@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'randomWords.dart';
+
+const appName = 'Chaos Tours';
 
 void main() {
   runApp(const MyApp());
@@ -10,13 +13,13 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Welcome to Flutter',
+      title: appName,
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('Welcome to Flutter'),
+          title: const Text(appName),
         ),
         body: const Center(
-          child: Text('Hello World'),
+          child: RandomWords(),
         ),
       ),
     );
