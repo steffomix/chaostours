@@ -1,33 +1,39 @@
 import 'package:flutter/material.dart';
-import 'randomWord.dart';
-import 'randomWordList.dart';
-// container
-import 'container/topBar.dart';
-import 'container/bottomBar.dart';
-//misc
-import 'settings.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() => runApp(const App());
+
+class App extends StatefulWidget {
+  const App({super.key});
+
+  @override
+  State<App> createState() => _AppState();
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class _AppState extends State<App> {
+  void _onItemTapped(int index) {
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: Settings.appName,
-      home: Scaffold(
-        appBar: AppBar(
-            title: const Text('appName'),
-            backgroundColor: Color.fromARGB(255, 32, 156, 165),
-            toolbarHeight: 30),
-        body: const Center(
-          child: RandomWords(),
-        ),
-        bottomNavigationBar: const BottomBar(),
-      ),
-    );
+        title: 'Title',
+        home: Scaffold(
+            appBar: AppBar(
+              leading: const Icon(Icons.navigation),
+              title: const Text(
+                'text',
+              ),
+              toolbarHeight: 60,
+            ),
+            body: Column(children: <Widget>[
+              Row(children: const <Widget>[Text('test'), Text('t2')])
+            ]),
+            bottomNavigationBar:
+                BottomNavigationBar(items: const <BottomNavigationBarItem>[
+              BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Start'),
+              BottomNavigationBarItem(
+                  icon: Icon(Icons.list), label: 'Arbeiten'),
+            ], onTap: _onItemTapped, currentIndex: 1)));
   }
 }

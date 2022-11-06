@@ -1,0 +1,7 @@
+provide simple data screen
+
+get gps coodinates
+
+get address from coodinates
+
+create future interval
