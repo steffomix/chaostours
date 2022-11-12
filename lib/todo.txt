@@ -5,3 +5,12 @@ get gps coodinates
 get address from coodinates
 
 create future interval
+
+
+
+https://nominatim.openstreetmap.org/reverse?lat=52.336647&lon=9.18955
+
+
+<?xml version="1.0" encoding="UTF-8" ?>
+<reversegeocode timestamp='Sun, 06 Nov 22 11:38:54 +0000' attribution='Data © OpenStreetMap contributors, ODbL 1.0. http://www.openstreetmap.org/copyright' querystring='lat=52.336647&amp;lon=9.18955'>
+<result place_id="216135398" osm_type="way" osm_id="505594101" ref="Industriestraße" lat="52.33691928516036" lon="9.189377109422596" boundingbox="52.3368975,52.3372323,9.1893428,9.1900459" place_rank='26' address_rank='26'>Industriestraße, Stadthagen, Landkreis Schaumburg, Niedersachsen, 31655, Deutschland</result><addressparts><road>Industriestraße</road><town>Stadthagen</town><county>Landkreis Schaumburg</county><state>Niedersachsen</state><ISO3166-2-lvl4>DE-NI</ISO3166-2-lvl4><postcode>31655</postcode><country>Deutschland</country><country_code>de</country_code></addressparts></reversegeocode>
