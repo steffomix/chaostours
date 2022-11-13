@@ -27,13 +27,13 @@ class Address {
   }
 }
 
-class Geo {
+class GeoCoding {
   // stores last lookups
   static final _lookups = <Address>[Address.empty()];
   static Address _lastLookup = Address.empty();
 
   // parses Address from openstreetmap response
-  Address _parseAddress(String res, double lat, double lon) {
+  void _parseAddress(String res, double lat, double lon) {
     String pattern = r'<%s>(.*)<\/%s>';
     String streetTag = 'road';
     String houseTag = 'house_number';
@@ -51,7 +51,11 @@ class Geo {
         postCode.firstMatch(res)?.group(1) ?? '',
         town.firstMatch(res)?.group(1) ?? '');
 
-    return _lastLookup;
+    _lookups.add(_lastLookup);
+  }
+
+  startTracking(Function f) {
+    f(Address.empty());
   }
 
   ///
@@ -71,13 +75,11 @@ class Geo {
 
   // lookup geo location
   void lookup(double lat, double lon) async {
-    var url =
-        Uri.https(_url, _page, {'lat': lat.toString(), 'lon': lon.toString()});
-
+    var params = {'lat': lat.toString(), 'lon': lon.toString()};
+    var url = Uri.https(_url, _page, params);
     var response = await http.get(url);
     if (response.statusCode == 200) {
-      Address addr = _parseAddress(response.body, lat, lon);
-      _lookups.add(addr);
+      _parseAddress(response.body, lat, lon);
     }
   }
 }

@@ -1,9 +1,10 @@
 import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'geoCoding.dart';
 
-void main() => runApp(const App());
+void main() {
+  runApp(const App());
+}
 
 class App extends StatefulWidget {
   const App({super.key});
@@ -17,9 +18,18 @@ double _lat = 52.3367;
 double _lon = 9.21645353535;
 
 class _AppState extends State<App> {
-  final geo = Geo();
+  final geo = GeoCoding();
   String _addr = '';
   int _requested = 0;
+
+  _AppState() {
+    geo.startTracking((Address addr) => updateAddress(addr));
+  }
+
+  updateAddress(Address addr) {
+    _addr = addr.address();
+    //setState(() {});
+  }
 
   void _onItemTapped(int index) {
     geo.lookup(_lat + Random().nextDouble(), _lon + Random().nextDouble());
@@ -29,6 +39,8 @@ class _AppState extends State<App> {
     _addr = '$addr \n $lastAddr';
     setState(() {});
   }
+
+  void startTracking() {}
 
   @override
   Widget build(BuildContext context) {
