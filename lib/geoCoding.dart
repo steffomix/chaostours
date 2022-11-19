@@ -1,17 +1,56 @@
+import 'logger.dart';
 import 'package:http/http.dart' as http;
 import 'package:sprintf/sprintf.dart';
+import 'dart:math';
 
-const _url = 'nominatim.openstreetmap.org';
-const _page = '/reverse';
+class GPS {
+  final DateTime time = DateTime.now();
+  double lat = 0;
+  double lon = 0;
+  Address _address = Address.empty();
+  final Function _callback;
+
+  GPS(this._callback) {
+    _lookupGps();
+  }
+
+  Address get address {
+    return _address;
+  }
+
+  set address(Address adr) {
+    _address = adr;
+    log(_address.address());
+    _callback(this);
+  }
+
+  static final double _lat = 52.3367;
+  static final double _lon = 9.21645353535;
+  static double _latMod = 0;
+  static double _lonMod = 0;
+
+  void _lookupGps() {
+    Future.delayed(const Duration(seconds: 3), () {
+      if (Random().nextInt(10) > 6) {
+        GPS._latMod = Random().nextDouble();
+        GPS._lonMod = Random().nextDouble();
+      }
+      lat = GPS._lat + GPS._latMod;
+      lon = GPS._lon + GPS._lonMod;
+
+      GeoCoding(this);
+    });
+  }
+}
 
 class Address {
-  final DateTime date = DateTime.now();
-  double lat;
-  double lon;
-  String street;
-  String house;
-  String code;
-  String town;
+  final DateTime time = DateTime.now();
+  final double lat;
+  final double lon;
+  final String street;
+  final String house;
+  final String code;
+  final String town;
   Address(this.lat, this.lon, this.street, this.house, this.code, this.town);
 
   Address.empty()
@@ -27,13 +66,49 @@ class Address {
   }
 }
 
+class GeoTracking {
+  static bool _running = false;
+  static const int _gpsLookupInterval = 3; // seconds
+  static List<GPS> tracks = [];
+  final Function _callback;
+
+  GeoTracking(this._callback);
+
+  void _track() {
+    Future.delayed(const Duration(seconds: _gpsLookupInterval), () {
+      log('_track');
+      tracks.add(GPS(_callback));
+      if (_running) {
+        _track();
+      }
+    });
+  }
+
+  void startTracking() {
+    log('start tracking');
+    if (_running) return;
+    _running = true;
+    _track();
+  }
+
+  void stopTracking() {
+    log('stop tracking');
+    if (!_running) return;
+    _running = false;
+  }
+}
+
 class GeoCoding {
-  // stores last lookups
-  static final _lookups = <Address>[Address.empty()];
-  static Address _lastLookup = Address.empty();
+  static const _url = 'nominatim.openstreetmap.org';
+  static const _page = '/reverse';
+
+  GeoCoding(GPS gps) {
+    log('Lookup ${gps.lat}, ${gps.lon}');
+    lookup(gps);
+  }
 
   // parses Address from openstreetmap response
-  void _parseAddress(String res, double lat, double lon) {
+  void _parseAddress(String res, GPS gps) {
     String pattern = r'<%s>(.*)<\/%s>';
     String streetTag = 'road';
     String houseTag = 'house_number';
@@ -43,43 +118,23 @@ class GeoCoding {
     RegExp house = RegExp(sprintf(pattern, [houseTag, houseTag]));
     RegExp town = RegExp(sprintf(pattern, [townTag, townTag]));
     RegExp postCode = RegExp(sprintf(pattern, [postCodeTag, postCodeTag]));
-    _lastLookup = Address(
-        lat,
-        lon,
+    Address address = Address(
+        gps.lat,
+        gps.lon,
         street.firstMatch(res)?.group(1) ?? '',
         house.firstMatch(res)?.group(1) ?? '',
         postCode.firstMatch(res)?.group(1) ?? '',
         town.firstMatch(res)?.group(1) ?? '');
-
-    _lookups.add(_lastLookup);
-  }
-
-  startTracking(Function f) {
-    f(Address.empty());
-  }
-
-  ///
-  /// return oldest address
-  Address get address {
-    if (_lookups.isNotEmpty) {
-      Address addr = _lookups.last;
-      _lookups.removeLast();
-      return addr;
-    }
-    return Address.empty();
-  }
-
-  Address get lastAddress {
-    return _lastLookup;
+    gps.address = address;
   }
 
   // lookup geo location
-  void lookup(double lat, double lon) async {
-    var params = {'lat': lat.toString(), 'lon': lon.toString()};
+  void lookup(GPS gps) async {
+    var params = {'lat': gps.lat.toString(), 'lon': gps.lon.toString()};
     var url = Uri.https(_url, _page, params);
     var response = await http.get(url);
     if (response.statusCode == 200) {
-      _parseAddress(response.body, lat, lon);
+      _parseAddress(response.body, gps);
     }
   }
 }

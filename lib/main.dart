@@ -1,8 +1,21 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'geoCoding.dart';
+import 'geoLocation.dart';
+import 'logger.dart';
+import 'dart:io';
+import 'package:flutter/services.dart';
 
-void main() {
+void main() async {
+  // https://stackoverflow.com/a/69481863
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // https://letsencrypt.org/certs/lets-encrypt-r3.pem
+  ByteData data =
+      await PlatformAssetBundle().load('assets/ca/lets-encrypt-r3.pem');
+  SecurityContext.defaultContext
+      .setTrustedCertificatesBytes(data.buffer.asUint8List());
+
+  Logger.debugMode = true;
   runApp(const App());
 }
 
@@ -13,34 +26,32 @@ class App extends StatefulWidget {
   State<App> createState() => _AppState();
 }
 
-//double _lat = 52.3366473695;
-double _lat = 52.3367;
-double _lon = 9.21645353535;
-
 class _AppState extends State<App> {
-  final geo = GeoCoding();
+  //GeoTracking _tracking;
+  static bool _gpsEnabled = false;
   String _addr = '';
-  int _requested = 0;
+  int tapped = 0;
 
   _AppState() {
-    geo.startTracking((Address addr) => updateAddress(addr));
+    GPSLookup(_enableGPS);
   }
 
-  updateAddress(Address addr) {
-    _addr = addr.address();
-    //setState(() {});
+  void _enableGPS(bool enable) {
+    _gpsEnabled = enable;
+    if (_gpsEnabled) {
+      GeoTracking(updateAddress).startTracking();
+    }
   }
 
-  void _onItemTapped(int index) {
-    geo.lookup(_lat + Random().nextDouble(), _lon + Random().nextDouble());
-    _requested++;
-    var addr = geo.address.address();
-    var lastAddr = geo.lastAddress.address();
-    _addr = '$addr \n $lastAddr';
+  updateAddress(GPS gps) {
+    _addr = gps.address.address();
     setState(() {});
   }
 
-  void startTracking() {}
+  void _onItemTapped(int index) {
+    tapped++;
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,7 +65,7 @@ class _AppState extends State<App> {
               ),
               toolbarHeight: 60,
             ),
-            body: Center(child: Text('$_requested Address: $_addr ')),
+            body: Center(child: Text('$tapped Address: $_addr ')),
             bottomNavigationBar:
                 BottomNavigationBar(items: const <BottomNavigationBarItem>[
               BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Start'),
