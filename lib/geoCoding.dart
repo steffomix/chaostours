@@ -2,6 +2,7 @@ import 'logger.dart';
 import 'package:http/http.dart' as http;
 import 'package:sprintf/sprintf.dart';
 import 'dart:math';
+import 'package:geolocator/geolocator.dart';
 
 class GPS {
   final DateTime time = DateTime.now();
@@ -11,7 +12,8 @@ class GPS {
   final Function _callback;
 
   GPS(this._callback) {
-    _lookupGps();
+    //_lookupGps();
+    _testLookupGps();
   }
 
   Address get address {
@@ -29,7 +31,7 @@ class GPS {
   static double _latMod = 0;
   static double _lonMod = 0;
 
-  void _lookupGps() {
+  void _testLookupGps() {
     Future.delayed(const Duration(seconds: 3), () {
       if (Random().nextInt(10) > 6) {
         GPS._latMod = Random().nextDouble();
@@ -40,6 +42,15 @@ class GPS {
 
       GeoCoding(this);
     });
+  }
+
+  void _lookupGps() async {
+    Position p = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high);
+
+    lat = p.latitude;
+    lon = p.longitude;
+    GeoCoding(this);
   }
 }
 
@@ -74,7 +85,9 @@ class GeoTracking {
 
   GeoTracking(this._callback);
 
-  void _track() {
+  ///
+  ///
+  Future<void> _track() async {
     Future.delayed(const Duration(seconds: _gpsLookupInterval), () {
       log('_track');
       tracks.add(GPS(_callback));
@@ -128,7 +141,7 @@ class GeoCoding {
     gps.address = address;
   }
 
-  // lookup geo location
+  // lookup geo location on openstreetmap.org
   void lookup(GPS gps) async {
     var params = {'lat': gps.lat.toString(), 'lon': gps.lon.toString()};
     var url = Uri.https(_url, _page, params);

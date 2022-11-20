@@ -3,8 +3,11 @@ import 'package:geolocator/geolocator.dart';
 
 class GPSLookup {
   final Function _cb;
+  static bool _setupExecuted = false;
   GPSLookup(this._cb) {
+    if (_setupExecuted) return;
     _setup();
+    _setupExecuted = true;
   }
 
   void _setup() {
