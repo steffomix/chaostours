@@ -1,18 +1,3 @@
-///    This file is part of Chaos Tours.
-
-//     Chaos Tours is free software: you can redistribute it and/or modify
-//     it under the terms of the GNU General Public License as published by
-//     the Free Software Foundation, either version 3 of the License, or
-//     (at your option) any later version.
-
-//     Chaos Tours is distributed in the hope that it will be useful,
-//     but WITHOUT ANY WARRANTY; without even the implied warranty of
-//     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//     GNU General Public License for more details.
-
-//     You should have received a copy of the GNU General Public License
-//     along with Chaos Tours.  If not, see <http://www.gnu.org/licenses/>.
-
 import 'package:flutter/material.dart';
 import 'geoCoding.dart';
 import 'geoLocation.dart';
@@ -34,6 +19,7 @@ void main() async {
 
   //setup logger
   Logger.debugMode = true;
+  CalendarHandler c = CalendarHandler();
 
   // start app
   runApp(const App());
@@ -51,7 +37,8 @@ class _AppState extends State<App> {
   static bool _gpsEnabled = false;
   static const String _appName = 'Chaos Tours';
   static int _bottomNavIndex = 0;
-  CalendarHandler calendar = CalendarHandler();
+
+  static CalendarHandler c = CalendarHandler();
 
   // last found address (can be incomplete or even empty)
   String _addr = '';
@@ -69,7 +56,7 @@ class _AppState extends State<App> {
   }
 
   void _onBottomNavTapped(int index) {
-    calendar.createTestEvent();
+    c.addEvent('title', 'description', ['tasks'], Address.empty());
     _bottomNavIndex = index;
     log('Tapped Bottomnavigation index: $index');
     setState(() {});

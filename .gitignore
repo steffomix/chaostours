@@ -8,8 +8,8 @@
 .buildlog/
 .history
 .svn/
-.assets/ca/
-.assets/google-api/
+assets/
+assets/
 migrate_working_dir/
 
 # IntelliJ related
