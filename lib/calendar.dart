@@ -1,9 +1,17 @@
 import 'dart:async';
 import 'geoCoding.dart';
-import 'logger.dart';
-import 'package:flutter/services.dart';
-import "package:googleapis_auth/auth_io.dart";
-import 'package:googleapis/calendar/v3.dart';
+import 'locationAlias.dart';
+import 'logger.dart' show log;
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:googleapis_auth/auth_io.dart'
+    show
+        clientViaServiceAccount,
+        ServiceAccountCredentials,
+        AutoRefreshingAuthClient;
+import 'package:googleapis/calendar/v3.dart'
+    show CalendarApi, Event, EventDateTime;
+import 'package:crypto/crypto.dart' show sha1;
+import 'dart:convert' show utf8;
 
 class Task {
   final statusQueue = 0;
@@ -38,7 +46,7 @@ class CalendarHandler {
   CalendarCredentials _calendarCredentials = CalendarCredentials.blank();
 
   final List<Task> _tasks = [];
-  //late Timer _t = Timer(const Duration(seconds: 1), _queue);
+  late Timer _timer;
   late CalendarApi _api;
 
   // singelton instance
@@ -50,15 +58,62 @@ class CalendarHandler {
     _resetApi();
   }
 
-  /// add Task(Function) to _queue
-  Task addEvent(
-      String title, String description, List<String> tasks, Address position) {
+  String _formatDate(DateTime t) {
+    return '${t.day}.${t.month}.${t.year} ${t.hour}:${t.minute}';
+  }
+
+  Event createEvent(
+      DateTime start, DateTime end, List<String> tasksList, Address addr) {
+    String fStart = _formatDate(start);
+    String fEnd = _formatDate(end);
+    double lat = addr.lat;
+    double lon = addr.lon;
+    String url = 'https://maps.google.com?q=$lat,$lon&center=$lat,$lon';
+    LocationAlias locationAlias = LocationAlias(lat, lon);
+    Alias alias = locationAlias.alias;
+    String aliasName = alias.name.toUpperCase();
+    String address =
+        aliasName == '' ? addr.asString : '$aliasName (${addr.asString})';
+    List<String> aliasNamesList = [];
+    for (var a in locationAlias.allAlias) {
+      aliasNamesList.add(a.name.toUpperCase());
+    }
+    String aliasNames =
+        aliasNamesList.length > 1 ? aliasNamesList.join('; ') : ' - ';
+
+    for (var i = 0; i < tasksList.length; i++) {
+      tasksList[i]
+        ..replaceAll('\r', '')
+        ..replaceAll('\n', '; ');
+    }
+    List<String> tsvEntryParts = [
+      address,
+      aliasNames,
+      fStart,
+      fEnd,
+      tasksList.join('; '),
+      url
+    ];
+    String body = 'Ort: $address\r\n'
+        'Von $fStart bis $fEnd\r\n\r\n'
+        'Arbeiten:\r\n${tasksList.join('\r\n')}\r\n\r\n'
+        '<a href="$url" target = "_blank">Link zu Google Maps</a>\r\n\r\n'
+        'Andere Aliasnamen für diesen Ort: $aliasNames\r\n\r\n'
+        'TSV (Tabulator Separated Values) für Excel import:\r\n${tsvEntryParts.join('  ')}';
+
+    body = '$body\r\n\r\n'
+        'UUID: ${sha1.convert(utf8.encode('$body ${DateTime.now().microsecondsSinceEpoch}')).toString()}';
+
     Event e = Event(
-        summary: '<<Android App Test Entry>>',
-        start: EventDateTime(
-            date: DateTime.now().add(const Duration(minutes: 10))),
-        end: EventDateTime(
-            date: DateTime.now().add(const Duration(minutes: 60))));
+        summary: address,
+        description: body,
+        start: EventDateTime(date: start),
+        end: EventDateTime(date: end));
+    return e;
+  }
+
+  /// add Task(Function) to _queue
+  Task addEvent(Event e) {
     Task t = Task(() {
       _api.events.insert(e, _calendarCredentials.calendarId).then((value) {
         _currentStatus = statusReady;
@@ -68,14 +123,27 @@ class CalendarHandler {
         log('Add event ${e.summary} to calendar failed: ${error.toString()}');
       });
     });
-    // execute now
-    if (_tasks.isEmpty && _currentStatus == statusReady) return t.execute();
-    // execute later
-    _tasks.add(t);
+    _addTask(t);
     return t;
   }
 
+  void _addTask(Task t) {
+    // execute now
+    if (_tasks.isEmpty && _currentStatus == statusReady) {
+      t.execute();
+      return;
+    }
+    // execute later
+    _tasks.add(t);
+  }
+
   void _resetApi() {
+    try {
+      // Timer may not be set
+      _timer.cancel();
+    } catch (e) {
+      // ignore
+    }
     log('reset api');
     _currentStatus = statusInitializing;
     _calendarCredentials = CalendarCredentials.blank();
@@ -94,7 +162,7 @@ class CalendarHandler {
   }
 
   void _queue() {
-    Timer(const Duration(seconds: 1), _queue);
+    _timer = Timer(const Duration(seconds: 1), _queue);
     log('queue status $_currentStatus');
     if (_currentStatus > 0) {
       log('Queue Calendar Api failed due to Status $_currentStatus');

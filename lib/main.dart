@@ -1,10 +1,14 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'geoCoding.dart';
+import 'geoTracking.dart';
 import 'geoLocation.dart';
 import 'calendar.dart';
 import 'logger.dart';
 import 'dart:io';
 import 'package:flutter/services.dart';
+import 'locationAlias.dart';
 
 void main() async {
   // Thanks for: https://stackoverflow.com/a/69481863
@@ -20,6 +24,7 @@ void main() async {
   //setup logger
   Logger.debugMode = true;
   CalendarHandler c = CalendarHandler();
+  LocationAlias l = LocationAlias(0, 0);
 
   // start app
   runApp(const App());
@@ -48,7 +53,7 @@ class _AppState extends State<App> {
       _gpsEnabled = enable;
       if (_gpsEnabled) {
         GeoTracking((GPS gps) {
-          _addr = gps.address.address();
+          _addr = gps.address.asString;
           setState(() {});
         }).startTracking();
       }
@@ -56,9 +61,18 @@ class _AppState extends State<App> {
   }
 
   void _onBottomNavTapped(int index) {
-    c.addEvent('title', 'description', ['tasks'], Address.empty());
-    _bottomNavIndex = index;
-    log('Tapped Bottomnavigation index: $index');
+    //c.addEvent('title', 'description', ['tasks'], Address.empty());
+    try {
+      _bottomNavIndex = index;
+      log('Tapped Bottomnavigation index: $index');
+      c.addEvent(c.createEvent(
+          DateTime.now(),
+          DateTime.now().add(const Duration(hours: 1)),
+          ['t1', 't2'],
+          Address.empty()));
+    } catch (e) {
+      log(e.toString());
+    }
     setState(() {});
   }
 
