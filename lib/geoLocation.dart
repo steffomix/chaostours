@@ -1,30 +1,11 @@
-import 'logger.dart';
 import 'package:geolocator/geolocator.dart';
 
 class GPSLookup {
-  final Function _cb;
-  static bool _setupExecuted = false;
-  GPSLookup(this._cb) {
-    if (_setupExecuted) return;
-    _setup();
-    _setupExecuted = true;
-  }
-
-  void _setup() {
-    _determinePosition().then((value) {
-      _cb(true);
-    }).onError((error, stackTrace) {
-      String e = error.toString();
-      log(e);
-      _cb(false);
-    });
-  }
-
   /// Determine the current position of the device.
   ///
   /// When the location services are not enabled or permissions
   /// are denied the `Future` will return an error.
-  Future<Position> _determinePosition() async {
+  static Future<Position> getPosition() async {
     bool serviceEnabled;
     LocationPermission permission;
 

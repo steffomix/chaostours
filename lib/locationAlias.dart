@@ -1,11 +1,8 @@
-import 'dart:io';
-import 'logger.dart';
-
-import 'package:flutter/services.dart';
+import 'logger.dart' show log;
+import 'package:flutter/services.dart' show rootBundle;
 
 class LocationAlias {
-  static const double meter = 0.001476; // ~one meter in gps degree
-  static const double radius = 0.01476; // 100m alias radius
+  static const double radius = 0.00145; // 100m alias radius
 
   final double lat;
   final double lon;

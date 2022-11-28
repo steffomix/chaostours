@@ -2,8 +2,6 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'geoCoding.dart';
-import 'geoTracking.dart';
-import 'geoLocation.dart';
 import 'calendar.dart';
 import 'logger.dart';
 import 'dart:io';
@@ -39,7 +37,6 @@ class App extends StatefulWidget {
 
 class _AppState extends State<App> {
   //GeoTracking _tracking;
-  static bool _gpsEnabled = false;
   static const String _appName = 'Chaos Tours';
   static int _bottomNavIndex = 0;
 
@@ -48,17 +45,7 @@ class _AppState extends State<App> {
   // last found address (can be incomplete or even empty)
   String _addr = '';
 
-  _AppState() {
-    GPSLookup((bool enable) {
-      _gpsEnabled = enable;
-      if (_gpsEnabled) {
-        GeoTracking((GPS gps) {
-          _addr = gps.address.asString;
-          setState(() {});
-        }).startTracking();
-      }
-    });
-  }
+  _AppState();
 
   void _onBottomNavTapped(int index) {
     //c.addEvent('title', 'description', ['tasks'], Address.empty());
