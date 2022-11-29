@@ -4,23 +4,53 @@ import 'geoLocation.dart' show GPSLookup;
 import 'package:geolocator/geolocator.dart' show Position;
 import 'package:sprintf/sprintf.dart' show sprintf;
 import 'package:http/http.dart' as http;
+import 'dart:async' show Timer;
+
+class TrackingStatusChangedEvent {
+  final TrackingStatus status;
+  final TrackPoint trackpointStart;
+  final TrackPoint trackPointEnd;
+  final Address address;
+
+  TrackingStatusChangedEvent(
+      this.status, this.trackpointStart, this.trackPointEnd, this.address);
+}
+
+class TrackingStatus {
+  static const int statusStop = 0;
+  static const int statusMove = 1;
+  int _status = 0;
+
+  TrackingStatus.stop() {
+    _status = statusStop;
+  }
+
+  TrackingStatus.move() {
+    _status = statusMove;
+  }
+
+  int get status {
+    return _status;
+  }
+}
 
 class TrackPoint extends GPS {
-  static const Duration trackingTickTime = Duration(seconds: 10);
+  static int _id = 0;
+  int id = _id;
+  static const Duration trackingTickTime = Duration(seconds: 1);
   DateTime _time = DateTime.now();
   static bool _tracking = false;
   static final List<TrackPoint> _tracklist = [];
   //
-  static const int timeDifference = 5; // in minutes
+  static const int timeDifference = 15; // in minutes
   static const double locationDifference = 0.00145 * 5; // 0.00145 = ~100m
-  static const int statusStop = 0;
-  static const int statusMove = 1;
-  static int _currentStatus = statusStop;
-  static Function(Address, int, TrackPoint, TrackPoint) _statusCallback =
-      (a, i, t1, t2) {};
+  static TrackingStatus _status = TrackingStatus.stop();
+  static Function(TrackingStatusChangedEvent) _statusCallback = (t) {
+    log('TrackingStatusEvent ${t.address.asString}');
+  };
 
-  static int get status {
-    return _currentStatus;
+  static TrackingStatus get status {
+    return _status;
   }
 
   static bool get tracking {
@@ -32,41 +62,62 @@ class TrackPoint extends GPS {
   }
 
   /// set status changed callback
-  TrackPoint.init(Function(Address, int, TrackPoint, TrackPoint) cb) {
+  TrackPoint.init(Function(TrackingStatusChangedEvent) cb) {
     _statusCallback = cb;
+  }
+
+  static double latDebug = 0;
+  static double lonDebug = 0;
+
+  static void move() {
+    latDebug += locationDifference;
+    lonDebug -= locationDifference;
   }
 
   ///
   TrackPoint() {
-    GPSLookup.getPosition().then((Position p) {
-      lat = p.latitude;
-      lon = p.longitude;
+    _id++;
+    Timer(const Duration(seconds: 1), () {
+      lat = latDebug;
+      lon = lonDebug;
       _time = DateTime.now();
       _gpsOk = true;
-    }).onError((error, stackTrace) {
-      log('GPSLookup failed: ${error.toString()}');
+      log('$lat, $lon');
+      _tracklist.add(this);
+      checkStatus();
     });
-    _tracklist.add(this);
-    checkStatus();
+    return;
+    // GPSLookup.getPosition().then((Position p) {
+    //   lat = p.latitude;
+    //   lon = p.longitude;
+    //   _time = DateTime.now();
+    //   _gpsOk = true;
+    // }).onError((error, stackTrace) {
+    //   log('GPSLookup failed: ${error.toString()}');
+    // });
+    // _tracklist.add(this);
+    // checkStatus();
   }
 
-  void _setStatus(int status, TrackPoint t1, TrackPoint t2) {
-    _currentStatus = status;
-    lookupGPS().then((Address addr) {
-      _statusCallback(addr, status, t1, t2);
+  void _setStatus(TrackingStatus status, TrackPoint t1, TrackPoint t2) {
+    _status = status;
+    t1.lookupGPS().then((Address addr) {
+      _statusCallback(TrackingStatusChangedEvent(status, t1, t2, address));
     });
   }
 
   /// check movement in last timeDifference was more than 0.015 gps degree or ~100m
   void checkStatus() {
+    // prune _tracklist
     if (_tracklist.length < 10) {
-      _currentStatus = statusStop;
+      _status = TrackingStatus.stop();
       return;
     }
     while (_tracklist.length > 100) {
       _tracklist.removeAt(0);
     }
 
+    // find first track with gps
     TrackPoint t1 = _tracklist.last;
     TrackPoint t2 = t1;
     int index = _tracklist.length;
@@ -77,18 +128,32 @@ class TrackPoint extends GPS {
         break;
       }
     }
-    for (var i = index; i <= 0; i--) {
+    // go at least <timeDifference> back and pick next
+    for (var i = index - 1; i >= 0; i--) {
       if (_tracklist[i]._gpsOk == true &&
-          _tracklist[i]._time.difference(t1._time).inMinutes >=
+          t1._time.difference(_tracklist[i]._time).inSeconds >=
               timeDifference) {
         t2 = _tracklist[i];
+        log('${_tracklist[i]._time.difference(t1._time).inSeconds}');
         break;
       }
     }
-    // 0.01476 gps degree = ~100m
-    distance(t1, t2) > locationDifference
-        ? _setStatus(statusMove, t1, t2)
-        : _setStatus(statusStop, t1, t2);
+    // calculate distance between both points
+    // 0.00145 gps degree = ~100m
+    double dist = distance(t1, t2);
+
+    if (_status.status == TrackingStatus.statusStop &&
+        dist > locationDifference) {
+      // status changed from stop to move
+      _setStatus(TrackingStatus.move(), t1, t2);
+    }
+
+    if (_status.status == TrackingStatus.statusMove &&
+        dist < locationDifference) {
+      // status changed from move to stop
+      _setStatus(TrackingStatus.stop(), t1, t2);
+    }
+    log('t1.id: ${t1.id} - ${t1.lat} || t2.id: ${t2.id} - ${t2.lat}');
   }
 
   double distance(TrackPoint t1, TrackPoint t2) {

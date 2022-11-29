@@ -21,8 +21,8 @@ void main() async {
 
   //setup logger
   Logger.debugMode = true;
-  CalendarHandler c = CalendarHandler();
-  LocationAlias l = LocationAlias(0, 0);
+  //CalendarHandler c = CalendarHandler();
+  //LocationAlias l = LocationAlias(0, 0);
 
   // start app
   runApp(const App());
@@ -40,25 +40,24 @@ class _AppState extends State<App> {
   static const String _appName = 'Chaos Tours';
   static int _bottomNavIndex = 0;
 
-  static CalendarHandler c = CalendarHandler();
-
-  // last found address (can be incomplete or even empty)
-  String _addr = '';
-
-  _AppState();
+  _AppState() {
+    TrackPoint.startTracking();
+  }
 
   void _onBottomNavTapped(int index) {
-    //c.addEvent('title', 'description', ['tasks'], Address.empty());
-    try {
-      _bottomNavIndex = index;
-      log('Tapped Bottomnavigation index: $index');
-      c.addEvent(c.createEvent(
-          DateTime.now(),
-          DateTime.now().add(const Duration(hours: 1)),
-          ['t1', 't2'],
-          Address.empty()));
-    } catch (e) {
-      log(e.toString());
+    _bottomNavIndex = index;
+    switch (index) {
+      case 0:
+        {
+          TrackPoint.move();
+          break;
+        }
+      case 1:
+        {
+          break;
+        }
+      default:
+        {}
     }
     setState(() {});
   }
@@ -93,21 +92,20 @@ class _AppState extends State<App> {
     switch (_bottomNavIndex) {
       case 0:
         {
-          return Center(child: Text('Page 0: Address: $_addr '));
+          return const Center(child: Text(' x'));
         }
       case 1:
         {
-          return Center(child: Text('Page 1 Address: $_addr '));
+          return const Center(child: Text(''));
         }
       default:
-        return Center(child: Text('Start Page 0: Address: $_addr '));
+        return const Center(child: Text(''));
     }
   }
 
   BottomNavigationBar _bottomNav() {
     return BottomNavigationBar(items: const <BottomNavigationBarItem>[
-      BottomNavigationBarItem(
-          icon: Icon(Icons.toggle_off_outlined), label: 'Start'),
+      BottomNavigationBarItem(icon: Icon(Icons.arrow_left), label: 'move'),
       BottomNavigationBarItem(
           icon: Icon(Icons.toggle_on_rounded), label: 'Arbeiten'),
     ], onTap: _onBottomNavTapped, currentIndex: _bottomNavIndex);
