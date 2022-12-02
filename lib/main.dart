@@ -1,7 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'geoCoding.dart';
+import 'trackPoint.dart';
 import 'calendar.dart';
 import 'logger.dart';
 import 'dart:io';
@@ -41,7 +41,7 @@ class _AppState extends State<App> {
   static int _bottomNavIndex = 0;
 
   _AppState() {
-    TrackPoint.startTracking();
+    //TrackPoint.startTracking();
   }
 
   void _onBottomNavTapped(int index) {
@@ -49,7 +49,7 @@ class _AppState extends State<App> {
     switch (index) {
       case 0:
         {
-          TrackPoint.move();
+          //TrackPoint.move();
           break;
         }
       case 1:

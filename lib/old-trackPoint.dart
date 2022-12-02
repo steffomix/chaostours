@@ -1,36 +1,10 @@
-import 'logger.dart' show log, info, severe;
+/*import 'logger.dart' show log, info, severe;
+import 'gps.dart';
+import 'address.dart';
+import 'trackingStatus.dart';
+import 'trackingEvent.dart';
 import 'dart:math' show sqrt, pow;
-import 'package:geolocator/geolocator.dart'
-    show Geolocator, Position, LocationPermission;
-import 'package:sprintf/sprintf.dart' show sprintf;
-import 'package:http/http.dart' as http;
 import 'dart:async' show Timer;
-
-class TrackingStatusChangedEvent {
-  final TrackingStatus status;
-  final TrackPoint trackPoint;
-  final Duration duration;
-
-  TrackingStatusChangedEvent(this.status, this.trackPoint, this.duration);
-}
-
-class TrackingStatus {
-  static const int statusStop = 0;
-  static const int statusMove = 1;
-  int _status = 0;
-
-  TrackingStatus.stop() {
-    _status = statusStop;
-  }
-
-  TrackingStatus.move() {
-    _status = statusMove;
-  }
-
-  int get status {
-    return _status;
-  }
-}
 
 class TrackPoint extends GPS {
   static int _nextTrackPointId = 0;
@@ -97,7 +71,7 @@ class TrackPoint extends GPS {
   }
 
   ///
-  TrackPoint() {
+  _TrackPoint() {
     Timer(const Duration(seconds: 1), () {
       lat = latDebug;
       lon = lonDebug;
@@ -269,159 +243,5 @@ class TrackPoint extends GPS {
   double distToKm(double dist) {
     return ((dist / distanceTreshold * 1000).round()) / 1000;
   }
-
-  /// tracking heartbeat with <trackingTickTime> speed
-  static Future<void> _track() async {
-    if (!_tracking) return;
-    Future.delayed(trackingTickTime, () {
-      info('-------- next track ---------');
-      TrackPoint();
-      _track();
-    });
-  }
-
-  /// start tracking heartbeat
-  static void startTracking() {
-    if (_tracking) return;
-    info('start tracking');
-    _tracking = true;
-    _track();
-  }
-
-  /// stop tracking heartbeat
-  static void stopTracking() {
-    if (!_tracking) return;
-    info('stop tracking');
-    _tracking = false;
-  }
 }
-
-class GPS {
-  static int _nextGpsId = 0;
-  final int _gpsId = ++GPS._nextGpsId - 1;
-  double lat = 0;
-  double lon = 0;
-  bool _gpsOk = false;
-  bool gps = false;
-  Address _address = Address.empty();
-
-  int get gpsId {
-    return _gpsId;
-  }
-
-  GPS() {
-    try {
-      lookupGPS().then((p) {
-        lat = p.latitude;
-        lon = p.longitude;
-        _gpsOk = true;
-        //info('GPS id $_gpsId: lat: $lat, lon: $lon');
-      }).onError((e, stackTrace) {
-        severe('gps failed: ${e.toString()}');
-      });
-    } catch (e) {
-      severe('gps failed: ${e.toString()}');
-    }
-  }
-
-  Future<Position> lookupGPS() async {
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      return Future.error('Location services are disabled.');
-    }
-
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        return Future.error('Location permissions are denied');
-      }
-    }
-
-    if (permission == LocationPermission.deniedForever) {
-      return Future.error(
-          'Location permissions are permanently denied, we cannot request permissions.');
-    }
-
-    // When we reach here, permissions are granted and we can
-    // continue accessing the position of the device.
-    return await Geolocator.getCurrentPosition();
-  }
-
-  Address get address {
-    return _address;
-  }
-
-  // lookup geo location on openstreetmap.org
-  Future<Address> lookupAddress() async {
-    var url = Uri.https('nominatim.openstreetmap.org', '/reverse',
-        {'lat': lat.toString(), 'lon': lon.toString()});
-    var response = await http.get(url);
-    if (response.statusCode == 200) {
-      String body = response.body;
-      String pattern = r'<%s>(.*)<\/%s>';
-      String streetTag = 'road';
-      String houseTag = 'house_number';
-      String townTag = 'town';
-      String postCodeTag = 'postcode';
-      RegExp street = RegExp(sprintf(pattern, [streetTag, streetTag]));
-      RegExp house = RegExp(sprintf(pattern, [houseTag, houseTag]));
-      RegExp town = RegExp(sprintf(pattern, [townTag, townTag]));
-      RegExp postCode = RegExp(sprintf(pattern, [postCodeTag, postCodeTag]));
-      _address = Address(
-          lat,
-          lon,
-          street.firstMatch(body)?.group(1) ?? '',
-          house.firstMatch(body)?.group(1) ?? '',
-          postCode.firstMatch(body)?.group(1) ?? '',
-          town.firstMatch(body)?.group(1) ?? '');
-    }
-    return _address;
-  }
-}
-
-class Address {
-  final DateTime time = DateTime.now();
-  final double lat;
-  final double lon;
-  final String street;
-  final String house;
-  final String code;
-  final String town;
-  Address(this.lat, this.lon, this.street, this.house, this.code, this.town);
-
-  Address.empty()
-      : lat = 0,
-        lon = 0,
-        street = '',
-        house = '',
-        code = '',
-        town = '';
-
-  String get asString {
-    return '$street $house, $code $town';
-  }
-}
-
-/*
-  static final double _lat = 52.3367;
-  static final double _lon = 9.21645353535;
-  static double _latMod = 0;
-  static double _lonMod = 0;
-
-  void _testGps() {
-    Future.delayed(const Duration(seconds: 3), () {
-      if (Random().nextInt(10) > 6) {
-        GPS._latMod = Random().nextDouble();
-        GPS._lonMod = Random().nextDouble();
-      }
-      lat = GPS._lat + GPS._latMod;
-      lon = GPS._lon + GPS._lonMod;
-
-      // GeoCoding(this);
-    });
-  }
 */

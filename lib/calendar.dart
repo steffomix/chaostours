@@ -1,7 +1,7 @@
-import 'dart:async';
-import 'geoCoding.dart';
-import 'locationAlias.dart';
 import 'logger.dart' show log;
+import 'address.dart';
+import 'dart:async';
+import 'locationAlias.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:googleapis_auth/auth_io.dart'
     show
