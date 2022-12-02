@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 import 'logger.dart';
 import 'dart:math' show pow, sqrt;
 import 'gps.dart';
@@ -58,10 +60,8 @@ class TrackPoint {
       }
     }
 
-    t2 = TrackPoint();
-
     if (distance(t1, t2) > distanceTreshold) {
-      TrackingStatus.move(this);
+      TrackingStatus.move(t2);
     } else {
       TrackingStatus.stop(t2);
     }
@@ -75,6 +75,7 @@ class TrackPoint {
     return dist;
   }
 }
+
 
 /*
 class TrackingStatus {
