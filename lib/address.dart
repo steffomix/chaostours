@@ -20,42 +20,39 @@ class Address {
   }
 
   DateTime get time {
-    return time;
+    return _time;
   }
 
-  Address(this._gps) {
-    _lookupAddress();
-  }
-
-  Address.empty() : _gps = GPS();
+  Address(this._gps);
 
   String get asString {
     return '$street $house, $code $town';
   }
 
-  void _lookupAddress() async {
+  Future<Address> lookupAddress() async {
     var url = Uri.https('nominatim.openstreetmap.org', '/reverse',
         {'lat': lat.toString(), 'lon': lon.toString()});
-    http.get(url).then((response) {
-      if (response.statusCode == 200) {
-        String body = response.body;
-        String pattern = r'<%s>(.*)<\/%s>';
-        String streetTag = 'road';
-        String houseTag = 'house_number';
-        String townTag = 'town';
-        String postCodeTag = 'postcode';
-        RegExp street = RegExp(sprintf(pattern, [streetTag, streetTag]));
-        RegExp house = RegExp(sprintf(pattern, [houseTag, houseTag]));
-        RegExp town = RegExp(sprintf(pattern, [townTag, townTag]));
-        RegExp postCode = RegExp(sprintf(pattern, [postCodeTag, postCodeTag]));
 
-        street.firstMatch(body)?.group(1) ?? '';
-        house.firstMatch(body)?.group(1) ?? '';
-        postCode.firstMatch(body)?.group(1) ?? '';
-        town.firstMatch(body)?.group(1) ?? '';
-      }
-    }).onError((error, stackTrace) {
-      severe('lookup address failed: ${error.toString()}');
-    });
+    http.Response response = await http.get(url);
+    if (response.statusCode == 200) {
+      String body = response.body;
+      String pattern = r'<%s>(.*)<\/%s>';
+      String streetTag = 'road';
+      String houseTag = 'house_number';
+      String townTag = 'town';
+      String postCodeTag = 'postcode';
+      RegExp street = RegExp(sprintf(pattern, [streetTag, streetTag]));
+      RegExp house = RegExp(sprintf(pattern, [houseTag, houseTag]));
+      RegExp town = RegExp(sprintf(pattern, [townTag, townTag]));
+      RegExp postCode = RegExp(sprintf(pattern, [postCodeTag, postCodeTag]));
+
+      street.firstMatch(body)?.group(1) ?? '';
+      house.firstMatch(body)?.group(1) ?? '';
+      postCode.firstMatch(body)?.group(1) ?? '';
+      town.firstMatch(body)?.group(1) ?? '';
+    } else {
+      severe('lookup address failed with status code: ${response.statusCode}');
+    }
+    return this;
   }
 }

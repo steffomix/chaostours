@@ -11,7 +11,14 @@ class TrackingStatus {
     return _status;
   }
 
-  static void stop(TrackPoint tp) {
+  static void move(tp) {
+    if (_status != statusMove) {
+      _status = statusMove;
+      _triggerEvent(tp);
+    }
+  }
+
+  static void stop(tp) {
     if (_status != statusStop) {
       _status = statusStop;
       _triggerEvent(tp);
@@ -23,13 +30,6 @@ class TrackingStatus {
       TrackingStatusChangedEvent.trigger(tp);
     } catch (e) {
       severe('TrackingStatusChangedEvent.trigger: ${e.toString()}');
-    }
-  }
-
-  static void move(TrackPoint tp) {
-    if (_status != statusMove) {
-      _status = statusMove;
-      _triggerEvent(tp);
     }
   }
 }

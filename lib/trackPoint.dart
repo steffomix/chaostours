@@ -19,6 +19,10 @@ class TrackPoint {
     return _gps.gpsOk;
   }
 
+  GPS get gps {
+    return gps;
+  }
+
   DateTime get time {
     return _time;
   }
@@ -60,10 +64,14 @@ class TrackPoint {
       }
     }
 
-    if (distance(t1, t2) > distanceTreshold) {
-      TrackingStatus.move(t2);
-    } else {
-      TrackingStatus.stop(t2);
+    try {
+      if (distance(t1, t2) > distanceTreshold) {
+        TrackingStatus.move(t2);
+      } else {
+        TrackingStatus.stop(t2);
+      }
+    } catch (e) {
+      severe('Change Tracking Status failed: ${e.toString()}');
     }
   }
 
