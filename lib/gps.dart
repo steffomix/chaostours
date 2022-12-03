@@ -9,15 +9,26 @@ class GPS {
   double lon = 0;
   bool _gpsOk = false;
 
-  int get gpsId {
-    return _gpsId;
-  }
+  int get gpsId => _gpsId;
 
-  bool get gpsOk {
-    return _gpsOk;
+  bool get gpsOk => _gpsOk;
+
+// 52.3840, 9.7260
+  static double _lat = 52.384;
+  static double _lon = 9.726;
+
+  static double move() {
+    _lat += 0.001;
+    return _lat;
   }
 
   GPS() {
+    lat = _lat;
+    lon = _lon;
+    _gpsOk = true;
+  }
+
+  _GPS() {
     try {
       lookupGPS().then((p) {
         lat = p.latitude;

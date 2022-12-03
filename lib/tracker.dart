@@ -9,7 +9,7 @@ class Tracker {
   static Future<void> _track() async {
     if (!_tracking) return;
     Future.delayed(_tickTime, () {
-      info('-------- next track ---------');
+      //info('-------- next track ---------');
       TrackPoint();
       _track();
     });

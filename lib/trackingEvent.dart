@@ -1,5 +1,4 @@
 import 'logger.dart';
-import 'trackingStatus.dart';
 import 'address.dart';
 import 'trackPoint.dart';
 
@@ -27,14 +26,15 @@ class TrackingStatusChangedEvent {
     _listener.add(fc);
   }
 
-  static void trigger(tp) {
+  static void triggerEvent(tp) {
     Address(tp.gps).lookupAddress().then((Address address) {
-      var e = TrackingStatusChangedEvent(
-          tp, address, calculateDuration(tp), TrackingStatus.status);
+      var event = TrackingStatusChangedEvent(
+          tp, address, calculateDuration(tp), TrackPoint.status);
       _lastTrackPoint = tp;
+      log('trigger event to status ${TrackPoint.status == 0 ? 'stop' : 'move'}');
       for (var cb in _listener) {
         try {
-          cb(e);
+          cb(event);
         } catch (e) {
           severe('Trigger TrackingStatusChangedEvent failed: ${e.toString()}');
         }

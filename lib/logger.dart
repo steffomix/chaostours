@@ -26,7 +26,7 @@ log(String msg) {
 }
 
 info(String msg) {
-  // Logger.info('INFO: $msg');
+  Logger.info('INFO: $msg');
 }
 
 severe(String msg) {

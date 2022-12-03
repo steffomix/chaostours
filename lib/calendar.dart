@@ -54,6 +54,8 @@ class CalendarHandler {
 
   factory CalendarHandler() => _handler;
 
+  int get status => _currentStatus;
+
   CalendarHandler._init() {
     _resetApi();
   }
@@ -155,10 +157,6 @@ class CalendarHandler {
     _currentStatus = statusReady;
     _queue();
     // _t = Timer(const Duration(seconds: 1), _queue);
-  }
-
-  int get status {
-    return _currentStatus;
   }
 
   void _queue() {

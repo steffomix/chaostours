@@ -1,7 +1,7 @@
 ///
 /// file trackPoint.dart
 ///
-
+/*
 import 'trackingStatus.dart' show TrackingStatus;
 
 class TrackPoint {
@@ -14,3 +14,4 @@ class TrackPoint {
     TrackingStatus.move(t2); // <-- compile error on t2
   }
 }
+*/

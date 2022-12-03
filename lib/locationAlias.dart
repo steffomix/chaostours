@@ -11,13 +11,9 @@ class LocationAlias {
 
   final _AliasLoader _list = _AliasLoader();
 
-  Alias get alias {
-    return _alias.isNotEmpty ? _alias.first : Alias('', 0, 0);
-  }
+  Alias get alias => _alias.isNotEmpty ? _alias.first : Alias('', 0, 0);
 
-  List<Alias> get allAlias {
-    return _alias;
-  }
+  List<Alias> get allAlias => _alias;
 
   LocationAlias(this.lat, this.lon) {
     var r = radius;

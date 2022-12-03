@@ -11,23 +11,15 @@ class Address {
   final String code = '';
   final String town = '';
 
-  double get lat {
-    return _gps.lat;
-  }
+  double get lat => _gps.lat;
 
-  double get lon {
-    return _gps.lon;
-  }
+  double get lon => _gps.lon;
 
-  DateTime get time {
-    return _time;
-  }
+  DateTime get time => _time;
+
+  String get asString => '$street $house, $code $town';
 
   Address(this._gps);
-
-  String get asString {
-    return '$street $house, $code $town';
-  }
 
   Future<Address> lookupAddress() async {
     var url = Uri.https('nominatim.openstreetmap.org', '/reverse',

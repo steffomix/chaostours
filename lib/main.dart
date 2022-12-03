@@ -1,12 +1,10 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
-import 'trackPoint.dart';
-import 'calendar.dart';
 import 'logger.dart';
+import 'tracker.dart';
+import 'gps.dart';
+import 'trackPoint.dart';
 import 'dart:io';
 import 'package:flutter/services.dart';
-import 'locationAlias.dart';
 
 void main() async {
   // Thanks for: https://stackoverflow.com/a/69481863
@@ -39,9 +37,10 @@ class _AppState extends State<App> {
   //GeoTracking _tracking;
   static const String _appName = 'Chaos Tours';
   static int _bottomNavIndex = 0;
+  static double _lat = 0;
 
   _AppState() {
-    //TrackPoint.startTracking();
+    Tracker.startTracking();
   }
 
   void _onBottomNavTapped(int index) {
@@ -49,7 +48,7 @@ class _AppState extends State<App> {
     switch (index) {
       case 0:
         {
-          //TrackPoint.move();
+          _lat = GPS.move();
           break;
         }
       case 1:
@@ -92,7 +91,9 @@ class _AppState extends State<App> {
     switch (_bottomNavIndex) {
       case 0:
         {
-          return const Center(child: Text(' x'));
+          return Center(
+              child: Text(
+                  'lat: ${_lat - 52.384}\nStatus: ${TrackPoint.status == 1 ? 'move' : 'stop'}'));
         }
       case 1:
         {
