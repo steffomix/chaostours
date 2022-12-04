@@ -1,155 +1,226 @@
-import 'package:flutter/material.dart';
-
+import 'config.dart';
 import 'logger.dart';
-import 'dart:math' show pow, sqrt;
 import 'gps.dart';
 import 'trackingEvent.dart';
 
 class TrackPoint {
-  static int _idStart = 0;
+  static int _nextId = 0;
   static final List<TrackPoint> _trackPoints = [];
   static TrackPoint _stoppedAtTrackPoint = TrackPoint();
   static TrackPoint _startedAtTrackPoint = _stoppedAtTrackPoint;
+  static double _idleDistance = 0;
+  static double _movedDistance = 0;
+
+  //
   static const int statusStop = 0;
   static const int statusStart = 1;
   static int _status = 0;
-  // time in minutes between two gps point to measure
-  static const Duration timeTreshold = Duration(seconds: 5); // in minutes
-  // distance in gps degree between two gps points (0.00145deg =  ~100m)
-  static const double distanceTreshold = 0.002;
-  static final Duration _maxStatusChangeSpeed =
-      Duration(seconds: 20); // in minutes
-  static DateTime _lastStatusChange =
-      DateTime.now(); //.subtract(_maxStatusChangeSpeed);
-
   static int get status => _status;
+  static DateTime _lastStatusChange = DateTime.now();
   static DateTime get lastStatusChange => _lastStatusChange;
   static TrackPoint get startedAtTrackPoint => _startedAtTrackPoint;
   static TrackPoint get stoppedAtTrackPoint => _stoppedAtTrackPoint;
 
+  // if tracker is running
+  static bool _tracking = false;
+  static bool get tracking => _tracking;
+
+  // durations and distances
+  // skip status check for given time to prevent ugly things
+  static Duration get waitTimeAfterStatusChanged {
+    return AppConfig.debugMode
+        ? const Duration(seconds: 3)
+        : const Duration(minutes: 3);
+  }
+
+  // stop time needed to trigger stop
+  static Duration get timeTreshold {
+    return AppConfig.debugMode
+        ? const Duration(seconds: 10)
+        : const Duration(minutes: 5);
+  }
+
+  // check status interval
+  static Duration get tickTime {
+    return AppConfig.debugMode
+        ? const Duration(seconds: 2)
+        : const Duration(seconds: 20);
+  }
+
+  // distance needed to trigger start in gps degree (0.00145deg = ~100meters)
+  static double get distanceTreshold => AppConfig.distanceTreshold;
+  // distance moved around during stop
+  static double get distanceMoved => _movedDistance;
+  // distance moved during start
+  static double get awayFromStop => _idleDistance;
+
+// change status to start
   static void start(TrackPoint tp) {
-    if (_status != statusStart) {
-      _status = statusStart;
-      _triggerEvent(tp);
-      _statusChanged();
-    }
+    if (_status == statusStart) return;
+    Duration d = tp.time.difference(_stoppedAtTrackPoint.time);
+    String t = ' ${d.inHours > 0 ? '${d.inHours} Stunden, ' : ''}'
+        '${d.inMinutes > 0 ? '${d.inMinutes} Minuten, ' : ''}'
+        '${d.inSeconds > 0 ? '${d.inSeconds} Sekunden' : ''}';
+    t = t.trim();
+    log('### start ### after $t');
+    _status = statusStart;
+    _startedAtTrackPoint = tp;
+    _statusChanged(tp);
   }
 
+// change status to stop
   static void stop(TrackPoint tp) {
-    if (_status != statusStop) {
-      _status = statusStop;
-      _triggerEvent(tp);
-      _statusChanged();
-    }
+    if (_status == statusStop) return;
+    log('### stop ### moved $_movedDistance meters');
+    _status = statusStop;
+    _stoppedAtTrackPoint = tp;
+    _statusChanged(tp);
   }
 
-  static void _statusChanged() {
+// trigger status change event
+  static void _statusChanged(TrackPoint tp) {
+    TrackingStatusChangedEvent.triggerEvent(tp);
     _lastStatusChange = DateTime.now();
+    _movedDistance = 0;
+    _idleDistance = 0;
+    _trackPoints.clear();
   }
 
-  static void _triggerEvent(TrackPoint tp) {
-    try {
-      TrackingStatusChangedEvent.triggerEvent(tp);
-    } catch (e) {
-      severe('TrackingStatusChangedEvent.trigger: ${e.toString()}');
-    }
-  }
-
-  int _id = ++_idStart;
+  final int _id = ++_nextId;
   final GPS _gps = GPS();
   final DateTime _time = DateTime.now();
 
   int get id => _id;
   bool get gpsOk => _gps.gpsOk;
-
   GPS get gps => _gps;
-
   DateTime get time => _time;
 
   TrackPoint() {
-    Future.delayed(const Duration(milliseconds: 1), _nextTrackPoint);
-  }
-
-  void _nextTrackPoint() {
-    log('------- TrackPoint ID: $id | Stop ID: ${_stoppedAtTrackPoint.id} | Start ID: ${_startedAtTrackPoint.id} -------');
     _trackPoints.add(this);
-    _checkStatus();
   }
 
-  void _checkStatus() {
-    bool wait =
-        _lastStatusChange.add(_maxStatusChangeSpeed).isAfter(DateTime.now());
-    log('wait $wait');
-    if (wait) return;
-    if (_trackPoints.length < 10) return;
+  static List<TrackPoint> _recentTracks() {
+    // collect TrackPoints of last <timeTreshold> with <gpsOk>
+    List<TrackPoint> trackList = [];
+    List<int> ids = [];
+    DateTime treshold = DateTime.now().subtract(timeTreshold);
+    bool outDated;
+    for (var i = _trackPoints.length - 1; i >= 0; i--) {
+      outDated = _trackPoints[i].time.isBefore(treshold);
+      if (outDated) break;
+      if (_trackPoints[i].gpsOk == true) {
+        trackList.add(_trackPoints[i]);
+        ids.add(_trackPoints[i].id);
+      }
+    }
+    return trackList;
+  }
+
+  static bool _checkMoved(List<TrackPoint> tl) {
+    // check if moved
+    double dist = 0;
+    TrackPoint tRef = _stoppedAtTrackPoint;
+    for (var i = 0; i < tl.length; i++) {
+      dist = GPS.distance(tl[i]._gps, tRef._gps);
+      if (dist > _idleDistance) _idleDistance = dist;
+      if (dist > distanceTreshold) {
+        return true;
+      }
+      log('idleDist $_idleDistance');
+    }
+    return false;
+  }
+
+  static bool _checkStopped(List<TrackPoint> tl) {
+    double dist = 0;
+    double distMoved = 0;
+    TrackPoint tRef = tl.first;
+    // check if stopped
+    for (var i = 0; i < tl.length; i++) {
+      dist = GPS.distance(tl[i]._gps, tRef._gps);
+      if (dist > distMoved) distMoved = dist;
+    }
+    log('moved: $distMoved in ${tl.length} tracks');
+    if (distMoved < distanceTreshold) {
+      return true;
+    }
+    _movedDistance = movedDistance();
+    return false;
+  }
+
+  static void _checkStatus() {
+    TrackPoint();
+    // wait
+    if (_lastStatusChange
+        .add(waitTimeAfterStatusChanged)
+        .isAfter(DateTime.now())) {
+      return;
+    }
+    // check distance reference is valid
+    if (_stoppedAtTrackPoint.gpsOk == false) {
+      _stoppedAtTrackPoint = TrackPoint();
+      return;
+    }
+    // min length
+    if (_trackPoints.length < 5) return;
+    // max length
     while (_trackPoints.length > 100) {
       _trackPoints.removeAt(0);
     }
 
-    // detect movement
-    // find most recent track with gpsOk
-    TrackPoint t = _trackPoints.last;
-    int indexGpsOk = -1;
-    for (var i = _trackPoints.length - 1; i >= 0; i--) {
-      if (_trackPoints[i].gpsOk == true) {
-        indexGpsOk = i;
-        t = _trackPoints[i];
-        break;
-      }
-    }
+    List<TrackPoint> trackList = _recentTracks();
+    // skip if nothing was found
+    if (trackList.isEmpty) return;
 
-    // skip if t1 didn't change because no gpsOk was found
-    if (indexGpsOk == -1) return;
-
-    // go at least <timeTreshold> back
-    // and look for next gps with gpsOk
-    int timeDiff = 0;
-    int indexTimeDiff = indexGpsOk;
-    for (var i = indexGpsOk; i >= 0; i--) {
-      timeDiff = t.time.difference(_trackPoints[i].time).inSeconds;
-      if (_trackPoints[i].gpsOk == true && timeDiff >= timeTreshold.inSeconds) {
-        indexTimeDiff = i;
-        break;
-      }
-    }
-
-    // now find movements between indexGpsOk and indexTimeDiff
-    int indexMoved = indexGpsOk;
-    for (var i = indexGpsOk; i >= indexTimeDiff; i--) {
-      if (_trackPoints[i].gpsOk == true &&
-          distance(_trackPoints[indexGpsOk], _trackPoints[i]) >
-              distanceTreshold) {
-        // movement detected
-        t = _trackPoints[indexMoved];
-        if (status == statusStop) {
-          _startedAtTrackPoint = t;
-          start(t);
-        }
+    if (_status == statusStop) {
+      if (_checkMoved(trackList)) {
+        start(trackList.first);
         return;
       }
-      indexMoved = i;
-    }
-// now find if we are stopping for at least <timeTreshold>
-    bool stopping = true;
-    for (var i = indexGpsOk; i >= indexTimeDiff; i--) {
-      if (_trackPoints[i].gpsOk == true &&
-          distance(_trackPoints[indexGpsOk], _trackPoints[i]) >
-              distanceTreshold) {
-        stopping = false;
-        break;
+    } else {
+      if (_checkStopped(trackList)) {
+        stop(TrackPoint());
+        return;
       }
-    }
-    if (stopping == true && _status == statusStart) {
-      _stoppedAtTrackPoint = _trackPoints[indexGpsOk];
-      stop(_stoppedAtTrackPoint);
     }
   }
 
-  /// calculate distance between two gps points in plain degree
-  double distance(TrackPoint t1, TrackPoint t2) {
-    double dist = sqrt(
-        pow(t1._gps.lat - t2._gps.lat, 2) + pow(t1._gps.lon - t2._gps.lon, 2));
-    log('distance $dist');
+  static double movedDistance() {
+    List<GPS> tracks = [];
+    for (var i in _trackPoints) {
+      if (i.gpsOk) tracks.add(i.gps);
+    }
+    if (tracks.length < 2) return 0;
+    double dist = 0;
+    GPS gps = tracks.first;
+    for (var i = 1; i < tracks.length; i++) {
+      dist += GPS.distance(gps, tracks[i]);
+      gps = tracks[i];
+    }
     return dist;
+  }
+
+  /// tracking heartbeat with <trackingTickTime> speed
+  static void _track() {
+    if (!_tracking) return;
+    Future.delayed(tickTime, () {
+      _checkStatus();
+      _track();
+    });
+  }
+
+  /// start tracking heartbeat
+  static void startTracking() {
+    if (_tracking) return;
+    log('start tracking');
+    _tracking = true;
+    _track();
+  }
+
+  /// stop tracking heartbeat
+  static void stopTracking() {
+    if (!_tracking) return;
+    log('stop tracking');
+    _tracking = false;
   }
 }

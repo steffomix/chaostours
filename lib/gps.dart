@@ -3,22 +3,26 @@ import 'package:geolocator/geolocator.dart'
     show Position, LocationPermission, Geolocator;
 
 class GPS {
-  static int _nextGpsId = 0;
-  final int _gpsId = ++GPS._nextGpsId;
+  static int _nextId = 0;
+
+  final int _id = ++GPS._nextId;
   double lat = 0;
   double lon = 0;
   bool _gpsOk = false;
 
-  int get gpsId => _gpsId;
-
+  int get id => _id;
   bool get gpsOk => _gpsOk;
 
-// 52.3840, 9.7260
+  /// calculate distance between two gps points in meters
+  static double distance(GPS p1, GPS p2) {
+    return Geolocator.distanceBetween(p1.lat, p1.lon, p2.lat, p2.lon);
+  }
+
+  // 52.3840, 9.7260
   static double _lat = 52.384;
   static double _lon = 9.726;
-
   static double move() {
-    _lat += 0.001;
+    _lat += 0.0002;
     return _lat;
   }
 
@@ -34,7 +38,6 @@ class GPS {
         lat = p.latitude;
         lon = p.longitude;
         _gpsOk = true;
-        //info('GPS id $_gpsId: lat: $lat, lon: $lon');
       }).onError((e, stackTrace) {
         severe('gps failed: ${e.toString()}');
       });

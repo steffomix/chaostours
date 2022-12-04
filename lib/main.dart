@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'logger.dart';
-import 'tracker.dart';
 import 'gps.dart';
 import 'trackPoint.dart';
 import 'dart:io';
@@ -40,7 +39,7 @@ class _AppState extends State<App> {
   static double _lat = 0;
 
   _AppState() {
-    Tracker.startTracking();
+    TrackPoint.startTracking();
   }
 
   void _onBottomNavTapped(int index) {
