@@ -1,7 +1,9 @@
+import 'package:chaostours/trackingCalendar.dart';
 import 'package:flutter/material.dart';
 import 'logger.dart';
 import 'gps.dart';
 import 'trackPoint.dart';
+import 'trackingEvent.dart';
 import 'dart:io';
 import 'package:flutter/services.dart';
 
@@ -18,8 +20,6 @@ void main() async {
 
   //setup logger
   Logger.debugMode = true;
-  //CalendarHandler c = CalendarHandler();
-  //LocationAlias l = LocationAlias(0, 0);
 
   // start app
   runApp(const App());
@@ -37,9 +37,25 @@ class _AppState extends State<App> {
   static const String _appName = 'Chaos Tours';
   static int _bottomNavIndex = 0;
   static double _lat = 0;
+  static String message = '';
 
   _AppState() {
+    TrackingStatusChangedEvent.addListener((TrackingStatusChangedEvent e) {
+      bool start = e.status == TrackPoint.statusStart;
+      String address = e.address.asString;
+
+      message =
+          'Von ${e.trackPointStart.time.toIso8601String()} bis ${e.trackPointStop.time.toIso8601String()}\n';
+      message += start ? 'Start von' : 'Stop bei';
+      message += ' $address \n';
+      message += 'um ${DateTime.now().toString()}\n';
+      message += start
+          ? 'nach ${e.time}'
+          : 'nach ${e.distanceMoved / 1000}km \nin ${e.time}';
+      setState(() {});
+    });
     TrackPoint.startTracking();
+    //TrackingCalendar();
   }
 
   void _onBottomNavTapped(int index) {
@@ -47,7 +63,7 @@ class _AppState extends State<App> {
     switch (index) {
       case 0:
         {
-          _lat = GPS.move();
+          GpsLocation.move();
           break;
         }
       case 1:
@@ -90,9 +106,7 @@ class _AppState extends State<App> {
     switch (_bottomNavIndex) {
       case 0:
         {
-          return Center(
-              child: Text(
-                  'lat: ${_lat - 52.384}\nStatus: ${TrackPoint.status == 1 ? 'move' : 'stop'}'));
+          return Center(child: Text(message));
         }
       case 1:
         {

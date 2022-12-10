@@ -1,6 +1,7 @@
 import 'config.dart';
 import 'logger.dart';
 import 'gps.dart';
+import 'util.dart';
 import 'trackingEvent.dart';
 
 class TrackPoint {
@@ -54,27 +55,73 @@ class TrackPoint {
   // distance moved during start
   static double get awayFromStop => _idleDistance;
 
+  static String timeElapsed(DateTime t1, DateTime t2) {
+    DateTime t0;
+    if (t1.difference(t2).isNegative) {
+      t0 = t1;
+      t2 = t1;
+      t1 = t0;
+    }
+    int days;
+    int hours;
+    int minutes;
+    int seconds;
+    int ms;
+    String s = '';
+    days = t1.difference(t2).inDays;
+    if (days > 0) {
+      s += '$days Tage, ';
+      t2.add(Duration(days: days));
+    }
+    //
+    hours = t1.difference(t2).inHours;
+    if (hours > 0) {
+      s += '$hours Stunden, ';
+      t2.add(Duration(hours: hours));
+    }
+    //
+    minutes = t1.difference(t2).inMinutes;
+    if (minutes > 0) {
+      s += '$minutes Minuten, ';
+      t2.add(Duration(minutes: minutes));
+    }
+    //
+    seconds = t1.difference(t2).inSeconds;
+    if (seconds > 0) {
+      s += '$seconds Sekunden, ';
+      t2.add(Duration(seconds: seconds));
+    }
+    //
+    ms = t1.difference(t2).inMilliseconds;
+    if (ms > 0) {
+      s += '$ms Millisekunden';
+    }
+
+    return s;
+  }
+
 // change status to start
   static void start(TrackPoint tp) {
     if (_status == statusStart) return;
-    Duration d = tp.time.difference(_stoppedAtTrackPoint.time);
-    String t = ' ${d.inHours > 0 ? '${d.inHours} Stunden, ' : ''}'
-        '${d.inMinutes > 0 ? '${d.inMinutes} Minuten, ' : ''}'
-        '${d.inSeconds > 0 ? '${d.inSeconds} Sekunden' : ''}';
-    t = t.trim();
-    log('### start ### after $t');
+    String s = timeElapsed(tp.time, _stoppedAtTrackPoint.time);
+    log('### start ### after $s');
     _status = statusStart;
     _startedAtTrackPoint = tp;
     _statusChanged(tp);
+    _trackPoints.clear();
+    _trackPoints.add(_stoppedAtTrackPoint);
   }
 
 // change status to stop
   static void stop(TrackPoint tp) {
     if (_status == statusStop) return;
-    log('### stop ### moved $_movedDistance meters');
+    String s = timeElapsed(tp.time, _startedAtTrackPoint.time);
+    log('### stop ### moved ${_movedDistance.round()} meters in $s');
     _status = statusStop;
     _stoppedAtTrackPoint = tp;
     _statusChanged(tp);
+    _trackPoints.clear();
+    _trackPoints.add(tp);
   }
 
 // trigger status change event
@@ -83,7 +130,6 @@ class TrackPoint {
     _lastStatusChange = DateTime.now();
     _movedDistance = 0;
     _idleDistance = 0;
-    _trackPoints.clear();
   }
 
   final int _id = ++_nextId;
@@ -126,8 +172,8 @@ class TrackPoint {
       if (dist > distanceTreshold) {
         return true;
       }
-      log('idleDist $_idleDistance');
     }
+    log('idleDist $_idleDistance');
     return false;
   }
 
@@ -142,9 +188,9 @@ class TrackPoint {
     }
     log('moved: $distMoved in ${tl.length} tracks');
     if (distMoved < distanceTreshold) {
+      _movedDistance = movedDistance();
       return true;
     }
-    _movedDistance = movedDistance();
     return false;
   }
 
@@ -179,7 +225,7 @@ class TrackPoint {
       }
     } else {
       if (_checkStopped(trackList)) {
-        stop(TrackPoint());
+        stop(trackList.last);
         return;
       }
     }

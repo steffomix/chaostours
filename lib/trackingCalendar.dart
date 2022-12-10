@@ -32,7 +32,7 @@ class Task {
   }
 }
 
-class CalendarHandler {
+class TrackingCalendar {
   final int statusDamaged = 3;
   final int statusInitializing = 2;
   final int statusBusy = 1;
@@ -50,13 +50,13 @@ class CalendarHandler {
   late CalendarApi _api;
 
   // singelton instance
-  static final _handler = CalendarHandler._init();
+  static final _handler = TrackingCalendar._init();
 
-  factory CalendarHandler() => _handler;
+  factory TrackingCalendar() => _handler;
 
   int get status => _currentStatus;
 
-  CalendarHandler._init() {
+  TrackingCalendar._init() {
     _resetApi();
   }
 
@@ -64,8 +64,8 @@ class CalendarHandler {
     return '${t.day}.${t.month}.${t.year} ${t.hour}:${t.minute}';
   }
 
-  Event createEvent(
-      DateTime start, DateTime end, List<String> tasksList, Address addr) {
+  Event createEvent(DateTime start, DateTime end, List<String> tasksList,
+      Address addr, String notes) {
     String fStart = _formatDate(start);
     String fEnd = _formatDate(end);
     double lat = addr.lat;
@@ -98,7 +98,8 @@ class CalendarHandler {
     ];
     String body = 'Ort: $address\r\n'
         'Von $fStart bis $fEnd\r\n\r\n'
-        'Arbeiten:\r\n${tasksList.join('\r\n')}\r\n\r\n'
+        'Arbeiten:\r\n${tasksList.join('\r\n')}\r\n'
+        '$notes\r\n\r\n'
         '<a href="$url" target = "_blank">Link zu Google Maps</a>\r\n\r\n'
         'Andere Aliasnamen für diesen Ort: $aliasNames\r\n\r\n'
         'TSV (Tabulator Separated Values) für Excel import:\r\n${tsvEntryParts.join('  ')}';

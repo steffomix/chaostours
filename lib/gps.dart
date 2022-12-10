@@ -1,48 +1,69 @@
 import 'logger.dart';
+import 'config.dart';
+import 'dart:math' show Random;
 import 'package:geolocator/geolocator.dart'
     show Position, LocationPermission, Geolocator;
+
+class GpsLocation {
+  final double _lat;
+  final double _lon;
+  bool _gpsOk = false;
+
+  double get lat {
+    if (!_gpsOk) throw ('gps not ok');
+    return _lat;
+  }
+
+  double get lon => _lon;
+  bool get gpsOk => _gpsOk;
+
+  GpsLocation(this._lat, this._lon) {
+    _gpsOk = true;
+  }
+
+  GpsLocation.pending(this._lat, this._lon) {
+    Future.delayed(
+        Duration(milliseconds: Random().nextInt(2000)), () => _gpsOk = true);
+  }
+
+  // 52.3840, 9.7260
+  static double _testLat = 52.384;
+  static double _testLon = 9.726;
+  static void move() {
+    _testLat += 0.0002;
+    _testLon += 0.00015;
+  }
+}
 
 class GPS {
   static int _nextId = 0;
 
   final int _id = ++GPS._nextId;
-  double lat = 0;
-  double lon = 0;
-  bool _gpsOk = false;
+
+  GpsLocation _location =
+      GpsLocation.pending(GpsLocation._testLat, GpsLocation._testLon);
 
   int get id => _id;
-  bool get gpsOk => _gpsOk;
+  double get lat => _location.lat;
+  double get lon => _location.lon;
+  bool get gpsOk => _location.gpsOk;
 
   /// calculate distance between two gps points in meters
   static double distance(GPS p1, GPS p2) {
     return Geolocator.distanceBetween(p1.lat, p1.lon, p2.lat, p2.lon);
   }
 
-  // 52.3840, 9.7260
-  static double _lat = 52.384;
-  static double _lon = 9.726;
-  static double move() {
-    _lat += 0.0002;
-    return _lat;
-  }
-
   GPS() {
-    lat = _lat;
-    lon = _lon;
-    _gpsOk = true;
-  }
-
-  _GPS() {
-    try {
-      lookupGPS().then((p) {
-        lat = p.latitude;
-        lon = p.longitude;
-        _gpsOk = true;
-      }).onError((e, stackTrace) {
+    if (!AppConfig.debugMode) {
+      try {
+        lookupGPS().then((p) {
+          _location = GpsLocation(p.latitude, p.longitude);
+        }).onError((e, stackTrace) {
+          severe('gps failed: ${e.toString()}');
+        });
+      } catch (e) {
         severe('gps failed: ${e.toString()}');
-      });
-    } catch (e) {
-      severe('gps failed: ${e.toString()}');
+      }
     }
   }
 
