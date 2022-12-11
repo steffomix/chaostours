@@ -1,8 +1,8 @@
 import 'config.dart';
 import 'logger.dart';
 import 'gps.dart';
-import 'util.dart';
 import 'trackingEvent.dart';
+import 'locationAlias.dart';
 
 class TrackPoint {
   static int _nextId = 0;

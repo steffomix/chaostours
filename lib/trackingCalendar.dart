@@ -1,4 +1,5 @@
 import 'logger.dart' show log;
+import 'config.dart';
 import 'address.dart';
 import 'dart:async';
 import 'locationAlias.dart';
@@ -71,14 +72,12 @@ class TrackingCalendar {
     double lat = addr.lat;
     double lon = addr.lon;
     String url = 'https://maps.google.com?q=$lat,$lon&center=$lat,$lon';
-    LocationAlias locationAlias = LocationAlias(lat, lon);
-    Alias alias = locationAlias.alias;
-    String aliasName = alias.name.toUpperCase();
-    String address =
-        aliasName == '' ? addr.asString : '$aliasName (${addr.asString})';
+    List<Alias> aliasList = LocationAlias.alias(lat, lon);
+    String alias = aliasList.isEmpty ? '' : aliasList[0].alias;
+    String address = alias == '' ? addr.asString : '$alias (${addr.asString})';
     List<String> aliasNamesList = [];
-    for (var a in locationAlias.allAlias) {
-      aliasNamesList.add(a.name.toUpperCase());
+    for (var a in aliasList) {
+      aliasNamesList.add(a.alias.toUpperCase());
     }
     String aliasNames =
         aliasNamesList.length > 1 ? aliasNamesList.join('; ') : ' - ';
@@ -131,6 +130,10 @@ class TrackingCalendar {
   }
 
   void _addTask(Task t) {
+    if (AppConfig.debugMode) {
+      log('TrackingCalendar _addTask skipped due to debug mode');
+      return;
+    }
     // execute now
     if (_tasks.isEmpty && _currentStatus == statusReady) {
       t.execute();
@@ -162,7 +165,7 @@ class TrackingCalendar {
 
   void _queue() {
     _timer = Timer(const Duration(seconds: 1), _queue);
-    log('queue status $_currentStatus');
+    // log('queue status $_currentStatus');
     if (_currentStatus > 0) {
       log('Queue Calendar Api failed due to Status $_currentStatus');
       return;

@@ -19,11 +19,13 @@ class Address {
 
   double get lat => _gps.lat;
   double get lon => _gps.lon;
+  GPS get gps => _gps;
   DateTime get time => _time;
   String get asString {
-    String addr = '$road $house_number, $postcode';
-    addr += town == '' ? ' $retail $suburb, ' : ' $town, ';
-    addr += '$city $city_district';
+    String addr = '$road $house_number \n';
+    addr += town == ''
+        ? '$postcode $city $city_district, $retail $suburb'
+        : '$postcode $town';
     return addr;
   }
 

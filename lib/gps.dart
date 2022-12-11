@@ -5,30 +5,40 @@ import 'package:geolocator/geolocator.dart'
     show Position, LocationPermission, Geolocator;
 
 class GpsLocation {
-  final double _lat;
-  final double _lon;
+  double _lat = 0;
+  double _lon = 0;
   bool _gpsOk = false;
 
   double get lat {
-    if (!_gpsOk) throw ('gps not ok');
-    return _lat;
+    if (!_gpsOk) throw ('gps lookup not ready');
+    return AppConfig.debugMode ? _lat + _testLat : _lat;
   }
 
-  double get lon => _lon;
+  double get lon {
+    if (!_gpsOk) throw ('gps lookup not ready');
+    return AppConfig.debugMode ? _lon + _testLon : _lon;
+  }
+
   bool get gpsOk => _gpsOk;
 
   GpsLocation(this._lat, this._lon) {
     _gpsOk = true;
   }
 
-  GpsLocation.pending(this._lat, this._lon) {
-    Future.delayed(
-        Duration(milliseconds: Random().nextInt(2000)), () => _gpsOk = true);
+  GpsLocation.pending() {
+    if (AppConfig.debugMode) {
+      Future.delayed(Duration(milliseconds: Random().nextInt(2000)), () {
+        _lat = _testLat;
+        _lon = _testLon;
+        _gpsOk = true;
+      });
+    }
   }
 
-  // 52.3840, 9.7260
-  static double _testLat = 52.384;
-  static double _testLon = 9.726;
+  // 52.3840, 9.7260 hannover
+  // 52.32741, 9.19255
+  static double _testLat = 52.32741;
+  static double _testLon = 9.19255;
   static void move() {
     _testLat += 0.0002;
     _testLon += 0.00015;
@@ -40,8 +50,7 @@ class GPS {
 
   final int _id = ++GPS._nextId;
 
-  GpsLocation _location =
-      GpsLocation.pending(GpsLocation._testLat, GpsLocation._testLon);
+  GpsLocation _location = GpsLocation.pending();
 
   int get id => _id;
   double get lat => _location.lat;
