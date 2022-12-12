@@ -1,0 +1,79 @@
+import 'gps.dart';
+import 'dart:io';
+import 'package:http/http.dart' as http;
+import 'package:flutter/services.dart';
+import 'package:googleapis_auth/auth_io.dart';
+import 'package:googleapis/calendar/v3.dart' show CalendarApi;
+
+class RecourceLoader {
+  ///
+  /// preload recources
+  static Future<void> preload() async {
+    await webKey();
+    await locationAlias();
+    await defaultCalendarId();
+    await calendarApiFromCredentials();
+  }
+
+  ///
+  /// load ssh key for https connections
+  static Future<void> webKey() async {
+    ByteData data =
+        await PlatformAssetBundle().load('assets/ca/lets-encrypt-r3.pem');
+    SecurityContext.defaultContext
+        .setTrustedCertificatesBytes(data.buffer.asUint8List());
+  }
+
+  ///
+  /// openStreetMap reverse lookup
+  static Future<http.Response> osmReverseLookup(GPS gps) async {
+    var url = Uri.https('nominatim.openstreetmap.org', '/reverse',
+        {'lat': gps.lat.toString(), 'lon': gps.lon.toString()});
+    http.Response response = await http.get(url);
+    return response;
+  }
+
+  ///
+  ///
+  static String? _locationAlias;
+
+  ///
+  static Future<String> locationAlias() async {
+    if (_locationAlias != null) return Future<String>.value(_locationAlias);
+    String alias = await rootBundle.loadString('assets/locationAlias.tsv');
+    _locationAlias = alias;
+    return alias;
+  }
+
+  ///
+  /// load calendar api from credentials asset file
+  static CalendarApi? _calendarApi;
+  static final List<String> scopes = [CalendarApi.calendarScope];
+  static const String credentialsFile =
+      'assets/google-api/service-account.json';
+
+  ///
+  static Future<CalendarApi> calendarApiFromCredentials(
+      {forceReload = false}) async {
+    if (_calendarApi != null && !forceReload) {
+      return Future<CalendarApi>.value(_calendarApi);
+    }
+    String jsonString = await rootBundle.loadString(credentialsFile);
+    AutoRefreshingAuthClient client = await clientViaServiceAccount(
+        ServiceAccountCredentials.fromJson(jsonString), scopes);
+    CalendarApi api = CalendarApi(client);
+    _calendarApi = api;
+    return api;
+  }
+
+  ///
+  /// load calendarId from asset file
+  static String? _calendarId;
+  static const String calendarIdFile = 'assets/google-api/calendar-id.txt';
+  static Future<String> defaultCalendarId() async {
+    if (_calendarId != null) return Future<String>.value(_calendarId);
+    String calendarId = await rootBundle.loadString(calendarIdFile);
+    _calendarId = calendarId;
+    return calendarId;
+  }
+}

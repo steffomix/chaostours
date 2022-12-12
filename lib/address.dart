@@ -2,7 +2,25 @@ import 'logger.dart';
 import 'gps.dart';
 import 'package:http/http.dart' as http;
 import 'package:sprintf/sprintf.dart' show sprintf;
+import 'recourceLoader.dart';
 
+///
+///<addressparts>
+///<house_number>8</house_number>
+///<road>Scheffelstraße</road>
+///<retail>Engelbosteler Damm</retail>
+///<town>Innenstadt</town>
+///<suburb>Nordstadt</suburb>
+///<city_district>Nord</city_district>
+///<city>Hannover</city>
+///<county>Region Hannover</county>
+///<state>Niedersachsen</state>
+///<ISO3166-2-lvl4>DE-NI</ISO3166-2-lvl4>
+///<postcode>30167</postcode>
+///<country>Deutschland</country>
+///<country_code>de</country_code>
+///</addressparts>
+///
 class Address {
   final GPS _gps;
   final DateTime _time = DateTime.now();
@@ -32,25 +50,7 @@ class Address {
   Address(this._gps);
 
   Future<Address> lookupAddress() async {
-    var url = Uri.https('nominatim.openstreetmap.org', '/reverse',
-        {'lat': lat.toString(), 'lon': lon.toString()});
-
-    ///<addressparts>
-    ///<house_number>8</house_number>
-    ///<road>Scheffelstraße</road>
-    ///<retail>Engelbosteler Damm</retail>
-    ///<town>Innenstadt</town>
-    ///<suburb>Nordstadt</suburb>
-    ///<city_district>Nord</city_district>
-    ///<city>Hannover</city>
-    ///<county>Region Hannover</county>
-    ///<state>Niedersachsen</state>
-    ///<ISO3166-2-lvl4>DE-NI</ISO3166-2-lvl4>
-    ///<postcode>30167</postcode>
-    ///<country>Deutschland</country>
-    ///<country_code>de</country_code>
-    ///</addressparts>
-    http.Response response = await http.get(url);
+    http.Response response = await RecourceLoader.osmReverseLookup(_gps);
     if (response.statusCode == 200) {
       String body = response.body;
       String pattern = r'<%s>(.*)<\/%s>';

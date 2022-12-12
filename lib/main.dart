@@ -4,8 +4,7 @@ import 'logger.dart';
 import 'gps.dart';
 import 'trackPoint.dart';
 import 'trackingEvent.dart';
-import 'dart:io';
-import 'package:flutter/services.dart';
+import 'recourceLoader.dart';
 
 void main() async {
   // Thanks for: https://stackoverflow.com/a/69481863
@@ -13,10 +12,7 @@ void main() async {
   // https://letsencrypt.org/certs/lets-encrypt-r3.pem
   WidgetsFlutterBinding.ensureInitialized();
 
-  ByteData data =
-      await PlatformAssetBundle().load('assets/ca/lets-encrypt-r3.pem');
-  SecurityContext.defaultContext
-      .setTrustedCertificatesBytes(data.buffer.asUint8List());
+  await RecourceLoader.preload();
 
   //setup logger
   Logger.debugMode = true;

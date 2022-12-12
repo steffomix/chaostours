@@ -42,3 +42,7 @@ String timeElapsed(DateTime t1, DateTime t2) {
 
   return s;
 }
+
+String formatDate(DateTime t) {
+  return '${t.day}.${t.month}.${t.year} ${t.hour}:${t.minute}';
+}

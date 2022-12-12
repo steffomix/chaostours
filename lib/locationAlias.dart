@@ -1,7 +1,7 @@
 import 'logger.dart' show log;
 import 'config.dart';
-import 'package:flutter/services.dart' show rootBundle;
 import 'package:geolocator/geolocator.dart';
+import 'recourceLoader.dart';
 
 class LocationAlias {
   static final List<Alias> _loadedList = [];
@@ -10,7 +10,7 @@ class LocationAlias {
   static bool get loaded => _loaded;
 
   static bool _loadAliasList() {
-    rootBundle.loadString('assets/locationAlias.tsv').then((String aliasList) {
+    RecourceLoader.locationAlias().then((String aliasList) {
       List<String> rows = aliasList.split('\n');
       if (rows.isEmpty) return;
       for (String r in rows) {
