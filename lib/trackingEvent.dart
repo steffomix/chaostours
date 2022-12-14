@@ -46,7 +46,7 @@ class TrackingStatusChangedEvent {
         status: TrackPoint.status,
         trackPointStart: started,
         trackPointStop: stopped,
-        address: Address(GPS()),
+        address: Address(tp.gps),
         distanceMoved: distanceMoved,
         time: time);
     Address(stopped.gps).lookupAddress().then((Address address) {
@@ -76,7 +76,7 @@ class TrackingStatusChangedEvent {
       String message =
           'Von ${tStart.toIso8601String()} bis ${tStop.toIso8601String()}\n';
       message += start ? 'Start von' : 'Stop bei';
-      message += ' $address \n';
+      message += ' ${address.asString} \n';
       message += 'um ${DateTime.now().toString()}\n';
       message += start
           ? 'nach ${event.time}'

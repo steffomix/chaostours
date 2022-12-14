@@ -1,9 +1,12 @@
+import 'logger.dart';
 import 'gps.dart';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:flutter/services.dart';
 import 'package:googleapis_auth/auth_io.dart';
 import 'package:googleapis/calendar/v3.dart' show CalendarApi;
+import 'package:geolocator/geolocator.dart'
+    show Position, LocationPermission, Geolocator;
 
 class RecourceLoader {
   ///
@@ -22,6 +25,7 @@ class RecourceLoader {
         await PlatformAssetBundle().load('assets/ca/lets-encrypt-r3.pem');
     SecurityContext.defaultContext
         .setTrustedCertificatesBytes(data.buffer.asUint8List());
+    log('RecourceLoader::WebKey loaded');
   }
 
   ///
@@ -42,6 +46,7 @@ class RecourceLoader {
     if (_locationAlias != null) return Future<String>.value(_locationAlias);
     String alias = await rootBundle.loadString('assets/locationAlias.tsv');
     _locationAlias = alias;
+    log('RecourceLoader::locationAlias loaded');
     return alias;
   }
 
@@ -63,6 +68,7 @@ class RecourceLoader {
         ServiceAccountCredentials.fromJson(jsonString), scopes);
     CalendarApi api = CalendarApi(client);
     _calendarApi = api;
+    log('RecourceLoader::Calendar api loaded');
     return api;
   }
 
@@ -74,6 +80,33 @@ class RecourceLoader {
     if (_calendarId != null) return Future<String>.value(_calendarId);
     String calendarId = await rootBundle.loadString(calendarIdFile);
     _calendarId = calendarId;
+    log('RecourceLoader::Calendar ID loaded');
     return calendarId;
+  }
+
+  static Future<Position> gps() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      return Future.error('Location services are disabled.');
+    }
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        return Future.error('Location permissions are denied');
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      return Future.error(
+          'Location permissions are permanently denied, we cannot request permissions.');
+    }
+
+    Position pos = await Geolocator.getCurrentPosition();
+    return pos;
   }
 }
