@@ -17,7 +17,8 @@ class TrackingCalendar {
     double lat = addr.lat;
     double lon = addr.lon;
     String url = 'https://maps.google.com?q=$lat,$lon&center=$lat,$lon';
-    List<Alias> aliasList = LocationAlias.alias(lat, lon);
+    List<Alias> aliasList = [];
+    LocationAlias.alias(lat, lon, aliasList);
     String alias = aliasList.isEmpty ? '' : aliasList[0].alias;
     String address = alias == '' ? addr.asString : '$alias (${addr.asString})';
     List<String> aliasNamesList = [];

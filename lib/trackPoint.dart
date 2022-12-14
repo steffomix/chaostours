@@ -1,14 +1,21 @@
 import 'config.dart';
 import 'logger.dart';
+import 'util.dart';
 import 'gps.dart';
 import 'trackingEvent.dart';
 import 'locationAlias.dart';
 
 class TrackPoint {
+  static Future<TrackPoint> create() async {
+    GPS gps = await GPS.gps();
+    return TrackPoint(gps);
+  }
+
   static int _nextId = 0;
   static final List<TrackPoint> _trackPoints = [];
-  static TrackPoint _stoppedAtTrackPoint = TrackPoint();
-  static TrackPoint _startedAtTrackPoint = _stoppedAtTrackPoint;
+  // both will be created in TrackPoint.startTracking();
+  static late TrackPoint _stoppedAtTrackPoint;
+  static late TrackPoint _startedAtTrackPoint;
   static double _idleDistance = 0;
   static double _movedDistance = 0;
 
@@ -55,51 +62,6 @@ class TrackPoint {
   // distance moved during start
   static double get awayFromStop => _idleDistance;
 
-  static String timeElapsed(DateTime t1, DateTime t2) {
-    DateTime t0;
-    if (t1.difference(t2).isNegative) {
-      t0 = t1;
-      t2 = t1;
-      t1 = t0;
-    }
-    int days;
-    int hours;
-    int minutes;
-    int seconds;
-    int ms;
-    String s = '';
-    days = t1.difference(t2).inDays;
-    if (days > 0) {
-      s += '$days Tage, ';
-      t2.add(Duration(days: days));
-    }
-    //
-    hours = t1.difference(t2).inHours;
-    if (hours > 0) {
-      s += '$hours Stunden, ';
-      t2.add(Duration(hours: hours));
-    }
-    //
-    minutes = t1.difference(t2).inMinutes;
-    if (minutes > 0) {
-      s += '$minutes Minuten, ';
-      t2.add(Duration(minutes: minutes));
-    }
-    //
-    seconds = t1.difference(t2).inSeconds;
-    if (seconds > 0) {
-      s += '$seconds Sekunden, ';
-      t2.add(Duration(seconds: seconds));
-    }
-    //
-    ms = t1.difference(t2).inMilliseconds;
-    if (ms > 0) {
-      s += '$ms Millisekunden';
-    }
-
-    return s;
-  }
-
 // change status to start
   static void start(TrackPoint tp) {
     if (_status == statusStart) return;
@@ -119,6 +81,7 @@ class TrackPoint {
     log('### stop ### moved ${_movedDistance.round()} meters in $s');
     _status = statusStop;
     _stoppedAtTrackPoint = tp;
+    LocationAlias.alias(tp._gps.lat, tp._gps.lon, tp.alias);
     _statusChanged(tp);
     _trackPoints.clear();
     _trackPoints.add(tp);
@@ -133,18 +96,22 @@ class TrackPoint {
   }
 
   final int _id = ++_nextId;
-  final GPS _gps = GPS();
+  final GPS _gps;
   final DateTime _time = DateTime.now();
+  final int _localStatus = TrackPoint._status;
+  final List<Alias> alias = [];
 
   int get id => _id;
-  bool get gpsOk => _gps.gpsOk;
   GPS get gps => _gps;
   DateTime get time => _time;
+  int get localstatus => _localStatus;
 
-  TrackPoint() {
+  TrackPoint(this._gps) {
     _trackPoints.add(this);
   }
 
+  /// collect recent Trackpoints in backwards order since last status changed with gpsOk
+  /// so that trackList[0] is most recent
   static List<TrackPoint> _recentTracks() {
     // collect TrackPoints of last <timeTreshold> with <gpsOk>
     List<TrackPoint> trackList = [];
@@ -154,12 +121,42 @@ class TrackPoint {
     for (var i = _trackPoints.length - 1; i >= 0; i--) {
       outDated = _trackPoints[i].time.isBefore(treshold);
       if (outDated) break;
-      if (_trackPoints[i].gpsOk == true) {
-        trackList.add(_trackPoints[i]);
-        ids.add(_trackPoints[i].id);
-      }
+      trackList.add(_trackPoints[i]);
+      ids.add(_trackPoints[i].id);
     }
     return trackList;
+  }
+
+  ///
+  /// creates new Trackpoint, waits after status changed,
+  ///
+  static void _checkStatus(TrackPoint tp) {
+    // wait after status changed
+    if (_lastStatusChange
+        .add(waitTimeAfterStatusChanged)
+        .isAfter(DateTime.now())) {
+      return;
+    }
+    // min length
+    if (_trackPoints.length < 5) return;
+
+    List<TrackPoint> trackList = _recentTracks();
+    // skip if nothing was found
+    if (trackList.isEmpty) return;
+
+    if (_status == statusStop) {
+      if (_checkMoved(trackList)) {
+        // use the most recent Trackpoint as reference
+        start(trackList.first);
+        return;
+      }
+    } else {
+      if (_checkStopped(trackList)) {
+        // use the oldest trackpoint where we stopped as reference
+        stop(trackList.last);
+        return;
+      }
+    }
   }
 
   static bool _checkMoved(List<TrackPoint> tl) {
@@ -194,47 +191,10 @@ class TrackPoint {
     return false;
   }
 
-  static void _checkStatus() {
-    TrackPoint();
-    // wait
-    if (_lastStatusChange
-        .add(waitTimeAfterStatusChanged)
-        .isAfter(DateTime.now())) {
-      return;
-    }
-    // check distance reference is valid
-    if (_stoppedAtTrackPoint.gpsOk == false) {
-      _stoppedAtTrackPoint = TrackPoint();
-      return;
-    }
-    // min length
-    if (_trackPoints.length < 5) return;
-    // max length
-    while (_trackPoints.length > 100) {
-      _trackPoints.removeAt(0);
-    }
-
-    List<TrackPoint> trackList = _recentTracks();
-    // skip if nothing was found
-    if (trackList.isEmpty) return;
-
-    if (_status == statusStop) {
-      if (_checkMoved(trackList)) {
-        start(trackList.first);
-        return;
-      }
-    } else {
-      if (_checkStopped(trackList)) {
-        stop(trackList.last);
-        return;
-      }
-    }
-  }
-
   static double movedDistance() {
     List<GPS> tracks = [];
     for (var i in _trackPoints) {
-      if (i.gpsOk) tracks.add(i.gps);
+      tracks.add(i.gps);
     }
     if (tracks.length < 2) return 0;
     double dist = 0;
@@ -247,17 +207,19 @@ class TrackPoint {
   }
 
   /// tracking heartbeat with <trackingTickTime> speed
-  static void _track() {
+  static void _track() async {
     if (!_tracking) return;
-    Future.delayed(tickTime, () {
-      _checkStatus();
+    Future.delayed(tickTime, () async {
+      TrackPoint tp = await TrackPoint.create();
+      _checkStatus(tp);
       _track();
     });
   }
 
   /// start tracking heartbeat
-  static void startTracking() {
+  static void startTracking() async {
     if (_tracking) return;
+    _startedAtTrackPoint = _stoppedAtTrackPoint = await TrackPoint.create();
     log('start tracking');
     _tracking = true;
     _track();

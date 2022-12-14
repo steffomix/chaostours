@@ -1,4 +1,3 @@
-import 'package:chaostours/trackingCalendar.dart';
 import 'package:flutter/material.dart';
 import 'logger.dart';
 import 'gps.dart';
@@ -59,7 +58,7 @@ class _AppState extends State<App> {
     switch (index) {
       case 0:
         {
-          GpsLocation.move();
+          GPS.move();
           break;
         }
       case 1:
