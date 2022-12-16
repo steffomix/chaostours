@@ -1,25 +1,9 @@
 import 'package:flutter/material.dart';
 import 'logger.dart';
-import 'recourceLoader.dart';
-import 'frontend_main.dart';
+import 'trackPoint.dart';
+import 'trackingEvent.dart';
+import 'gps.dart';
 
-void main() async {
-  // Thanks for: https://stackoverflow.com/a/69481863
-  // add cert for https requests you can download here:
-  // https://letsencrypt.org/certs/lets-encrypt-r3.pem
-  WidgetsFlutterBinding.ensureInitialized();
-
-  await RecourceLoader.preload();
-
-  //setup logger
-  Logger.debugMode = true;
-
-  // start app
-  runApp(const App());
-}
-
-
-/*
 class App extends StatefulWidget {
   const App({super.key});
 
@@ -130,4 +114,3 @@ class _AppState extends State<App> {
             bottomNavigationBar: _bottomNav()));
   }
 }
-*/

@@ -50,41 +50,47 @@ class Address {
   Address(this._gps);
 
   Future<Address> lookupAddress() async {
-    http.Response response = await RecourceLoader.osmReverseLookup(_gps);
-    if (response.statusCode == 200) {
-      String body = response.body;
-      String pattern = r'<%s>(.*)<\/%s>';
-      Map<String, String> tags = {
-        'road': '',
-        'hous_number': '',
-        'town': '',
-        'retail': '',
-        'suburb': '',
-        'city_district': '',
-        'city': '',
-        'county': '',
-        'state': '',
-        'postcode': '',
-      };
-      tags.forEach((String k, String v) {
-        RegExp rx = RegExp(sprintf(pattern, [k, k]));
-        tags[k] = rx.firstMatch(body)?.group(1) ?? '';
-      });
+    try {
+      http.Response response = await RecourceLoader.osmReverseLookup(_gps);
+      if (response.statusCode == 200) {
+        String body = response.body;
+        String pattern = r'<%s>(.*)<\/%s>';
+        Map<String, String> tags = {
+          'road': '',
+          'hous_number': '',
+          'town': '',
+          'retail': '',
+          'suburb': '',
+          'city_district': '',
+          'city': '',
+          'county': '',
+          'state': '',
+          'postcode': '',
+        };
+        tags.forEach((String k, String v) {
+          RegExp rx = RegExp(sprintf(pattern, [k, k]));
+          tags[k] = rx.firstMatch(body)?.group(1) ?? '';
+        });
 
-      road = tags['road'] ?? '';
-      house_number = tags['house_number'] ?? '';
-      town = tags['town'] ?? '';
-      retail = tags['retail'] ?? '';
-      suburb = tags['suburb'] ?? '';
-      city_district = tags['city_district'] ?? '';
-      city = tags['city'] ?? '';
-      county = tags['county'] ?? '';
-      state = tags['state'] ?? '';
-      postcode = tags['postcode'] ?? '';
-    } else {
-      severe('lookup address failed with status code: ${response.statusCode}\n'
-          '${response.body}');
+        road = tags['road'] ?? '';
+        house_number = tags['house_number'] ?? '';
+        town = tags['town'] ?? '';
+        retail = tags['retail'] ?? '';
+        suburb = tags['suburb'] ?? '';
+        city_district = tags['city_district'] ?? '';
+        city = tags['city'] ?? '';
+        county = tags['county'] ?? '';
+        state = tags['state'] ?? '';
+        postcode = tags['postcode'] ?? '';
+      } else {
+        severe(
+            'lookup address failed with status code: ${response.statusCode}\n'
+            '${response.body}');
+      }
+    } catch (e, stk) {
+      // ignore
+      log('$e $stk');
     }
-    return this;
+    return Future<Address>.value(this);
   }
 }

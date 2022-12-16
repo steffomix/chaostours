@@ -7,6 +7,7 @@ import 'package:googleapis_auth/auth_io.dart';
 import 'package:googleapis/calendar/v3.dart' show CalendarApi;
 import 'package:geolocator/geolocator.dart'
     show Position, LocationPermission, Geolocator;
+import 'locationAlias.dart';
 
 class RecourceLoader {
   ///
@@ -46,6 +47,7 @@ class RecourceLoader {
     if (_locationAlias != null) return Future<String>.value(_locationAlias);
     String alias = await rootBundle.loadString('assets/locationAlias.tsv');
     _locationAlias = alias;
+    LocationAlias.loadeAliasList();
     log('RecourceLoader::locationAlias loaded');
     return alias;
   }

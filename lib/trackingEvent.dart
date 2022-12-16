@@ -31,7 +31,7 @@ class TrackingStatusChangedEvent {
     _listener.add(fc);
   }
 
-  static void triggerEvent(TrackPoint tp) {
+  static void triggerEvent(TrackPoint tp) async {
     // collect event data
     bool start = TrackPoint.status == TrackPoint.statusStart;
     TrackPoint stopped = TrackPoint.stoppedAtTrackPoint;
@@ -41,34 +41,23 @@ class TrackingStatusChangedEvent {
         : util.timeElapsed(tp.time, started.time);
     int distanceMoved = start ? 0 : TrackPoint.distanceMoved.round();
 
-    // create a dummy event with a failed address lookup first
+    Address address = await Address(stopped.gps).lookupAddress();
+    // replace the dummy event with a valid
     TrackingStatusChangedEvent event = TrackingStatusChangedEvent(
         status: TrackPoint.status,
         trackPointStart: started,
         trackPointStop: stopped,
-        address: Address(tp.gps),
+        address: address,
         distanceMoved: distanceMoved,
         time: time);
-    Address(stopped.gps).lookupAddress().then((Address address) {
-      // replace the dummy event with a valid
-      event = TrackingStatusChangedEvent(
-          status: TrackPoint.status,
-          trackPointStart: started,
-          trackPointStop: stopped,
-          address: address,
-          distanceMoved: distanceMoved,
-          time: time);
-    }).onError((error, stackTrace) {
-      severe('Lookup Address failed: ${error.toString()}');
-    }).whenComplete(() {
-      // dispatch event
-      for (var cb in _listener) {
-        try {
-          cb(event);
-        } catch (e) {
-          severe('Trigger TrackingStatusChangedEvent failed: ${e.toString()}');
-        }
+    // dispatch event
+    for (var cb in _listener) {
+      try {
+        cb(event);
+      } catch (e) {
+        severe('Trigger TrackingStatusChangedEvent failed: ${e.toString()}');
       }
+
       DateTime tStart = tp.time;
       DateTime tStop = start ? stopped.time : started.time;
       List<String> tasks = ['schindern', 'malochen', 'knechten', 'rackern'];
@@ -84,7 +73,9 @@ class TrackingStatusChangedEvent {
 
       // add calendar entry
       TrackingCalendar cal = TrackingCalendar();
-      cal.addEvent(cal.createEvent(tStart, tStop, tasks, address, message));
-    });
+      cal.addEvent(
+          await cal.createEvent(tStart, tStop, tasks, address, message));
+    }
+    ;
   }
 }

@@ -75,13 +75,20 @@ class TrackPoint {
   }
 
 // change status to stop
-  static void stop(TrackPoint tp) {
+  static void stop(TrackPoint tp) async {
     if (_status == statusStop) return;
     String s = timeElapsed(tp.time, _startedAtTrackPoint.time);
     log('### stop ### moved ${_movedDistance.round()} meters in $s');
     _status = statusStop;
     _stoppedAtTrackPoint = tp;
-    LocationAlias.alias(tp._gps.lat, tp._gps.lon, tp.alias);
+    //
+    try {
+      tp._alias = await LocationAlias.findAlias(tp._gps.lat, tp._gps.lon);
+    } catch (e) {
+      // ignore
+      log('$e');
+    }
+
     _statusChanged(tp);
     _trackPoints.clear();
     _trackPoints.add(tp);
@@ -99,12 +106,13 @@ class TrackPoint {
   final GPS _gps;
   final DateTime _time = DateTime.now();
   final int _localStatus = TrackPoint._status;
-  final List<Alias> alias = [];
+  List<Alias> _alias = [];
 
   int get id => _id;
   GPS get gps => _gps;
   DateTime get time => _time;
   int get localstatus => _localStatus;
+  List<Alias> get alias => _alias;
 
   TrackPoint(this._gps) {
     _trackPoints.add(this);
@@ -210,8 +218,13 @@ class TrackPoint {
   static void _track() async {
     if (!_tracking) return;
     Future.delayed(tickTime, () async {
-      TrackPoint tp = await TrackPoint.create();
-      _checkStatus(tp);
+      try {
+        TrackPoint tp = await TrackPoint.create();
+        _checkStatus(tp);
+      } catch (e) {
+        // ignore
+        log('$e');
+      }
       _track();
     });
   }
