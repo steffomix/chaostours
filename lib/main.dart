@@ -3,8 +3,10 @@ import 'log.dart';
 import 'config.dart';
 import 'recourceLoader.dart';
 import 'frontend/frontend_main.dart';
+import 'package:logger/logger.dart';
 
 void main() async {
+  Logger.level = Level.info;
   // Thanks for: https://stackoverflow.com/a/69481863
   // add cert for https requests you can download here:
   // https://letsencrypt.org/certs/lets-encrypt-r3.pem

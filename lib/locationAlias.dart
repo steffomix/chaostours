@@ -32,7 +32,8 @@ class LocationAlias {
       if (Geolocator.distanceBetween(lat, lon, a.lat, a.lon) <=
           AppConfig.distanceTreshold) {
         l.add(a);
-        logInfo('found alias ${a.address} (${a.alias})');
+        logInfo(
+            'LocationAlias::findAlias found alias\n ${a.address} (${a.alias})');
       }
     }
     return Future<List<Alias>>.value(list);

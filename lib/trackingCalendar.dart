@@ -10,14 +10,18 @@ import 'recourceLoader.dart';
 import 'util.dart';
 
 class TrackingCalendar {
-  Future<Event> createEvent(DateTime start, DateTime end,
-      List<String> tasksList, Address addr, String notes) async {
+  Future<Event> createEvent(
+      DateTime start,
+      DateTime end,
+      List<String> tasksList,
+      Address addr,
+      List<Alias> aliasList,
+      String notes) async {
     String fStart = formatDate(start);
     String fEnd = formatDate(end);
     double lat = addr.lat;
     double lon = addr.lon;
     String url = 'https://maps.google.com?q=$lat,$lon&center=$lat,$lon';
-    List<Alias> aliasList = await LocationAlias.findAlias(lat, lon);
     String alias = aliasList.isEmpty ? '' : aliasList[0].alias;
     String address = alias == '' ? addr.asString : '$alias (${addr.asString})';
     List<String> aliasNamesList = [];

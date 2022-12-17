@@ -74,8 +74,8 @@ class TrackingStatusChangedEvent {
       // add calendar entry
       TrackingCalendar cal = TrackingCalendar();
       try {
-        cal.addEvent(
-            await cal.createEvent(tStart, tStop, tasks, address, message));
+        cal.addEvent(await cal.createEvent(
+            tStart, tStop, tasks, address, tp.alias, message));
       } catch (e) {
         logError('TrackingStatusChangedEvent::addEvent', e);
       }

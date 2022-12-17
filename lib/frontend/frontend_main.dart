@@ -43,7 +43,6 @@ class _AppState extends State<App> {
     switch (index) {
       case 0:
         {
-          GPS.move();
           break;
         }
       case 1:

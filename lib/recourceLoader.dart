@@ -26,7 +26,7 @@ class RecourceLoader {
         await PlatformAssetBundle().load('assets/ca/lets-encrypt-r3.pem');
     SecurityContext.defaultContext
         .setTrustedCertificatesBytes(data.buffer.asUint8List());
-    logFatal('RecourceLoader::WebKey loaded');
+    logInfo('RecourceLoader::WebKey loaded');
   }
 
   ///
@@ -35,6 +35,7 @@ class RecourceLoader {
     var url = Uri.https('nominatim.openstreetmap.org', '/reverse',
         {'lat': gps.lat.toString(), 'lon': gps.lon.toString()});
     http.Response response = await http.get(url);
+    logInfo('osmReverseLookup for gps #${gps.id}');
     return response;
   }
 

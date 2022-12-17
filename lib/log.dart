@@ -2,7 +2,7 @@ import 'package:logger/logger.dart';
 
 var _logger = Logger(
   printer: PrettyPrinter(
-      methodCount: 5, // number of method calls to be displayed
+      methodCount: 0, // number of method calls to be displayed
       errorMethodCount: 8, // number of method calls if stacktrace is provided
       lineLength: 120, // width of the output
       colors: true, // Colorful log messages
@@ -10,7 +10,6 @@ var _logger = Logger(
       printTime: false // Should each log print contain a timestamp
       ),
 );
-
 var logVerbose = _logger.v;
 var logInfo = _logger.i;
 var logDebug = _logger.d;

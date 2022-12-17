@@ -8,7 +8,9 @@ import 'locationAlias.dart';
 class TrackPoint {
   static Future<TrackPoint> create() async {
     GPS gps = await GPS.gps();
-    return TrackPoint(gps);
+    TrackPoint tp = TrackPoint(gps);
+    logInfo('TrackPoint::create TrackPoint #${tp.id} with GPS #${gps.id}');
+    return tp;
   }
 
   static int _nextId = 0;
@@ -37,14 +39,14 @@ class TrackPoint {
   // skip status check for given time to prevent ugly things
   static Duration get waitTimeAfterStatusChanged {
     return AppConfig.debugMode
-        ? const Duration(seconds: 3)
+        ? const Duration(seconds: 1)
         : const Duration(minutes: 3);
   }
 
   // stop time needed to trigger stop
   static Duration get timeTreshold {
     return AppConfig.debugMode
-        ? const Duration(seconds: 10)
+        ? const Duration(seconds: 5)
         : const Duration(minutes: 5);
   }
 
@@ -146,7 +148,7 @@ class TrackPoint {
       return;
     }
     // min length
-    if (_trackPoints.length < 5) return;
+    if (_trackPoints.length < 2) return;
 
     List<TrackPoint> trackList = _recentTracks();
     // skip if nothing was found
