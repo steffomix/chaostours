@@ -1,4 +1,4 @@
-import 'logger.dart';
+import 'log.dart';
 import 'gps.dart';
 import 'dart:io';
 import 'package:http/http.dart' as http;
@@ -26,7 +26,7 @@ class RecourceLoader {
         await PlatformAssetBundle().load('assets/ca/lets-encrypt-r3.pem');
     SecurityContext.defaultContext
         .setTrustedCertificatesBytes(data.buffer.asUint8List());
-    log('RecourceLoader::WebKey loaded');
+    logFatal('RecourceLoader::WebKey loaded');
   }
 
   ///
@@ -48,7 +48,7 @@ class RecourceLoader {
     String alias = await rootBundle.loadString('assets/locationAlias.tsv');
     _locationAlias = alias;
     LocationAlias.loadeAliasList();
-    log('RecourceLoader::locationAlias loaded');
+    logInfo('RecourceLoader::locationAlias loaded');
     return alias;
   }
 
@@ -70,7 +70,7 @@ class RecourceLoader {
         ServiceAccountCredentials.fromJson(jsonString), scopes);
     CalendarApi api = CalendarApi(client);
     _calendarApi = api;
-    log('RecourceLoader::Calendar api loaded');
+    logInfo('RecourceLoader::Calendar api loaded');
     return api;
   }
 
@@ -82,7 +82,7 @@ class RecourceLoader {
     if (_calendarId != null) return Future<String>.value(_calendarId);
     String calendarId = await rootBundle.loadString(calendarIdFile);
     _calendarId = calendarId;
-    log('RecourceLoader::Calendar ID loaded');
+    logInfo('RecourceLoader::Calendar ID loaded');
     return calendarId;
   }
 

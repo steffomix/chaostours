@@ -1,4 +1,4 @@
-import 'logger.dart';
+import 'log.dart';
 import 'address.dart';
 import 'trackPoint.dart';
 import 'util.dart' as util;
@@ -55,7 +55,7 @@ class TrackingStatusChangedEvent {
       try {
         cb(event);
       } catch (e) {
-        severe('Trigger TrackingStatusChangedEvent failed: ${e.toString()}');
+        logError('Trigger TrackingStatusChangedEvent failed', e);
       }
 
       DateTime tStart = tp.time;
@@ -73,8 +73,12 @@ class TrackingStatusChangedEvent {
 
       // add calendar entry
       TrackingCalendar cal = TrackingCalendar();
-      cal.addEvent(
-          await cal.createEvent(tStart, tStop, tasks, address, message));
+      try {
+        cal.addEvent(
+            await cal.createEvent(tStart, tStop, tasks, address, message));
+      } catch (e) {
+        logError('TrackingStatusChangedEvent::addEvent', e);
+      }
     }
     ;
   }

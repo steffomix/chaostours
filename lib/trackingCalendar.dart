@@ -1,4 +1,4 @@
-import 'logger.dart' show log;
+import 'log.dart';
 import 'address.dart';
 import 'dart:async';
 import 'locationAlias.dart';

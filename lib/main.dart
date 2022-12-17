@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'logger.dart';
+import 'log.dart';
+import 'config.dart';
 import 'recourceLoader.dart';
-import 'frontend_main.dart';
+import 'frontend/frontend_main.dart';
 
 void main() async {
   // Thanks for: https://stackoverflow.com/a/69481863
@@ -10,9 +11,6 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await RecourceLoader.preload();
-
-  //setup logger
-  Logger.debugMode = true;
 
   // start app
   runApp(const App());

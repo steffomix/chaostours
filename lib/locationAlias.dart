@@ -1,4 +1,4 @@
-import 'logger.dart' show log;
+import 'log.dart';
 import 'config.dart';
 import 'package:geolocator/geolocator.dart';
 import 'recourceLoader.dart';
@@ -32,7 +32,7 @@ class LocationAlias {
       if (Geolocator.distanceBetween(lat, lon, a.lat, a.lon) <=
           AppConfig.distanceTreshold) {
         l.add(a);
-        log('found alias ${a.address} (${a.alias})');
+        logInfo('found alias ${a.address} (${a.alias})');
       }
     }
     return Future<List<Alias>>.value(list);
@@ -42,48 +42,70 @@ class LocationAlias {
 // Latitude	Longitude	Alias	Status	Last visited	Times visted	Address
 class Alias {
   final int _id;
-  final String alias;
+  //
+  String _alias;
+  String get alias => _alias;
+  set alias(String a) => _alias = _purifyString(a);
+  //
   final double lat;
   final double lon;
   int status = 0;
   DateTime lastVisited = DateTime.now();
   int timesVisited = 0;
-  String address = '';
-  String notes = '';
+  //
+  String _address = '';
+  String get address => _address;
+  set address(String str) => _address = _purifyString(str);
+  //
+  String _notes = '';
+  String get notes => _notes;
+  set notes(String str) => _notes = _purifyString(str);
+  //
+  static String _space = '    ';
 
-  Alias(this._id, this.alias, this.lat, this.lon);
+  static String _purifyString(String str) {
+    return str
+        .replaceAll('\n', '')
+        .replaceAll('\r', '')
+        .replaceAll('\t', _space);
+  }
+
+  Alias(this._id, this._alias, this.lat, this.lon);
 
   static Alias? parseTsv(String tsv) {
     List<String> list = tsv.split('\t');
     int l = list.length;
-    if (l < 4) return null;
+    if (l < 4) {
+      logWarn('Alias::parseTsv: invalit tsv line:\n$tsv');
+      return null;
+    }
     try {
       int rId = int.parse(list[0]);
       double rLat = double.parse(list[1]);
       double rLon = double.parse(list[2]);
-      String rAlias = list[3];
+      String rAlias = _purifyString(list[3]);
       Alias alias = Alias(rId, rAlias, rLat, rLon);
       try {
         alias.status = l >= 5 ? int.parse(list[4]) : 0;
       } catch (e) {
-        log('LocationAlias::parseStatus: $e');
+        logWarn('LocationAlias::parseStatus', e);
       }
       try {
         alias.lastVisited = l >= 6 ? DateTime.parse(list[5]) : DateTime.now();
       } catch (e) {
-        log('LocationAlias::parse DateTime lastVisited: $e');
+        logWarn('LocationAlias::parse DateTime lastVisited', e);
         alias.lastVisited = DateTime.now();
       }
       try {
         alias.timesVisited = l >= 7 ? int.parse(list[6]) : 0;
       } catch (e) {
-        log('LocationAlias::parse DateTime timesVisited $e');
+        logWarn('LocationAlias::parse DateTime timesVisited', e);
         alias.timesVisited = 0;
       }
 
       alias.address = l >= 8 ? list[7] : '';
       alias.notes = l >= 9 ? list[8] : '';
-      log('added alias ${alias.address}');
+      logInfo('added alias ${alias.address}');
       return alias;
     } catch (e) {
       log('$e');
@@ -92,6 +114,22 @@ class Alias {
   }
 
   String get tsv {
-    return '$lat\t$lon\t$alias\t$status\t${lastVisited.toString()}\t$timesVisited\t"$address"\t"$notes"';
+    try {
+      List<String> parts = [
+        _id.toString(),
+        lat.toString(),
+        lon.toString(),
+        alias,
+        status.toString(),
+        lastVisited.toIso8601String(),
+        timesVisited.toString(),
+        address,
+        notes
+      ];
+      return parts.join('\t');
+    } catch (e) {
+      logError('Alias::tsv', e);
+    }
+    return '';
   }
 }

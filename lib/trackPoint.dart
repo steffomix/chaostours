@@ -1,5 +1,5 @@
 import 'config.dart';
-import 'logger.dart';
+import 'log.dart';
 import 'util.dart';
 import 'gps.dart';
 import 'trackingEvent.dart';
@@ -66,7 +66,7 @@ class TrackPoint {
   static void start(TrackPoint tp) {
     if (_status == statusStart) return;
     String s = timeElapsed(tp.time, _stoppedAtTrackPoint.time);
-    log('### start ### after $s');
+    logVerbose('### start ### after $s');
     _status = statusStart;
     _startedAtTrackPoint = tp;
     _statusChanged(tp);
@@ -78,15 +78,15 @@ class TrackPoint {
   static void stop(TrackPoint tp) async {
     if (_status == statusStop) return;
     String s = timeElapsed(tp.time, _startedAtTrackPoint.time);
-    log('### stop ### moved ${_movedDistance.round()} meters in $s');
+    logVerbose('### stop ### moved ${_movedDistance.round()} meters in $s');
     _status = statusStop;
     _stoppedAtTrackPoint = tp;
     //
     try {
       tp._alias = await LocationAlias.findAlias(tp._gps.lat, tp._gps.lon);
-    } catch (e) {
+    } catch (e, stk) {
       // ignore
-      log('$e');
+      logError('find alias', e, stk);
     }
 
     _statusChanged(tp);
@@ -178,7 +178,7 @@ class TrackPoint {
         return true;
       }
     }
-    log('idleDist $_idleDistance');
+    logVerbose('idle Distance $_idleDistance');
     return false;
   }
 
@@ -191,7 +191,7 @@ class TrackPoint {
       dist = GPS.distance(tl[i]._gps, tRef._gps);
       if (dist > distMoved) distMoved = dist;
     }
-    log('moved: $distMoved in ${tl.length} tracks');
+    logVerbose('moved: $distMoved in ${tl.length} tracks');
     if (distMoved < distanceTreshold) {
       _movedDistance = movedDistance();
       return true;
@@ -221,9 +221,9 @@ class TrackPoint {
       try {
         TrackPoint tp = await TrackPoint.create();
         _checkStatus(tp);
-      } catch (e) {
+      } catch (e, stk) {
         // ignore
-        log('$e');
+        logFatal('TrackPoint::create', e, stk);
       }
       _track();
     });
@@ -233,7 +233,7 @@ class TrackPoint {
   static void startTracking() async {
     if (_tracking) return;
     _startedAtTrackPoint = _stoppedAtTrackPoint = await TrackPoint.create();
-    log('start tracking');
+    logInfo('start tracking');
     _tracking = true;
     _track();
   }
@@ -241,7 +241,7 @@ class TrackPoint {
   /// stop tracking heartbeat
   static void stopTracking() {
     if (!_tracking) return;
-    log('stop tracking');
+    logInfo('stop tracking');
     _tracking = false;
   }
 }

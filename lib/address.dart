@@ -1,4 +1,4 @@
-import 'logger.dart';
+import 'log.dart';
 import 'gps.dart';
 import 'package:http/http.dart' as http;
 import 'package:sprintf/sprintf.dart' show sprintf;
@@ -83,13 +83,13 @@ class Address {
         state = tags['state'] ?? '';
         postcode = tags['postcode'] ?? '';
       } else {
-        severe(
+        logWarn(
             'lookup address failed with status code: ${response.statusCode}\n'
             '${response.body}');
       }
     } catch (e, stk) {
       // ignore
-      log('$e $stk');
+      logError('Address::lookupAdress', e, stk);
     }
     return Future<Address>.value(this);
   }

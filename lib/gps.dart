@@ -1,4 +1,4 @@
-import 'logger.dart';
+import 'log.dart';
 import 'config.dart';
 import 'package:geolocator/geolocator.dart' show Position, Geolocator;
 import 'recourceLoader.dart';
@@ -12,14 +12,21 @@ class GPS {
   double get lat => _lat;
   double get lon => _lon;
 
-  GPS(this._lat, this._lon);
+  GPS(this._lat, this._lon) {
+    logVerbose('GPS $_lat, $_lon');
+  }
 
   static Future<GPS> gps() async {
-    Position pos = await RecourceLoader.gps();
-    GPS gps = AppConfig.debugMode
-        ? GPS(_gps.lat, _gps.lon)
-        : GPS(pos.latitude, pos.longitude);
-    return Future<GPS>.value(gps);
+    try {
+      Position pos = await RecourceLoader.gps();
+      GPS gps = AppConfig.debugMode
+          ? GPS(_gps.lat, _gps.lon)
+          : GPS(pos.latitude, pos.longitude);
+      return Future<GPS>.value(gps);
+    } catch (e, stk) {
+      logFatal('GPS::gps', e, stk);
+    }
+    return Future<GPS>.value(GPS(0, 0));
   }
 }
 
