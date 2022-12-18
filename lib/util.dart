@@ -1,5 +1,3 @@
-import 'dart:math' show cos, sqrt, asin;
-
 String timeElapsed(DateTime t1, DateTime t2) {
   DateTime t0;
   if (t1.difference(t2).isNegative) {
@@ -46,5 +44,5 @@ String timeElapsed(DateTime t1, DateTime t2) {
 }
 
 String formatDate(DateTime t) {
-  return '${t.day}.${t.month}.${t.year} ${t.hour}:${t.minute}';
+  return '${t.day}.${t.month}.${t.year} ${t.hour}:${t.minute}::${t.second}:::${t.millisecond}';
 }

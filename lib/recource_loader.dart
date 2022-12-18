@@ -7,7 +7,7 @@ import 'package:googleapis_auth/auth_io.dart';
 import 'package:googleapis/calendar/v3.dart' show CalendarApi;
 import 'package:geolocator/geolocator.dart'
     show Position, LocationPermission, Geolocator;
-import 'locationAlias.dart';
+import 'location_alias.dart';
 
 class RecourceLoader {
   ///

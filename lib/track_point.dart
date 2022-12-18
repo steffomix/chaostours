@@ -2,30 +2,45 @@ import 'config.dart';
 import 'log.dart';
 import 'util.dart';
 import 'gps.dart';
-import 'trackingEvent.dart';
-import 'locationAlias.dart';
+import 'tracking_event.dart';
+import 'location_alias.dart';
+import 'address.dart';
+
+enum TrackingStatus {
+  stop,
+  start;
+}
 
 class TrackPoint {
   static Future<TrackPoint> create() async {
     GPS gps = await GPS.gps();
+    num dist = _trackPoints.isNotEmpty
+        ? GPS.distance(_trackPoints.last._gps, gps).round()
+        : 0;
+
     TrackPoint tp = TrackPoint(gps);
-    logInfo('TrackPoint::create TrackPoint #${tp.id} with GPS #${gps.id}');
+    await tp.address.lookupAddress();
+    logInfo(
+        'TrackPoint::create TrackPoint #${tp.id} with GPS #${gps.id} at dist $dist meters\n'
+        'at address ${tp.address.asString}');
     return tp;
   }
 
   static int _nextId = 0;
+  // contains all trackpoints from current state start or stop
   static final List<TrackPoint> _trackPoints = [];
+  // contains all trackpoints during driving (from start to stop)
+  static final List<TrackPoint> driverTrackPoints = [];
   // both will be created in TrackPoint.startTracking();
   static late TrackPoint _stoppedAtTrackPoint;
   static late TrackPoint _startedAtTrackPoint;
-  static double _idleDistance = 0;
-  static double _movedDistance = 0;
+
+  static double _idleDistanceMoved = 0;
+  static double _distanceMoved = 0;
 
   //
-  static const int statusStop = 0;
-  static const int statusStart = 1;
-  static int _status = 0;
-  static int get status => _status;
+  static TrackingStatus _status = TrackingStatus.stop;
+  static TrackingStatus get status => _status;
   static DateTime _lastStatusChange = DateTime.now();
   static DateTime get lastStatusChange => _lastStatusChange;
   static TrackPoint get startedAtTrackPoint => _startedAtTrackPoint;
@@ -35,42 +50,27 @@ class TrackPoint {
   static bool _tracking = false;
   static bool get tracking => _tracking;
 
-  // durations and distances
-  // skip status check for given time to prevent ugly things
-  static Duration get waitTimeAfterStatusChanged {
-    return AppConfig.debugMode
-        ? const Duration(seconds: 1)
-        : const Duration(minutes: 3);
-  }
-
-  // stop time needed to trigger stop
-  static Duration get timeTreshold {
-    return AppConfig.debugMode
-        ? const Duration(seconds: 5)
-        : const Duration(minutes: 5);
-  }
-
-  // check status interval
-  static Duration get tickTime {
-    return AppConfig.debugMode
-        ? const Duration(seconds: 2)
-        : const Duration(seconds: 20);
-  }
-
   // distance needed to trigger start in gps degree (0.00145deg = ~100meters)
   static double get distanceTreshold => AppConfig.distanceTreshold;
   // distance moved around during stop
-  static double get distanceMoved => _movedDistance;
+  static double get distanceMoved => _distanceMoved;
   // distance moved during start
-  static double get awayFromStop => _idleDistance;
+  static double get idleDistanceMoved => _idleDistanceMoved;
 
 // change status to start
-  static void start(TrackPoint tp) {
-    if (_status == statusStart) return;
+  static void start(TrackPoint tp) async {
+    if (_status == TrackingStatus.start) return;
     String s = timeElapsed(tp.time, _stoppedAtTrackPoint.time);
-    logVerbose('### start ### after $s');
-    _status = statusStart;
+    logInfo('### start ### after $s');
+    _status = TrackingStatus.start;
     _startedAtTrackPoint = tp;
+
+    try {
+      tp._alias = await LocationAlias.findAlias(tp._gps.lat, tp._gps.lon);
+    } catch (e, stk) {
+      // ignore
+      logError('find alias', e, stk);
+    }
     _statusChanged(tp);
     _trackPoints.clear();
     _trackPoints.add(_stoppedAtTrackPoint);
@@ -78,11 +78,14 @@ class TrackPoint {
 
 // change status to stop
   static void stop(TrackPoint tp) async {
-    if (_status == statusStop) return;
+    if (_status == TrackingStatus.stop) return;
     String s = timeElapsed(tp.time, _startedAtTrackPoint.time);
-    logVerbose('### stop ### moved ${_movedDistance.round()} meters in $s');
-    _status = statusStop;
+    logInfo('### stop ### moved ${_distanceMoved.round()} meters in $s');
+    _status = TrackingStatus.stop;
     _stoppedAtTrackPoint = tp;
+    TrackPoint._distanceMoved =
+        GPS.distance(_stoppedAtTrackPoint._gps, _startedAtTrackPoint._gps);
+    driverTrackPoints.addAll(_trackPoints);
     //
     try {
       tp._alias = await LocationAlias.findAlias(tp._gps.lat, tp._gps.lon);
@@ -90,7 +93,6 @@ class TrackPoint {
       // ignore
       logError('find alias', e, stk);
     }
-
     _statusChanged(tp);
     _trackPoints.clear();
     _trackPoints.add(tp);
@@ -100,23 +102,25 @@ class TrackPoint {
   static void _statusChanged(TrackPoint tp) {
     TrackingStatusChangedEvent.triggerEvent(tp);
     _lastStatusChange = DateTime.now();
-    _movedDistance = 0;
-    _idleDistance = 0;
+    _distanceMoved = 0;
+    _idleDistanceMoved = 0;
   }
 
   final int _id = ++_nextId;
   final GPS _gps;
   final DateTime _time = DateTime.now();
-  final int _localStatus = TrackPoint._status;
+  final TrackingStatus _localStatus = TrackPoint._status;
   List<Alias> _alias = [];
 
   int get id => _id;
   GPS get gps => _gps;
   DateTime get time => _time;
-  int get localstatus => _localStatus;
+  TrackingStatus get localStatus => _localStatus;
   List<Alias> get alias => _alias;
+  late Address address;
 
   TrackPoint(this._gps) {
+    address = Address(_gps);
     _trackPoints.add(this);
   }
 
@@ -126,7 +130,7 @@ class TrackPoint {
     // collect TrackPoints of last <timeTreshold> with <gpsOk>
     List<TrackPoint> trackList = [];
     List<int> ids = [];
-    DateTime treshold = DateTime.now().subtract(timeTreshold);
+    DateTime treshold = DateTime.now().subtract(AppConfig.stopTimeTreshold);
     bool outDated;
     for (var i = _trackPoints.length - 1; i >= 0; i--) {
       outDated = _trackPoints[i].time.isBefore(treshold);
@@ -143,18 +147,18 @@ class TrackPoint {
   static void _checkStatus(TrackPoint tp) {
     // wait after status changed
     if (_lastStatusChange
-        .add(waitTimeAfterStatusChanged)
+        .add(AppConfig.waitTimeAfterStatusChanged)
         .isAfter(DateTime.now())) {
       return;
     }
     // min length
-    if (_trackPoints.length < 2) return;
+    if (_trackPoints.length < 4) return;
 
     List<TrackPoint> trackList = _recentTracks();
     // skip if nothing was found
     if (trackList.isEmpty) return;
 
-    if (_status == statusStop) {
+    if (_status == TrackingStatus.stop) {
       if (_checkMoved(trackList)) {
         // use the most recent Trackpoint as reference
         start(trackList.first);
@@ -175,12 +179,12 @@ class TrackPoint {
     TrackPoint tRef = _stoppedAtTrackPoint;
     for (var i = 0; i < tl.length; i++) {
       dist = GPS.distance(tl[i]._gps, tRef._gps);
-      if (dist > _idleDistance) _idleDistance = dist;
+      if (dist > _idleDistanceMoved) _idleDistanceMoved = dist;
       if (dist > distanceTreshold) {
         return true;
       }
     }
-    logVerbose('idle Distance $_idleDistance');
+    logVerbose('idle Distance $_idleDistanceMoved');
     return false;
   }
 
@@ -195,7 +199,7 @@ class TrackPoint {
     }
     logVerbose('moved: $distMoved in ${tl.length} tracks');
     if (distMoved < distanceTreshold) {
-      _movedDistance = movedDistance();
+      _distanceMoved = movedDistance();
       return true;
     }
     return false;
@@ -219,7 +223,7 @@ class TrackPoint {
   /// tracking heartbeat with <trackingTickTime> speed
   static void _track() async {
     if (!_tracking) return;
-    Future.delayed(tickTime, () async {
+    Future.delayed(AppConfig.trackPointTickTime, () async {
       try {
         TrackPoint tp = await TrackPoint.create();
         _checkStatus(tp);

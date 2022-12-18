@@ -1,8 +1,8 @@
 import 'log.dart';
 import 'config.dart';
 import 'package:geolocator/geolocator.dart' show Position, Geolocator;
-import 'recourceLoader.dart';
-import 'locationAlias.dart';
+import 'recource_loader.dart';
+import 'location_alias.dart';
 import 'dart:math';
 
 class GPS {
@@ -11,13 +11,11 @@ class GPS {
   int get id => _id;
   static double distance(GPS g1, GPS g2) =>
       Geolocator.distanceBetween(g1.lat, g1.lon, g2.lat, g2.lon);
-  final double _lat;
-  final double _lon;
-  double get lat => _lat;
-  double get lon => _lon;
+  double lat;
+  double lon;
 
-  GPS(this._lat, this._lon) {
-    logVerbose('GPS #$id at $_lat, $_lon');
+  GPS(this.lat, this.lon) {
+    logVerbose('GPS #$id at $lat, $lon');
   }
 
   static Future<GPS> gps() async {
@@ -34,7 +32,7 @@ class GPS {
   }
 }
 
-class _gps {
+class _Gps {
   // 52.3840, 9.7260 somewhere in hannover
   // 52.32741, 9.19255 somewhere in schaumburg
   static double _lat = 52.32741;
@@ -54,8 +52,7 @@ class _gps {
 
 class SimulateGps {
   static Alias? _station;
-  static List<Alias>? _stations;
-  static int _nextStop = 0;
+  static int _nextStop = 3;
 
   static Future<GPS> next() async {
     _station ??= await station;
@@ -63,10 +60,19 @@ class SimulateGps {
       _nextStop = Random().nextInt(10) + 5;
       Alias alias = await station;
       logInfo('SimulateGps::nextStop for $_nextStop ticks at ${alias.address}');
-      return GPS(alias.lat, alias.lon);
+      // shuffle position a little
+      return GPS(shake(alias.lat), shake(alias.lon));
     } else {
+      _station?.lat = shake(_station?.lat ?? 0);
+      _station?.lon = shake(_station?.lon ?? 0);
       return GPS(_station?.lat ?? 0, _station?.lon ?? 0);
     }
+  }
+
+  static double shake(double pos) {
+    int direction = Random().nextBool() ? 1 : -1;
+    pos = pos + Random().nextDouble() / 1000 * direction;
+    return pos;
   }
 
   static Future<Alias> get station async {
@@ -77,8 +83,9 @@ class SimulateGps {
       st = _station = stations[Random().nextInt(stations.length - 1)];
     } catch (e, str) {
       logWarn('SimulateGps', e, str);
-      st = _station = Alias(0, 'undefined', _gps.lat, _gps.lon);
+      st = _station = Alias(0, 'undefined', _Gps.lat, _Gps.lon);
     }
+
     return Future<Alias>.value(st);
   }
 }

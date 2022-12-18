@@ -2,7 +2,7 @@ import 'log.dart';
 import 'gps.dart';
 import 'package:http/http.dart' as http;
 import 'package:sprintf/sprintf.dart' show sprintf;
-import 'recourceLoader.dart';
+import 'recource_loader.dart';
 
 ///
 ///<addressparts>
@@ -25,10 +25,12 @@ class Address {
   final GPS _gps;
   final DateTime _time = DateTime.now();
   String road = '';
+  // ignore: non_constant_identifier_names
   String house_number = '';
   String town = '';
   String retail = '';
   String suburb = '';
+  // ignore: non_constant_identifier_names
   String city_district = '';
   String city = '';
   String county = '';

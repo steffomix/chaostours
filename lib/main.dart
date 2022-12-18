@@ -1,20 +1,29 @@
 import 'package:flutter/material.dart';
-import 'log.dart';
-import 'config.dart';
-import 'recourceLoader.dart';
+import 'recource_loader.dart';
 import 'frontend/frontend_main.dart';
 import 'package:logger/logger.dart';
+import 'track_point.dart';
+import 'tracking_calendar.dart';
 
 void main() async {
-  Logger.level = Level.info;
   // Thanks for: https://stackoverflow.com/a/69481863
   // add cert for https requests you can download here:
   // https://letsencrypt.org/certs/lets-encrypt-r3.pem
   WidgetsFlutterBinding.ensureInitialized();
 
+  // set loglevel
+  Logger.level = Level.info;
+
+  // preload recources
   await RecourceLoader.preload();
 
-  // start app
+  // instantiate TrackingCalendar singelton
+  TrackingCalendar();
+
+  // start gps tracking
+  TrackPoint.startTracking();
+
+  // start frontend
   runApp(const App());
 }
 

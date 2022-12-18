@@ -1,7 +1,7 @@
 import 'log.dart';
 import 'config.dart';
 import 'package:geolocator/geolocator.dart';
-import 'recourceLoader.dart';
+import 'recource_loader.dart';
 
 class LocationAlias {
   static List<Alias>? _loadedAliasList;
@@ -27,29 +27,31 @@ class LocationAlias {
 
   static Future<List<Alias>> findAlias(double lat, double lon) async {
     List<Alias> list = await loadeAliasList();
-    List<Alias> l = [];
+    List<Alias> found = [];
     for (var a in list) {
-      if (Geolocator.distanceBetween(lat, lon, a.lat, a.lon) <=
-          AppConfig.distanceTreshold) {
-        l.add(a);
+      double dist = Geolocator.distanceBetween(lat, lon, a.lat, a.lon);
+      if (dist <= AppConfig.distanceTreshold) {
+        a.trackPointDistance = dist;
+        found.add(a);
         logInfo(
-            'LocationAlias::findAlias found alias\n ${a.address} (${a.alias})');
+            'LocationAlias::findAlias found alias with distance ${dist.round()}meter\n ${a.address} (${a.alias})');
       }
     }
-    return Future<List<Alias>>.value(list);
+    found.sort((Alias a, Alias b) => a.compareTo(b));
+    return Future<List<Alias>>.value(found);
   }
 }
 
 // Latitude	Longitude	Alias	Status	Last visited	Times visted	Address
-class Alias {
+class Alias implements Comparable<Alias> {
   final int _id;
   //
   String _alias;
   String get alias => _alias;
   set alias(String a) => _alias = _purifyString(a);
   //
-  final double lat;
-  final double lon;
+  double lat;
+  double lon;
   int status = 0;
   DateTime lastVisited = DateTime.now();
   int timesVisited = 0;
@@ -62,7 +64,9 @@ class Alias {
   String get notes => _notes;
   set notes(String str) => _notes = _purifyString(str);
   //
-  static String _space = '    ';
+  double trackPointDistance = 0;
+  //
+  static const String _space = '    ';
 
   static String _purifyString(String str) {
     return str
@@ -132,5 +136,11 @@ class Alias {
       logError('Alias::tsv', e);
     }
     return '';
+  }
+
+  @override
+  int compareTo(Alias other) {
+    int compare = trackPointDistance.round() - other.trackPointDistance.round();
+    return compare;
   }
 }
