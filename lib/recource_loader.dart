@@ -13,10 +13,14 @@ class RecourceLoader {
   ///
   /// preload recources
   static Future<void> preload() async {
-    await webKey();
-    await locationAlias();
-    await defaultCalendarId();
-    await calendarApiFromCredentials();
+    try {
+      await webKey();
+      await locationAlias();
+      await defaultCalendarId();
+      await calendarApiFromCredentials();
+    } catch (e, stk) {
+      logFatal('Preload failed', e, stk);
+    }
   }
 
   ///

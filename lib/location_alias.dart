@@ -42,6 +42,31 @@ class LocationAlias {
   }
 }
 
+enum AliasStatus {
+  disabled(0),
+  privat(1),
+  public(2);
+
+  final int value;
+  const AliasStatus(this.value);
+
+  static AliasStatus byValue(int id) {
+    try {
+      AliasStatus status =
+          AliasStatus.values.firstWhere((en) => en.value == id);
+      return status;
+    } catch (e, stk) {
+      logError(
+          'Non existant enum AliasStatus with id $id\n'
+          'Fallback to AliasStatus.disabled',
+          e,
+          stk);
+      AliasStatus status = AliasStatus.disabled;
+      return status;
+    }
+  }
+}
+
 // Latitude	Longitude	Alias	Status	Last visited	Times visted	Address
 class Alias implements Comparable<Alias> {
   final int _id;
@@ -52,7 +77,7 @@ class Alias implements Comparable<Alias> {
   //
   double lat;
   double lon;
-  int status = 0;
+  AliasStatus status = AliasStatus.public;
   DateTime lastVisited = DateTime.now();
   int timesVisited = 0;
   //
@@ -81,7 +106,7 @@ class Alias implements Comparable<Alias> {
     List<String> list = tsv.split('\t');
     int l = list.length;
     if (l < 4) {
-      logWarn('Alias::parseTsv: invalit tsv line:\n$tsv');
+      //logWarn('Alias::parseTsv: invalit tsv line:\n$tsv');
       return null;
     }
     try {
@@ -91,26 +116,26 @@ class Alias implements Comparable<Alias> {
       String rAlias = _purifyString(list[3]);
       Alias alias = Alias(rId, rAlias, rLat, rLon);
       try {
-        alias.status = l >= 5 ? int.parse(list[4]) : 0;
+        alias.status = AliasStatus.byValue(l >= 5 ? int.parse(list[4]) : 0);
       } catch (e) {
-        logWarn('LocationAlias::parseStatus', e);
+        //logWarn('LocationAlias::parseStatus', e);
       }
       try {
         alias.lastVisited = l >= 6 ? DateTime.parse(list[5]) : DateTime.now();
       } catch (e) {
-        logWarn('LocationAlias::parse DateTime lastVisited', e);
+        //logWarn('LocationAlias::parse DateTime lastVisited', e);
         alias.lastVisited = DateTime.now();
       }
       try {
         alias.timesVisited = l >= 7 ? int.parse(list[6]) : 0;
       } catch (e) {
-        logWarn('LocationAlias::parse DateTime timesVisited', e);
+        //logWarn('LocationAlias::parse DateTime timesVisited', e);
         alias.timesVisited = 0;
       }
 
       alias.address = l >= 8 ? list[7] : '';
       alias.notes = l >= 9 ? list[8] : '';
-      logInfo('added alias ${alias.address}');
+      //logInfo('added alias ${alias.address}');
       return alias;
     } catch (e) {
       log('$e');

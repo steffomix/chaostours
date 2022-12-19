@@ -2,7 +2,7 @@ import 'config.dart';
 import 'log.dart';
 import 'util.dart';
 import 'gps.dart';
-import 'tracking_event.dart';
+import 'events.dart';
 import 'location_alias.dart';
 import 'address.dart';
 
@@ -100,7 +100,7 @@ class TrackPoint {
 
 // trigger status change event
   static void _statusChanged(TrackPoint tp) {
-    TrackingStatusChangedEvent.triggerEvent(tp);
+    trackingStatusEvents.fire(TrackingStatusChangedEvent(tp, status));
     _lastStatusChange = DateTime.now();
     _distanceMoved = 0;
     _idleDistanceMoved = 0;
@@ -109,13 +109,11 @@ class TrackPoint {
   final int _id = ++_nextId;
   final GPS _gps;
   final DateTime _time = DateTime.now();
-  final TrackingStatus _localStatus = TrackPoint._status;
   List<Alias> _alias = [];
 
   int get id => _id;
   GPS get gps => _gps;
   DateTime get time => _time;
-  TrackingStatus get localStatus => _localStatus;
   List<Alias> get alias => _alias;
   late Address address;
 

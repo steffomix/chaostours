@@ -47,6 +47,7 @@ dependencies:
   url_launcher: ^6.1.6
   crypto: ^3.0.2
   logger: ^1.1.0
+  event_bus: ^2.0.0
   # https://pub.dev/packages/rollbar_flutter
   # rollbar_flutter: ^1.2.0
 
