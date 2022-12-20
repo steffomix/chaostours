@@ -31,12 +31,16 @@ class _AppState extends State<App> {
   }
 
   BottomNavigationBar bottomNavigationBar() {
-    return BottomNavigationBar(items: const [
-      BottomNavigationBarItem(
-          icon: Icon(Icons.accessible_forward_outlined), label: 'but 1'),
-      BottomNavigationBarItem(
-          icon: Icon(Icons.accessible_forward_outlined), label: 'but 2')
-    ], onTap: (int id) {});
+    return BottomNavigationBar(
+        items: const [
+          BottomNavigationBarItem(
+              icon: Icon(Icons.tap_and_play), label: 'but 1'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.accessible_forward_outlined), label: 'but 2')
+        ],
+        onTap: (int id) {
+          onTapEvent.fire(Tapped());
+        });
   }
 
   ListView listView() {

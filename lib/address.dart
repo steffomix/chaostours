@@ -93,8 +93,7 @@ class Address {
       // ignore
       logError('Address::lookupAdress', e, stk);
     }
-    logInfo(
-        'Address parsed OSM reverse lookup result on GPS #${_gps.id}:\n$asString');
+    //logInfo('Address parsed OSM reverse lookup result on GPS #${_gps.id}:\n$asString');
     return Future<Address>.value(this);
   }
 }

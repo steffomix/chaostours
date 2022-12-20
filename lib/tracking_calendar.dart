@@ -33,7 +33,7 @@ class TrackingCalendar {
   createEvent(TrackingStatusChangedEvent event) {
     // statusStop = start to stop
     // statusStart = stop to start
-    TrackPoint tp = event.trackPoint;
+    TrackPoint tp = event.trackPoints.last;
     TrackingStatus status = event.status;
 
     TrackPoint tpStart = status == TrackingStatus.start
@@ -45,9 +45,6 @@ class TrackingCalendar {
         : TrackPoint.stoppedAtTrackPoint;
 
     String duration = timeElapsed(tpStart.time, tpStop.time);
-    num distanceMoved = status == TrackingStatus.start
-        ? TrackPoint.idleDistanceMoved.round()
-        : (GPS.distance(tpStart.gps, tpStop.gps) / 100).round() / 10;
 
     String fTimeStart = formatDate(tpStart.time);
     String fTimeStop = formatDate(tpStop.time);
@@ -63,7 +60,7 @@ class TrackingCalendar {
 
     String summary = status == TrackingStatus.start
         ? '##STOP## $duration Stand bei:$alias${tpStart.address.asString}'
-        : '##START## $duration, ${distanceMoved}km Fahrt von: ${tpStop.address.asString} bis ${tpStart.address.asString}';
+        : '##START## $duration, ?Calc Distance?km Fahrt von: ${tpStop.address.asString} bis ${tpStart.address.asString}';
 
     String body = 'Von $fTimeStop bis $fTimeStart\n$summary\n\n'
         'Andere Aliasnamen:'

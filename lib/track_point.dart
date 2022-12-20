@@ -12,20 +12,6 @@ enum TrackingStatus {
 }
 
 class TrackPoint {
-  static Future<TrackPoint> create() async {
-    GPS gps = await GPS.gps();
-    num dist = _trackPoints.isNotEmpty
-        ? GPS.distance(_trackPoints.last._gps, gps).round()
-        : 0;
-
-    TrackPoint tp = TrackPoint(gps);
-    await tp.address.lookupAddress();
-    logInfo(
-        'TrackPoint::create TrackPoint #${tp.id} with GPS #${gps.id} at dist $dist meters\n'
-        'at address ${tp.address.asString}');
-    return tp;
-  }
-
   static int _nextId = 0;
   // contains all trackpoints from current state start or stop
   static final List<TrackPoint> _trackPoints = [];
@@ -34,9 +20,6 @@ class TrackPoint {
   // both will be created in TrackPoint.startTracking();
   static late TrackPoint _stoppedAtTrackPoint;
   static late TrackPoint _startedAtTrackPoint;
-
-  static double _idleDistanceMoved = 0;
-  static double _distanceMoved = 0;
 
   //
   static TrackingStatus _status = TrackingStatus.stop;
@@ -52,59 +35,6 @@ class TrackPoint {
 
   // distance needed to trigger start in gps degree (0.00145deg = ~100meters)
   static double get distanceTreshold => AppConfig.distanceTreshold;
-  // distance moved around during stop
-  static double get distanceMoved => _distanceMoved;
-  // distance moved during start
-  static double get idleDistanceMoved => _idleDistanceMoved;
-
-// change status to start
-  static void start(TrackPoint tp) async {
-    if (_status == TrackingStatus.start) return;
-    String s = timeElapsed(tp.time, _stoppedAtTrackPoint.time);
-    logInfo('### start ### after $s');
-    _status = TrackingStatus.start;
-    _startedAtTrackPoint = tp;
-
-    try {
-      tp._alias = await LocationAlias.findAlias(tp._gps.lat, tp._gps.lon);
-    } catch (e, stk) {
-      // ignore
-      logError('find alias', e, stk);
-    }
-    _statusChanged(tp);
-    _trackPoints.clear();
-    _trackPoints.add(_stoppedAtTrackPoint);
-  }
-
-// change status to stop
-  static void stop(TrackPoint tp) async {
-    if (_status == TrackingStatus.stop) return;
-    String s = timeElapsed(tp.time, _startedAtTrackPoint.time);
-    logInfo('### stop ### moved ${_distanceMoved.round()} meters in $s');
-    _status = TrackingStatus.stop;
-    _stoppedAtTrackPoint = tp;
-    TrackPoint._distanceMoved =
-        GPS.distance(_stoppedAtTrackPoint._gps, _startedAtTrackPoint._gps);
-    driverTrackPoints.addAll(_trackPoints);
-    //
-    try {
-      tp._alias = await LocationAlias.findAlias(tp._gps.lat, tp._gps.lon);
-    } catch (e, stk) {
-      // ignore
-      logError('find alias', e, stk);
-    }
-    _statusChanged(tp);
-    _trackPoints.clear();
-    _trackPoints.add(tp);
-  }
-
-// trigger status change event
-  static void _statusChanged(TrackPoint tp) {
-    trackingStatusEvents.fire(TrackingStatusChangedEvent(tp, status));
-    _lastStatusChange = DateTime.now();
-    _distanceMoved = 0;
-    _idleDistanceMoved = 0;
-  }
 
   final int _id = ++_nextId;
   final GPS _gps;
@@ -118,8 +48,38 @@ class TrackPoint {
   late Address address;
 
   TrackPoint(this._gps) {
-    address = Address(_gps);
     _trackPoints.add(this);
+  }
+
+  // change status to start
+  static void start(TrackPoint tp) async {
+    if (_status == TrackingStatus.start) return;
+    String s = timeElapsed(tp.time, _stoppedAtTrackPoint.time);
+    logInfo('### start ### after $s');
+    _status = TrackingStatus.start;
+    _startedAtTrackPoint = tp;
+    _statusChanged(tp);
+    _trackPoints.clear();
+    _trackPoints.add(_stoppedAtTrackPoint);
+  }
+
+// change status to stop
+  static void stop(TrackPoint tp) async {
+    if (_status == TrackingStatus.stop) return;
+    String s = timeElapsed(tp.time, _startedAtTrackPoint.time);
+    _status = TrackingStatus.stop;
+    _stoppedAtTrackPoint = tp;
+    driverTrackPoints.addAll(_trackPoints);
+    _statusChanged(tp);
+    _trackPoints.clear();
+    _trackPoints.add(tp);
+  }
+
+// trigger status change event
+  static void _statusChanged(TrackPoint tp) {
+    _lastStatusChange = DateTime.now();
+    trackingStatusEvents.fire(
+        TrackingStatusChangedEvent(<TrackPoint>[..._trackPoints], status));
   }
 
   /// collect recent Trackpoints in backwards order since last status changed with gpsOk
@@ -164,7 +124,7 @@ class TrackPoint {
       }
     } else {
       if (_checkStopped(trackList)) {
-        // use the oldest trackpoint where we stopped as reference
+        // use the one before oldest trackpoint where we stopped as reference
         stop(trackList.last);
         return;
       }
@@ -177,12 +137,10 @@ class TrackPoint {
     TrackPoint tRef = _stoppedAtTrackPoint;
     for (var i = 0; i < tl.length; i++) {
       dist = GPS.distance(tl[i]._gps, tRef._gps);
-      if (dist > _idleDistanceMoved) _idleDistanceMoved = dist;
       if (dist > distanceTreshold) {
         return true;
       }
     }
-    logVerbose('idle Distance $_idleDistanceMoved');
     return false;
   }
 
@@ -197,25 +155,41 @@ class TrackPoint {
     }
     logVerbose('moved: $distMoved in ${tl.length} tracks');
     if (distMoved < distanceTreshold) {
-      _distanceMoved = movedDistance();
       return true;
     }
     return false;
   }
 
-  static double movedDistance() {
-    List<GPS> tracks = [];
-    for (var i in _trackPoints) {
-      tracks.add(i.gps);
-    }
-    if (tracks.length < 2) return 0;
+  // calc distance in meters
+  static double movedDistance(List<TrackPoint> tracklist) {
+    if (tracklist.length < 2) return 0;
     double dist = 0;
-    GPS gps = tracks.first;
-    for (var i = 1; i < tracks.length; i++) {
-      dist += GPS.distance(gps, tracks[i]);
-      gps = tracks[i];
+    GPS gps = tracklist[0]._gps;
+    for (var i = 1; i < tracklist.length; i++) {
+      dist += GPS.distance(gps, tracklist[i]._gps);
+      gps = tracklist[i]._gps;
     }
     return dist;
+  }
+
+  static Future<TrackPoint> create() async {
+    GPS gps = await GPS.gps();
+    num dist = _trackPoints.isNotEmpty
+        ? GPS.distance(_trackPoints.last._gps, gps).round()
+        : 0;
+
+    TrackPoint tp = TrackPoint(gps);
+    tp.address = Address(gps);
+    await tp.address.lookupAddress();
+    tp._alias = await LocationAlias.findAlias(tp._gps.lat, tp._gps.lon);
+/*
+    logInfo(
+        'TrackPoint::create TrackPoint #${tp.id} with GPS #${gps.id} at dist $dist meters\n'
+        'at address ${tp.address.asString}\n'
+        'with alias ${tp.alias.isEmpty ? ' - ' : tp.alias[0].alias}');
+*/
+    trackPointEvent.fire(TrackPointEvent(<TrackPoint>[..._trackPoints]));
+    return tp;
   }
 
   /// tracking heartbeat with <trackingTickTime> speed

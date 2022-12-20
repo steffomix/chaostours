@@ -4,6 +4,7 @@ import 'package:geolocator/geolocator.dart' show Position, Geolocator;
 import 'recource_loader.dart';
 import 'location_alias.dart';
 import 'dart:math';
+import 'events.dart';
 
 class GPS {
   static int _nextId = 0;
@@ -22,7 +23,7 @@ class GPS {
     try {
       Position pos = await RecourceLoader.gps();
       GPS gps = AppConfig.debugMode
-          ? await SimulateGps.next()
+          ? await SimulateGps().next()
           : GPS(pos.latitude, pos.longitude);
       return Future<GPS>.value(gps);
     } catch (e, stk) {
@@ -51,13 +52,68 @@ class _Gps {
 }
 
 class SimulateGps {
+  static final _instance = SimulateGps._instantiate();
+  SimulateGps._instantiate() {
+    onTapEvent.on<Tapped>().listen((Tapped tapped) {
+      nextStation();
+    });
+    trackingStatusEvents
+        .on<TrackingStatusChangedEvent>()
+        .listen((TrackingStatusChangedEvent e) {
+      walkLat = walkLon = 0;
+    });
+  }
+  factory SimulateGps() {
+    return _instance;
+  }
+
+  int ticksLeft = 0;
+  double walkLat = 0;
+  double walkLon = 0;
+  double lat = 52.32741;
+  double lon = 9.19255;
+
+  GPS gps = GPS(52.32741, 9.19255);
+
+  GPS next() {
+    if (--ticksLeft <= 0) {
+      walkLat = walkLon = 0;
+    }
+    lat += walkLat + shake();
+    lon += walkLon + shake();
+    return GPS(lat, lon);
+  }
+
+  void nextStation() {
+    randomStation().then((Alias alias) {
+      ticksLeft = Random().nextInt(15) + 5;
+      walkLat = (gps.lat - alias.lat) / ticksLeft;
+      walkLon = (gps.lon - alias.lon) / ticksLeft;
+    });
+  }
+
+  Future<Alias> randomStation() async {
+    List<Alias> stations = await LocationAlias.loadeAliasList();
+    return stations[Random().nextInt(stations.length - 1)];
+  }
+
+  static double shake() {
+    int direction = Random().nextBool() ? 1 : -1;
+    return Random().nextDouble() / 10000 * direction;
+  }
+}
+
+
+
+/*
+class _SimulateGps {
   static Alias? _station;
   static int _nextStop = 3;
 
   static Future<GPS> next() async {
     _station ??= await station;
     if (--_nextStop <= 0) {
-      _nextStop = Random().nextInt(10) + 5;
+      _nextStop = Random().nextInt(10) + 10;
       Alias alias = await station;
       logInfo('SimulateGps::nextStop for $_nextStop ticks at ${alias.address}');
       // shuffle position a little
@@ -71,7 +127,7 @@ class SimulateGps {
 
   static double shake(double pos) {
     int direction = Random().nextBool() ? 1 : -1;
-    pos = pos + Random().nextDouble() / 1000 * direction;
+    pos = pos + Random().nextDouble() / 10000 * direction;
     return pos;
   }
 
@@ -89,3 +145,4 @@ class SimulateGps {
     return Future<Alias>.value(st);
   }
 }
+*/

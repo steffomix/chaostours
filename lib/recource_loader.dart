@@ -39,7 +39,7 @@ class RecourceLoader {
     var url = Uri.https('nominatim.openstreetmap.org', '/reverse',
         {'lat': gps.lat.toString(), 'lon': gps.lon.toString()});
     http.Response response = await http.get(url);
-    logInfo('osmReverseLookup for gps #${gps.id}');
+    //logInfo('osmReverseLookup for gps #${gps.id}');
     return response;
   }
 
