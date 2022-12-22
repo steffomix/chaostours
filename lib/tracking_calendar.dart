@@ -35,13 +35,11 @@ class TrackingCalendar {
     TrackPoint tp = event.trackList.last;
     TrackingStatus status = event.status;
 
-    TrackPoint tpStart = status == TrackingStatus.moving
-        ? TrackPoint.stoppedAtTrackPoint
-        : TrackPoint.startedAtTrackPoint;
+    TrackPoint tpStart =
+        status == TrackingStatus.moving ? event.stopped : event.started;
 
-    TrackPoint tpStop = status == TrackingStatus.moving
-        ? TrackPoint.startedAtTrackPoint
-        : TrackPoint.stoppedAtTrackPoint;
+    TrackPoint tpStop =
+        status == TrackingStatus.moving ? event.started : event.stopped;
 
     String duration = timeElapsed(tpStart.time, tpStop.time);
 
@@ -65,7 +63,7 @@ class TrackingCalendar {
         'Andere Aliasnamen:'
         '${otherAlias.isNotEmpty ? '\n${otherAlias.join('\n')}' : ' - '}';
 
-    logInfo('Calender Event: $body');
+    //logInfo('Calender Event: $body');
     calendar.Event e = calendar.Event(
         summary: summary,
         description: body,
@@ -81,7 +79,7 @@ class TrackingCalendar {
     calendar.CalendarApi api =
         await RecourceLoader.calendarApiFromCredentials();
     if (AppConfig.debugMode) {
-      logFatal('Skip send Calendar Event due to debug mode: ${event.summary}');
+      //logFatal('Skip send Calendar Event due to debug mode: ${event.summary}');
       return event;
     } else {
       calendar.Event send = await api.events.insert(event, id);

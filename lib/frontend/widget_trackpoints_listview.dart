@@ -16,11 +16,11 @@ class _TrackPointListItem {
 
   _TrackPointListItem(this.event);
 
-  Widget get asTable {
+  Widget get asWidget {
     TrackPoint trackPoint = event.caused;
     double dist = event.status == TrackingStatus.moving
-        ? event.distancePath
-        : event.distanceStraight;
+        ? event.distancePath.round() / 1000
+        : event.distanceStraight.round() / 1000;
 
     TableCell row1 = TableCell(
         child: Center(
@@ -72,7 +72,7 @@ class _TrackPointListView extends State<TrackPointListView> {
   // and prune list to max of 100
   void onTrackingStatusChanged(TrackPointEvent event) {
     _trackPointsStatusChanged.add(event);
-    listView.add(_TrackPointListItem(event).asTable);
+    listView.add(_TrackPointListItem(event).asWidget);
     while (listView.length > 100) {
       listView.removeLast();
     }
@@ -86,7 +86,9 @@ class _TrackPointListView extends State<TrackPointListView> {
   // update last trackpoint list item
   void onTrackPoint(TrackPointEvent event) {
     if (_trackPointsStatusChanged.isEmpty) return;
-    listView[listView.length - 1] = _TrackPointListItem(event).asTable;
+    int last = _trackPointsStatusChanged.length - 1;
+    _trackPointsStatusChanged[last] = event;
+    listView[listView.length - 1] = _TrackPointListItem(event).asWidget;
     setState(() {});
   }
 

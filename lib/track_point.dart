@@ -18,16 +18,13 @@ class TrackPoint {
   // contains all trackpoints during driving (from start to stop)
   static final List<TrackPoint> driverTrackPoints = [];
   // both will be created in TrackPoint.startTracking();
-  static late TrackPoint _stoppedAtTrackPoint;
-  static late TrackPoint _startedAtTrackPoint;
+  static TrackPoint? _stoppedAtTrackPoint;
+  static TrackPoint? _startedAtTrackPoint;
 
   //
   static TrackingStatus _status = TrackingStatus.standing;
   static TrackingStatus get status => _status;
   static DateTime _lastStatusChange = DateTime.now();
-  static DateTime get lastStatusChange => _lastStatusChange;
-  static TrackPoint get startedAtTrackPoint => _startedAtTrackPoint;
-  static TrackPoint get stoppedAtTrackPoint => _stoppedAtTrackPoint;
 
   // if tracker is running
   static bool _tracking = false;
@@ -55,35 +52,28 @@ class TrackPoint {
     return TrackPointEvent(
         status: TrackPoint.status,
         caused: tp,
-        stopped: _stoppedAtTrackPoint,
-        started: _startedAtTrackPoint,
-        trackList: [..._trackPoints]);
-  }
-
-  static fireStatusChangedEvent(TrackPoint tp) {
-    trackingStatusChangedEvents.fire(createEvent(tp));
+        stopped: _stoppedAtTrackPoint ??= tp,
+        started: _startedAtTrackPoint ??= tp,
+        trackList: <TrackPoint>[..._trackPoints]);
   }
 
   // change status to start
   static void start(TrackPoint tp) async {
     if (_status == TrackingStatus.moving) return;
-    String s = timeElapsed(tp.time, _stoppedAtTrackPoint.time);
-    logInfo('### start ### after $s');
     _status = TrackingStatus.moving;
     _startedAtTrackPoint = tp;
-    fireStatusChangedEvent(tp);
+    trackingStatusChangedEvents.fire(createEvent(tp).statusChanged());
     _trackPoints.clear();
-    _trackPoints.add(_stoppedAtTrackPoint);
+    _trackPoints.add(_stoppedAtTrackPoint ??= tp);
   }
 
 // change status to stop
   static void stop(TrackPoint tp) async {
     if (_status == TrackingStatus.standing) return;
-    String s = timeElapsed(tp.time, _startedAtTrackPoint.time);
     _status = TrackingStatus.standing;
     _stoppedAtTrackPoint = tp;
     driverTrackPoints.addAll(_trackPoints);
-    fireStatusChangedEvent(tp);
+    trackingStatusChangedEvents.fire(createEvent(tp).statusChanged());
     _trackPoints.clear();
     _trackPoints.add(tp);
   }
@@ -140,7 +130,7 @@ class TrackPoint {
   static bool _checkMoved(List<TrackPoint> tl) {
     // check if moved
     double dist = 0;
-    TrackPoint tRef = _stoppedAtTrackPoint;
+    TrackPoint tRef = _stoppedAtTrackPoint ??= tl.last;
     for (var i = 0; i < tl.length; i++) {
       dist = GPS.distance(tl[i]._gps, tRef._gps);
       if (dist > distanceTreshold) {
@@ -185,16 +175,18 @@ class TrackPoint {
         : 0;
 
     TrackPoint tp = TrackPoint(gps);
+
     tp.address = Address(gps);
     await tp.address.lookupAddress();
     tp._alias = await LocationAlias.findAlias(tp._gps.lat, tp._gps.lon);
+
+    trackPointCreatedEvents.fire(createEvent(tp));
 /*
     logInfo(
         'TrackPoint::create TrackPoint #${tp.id} with GPS #${gps.id} at dist $dist meters\n'
         'at address ${tp.address.asString}\n'
         'with alias ${tp.alias.isEmpty ? ' - ' : tp.alias[0].alias}');
 */
-    trackPointCreatedEvents.fire(createEvent(tp));
     return tp;
   }
 
@@ -216,7 +208,7 @@ class TrackPoint {
   /// start tracking heartbeat
   static void startTracking() async {
     if (_tracking) return;
-    _startedAtTrackPoint = _stoppedAtTrackPoint = await TrackPoint.create();
+    await TrackPoint.create();
     logInfo('start tracking');
     _tracking = true;
     _track();

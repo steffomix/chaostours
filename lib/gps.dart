@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'log.dart';
 import 'config.dart';
 import 'package:geolocator/geolocator.dart' show Position, Geolocator;
@@ -23,7 +25,7 @@ class GPS {
     try {
       Position pos = await RecourceLoader.gps();
       GPS gps = AppConfig.debugMode
-          ? await SimulateGps().next()
+          ? SimulateGps.next()
           : GPS(pos.latitude, pos.longitude);
       return Future<GPS>.value(gps);
     } catch (e, stk) {
@@ -33,57 +35,42 @@ class GPS {
   }
 }
 
+var x = SimulateGps();
+
 class SimulateGps {
-  static final _instance = SimulateGps._instantiate();
-  SimulateGps._instantiate() {
-    onTapEvent.on<Tapped>().listen((Tapped tapped) {
-      nextStation();
+  static double lat = 52.32741;
+  static double lon = 9.19255;
+  static double slow = 0.0001;
+  double fast = 0.0001;
+  static StreamSubscription<Tapped>? _listener;
+
+  static StreamSubscription<Tapped> addListener() {
+    var x = onTapEvent.on<Tapped>().listen((Tapped tapped) {
+      switch (tapped.id) {
+        case 0:
+          lat += slow;
+          break;
+        case 1:
+          LocationAlias.loadeAliasList().then((List<Alias> list) {
+            Alias alias = list[Random().nextInt(list.length - 1)];
+            lat = alias.lat;
+            lon = alias.lon;
+          });
+          break;
+        case 2:
+          lat -= slow;
+          break;
+        default:
+          break;
+      }
     });
-    trackingStatusChangedEvents
-        .on<TrackPointEvent>()
-        .listen((TrackPointEvent e) {
-      walkLat = walkLon = 0;
-    });
-  }
-  factory SimulateGps() {
-    return _instance;
+    return x;
   }
 
-  int ticksLeft = 0;
-  double walkLat = 0;
-  double walkLon = 0;
-  double lat = 52.32741;
-  double lon = 9.19255;
-
-  GPS gps = GPS(52.32741, 9.19255);
-
-  GPS next() {
-    if (--ticksLeft <= 0) {
-      walkLat = walkLon = 0;
-      nextStation();
-    }
-    lat += walkLat + shake();
-    lon += walkLon + shake();
+  static GPS next() {
+    _listener ??= addListener();
+    SimulateGps();
     return GPS(lat, lon);
-  }
-
-  void nextStation() {
-    if (Random().nextInt(100) < 30) return;
-    randomStation().then((Alias alias) {
-      ticksLeft = Random().nextInt(15) + 5;
-      walkLat = (gps.lat - alias.lat) / ticksLeft;
-      walkLon = (gps.lon - alias.lon) / ticksLeft;
-    });
-  }
-
-  Future<Alias> randomStation() async {
-    List<Alias> stations = await LocationAlias.loadeAliasList();
-    return stations[Random().nextInt(stations.length - 1)];
-  }
-
-  static double shake() {
-    int direction = Random().nextBool() ? 1 : -1;
-    return Random().nextDouble() / 10000 * direction;
   }
 }
 

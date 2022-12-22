@@ -11,7 +11,7 @@ class AppConfig {
 
   // stop time needed to trigger stop
   static Duration get stopTimeTreshold {
-    return debugMode ? const Duration(seconds: 5) : const Duration(minutes: 5);
+    return debugMode ? const Duration(seconds: 10) : const Duration(minutes: 5);
   }
 
   // check status interval

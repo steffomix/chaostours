@@ -30,16 +30,19 @@ class _AppState extends State<App> {
     return ListTile(title: Text(title));
   }
 
+  onTabBottomNavigationBar(int id) {}
+
   BottomNavigationBar bottomNavigationBar() {
     return BottomNavigationBar(
         items: const [
           BottomNavigationBarItem(
-              icon: Icon(Icons.tap_and_play), label: 'but 1'),
+              icon: Icon(Icons.keyboard_arrow_left), label: 'x'),
+          BottomNavigationBarItem(icon: Icon(Icons.location_city), label: 'x'),
           BottomNavigationBarItem(
-              icon: Icon(Icons.accessible_forward_outlined), label: 'but 2')
+              icon: Icon(Icons.keyboard_arrow_right), label: 'x'),
         ],
         onTap: (int id) {
-          onTapEvent.fire(Tapped());
+          onTapEvent.fire(Tapped(id));
         });
   }
 

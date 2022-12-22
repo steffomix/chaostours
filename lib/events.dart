@@ -3,9 +3,12 @@ import 'package:event_bus/event_bus.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/util.dart' as util;
 
-EventBus onTapEvent = EventBus(sync: false);
+EventBus onTapEvent = EventBus(sync: true);
 
-class Tapped {}
+class Tapped {
+  final int id;
+  Tapped(this.id);
+}
 
 // fired when trackPoint status changed
 EventBus trackingStatusChangedEvents = EventBus(sync: false);
@@ -40,10 +43,19 @@ class TrackPointEvent extends EventBase {
         util.duration(trackList.first.time, trackList.last.time);
   }
 
+  TrackPointEvent statusChanged() {
+    var calculatePath = _distancePath = _distanceStraight;
+    var calculateDur = duration;
+    var last = trackList.last;
+    trackList.clear();
+    trackList.add(last);
+    return this;
+  }
+
   TrackPointEvent(
       {required this.status,
       required this.caused,
       required this.stopped,
       required this.started,
-      required this.trackList});
+      required this.trackList}) {}
 }
