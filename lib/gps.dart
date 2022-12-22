@@ -33,33 +33,15 @@ class GPS {
   }
 }
 
-class _Gps {
-  // 52.3840, 9.7260 somewhere in hannover
-  // 52.32741, 9.19255 somewhere in schaumburg
-  static double _lat = 52.32741;
-  static double _lon = 9.19255;
-  static double v = 0.005;
-  static double get _move => Random().nextInt(10) > 5 ? v : v * -1;
-  static double get lat {
-    _lat += _move;
-    return _lat;
-  }
-
-  static double get lon {
-    _lon += _move;
-    return _lon;
-  }
-}
-
 class SimulateGps {
   static final _instance = SimulateGps._instantiate();
   SimulateGps._instantiate() {
     onTapEvent.on<Tapped>().listen((Tapped tapped) {
       nextStation();
     });
-    trackingStatusEvents
-        .on<TrackingStatusChangedEvent>()
-        .listen((TrackingStatusChangedEvent e) {
+    trackingStatusChangedEvents
+        .on<TrackPointEvent>()
+        .listen((TrackPointEvent e) {
       walkLat = walkLon = 0;
     });
   }
@@ -78,6 +60,7 @@ class SimulateGps {
   GPS next() {
     if (--ticksLeft <= 0) {
       walkLat = walkLon = 0;
+      nextStation();
     }
     lat += walkLat + shake();
     lon += walkLon + shake();
@@ -85,6 +68,7 @@ class SimulateGps {
   }
 
   void nextStation() {
+    if (Random().nextInt(100) < 30) return;
     randomStation().then((Alias alias) {
       ticksLeft = Random().nextInt(15) + 5;
       walkLat = (gps.lat - alias.lat) / ticksLeft;
@@ -106,6 +90,27 @@ class SimulateGps {
 
 
 /*
+
+
+class _Gps {
+  // 52.3840, 9.7260 somewhere in hannover
+  // 52.32741, 9.19255 somewhere in schaumburg
+  static double _lat = 52.32741;
+  static double _lon = 9.19255;
+  static double v = 0.005;
+  static double get _move => Random().nextInt(10) > 5 ? v : v * -1;
+  static double get lat {
+    _lat += _move;
+    return _lat;
+  }
+
+  static double get lon {
+    _lon += _move;
+    return _lon;
+  }
+}
+
+
 class _SimulateGps {
   static Alias? _station;
   static int _nextStop = 3;

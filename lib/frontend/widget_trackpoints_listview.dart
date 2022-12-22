@@ -11,66 +11,21 @@ class TrackPointListView extends StatefulWidget {
   State<TrackPointListView> createState() => _TrackPointListView();
 }
 
-class _TrackPointListView extends State<TrackPointListView> {
-  static final List<TrackingStatusChangedEvent> _trackPointsStatusChanged = [];
-  static final List<Widget> listView = [];
-  static StreamSubscription? _trackingStatusListener;
-  static StreamSubscription? _trackPointListener;
+class _TrackPointListItem {
+  final TrackPointEvent event;
 
-  _TrackPointListView() {
-    _trackingStatusListener ??= trackingStatusEvents
-        .on<TrackingStatusChangedEvent>()
-        .listen(onTrackingStatusChanged);
-    _trackPointListener ??=
-        trackPointEvent.on<TrackPointEvent>().listen(onTrackPoint);
-  }
+  _TrackPointListItem(this.event);
 
-  // add a new Trackpoint list item
-  // and prune list to max of 100
-  void onTrackingStatusChanged(TrackingStatusChangedEvent event) {
-    _trackPointsStatusChanged.add(event);
-    listView.add(renderTrackPoint(event.trackPoints, event.status));
-    while (listView.length > 100) {
-      listView.removeLast();
-    }
-    setState(() {});
-  }
-
-  void onTapItem(TrackPoint trackPoint, TrackingStatus status) {
-    logInfo('OnTapItem');
-  }
-
-  // update last trackpoint list item
-  void onTrackPoint(TrackPointEvent event) {
-    if (_trackPointsStatusChanged.isEmpty) return;
-    listView[listView.length - 1] = renderTrackPoint(
-        event.trackPoints, _trackPointsStatusChanged.last.status);
-    setState(() {});
-  }
-
-  // render a listView item
-  Table renderTrackPoint(List<TrackPoint> trackPoints, TrackingStatus status) {
-    TrackPoint trackPoint = trackPoints.last;
-    double dist;
-    if (status == TrackingStatus.start) {
-      // calc distance over all trackpoints as waypoints
-      dist = TrackPoint.movedDistance(
-                  trackPoints.getRange(0, trackPoints.length - 2).toList())
-              .round() /
-          1000;
-    } else {
-      // calc distance from stooped point to recent point as straight line
-      dist = TrackPoint.movedDistance(<TrackPoint>[
-            _trackPointsStatusChanged.last.trackPoints.last,
-            trackPoints.elementAt(trackPoints.length - 2)
-          ]).round() /
-          1000;
-    }
+  Widget get asTable {
+    TrackPoint trackPoint = event.caused;
+    double dist = event.status == TrackingStatus.moving
+        ? event.distancePath
+        : event.distanceStraight;
 
     TableCell row1 = TableCell(
         child: Center(
             child: Text(
-                'Status: ${status == TrackingStatus.start ? 'Fahren (${dist}km)' : 'Halt (${dist}km)'}')));
+                'Status: ${event.status == TrackingStatus.moving ? 'Fahren (${dist}km)' : 'Halt (${dist}km)'}')));
 
     TableCell row2 =
         TableCell(child: Center(child: Text(trackPoint.address.asString)));
@@ -88,7 +43,51 @@ class _TrackPointListView extends State<TrackPointListView> {
           TableRow(children: <Widget>[row2]),
           TableRow(children: <Widget>[row3])
         ]);
-    return table;
+
+    Listener listener = Listener(
+      child: table,
+      onPointerDown: (PointerDownEvent e) {
+        onTapEvent.fire(event);
+      },
+    );
+    return listener;
+  }
+}
+
+class _TrackPointListView extends State<TrackPointListView> {
+  static final List<TrackPointEvent> _trackPointsStatusChanged = [];
+  static final List<Widget> listView = [];
+  static StreamSubscription? _trackingStatusListener;
+  static StreamSubscription? _trackPointListener;
+
+  _TrackPointListView() {
+    _trackingStatusListener ??= trackingStatusChangedEvents
+        .on<TrackPointEvent>()
+        .listen(onTrackingStatusChanged);
+    _trackPointListener ??=
+        trackPointCreatedEvents.on<TrackPointEvent>().listen(onTrackPoint);
+  }
+
+  // add a new Trackpoint list item
+  // and prune list to max of 100
+  void onTrackingStatusChanged(TrackPointEvent event) {
+    _trackPointsStatusChanged.add(event);
+    listView.add(_TrackPointListItem(event).asTable);
+    while (listView.length > 100) {
+      listView.removeLast();
+    }
+    setState(() {});
+  }
+
+  void onTapItem(TrackPoint trackPoint, TrackingStatus status) {
+    logInfo('OnTapItem');
+  }
+
+  // update last trackpoint list item
+  void onTrackPoint(TrackPointEvent event) {
+    if (_trackPointsStatusChanged.isEmpty) return;
+    listView[listView.length - 1] = _TrackPointListItem(event).asTable;
+    setState(() {});
   }
 
   @override

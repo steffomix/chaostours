@@ -2,7 +2,6 @@ import 'log.dart';
 import 'dart:async';
 import 'package:googleapis/calendar/v3.dart' as calendar;
 import 'config.dart';
-import 'gps.dart';
 import 'track_point.dart';
 import 'recource_loader.dart';
 import 'util.dart';
@@ -14,15 +13,15 @@ class TrackingCalendar {
   static final TrackingCalendar _instance = TrackingCalendar._createInstance();
   TrackingCalendar._createInstance() {
     logInfo('addListener');
-    _trackingStatusListener ??= trackingStatusEvents
-        .on<TrackingStatusChangedEvent>()
+    _trackingStatusListener ??= trackingStatusChangedEvents
+        .on<TrackPointEvent>()
         .listen(onTrackingStatusChanged);
   }
   factory TrackingCalendar() {
     return _instance;
   }
 
-  void onTrackingStatusChanged(TrackingStatusChangedEvent event) async {
+  void onTrackingStatusChanged(TrackPointEvent event) async {
     try {
       addEvent(await createEvent(event));
     } catch (e, stk) {
@@ -30,17 +29,17 @@ class TrackingCalendar {
     }
   }
 
-  createEvent(TrackingStatusChangedEvent event) {
+  createEvent(TrackPointEvent event) {
     // statusStop = start to stop
     // statusStart = stop to start
-    TrackPoint tp = event.trackPoints.last;
+    TrackPoint tp = event.trackList.last;
     TrackingStatus status = event.status;
 
-    TrackPoint tpStart = status == TrackingStatus.start
+    TrackPoint tpStart = status == TrackingStatus.moving
         ? TrackPoint.stoppedAtTrackPoint
         : TrackPoint.startedAtTrackPoint;
 
-    TrackPoint tpStop = status == TrackingStatus.start
+    TrackPoint tpStop = status == TrackingStatus.moving
         ? TrackPoint.startedAtTrackPoint
         : TrackPoint.stoppedAtTrackPoint;
 
@@ -58,7 +57,7 @@ class TrackingCalendar {
       }
     }
 
-    String summary = status == TrackingStatus.start
+    String summary = status == TrackingStatus.moving
         ? '##STOP## $duration Stand bei:$alias${tpStart.address.asString}'
         : '##START## $duration, ?Calc Distance?km Fahrt von: ${tpStop.address.asString} bis ${tpStart.address.asString}';
 

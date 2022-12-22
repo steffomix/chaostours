@@ -43,6 +43,16 @@ String timeElapsed(DateTime t1, DateTime t2) {
   return s;
 }
 
+Duration duration(DateTime t1, DateTime t2) {
+  DateTime t0;
+  if (t1.difference(t2).isNegative) {
+    t0 = t1;
+    t2 = t1;
+    t1 = t0;
+  }
+  return t1.difference(t2);
+}
+
 String formatDate(DateTime t) {
   return '${t.day}.${t.month}.${t.year} ${t.hour}:${t.minute}::${t.second}:::${t.millisecond}';
 }
