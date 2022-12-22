@@ -1,14 +1,14 @@
-import 'config.dart';
-import 'log.dart';
-import 'util.dart';
-import 'gps.dart';
-import 'events.dart';
-import 'location_alias.dart';
-import 'address.dart';
+import 'package:chaostours/config.dart';
+import 'package:chaostours/log.dart';
+import 'package:chaostours/util.dart';
+import 'package:chaostours/gps.dart';
+import 'package:chaostours/events.dart';
+import 'package:chaostours/location_alias.dart';
+import 'package:chaostours/address.dart';
 
 enum TrackingStatus {
-  stop,
-  start;
+  standing,
+  moving;
 }
 
 class TrackPoint {
@@ -22,7 +22,7 @@ class TrackPoint {
   static late TrackPoint _startedAtTrackPoint;
 
   //
-  static TrackingStatus _status = TrackingStatus.stop;
+  static TrackingStatus _status = TrackingStatus.standing;
   static TrackingStatus get status => _status;
   static DateTime _lastStatusChange = DateTime.now();
   static DateTime get lastStatusChange => _lastStatusChange;
@@ -51,35 +51,41 @@ class TrackPoint {
     _trackPoints.add(this);
   }
 
+  static TrackPointEvent createEvent(TrackPoint tp) {
+    return TrackPointEvent(
+        status: TrackPoint.status,
+        caused: tp,
+        stopped: _stoppedAtTrackPoint,
+        started: _startedAtTrackPoint,
+        trackList: [..._trackPoints]);
+  }
+
+  static fireStatusChangedEvent(TrackPoint tp) {
+    trackingStatusChangedEvents.fire(createEvent(tp));
+  }
+
   // change status to start
   static void start(TrackPoint tp) async {
-    if (_status == TrackingStatus.start) return;
+    if (_status == TrackingStatus.moving) return;
     String s = timeElapsed(tp.time, _stoppedAtTrackPoint.time);
     logInfo('### start ### after $s');
-    _status = TrackingStatus.start;
+    _status = TrackingStatus.moving;
     _startedAtTrackPoint = tp;
-    _statusChanged(tp);
+    fireStatusChangedEvent(tp);
     _trackPoints.clear();
     _trackPoints.add(_stoppedAtTrackPoint);
   }
 
 // change status to stop
   static void stop(TrackPoint tp) async {
-    if (_status == TrackingStatus.stop) return;
+    if (_status == TrackingStatus.standing) return;
     String s = timeElapsed(tp.time, _startedAtTrackPoint.time);
-    _status = TrackingStatus.stop;
+    _status = TrackingStatus.standing;
     _stoppedAtTrackPoint = tp;
     driverTrackPoints.addAll(_trackPoints);
-    _statusChanged(tp);
+    fireStatusChangedEvent(tp);
     _trackPoints.clear();
     _trackPoints.add(tp);
-  }
-
-// trigger status change event
-  static void _statusChanged(TrackPoint tp) {
-    _lastStatusChange = DateTime.now();
-    trackingStatusEvents.fire(
-        TrackingStatusChangedEvent(<TrackPoint>[..._trackPoints], status));
   }
 
   /// collect recent Trackpoints in backwards order since last status changed with gpsOk
@@ -116,7 +122,7 @@ class TrackPoint {
     // skip if nothing was found
     if (trackList.isEmpty) return;
 
-    if (_status == TrackingStatus.stop) {
+    if (_status == TrackingStatus.standing) {
       if (_checkMoved(trackList)) {
         // use the most recent Trackpoint as reference
         start(trackList.first);
@@ -188,7 +194,7 @@ class TrackPoint {
         'at address ${tp.address.asString}\n'
         'with alias ${tp.alias.isEmpty ? ' - ' : tp.alias[0].alias}');
 */
-    trackPointEvent.fire(TrackPointEvent(<TrackPoint>[..._trackPoints]));
+    trackPointCreatedEvents.fire(createEvent(tp));
     return tp;
   }
 
