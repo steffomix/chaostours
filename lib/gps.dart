@@ -45,7 +45,7 @@ class SimulateGps {
   static StreamSubscription<Tapped>? _listener;
 
   static StreamSubscription<Tapped> addListener() {
-    var x = onTapEvent.on<Tapped>().listen((Tapped tapped) {
+    var x = tapBottomNavBarIconEvents.on<Tapped>().listen((Tapped tapped) {
       switch (tapped.id) {
         case 0:
           lat += slow;

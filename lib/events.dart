@@ -2,22 +2,29 @@ import 'package:chaostours/track_point.dart';
 import 'package:event_bus/event_bus.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/util.dart' as util;
+import 'package:chaostours/enum.dart';
 
-EventBus onTapEvent = EventBus(sync: true);
+EventBus appBodyScreenChangedEvents = EventBus();
 
-class Tapped {
-  final int id;
-  Tapped(this.id);
-}
+// BottomNavBar enets
+EventBus tapBottomNavBarIconEvents = EventBus();
+
+// TrackPoint List Item on main screen
+EventBus tapTrackPointListItemEvents = EventBus();
 
 // fired when trackPoint status changed
-EventBus trackingStatusChangedEvents = EventBus(sync: false);
+EventBus trackingStatusChangedEvents = EventBus();
 
 // fired when new trackpoint is created
-EventBus trackPointCreatedEvents = EventBus(sync: false);
+EventBus trackPointCreatedEvents = EventBus();
 
 class EventBase {
   final DateTime time = DateTime.now();
+}
+
+class Tapped extends EventBase {
+  final int id;
+  Tapped(this.id);
 }
 
 class TrackPointEvent extends EventBase {
@@ -57,5 +64,5 @@ class TrackPointEvent extends EventBase {
       required this.caused,
       required this.stopped,
       required this.started,
-      required this.trackList}) {}
+      required this.trackList});
 }

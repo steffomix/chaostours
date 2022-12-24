@@ -5,11 +5,7 @@ import 'package:chaostours/gps.dart';
 import 'package:chaostours/events.dart';
 import 'package:chaostours/location_alias.dart';
 import 'package:chaostours/address.dart';
-
-enum TrackingStatus {
-  standing,
-  moving;
-}
+import 'package:chaostours/enum.dart';
 
 class TrackPoint {
   static int _nextId = 0;
@@ -29,9 +25,6 @@ class TrackPoint {
   // if tracker is running
   static bool _tracking = false;
   static bool get tracking => _tracking;
-
-  // distance needed to trigger start in gps degree (0.00145deg = ~100meters)
-  static double get distanceTreshold => AppConfig.distanceTreshold;
 
   final int _id = ++_nextId;
   final GPS _gps;
@@ -133,7 +126,7 @@ class TrackPoint {
     TrackPoint tRef = _stoppedAtTrackPoint ??= tl.last;
     for (var i = 0; i < tl.length; i++) {
       dist = GPS.distance(tl[i]._gps, tRef._gps);
-      if (dist > distanceTreshold) {
+      if (dist > AppConfig.distanceTreshold) {
         return true;
       }
     }
@@ -150,7 +143,7 @@ class TrackPoint {
       if (dist > distMoved) distMoved = dist;
     }
     logVerbose('moved: $distMoved in ${tl.length} tracks');
-    if (distMoved < distanceTreshold) {
+    if (distMoved < AppConfig.distanceTreshold) {
       return true;
     }
     return false;
@@ -170,9 +163,6 @@ class TrackPoint {
 
   static Future<TrackPoint> create() async {
     GPS gps = await GPS.gps();
-    num dist = _trackPoints.isNotEmpty
-        ? GPS.distance(_trackPoints.last._gps, gps).round()
-        : 0;
 
     TrackPoint tp = TrackPoint(gps);
 
@@ -181,21 +171,16 @@ class TrackPoint {
     tp._alias = await LocationAlias.findAlias(tp._gps.lat, tp._gps.lon);
 
     trackPointCreatedEvents.fire(createEvent(tp));
-/*
-    logInfo(
-        'TrackPoint::create TrackPoint #${tp.id} with GPS #${gps.id} at dist $dist meters\n'
-        'at address ${tp.address.asString}\n'
-        'with alias ${tp.alias.isEmpty ? ' - ' : tp.alias[0].alias}');
-*/
     return tp;
   }
 
   /// tracking heartbeat with <trackingTickTime> speed
-  static void _track() async {
+  static void _track([bool first = false]) async {
     if (!_tracking) return;
     Future.delayed(AppConfig.trackPointTickTime, () async {
       try {
         TrackPoint tp = await TrackPoint.create();
+        if (first) trackingStatusChangedEvents.fire(createEvent(tp));
         _checkStatus(tp);
       } catch (e, stk) {
         // ignore
@@ -211,7 +196,7 @@ class TrackPoint {
     await TrackPoint.create();
     logInfo('start tracking');
     _tracking = true;
-    _track();
+    _track(true);
   }
 
   /// stop tracking heartbeat

@@ -42,7 +42,7 @@ class Address {
   GPS get gps => _gps;
   DateTime get time => _time;
   String get asString {
-    String addr = '$road $house_number \n';
+    String addr = '$road $house_number, ';
     addr += town == ''
         ? '$postcode $city $city_district, $retail $suburb'
         : '$postcode $town';

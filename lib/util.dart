@@ -1,4 +1,4 @@
-String timeElapsed(DateTime t1, DateTime t2) {
+String timeElapsed(DateTime t1, DateTime t2, [bool short = true]) {
   DateTime t0;
   if (t1.difference(t2).isNegative) {
     t0 = t1;
@@ -11,33 +11,53 @@ String timeElapsed(DateTime t1, DateTime t2) {
   int seconds;
   int ms;
   String s = '';
-  days = t1.difference(t2).inDays;
-  if (days > 0) {
-    s += '$days Tage, ';
+  if (short) {
+    days = t1.difference(t2).inDays;
     t2 = t2.add(Duration(days: days));
-  }
-  //
-  hours = t1.difference(t2).inHours;
-  if (hours > 0) {
-    s += '$hours Stunden, ';
+    //
+    hours = t1.difference(t2).inHours;
     t2 = t2.add(Duration(hours: hours));
-  }
-  //
-  minutes = t1.difference(t2).inMinutes;
-  if (minutes > 0) {
-    s += '$minutes Minuten, ';
+    //
+    minutes = t1.difference(t2).inMinutes;
     t2 = t2.add(Duration(minutes: minutes));
-  }
-  //
-  seconds = t1.difference(t2).inSeconds;
-  if (seconds > 0) {
-    s += '$seconds Sekunden, ';
+    //
+    seconds = t1.difference(t2).inSeconds;
     t2 = t2.add(Duration(seconds: seconds));
-  }
-  //
-  ms = t1.difference(t2).inMilliseconds;
-  if (ms > 0) {
-    s += '$ms Millisekunden';
+    //
+    ms = t1.difference(t2).inMilliseconds;
+    //
+
+    s = '$hours:$minutes::$seconds.$ms';
+  } else {
+    days = t1.difference(t2).inDays;
+    if (days > 0) {
+      s += '$days Tage, ';
+    }
+    //
+    hours = t1.difference(t2).inHours;
+    if (hours > 0) {
+      s += '$hours Stunden, ';
+      t2 = t2.add(Duration(hours: hours));
+    }
+    //
+    minutes = t1.difference(t2).inMinutes;
+    if (minutes > 0) {
+      s += '$minutes Minuten, ';
+      t2 = t2.add(Duration(minutes: minutes));
+    }
+    //
+
+    seconds = t1.difference(t2).inSeconds;
+    if (seconds > 0) {
+      s += '$seconds Sekunden, ';
+      t2 = t2.add(Duration(seconds: seconds));
+    }
+    //
+
+    ms = t1.difference(t2).inMilliseconds;
+    if (ms > 0) {
+      s += ':::$ms';
+    }
   }
 
   return s;

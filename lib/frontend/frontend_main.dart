@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'package:chaostours/enum.dart';
 import 'package:chaostours/events.dart';
 import 'package:flutter/material.dart';
 import 'widget_trackpoints_listview.dart';
-import '../log.dart';
+import 'widget_trackpoint-editview.dart';
+import 'package:chaostours/log.dart';
 
 class App extends StatefulWidget {
   const App({super.key});
@@ -12,9 +14,33 @@ class App extends StatefulWidget {
 }
 
 class _AppState extends State<App> {
-  _AppState();
+  static StreamSubscription? onScreenChanged;
+  static AppBodyScreens _bodyId = AppBodyScreens.trackPointListView;
+
+  _AppState() {
+    onScreenChanged ??= appBodyScreenChangedEvents
+        .on<AppBodyScreens>()
+        .listen(onAppBodyChanged);
+  }
+
+  Widget body() {
+    switch (_bodyId) {
+      case AppBodyScreens.trackPointListView:
+        return const TrackPointListView();
+      case AppBodyScreens.trackPointEditView:
+        return const TrackPointEditView();
+      default:
+        return const TrackPointListView();
+    }
+  }
+
   AppBar appbar() {
     return AppBar(title: const Text('Title'));
+  }
+
+  onAppBodyChanged(AppBodyScreens id) {
+    _bodyId = id;
+    setState(() {});
   }
 
   Drawer drawer() {
@@ -42,12 +68,8 @@ class _AppState extends State<App> {
               icon: Icon(Icons.keyboard_arrow_right), label: 'x'),
         ],
         onTap: (int id) {
-          onTapEvent.fire(Tapped(id));
+          tapBottomNavBarIconEvents.fire(Tapped(id));
         });
-  }
-
-  ListView listView() {
-    return ListView(children: const [Text('test'), Text('test2')]);
   }
 
   @override
@@ -62,7 +84,7 @@ class _AppState extends State<App> {
         home: Scaffold(
       appBar: appbar(),
       drawer: drawer(),
-      body: myBody,
+      body: body(),
       bottomNavigationBar: bottomNavigationBar(),
     ));
   }

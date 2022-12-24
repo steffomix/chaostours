@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:chaostours/events.dart';
 import 'package:chaostours/track_point.dart';
 import 'package:chaostours/log.dart';
+import 'package:chaostours/util.dart' as util;
+import 'package:chaostours/enum.dart';
 
 class TrackPointListView extends StatefulWidget {
   const TrackPointListView({super.key});
@@ -18,47 +20,51 @@ class _TrackPointListItem {
 
   Widget get asWidget {
     TrackPoint trackPoint = event.caused;
-    double dist = event.status == TrackingStatus.moving
+    String duration =
+        util.timeElapsed(event.trackList.last.time, event.trackList.first.time);
+    double distance = event.status == TrackingStatus.moving
         ? event.distancePath.round() / 1000
-        : event.distanceStraight.round() / 1000;
+        : event.distanceStraight.round().toDouble();
 
-    TableCell row1 = TableCell(
-        child: Center(
-            child: Text(
-                'Status: ${event.status == TrackingStatus.moving ? 'Fahren (${dist}km)' : 'Halt (${dist}km)'}')));
+    String t1 = 'Status:';
+    t1 += event.status == TrackingStatus.moving
+        ? '$duration fahren (${distance}km)'
+        : '$duration halten (${distance}m)';
 
-    TableCell row2 =
-        TableCell(child: Center(child: Text(trackPoint.address.asString)));
+    String t2 = trackPoint.address.asString;
 
-    TableCell row3 = TableCell(
-        child: Center(
-            child: Text(trackPoint.alias.isNotEmpty
-                ? 'Alias ${trackPoint.alias[0].alias}'
-                : ' - ')));
-
+    String t3 = trackPoint.alias.isNotEmpty
+        ? 'Alias ${trackPoint.alias[0].alias}'
+        : ' - ';
+    Row();
     Table table = Table(
         border: const TableBorder(top: BorderSide(style: BorderStyle.solid)),
         children: <TableRow>[
-          TableRow(children: <Widget>[row1]),
-          TableRow(children: <Widget>[row2]),
-          TableRow(children: <Widget>[row3])
+          TableRow(
+              children: <Widget>[TableCell(child: Center(child: Text(t1)))]),
+          TableRow(
+              children: <Widget>[TableCell(child: Center(child: Text(t2)))]),
+          TableRow(
+              children: <Widget>[TableCell(child: Center(child: Text(t3)))])
         ]);
 
-    Listener listener = Listener(
+    Listener widget = Listener(
       child: table,
       onPointerDown: (PointerDownEvent e) {
-        onTapEvent.fire(event);
+        tapTrackPointListItemEvents.fire(event);
+        appBodyScreenChangedEvents.fire(AppBodyScreens.trackPointEditView);
       },
     );
-    return listener;
+    return widget;
   }
 }
 
 class _TrackPointListView extends State<TrackPointListView> {
-  static final List<TrackPointEvent> _trackPointsStatusChanged = [];
   static final List<Widget> listView = [];
-  static StreamSubscription? _trackingStatusListener;
-  static StreamSubscription? _trackPointListener;
+  static final List<TrackPointEvent> _trackPointsStatusChanged = [];
+  StreamSubscription? _trackingStatusListener;
+  StreamSubscription? _trackPointListener;
+  StreamSubscription? _disposeListener;
 
   _TrackPointListView() {
     _trackingStatusListener ??= trackingStatusChangedEvents
@@ -66,6 +72,15 @@ class _TrackPointListView extends State<TrackPointListView> {
         .listen(onTrackingStatusChanged);
     _trackPointListener ??=
         trackPointCreatedEvents.on<TrackPointEvent>().listen(onTrackPoint);
+
+    _disposeListener ??=
+        appBodyScreenChangedEvents.on<AppBodyScreens>().listen(_dispose);
+  }
+
+  void _dispose(AppBodyScreens id) {
+    _trackingStatusListener?.cancel();
+    _trackPointListener?.cancel();
+    _disposeListener?.cancel();
   }
 
   // add a new Trackpoint list item

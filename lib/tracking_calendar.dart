@@ -2,6 +2,7 @@ import 'log.dart';
 import 'dart:async';
 import 'package:googleapis/calendar/v3.dart' as calendar;
 import 'config.dart';
+import 'package:chaostours/enum.dart';
 import 'track_point.dart';
 import 'recource_loader.dart';
 import 'util.dart';
