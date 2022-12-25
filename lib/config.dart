@@ -1,6 +1,8 @@
 class AppConfig {
   static const bool debugMode = true;
 
+  static String version = '';
+
   static double distanceTreshold = 100; //meters
 
   // durations and distances

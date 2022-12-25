@@ -18,7 +18,7 @@ class _AppState extends State<App> {
   static AppBodyScreens _bodyId = AppBodyScreens.trackPointListView;
 
   _AppState() {
-    onScreenChanged ??= appBodyScreenChangedEvents
+    onScreenChanged ??= eventBusAppBodyScreenChanged
         .on<AppBodyScreens>()
         .listen(onAppBodyChanged);
   }
@@ -35,7 +35,7 @@ class _AppState extends State<App> {
   }
 
   AppBar appbar() {
-    return AppBar(title: const Text('Title'));
+    return AppBar(title: const Text('ChaosTours'));
   }
 
   onAppBodyChanged(AppBodyScreens id) {
@@ -68,7 +68,7 @@ class _AppState extends State<App> {
               icon: Icon(Icons.keyboard_arrow_right), label: 'x'),
         ],
         onTap: (int id) {
-          tapBottomNavBarIconEvents.fire(Tapped(id));
+          eventBusTapBottomNavBarIcon.fire(Tapped(id));
         });
   }
 

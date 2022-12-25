@@ -1,9 +1,12 @@
+import 'package:chaostours/log.dart';
 import 'package:flutter/material.dart';
 import 'recource_loader.dart';
 import 'frontend/frontend_main.dart';
 import 'package:logger/logger.dart';
 import 'track_point.dart';
 import 'tracking_calendar.dart';
+import 'package:chaostours/config.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 void main() async {
   // Thanks for: https://stackoverflow.com/a/69481863
@@ -19,6 +22,13 @@ void main() async {
 
   // instantiate TrackingCalendar singelton
   TrackingCalendar();
+
+  try {
+    PackageInfo packageInfo = await PackageInfo.fromPlatform();
+    AppConfig.version = packageInfo.version;
+  } catch (e) {
+    logError(e);
+  }
 
   // start gps tracking
   TrackPoint.startTracking();

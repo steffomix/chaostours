@@ -55,7 +55,7 @@ class TrackPoint {
     if (_status == TrackingStatus.moving) return;
     _status = TrackingStatus.moving;
     _startedAtTrackPoint = tp;
-    trackingStatusChangedEvents.fire(createEvent(tp).statusChanged());
+    eventBusTrackingStatusChanged.fire(createEvent(tp).statusChanged());
     _trackPoints.clear();
     _trackPoints.add(_stoppedAtTrackPoint ??= tp);
   }
@@ -66,7 +66,7 @@ class TrackPoint {
     _status = TrackingStatus.standing;
     _stoppedAtTrackPoint = tp;
     driverTrackPoints.addAll(_trackPoints);
-    trackingStatusChangedEvents.fire(createEvent(tp).statusChanged());
+    eventBusTrackingStatusChanged.fire(createEvent(tp).statusChanged());
     _trackPoints.clear();
     _trackPoints.add(tp);
   }
@@ -170,7 +170,7 @@ class TrackPoint {
     await tp.address.lookupAddress();
     tp._alias = await LocationAlias.findAlias(tp._gps.lat, tp._gps.lon);
 
-    trackPointCreatedEvents.fire(createEvent(tp));
+    eventBusTrackPointCreated.fire(createEvent(tp));
     return tp;
   }
 
@@ -180,7 +180,7 @@ class TrackPoint {
     Future.delayed(AppConfig.trackPointTickTime, () async {
       try {
         TrackPoint tp = await TrackPoint.create();
-        if (first) trackingStatusChangedEvents.fire(createEvent(tp));
+        if (first) eventBusTrackingStatusChanged.fire(createEvent(tp));
         _checkStatus(tp);
       } catch (e, stk) {
         // ignore

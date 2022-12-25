@@ -14,7 +14,7 @@ class TrackingCalendar {
   static final TrackingCalendar _instance = TrackingCalendar._createInstance();
   TrackingCalendar._createInstance() {
     logInfo('addListener');
-    _trackingStatusListener ??= trackingStatusChangedEvents
+    _trackingStatusListener ??= eventBusTrackingStatusChanged
         .on<TrackPointEvent>()
         .listen(onTrackingStatusChanged);
   }
