@@ -2,6 +2,7 @@ import 'log.dart';
 import 'config.dart';
 import 'package:geolocator/geolocator.dart';
 import 'recource_loader.dart';
+import 'package:chaostours/enum.dart';
 
 class LocationAlias {
   static List<Alias>? _loadedAliasList;
@@ -39,31 +40,6 @@ class LocationAlias {
     }
     found.sort((Alias a, Alias b) => a.compareTo(b));
     return Future<List<Alias>>.value(found);
-  }
-}
-
-enum AliasStatus {
-  disabled(0),
-  privat(1),
-  public(2);
-
-  final int value;
-  const AliasStatus(this.value);
-
-  static AliasStatus byValue(int id) {
-    try {
-      AliasStatus status =
-          AliasStatus.values.firstWhere((en) => en.value == id);
-      return status;
-    } catch (e, stk) {
-      logError(
-          'Non existant enum AliasStatus with id $id\n'
-          'Fallback to AliasStatus.disabled',
-          e,
-          stk);
-      AliasStatus status = AliasStatus.disabled;
-      return status;
-    }
   }
 }
 
@@ -106,7 +82,7 @@ class Alias implements Comparable<Alias> {
     List<String> list = tsv.split('\t');
     int l = list.length;
     if (l < 4) {
-      //logWarn('Alias::parseTsv: invalit tsv line:\n$tsv');
+      logWarn('Alias::parseTsv: invalit tsv line:\n$tsv');
       return null;
     }
     try {
@@ -115,26 +91,25 @@ class Alias implements Comparable<Alias> {
       double rLon = double.parse(list[2]);
       String rAlias = _purifyString(list[3]);
       Alias alias = Alias(rId, rAlias, rLat, rLon);
+      alias.notes = l >= 5 ? list[4] : '';
       try {
-        alias.status = AliasStatus.byValue(l >= 5 ? int.parse(list[4]) : 0);
+        alias.status = AliasStatus.byValue(l >= 6 ? int.parse(list[5]) : 0);
       } catch (e) {
-        //logWarn('LocationAlias::parseStatus', e);
+        logWarn('LocationAlias::parseStatus', e);
       }
       try {
-        alias.lastVisited = l >= 6 ? DateTime.parse(list[5]) : DateTime.now();
+        alias.lastVisited = l >= 7 ? DateTime.parse(list[6]) : DateTime.now();
       } catch (e) {
-        //logWarn('LocationAlias::parse DateTime lastVisited', e);
+        // logWarn('LocationAlias::parse DateTime lastVisited', e);
         alias.lastVisited = DateTime.now();
       }
       try {
-        alias.timesVisited = l >= 7 ? int.parse(list[6]) : 0;
+        alias.timesVisited = l >= 8 ? int.parse(list[7]) : 0;
       } catch (e) {
-        //logWarn('LocationAlias::parse DateTime timesVisited', e);
+        logWarn('LocationAlias::parse DateTime timesVisited', e);
         alias.timesVisited = 0;
       }
 
-      alias.address = l >= 8 ? list[7] : '';
-      alias.notes = l >= 9 ? list[8] : '';
       //logInfo('added alias ${alias.address}');
       return alias;
     } catch (e) {

@@ -1,6 +1,5 @@
 import 'log.dart';
 import 'gps.dart';
-import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:flutter/services.dart';
 import 'package:googleapis_auth/auth_io.dart';
@@ -8,12 +7,18 @@ import 'package:googleapis/calendar/v3.dart' show CalendarApi;
 import 'package:geolocator/geolocator.dart'
     show Position, LocationPermission, Geolocator;
 import 'location_alias.dart';
+import 'dart:io' as io;
+import 'package:path/path.dart' as path;
+import 'package:path_provider/path_provider.dart' as pathProvider;
+import 'package:chaostours/model.dart';
 
 class RecourceLoader {
   ///
   /// preload recources
   static Future<void> preload() async {
     try {
+      await ModelAlias.open();
+      await ModelAlias.write();
       await webKey();
       await locationAlias();
       await defaultCalendarId();
@@ -28,9 +33,18 @@ class RecourceLoader {
   static Future<void> webKey() async {
     ByteData data =
         await PlatformAssetBundle().load('assets/ca/lets-encrypt-r3.pem');
-    SecurityContext.defaultContext
+    io.SecurityContext.defaultContext
         .setTrustedCertificatesBytes(data.buffer.asUint8List());
     logInfo('RecourceLoader::WebKey loaded');
+  }
+
+  static final List<String> localPath = ['chaostours', 'db'];
+  static Future<io.File> modelAliasHandle() async {
+    String sep = path.separator;
+    io.Directory appDir = await pathProvider.getApplicationDocumentsDirectory();
+    List<String> parts = [appDir.path, ...localPath, 'alias.tsv'];
+    io.File file = await io.File(parts.join(sep)).create(recursive: true);
+    return file;
   }
 
   ///

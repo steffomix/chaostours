@@ -5,7 +5,6 @@ import 'package:chaostours/track_point.dart';
 import 'package:chaostours/log.dart';
 import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/enum.dart';
-import 'package:googleapis/tagmanager/v1.dart';
 
 class TrackPointListView extends StatefulWidget {
   const TrackPointListView({super.key});

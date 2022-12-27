@@ -1,10 +1,10 @@
-import 'package:chaostours/log.dart';
 import 'package:flutter/material.dart';
-import 'recource_loader.dart';
-import 'frontend/frontend_main.dart';
+import 'package:chaostours/recource_loader.dart';
+import 'package:chaostours/log.dart';
 import 'package:logger/logger.dart';
-import 'track_point.dart';
-import 'tracking_calendar.dart';
+import 'package:chaostours/frontend/frontend_main.dart';
+import 'package:chaostours/track_point.dart';
+import 'package:chaostours/tracking_calendar.dart';
 import 'package:chaostours/config.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -40,7 +40,7 @@ void main() async {
 
 /*
 class App extends StatefulWidget {
-  const App({super.key});
+  const App({super.key});q
 
   @override
   State<App> createState() => _AppState();

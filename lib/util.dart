@@ -1,3 +1,7 @@
+import 'dart:convert';
+
+Codec<String, String> base64Codec() => utf8.fuse(base64);
+
 String timeElapsed(DateTime t1, DateTime t2, [bool short = true]) {
   DateTime t0;
   if (t1.difference(t2).isNegative) {
