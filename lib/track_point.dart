@@ -3,7 +3,7 @@ import 'package:chaostours/log.dart';
 import 'package:chaostours/util.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/events.dart';
-import 'package:chaostours/location_alias.dart';
+import 'package:chaostours/model.dart';
 import 'package:chaostours/address.dart';
 import 'package:chaostours/enum.dart';
 
@@ -29,12 +29,12 @@ class TrackPoint {
   final int _id = ++_nextId;
   final GPS _gps;
   final DateTime _time = DateTime.now();
-  List<Alias> _alias = [];
+  List<ModelAlias> _alias = [];
 
   int get id => _id;
   GPS get gps => _gps;
   DateTime get time => _time;
-  List<Alias> get alias => _alias;
+  List<ModelAlias> get alias => _alias;
   late Address address;
 
   TrackPoint(this._gps) {
@@ -168,7 +168,7 @@ class TrackPoint {
 
     tp.address = Address(gps);
     await tp.address.lookupAddress();
-    tp._alias = await LocationAlias.findAlias(tp._gps.lat, tp._gps.lon);
+    tp._alias = ModelAlias.nextAlias(gps);
 
     eventBusTrackPointCreated.fire(createEvent(tp));
     return tp;

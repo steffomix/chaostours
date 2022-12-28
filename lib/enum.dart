@@ -22,3 +22,9 @@ enum AliasStatus {
     return status;
   }
 }
+
+enum FileHandle {
+  alias,
+  task,
+  station;
+}

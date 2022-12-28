@@ -6,7 +6,6 @@ import 'package:googleapis_auth/auth_io.dart';
 import 'package:googleapis/calendar/v3.dart' show CalendarApi;
 import 'package:geolocator/geolocator.dart'
     show Position, LocationPermission, Geolocator;
-import 'location_alias.dart';
 import 'dart:io' as io;
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart' as pathProvider;
@@ -17,10 +16,16 @@ class RecourceLoader {
   /// preload recources
   static Future<void> preload() async {
     try {
-      await ModelAlias.open();
+      try {
+        //throw 'e';
+        await ModelAlias.open();
+      } catch (e) {
+        //logError(e);
+        await ModelAlias.openFromAsset();
+      }
       await ModelAlias.write();
+
       await webKey();
-      await locationAlias();
       await defaultCalendarId();
       await calendarApiFromCredentials();
     } catch (e, stk) {
@@ -39,10 +44,10 @@ class RecourceLoader {
   }
 
   static final List<String> localPath = ['chaostours', 'db'];
-  static Future<io.File> modelAliasHandle() async {
+  static Future<io.File> fileHandle(String filename) async {
     String sep = path.separator;
     io.Directory appDir = await pathProvider.getApplicationDocumentsDirectory();
-    List<String> parts = [appDir.path, ...localPath, 'alias.tsv'];
+    List<String> parts = [appDir.path, ...localPath, filename];
     io.File file = await io.File(parts.join(sep)).create(recursive: true);
     return file;
   }
@@ -55,20 +60,6 @@ class RecourceLoader {
     http.Response response = await http.get(url);
     //logInfo('osmReverseLookup for gps #${gps.id}');
     return response;
-  }
-
-  ///
-  ///
-  static String? _locationAlias;
-
-  ///
-  static Future<String> locationAlias() async {
-    if (_locationAlias != null) return Future<String>.value(_locationAlias);
-    String alias = await rootBundle.loadString('assets/locationAlias.tsv');
-    _locationAlias = alias;
-    LocationAlias.loadeAliasList();
-    logInfo('RecourceLoader::locationAlias loaded');
-    return alias;
   }
 
   ///

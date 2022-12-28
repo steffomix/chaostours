@@ -4,8 +4,7 @@ import 'log.dart';
 import 'config.dart';
 import 'package:geolocator/geolocator.dart' show Position, Geolocator;
 import 'recource_loader.dart';
-import 'location_alias.dart';
-import 'dart:math';
+import 'package:chaostours/model.dart';
 import 'events.dart';
 
 class GPS {
@@ -51,11 +50,9 @@ class SimulateGps {
           lat += slow;
           break;
         case 1:
-          LocationAlias.loadeAliasList().then((List<Alias> list) {
-            Alias alias = list[Random().nextInt(list.length - 1)];
-            lat = alias.lat;
-            lon = alias.lon;
-          });
+          ModelAlias alias = ModelAlias.random;
+          lat = alias.lat;
+          lon = alias.lon;
           break;
         case 2:
           lat -= slow;
@@ -73,68 +70,3 @@ class SimulateGps {
     return GPS(lat, lon);
   }
 }
-
-
-
-/*
-
-
-class _Gps {
-  // 52.3840, 9.7260 somewhere in hannover
-  // 52.32741, 9.19255 somewhere in schaumburg
-  static double _lat = 52.32741;
-  static double _lon = 9.19255;
-  static double v = 0.005;
-  static double get _move => Random().nextInt(10) > 5 ? v : v * -1;
-  static double get lat {
-    _lat += _move;
-    return _lat;
-  }
-
-  static double get lon {
-    _lon += _move;
-    return _lon;
-  }
-}
-
-
-class _SimulateGps {
-  static Alias? _station;
-  static int _nextStop = 3;
-
-  static Future<GPS> next() async {
-    _station ??= await station;
-    if (--_nextStop <= 0) {
-      _nextStop = Random().nextInt(10) + 10;
-      Alias alias = await station;
-      logInfo('SimulateGps::nextStop for $_nextStop ticks at ${alias.address}');
-      // shuffle position a little
-      return GPS(shake(alias.lat), shake(alias.lon));
-    } else {
-      _station?.lat = shake(_station?.lat ?? 0);
-      _station?.lon = shake(_station?.lon ?? 0);
-      return GPS(_station?.lat ?? 0, _station?.lon ?? 0);
-    }
-  }
-
-  static double shake(double pos) {
-    int direction = Random().nextBool() ? 1 : -1;
-    pos = pos + Random().nextDouble() / 10000 * direction;
-    return pos;
-  }
-
-  static Future<Alias> get station async {
-    Alias st;
-    try {
-      List<Alias> stations = await LocationAlias.loadeAliasList();
-      if (stations.isEmpty) throw ('loadedAliasList is empty');
-      st = _station = stations[Random().nextInt(stations.length - 1)];
-    } catch (e, str) {
-      logWarn('SimulateGps', e, str);
-      st = _station = Alias(0, 'undefined', _Gps.lat, _Gps.lon);
-    }
-
-    return Future<Alias>.value(st);
-  }
-}
-*/
