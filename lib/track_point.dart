@@ -3,7 +3,7 @@ import 'package:chaostours/log.dart';
 import 'package:chaostours/util.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/events.dart';
-import 'package:chaostours/model.dart';
+import 'package:chaostours/model_alias.dart';
 import 'package:chaostours/address.dart';
 import 'package:chaostours/enum.dart';
 

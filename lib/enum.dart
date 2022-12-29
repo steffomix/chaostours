@@ -25,6 +25,9 @@ enum AliasStatus {
 
 enum FileHandle {
   alias,
+  alias_current,
   task,
-  station;
+  task_current,
+  station,
+  station_current;
 }

@@ -2,7 +2,7 @@ import 'package:chaostours/events.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:chaostours/enum.dart';
-import 'package:chaostours/model.dart';
+import 'package:chaostours/model_alias.dart';
 
 class TrackPointEditView extends StatefulWidget {
   const TrackPointEditView({super.key});

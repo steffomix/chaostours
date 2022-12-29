@@ -1,10 +1,9 @@
 import 'dart:async';
-
 import 'log.dart';
 import 'config.dart';
 import 'package:geolocator/geolocator.dart' show Position, Geolocator;
 import 'recource_loader.dart';
-import 'package:chaostours/model.dart';
+import 'package:chaostours/model_alias.dart';
 import 'events.dart';
 
 class GPS {

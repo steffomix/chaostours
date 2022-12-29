@@ -9,7 +9,10 @@ import 'package:geolocator/geolocator.dart'
 import 'dart:io' as io;
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart' as pathProvider;
-import 'package:chaostours/model.dart';
+import 'package:chaostours/model_alias.dart';
+import 'package:chaostours/model_trackpoint.dart';
+import 'package:chaostours/model_task.dart';
+import 'package:chaostours/enum.dart';
 
 class RecourceLoader {
   ///
@@ -19,11 +22,35 @@ class RecourceLoader {
       try {
         //throw 'e';
         await ModelAlias.open();
+        await ModelTrackPoint.open();
+        await ModelTask.open();
+        ModelTrackPoint.insert(ModelTrackPoint(
+            lat: 1,
+            lon: 2,
+            trackPoints: [GPS(2, 3), GPS(4, 5)],
+            timeStart: DateTime.now(),
+            timeEnd: DateTime.now(),
+            idAlias: [1, 5, 7],
+            idTask: [3, 6, 5, 2],
+            notes: 'this is a test'));
+
+        ModelAlias.insert(ModelAlias(
+            lat: 1,
+            lon: 2,
+            radius: 155,
+            alias: 'new alias',
+            notes: 'dont forget next time...',
+            status: AliasStatus.privat,
+            lastVisited: DateTime.now(),
+            timesVisited: 23));
+
+        ModelTask.insert(
+            ModelTask(task: 'chill brother!', notes: 'but not THAT long!'));
       } catch (e) {
-        //logError(e);
-        await ModelAlias.openFromAsset();
+        logError(e);
+        //await ModelAlias.openFromAsset();
       }
-      await ModelAlias.write();
+      //await ModelAlias.write();
 
       await webKey();
       await defaultCalendarId();
@@ -49,7 +76,7 @@ class RecourceLoader {
     io.Directory appDir = await pathProvider.getApplicationDocumentsDirectory();
     List<String> parts = [appDir.path, ...localPath, filename];
     io.File file = await io.File(parts.join(sep)).create(recursive: true);
-    return file;
+    return Future<io.File>.value(file);
   }
 
   ///
