@@ -9,8 +9,9 @@ import 'package:chaostours/model.dart';
 import 'package:chaostours/file_handler.dart';
 
 class ModelAlias {
-  static List<ModelAlias> _table = [];
+  static final List<ModelAlias> _table = [];
   int _id = 0;
+  final int deleted;
   final double lat;
   final double lon;
   final int radius;
@@ -21,6 +22,7 @@ class ModelAlias {
   final int timesVisited;
 
   int get id => _id;
+  static int get length => _table.length;
 
   // temporary set during search for neares Alias
   int sortDistance = 0;
@@ -28,21 +30,26 @@ class ModelAlias {
   ModelAlias(
       {required this.lat,
       required this.lon,
-      required this.radius,
       required this.alias,
-      required this.notes,
-      required this.status,
       required this.lastVisited,
-      required this.timesVisited});
+      this.deleted = 0,
+      this.radius = 100,
+      this.notes = '',
+      this.status = AliasStatus.public,
+      this.timesVisited = 0});
 
   static ModelAlias get random {
     return _table[Random().nextInt(_table.length - 1)];
   }
 
+  static ModelAlias getAlias(int id) {
+    return _table[id - 1];
+  }
+
   static Future<int> insert(ModelAlias m) async {
     _table.add(m);
     m._id = _table.length;
-    await Model.writeLine(handle: await FileHandler.alias, line: m.toString());
+    await Model.insertRow(handle: await FileHandler.alias, line: m.toString());
     return m._id;
   }
 
@@ -78,7 +85,7 @@ class ModelAlias {
 
   // opens, read and parse database
   static Future<int> open() async {
-    List<String> lines = await FileHandler.readLines(FileHandle.alias);
+    List<String> lines = await FileHandler.readLines(DatabaseFile.alias);
     Model.walkLines(lines, (row) => _table.add(toModel(row)));
     logInfo('alias loaded ${_table.length} rows');
     return _table.length;
@@ -99,14 +106,15 @@ class ModelAlias {
     Model.walkLines(lines, (l) {
       p = l.split('\t');
       ModelAlias a = ModelAlias(
-          lat: double.parse(p[0]),
-          lon: double.parse(p[1]),
-          radius: int.parse(p[2]),
-          alias: p[3],
-          notes: p[4],
-          status: AliasStatus.byValue(int.parse(p[5])),
-          lastVisited: DateTime.parse(p[6]),
-          timesVisited: int.parse(p[7]));
+          deleted: int.parse(p[0]),
+          lat: double.parse(p[1]),
+          lon: double.parse(p[2]),
+          radius: int.parse(p[3]),
+          alias: p[4],
+          notes: p[5],
+          status: AliasStatus.byValue(int.parse(p[6])),
+          lastVisited: DateTime.parse(p[7]),
+          timesVisited: int.parse(p[8]));
       a._id = ++id;
       _table.add(a);
     });
@@ -117,14 +125,15 @@ class ModelAlias {
     List<String> p = row.trim().split('\t');
     int id = int.parse(p[0]);
     ModelAlias a = ModelAlias(
-        lat: double.parse(p[1]),
-        lon: double.parse(p[2]),
-        radius: int.parse(p[3]),
-        alias: decode(p[4]),
-        notes: decode(p[5]),
-        status: AliasStatus.byValue(int.parse(p[6])),
-        lastVisited: DateTime.parse(p[7]),
-        timesVisited: int.parse(p[8]));
+        deleted: int.parse(p[1]),
+        lat: double.parse(p[2]),
+        lon: double.parse(p[3]),
+        radius: int.parse(p[4]),
+        alias: decode(p[5]),
+        notes: decode(p[6]),
+        status: AliasStatus.byValue(int.parse(p[7])),
+        lastVisited: DateTime.parse(p[8]),
+        timesVisited: int.parse(p[9]));
     a._id = id;
     return a;
   }
@@ -133,6 +142,7 @@ class ModelAlias {
   String toString() {
     List<String> l = [
       id.toString(),
+      deleted.toString(),
       lat.toString(),
       lon.toString(),
       radius.toString(),

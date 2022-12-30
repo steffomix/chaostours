@@ -1,14 +1,12 @@
 import 'package:chaostours/util.dart' as util;
-import 'package:chaostours/recource_loader.dart';
-import 'package:chaostours/enum.dart';
 import 'dart:io' as io;
 import 'package:file/file.dart';
 import 'package:chaostours/log.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/file_handler.dart';
 
-var decode = util.base64Codec().decode;
-var encode = util.base64Codec().encode;
+var decode = Uri.decodeFull; // util.base64Codec().decode;
+var encode = Uri.encodeFull; // util.base64Codec().encode;
 
 class Model {
   static Future<bool> writeTable(
@@ -20,7 +18,7 @@ class Model {
     return true;
   }
 
-  static Future<bool> writeLine(
+  static Future<bool> insertRow(
       {required io.File handle, required String line}) async {
     await handle.writeAsString('\n$line', mode: FileMode.append, flush: true);
     return true;
@@ -46,7 +44,7 @@ class Model {
         break;
       }
       try {
-        fn(el);
+        fn(el.trim());
       } catch (e) {
         logError(e);
       }
@@ -55,8 +53,8 @@ class Model {
   }
 
   //
-  static List<GPS> parseTrackPointList(String string) {
-    List<GPS> tps = [];
+  static Set<GPS> parseTrackPointList(String string) {
+    Set<GPS> tps = {};
     List<String> list = string.split(';');
     walkLines(list, (item) {
       List<String> coords = item.split(',');
@@ -65,15 +63,17 @@ class Model {
     return tps;
   }
 
-  static String trackPointsToString(List<GPS> tps) {
+  static String trackPointsToString(Set<GPS> tps) {
     List<String> tpList = [];
     tps.forEach((gps) => tpList.add('${gps.lat},${gps.lon}'));
     return tpList.join(';');
   }
 
-  static List<int> parseIdList(String string) {
-    List<int> ids = [];
-    List<String> list = string.split(',');
+  static Set<int> parseIdList(String string) {
+    string = string;
+    Set<int> ids = {};
+    if (string.isEmpty) return ids;
+    List<String> list = string.split(',').where((e) => e.isNotEmpty).toList();
     if (list.isEmpty) return ids;
     walkLines(list, (String item) {
       ids.add(int.parse(item));

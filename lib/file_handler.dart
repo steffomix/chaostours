@@ -4,23 +4,23 @@ import 'package:chaostours/recource_loader.dart';
 
 class FileHandler {
   static const String lineSeperator = '\n';
-  static Map<FileHandle, io.File?> handles = {
-    FileHandle.alias: null,
-    FileHandle.alias_current: null,
-    FileHandle.task: null,
-    FileHandle.task_current: null,
-    FileHandle.station: null,
-    FileHandle.station_current: null
+  static Map<DatabaseFile, io.File?> handles = {
+    DatabaseFile.alias: null,
+    DatabaseFile.tmpalias: null,
+    DatabaseFile.task: null,
+    DatabaseFile.tmptask: null,
+    DatabaseFile.station: null,
+    DatabaseFile.tmpstation: null
   };
-  static Future<io.File> get alias => _handle(FileHandle.alias);
-  static Future<io.File> get alias_current => _handle(FileHandle.alias_current);
-  static Future<io.File> get task => _handle(FileHandle.task);
-  static Future<io.File> get task_current => _handle(FileHandle.task_current);
-  static Future<io.File> get station => _handle(FileHandle.station);
+  static Future<io.File> get alias => _handle(DatabaseFile.alias);
+  static Future<io.File> get alias_current => _handle(DatabaseFile.tmpalias);
+  static Future<io.File> get task => _handle(DatabaseFile.task);
+  static Future<io.File> get task_current => _handle(DatabaseFile.tmptask);
+  static Future<io.File> get station => _handle(DatabaseFile.station);
   static Future<io.File> get station_current =>
-      _handle(FileHandle.station_current);
+      _handle(DatabaseFile.tmpstation);
 
-  static Future<io.File> _handle(FileHandle filehandle) async {
+  static Future<io.File> _handle(DatabaseFile filehandle) async {
     if (handles[filehandle] != null) {
       return Future<io.File>.value(handles[filehandle]);
     }
@@ -29,10 +29,11 @@ class FileHandler {
     return Future<io.File>.value(handles[filehandle]);
   }
 
-  static Future<List<String>> readLines(FileHandle h) async {
+  static Future<List<String>> readLines(DatabaseFile h) async {
     io.File handle = await _handle(h);
     String string = await handle.readAsString();
-    List<String> lines = string.split(lineSeperator);
+    List<String> lines =
+        string.trim().split(lineSeperator).where((e) => e.isNotEmpty).toList();
     return lines;
   }
 }

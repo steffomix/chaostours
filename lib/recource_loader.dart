@@ -24,17 +24,23 @@ class RecourceLoader {
         await ModelAlias.open();
         await ModelTrackPoint.open();
         await ModelTask.open();
-        ModelTrackPoint.insert(ModelTrackPoint(
+
+        await ModelAlias.write();
+        await ModelTrackPoint.write();
+        await ModelTask.write();
+        ModelTrackPoint tp = ModelTrackPoint(
+            deleted: 0,
             lat: 1,
             lon: 2,
-            trackPoints: [GPS(2, 3), GPS(4, 5)],
+            trackPoints: {GPS(2, 3), GPS(4, 5)},
             timeStart: DateTime.now(),
             timeEnd: DateTime.now(),
-            idAlias: [1, 5, 7],
-            idTask: [3, 6, 5, 2],
-            notes: 'this is a test'));
+            idAlias: {1, 5, 7},
+            idTask: {3, 6, 5, 2},
+            notes: 'this is a test');
+        ModelTrackPoint.insert(tp);
 
-        ModelAlias.insert(ModelAlias(
+        await ModelAlias.insert(ModelAlias(
             lat: 1,
             lon: 2,
             radius: 155,
@@ -44,8 +50,8 @@ class RecourceLoader {
             lastVisited: DateTime.now(),
             timesVisited: 23));
 
-        ModelTask.insert(
-            ModelTask(task: 'chill brother!', notes: 'but not THAT long!'));
+        await ModelTask.insert(ModelTask(
+            deleted: 0, task: 'chill brother!', notes: 'but not THAT long!'));
       } catch (e) {
         logError(e);
         //await ModelAlias.openFromAsset();

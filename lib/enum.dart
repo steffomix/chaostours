@@ -23,11 +23,11 @@ enum AliasStatus {
   }
 }
 
-enum FileHandle {
+enum DatabaseFile {
   alias,
-  alias_current,
+  tmpalias,
   task,
-  task_current,
+  tmptask,
   station,
-  station_current;
+  tmpstation;
 }

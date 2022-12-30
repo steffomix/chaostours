@@ -1,7 +1,12 @@
 import 'dart:convert';
-import 'package:chaostours/log.dart';
+import 'dart:io';
 
 Codec<String, String> base64Codec() => utf8.fuse(base64);
+
+double fileSize(File file) {
+  double mb = file.lengthSync() / (1024 * 1024);
+  return mb;
+}
 
 String timeElapsed(DateTime t1, DateTime t2, [bool short = true]) {
   DateTime t0;
