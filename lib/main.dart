@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:chaostours/recource_loader.dart';
 import 'package:chaostours/log.dart';
 import 'package:logger/logger.dart';
-import 'package:chaostours/frontend/frontend_main.dart';
+import 'package:chaostours/widget/widget_main.dart';
 import 'package:chaostours/track_point.dart';
 import 'package:chaostours/tracking_calendar.dart';
 import 'package:chaostours/config.dart';

@@ -6,16 +6,14 @@ import 'package:chaostours/events.dart';
 import 'package:chaostours/model_alias.dart';
 import 'package:chaostours/address.dart';
 import 'package:chaostours/enum.dart';
+import 'package:chaostours/model_trackpoint.dart';
+import 'package:flutter/material.dart';
 
 class TrackPoint {
   static int _nextId = 0;
   // contains all trackpoints from current state start or stop
   static final List<TrackPoint> _trackPoints = [];
   // contains all trackpoints during driving (from start to stop)
-  static final List<TrackPoint> driverTrackPoints = [];
-  // both will be created in TrackPoint.startTracking();
-  static TrackPoint? _stoppedAtTrackPoint;
-  static TrackPoint? _startedAtTrackPoint;
 
   //
   static TrackingStatus _status = TrackingStatus.standing;
@@ -41,51 +39,33 @@ class TrackPoint {
     _trackPoints.add(this);
   }
 
-  static TrackPointEvent createEvent(TrackPoint tp) {
-    return TrackPointEvent(
-        status: TrackPoint.status,
-        caused: tp,
-        stopped: _stoppedAtTrackPoint ??= tp,
-        started: _startedAtTrackPoint ??= tp,
-        trackList: <TrackPoint>[..._trackPoints]);
-  }
-
-  // change status to start
-  static void start(TrackPoint tp) async {
-    if (_status == TrackingStatus.moving) return;
-    _status = TrackingStatus.moving;
-    _startedAtTrackPoint = tp;
-    eventBusTrackingStatusChanged.fire(createEvent(tp).statusChanged());
-    _trackPoints.clear();
-    _trackPoints.add(_stoppedAtTrackPoint ??= tp);
-  }
-
-// change status to stop
-  static void stop(TrackPoint tp) async {
-    if (_status == TrackingStatus.standing) return;
-    _status = TrackingStatus.standing;
-    _stoppedAtTrackPoint = tp;
-    driverTrackPoints.addAll(_trackPoints);
-    eventBusTrackingStatusChanged.fire(createEvent(tp).statusChanged());
+  static void _statusChanged(TrackPoint tp) async {
+    if (_status == TrackingStatus.moving) {
+      // switch to stop
+      _status = TrackingStatus.standing;
+    } else {
+      // switch to move
+      _status = TrackingStatus.moving;
+    }
+    TrackPointEvent event = createEvent(tp);
+    event.statusChanged();
+    ModelTrackPoint.insert(event);
+    eventBusTrackingStatusChanged.fire(event);
     _trackPoints.clear();
     _trackPoints.add(tp);
   }
 
-  /// collect recent Trackpoints in backwards order since last status changed with gpsOk
-  /// so that trackList[0] is most recent
-  static List<TrackPoint> _recentTracks() {
-    // collect TrackPoints of last <timeTreshold> with <gpsOk>
-    List<TrackPoint> trackList = [];
-    List<int> ids = [];
-    DateTime treshold = DateTime.now().subtract(AppConfig.stopTimeTreshold);
-    bool outDated;
-    for (var i = _trackPoints.length - 1; i >= 0; i--) {
-      outDated = _trackPoints[i].time.isBefore(treshold);
-      if (outDated) break;
-      trackList.add(_trackPoints[i]);
-      ids.add(_trackPoints[i].id);
-    }
-    return trackList;
+  static TrackPointEvent createEvent(TrackPoint tp) {
+    TrackPointEvent mtp = TrackPointEvent(
+        status: _status,
+        address: tp.address,
+        trackList: [..._trackPoints],
+        lat: tp.gps.lat,
+        lon: tp.gps.lon,
+        timeStart: _trackPoints.first.time,
+        timeEnd: _trackPoints.last.time,
+        aliasList: tp.alias);
+    return mtp;
   }
 
   ///
@@ -108,13 +88,13 @@ class TrackPoint {
     if (_status == TrackingStatus.standing) {
       if (_checkMoved(trackList)) {
         // use the most recent Trackpoint as reference
-        start(trackList.first);
+        _statusChanged(trackList.first);
         return;
       }
     } else {
       if (_checkStopped(trackList)) {
         // use the one before oldest trackpoint where we stopped as reference
-        stop(trackList.last);
+        _statusChanged(trackList.last);
         return;
       }
     }
@@ -123,7 +103,7 @@ class TrackPoint {
   static bool _checkMoved(List<TrackPoint> tl) {
     // check if moved
     double dist = 0;
-    TrackPoint tRef = _stoppedAtTrackPoint ??= tl.last;
+    TrackPoint tRef = tl.last;
     for (var i = 0; i < tl.length; i++) {
       dist = GPS.distance(tl[i]._gps, tRef._gps);
       if (dist > AppConfig.distanceTreshold) {
@@ -149,6 +129,23 @@ class TrackPoint {
     return false;
   }
 
+  /// collect recent Trackpoints in backwards order since last status changed with gpsOk
+  /// so that trackList[0] is most recent
+  static List<TrackPoint> _recentTracks() {
+    // collect TrackPoints of last <timeTreshold> with <gpsOk>
+    List<TrackPoint> trackList = [];
+    List<int> ids = [];
+    DateTime treshold = DateTime.now().subtract(AppConfig.stopTimeTreshold);
+    bool outDated;
+    for (var i = _trackPoints.length - 1; i >= 0; i--) {
+      outDated = _trackPoints[i].time.isBefore(treshold);
+      if (outDated) break;
+      trackList.add(_trackPoints[i]);
+      ids.add(_trackPoints[i].id);
+    }
+    return trackList;
+  }
+
   // calc distance in meters
   static double movedDistance(List<TrackPoint> tracklist) {
     if (tracklist.length < 2) return 0;
@@ -167,10 +164,9 @@ class TrackPoint {
     TrackPoint tp = TrackPoint(gps);
 
     tp.address = Address(gps);
-    await tp.address.lookupAddress();
+    // await tp.address.lookupAddress();
     tp._alias = ModelAlias.nextAlias(gps);
 
-    eventBusTrackPointCreated.fire(createEvent(tp));
     return tp;
   }
 
@@ -182,6 +178,8 @@ class TrackPoint {
         TrackPoint tp = await TrackPoint.create();
         if (first) eventBusTrackingStatusChanged.fire(createEvent(tp));
         _checkStatus(tp);
+
+        eventBusTrackPointCreated.fire(createEvent(tp));
       } catch (e, stk) {
         // ignore
         logFatal('TrackPoint::create', e, stk);

@@ -6,21 +6,24 @@ import 'package:chaostours/gps.dart';
 import 'package:chaostours/file_handler.dart';
 
 var decode = Uri.decodeFull; // util.base64Codec().decode;
-var encode = Uri.encodeFull; // util.base64Codec().encode;
+var encode = Uri.encodeFull; //util.base64Codec().encode;
 
 class Model {
+  static const String rowSeperator = '|\n'; // prevent trim damage
   static Future<bool> writeTable(
       {required io.File handle, required List<dynamic> table}) async {
     List<String> lines = [];
     table.forEach((m) => lines.add(m.toString()));
-    String out = lines.join(FileHandler.lineSeperator);
-    await handle.writeAsString(out, mode: FileMode.write, flush: true);
+    String out = lines.join(rowSeperator);
+    io.File file =
+        await handle.writeAsString(out, mode: FileMode.write, flush: true);
     return true;
   }
 
   static Future<bool> insertRow(
       {required io.File handle, required String line}) async {
-    await handle.writeAsString('\n$line', mode: FileMode.append, flush: true);
+    io.File file = await handle.writeAsString('\n$line',
+        mode: FileMode.append, flush: true);
     return true;
   }
 
@@ -55,7 +58,7 @@ class Model {
   //
   static Set<GPS> parseTrackPointList(String string) {
     Set<GPS> tps = {};
-    List<String> list = string.split(';');
+    List<String> list = string.split(';').where((e) => e.isNotEmpty).toList();
     walkLines(list, (item) {
       List<String> coords = item.split(',');
       tps.add(GPS(double.parse(coords[0]), double.parse(coords[1])));

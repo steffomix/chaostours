@@ -36,11 +36,13 @@ class TrackingCalendar {
     TrackPoint tp = event.trackList.last;
     TrackingStatus status = event.status;
 
-    TrackPoint tpStart =
-        status == TrackingStatus.moving ? event.stopped : event.started;
+    TrackPoint tpStart = status == TrackingStatus.moving
+        ? event.trackList.first
+        : event.trackList.last;
 
-    TrackPoint tpStop =
-        status == TrackingStatus.moving ? event.started : event.stopped;
+    TrackPoint tpStop = status == TrackingStatus.moving
+        ? event.trackList.first
+        : event.trackList.last;
 
     String duration = timeElapsed(tpStart.time, tpStop.time);
 

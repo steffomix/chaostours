@@ -20,43 +20,12 @@ class RecourceLoader {
   static Future<void> preload() async {
     try {
       try {
-        //throw 'e';
         await ModelAlias.open();
         await ModelTrackPoint.open();
         await ModelTask.open();
-
-        await ModelAlias.write();
-        await ModelTrackPoint.write();
-        await ModelTask.write();
-        ModelTrackPoint tp = ModelTrackPoint(
-            deleted: 0,
-            lat: 1,
-            lon: 2,
-            trackPoints: {GPS(2, 3), GPS(4, 5)},
-            timeStart: DateTime.now(),
-            timeEnd: DateTime.now(),
-            idAlias: {1, 5, 7},
-            idTask: {3, 6, 5, 2},
-            notes: 'this is a test');
-        ModelTrackPoint.insert(tp);
-
-        await ModelAlias.insert(ModelAlias(
-            lat: 1,
-            lon: 2,
-            radius: 155,
-            alias: 'new alias',
-            notes: 'dont forget next time...',
-            status: AliasStatus.privat,
-            lastVisited: DateTime.now(),
-            timesVisited: 23));
-
-        await ModelTask.insert(ModelTask(
-            deleted: 0, task: 'chill brother!', notes: 'but not THAT long!'));
       } catch (e) {
         logError(e);
-        //await ModelAlias.openFromAsset();
       }
-      //await ModelAlias.write();
 
       await webKey();
       await defaultCalendarId();

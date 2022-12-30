@@ -66,11 +66,20 @@ class ModelTrackPoint {
   void addTrackPoint(GPS gps) => trackPoints.add(gps);
   void removeTrackPoint(GPS gps) => trackPoints.remove(gps);
 
-  Set<ModelAlias> getAlias() {
-    Set<ModelAlias> list = {};
-    idAlias.forEach((int id) {
+  List<ModelAlias> getAlias() {
+    List<ModelAlias> list = [];
+    for (int id in idAlias) {
       list.add(ModelAlias.getAlias(id));
-    });
+    }
+    return list;
+  }
+
+  static List<ModelTrackPoint> recentTrackPoints({int max = 30}) {
+    List<ModelTrackPoint> list = [];
+    int m = (max > _table.length ? _table.length : max) - 1;
+    for (var i = _table.length - m; i < _table.length; i++) {
+      list.add(_table[i]);
+    }
     return list;
   }
 
@@ -101,12 +110,13 @@ class ModelTrackPoint {
   static Future<bool> update() => write();
 
   static Future<bool> write() async {
-    Model.writeTable(handle: await FileHandler.station, table: _table);
+    await Model.writeTable(handle: await FileHandler.station, table: _table);
     return true;
   }
 
   static ModelTrackPoint toModel(String row) {
     List<String> p = row.split('\t');
+
     ModelTrackPoint tp = ModelTrackPoint(
         deleted: int.parse(p[1]),
         lat: double.parse(p[2]),

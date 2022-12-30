@@ -12,15 +12,15 @@ String timeElapsed(DateTime t1, DateTime t2, [bool short = true]) {
   DateTime t0;
   if (t1.difference(t2).isNegative) {
     t0 = t1;
-    t2 = t1;
-    t1 = t0;
+    t1 = t2;
+    t2 = t0;
   }
   int days;
   int hours;
   int minutes;
   int seconds;
   int ms;
-  String s = '';
+  String s = '-';
   if (short) {
     days = t1.difference(t2).inDays;
     t2 = t2.add(Duration(days: days));
@@ -83,6 +83,10 @@ Duration duration(DateTime t1, DateTime t2) {
   return t1.difference(t2);
 }
 
-String formatDate(DateTime t) {
-  return '${t.day}.${t.month}.${t.year} ${t.hour}:${t.minute}::${t.second}:::${t.millisecond}';
+String formatDate(DateTime t, [bool short = true]) {
+  if (short) {
+    return '${t.day}.${t.month}.${t.year} um ${t.hour}:${t.minute}';
+  } else {
+    return '${t.day}.${t.month}.${t.year} ${t.hour}:${t.minute}::${t.second}:::${t.millisecond}';
+  }
 }
