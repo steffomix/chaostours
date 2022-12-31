@@ -40,22 +40,20 @@ class TrackPoint {
   }
 
   static void _statusChanged(TrackPoint tp) async {
+    _status = _status == TrackingStatus.moving
+        ? TrackingStatus.standing
+        : TrackingStatus.moving;
+    TrackPointEvent event = createEvent(tp: tp, newStatus: true);
     if (_status == TrackingStatus.moving) {
-      // switch to stop
-      _status = TrackingStatus.standing;
-    } else {
-      // switch to move
-      _status = TrackingStatus.moving;
+      ModelTrackPoint.insert(event);
     }
-    TrackPointEvent event = createEvent(tp);
-    event.statusChanged();
-    ModelTrackPoint.insert(event);
     eventBusTrackingStatusChanged.fire(event);
     _trackPoints.clear();
     _trackPoints.add(tp);
   }
 
-  static TrackPointEvent createEvent(TrackPoint tp) {
+  static TrackPointEvent createEvent(
+      {required TrackPoint tp, bool newStatus = false}) {
     TrackPointEvent mtp = TrackPointEvent(
         status: _status,
         address: tp.address,
@@ -65,6 +63,7 @@ class TrackPoint {
         timeStart: _trackPoints.first.time,
         timeEnd: _trackPoints.last.time,
         aliasList: tp.alias);
+    if (newStatus) mtp.statusChanged();
     return mtp;
   }
 
@@ -164,7 +163,7 @@ class TrackPoint {
     TrackPoint tp = TrackPoint(gps);
 
     tp.address = Address(gps);
-    // await tp.address.lookupAddress();
+    await tp.address.lookupAddress();
     tp._alias = ModelAlias.nextAlias(gps);
 
     return tp;
@@ -176,10 +175,10 @@ class TrackPoint {
     Future.delayed(AppConfig.trackPointTickTime, () async {
       try {
         TrackPoint tp = await TrackPoint.create();
-        if (first) eventBusTrackingStatusChanged.fire(createEvent(tp));
+        if (first) eventBusTrackingStatusChanged.fire(createEvent(tp: tp));
         _checkStatus(tp);
 
-        eventBusTrackPointCreated.fire(createEvent(tp));
+        eventBusTrackPointCreated.fire(createEvent(tp: tp));
       } catch (e, stk) {
         // ignore
         logFatal('TrackPoint::create', e, stk);

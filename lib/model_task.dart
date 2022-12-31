@@ -9,34 +9,13 @@ class ModelTask {
   int get id => _id;
   static int get length => _table.length;
 
-  final int deleted;
-  final String task;
-  final String notes;
+  String task;
+  String notes = '';
+  int deleted;
   ModelTask({required this.task, this.notes = '', this.deleted = 0});
 
   static ModelTask getTask(int id) {
     return _table[id - 1];
-  }
-
-  static Future<int> insert(ModelTask m) async {
-    _table.add(m);
-    m._id = _table.length;
-    await Model.insertRow(handle: await FileHandler.task, line: m.toString());
-    return m._id;
-  }
-
-  static Future<int> open() async {
-    List<String> lines = await FileHandler.readLines(DatabaseFile.task);
-    _table.clear();
-    Model.walkLines(lines, (row) => _table.add(toModel(row)));
-    logInfo('tasks loaded ${_table.length} rows');
-    return _table.length;
-  }
-
-  // writes the entire table back to disc
-  static Future<bool> write() async {
-    Model.writeTable(handle: await FileHandler.task, table: _table);
-    return true;
   }
 
   @override
@@ -59,5 +38,39 @@ class ModelTask {
         notes: decode(parts[3]));
     model._id = id;
     return model;
+  }
+
+  static Future<int> open() async {
+    List<String> lines = await Model.readTable(DatabaseFile.task);
+    _table.clear();
+    for (var row in lines) {
+      _table.add(toModel(row));
+    }
+    logInfo('tasks loaded ${_table.length} rows');
+    return Future<int>.value(_table.length);
+  }
+
+  static Future<int> insert(ModelTask m) async {
+    _table.add(m);
+    m._id = _table.length;
+    await write();
+    return Future<int>.value(m._id);
+  }
+
+  static Future<bool> update() async {
+    await write();
+    return Future<bool>.value(true);
+  }
+
+  static Future<bool> delete(ModelTask m) async {
+    m.deleted = 1;
+    await write();
+    return Future<bool>.value(true);
+  }
+
+  // writes the entire table back to disc
+  static Future<bool> write() async {
+    Model.writeTable(handle: await FileHandler.task, table: _table);
+    return Future<bool>.value(true);
   }
 }

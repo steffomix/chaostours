@@ -1,9 +1,6 @@
-import 'dart:ffi';
-
 import 'package:chaostours/model.dart';
 import 'package:chaostours/model_task.dart';
 import 'model_alias.dart';
-import 'dart:io' as io;
 import 'package:chaostours/log.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/file_handler.dart';
@@ -37,7 +34,7 @@ class ModelTrackPoint {
   final DateTime timeEnd;
   final Set<int> idAlias; // "id,id,..."
   final Set<int> idTask; // "id,id,..."
-  final String notes;
+  String notes;
 
   int get id => _id;
   static int get length => _table.length;
@@ -53,8 +50,28 @@ class ModelTrackPoint {
       this.idTask = const {},
       this.notes = ''});
 
-  set notes(String n) {
-    notes = n;
+  static Future<int> insert(ModelTrackPoint m) async {
+    _table.add(m);
+    m._id = _table.length;
+    await write();
+    return Future<int>.value(m._id);
+  }
+
+  static Future<bool> update() => write();
+
+  static Future<bool> write() async {
+    await Model.writeTable(handle: await FileHandler.station, table: _table);
+    return Future<bool>.value(true);
+  }
+
+  static Future<int> open() async {
+    List<String> lines = await Model.readTable(DatabaseFile.station);
+    _table.clear();
+    for (var row in lines) {
+      _table.add(toModel(row));
+    }
+    logInfo('Trackpoints loaded ${_table.length} rows');
+    return Future<int>.value(_table.length);
   }
 
   void addAlias(ModelAlias m) => idAlias.add(m.id);
@@ -85,33 +102,10 @@ class ModelTrackPoint {
 
   Set<ModelTask> getTask() {
     Set<ModelTask> list = {};
-    idAlias.forEach((int id) {
+    for (int id in idAlias) {
       list.add(ModelTask.getTask(id));
-    });
+    }
     return list;
-  }
-
-  static Future<int> insert(ModelTrackPoint m) async {
-    _table.add(m);
-    m._id = _table.length;
-    await Model.insertRow(
-        handle: await FileHandler.station, line: m.toString());
-    return m._id;
-  }
-
-  static Future<int> open() async {
-    List<String> lines = await FileHandler.readLines(DatabaseFile.station);
-    _table.clear();
-    Model.walkLines(lines, (String line) => _table.add(toModel(line)));
-    logInfo('Trackpoints loaded ${_table.length} rows');
-    return _table.length;
-  }
-
-  static Future<bool> update() => write();
-
-  static Future<bool> write() async {
-    await Model.writeTable(handle: await FileHandler.station, table: _table);
-    return true;
   }
 
   static ModelTrackPoint toModel(String row) {
@@ -121,7 +115,7 @@ class ModelTrackPoint {
         deleted: int.parse(p[1]),
         lat: double.parse(p[2]),
         lon: double.parse(p[3]),
-        trackPoints: Model.parseTrackPointList(p[4]),
+        trackPoints: parseTrackPointList(p[4]),
         timeStart: DateTime.parse(p[5]),
         timeEnd: DateTime.parse(p[6]),
         idAlias: Model.parseIdList(p[7]),
@@ -133,12 +127,16 @@ class ModelTrackPoint {
 
   @override
   String toString() {
+    List<String> list = [];
+    for (var gps in trackPoints) {
+      list.add('${gps.lat},${gps.lon}');
+    }
     List<String> parts = [
       _id.toString(),
       deleted.toString(),
       lat.toString(),
       lon.toString(),
-      Model.trackPointsToString(trackPoints),
+      list.join(','),
       timeStart.toIso8601String(),
       timeEnd.toIso8601String(),
       idAlias.join(','),
@@ -146,5 +144,16 @@ class ModelTrackPoint {
       encode(notes)
     ];
     return parts.join('\t');
+  }
+
+  //
+  static Set<GPS> parseTrackPointList(String string) {
+    Set<GPS> tps = {};
+    List<String> list = string.split(';').where((e) => e.isNotEmpty).toList();
+    for (var item in list) {
+      List<String> coords = item.split(',');
+      tps.add(GPS(double.parse(coords[0]), double.parse(coords[1])));
+    }
+    return tps;
   }
 }

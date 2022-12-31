@@ -97,7 +97,9 @@ class TrackPointEvent extends ModelTrackPoint {
   }
 
   TrackPointEvent statusChanged() {
+    // ignore: unused_local_variable
     var calculatePath = _distancePath = _distanceStraight;
+    // ignore: unused_local_variable
     var calculateDur = duration;
     var last = trackList.last;
     trackList.clear();
