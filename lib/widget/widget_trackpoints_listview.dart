@@ -6,15 +6,18 @@ import 'package:chaostours/log.dart';
 import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/enum.dart';
 import 'package:chaostours/model_trackpoint.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'widget_add_tasks.dart';
+import 'package:chaostours/globals.dart';
 
-class TrackPointListView extends StatefulWidget {
-  const TrackPointListView({super.key});
+class WidgetTrackPointEventList extends StatefulWidget {
+  const WidgetTrackPointEventList({super.key});
 
   @override
-  State<TrackPointListView> createState() => _TrackPointListView();
+  State<WidgetTrackPointEventList> createState() => _TrackPointListView();
 }
 
-class _TrackPointListView extends State<TrackPointListView> {
+class _TrackPointListView extends State<WidgetTrackPointEventList> {
   static final List<Widget> listView = [];
   static final List<TrackPointEvent> _trackPointsStatusChanged = [];
   StreamSubscription? _trackingStatusListener;
@@ -31,6 +34,9 @@ class _TrackPointListView extends State<TrackPointListView> {
       _trackPointsStatusChanged.add(e);
       listView.add(createListItem(e));
     }
+    listView.add(const Divider(color: Colors.black));
+    listView.add(const Center(child: Text('Geladene Einträge')));
+    listView.add(const Divider(color: Colors.black));
   }
 
   @override
@@ -70,50 +76,88 @@ class _TrackPointListView extends State<TrackPointListView> {
     return ListView(children: items);
   }
 
+  ///
+  /// creates a list item from TrackPoint
+  ///
   Widget createListItem(TrackPointEvent event) {
+    // calculate duration and distance
     String duration = util.timeElapsed(event.timeStart, event.timeEnd);
     num distance = event.status == TrackingStatus.moving
         ? event.distancePath.round() / 1000
         : event.distanceStraight.round();
 
-    String t1 = event.status == TrackingStatus.moving
-        ? 'Fahren: ${distance}km in $duration'
-        : 'Halt am ${util.formatDate(event.timeStart)} für $duration';
-
-    String t2 = event.address.asString;
-
-    String t3 = event.aliasList.isNotEmpty
-        ? 'Alias ${event.aliasList.first.alias}'
-        : ' - ';
-
+    // left section (icon)
     var icon = event.status == TrackingStatus.standing
         ? Icons.edit
         : Icons.info_outline;
+
     Widget left = IconButton(
       icon: Icon(icon),
       onPressed: () {
-        eventBusTapTrackPointListItem.fire(event);
-        eventBusAppBodyScreenChanged.fire(AppBodyScreens.trackPointEditView);
+        Globals.mainPane = WidgetAddTasks(trackPoint: event);
+        eventBusAppBodyScreenChanged.fire(Globals.mainPane);
       },
     );
 
+    // prepare rows for right section (info)
+    List<TableRow> rows = [];
+    String text;
+
+    // first line (status, time, duration and distance)
+    text = event.status == TrackingStatus.moving
+        ? 'Fahren: ${distance}km in $duration'
+        : 'Halt am ${util.formatDate(event.timeStart)}\nfür $duration';
+    rows.add(TableRow(children: <Widget>[
+      TableCell(
+          child: Center(
+              child: Text(text,
+                  style: const TextStyle(fontWeight: FontWeight.bold))))
+    ]));
+
+    /// second row (address)
+    if (event.address.loaded) {
+      text = 'OSM: ${event.address.asString}';
+      rows.add(TableRow(
+          children: <Widget>[TableCell(child: Center(child: Text(text)))]));
+    }
+    if (event.aliasList.isNotEmpty) {
+      text = 'Alias: ${event.aliasList.first.alias}';
+      rows.add(TableRow(
+          children: <Widget>[TableCell(child: Center(child: Text(text)))]));
+    }
+    if (!event.address.loaded && event.aliasList.isEmpty) {
+      //https://maps.google.com&q=lat,lon&center=lat,lon
+      text =
+          'GPS: ${(event.lat * 10000).round() / 10000},${(event.lon * 10000).round() / 10000}';
+      rows.add(TableRow(children: <Widget>[Center(child: Text(text))]));
+      //'&center=${event.lat},${event.lon}';
+      /*
+      rows.add(TableRow(children: <Widget>[
+        TableCell(
+            child: Center(
+                child: InkWell(
+          child: Text(text),
+          onTap: () {
+            launchUrl(
+                Uri(scheme: 'https', host: 'maps.google.com', queryParameters: {
+              'q': '${event.lat},${event.lon}',
+              //'center': '${event.lat},${event.lon}'
+            }));
+          },
+        )))
+      ]));
+      */
+    }
+
+    // combine right rows to a table
     Widget right = Table(
         border: const TableBorder(top: BorderSide(style: BorderStyle.solid)),
-        children: <TableRow>[
-          TableRow(children: <Widget>[
-            TableCell(
-                child: Center(
-                    child: Text(t1,
-                        style: const TextStyle(fontWeight: FontWeight.bold))))
-          ]),
-          TableRow(
-              children: <Widget>[TableCell(child: Center(child: Text(t2)))]),
-          TableRow(
-              children: <Widget>[TableCell(child: Center(child: Text(t3)))])
-        ]);
+        children: rows);
 
+    // put left section (table with one row) and right section (table with flexible rows) in another table
+    // to simulate html rowspan
     return Table(
-      columnWidths: const {0: FlexColumnWidth(1), 1: FlexColumnWidth(5)},
+      columnWidths: const {0: FlexColumnWidth(1), 1: FlexColumnWidth(8)},
       children: [
         TableRow(children: [TableCell(child: left), TableCell(child: right)]),
         const TableRow(

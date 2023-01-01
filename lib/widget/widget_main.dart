@@ -2,45 +2,48 @@ import 'dart:async';
 import 'package:chaostours/enum.dart';
 import 'package:chaostours/events.dart';
 import 'package:flutter/material.dart';
-import 'widget_trackpoints_listview.dart';
-import 'widget_trackpoint-editview.dart';
+import 'package:chaostours/widget/widget_trackpoints_listview.dart';
+import 'package:chaostours/widget/widget_add_tasks.dart';
 import 'package:chaostours/log.dart';
+import 'package:chaostours/globals.dart';
 
 class App extends StatefulWidget {
   const App({super.key});
+  // app main pane
+  static Widget? _mainPane;
+  static Widget get mainPane => _mainPane ??= const WidgetTrackPointEventList();
+  static set mainPane(Widget pane) {
+    eventBusAppBodyScreenChanged.fire(pane);
+    _mainPane = pane;
+  }
 
   @override
   State<App> createState() => _AppState();
 }
 
+///
+///
+///
+///
 class _AppState extends State<App> {
   static StreamSubscription? onScreenChanged;
   static AppBodyScreens _bodyId = AppBodyScreens.trackPointListView;
 
   _AppState() {
-    onScreenChanged ??= eventBusAppBodyScreenChanged
-        .on<AppBodyScreens>()
-        .listen(onAppBodyChanged);
+    onScreenChanged ??=
+        eventBusAppBodyScreenChanged.on<Widget>().listen((Widget pane) {
+      setState(() {});
+    });
   }
 
-  Widget body() {
-    switch (_bodyId) {
-      case AppBodyScreens.trackPointListView:
-        return const TrackPointListView();
-      case AppBodyScreens.trackPointEditView:
-        return const TrackPointEditView();
-      default:
-        return const TrackPointListView();
-    }
+  @override
+  void dispose() {
+    onScreenChanged?.cancel();
+    super.dispose();
   }
 
   AppBar appbar() {
     return AppBar(title: const Text('ChaosTours'));
-  }
-
-  onAppBodyChanged(AppBodyScreens id) {
-    _bodyId = id;
-    setState(() {});
   }
 
   Drawer drawer() {
@@ -76,7 +79,7 @@ class _AppState extends State<App> {
   Widget build(BuildContext context) {
     Widget myBody = const Text('Waiting for TrackPoints...');
     try {
-      myBody = const TrackPointListView();
+      myBody = const WidgetTrackPointEventList();
     } catch (e) {
       logWarn('Waiting for TrackPoints...', e);
     }
@@ -84,7 +87,7 @@ class _AppState extends State<App> {
         home: Scaffold(
       appBar: appbar(),
       drawer: drawer(),
-      body: body(),
+      body: App.mainPane,
       bottomNavigationBar: bottomNavigationBar(),
     ));
   }
