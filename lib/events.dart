@@ -8,7 +8,7 @@ import 'package:chaostours/model_alias.dart';
 import 'package:chaostours/address.dart';
 
 // set the main screen id
-EventBus eventBusAppBodyScreenChanged = EventBus();
+EventBus eventBusMainPaneChanged = EventBus();
 
 // BottomNavBar enets
 EventBus eventBusTapBottomNavBarIcon = EventBus();
@@ -37,6 +37,7 @@ class TrackPointEvent extends ModelTrackPoint {
   final TrackingStatus status;
   final List<TrackPoint> trackList;
   final Address address;
+  ModelTrackPoint? model;
   List<ModelAlias> aliasList;
 
   TrackPointEvent(
@@ -47,7 +48,8 @@ class TrackPointEvent extends ModelTrackPoint {
       required this.status,
       required this.address,
       required this.trackList,
-      required this.aliasList})
+      required this.aliasList,
+      this.model})
       : super(
             lat: lat,
             lon: lon,
@@ -61,6 +63,10 @@ class TrackPointEvent extends ModelTrackPoint {
       idAlias.add(e.id);
     }
   }
+
+  //double get lat => model == null ? lat : model!.lat;
+  //double get lon => model == null ? lon : model!.lon;
+  //DatTime get timeStart => model == null ? timeStart : model!.timeStart;
 
   double? _distancePath;
   double get distancePath {

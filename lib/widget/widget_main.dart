@@ -1,21 +1,13 @@
 import 'dart:async';
-import 'package:chaostours/enum.dart';
 import 'package:chaostours/events.dart';
 import 'package:flutter/material.dart';
 import 'package:chaostours/widget/widget_trackpoints_listview.dart';
-import 'package:chaostours/widget/widget_add_tasks.dart';
 import 'package:chaostours/log.dart';
 import 'package:chaostours/globals.dart';
 
 class App extends StatefulWidget {
   const App({super.key});
   // app main pane
-  static Widget? _mainPane;
-  static Widget get mainPane => _mainPane ??= const WidgetTrackPointEventList();
-  static set mainPane(Widget pane) {
-    eventBusAppBodyScreenChanged.fire(pane);
-    _mainPane = pane;
-  }
 
   @override
   State<App> createState() => _AppState();
@@ -27,18 +19,17 @@ class App extends StatefulWidget {
 ///
 class _AppState extends State<App> {
   static StreamSubscription? onScreenChanged;
-  static AppBodyScreens _bodyId = AppBodyScreens.trackPointListView;
 
   _AppState() {
     onScreenChanged ??=
-        eventBusAppBodyScreenChanged.on<Widget>().listen((Widget pane) {
+        eventBusMainPaneChanged.on<Widget>().listen((Widget pane) {
       setState(() {});
     });
   }
 
   @override
   void dispose() {
-    onScreenChanged?.cancel();
+    //onScreenChanged?.cancel();
     super.dispose();
   }
 
@@ -87,7 +78,7 @@ class _AppState extends State<App> {
         home: Scaffold(
       appBar: appbar(),
       drawer: drawer(),
-      body: App.mainPane,
+      body: Globals.mainPane,
       bottomNavigationBar: bottomNavigationBar(),
     ));
   }

@@ -1,3 +1,5 @@
+// ignore_for_file: no_logic_in_create_state
+
 import 'package:chaostours/events.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -7,7 +9,12 @@ import 'package:chaostours/model_task.dart';
 import 'package:chaostours/model_trackpoint.dart';
 import 'package:chaostours/track_point.dart';
 import 'package:chaostours/events.dart';
+import 'package:chaostours/globals.dart';
+import 'widget_trackpoints_listview.dart';
 
+///
+/// checkbox
+///
 class WidgedTaskCheckbox extends StatefulWidget {
   final TrackPointEvent trackPoint;
   final ModelTask task;
@@ -28,8 +35,11 @@ class _WidgedTaskCheckbox extends State<WidgedTaskCheckbox> {
   @override
   Widget build(BuildContext context) {
     return CheckboxListTile(
-        value: checked,
+        value: checked ??= trackPoint.idTask.contains(task.id),
         onChanged: (bool? val) {
+          val ??= false;
+          val ? trackPoint.addTask(task) : trackPoint.removeTask(task);
+          ModelTrackPoint.write();
           setState(() {
             checked = val;
           });
@@ -39,6 +49,9 @@ class _WidgedTaskCheckbox extends State<WidgedTaskCheckbox> {
   }
 }
 
+///
+/// CheckBox list
+///
 class WidgetAddTasks extends StatefulWidget {
   final TrackPointEvent trackPoint;
 
@@ -49,6 +62,16 @@ class WidgetAddTasks extends StatefulWidget {
       _WidgetAddTasksState(trackPoint: trackPoint);
 }
 
+void onBackToMainPane() {
+  Globals.mainPane = Globals.pane(Panes.trackPointList);
+}
+
+Widget backToMainPane() {
+  return const Center(
+      child:
+          IconButton(icon: Icon(Icons.done_all), onPressed: onBackToMainPane));
+}
+
 class _WidgetAddTasksState extends State<WidgetAddTasks> {
   final TrackPointEvent trackPoint;
 
@@ -57,7 +80,7 @@ class _WidgetAddTasksState extends State<WidgetAddTasks> {
   @override
   Widget build(BuildContext context) {
     List<ModelTask> tasks = ModelTask.getAll();
-    List<Widget> widgets = [];
+    List<Widget> widgets = [backToMainPane()];
     for (var task in tasks) {
       widgets.add(WidgedTaskCheckbox(trackPoint: trackPoint, task: task));
     }

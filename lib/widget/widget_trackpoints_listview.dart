@@ -18,8 +18,9 @@ class WidgetTrackPointEventList extends StatefulWidget {
 }
 
 class _TrackPointListView extends State<WidgetTrackPointEventList> {
+  static TrackPointEvent? lastEvent;
+  static bool init = false;
   static final List<Widget> listView = [];
-  static final List<TrackPointEvent> _trackPointsStatusChanged = [];
   StreamSubscription? _trackingStatusListener;
   StreamSubscription? _trackPointListener;
 
@@ -29,14 +30,17 @@ class _TrackPointListView extends State<WidgetTrackPointEventList> {
         .listen(onTrackingStatusChanged);
     _trackPointListener ??=
         eventBusTrackPointCreated.on<TrackPointEvent>().listen(onTrackPoint);
-
+    listView.clear();
     for (var e in TrackPointEvent.recentEvents(max: 30)) {
-      _trackPointsStatusChanged.add(e);
       listView.add(createListItem(e));
     }
     listView.add(const Divider(color: Colors.black));
-    listView.add(const Center(child: Text('Geladene Einträge')));
     listView.add(const Divider(color: Colors.black));
+    listView.add(const Center(child: Text('Gespeicherte Einträge')));
+    listView.add(const Divider(color: Colors.black));
+    listView.add(const Divider(color: Colors.black));
+    if (lastEvent != null && init) listView.add(createListItem(lastEvent!));
+    init = true;
   }
 
   @override
@@ -49,12 +53,11 @@ class _TrackPointListView extends State<WidgetTrackPointEventList> {
   // add a new Trackpoint list item
   // and prune list to max of 100
   void onTrackingStatusChanged(TrackPointEvent event) {
-    _trackPointsStatusChanged.add(event);
     listView.add(createListItem(event));
     while (listView.length > 100) {
       listView.removeLast();
     }
-    setState(() {});
+    //setState(() {});
   }
 
   void onTapItem(TrackPoint trackPoint, TrackingStatus status) {
@@ -63,9 +66,7 @@ class _TrackPointListView extends State<WidgetTrackPointEventList> {
 
   // update last trackpoint list item
   void onTrackPoint(TrackPointEvent event) {
-    if (_trackPointsStatusChanged.isEmpty) return;
-    int last = _trackPointsStatusChanged.length - 1;
-    _trackPointsStatusChanged[last] = event;
+    lastEvent = event;
     listView[listView.length - 1] = createListItem(event);
     setState(() {});
   }
@@ -80,6 +81,7 @@ class _TrackPointListView extends State<WidgetTrackPointEventList> {
   /// creates a list item from TrackPoint
   ///
   Widget createListItem(TrackPointEvent event) {
+    lastEvent = event;
     // calculate duration and distance
     String duration = util.timeElapsed(event.timeStart, event.timeEnd);
     num distance = event.status == TrackingStatus.moving
@@ -95,7 +97,6 @@ class _TrackPointListView extends State<WidgetTrackPointEventList> {
       icon: Icon(icon),
       onPressed: () {
         Globals.mainPane = WidgetAddTasks(trackPoint: event);
-        eventBusAppBodyScreenChanged.fire(Globals.mainPane);
       },
     );
 
