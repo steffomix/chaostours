@@ -30,16 +30,20 @@ class WidgedTaskCheckbox extends StatefulWidget {
 class _WidgedTaskCheckbox extends State<WidgedTaskCheckbox> {
   final TrackPointEvent trackPoint;
   final ModelTask task;
+  ModelTrackPoint? model;
   bool? checked;
-  _WidgedTaskCheckbox({required this.trackPoint, required this.task});
+  _WidgedTaskCheckbox({required this.trackPoint, required this.task}) {
+    model = trackPoint.model ?? trackPoint;
+  }
   @override
   Widget build(BuildContext context) {
     return CheckboxListTile(
-        value: checked ??= trackPoint.idTask.contains(task.id),
+        value: model?.idTask.contains(task.id) ?? false,
         onChanged: (bool? val) {
           val ??= false;
-          val ? trackPoint.addTask(task) : trackPoint.removeTask(task);
-          ModelTrackPoint.write();
+
+          val == true ? trackPoint.addTask(task) : trackPoint.removeTask(task);
+          //ModelTrackPoint.update(trackPoint);
           setState(() {
             checked = val;
           });

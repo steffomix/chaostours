@@ -5,6 +5,7 @@ import 'package:chaostours/log.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/file_handler.dart';
 import 'package:chaostours/enum.dart';
+import 'package:chaostours/events.dart';
 
 /*
 example: 
@@ -25,13 +26,13 @@ await ModelTrackPoint.write();
 */
 class ModelTrackPoint {
   static final List<ModelTrackPoint> _table = [];
-  int _id = 1;
+  int _id = -1;
   final int deleted; // 0 or 1
   final double lat;
   final double lon;
   final Set<GPS> trackPoints; // "lat,lon;lat,lon;..."
   final DateTime timeStart;
-  final DateTime timeEnd;
+  DateTime timeEnd;
   final Set<int> idAlias; // "id,id,..."
   final Set<int> idTask; // "id,id,..."
   String notes;
@@ -57,7 +58,12 @@ class ModelTrackPoint {
     return Future<int>.value(m._id);
   }
 
-  static Future<bool> update() => write();
+  static Future<bool> update(TrackPointEvent model) async {
+    if (model.model == null) return false; // not inserted yet
+    model._id = model.model!.id;
+    _table[model._id - 1] = model;
+    return await write();
+  }
 
   static Future<bool> write() async {
     await Model.writeTable(handle: await FileHandler.station, table: _table);
@@ -93,11 +99,11 @@ class ModelTrackPoint {
 
   static List<ModelTrackPoint> recentTrackPoints({int max = 30}) {
     List<ModelTrackPoint> list = [];
-    int m = (max > _table.length ? _table.length : max) - 1;
-    for (var i = _table.length - m; i < _table.length; i++) {
+    int i = _table.length;
+    while (--max >= 0 && --i >= 0) {
       list.add(_table[i]);
     }
-    return list;
+    return list.reversed.toList();
   }
 
   Set<ModelTask> getTask() {

@@ -38,17 +38,16 @@ class TrackPointEvent extends ModelTrackPoint {
   final List<TrackPoint> trackList;
   final Address address;
   ModelTrackPoint? model;
-  List<ModelAlias> aliasList;
 
   TrackPointEvent(
-      {required lat,
+      {required this.status,
+      required lat,
       required lon,
       required timeStart,
       required timeEnd,
-      required this.status,
       required this.address,
       required this.trackList,
-      required this.aliasList,
+      required idAlias,
       this.model})
       : super(
             lat: lat,
@@ -57,12 +56,7 @@ class TrackPointEvent extends ModelTrackPoint {
             timeEnd: timeEnd,
             idAlias: <int>{},
             idTask: <int>{},
-            trackPoints: <GPS>{}) {
-    eventId = ++_eventId;
-    for (var e in aliasList) {
-      idAlias.add(e.id);
-    }
-  }
+            trackPoints: <GPS>{});
 
   //double get lat => model == null ? lat : model!.lat;
   //double get lon => model == null ? lon : model!.lon;
@@ -92,14 +86,15 @@ class TrackPointEvent extends ModelTrackPoint {
     List<TrackPointEvent> trackPoints = [];
     for (var m in models) {
       trackPoints.add(TrackPointEvent(
+          status: TrackingStatus.standing, // event only
+          trackList: [], // event only
+          address: Address(GPS(m.lat, m.lon)), // event only
+          model: m, // event only
           lat: m.lat,
           lon: m.lon,
           timeStart: m.timeStart,
           timeEnd: m.timeEnd,
-          status: TrackingStatus.standing,
-          address: Address(GPS(m.lat, m.lon)),
-          trackList: [],
-          aliasList: m.getAlias()));
+          idAlias: m.idAlias));
     }
     return trackPoints;
   }

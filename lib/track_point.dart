@@ -44,8 +44,18 @@ class TrackPoint {
         ? TrackingStatus.standing
         : TrackingStatus.moving;
     TrackPointEvent event = createEvent(tp: tp, newStatus: true);
+    // latest point of time to save event to disk
     if (_status == TrackingStatus.moving) {
-      ModelTrackPoint.insert(event);
+      // we just started moving
+      _status = TrackingStatus.standing;
+      event.timeEnd = tp.time;
+      // if not already saved
+      if (event.id <= 0) {
+        await ModelTrackPoint.insert(event);
+        event.model = event;
+      } else {
+        ModelTrackPoint.update(event);
+      }
     }
     eventBusTrackingStatusChanged.fire(event);
     _trackPoints.clear();
@@ -64,7 +74,9 @@ class TrackPoint {
         lon: tp.gps.lon,
         timeStart: _trackPoints.first.time,
         timeEnd: _trackPoints.last.time,
-        aliasList: tp.alias);
+        idAlias: tp.alias.map((ModelAlias m) {
+          return m.id;
+        }).toList());
     if (newStatus) mtp.statusChanged();
     return mtp;
   }

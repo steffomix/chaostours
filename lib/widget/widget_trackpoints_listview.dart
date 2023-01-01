@@ -5,10 +5,11 @@ import 'package:chaostours/track_point.dart';
 import 'package:chaostours/log.dart';
 import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/enum.dart';
-import 'package:chaostours/model_trackpoint.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'widget_add_tasks.dart';
 import 'package:chaostours/globals.dart';
+import 'package:chaostours/model_alias.dart';
+import 'package:chaostours/model_task.dart';
+import 'package:chaostours/model_trackpoint.dart';
 
 class WidgetTrackPointEventList extends StatefulWidget {
   const WidgetTrackPointEventList({super.key});
@@ -31,7 +32,8 @@ class _TrackPointListView extends State<WidgetTrackPointEventList> {
     _trackPointListener ??=
         eventBusTrackPointCreated.on<TrackPointEvent>().listen(onTrackPoint);
     listView.clear();
-    for (var e in TrackPointEvent.recentEvents(max: 30)) {
+    int count = 30;
+    for (var e in TrackPointEvent.recentEvents(max: count)) {
       listView.add(createListItem(e));
     }
     listView.add(const Divider(color: Colors.black));
@@ -104,7 +106,9 @@ class _TrackPointListView extends State<WidgetTrackPointEventList> {
     List<TableRow> rows = [];
     String text;
 
-    // first line (status, time, duration and distance)
+    ///
+    /// first line (status, time, duration and distance)
+    ///
     text = event.status == TrackingStatus.moving
         ? 'Fahren: ${distance}km in $duration'
         : 'Halt am ${util.formatDate(event.timeStart)}\nfür $duration';
@@ -115,39 +119,55 @@ class _TrackPointListView extends State<WidgetTrackPointEventList> {
                   style: const TextStyle(fontWeight: FontWeight.bold))))
     ]));
 
+    ///
     /// second row (address)
+    ///
     if (event.address.loaded) {
       text = 'OSM: ${event.address.asString}';
       rows.add(TableRow(
           children: <Widget>[TableCell(child: Center(child: Text(text)))]));
     }
-    if (event.aliasList.isNotEmpty) {
-      text = 'Alias: ${event.aliasList.first.alias}';
+    if (event.idAlias.isNotEmpty) {
+      text = 'Alias: ${ModelAlias.getAlias(event.idAlias.first)}';
       rows.add(TableRow(
           children: <Widget>[TableCell(child: Center(child: Text(text)))]));
     }
-    if (!event.address.loaded && event.aliasList.isEmpty) {
+    if (!event.address.loaded && event.idAlias.isEmpty) {
       //https://maps.google.com&q=lat,lon&center=lat,lon
       text =
           'GPS: ${(event.lat * 10000).round() / 10000},${(event.lon * 10000).round() / 10000}';
       rows.add(TableRow(children: <Widget>[Center(child: Text(text))]));
       //'&center=${event.lat},${event.lon}';
-      /*
-      rows.add(TableRow(children: <Widget>[
+
+      // rows.add(TableRow(children: <Widget>[
+      //   TableCell(
+      //       child: Center(
+      //           child: InkWell(
+      //     child: Text(text),
+      //     onTap: () {
+      //       launchUrl(
+      //           Uri(scheme: 'https', host: 'maps.google.com', queryParameters: {
+      //         'q': '${event.lat},${event.lon}',
+      //         //'center': '${event.lat},${event.lon}'
+      //       }));
+      //     },
+      //   )))
+      // ]));
+
+    }
+
+    ///
+    /// third row (tasks)
+    ///
+    List<TableRow> tasks = [];
+    ModelTrackPoint model = event.model ?? event;
+    for (var task in model.idTask) {
+      ModelTask.getTask(task);
+      tasks.add(TableRow(children: [
+        const TableCell(child: Text('')),
         TableCell(
-            child: Center(
-                child: InkWell(
-          child: Text(text),
-          onTap: () {
-            launchUrl(
-                Uri(scheme: 'https', host: 'maps.google.com', queryParameters: {
-              'q': '${event.lat},${event.lon}',
-              //'center': '${event.lat},${event.lon}'
-            }));
-          },
-        )))
+            child: Center(child: Text('- ${ModelTask.getTask(task).task}')))
       ]));
-      */
     }
 
     // combine right rows to a table
@@ -162,7 +182,8 @@ class _TrackPointListView extends State<WidgetTrackPointEventList> {
       children: [
         TableRow(children: [TableCell(child: left), TableCell(child: right)]),
         const TableRow(
-            children: [TableCell(child: Text('')), TableCell(child: Text(''))])
+            children: [TableCell(child: Text('')), TableCell(child: Text(''))]),
+        ...tasks
       ],
     );
   }
