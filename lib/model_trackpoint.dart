@@ -40,14 +40,14 @@ class ModelTrackPoint {
   static int get length => _table.length;
 
   ModelTrackPoint(
-      {required this.lat,
+      {this.deleted = 0,
+      required this.lat,
       required this.lon,
       required this.timeStart,
       required this.timeEnd,
-      this.deleted = 0,
-      this.trackPoints = const {},
-      this.idAlias = const {},
-      this.idTask = const {},
+      required this.trackPoints,
+      required this.idAlias,
+      required this.idTask,
       this.notes = ''});
 
   static Future<int> insert(ModelTrackPoint m) async {
@@ -78,7 +78,7 @@ class ModelTrackPoint {
   void removeAlias(ModelAlias m) => idAlias.remove(m.id);
 
   void addTask(ModelTask m) => idTask.add(m.id);
-  void emoveTask(ModelTask m) => idTask.remove(m.id);
+  void removeTask(ModelTask m) => idTask.remove(m.id);
 
   void addTrackPoint(GPS gps) => trackPoints.add(gps);
   void removeTrackPoint(GPS gps) => trackPoints.remove(gps);

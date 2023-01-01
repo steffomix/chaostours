@@ -14,7 +14,7 @@ EventBus eventBusAppBodyScreenChanged = EventBus();
 EventBus eventBusTapBottomNavBarIcon = EventBus();
 
 // TrackPoint List Item on main screen
-EventBus eventBusTapTrackPointListItem = EventBus();
+EventBus eventBusTrackPointEventSelected = EventBus();
 
 // fired when trackPoint status changed
 EventBus eventBusTrackingStatusChanged = EventBus();
@@ -53,7 +53,9 @@ class TrackPointEvent extends ModelTrackPoint {
             lon: lon,
             timeStart: timeStart,
             timeEnd: timeEnd,
-            idAlias: <int>{}) {
+            idAlias: <int>{},
+            idTask: <int>{},
+            trackPoints: <GPS>{}) {
     eventId = ++_eventId;
     for (var e in aliasList) {
       idAlias.add(e.id);

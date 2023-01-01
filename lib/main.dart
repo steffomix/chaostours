@@ -7,6 +7,7 @@ import 'package:chaostours/track_point.dart';
 import 'package:chaostours/tracking_calendar.dart';
 import 'package:chaostours/config.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:chaostours/globals.dart';
 
 void main() async {
   // Thanks for: https://stackoverflow.com/a/69481863
@@ -34,7 +35,7 @@ void main() async {
   TrackPoint.startTracking();
 
   // start frontend
-  runApp(const App());
+  runApp(Globals.app);
 }
 
 

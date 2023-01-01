@@ -24,6 +24,7 @@ import 'recource_loader.dart';
 class Address {
   final GPS _gps;
   final DateTime _time = DateTime.now();
+  bool _loaded = false;
   String road = '';
   // ignore: non_constant_identifier_names
   String house_number = '';
@@ -48,6 +49,8 @@ class Address {
         : '$postcode $town';
     return addr;
   }
+
+  bool get loaded => _loaded;
 
   Address(this._gps);
 
@@ -93,6 +96,7 @@ class Address {
       // ignore
       logError('Address::lookupAdress', e, stk);
     }
+    _loaded = true;
     //logInfo('Address parsed OSM reverse lookup result on GPS #${_gps.id}:\n$asString');
     return Future<Address>.value(this);
   }

@@ -57,7 +57,9 @@ class TrackPoint {
     TrackPointEvent mtp = TrackPointEvent(
         status: _status,
         address: tp.address,
-        trackList: [..._trackPoints],
+        trackList: _trackPoints.isEmpty
+            ? <TrackPoint>[tp]
+            : <TrackPoint>[..._trackPoints],
         lat: tp.gps.lat,
         lon: tp.gps.lon,
         timeStart: _trackPoints.first.time,
@@ -163,7 +165,7 @@ class TrackPoint {
     TrackPoint tp = TrackPoint(gps);
 
     tp.address = Address(gps);
-    await tp.address.lookupAddress();
+    //await tp.address.lookupAddress();
     tp._alias = ModelAlias.nextAlias(gps);
 
     return tp;

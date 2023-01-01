@@ -11,7 +11,7 @@ var encode = Uri.encodeFull; //util.base64Codec().encode;
 
 class Model {
   static const lineSep = '\n';
-  static const rowEnd = '|';
+  static const rowEnd = '\t|';
 
   static Future<io.File> writeTable(
       {required io.File handle, required List<dynamic> table}) async {
@@ -36,11 +36,10 @@ class Model {
   }
 
   static Set<int> parseIdList(String string) {
-    string = string;
+    string = string.trim();
     Set<int> ids = {};
     if (string.isEmpty) return ids;
-    List<String> list = string.split(',').where((e) => e.isNotEmpty).toList();
-    if (list.isEmpty) return ids;
+    List<String> list = string.split(',');
     for (var item in list) {
       ids.add(int.parse(item));
     }

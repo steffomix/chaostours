@@ -18,6 +18,8 @@ class ModelTask {
     return _table[id - 1];
   }
 
+  static List<ModelTask> getAll() => <ModelTask>[..._table];
+
   @override
   String toString() {
     List<String> parts = [
