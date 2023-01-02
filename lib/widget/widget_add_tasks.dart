@@ -16,7 +16,7 @@ import 'widget_trackpoints_listview.dart';
 /// checkbox
 ///
 class WidgedTaskCheckbox extends StatefulWidget {
-  final TrackPointEvent trackPoint;
+  final ModelTrackPoint trackPoint;
   final ModelTask task;
 
   const WidgedTaskCheckbox(
@@ -28,22 +28,19 @@ class WidgedTaskCheckbox extends StatefulWidget {
 }
 
 class _WidgedTaskCheckbox extends State<WidgedTaskCheckbox> {
-  final TrackPointEvent trackPoint;
+  final ModelTrackPoint trackPoint;
   final ModelTask task;
-  ModelTrackPoint? model;
   bool? checked;
-  _WidgedTaskCheckbox({required this.trackPoint, required this.task}) {
-    model = trackPoint.model ?? trackPoint;
-  }
+  _WidgedTaskCheckbox({required this.trackPoint, required this.task});
   @override
   Widget build(BuildContext context) {
     return CheckboxListTile(
-        value: model?.idTask.contains(task.id) ?? false,
+        value: trackPoint.idTask.contains(task.id),
         onChanged: (bool? val) {
           val ??= false;
 
           val == true ? trackPoint.addTask(task) : trackPoint.removeTask(task);
-          //ModelTrackPoint.update(trackPoint);
+          ModelTrackPoint.update();
           setState(() {
             checked = val;
           });
@@ -57,7 +54,7 @@ class _WidgedTaskCheckbox extends State<WidgedTaskCheckbox> {
 /// CheckBox list
 ///
 class WidgetAddTasks extends StatefulWidget {
-  final TrackPointEvent trackPoint;
+  final ModelTrackPoint trackPoint;
 
   const WidgetAddTasks({super.key, required this.trackPoint});
 
@@ -77,7 +74,7 @@ Widget backToMainPane() {
 }
 
 class _WidgetAddTasksState extends State<WidgetAddTasks> {
-  final TrackPointEvent trackPoint;
+  final ModelTrackPoint trackPoint;
 
   _WidgetAddTasksState({required this.trackPoint}) {}
 

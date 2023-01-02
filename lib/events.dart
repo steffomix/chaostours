@@ -30,7 +30,7 @@ class Tapped extends EventBase {
   final int id;
   Tapped(this.id);
 }
-
+/*
 class TrackPointEvent extends ModelTrackPoint {
   static int _eventId = 0;
   int eventId = -1;
@@ -110,3 +110,4 @@ class TrackPointEvent extends ModelTrackPoint {
     return this;
   }
 }
+*/

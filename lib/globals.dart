@@ -23,7 +23,7 @@ class Globals {
   static Widget? _mainPane;
   static Widget get mainPane {
     _mainPane ??=
-        _staticPanes[Panes.trackPointList] = const WidgetTrackPointEventList();
+        _staticPanes[Panes.trackPointList] = const WidgetModelTrackPointList();
 
     return _mainPane!;
   }
@@ -39,7 +39,7 @@ class Globals {
       case Panes.trackPointList:
         // same as mainPane but from Map _staticPanes
         _mainPane = _staticPanes[Panes.trackPointList] ??=
-            const WidgetTrackPointEventList();
+            const WidgetModelTrackPointList();
         return _mainPane!;
       //return mainPane;
 

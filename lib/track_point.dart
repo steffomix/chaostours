@@ -8,15 +8,16 @@ import 'package:chaostours/address.dart';
 import 'package:chaostours/enum.dart';
 import 'package:chaostours/model_trackpoint.dart';
 import 'package:flutter/material.dart';
+import 'package:chaostours/util.dart' as util;
 
 class TrackPoint {
-  static int _nextId = 0;
+  //static int _nextId = 0;
   // contains all trackpoints from current state start or stop
-  static final List<TrackPoint> _trackPoints = [];
+  static final List<ModelTrackPoint> _trackPoints = [];
   // contains all trackpoints during driving (from start to stop)
 
   //
-  static TrackingStatus _status = TrackingStatus.standing;
+  static TrackingStatus _status = TrackingStatus.none;
   static TrackingStatus get status => _status;
   static DateTime _lastStatusChange = DateTime.now();
 
@@ -24,6 +25,25 @@ class TrackPoint {
   static bool _tracking = false;
   static bool get tracking => _tracking;
 
+  static String timeElapsed() {
+    if (_trackPoints.isEmpty) return '00:00:00';
+    return util.timeElapsed(
+        _trackPoints.first.timeStart, _trackPoints.last.timeStart);
+  }
+
+  static double distance() {
+    if (_trackPoints.isEmpty) return 0.0;
+    if (_status == TrackingStatus.standing) {
+      return (GPS.distance(_trackPoints.first.gps, _trackPoints.last.gps) *
+                  1000)
+              .round() /
+          1000;
+    } else {
+      return movedDistance(_trackPoints);
+    }
+  }
+
+  /*
   final int _id = ++_nextId;
   final GPS _gps;
   final DateTime _time = DateTime.now();
@@ -34,57 +54,36 @@ class TrackPoint {
   DateTime get time => _time;
   List<ModelAlias> get alias => _alias;
   late Address address;
-
-  TrackPoint(this._gps) {
-    _trackPoints.add(this);
+*/
+  TrackPoint() {
+    throw 'Do not instantiate TrackPoint, use ModelTrackPoint!';
   }
 
-  static void _statusChanged(TrackPoint tp) async {
-    _status = _status == TrackingStatus.moving
-        ? TrackingStatus.standing
-        : TrackingStatus.moving;
-    TrackPointEvent event = createEvent(tp: tp, newStatus: true);
-    // latest point of time to save event to disk
-    if (_status == TrackingStatus.moving) {
-      // we just started moving
-      _status = TrackingStatus.standing;
-      event.timeEnd = tp.time;
-      // if not already saved
-      if (event.id <= 0) {
-        await ModelTrackPoint.insert(event);
-        event.model = event;
-      } else {
-        ModelTrackPoint.update(event);
-      }
+  static void _statusChanged(ModelTrackPoint tp) async {
+    // create a new TrackPoint as event
+    ModelTrackPoint event = await createEvent();
+    if (_status == TrackingStatus.standing) {
+      await ModelTrackPoint.insert(event);
     }
     eventBusTrackingStatusChanged.fire(event);
     _trackPoints.clear();
     _trackPoints.add(tp);
+    _lastStatusChange = DateTime.now();
   }
 
-  static TrackPointEvent createEvent(
-      {required TrackPoint tp, bool newStatus = false}) {
-    TrackPointEvent mtp = TrackPointEvent(
-        status: _status,
-        address: tp.address,
-        trackList: _trackPoints.isEmpty
-            ? <TrackPoint>[tp]
-            : <TrackPoint>[..._trackPoints],
-        lat: tp.gps.lat,
-        lon: tp.gps.lon,
-        timeStart: _trackPoints.first.time,
-        timeEnd: _trackPoints.last.time,
-        idAlias: tp.alias.map((ModelAlias m) {
-          return m.id;
-        }).toList());
-    if (newStatus) mtp.statusChanged();
-    return mtp;
+  static Future<ModelTrackPoint> createEvent() async {
+    ModelTrackPoint event = await create();
+    event.status = _status;
+    event.timeStart = _trackPoints.first.timeStart;
+    event.timeEnd = DateTime.now();
+    event.trackPoints = [..._trackPoints];
+    return event;
   }
 
   ///
   /// creates new Trackpoint, waits after status changed,
   ///
-  static void _checkStatus(TrackPoint tp) {
+  static void _checkStatus(ModelTrackPoint tp) {
     // wait after status changed
     if (_lastStatusChange
         .add(AppConfig.waitTimeAfterStatusChanged)
@@ -94,31 +93,33 @@ class TrackPoint {
     // min length
     if (_trackPoints.length < 4) return;
 
-    List<TrackPoint> trackList = _recentTracks();
+    List<ModelTrackPoint> trackList = _recentTracks();
     // skip if nothing was found
     if (trackList.isEmpty) return;
 
-    if (_status == TrackingStatus.standing) {
+    if (_status == TrackingStatus.standing || _status == TrackingStatus.none) {
       if (_checkMoved(trackList)) {
         // use the most recent Trackpoint as reference
         _statusChanged(trackList.first);
+        _status = TrackingStatus.moving;
         return;
       }
     } else {
       if (_checkStopped(trackList)) {
         // use the one before oldest trackpoint where we stopped as reference
         _statusChanged(trackList.last);
+        _status = TrackingStatus.standing;
         return;
       }
     }
   }
 
-  static bool _checkMoved(List<TrackPoint> tl) {
+  static bool _checkMoved(List<ModelTrackPoint> tl) {
     // check if moved
     double dist = 0;
-    TrackPoint tRef = tl.last;
+    ModelTrackPoint tRef = tl.last;
     for (var i = 0; i < tl.length; i++) {
-      dist = GPS.distance(tl[i]._gps, tRef._gps);
+      dist = GPS.distance(tl[i].gps, tRef.gps);
       if (dist > AppConfig.distanceTreshold) {
         return true;
       }
@@ -126,13 +127,13 @@ class TrackPoint {
     return false;
   }
 
-  static bool _checkStopped(List<TrackPoint> tl) {
+  static bool _checkStopped(List<ModelTrackPoint> tl) {
     double dist = 0;
     double distMoved = 0;
-    TrackPoint tRef = tl.first;
+    ModelTrackPoint tRef = tl.first;
     // check if stopped
     for (var i = 0; i < tl.length; i++) {
-      dist = GPS.distance(tl[i]._gps, tRef._gps);
+      dist = GPS.distance(tl[i].gps, tRef.gps);
       if (dist > distMoved) distMoved = dist;
     }
     logVerbose('moved: $distMoved in ${tl.length} tracks');
@@ -142,43 +143,44 @@ class TrackPoint {
     return false;
   }
 
-  /// collect recent Trackpoints in backwards order since last status changed with gpsOk
+  /// collect recent Trackpoints in backwards order since last status changed
+  /// and until <timeTreshold>
   /// so that trackList[0] is most recent
-  static List<TrackPoint> _recentTracks() {
-    // collect TrackPoints of last <timeTreshold> with <gpsOk>
-    List<TrackPoint> trackList = [];
-    List<int> ids = [];
+  static List<ModelTrackPoint> _recentTracks() {
+    List<ModelTrackPoint> trackList = [];
     DateTime treshold = DateTime.now().subtract(AppConfig.stopTimeTreshold);
     bool outDated;
     for (var i = _trackPoints.length - 1; i >= 0; i--) {
-      outDated = _trackPoints[i].time.isBefore(treshold);
+      outDated = _trackPoints[i].timeStart.isBefore(treshold);
       if (outDated) break;
       trackList.add(_trackPoints[i]);
-      ids.add(_trackPoints[i].id);
     }
     return trackList;
   }
 
-  // calc distance in meters
-  static double movedDistance(List<TrackPoint> tracklist) {
+  // calc distance over multiple trackpoints in meters
+  static double movedDistance(List<ModelTrackPoint> tracklist) {
     if (tracklist.length < 2) return 0;
     double dist = 0;
-    GPS gps = tracklist[0]._gps;
+    GPS gps = tracklist[0].gps;
     for (var i = 1; i < tracklist.length; i++) {
-      dist += GPS.distance(gps, tracklist[i]._gps);
-      gps = tracklist[i]._gps;
+      dist += GPS.distance(gps, tracklist[i].gps);
+      gps = tracklist[i].gps;
     }
     return dist;
   }
 
-  static Future<TrackPoint> create() async {
+  static Future<ModelTrackPoint> create() async {
     GPS gps = await GPS.gps();
+    Address address = Address(gps);
+    if (AppConfig.alwaysLookupAddress) await address.lookupAddress();
 
-    TrackPoint tp = TrackPoint(gps);
-
-    tp.address = Address(gps);
-    //await tp.address.lookupAddress();
-    tp._alias = ModelAlias.nextAlias(gps);
+    ModelTrackPoint tp = ModelTrackPoint(
+        gps: gps,
+        trackPoints: <ModelTrackPoint>[],
+        idAlias: ModelAlias.nextAlias(gps).map((e) => e.id).toList(),
+        timeStart: DateTime.now(),
+        address: address);
 
     return tp;
   }
@@ -187,12 +189,20 @@ class TrackPoint {
   static void _track([bool first = false]) async {
     if (!_tracking) return;
     Future.delayed(AppConfig.trackPointTickTime, () async {
+      ModelTrackPoint tp;
       try {
-        TrackPoint tp = await TrackPoint.create();
-        if (first) eventBusTrackingStatusChanged.fire(createEvent(tp: tp));
-        _checkStatus(tp);
-
-        eventBusTrackPointCreated.fire(createEvent(tp: tp));
+        tp = await create();
+        tp.status = _status;
+        _trackPoints.add(tp);
+        if (first) {
+          tp = await createEvent();
+          tp.timeEnd = DateTime.now();
+          _status = TrackingStatus.standing;
+          eventBusTrackingStatusChanged.fire(await createEvent());
+        } else {
+          _checkStatus(tp);
+          eventBusTrackPointCreated.fire(tp);
+        }
       } catch (e, stk) {
         // ignore
         logFatal('TrackPoint::create', e, stk);

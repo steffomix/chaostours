@@ -11,15 +11,15 @@ import 'package:chaostours/model_alias.dart';
 import 'package:chaostours/model_task.dart';
 import 'package:chaostours/model_trackpoint.dart';
 
-class WidgetTrackPointEventList extends StatefulWidget {
-  const WidgetTrackPointEventList({super.key});
+class WidgetModelTrackPointList extends StatefulWidget {
+  const WidgetModelTrackPointList({super.key});
 
   @override
-  State<WidgetTrackPointEventList> createState() => _TrackPointListView();
+  State<WidgetModelTrackPointList> createState() => _TrackPointListView();
 }
 
-class _TrackPointListView extends State<WidgetTrackPointEventList> {
-  static TrackPointEvent? lastEvent;
+class _TrackPointListView extends State<WidgetModelTrackPointList> {
+  static ModelTrackPoint? lastEvent;
   static bool init = false;
   static final List<Widget> listView = [];
   StreamSubscription? _trackingStatusListener;
@@ -27,13 +27,14 @@ class _TrackPointListView extends State<WidgetTrackPointEventList> {
 
   _TrackPointListView() {
     _trackingStatusListener ??= eventBusTrackingStatusChanged
-        .on<TrackPointEvent>()
+        .on<ModelTrackPoint>()
         .listen(onTrackingStatusChanged);
     _trackPointListener ??=
-        eventBusTrackPointCreated.on<TrackPointEvent>().listen(onTrackPoint);
+        eventBusTrackPointCreated.on<ModelTrackPoint>().listen(onTrackPoint);
     listView.clear();
     int count = 30;
-    for (var e in TrackPointEvent.recentEvents(max: count)) {
+    for (var e in ModelTrackPoint.recentTrackPoints(max: count)) {
+      e.status = TrackingStatus.standing;
       listView.add(createListItem(e));
     }
     listView.add(const Divider(color: Colors.black));
@@ -54,8 +55,8 @@ class _TrackPointListView extends State<WidgetTrackPointEventList> {
 
   // add a new Trackpoint list item
   // and prune list to max of 100
-  void onTrackingStatusChanged(TrackPointEvent event) {
-    listView.add(createListItem(event));
+  void onTrackingStatusChanged(ModelTrackPoint event) {
+    listView.add(createListItem(event, false));
     while (listView.length > 100) {
       listView.removeLast();
     }
@@ -67,9 +68,9 @@ class _TrackPointListView extends State<WidgetTrackPointEventList> {
   }
 
   // update last trackpoint list item
-  void onTrackPoint(TrackPointEvent event) {
+  void onTrackPoint(ModelTrackPoint event) {
     lastEvent = event;
-    listView[listView.length - 1] = createListItem(event);
+    listView[listView.length - 1] = createListItem(event, true);
     setState(() {});
   }
 
@@ -82,13 +83,16 @@ class _TrackPointListView extends State<WidgetTrackPointEventList> {
   ///
   /// creates a list item from TrackPoint
   ///
-  Widget createListItem(TrackPointEvent event) {
+  String ev = '';
+  String up = '';
+  Widget createListItem(ModelTrackPoint event, [bool update = true]) {
+    ev += event.status.index.toString();
+    up += (update == true ? 1 : 0).toString();
     lastEvent = event;
     // calculate duration and distance
-    String duration = util.timeElapsed(event.timeStart, event.timeEnd);
-    num distance = event.status == TrackingStatus.moving
-        ? event.distancePath.round() / 1000
-        : event.distanceStraight.round();
+    String duration = TrackPoint.timeElapsed();
+
+    double distance = TrackPoint.distance();
 
     // left section (icon)
     var icon = event.status == TrackingStatus.standing
@@ -128,14 +132,14 @@ class _TrackPointListView extends State<WidgetTrackPointEventList> {
           children: <Widget>[TableCell(child: Center(child: Text(text)))]));
     }
     if (event.idAlias.isNotEmpty) {
-      text = 'Alias: ${ModelAlias.getAlias(event.idAlias.first)}';
+      text = 'Alias: ${ModelAlias.getAlias(event.idAlias.first).alias}';
       rows.add(TableRow(
           children: <Widget>[TableCell(child: Center(child: Text(text)))]));
     }
     if (!event.address.loaded && event.idAlias.isEmpty) {
       //https://maps.google.com&q=lat,lon&center=lat,lon
       text =
-          'GPS: ${(event.lat * 10000).round() / 10000},${(event.lon * 10000).round() / 10000}';
+          'GPS: ${(event.gps.lat * 10000).round() / 10000},${(event.gps.lon * 10000).round() / 10000}';
       rows.add(TableRow(children: <Widget>[Center(child: Text(text))]));
       //'&center=${event.lat},${event.lon}';
 
@@ -160,7 +164,7 @@ class _TrackPointListView extends State<WidgetTrackPointEventList> {
     /// third row (tasks)
     ///
     List<TableRow> tasks = [];
-    ModelTrackPoint model = event.model ?? event;
+    ModelTrackPoint model = event;
     for (var task in model.idTask) {
       ModelTask.getTask(task);
       tasks.add(TableRow(children: [

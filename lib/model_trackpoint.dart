@@ -1,55 +1,63 @@
 import 'package:chaostours/model.dart';
 import 'package:chaostours/model_task.dart';
-import 'model_alias.dart';
+import 'package:chaostours/model_alias.dart';
 import 'package:chaostours/log.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/file_handler.dart';
 import 'package:chaostours/enum.dart';
-import 'package:chaostours/events.dart';
+import 'package:chaostours/address.dart';
+import 'package:chaostours/track_point.dart';
+import 'package:chaostours/util.dart' as util;
 
-/*
-example: 
-await ModelTrackPoint.insert(ModelTrackPoint(
-  lat: 1,
-  lon: 2,
-  trackPoints: [GPS(2, 3), GPS(4, 5)],
-  timeStart: DateTime.now(),
-  timeEnd: DateTime.now(),
-  idAlias: [1, 5, 7],
-  idTask: [3, 6, 5, 2],
-  notes: 'this is a test'));
-
-await ModelTrackPoint.update();
-
-await ModelTrackPoint.write();
-
-*/
 class ModelTrackPoint {
   static final List<ModelTrackPoint> _table = [];
-  int _id = -1;
-  final int deleted; // 0 or 1
-  final double lat;
-  final double lon;
-  final Set<GPS> trackPoints; // "lat,lon;lat,lon;..."
-  final DateTime timeStart;
-  DateTime timeEnd;
-  final Set<int> idAlias; // "id,id,..."
-  final Set<int> idTask; // "id,id,..."
-  String notes;
 
-  int get id => _id;
+  ///
+  /// TrackPoint owners
+  ///
+  TrackingStatus status = TrackingStatus.none;
+  static int _nextTrackingId = 0;
+  int trackingId = 0; // needed for debug only
+
+  ///
+  /// Model owners
+  ///
+  int? _id;
+  int deleted = 0; // 0 or 1
+  GPS gps;
+  List<ModelTrackPoint> trackPoints; // "lat,lon;lat,lon;..."
+  DateTime timeStart;
+  DateTime? _timeEnd;
+  List<int> idAlias = []; // "id,id,..." needs to be sorted by distance
+  List<int> idTask = []; // "id,id,..." needs to be ordered by user
+  String notes = '';
+  Address address;
+
+  set timeEnd(DateTime t) => _timeEnd = t;
+
+  /// throws if timeEnd is [t] not yert set
+  DateTime get timeEnd {
+    if (_timeEnd == null) throw 'ModelTrackPoint _timeEnd not yet set';
+    return _timeEnd!;
+  }
+
+  int get id {
+    if (_id == null) throw 'ModelTrackPoint _id not yet set';
+    return _id!;
+  }
+
   static int get length => _table.length;
 
   ModelTrackPoint(
-      {this.deleted = 0,
-      required this.lat,
-      required this.lon,
-      required this.timeStart,
-      required this.timeEnd,
+      {required this.gps,
       required this.trackPoints,
       required this.idAlias,
-      required this.idTask,
-      this.notes = ''});
+      required this.timeStart,
+      required this.address,
+      this.deleted = 0,
+      this.notes = ''}) {
+    trackingId = ++_nextTrackingId;
+  }
 
   static Future<int> insert(ModelTrackPoint m) async {
     _table.add(m);
@@ -58,10 +66,7 @@ class ModelTrackPoint {
     return Future<int>.value(m._id);
   }
 
-  static Future<bool> update(TrackPointEvent model) async {
-    if (model.model == null) return false; // not inserted yet
-    model._id = model.model!.id;
-    _table[model._id - 1] = model;
+  static Future<bool> update() async {
     return await write();
   }
 
@@ -85,9 +90,6 @@ class ModelTrackPoint {
 
   void addTask(ModelTask m) => idTask.add(m.id);
   void removeTask(ModelTask m) => idTask.remove(m.id);
-
-  void addTrackPoint(GPS gps) => trackPoints.add(gps);
-  void removeTrackPoint(GPS gps) => trackPoints.remove(gps);
 
   List<ModelAlias> getAlias() {
     List<ModelAlias> list = [];
@@ -116,49 +118,65 @@ class ModelTrackPoint {
 
   static ModelTrackPoint toModel(String row) {
     List<String> p = row.split('\t');
-
+    GPS gps = GPS(double.parse(p[2]), double.parse(p[3]));
     ModelTrackPoint tp = ModelTrackPoint(
         deleted: int.parse(p[1]),
-        lat: double.parse(p[2]),
-        lon: double.parse(p[3]),
-        trackPoints: parseTrackPointList(p[4]),
-        timeStart: DateTime.parse(p[5]),
-        timeEnd: DateTime.parse(p[6]),
+        gps: gps,
+        address: Address(gps),
+        timeStart: DateTime.parse(p[4]),
+        trackPoints: parseTrackPointList(p[6]),
         idAlias: Model.parseIdList(p[7]),
-        idTask: Model.parseIdList(p[8]),
         notes: decode(p[9]));
+
     tp._id = int.parse(p[0]);
+    tp.timeEnd = DateTime.parse(p[5]);
+    tp.idTask = Model.parseIdList(p[8]);
     return tp;
   }
 
   @override
   String toString() {
+    /*
     List<String> list = [];
-    for (var gps in trackPoints) {
-      list.add('${gps.lat},${gps.lon}');
+    for (var tp in trackPoints) {
+      list.add('${tp.gps.lat},${tp.gps.lon}');
     }
+    */
     List<String> parts = [
-      _id.toString(),
-      deleted.toString(),
-      lat.toString(),
-      lon.toString(),
-      list.join(','),
-      timeStart.toIso8601String(),
-      timeEnd.toIso8601String(),
-      idAlias.join(','),
-      idTask.join(','),
-      encode(notes)
+      _id.toString(), // 0
+      deleted.toString(), // 1
+      gps.lat.toString(), // 2
+      gps.lon.toString(), // 3
+      timeStart.toIso8601String(), // 4
+      timeEnd.toIso8601String(), // 5
+      trackPoints
+          .map((tp) => '${(tp.gps.lat * 10000).round() / 10000},'
+              '${(tp.gps.lon * 10000).round() / 10000}')
+          .toList()
+          .join(';'), //list.join(';'), // 6
+      idAlias.join(','), // 7
+      idTask.join(','), // 8
+      encode(notes) // 9
     ];
     return parts.join('\t');
   }
 
   //
-  static Set<GPS> parseTrackPointList(String string) {
-    Set<GPS> tps = {};
+  static List<ModelTrackPoint> parseTrackPointList(String string) {
+    //return tps;
     List<String> list = string.split(';').where((e) => e.isNotEmpty).toList();
+    GPS gps;
+    List<ModelTrackPoint> tps = [];
     for (var item in list) {
       List<String> coords = item.split(',');
-      tps.add(GPS(double.parse(coords[0]), double.parse(coords[1])));
+      gps = GPS(double.parse(coords[0]), double.parse(coords[1]));
+      ModelTrackPoint tp = ModelTrackPoint(
+          gps: gps,
+          address: Address(gps),
+          trackPoints: <ModelTrackPoint>[],
+          idAlias: ModelAlias.nextAlias(gps).map((m) => m.id).toList(),
+          timeStart: DateTime.now());
+      tps.add(tp);
     }
     return tps;
   }

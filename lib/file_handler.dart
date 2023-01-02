@@ -3,7 +3,6 @@ import 'dart:io' as io;
 import 'package:chaostours/recource_loader.dart';
 
 class FileHandler {
-  static const String lineSeperator = '\n';
   static Map<DatabaseFile, io.File?> handles = {
     DatabaseFile.alias: null,
     DatabaseFile.task: null,

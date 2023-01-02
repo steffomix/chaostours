@@ -1,6 +1,7 @@
 enum TrackingStatus {
   standing,
-  moving;
+  moving,
+  none;
 }
 
 enum AppBodyScreens {
@@ -10,8 +11,8 @@ enum AppBodyScreens {
 
 enum AliasStatus {
   disabled(0),
-  public(2),
-  privat(1);
+  public(1),
+  privat(2);
 
   final int value;
   const AliasStatus(this.value);

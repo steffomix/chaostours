@@ -20,12 +20,38 @@ class RecourceLoader {
   static Future<void> preload() async {
     try {
       try {
-        await ModelAlias.open();
-        await ModelTrackPoint.open();
-        await ModelTask.open();
+        var m1 = await ModelAlias.open();
+        var m2 = await ModelTrackPoint.open();
+        var m3 = await ModelTask.open();
+        await Future.delayed(const Duration(seconds: 1), ModelAlias.write);
+        await Future.delayed(const Duration(seconds: 2), ModelTrackPoint.write);
+        await Future.delayed(const Duration(seconds: 3), ModelTask.write);
       } catch (e) {
         logError(e);
       }
+      try {
+        if (ModelAlias.length < 1) {
+          var ass = await ModelAlias.openFromAsset();
+          var y = await Future.delayed(
+              const Duration(seconds: 1), ModelAlias.write);
+        }
+      } catch (e) {
+        logError(e);
+      }
+
+      try {
+        if (ModelTask.length < 1) {
+          var ass = await ModelTask.openFromAsset();
+          var y =
+              await Future.delayed(const Duration(seconds: 1), ModelTask.write);
+        }
+      } catch (e) {
+        logError(e);
+      }
+
+      logInfo('TableAlias ${ModelAlias.length}');
+      logInfo('TableTrackPoints ${ModelTrackPoint.length}');
+      logInfo('TableTask ${ModelTask.length}');
 
       await webKey();
       await defaultCalendarId();
@@ -45,13 +71,11 @@ class RecourceLoader {
     logInfo('RecourceLoader::WebKey loaded');
   }
 
-  static final List<String> localPath = ['chaostours', 'db'];
   static Future<io.File> fileHandle(String filename) async {
-    String sep = path.separator;
     io.Directory appDir = await pathProvider.getApplicationDocumentsDirectory();
-    List<String> parts = [appDir.path, ...localPath, filename];
-    io.File file = await io.File(parts.join(sep)).create(recursive: true);
-    return Future<io.File>.value(file);
+    //List<String> parts = [appDir.path, ...localPath, filename];
+    io.File file = await io.File(path.join(appDir.path, filename)).create();
+    return file;
   }
 
   ///

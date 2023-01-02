@@ -7,6 +7,8 @@ import 'track_point.dart';
 import 'recource_loader.dart';
 import 'util.dart';
 import 'events.dart';
+import 'package:chaostours/model_trackpoint.dart';
+import 'package:chaostours/model_alias.dart';
 
 class TrackingCalendar {
   // singelton
@@ -15,14 +17,17 @@ class TrackingCalendar {
   TrackingCalendar._createInstance() {
     logInfo('addListener');
     _trackingStatusListener ??= eventBusTrackingStatusChanged
-        .on<TrackPointEvent>()
+        .on<ModelTrackPoint>()
         .listen(onTrackingStatusChanged);
   }
   factory TrackingCalendar() {
     return _instance;
   }
 
-  void onTrackingStatusChanged(TrackPointEvent event) async {
+  void onTrackingStatusChanged(ModelTrackPoint event) async {
+    if (event.status == TrackingStatus.none) return;
+    //logInfo('---- create Event --- $event');
+    return;
     try {
       addEvent(await createEvent(event));
     } catch (e, stk) {
@@ -30,33 +35,28 @@ class TrackingCalendar {
     }
   }
 
-  createEvent(TrackPointEvent event) {
+  createEvent(ModelTrackPoint tp) {
     // statusStop = start to stop
     // statusStart = stop to start
-    TrackPoint tp = event.trackList.last;
-    TrackingStatus status = event.status;
+    TrackingStatus status = tp.status;
 
-    TrackPoint tpStart = status == TrackingStatus.moving
-        ? event.trackList.first
-        : event.trackList.last;
+    String duration = timeElapsed(tp.timeStart, tp.timeEnd);
 
-    TrackPoint tpStop = status == TrackingStatus.moving
-        ? event.trackList.first
-        : event.trackList.last;
-
-    String duration = timeElapsed(tpStart.time, tpStop.time);
-
-    String fTimeStart = formatDate(tpStart.time);
-    String fTimeStop = formatDate(tpStop.time);
+    String fTimeStart = formatDate(tp.timeStart);
+    String fTimeStop = formatDate(tp.timeEnd);
 
     // nearest alias
-    String alias = tp.alias.isEmpty ? ' ' : ' (${tp.alias[0].alias}) ';
+    String alias = tp.idAlias.isEmpty
+        ? ' '
+        : ' (${ModelAlias.getAlias(tp.idAlias.first).alias}) ';
     List<String> otherAlias = [];
-    if (tp.alias.length > 1) {
-      for (var i = 1; i < tp.alias.length - 1; i++) {
-        otherAlias.add(tp.alias[i].alias);
+    if (tp.idAlias.length > 1) {
+      for (var i = 1; i < tp.idAlias.length - 1; i++) {
+        otherAlias.add(ModelAlias.getAlias(i).alias);
       }
     }
+    ModelTrackPoint tpStart = tp.trackPoints.first;
+    ModelTrackPoint tpStop = tp.trackPoints.last;
 
     String summary = status == TrackingStatus.moving
         ? '##STOP## $duration Stand bei:$alias${tpStart.address.asString}'
@@ -70,8 +70,8 @@ class TrackingCalendar {
     calendar.Event e = calendar.Event(
         summary: summary,
         description: body,
-        start: calendar.EventDateTime(date: tpStart.time),
-        end: calendar.EventDateTime(date: tpStop.time));
+        start: calendar.EventDateTime(date: tpStart.timeStart),
+        end: calendar.EventDateTime(date: tpStop.timeEnd));
     return Future<calendar.Event>.value(e);
     //
   }

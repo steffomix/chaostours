@@ -2,6 +2,7 @@ import 'package:chaostours/model.dart';
 import 'package:chaostours/log.dart';
 import 'package:chaostours/file_handler.dart';
 import 'package:chaostours/enum.dart';
+import 'package:flutter/services.dart';
 
 class ModelTask {
   static final List<ModelTask> _table = [];
@@ -74,5 +75,15 @@ class ModelTask {
   static Future<bool> write() async {
     Model.writeTable(handle: await FileHandler.task, table: _table);
     return Future<bool>.value(true);
+  }
+
+  static Future<int> openFromAsset() async {
+    String string = await rootBundle.loadString('assets/task.tsv');
+    List<String> lines = string.trim().split(Model.lineSep);
+    _table.clear();
+    for (var row in lines) {
+      _table.add(toModel(row));
+    }
+    return _table.length;
   }
 }

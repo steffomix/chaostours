@@ -138,25 +138,11 @@ class ModelAlias {
 
   static Future<int> openFromAsset() async {
     String string = await rootBundle.loadString('assets/alias.tsv');
-    List<String> lines = string.split(FileHandler.lineSeperator);
+    List<String> lines = string.trim().split(Model.lineSep);
     _table.clear();
-    List<String> p;
-    int id = 0;
-    for (var l in lines) {
-      p = l.split('\t');
-      ModelAlias a = ModelAlias(
-          deleted: int.parse(p[0]),
-          lat: double.parse(p[1]),
-          lon: double.parse(p[2]),
-          radius: int.parse(p[3]),
-          alias: p[4],
-          notes: p[5],
-          status: AliasStatus.byValue(int.parse(p[6])),
-          lastVisited: DateTime.parse(p[7]),
-          timesVisited: int.parse(p[8]));
-      a._id = ++id;
-      _table.add(a);
+    for (var row in lines) {
+      _table.add(toModel(row));
     }
-    return id;
+    return _table.length;
   }
 }

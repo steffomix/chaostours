@@ -1,6 +1,8 @@
 import 'package:logger/logger.dart';
+import 'package:chaostours/config.dart';
 
 var _logger = Logger(
+  level: AppConfig.debugMode == true ? Level.info : Level.nothing,
   printer: PrettyPrinter(
       methodCount: 0, // number of method calls to be displayed
       errorMethodCount: 8, // number of method calls if stacktrace is provided
@@ -16,5 +18,3 @@ var logDebug = _logger.d;
 var logWarn = _logger.w;
 var logError = _logger.e;
 var logFatal = _logger.wtf;
-
-var log = _logger.d;
