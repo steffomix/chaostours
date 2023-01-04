@@ -6,7 +6,6 @@ import 'package:chaostours/gps.dart';
 import 'package:chaostours/file_handler.dart';
 import 'package:chaostours/enum.dart';
 import 'package:chaostours/address.dart';
-import 'package:chaostours/track_point.dart';
 import 'package:chaostours/util.dart' as util;
 
 class ModelTrackPoint {
@@ -27,12 +26,12 @@ class ModelTrackPoint {
   GPS gps;
   List<ModelTrackPoint> trackPoints; // "lat,lon;lat,lon;..."
   DateTime timeStart;
-  DateTime? _timeEnd;
+  DateTime timeEnd = DateTime.now();
   List<int> idAlias = []; // "id,id,..." needs to be sorted by distance
   List<int> idTask = []; // "id,id,..." needs to be ordered by user
   String notes = '';
   Address address;
-
+/*
   set timeEnd(DateTime t) => _timeEnd = t;
 
   /// throws if timeEnd is [t] not yert set
@@ -40,7 +39,7 @@ class ModelTrackPoint {
     if (_timeEnd == null) throw 'ModelTrackPoint _timeEnd not yet set';
     return _timeEnd!;
   }
-
+*/
   int get id {
     if (_id == null) throw 'ModelTrackPoint _id not yet set';
     return _id!;
@@ -59,15 +58,73 @@ class ModelTrackPoint {
     trackingId = ++_nextTrackingId;
   }
 
+  String timeElapsed() {
+    return util.timeElapsed(timeStart, timeEnd);
+  }
+
+  static String dumpTable() {
+    List<String> lines = [];
+    for (var line in _table) {
+      lines.add(line.toString());
+    }
+    String end = '${Model.rowEnd}${Model.lineSep}';
+    String dump = lines.join(end);
+    dump += end;
+    return dump;
+  }
+
+  /// calculates route or distance, depending on TrackingStatus status
+  /// route on moving and distance on standing
+  double distance() {
+    if (trackPoints.isEmpty) return 0.0;
+    double dist;
+    if (status == TrackingStatus.standing) {
+      dist = GPS.distance(trackPoints.first.gps, trackPoints.last.gps);
+    } else {
+      dist = _distanceRoute();
+    }
+    return (dist).round() / 1000;
+  }
+
+  // calc distance over multiple trackpoints in meters
+  double _distanceRoute() {
+    if (trackPoints.length < 2) return 0;
+    double dist = 0;
+    GPS gps = trackPoints[0].gps;
+    for (var i = 1; i < trackPoints.length; i++) {
+      dist += GPS.distance(gps, trackPoints[i].gps);
+      gps = trackPoints[i].gps;
+    }
+    return dist;
+  }
+
+  ///
+  /// insert only if Model doesn't have a valid (not null) _id
+  /// otherwise writes table to disk
+  ///
   static Future<int> insert(ModelTrackPoint m) async {
-    _table.add(m);
-    m._id = _table.length;
+    if (m._id == null) {
+      _table.add(m);
+      m._id = _table.length;
+    }
     await write();
     return Future<int>.value(m._id);
   }
 
-  static Future<bool> update() async {
-    return await write();
+  ///
+  /// Returns true if Model existed
+  /// otherwise false and Model will be inserted.
+  /// The Model will then have a valid id
+  /// that reflects (is same as) Table length.
+  ///
+  static Future<bool> update(ModelTrackPoint tp) async {
+    if (tp._id == null) {
+      await insert(tp);
+      return false;
+    } else {
+      await write();
+      return true;
+    }
   }
 
   static Future<bool> write() async {
@@ -118,47 +175,45 @@ class ModelTrackPoint {
 
   static ModelTrackPoint toModel(String row) {
     List<String> p = row.split('\t');
-    GPS gps = GPS(double.parse(p[2]), double.parse(p[3]));
+    GPS gps = GPS(double.parse(p[3]), double.parse(p[4]));
     ModelTrackPoint tp = ModelTrackPoint(
         deleted: int.parse(p[1]),
         gps: gps,
         address: Address(gps),
-        timeStart: DateTime.parse(p[4]),
-        trackPoints: parseTrackPointList(p[6]),
-        idAlias: Model.parseIdList(p[7]),
-        notes: decode(p[9]));
+        timeStart: DateTime.parse(p[5]),
+        trackPoints: parseTrackPointList(p[7]),
+        idAlias: Model.parseIdList(p[8]),
+        notes: decode(p[10]));
 
     tp._id = int.parse(p[0]);
-    tp.timeEnd = DateTime.parse(p[5]);
-    tp.idTask = Model.parseIdList(p[8]);
+    tp.timeEnd = DateTime.parse(p[6]);
+    tp.idTask = Model.parseIdList(p[9]);
+    tp.status = TrackingStatus.byValue(int.parse(p[2]));
     return tp;
   }
 
   @override
   String toString() {
-    /*
-    List<String> list = [];
-    for (var tp in trackPoints) {
-      list.add('${tp.gps.lat},${tp.gps.lon}');
-    }
-    */
-    List<String> parts = [
+    List<String> cols = [
       _id.toString(), // 0
       deleted.toString(), // 1
-      gps.lat.toString(), // 2
-      gps.lon.toString(), // 3
-      timeStart.toIso8601String(), // 4
-      timeEnd.toIso8601String(), // 5
-      trackPoints
-          .map((tp) => '${(tp.gps.lat * 10000).round() / 10000},'
-              '${(tp.gps.lon * 10000).round() / 10000}')
-          .toList()
-          .join(';'), //list.join(';'), // 6
-      idAlias.join(','), // 7
-      idTask.join(','), // 8
-      encode(notes) // 9
+      status.index.toString(), // 2
+      gps.lat.toString(), // 3
+      gps.lon.toString(), // 4
+      timeStart.toIso8601String(), // 5
+      timeEnd.toIso8601String(), // 6
+      status == TrackingStatus.moving
+          ? trackPoints
+              .map((tp) => '${(tp.gps.lat * 10000).round() / 10000},'
+                  '${(tp.gps.lon * 10000).round() / 10000}')
+              .toList()
+              .join(';')
+          : '', //list.join(';'), // 7
+      idAlias.join(','), // 8
+      idTask.join(','), // 9
+      encode(notes) // 10
     ];
-    return parts.join('\t');
+    return cols.join('\t');
   }
 
   //

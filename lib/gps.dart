@@ -1,10 +1,11 @@
 import 'dart:async';
 import 'log.dart';
-import 'config.dart';
 import 'package:geolocator/geolocator.dart' show Position, Geolocator;
-import 'recource_loader.dart';
+//
+import 'package:chaostours/recource_loader.dart';
 import 'package:chaostours/model_alias.dart';
-import 'events.dart';
+import 'package:chaostours/events.dart';
+import 'package:chaostours/globals.dart';
 
 class GPS {
   static int _nextId = 0;
@@ -22,7 +23,7 @@ class GPS {
   static Future<GPS> gps() async {
     try {
       Position pos = await RecourceLoader.gps();
-      GPS gps = AppConfig.debugMode
+      GPS gps = Globals.debugMode
           ? SimulateGps.next()
           : GPS(pos.latitude, pos.longitude);
       return Future<GPS>.value(gps);

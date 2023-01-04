@@ -1,13 +1,11 @@
-import 'package:chaostours/config.dart';
+import 'package:chaostours/globals.dart';
 import 'package:chaostours/log.dart';
-import 'package:chaostours/util.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/events.dart';
 import 'package:chaostours/model_alias.dart';
 import 'package:chaostours/address.dart';
 import 'package:chaostours/enum.dart';
 import 'package:chaostours/model_trackpoint.dart';
-import 'package:flutter/material.dart';
 import 'package:chaostours/util.dart' as util;
 
 class TrackPoint {
@@ -33,28 +31,15 @@ class TrackPoint {
 
   static double distance() {
     if (_trackPoints.isEmpty) return 0.0;
+    double dist;
     if (_status == TrackingStatus.standing) {
-      return (GPS.distance(_trackPoints.first.gps, _trackPoints.last.gps) *
-                  1000)
-              .round() /
-          1000;
+      dist = GPS.distance(_trackPoints.first.gps, _trackPoints.last.gps);
     } else {
-      return movedDistance(_trackPoints);
+      dist = movedDistance(_trackPoints);
     }
+    return (dist * 1000).round() / 1000;
   }
 
-  /*
-  final int _id = ++_nextId;
-  final GPS _gps;
-  final DateTime _time = DateTime.now();
-  List<ModelAlias> _alias = [];
-
-  int get id => _id;
-  GPS get gps => _gps;
-  DateTime get time => _time;
-  List<ModelAlias> get alias => _alias;
-  late Address address;
-*/
   TrackPoint() {
     throw 'Do not instantiate TrackPoint, use ModelTrackPoint!';
   }
@@ -62,9 +47,12 @@ class TrackPoint {
   static void _statusChanged(ModelTrackPoint tp) async {
     // create a new TrackPoint as event
     ModelTrackPoint event = await createEvent();
-    if (_status == TrackingStatus.standing) {
-      await ModelTrackPoint.insert(event);
+    if (Globals.osmLookup == OsmLookup.onStatus) {
+      await tp.address.lookupAddress();
     }
+    //if (_status == TrackingStatus.standing) {
+    await ModelTrackPoint.insert(event);
+    //}
     eventBusTrackingStatusChanged.fire(event);
     _trackPoints.clear();
     _trackPoints.add(tp);
@@ -86,7 +74,7 @@ class TrackPoint {
   static void _checkStatus(ModelTrackPoint tp) {
     // wait after status changed
     if (_lastStatusChange
-        .add(AppConfig.waitTimeAfterStatusChanged)
+        .add(Globals.waitTimeAfterStatusChanged)
         .isAfter(DateTime.now())) {
       return;
     }
@@ -120,7 +108,7 @@ class TrackPoint {
     ModelTrackPoint tRef = tl.last;
     for (var i = 0; i < tl.length; i++) {
       dist = GPS.distance(tl[i].gps, tRef.gps);
-      if (dist > AppConfig.distanceTreshold) {
+      if (dist > Globals.distanceTreshold) {
         return true;
       }
     }
@@ -137,7 +125,7 @@ class TrackPoint {
       if (dist > distMoved) distMoved = dist;
     }
     logVerbose('moved: $distMoved in ${tl.length} tracks');
-    if (distMoved < AppConfig.distanceTreshold) {
+    if (distMoved < Globals.distanceTreshold) {
       return true;
     }
     return false;
@@ -148,7 +136,7 @@ class TrackPoint {
   /// so that trackList[0] is most recent
   static List<ModelTrackPoint> _recentTracks() {
     List<ModelTrackPoint> trackList = [];
-    DateTime treshold = DateTime.now().subtract(AppConfig.stopTimeTreshold);
+    DateTime treshold = DateTime.now().subtract(Globals.stopTimeTreshold);
     bool outDated;
     for (var i = _trackPoints.length - 1; i >= 0; i--) {
       outDated = _trackPoints[i].timeStart.isBefore(treshold);
@@ -173,7 +161,7 @@ class TrackPoint {
   static Future<ModelTrackPoint> create() async {
     GPS gps = await GPS.gps();
     Address address = Address(gps);
-    if (AppConfig.alwaysLookupAddress) await address.lookupAddress();
+    if (Globals.osmLookup == OsmLookup.always) await address.lookupAddress();
 
     ModelTrackPoint tp = ModelTrackPoint(
         gps: gps,
@@ -188,7 +176,7 @@ class TrackPoint {
   /// tracking heartbeat with <trackingTickTime> speed
   static void _track([bool first = false]) async {
     if (!_tracking) return;
-    Future.delayed(AppConfig.trackPointTickTime, () async {
+    Future.delayed(Globals.trackPointTickTime, () async {
       ModelTrackPoint tp;
       try {
         tp = await create();

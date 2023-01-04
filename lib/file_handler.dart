@@ -1,6 +1,7 @@
-import 'package:chaostours/enum.dart';
 import 'dart:io' as io;
+//
 import 'package:chaostours/recource_loader.dart';
+import 'package:chaostours/enum.dart';
 
 class FileHandler {
   static Map<DatabaseFile, io.File?> handles = {

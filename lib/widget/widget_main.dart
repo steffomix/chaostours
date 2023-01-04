@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'package:chaostours/events.dart';
 import 'package:flutter/material.dart';
+//
 import 'package:chaostours/widget/widget_trackpoints_listview.dart';
 import 'package:chaostours/log.dart';
 import 'package:chaostours/globals.dart';
-import 'package:chaostours/config.dart';
 
 class App extends StatefulWidget {
   const App({super.key});
@@ -75,7 +75,7 @@ class _AppState extends State<App> {
     } catch (e) {
       logWarn('Waiting for TrackPoints...', e);
     }
-    if (AppConfig.debugMode) {
+    if (Globals.debugMode) {
       return MaterialApp(
           home: Scaffold(
         appBar: appbar(),

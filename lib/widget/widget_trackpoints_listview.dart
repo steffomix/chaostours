@@ -1,11 +1,12 @@
 import 'dart:async';
+//
 import 'package:flutter/material.dart';
 import 'package:chaostours/events.dart';
-import 'package:chaostours/track_point.dart';
+import 'package:chaostours/trackpoint.dart';
 import 'package:chaostours/log.dart';
 import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/enum.dart';
-import 'widget_add_tasks.dart';
+import 'package:chaostours/widget/widget_add_tasks.dart';
 import 'package:chaostours/globals.dart';
 import 'package:chaostours/model_alias.dart';
 import 'package:chaostours/model_task.dart';
@@ -19,8 +20,7 @@ class WidgetModelTrackPointList extends StatefulWidget {
 }
 
 class _TrackPointListView extends State<WidgetModelTrackPointList> {
-  static ModelTrackPoint? lastEvent;
-  static bool init = false;
+  static _ActiveListItem? activeItem;
   static final List<Widget> listView = [];
   StreamSubscription? _trackingStatusListener;
   StreamSubscription? _trackPointListener;
@@ -34,16 +34,16 @@ class _TrackPointListView extends State<WidgetModelTrackPointList> {
     listView.clear();
     int count = 30;
     for (var e in ModelTrackPoint.recentTrackPoints(max: count)) {
-      e.status = TrackingStatus.standing;
-      listView.add(createListItem(e));
+      //e.status = TrackingStatus.standing;
+      listView.add(_ActiveListItem(e).widget);
     }
-    listView.add(const Divider(color: Colors.black));
-    listView.add(const Divider(color: Colors.black));
+    listView
+        .add(const Divider(color: Colors.black, thickness: 3.0, height: 5.0));
     listView.add(const Center(child: Text('Gespeicherte Einträge')));
-    listView.add(const Divider(color: Colors.black));
-    listView.add(const Divider(color: Colors.black));
-    if (lastEvent != null && init) listView.add(createListItem(lastEvent!));
-    init = true;
+    listView
+        .add(const Divider(color: Colors.black, thickness: 3.0, height: 5.0));
+    listView.add(const Text(''));
+    listView.add(const Text('')); // to be replaced with active item
   }
 
   @override
@@ -56,11 +56,17 @@ class _TrackPointListView extends State<WidgetModelTrackPointList> {
   // add a new Trackpoint list item
   // and prune list to max of 100
   void onTrackingStatusChanged(ModelTrackPoint event) {
-    listView.add(createListItem(event, false));
+    if (activeItem == null) {
+      return onTrackPoint(event);
+    } else {
+      listView.add(activeItem!.widget);
+      activeItem = _ActiveListItem(event);
+    }
+
     while (listView.length > 100) {
       listView.removeLast();
     }
-    //setState(() {});
+    setState(() {});
   }
 
   void onTapItem(TrackPoint trackPoint, TrackingStatus status) {
@@ -69,30 +75,62 @@ class _TrackPointListView extends State<WidgetModelTrackPointList> {
 
   // update last trackpoint list item
   void onTrackPoint(ModelTrackPoint event) {
-    lastEvent = event;
-    listView[listView.length - 1] = createListItem(event, true);
+    activeItem ??= _ActiveListItem(event);
+    activeItem?.update(event);
     setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
-    List<Widget> items = [...listView.reversed.toList()];
+    List<Widget> items = [
+      activeItem?.widget ?? const Text('...waiting for Trackpoint.')
+    ];
+    items.addAll(listView.reversed.toList());
+    String db = '';
+
+    items.add(TextField(
+      keyboardType: TextInputType.multiline,
+      maxLines: null,
+      controller: TextEditingController(text: ModelTrackPoint.dumpTable()),
+    ));
     return ListView(children: items);
+  }
+}
+
+///
+///
+///
+///
+
+class _ActiveListItem {
+  final ModelTrackPoint event;
+  Widget? _widget;
+  _ActiveListItem(this.event);
+
+  Widget get widget {
+    Widget w = _widget ??= _createWidget();
+    return w;
+  }
+
+  Widget update(ModelTrackPoint tp) {
+    event.deleted = tp.deleted;
+    event.gps = tp.gps;
+    event.address = tp.address;
+    event.idAlias = tp.idAlias;
+    event.timeEnd = DateTime.now();
+    return (_widget = _createWidget());
   }
 
   ///
   /// creates a list item from TrackPoint
   ///
-  String ev = '';
-  String up = '';
-  Widget createListItem(ModelTrackPoint event, [bool update = true]) {
-    ev += event.status.index.toString();
-    up += (update == true ? 1 : 0).toString();
-    lastEvent = event;
+  Widget _createWidget() {
     // calculate duration and distance
-    String duration = TrackPoint.timeElapsed();
+    String duration = event.timeElapsed();
 
-    double distance = TrackPoint.distance();
+    double distance = event.distance();
+
+    TextStyle fatStyle = const TextStyle(fontWeight: FontWeight.bold);
 
     // left section (icon)
     var icon = event.status == TrackingStatus.standing
@@ -117,26 +155,30 @@ class _TrackPointListView extends State<WidgetModelTrackPointList> {
         ? 'Fahren: ${distance}km in $duration'
         : 'Halt am ${util.formatDate(event.timeStart)}\nfür $duration';
     rows.add(TableRow(children: <Widget>[
-      TableCell(
-          child: Center(
-              child: Text(text,
-                  style: const TextStyle(fontWeight: FontWeight.bold))))
+      TableCell(child: Center(child: Text(text, style: fatStyle)))
     ]));
+
+    ///// Alias
+    if (event.idAlias.isNotEmpty && event.status == TrackingStatus.standing) {
+      text = ModelAlias.getAlias(event.idAlias.first).alias;
+      rows.add(TableRow(children: <Widget>[
+        TableCell(child: Center(child: Text(text, style: fatStyle)))
+      ]));
+    }
 
     ///
     /// second row (address)
     ///
-    if (event.address.loaded) {
-      text = 'OSM: ${event.address.asString}';
+    ///// OSM
+    if (event.address.loaded && event.status == TrackingStatus.standing) {
+      text = '(OSM: ${event.address.asString})';
       rows.add(TableRow(
           children: <Widget>[TableCell(child: Center(child: Text(text)))]));
     }
-    if (event.idAlias.isNotEmpty) {
-      text = 'Alias: ${ModelAlias.getAlias(event.idAlias.first).alias}';
-      rows.add(TableRow(
-          children: <Widget>[TableCell(child: Center(child: Text(text)))]));
-    }
-    if (!event.address.loaded && event.idAlias.isEmpty) {
+    ///// Link
+    if (!event.address.loaded &&
+        event.idAlias.isEmpty &&
+        event.status == TrackingStatus.standing) {
       //https://maps.google.com&q=lat,lon&center=lat,lon
       text =
           'GPS: ${(event.gps.lat * 10000).round() / 10000},${(event.gps.lon * 10000).round() / 10000}';

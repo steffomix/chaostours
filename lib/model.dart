@@ -1,8 +1,6 @@
-import 'package:chaostours/util.dart' as util;
 import 'dart:io' as io;
-import 'package:file/file.dart';
-import 'package:chaostours/log.dart';
-import 'package:chaostours/gps.dart';
+import 'package:file/file.dart' show FileMode;
+//
 import 'package:chaostours/enum.dart';
 import 'package:chaostours/file_handler.dart';
 

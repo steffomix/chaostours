@@ -1,5 +1,3 @@
-import 'log.dart';
-import 'gps.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/services.dart';
 import 'package:googleapis_auth/auth_io.dart';
@@ -8,11 +6,13 @@ import 'package:geolocator/geolocator.dart'
     show Position, LocationPermission, Geolocator;
 import 'dart:io' as io;
 import 'package:path/path.dart' as path;
-import 'package:path_provider/path_provider.dart' as pathProvider;
+import 'package:path_provider/path_provider.dart' as path_provider;
+//
 import 'package:chaostours/model_alias.dart';
 import 'package:chaostours/model_trackpoint.dart';
 import 'package:chaostours/model_task.dart';
-import 'package:chaostours/enum.dart';
+import 'package:chaostours/log.dart';
+import 'package:chaostours/gps.dart';
 
 class RecourceLoader {
   ///
@@ -23,9 +23,12 @@ class RecourceLoader {
         var m1 = await ModelAlias.open();
         var m2 = await ModelTrackPoint.open();
         var m3 = await ModelTask.open();
-        await Future.delayed(const Duration(seconds: 1), ModelAlias.write);
-        await Future.delayed(const Duration(seconds: 2), ModelTrackPoint.write);
-        await Future.delayed(const Duration(seconds: 3), ModelTask.write);
+        await Future.delayed(
+            const Duration(milliseconds: 200), ModelAlias.write);
+        await Future.delayed(
+            const Duration(milliseconds: 200), ModelTrackPoint.write);
+        await Future.delayed(
+            const Duration(milliseconds: 200), ModelTask.write);
       } catch (e) {
         logError(e);
       }
@@ -33,7 +36,7 @@ class RecourceLoader {
         if (ModelAlias.length < 1) {
           var ass = await ModelAlias.openFromAsset();
           var y = await Future.delayed(
-              const Duration(seconds: 1), ModelAlias.write);
+              const Duration(milliseconds: 200), ModelAlias.write);
         }
       } catch (e) {
         logError(e);
@@ -42,8 +45,8 @@ class RecourceLoader {
       try {
         if (ModelTask.length < 1) {
           var ass = await ModelTask.openFromAsset();
-          var y =
-              await Future.delayed(const Duration(seconds: 1), ModelTask.write);
+          var y = await Future.delayed(
+              const Duration(milliseconds: 200), ModelTask.write);
         }
       } catch (e) {
         logError(e);
@@ -72,7 +75,8 @@ class RecourceLoader {
   }
 
   static Future<io.File> fileHandle(String filename) async {
-    io.Directory appDir = await pathProvider.getApplicationDocumentsDirectory();
+    io.Directory appDir =
+        await path_provider.getApplicationDocumentsDirectory();
     //List<String> parts = [appDir.path, ...localPath, filename];
     io.File file = await io.File(path.join(appDir.path, filename)).create();
     return file;

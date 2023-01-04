@@ -1,12 +1,14 @@
+// ignore_for_file: prefer_const_constructors
+
+import 'package:logger/logger.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_background/flutter_background.dart';
+//
 import 'package:chaostours/recource_loader.dart';
 import 'package:chaostours/log.dart';
-import 'package:logger/logger.dart';
-import 'package:chaostours/widget/widget_main.dart';
-import 'package:chaostours/track_point.dart';
+import 'package:chaostours/trackpoint.dart';
 import 'package:chaostours/tracking_calendar.dart';
-import 'package:chaostours/config.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import 'package:chaostours/globals.dart';
 
 void main() async {
@@ -14,7 +16,29 @@ void main() async {
   // add cert for https requests you can download here:
   // https://letsencrypt.org/certs/lets-encrypt-r3.pem
   WidgetsFlutterBinding.ensureInitialized();
-
+  try {
+    final androidConfig = FlutterBackgroundAndroidConfig(
+      notificationTitle: "Chaos Tours App",
+      notificationText:
+          "Diese Meldung wird benötigt damit Chaos Tours im Hintergrund läuft.",
+      notificationImportance: AndroidNotificationImportance.Default,
+      notificationIcon: AndroidResource(
+          name: 'ic_launcher',
+          defType: 'drawable'), // Default is ic_launcher from folder mipmap
+    );
+    bool hasPermissions = await FlutterBackground.hasPermissions;
+    if (!hasPermissions) {
+      bool success =
+          await FlutterBackground.initialize(androidConfig: androidConfig);
+    }
+  } catch (e) {
+    logError(e);
+  }
+  try {
+    bool success = await FlutterBackground.enableBackgroundExecution();
+  } catch (e) {
+    logError(e);
+  }
   // set loglevel
   Logger.level = Level.info;
 
@@ -26,7 +50,7 @@ void main() async {
 
   try {
     PackageInfo packageInfo = await PackageInfo.fromPlatform();
-    AppConfig.version = packageInfo.version;
+    Globals.version = packageInfo.version;
   } catch (e) {
     logError(e);
   }

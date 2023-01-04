@@ -1,11 +1,12 @@
 import 'package:geolocator/geolocator.dart' show Geolocator;
-import 'package:chaostours/log.dart';
-import 'package:chaostours/gps.dart';
 import 'package:flutter/services.dart';
 import 'dart:math';
+//
 import 'package:chaostours/enum.dart';
 import 'package:chaostours/model.dart';
 import 'package:chaostours/file_handler.dart';
+import 'package:chaostours/log.dart';
+import 'package:chaostours/gps.dart';
 
 class ModelAlias {
   static final List<ModelAlias> _table = [];

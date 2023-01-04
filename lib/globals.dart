@@ -1,12 +1,36 @@
 import 'package:flutter/material.dart';
+//
 import 'package:chaostours/events.dart';
-import 'widget/widget_trackpoints_listview.dart';
-import 'widget/widget_main.dart';
+import 'package:chaostours/widget/widget_trackpoints_listview.dart';
+import 'package:chaostours/widget/widget_main.dart';
 
 // pane widgets that must not renew
 enum Panes { trackPointList }
 
+enum OsmLookup { never, onStatus, always }
+
 class Globals {
+  static String version = '';
+  static const bool debugMode = false;
+  static double distanceTreshold = 100; //meters
+  static OsmLookup osmLookup = OsmLookup.onStatus;
+
+  // durations and distances
+  // skip status check for given time to prevent ugly things
+  static Duration get waitTimeAfterStatusChanged {
+    return debugMode ? const Duration(seconds: 1) : const Duration(minutes: 1);
+  }
+
+  // stop time needed to trigger stop
+  static Duration get stopTimeTreshold {
+    return debugMode ? const Duration(seconds: 10) : const Duration(minutes: 3);
+  }
+
+  // check status interval
+  static Duration get trackPointTickTime {
+    return debugMode ? const Duration(seconds: 2) : const Duration(seconds: 20);
+  }
+
   ///
   /// App from widget_main
   ///

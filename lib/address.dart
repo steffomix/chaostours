@@ -2,7 +2,8 @@ import 'log.dart';
 import 'gps.dart';
 import 'package:http/http.dart' as http;
 import 'package:sprintf/sprintf.dart' show sprintf;
-import 'recource_loader.dart';
+//
+import 'package:chaostours/recource_loader.dart';
 
 ///
 ///<addressparts>

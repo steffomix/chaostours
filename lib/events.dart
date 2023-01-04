@@ -1,11 +1,4 @@
-import 'package:chaostours/track_point.dart';
 import 'package:event_bus/event_bus.dart';
-import 'package:chaostours/gps.dart';
-import 'package:chaostours/util.dart' as util;
-import 'package:chaostours/enum.dart';
-import 'package:chaostours/model_trackpoint.dart';
-import 'package:chaostours/model_alias.dart';
-import 'package:chaostours/address.dart';
 
 // set the main screen id
 EventBus eventBusMainPaneChanged = EventBus();

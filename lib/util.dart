@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
+//
+import 'package:chaostours/globals.dart';
 
 Codec<String, String> base64Codec() => utf8.fuse(base64);
 
@@ -37,7 +39,7 @@ String timeElapsed(DateTime t1, DateTime t2, [bool short = true]) {
     ms = t1.difference(t2).inMilliseconds;
     //
 
-    s = '$hours:$minutes::$seconds.$ms';
+    s = Globals.debugMode ? '$hours:$minutes::$seconds.$ms' : '$hours:$minutes';
   } else {
     days = t1.difference(t2).inDays;
     if (days > 0) {
@@ -52,21 +54,23 @@ String timeElapsed(DateTime t1, DateTime t2, [bool short = true]) {
     //
     minutes = t1.difference(t2).inMinutes;
     if (minutes > 0) {
-      s += '$minutes Minuten, ';
+      s += '$minutes Minuten';
+      if (Globals.debugMode) {
+        s += ', ';
+      }
       t2 = t2.add(Duration(minutes: minutes));
     }
     //
-
-    seconds = t1.difference(t2).inSeconds;
-    if (seconds > 0) {
-      s += '$seconds Sekunden, ';
-      t2 = t2.add(Duration(seconds: seconds));
-    }
-    //
-
-    ms = t1.difference(t2).inMilliseconds;
-    if (ms > 0) {
-      s += ':::$ms';
+    if (Globals.debugMode) {
+      seconds = t1.difference(t2).inSeconds;
+      if (seconds > 0) {
+        s += '$seconds Sekunden, ';
+        t2 = t2.add(Duration(seconds: seconds));
+      }
+      ms = t1.difference(t2).inMilliseconds;
+      if (ms > 0) {
+        s += ':::$ms';
+      }
     }
   }
 

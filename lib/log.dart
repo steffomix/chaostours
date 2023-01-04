@@ -1,8 +1,9 @@
 import 'package:logger/logger.dart';
-import 'package:chaostours/config.dart';
+//
+import 'package:chaostours/globals.dart';
 
 var _logger = Logger(
-  level: AppConfig.debugMode == true ? Level.info : Level.nothing,
+  level: Globals.debugMode == true ? Level.info : Level.nothing,
   printer: PrettyPrinter(
       methodCount: 0, // number of method calls to be displayed
       errorMethodCount: 8, // number of method calls if stacktrace is provided

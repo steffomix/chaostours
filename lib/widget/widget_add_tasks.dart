@@ -1,16 +1,10 @@
 // ignore_for_file: no_logic_in_create_state
 
-import 'package:chaostours/events.dart';
-import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:chaostours/enum.dart';
-import 'package:chaostours/model_alias.dart';
+//
 import 'package:chaostours/model_task.dart';
 import 'package:chaostours/model_trackpoint.dart';
-import 'package:chaostours/track_point.dart';
-import 'package:chaostours/events.dart';
 import 'package:chaostours/globals.dart';
-import 'widget_trackpoints_listview.dart';
 
 ///
 /// checkbox
@@ -40,7 +34,7 @@ class _WidgedTaskCheckbox extends State<WidgedTaskCheckbox> {
           val ??= false;
 
           val == true ? trackPoint.addTask(task) : trackPoint.removeTask(task);
-          ModelTrackPoint.update();
+          ModelTrackPoint.update(trackPoint);
           setState(() {
             checked = val;
           });
@@ -76,7 +70,7 @@ Widget backToMainPane() {
 class _WidgetAddTasksState extends State<WidgetAddTasks> {
   final ModelTrackPoint trackPoint;
 
-  _WidgetAddTasksState({required this.trackPoint}) {}
+  _WidgetAddTasksState({required this.trackPoint});
 
   @override
   Widget build(BuildContext context) {
