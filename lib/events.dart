@@ -1,5 +1,7 @@
 import 'package:event_bus/event_bus.dart';
 
+EventBus eventOnGps = EventBus();
+
 // set the main screen id
 EventBus eventBusMainPaneChanged = EventBus();
 
@@ -7,7 +9,7 @@ EventBus eventBusMainPaneChanged = EventBus();
 EventBus eventBusTapBottomNavBarIcon = EventBus();
 
 // TrackPoint List Item on main screen
-EventBus eventBusTrackPointEventSelected = EventBus();
+//EventBus eventBusTrackPointEventSelected = EventBus();
 
 // fired when trackPoint status changed
 EventBus eventBusTrackingStatusChanged = EventBus();

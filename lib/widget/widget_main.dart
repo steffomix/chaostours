@@ -3,6 +3,7 @@ import 'package:chaostours/events.dart';
 import 'package:flutter/material.dart';
 //
 import 'package:chaostours/widget/widget_trackpoints_listview.dart';
+import 'package:chaostours/widget/widget_drawer.dart';
 import 'package:chaostours/log.dart';
 import 'package:chaostours/enum.dart';
 import 'package:chaostours/globals.dart';
@@ -28,8 +29,8 @@ class _AppState extends State<App> {
   }
 
   _AppState() {
-    onScreenChanged ??=
-        eventBusMainPaneChanged.on<Widget>().listen((Widget pane) {
+    onScreenChanged ??= eventBusMainPaneChanged.on<Widget>().listen((Widget p) {
+      _pane = p;
       setState(() {});
     });
   }
@@ -81,16 +82,12 @@ class _AppState extends State<App> {
     } catch (e) {
       logWarn('Waiting for TrackPoints...', e);
     }
-    if (Globals.debugMode) {
-      return MaterialApp(
-          home: Scaffold(
-        drawer: drawer(),
-        body: pane,
-        bottomNavigationBar: bottomNavigationBar(),
-      ));
-    } else {
-      return MaterialApp(home: Scaffold(appBar: appbar(), body: pane));
-    }
+    return MaterialApp(
+        home: Scaffold(
+      appBar: appbar(),
+      drawer: WidgetDrawer(),
+      body: pane,
+    ));
   }
 
   // ignore: unused_element

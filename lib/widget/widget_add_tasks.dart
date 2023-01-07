@@ -59,7 +59,7 @@ class WidgetAddTasks extends StatefulWidget {
 }
 
 void onBackToMainPane() {
-  eventBusMainPaneChanged.fire(Panes.trackPointList);
+  eventBusMainPaneChanged.fire(Panes.trackPointList.value);
 }
 
 Widget backToMainPane() {

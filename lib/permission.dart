@@ -3,12 +3,17 @@ import 'dart:math';
 import 'package:background_location_tracker/background_location_tracker.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:chaostours/events.dart';
+import 'package:chaostours/gps.dart';
 
+/*
 @pragma('vm:entry-point')
 void backgroundCallback() {
   BackgroundLocationTrackerManager.handleBackgroundUpdated(
-    (data) async => Repo().update(data),
-  );
+      (BackgroundLocationUpdateData data) {
+    eventOnGps.fire(GPS(data.lat, data.lon));
+    return Future<void>.value();
+  }); //(data) async => Repo().update(data),
 }
 
 Future<void> main() async {
@@ -29,7 +34,7 @@ Future<void> main() async {
     ),
   );
 }
-
+*/
 class Repo {
   static Repo? _instance;
 

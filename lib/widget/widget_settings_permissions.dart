@@ -35,94 +35,85 @@ class _WidgetSettingsPermissionsState extends State<WidgetSettingsPermissions> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text('Plugin example app'),
-        ),
-        body: Container(
-          width: double.infinity,
-          child: Column(
-            children: [
-              Expanded(
-                child: Column(
-                  children: [
-                    MaterialButton(
-                      child: const Text('Request location permission'),
-                      onPressed: _requestLocationPermission,
-                    ),
-                    if (Platform.isAndroid) ...[
-                      const Text(
-                          'Permission on android is only needed starting from sdk 33.'),
-                    ],
-                    MaterialButton(
-                      child: const Text('Request Notification permission'),
-                      onPressed: _requestNotificationPermission,
-                    ),
-                    MaterialButton(
-                      child: const Text('Send notification'),
-                      onPressed: () =>
-                          sendNotification('Hello from another world'),
-                    ),
-                    MaterialButton(
-                      child: const Text('Start Tracking'),
-                      onPressed: isTracking
-                          ? null
-                          : () async {
-                              await BackgroundLocationTrackerManager
-                                  .startTracking();
-                              setState(() => isTracking = true);
-                            },
-                    ),
-                    MaterialButton(
-                      child: const Text('Stop Tracking'),
-                      onPressed: isTracking
-                          ? () async {
-                              await LocationDao().clear();
-                              await _getLocations();
-                              await BackgroundLocationTrackerManager
-                                  .stopTracking();
-                              setState(() => isTracking = false);
-                            }
-                          : null,
-                    ),
-                  ],
+    return Container(
+      width: double.infinity,
+      child: Column(
+        children: [
+          Expanded(
+            child: Column(
+              children: [
+                MaterialButton(
+                  onPressed: _requestLocationPermission,
+                  child: const Text('Request location permission'),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                color: Colors.black12,
-                height: 2,
-              ),
-              const Text('Locations'),
-              MaterialButton(
-                child: const Text('Refresh locations'),
-                onPressed: _getLocations,
-              ),
-              Expanded(
-                child: Builder(
-                  builder: (context) {
-                    if (_locations.isEmpty) {
-                      return const Text('No locations saved');
-                    }
-                    return ListView.builder(
-                      itemCount: _locations.length,
-                      itemBuilder: (context, index) => Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                        child: Text(
-                          _locations[index],
-                        ),
-                      ),
-                    );
-                  },
+                if (Platform.isAndroid) ...[
+                  const Text(
+                      'Permission on android is only needed starting from sdk 33.'),
+                ],
+                MaterialButton(
+                  onPressed: _requestNotificationPermission,
+                  child: const Text('Request Notification permission'),
                 ),
-              ),
-            ],
+                MaterialButton(
+                  child: const Text('Send notification'),
+                  onPressed: () => sendNotification('Hello from another world'),
+                ),
+                MaterialButton(
+                  onPressed: isTracking
+                      ? null
+                      : () async {
+                          await BackgroundLocationTrackerManager
+                              .startTracking();
+                          setState(() => isTracking = true);
+                        },
+                  child: const Text('Start Tracking'),
+                ),
+                MaterialButton(
+                  onPressed: isTracking
+                      ? () async {
+                          await LocationDao().clear();
+                          await _getLocations();
+                          await BackgroundLocationTrackerManager.stopTracking();
+                          setState(() => isTracking = false);
+                        }
+                      : null,
+                  child: const Text('Stop Tracking'),
+                ),
+              ],
+            ),
           ),
-        ),
+          const SizedBox(height: 8),
+          Container(
+            color: Colors.black12,
+            height: 2,
+          ),
+          const Text('Locations'),
+          MaterialButton(
+            onPressed: _getLocations,
+            child: const Text('Refresh locations'),
+          ),
+          Expanded(
+            child: Builder(
+              builder: (context) {
+                if (_locations.isEmpty) {
+                  return const Text('No locations saved');
+                }
+                return ListView.builder(
+                  itemCount: _locations.length,
+                  itemBuilder: (context, index) => Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    child: Text(
+                      _locations[index],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
