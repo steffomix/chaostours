@@ -13,6 +13,8 @@ import 'package:chaostours/model_trackpoint.dart';
 import 'package:chaostours/model_task.dart';
 import 'package:chaostours/log.dart';
 import 'package:chaostours/gps.dart';
+import 'package:chaostours/tracking_calendar.dart';
+import 'package:chaostours/notifications.dart';
 
 class RecourceLoader {
   ///
@@ -55,6 +57,9 @@ class RecourceLoader {
       logInfo('TableAlias ${ModelAlias.length}');
       logInfo('TableTrackPoints ${ModelTrackPoint.length}');
       logInfo('TableTask ${ModelTask.length}');
+
+      TrackingCalendar();
+      Notifications().initialize();
 
       await webKey();
       await defaultCalendarId();

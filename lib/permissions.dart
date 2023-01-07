@@ -1,3 +1,41 @@
+import 'package:permission_handler/permission_handler.dart';
+import 'package:chaostours/log.dart';
+
+class Permissions {
+  static Permissions? _instance;
+  Permissions._();
+  factory Permissions() => _instance ??= Permissions._();
+
+  Future<void> requestNotificationPermission() async {
+    final result = await Permission.notification.request();
+    if (result == PermissionStatus.granted) {
+      logInfo('Notification Permission GRANTED'); // ignore: avoid_print
+    } else {
+      logInfo('Notification Permission NOT GRANTED'); // ignore: avoid_print
+    }
+  }
+
+  Future<void> requestLocationPermission() async {
+    final result = await Permission.locationAlways.request();
+    if (result == PermissionStatus.granted) {
+      print('Location Permission GRANTED'); // ignore: avoid_print
+    } else {
+      print('Location Permission NOT GRANTED'); // ignore: avoid_print
+    }
+  }
+}
+/*
+  static Notification? _instance;
+  Notification._() {
+    eventOnGps.on<GPS>().listen(onGps);
+  }
+  factory Notification() => _instance ??= Notification._();
+  */
+
+
+
+
+/*
 import 'dart:async';
 import 'dart:math';
 import 'package:background_location_tracker/background_location_tracker.dart';
@@ -6,40 +44,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:chaostours/events.dart';
 import 'package:chaostours/gps.dart';
 
-/*
-@pragma('vm:entry-point')
-void backgroundCallback() {
-  BackgroundLocationTrackerManager.handleBackgroundUpdated(
-      (BackgroundLocationUpdateData data) {
-    eventOnGps.fire(GPS(data.lat, data.lon));
-    return Future<void>.value();
-  }); //(data) async => Repo().update(data),
-}
-
-Future<void> main() async {
-  await BackgroundLocationTrackerManager.initialize(
-    backgroundCallback,
-    config: const BackgroundLocationTrackerConfig(
-      loggingEnabled: true,
-      androidConfig: AndroidConfig(
-        notificationIcon: 'explore',
-        trackingInterval: Duration(seconds: 4),
-        distanceFilterMeters: null,
-      ),
-      iOSConfig: IOSConfig(
-        activityType: ActivityType.FITNESS,
-        distanceFilterMeters: null,
-        restartAfterKill: true,
-      ),
-    ),
-  );
-}
-*/
 class Repo {
   static Repo? _instance;
-
   Repo._();
-
   factory Repo() => _instance ??= Repo._();
 
   Future<void> update(BackgroundLocationUpdateData data) async {
@@ -109,3 +116,4 @@ void sendNotification(String text) {
     ),
   );
 }
+*/

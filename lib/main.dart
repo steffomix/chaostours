@@ -4,21 +4,11 @@ import 'package:flutter/material.dart';
 //
 import 'package:chaostours/recource_loader.dart';
 import 'package:chaostours/log.dart';
-import 'package:chaostours/trackpoint.dart';
-import 'package:chaostours/tracking_calendar.dart';
+// import 'package:chaostours/tracking_calendar.dart';
 import 'package:chaostours/globals.dart';
-import 'package:chaostours/events.dart';
-import 'package:background_location_tracker/background_location_tracker.dart';
-import 'package:chaostours/gps.dart';
+import 'package:chaostours/tracking.dart';
 
-@pragma('vm:entry-point')
-void backgroundCallback() {
-  BackgroundLocationTrackerManager.handleBackgroundUpdated(
-      (BackgroundLocationUpdateData data) {
-    eventOnGps.fire(GPS(data.lat, data.lon));
-    return Future<void>.value();
-  }); //(data) async => Repo().update(data),
-}
+// android native code
 
 void main() async {
   // Thanks for: https://stackoverflow.com/a/69481863
@@ -32,9 +22,6 @@ void main() async {
   // preload recources
   await RecourceLoader.preload();
 
-  // instantiate TrackingCalendar singelton
-  TrackingCalendar();
-
   try {
     PackageInfo packageInfo = await PackageInfo.fromPlatform();
     Globals.version = packageInfo.version;
@@ -42,25 +29,9 @@ void main() async {
     logError(e);
   }
 
-  await BackgroundLocationTrackerManager.initialize(
-    backgroundCallback,
-    config: const BackgroundLocationTrackerConfig(
-      loggingEnabled: true,
-      androidConfig: AndroidConfig(
-        notificationIcon: 'explore',
-        trackingInterval: Duration(seconds: 4),
-        distanceFilterMeters: null,
-      ),
-      iOSConfig: IOSConfig(
-        activityType: ActivityType.FITNESS,
-        distanceFilterMeters: null,
-        restartAfterKill: true,
-      ),
-    ),
-  );
-
   // start gps tracking
-  TrackPoint.startTracking();
+  //TrackPoint.startTracking();
+  Tracking.initialize();
 
   // start frontend
   runApp(Globals.app);

@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:io';
-
-import 'package:background_location_tracker/background_location_tracker.dart';
+//import 'package:background_location_tracker/background_location_tracker.dart';
 import 'package:flutter/material.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:chaostours/permission.dart';
+//import 'package:permission_handler/permission_handler.dart';
+//
+import 'package:chaostours/notifications.dart';
+import 'package:chaostours/permissions.dart';
+import 'package:chaostours/tracking.dart';
 
 @override
 class WidgetSettingsPermissions extends StatefulWidget {
@@ -15,21 +17,15 @@ class WidgetSettingsPermissions extends StatefulWidget {
 }
 
 class _WidgetSettingsPermissionsState extends State<WidgetSettingsPermissions> {
-  var isTracking = false;
-
-  Timer? _timer;
   List<String> _locations = [];
 
   @override
   void initState() {
     super.initState();
-    _getTrackingStatus();
-    _startLocationsUpdatesStream();
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
     super.dispose();
   }
 
@@ -42,42 +38,33 @@ class _WidgetSettingsPermissionsState extends State<WidgetSettingsPermissions> {
           Expanded(
             child: Column(
               children: [
-                MaterialButton(
-                  onPressed: _requestLocationPermission,
-                  child: const Text('Request location permission'),
+                ElevatedButton(
+                  onPressed: Permissions().requestLocationPermission,
+                  child: const Text('Request background location permission'),
                 ),
                 if (Platform.isAndroid) ...[
                   const Text(
-                      'Permission on android is only needed starting from sdk 33.'),
+                      'You need to check to option "ALWAYS allow location lookup\n\n'
+                      'This permission on android is only needed since API Level 33:\n'
+                      'Android 13, Tiramisu, API Level 33 since August 15, 2022\n'
+                      'https://en.wikipedia.org/wiki/Android_version_history#Overview'),
                 ],
-                MaterialButton(
-                  onPressed: _requestNotificationPermission,
+                ElevatedButton(
+                  onPressed: Permissions().requestNotificationPermission,
                   child: const Text('Request Notification permission'),
                 ),
-                MaterialButton(
-                  child: const Text('Send notification'),
-                  onPressed: () => sendNotification('Hello from another world'),
+                ElevatedButton(
+                  child: const Text('Test notification'),
+                  onPressed: () => Notifications().send(
+                      'Hello from Chaos Tours', 'The ultimate Tracking app'),
                 ),
-                MaterialButton(
-                  onPressed: isTracking
-                      ? null
-                      : () async {
-                          await BackgroundLocationTrackerManager
-                              .startTracking();
-                          setState(() => isTracking = true);
-                        },
-                  child: const Text('Start Tracking'),
+                const ElevatedButton(
+                  onPressed: Tracking.startTracking,
+                  child: Text('Ok, let\'s go! Start Tracking'),
                 ),
-                MaterialButton(
-                  onPressed: isTracking
-                      ? () async {
-                          await LocationDao().clear();
-                          await _getLocations();
-                          await BackgroundLocationTrackerManager.stopTracking();
-                          setState(() => isTracking = false);
-                        }
-                      : null,
-                  child: const Text('Stop Tracking'),
+                const ElevatedButton(
+                  onPressed: Tracking.stopTracking,
+                  child: Text('Stop Tracking'),
                 ),
               ],
             ),
@@ -87,37 +74,11 @@ class _WidgetSettingsPermissionsState extends State<WidgetSettingsPermissions> {
             color: Colors.black12,
             height: 2,
           ),
-          const Text('Locations'),
-          MaterialButton(
-            onPressed: _getLocations,
-            child: const Text('Refresh locations'),
-          ),
-          Expanded(
-            child: Builder(
-              builder: (context) {
-                if (_locations.isEmpty) {
-                  return const Text('No locations saved');
-                }
-                return ListView.builder(
-                  itemCount: _locations.length,
-                  itemBuilder: (context, index) => Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    child: Text(
-                      _locations[index],
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
         ],
       ),
     );
   }
-
+/*
   Future<void> _getTrackingStatus() async {
     isTracking = await BackgroundLocationTrackerManager.isTracking();
     setState(() {});
@@ -140,17 +101,5 @@ class _WidgetSettingsPermissionsState extends State<WidgetSettingsPermissions> {
       print('NOT GRANTED'); // ignore: avoid_print
     }
   }
-
-  Future<void> _getLocations() async {
-    final locations = await LocationDao().getLocations();
-    setState(() {
-      _locations = locations;
-    });
-  }
-
-  void _startLocationsUpdatesStream() {
-    _timer?.cancel();
-    _timer = Timer.periodic(
-        const Duration(milliseconds: 250), (timer) => _getLocations());
-  }
+*/
 }

@@ -9,6 +9,12 @@ import 'package:chaostours/model_trackpoint.dart';
 import 'package:chaostours/util.dart' as util;
 
 class TrackPoint {
+  static initialize() {
+    eventOnGps.on<GPS>().listen((GPS gps) {
+      trackBackground(gps);
+    });
+  }
+
   //static int _nextId = 0;
   // contains all trackpoints from current state start or stop
   static final List<ModelTrackPoint> _trackPoints = [];
@@ -158,8 +164,8 @@ class TrackPoint {
     return dist;
   }
 
-  static Future<ModelTrackPoint> create() async {
-    GPS gps = await GPS.gps();
+  static Future<ModelTrackPoint> create({GPS? backgroundGps}) async {
+    GPS gps = backgroundGps ??= await GPS.gps();
     Address address = Address(gps);
     if (Globals.osmLookup == OsmLookup.always) await address.lookupAddress();
 
@@ -173,8 +179,31 @@ class TrackPoint {
     return tp;
   }
 
+  static bool _first = true;
+  static void trackBackground(GPS gps) async {
+    ModelTrackPoint tp;
+    try {
+      tp = await create();
+      tp.status = _status;
+      _trackPoints.add(tp);
+      if (_first) {
+        tp = await createEvent();
+        tp.timeEnd = DateTime.now();
+        _status = TrackingStatus.standing;
+        eventBusTrackingStatusChanged.fire(await createEvent());
+        _first = false;
+      } else {
+        _checkStatus(tp);
+        eventBusTrackPointCreated.fire(tp);
+      }
+    } catch (e, stk) {
+      // ignore
+      logFatal('TrackPoint::create', e, stk);
+    }
+  }
+
   /// tracking heartbeat with <trackingTickTime> speed
-  static void _track([bool first = false]) async {
+  static void _track() async {
     if (!_tracking) return;
     Future.delayed(Globals.trackPointTickTime, () async {
       ModelTrackPoint tp;
@@ -182,11 +211,12 @@ class TrackPoint {
         tp = await create();
         tp.status = _status;
         _trackPoints.add(tp);
-        if (first) {
+        if (_first) {
           tp = await createEvent();
           tp.timeEnd = DateTime.now();
           _status = TrackingStatus.standing;
           eventBusTrackingStatusChanged.fire(await createEvent());
+          _first = false;
         } else {
           _checkStatus(tp);
           eventBusTrackPointCreated.fire(tp);
@@ -205,7 +235,7 @@ class TrackPoint {
     await TrackPoint.create();
     logInfo('start tracking');
     _tracking = true;
-    _track(true);
+    _track();
   }
 
   /// stop tracking heartbeat
