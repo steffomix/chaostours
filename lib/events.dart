@@ -1,6 +1,6 @@
 import 'package:event_bus/event_bus.dart';
 
-EventBus eventOnGps = EventBus();
+EventBus eventOnGps = EventBus(sync: true);
 
 // set the main screen id
 EventBus eventBusMainPaneChanged = EventBus();

@@ -7,13 +7,21 @@ import 'package:chaostours/address.dart';
 import 'package:chaostours/enum.dart';
 import 'package:chaostours/model_trackpoint.dart';
 import 'package:chaostours/util.dart' as util;
+import 'package:chaostours/event_manager.dart';
 
 class TrackPoint {
-  static initialize() {
+  static TrackPoint? _instance;
+  TrackPoint._() {
+    EventManager(Events.onGps).addListener((dynamic gps) {
+      trackBackground(gps as GPS);
+    });
+    /*
     eventOnGps.on<GPS>().listen((GPS gps) {
       trackBackground(gps);
     });
+    */
   }
+  factory TrackPoint() => _instance ??= TrackPoint._();
 
   //static int _nextId = 0;
   // contains all trackpoints from current state start or stop
@@ -44,10 +52,6 @@ class TrackPoint {
       dist = movedDistance(_trackPoints);
     }
     return (dist * 1000).round() / 1000;
-  }
-
-  TrackPoint() {
-    throw 'Do not instantiate TrackPoint, use ModelTrackPoint!';
   }
 
   static void _statusChanged(ModelTrackPoint tp) async {

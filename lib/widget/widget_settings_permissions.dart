@@ -44,7 +44,7 @@ class _WidgetSettingsPermissionsState extends State<WidgetSettingsPermissions> {
                 ),
                 if (Platform.isAndroid) ...[
                   const Text(
-                      'You need to check to option "ALWAYS allow location lookup\n\n'
+                      'You need to check the option "ALWAYS allow location lookup\n\n'
                       'This permission on android is only needed since API Level 33:\n'
                       'Android 13, Tiramisu, API Level 33 since August 15, 2022\n'
                       'https://en.wikipedia.org/wiki/Android_version_history#Overview'),
@@ -58,13 +58,13 @@ class _WidgetSettingsPermissionsState extends State<WidgetSettingsPermissions> {
                   onPressed: () => Notifications().send(
                       'Hello from Chaos Tours', 'The ultimate Tracking app'),
                 ),
-                const ElevatedButton(
-                  onPressed: Tracking.startTracking,
-                  child: Text('Ok, let\'s go! Start Tracking'),
+                ElevatedButton(
+                  onPressed: Tracking().startTracking,
+                  child: const Text('Ok, let\'s go! Start Tracking'),
                 ),
-                const ElevatedButton(
-                  onPressed: Tracking.stopTracking,
-                  child: Text('Stop Tracking'),
+                ElevatedButton(
+                  onPressed: Tracking().stopTracking,
+                  child: const Text('Stop Tracking'),
                 ),
               ],
             ),
