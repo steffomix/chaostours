@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 //
 import 'package:chaostours/model_task.dart';
 import 'package:chaostours/model_trackpoint.dart';
-import 'package:chaostours/globals.dart';
+import 'package:chaostours/events.dart';
+import 'package:chaostours/enum.dart';
 
 ///
 /// checkbox
@@ -58,7 +59,7 @@ class WidgetAddTasks extends StatefulWidget {
 }
 
 void onBackToMainPane() {
-  Globals.mainPane = Globals.pane(Panes.trackPointList);
+  eventBusMainPaneChanged.fire(Panes.trackPointList);
 }
 
 Widget backToMainPane() {

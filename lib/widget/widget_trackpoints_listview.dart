@@ -12,14 +12,14 @@ import 'package:chaostours/model_alias.dart';
 import 'package:chaostours/model_task.dart';
 import 'package:chaostours/model_trackpoint.dart';
 
-class WidgetModelTrackPointList extends StatefulWidget {
-  const WidgetModelTrackPointList({super.key});
+class WidgetTrackPointList extends StatefulWidget {
+  const WidgetTrackPointList({super.key});
 
   @override
-  State<WidgetModelTrackPointList> createState() => _TrackPointListView();
+  State<WidgetTrackPointList> createState() => _TrackPointListView();
 }
 
-class _TrackPointListView extends State<WidgetModelTrackPointList> {
+class _TrackPointListView extends State<WidgetTrackPointList> {
   static _ActiveListItem? activeItem;
   static final List<Widget> listView = [];
   StreamSubscription? _trackingStatusListener;
@@ -140,7 +140,7 @@ class _ActiveListItem {
     Widget left = IconButton(
       icon: Icon(icon),
       onPressed: () {
-        Globals.mainPane = WidgetAddTasks(trackPoint: event);
+        eventBusMainPaneChanged.fire(WidgetAddTasks(trackPoint: event));
       },
     );
 

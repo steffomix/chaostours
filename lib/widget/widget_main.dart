@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 //
 import 'package:chaostours/widget/widget_trackpoints_listview.dart';
 import 'package:chaostours/log.dart';
+import 'package:chaostours/enum.dart';
 import 'package:chaostours/globals.dart';
 
 class App extends StatefulWidget {
@@ -20,6 +21,11 @@ class App extends StatefulWidget {
 ///
 class _AppState extends State<App> {
   static StreamSubscription? onScreenChanged;
+  static Widget? _pane;
+
+  Widget get pane {
+    return _pane ??= Panes.trackPointList.value;
+  }
 
   _AppState() {
     onScreenChanged ??=
@@ -71,20 +77,19 @@ class _AppState extends State<App> {
   Widget build(BuildContext context) {
     Widget myBody = const Text('Waiting for TrackPoints...');
     try {
-      myBody = const WidgetModelTrackPointList();
+      myBody = const WidgetTrackPointList();
     } catch (e) {
       logWarn('Waiting for TrackPoints...', e);
     }
     if (Globals.debugMode) {
       return MaterialApp(
           home: Scaffold(
-        appBar: appbar(),
         drawer: drawer(),
-        body: Globals.mainPane,
+        body: pane,
         bottomNavigationBar: bottomNavigationBar(),
       ));
     } else {
-      return MaterialApp(home: Scaffold(body: Globals.mainPane));
+      return MaterialApp(home: Scaffold(appBar: appbar(), body: pane));
     }
   }
 
