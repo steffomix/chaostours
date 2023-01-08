@@ -7,6 +7,7 @@ import 'package:chaostours/file_handler.dart';
 import 'package:chaostours/enum.dart';
 import 'package:chaostours/address.dart';
 import 'package:chaostours/util.dart' as util;
+import 'package:flutter/cupertino.dart';
 
 class ModelTrackPoint {
   static final List<ModelTrackPoint> _table = [];
@@ -102,13 +103,12 @@ class ModelTrackPoint {
   /// insert only if Model doesn't have a valid (not null) _id
   /// otherwise writes table to disk
   ///
-  static Future<int> insert(ModelTrackPoint m) async {
+  static Future<void> insert(ModelTrackPoint m) async {
     if (m._id == null) {
       _table.add(m);
       m._id = _table.length;
     }
     await write();
-    return Future<int>.value(m._id);
   }
 
   ///
@@ -117,29 +117,25 @@ class ModelTrackPoint {
   /// The Model will then have a valid id
   /// that reflects (is same as) Table length.
   ///
-  static Future<bool> update(ModelTrackPoint tp) async {
+  static Future<void> update(ModelTrackPoint tp) async {
     if (tp._id == null) {
       await insert(tp);
-      return false;
     } else {
       await write();
-      return true;
     }
   }
 
-  static Future<bool> write() async {
+  static Future<void> write() async {
     await Model.writeTable(handle: await FileHandler.station, table: _table);
-    return Future<bool>.value(true);
   }
 
-  static Future<int> open() async {
+  static Future<void> open() async {
     List<String> lines = await Model.readTable(DatabaseFile.station);
     _table.clear();
     for (var row in lines) {
       _table.add(toModel(row));
     }
     logInfo('Trackpoints loaded ${_table.length} rows');
-    return Future<int>.value(_table.length);
   }
 
   void addAlias(ModelAlias m) => idAlias.add(m.id);

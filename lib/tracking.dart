@@ -12,11 +12,13 @@ void backgroundCallback() {
       (BackgroundLocationUpdateData data) async {
     Shared shared =
         Shared(key: SharedKeys.gps, data: '${data.lat},${data.lon}');
+    Tracking.counter++;
     await shared.save();
   });
 }
 
 class Tracking {
+  static int counter = 0;
   static EventManager eventManager = EventManager(Events.onGps);
   static Tracking? _instance;
   Tracking._() {

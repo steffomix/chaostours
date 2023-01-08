@@ -17,8 +17,8 @@ class TrackPoint {
       trackBackground(gps as GPS);
     });
     */
-    eventOnGps.on<GPS>().listen((GPS gps) {
-      trackBackground(gps);
+    eventOnGps.on<GPS>().listen((GPS gps) async {
+      await trackBackground(gps);
     });
   }
   factory TrackPoint() => _instance ??= TrackPoint._();
@@ -54,7 +54,7 @@ class TrackPoint {
     return (dist * 1000).round() / 1000;
   }
 
-  static void _statusChanged(ModelTrackPoint tp) async {
+  static Future<void> _statusChanged(ModelTrackPoint tp) async {
     // create a new TrackPoint as event
     ModelTrackPoint event = await createEvent();
     if (Globals.osmLookup == OsmLookup.onStatus) {
@@ -184,7 +184,7 @@ class TrackPoint {
   }
 
   static bool _first = true;
-  static void trackBackground(GPS gps) async {
+  static Future<void> trackBackground(GPS gps) async {
     ModelTrackPoint tp;
     try {
       tp = await create();
@@ -207,7 +207,7 @@ class TrackPoint {
   }
 
   /// tracking heartbeat with <trackingTickTime> speed
-  static void _track() async {
+  static Future<void> _track() async {
     if (!_tracking) return;
     Future.delayed(Globals.trackPointTickTime, () async {
       ModelTrackPoint tp;
@@ -234,7 +234,7 @@ class TrackPoint {
   }
 
   /// start tracking heartbeat
-  static void startTracking() async {
+  static Future<void> startTracking() async {
     if (_tracking) return;
     await TrackPoint.create();
     logInfo('start tracking');

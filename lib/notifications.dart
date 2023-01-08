@@ -6,6 +6,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:chaostours/events.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/log.dart';
+import 'package:googleapis/cloudsearch/v1.dart';
 
 class Notifications {
   static Notifications? _instance;
@@ -14,7 +15,7 @@ class Notifications {
   }
   factory Notifications() => _instance ??= Notifications._();
   //
-  static int id = DateTime.now().microsecondsSinceEpoch;
+  static int id = DateTime.now().millisecond;
   static FlutterLocalNotificationsPlugin? plugin;
   bool pluginInitialized = false;
 
@@ -23,7 +24,7 @@ class Notifications {
   }
 
   final settings = const InitializationSettings(
-    android: AndroidInitializationSettings('app_icon'),
+    android: AndroidInitializationSettings('mipmap/ic_launcher'),
     iOS: IOSInitializationSettings(
       requestAlertPermission: false,
       requestBadgePermission: false,
@@ -31,7 +32,7 @@ class Notifications {
     ),
   );
 
-  void initialize() async {
+  Future<void> initialize() async {
     if (pluginInitialized) return;
     plugin ??= FlutterLocalNotificationsPlugin();
     pluginInitialized = await plugin!.initialize(
@@ -41,7 +42,7 @@ class Notifications {
         false;
   }
 
-  void onSelectNotification(String? data) async {
+  Future<void> onSelectNotification(String? data) async {
     data ??= '-no Data-';
     logInfo('onSelectNotification Data: $data');
   }

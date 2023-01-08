@@ -7,10 +7,10 @@ import 'package:chaostours/log.dart';
 import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/enum.dart';
 import 'package:chaostours/widget/widget_add_tasks.dart';
-import 'package:chaostours/globals.dart';
 import 'package:chaostours/model_alias.dart';
 import 'package:chaostours/model_task.dart';
 import 'package:chaostours/model_trackpoint.dart';
+import 'package:chaostours/tracking.dart';
 
 class WidgetTrackPointList extends StatefulWidget {
   const WidgetTrackPointList({super.key});
@@ -217,7 +217,7 @@ class _ActiveListItem {
     }
 
     String gpsText =
-        '${TrackPoint.length}x GPS (lat,lon): ${event.gps.lat},${event.gps.lon}';
+        'Trackpoints: ${TrackPoint.length}, Trackings: ${Tracking.counter}';
     TableRow gpsInfo = TableRow(children: [
       const TableCell(child: Text('')),
       TableCell(child: Text(gpsText))
