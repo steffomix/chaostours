@@ -1,20 +1,19 @@
 import 'package:background_location_tracker/background_location_tracker.dart';
 import 'package:chaostours/log.dart';
-//import 'package:chaostours/events.dart';
+import 'package:chaostours/events.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/trackpoint.dart';
+import 'package:chaostours/shared.dart';
 
 @pragma('vm:entry-point')
 void backgroundCallback() {
   BackgroundLocationTrackerManager.handleBackgroundUpdated(
       (BackgroundLocationUpdateData data) async {
-    GPS gps = GPS(data.lat, data.lon);
-    //eventOnGps.fire(gps);
-    //Tracking.eventManager.fire(gps);
-    TrackPoint.trackBackground(gps);
-    return Future<void>.value();
-  }); //(data) async => Repo().update(data),
+    Shared shared =
+        Shared(key: SharedKeys.gps, data: '${data.lat},${data.lon}');
+    await shared.save();
+  });
 }
 
 class Tracking {
@@ -22,6 +21,12 @@ class Tracking {
   static Tracking? _instance;
   Tracking._() {
     initialize();
+    Shared(key: SharedKeys.gps, data: '').observe(
+        duration: const Duration(seconds: 1),
+        fn: (String data) {
+          List<String> parts = data.split(',');
+          eventOnGps.fire(GPS(double.parse(parts[0]), double.parse(parts[1])));
+        });
   }
   factory Tracking() => _instance ??= Tracking._();
 

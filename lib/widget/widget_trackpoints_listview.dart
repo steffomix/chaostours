@@ -189,7 +189,7 @@ class _ActiveListItem {
       //   TableCell(
       //       child: Center(
       //           child: InkWell(
-      //     child: Text(text),
+      //     child: Text(gpsText),
       //     onTap: () {
       //       launchUrl(
       //           Uri(scheme: 'https', host: 'maps.google.com', queryParameters: {
@@ -216,6 +216,13 @@ class _ActiveListItem {
       ]));
     }
 
+    String gpsText =
+        '${TrackPoint.length}x GPS (lat,lon): ${event.gps.lat},${event.gps.lon}';
+    TableRow gpsInfo = TableRow(children: [
+      const TableCell(child: Text('')),
+      TableCell(child: Text(gpsText))
+    ]);
+
     // combine right rows to a table
     Widget right = Table(
         border: const TableBorder(top: BorderSide(style: BorderStyle.solid)),
@@ -229,7 +236,8 @@ class _ActiveListItem {
         TableRow(children: [TableCell(child: left), TableCell(child: right)]),
         const TableRow(
             children: [TableCell(child: Text('')), TableCell(child: Text(''))]),
-        ...tasks
+        ...tasks,
+        gpsInfo
       ],
     );
   }

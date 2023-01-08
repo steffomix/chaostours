@@ -10,20 +10,30 @@ class WidgetDrawer extends StatefulWidget {
 }
 
 class _WidgetDrawer extends State<WidgetDrawer> {
-  void onPressedTracking() =>
-      eventBusMainPaneChanged.fire(Panes.trackPointList.value);
+  void onPressedTracking(BuildContext ctx) {
+    eventBusMainPaneChanged.fire(Panes.trackPointList.value);
+    Navigator.pop(ctx);
+  }
 
-  void onPressedPermissions() =>
-      eventBusMainPaneChanged.fire(Panes.permissions.value);
+  void onPressedPermissions(BuildContext ctx) {
+    eventBusMainPaneChanged.fire(Panes.permissions.value);
+    Navigator.pop(ctx);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Drawer(
         child: ListView(padding: EdgeInsets.zero, children: [
       const Text('Chaos Tours'),
       ElevatedButton(
-          onPressed: onPressedTracking, child: const Text('Tracking')),
+          onPressed: () {
+            onPressedTracking(context);
+          },
+          child: const Text('Tracking')),
       ElevatedButton(
-          onPressed: onPressedPermissions,
+          onPressed: () {
+            onPressedPermissions(context);
+          },
           child: const Text('Android Permissions'))
     ]));
   }

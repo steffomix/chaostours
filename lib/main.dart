@@ -8,6 +8,7 @@ import 'package:chaostours/log.dart';
 import 'package:chaostours/globals.dart';
 import 'package:chaostours/tracking.dart';
 import 'trackpoint.dart';
+import 'package:chaostours/shared.dart';
 
 // android native code
 
@@ -33,7 +34,7 @@ void main() async {
   // init tracking processor
   TrackPoint();
   // start gps tracking
-  TrackPoint.startTracking();
+  //TrackPoint.startTracking();
   await Tracking().initialize();
 
   // start frontend

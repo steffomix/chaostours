@@ -12,14 +12,14 @@ import 'package:chaostours/event_manager.dart';
 class TrackPoint {
   static TrackPoint? _instance;
   TrackPoint._() {
+    /*
     EventManager(Events.onGps).addListener((dynamic gps) {
       trackBackground(gps as GPS);
     });
-    /*
+    */
     eventOnGps.on<GPS>().listen((GPS gps) {
       trackBackground(gps);
     });
-    */
   }
   factory TrackPoint() => _instance ??= TrackPoint._();
 
@@ -27,7 +27,7 @@ class TrackPoint {
   // contains all trackpoints from current state start or stop
   static final List<ModelTrackPoint> _trackPoints = [];
   // contains all trackpoints during driving (from start to stop)
-
+  static int get length => _trackPoints.length;
   //
   static TrackingStatus _status = TrackingStatus.none;
   static TrackingStatus get status => _status;
