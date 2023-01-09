@@ -1,21 +1,29 @@
 enum Events {
-  onGps;
+  onGps,
+  onTrackPoint,
+  onStatusChanged,
+  onMainPaneChanged,
+
+  ;
 }
 
 class EventManager {
-  static final Map<Events, _Event> _events = {};
-  _Event? _event;
+  static  final Map<Events, Set<Event>> _register = {
+    Events.onGps: {},
+    Events.onTrackPoint: {},
+    Events.onMainPaneChanged: {}
+  };
+  
+  void fnDefault (Event e){
+    //
+  }
 
-  EventManager(Events ev) {
-    var e = _events[ev];
-    if (e == null) {
-      Map<Events, _Event> entry = {ev: _Event()};
-      _events.addEntries(entry.entries);
-      _event = _events[ev];
+  bool addListener (Events e, Event ex) => _register[e].add(ex);
+  EventManager(Events ev) { 
     }
   }
 
-  void addListener(void Function(dynamic) fn) => _event!.listeners.add(fn);
+  void addListener(void Function(Event) fn) => _event!.listeners.add(fn);
   void removeListener(void Function(dynamic) fn) =>
       _event!.listeners.remove(fn);
 
@@ -26,7 +34,4 @@ class EventManager {
   }
 }
 
-class _Event {
-  final Set<void Function(dynamic)> listeners = {};
-  _Event();
-}
+class Event {}
