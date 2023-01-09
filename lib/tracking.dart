@@ -10,10 +10,17 @@ import 'package:chaostours/shared.dart';
 void backgroundCallback() {
   BackgroundLocationTrackerManager.handleBackgroundUpdated(
       (BackgroundLocationUpdateData data) async {
-    Shared shared =
-        Shared(key: SharedKeys.gps, data: '${data.lat},${data.lon}');
+    print('### handleBackgroundUpdated started');
+    DateTime t = DateTime.now();
+    Shared shared = Shared(key: SharedKeys.gps);
     Tracking.counter++;
-    await shared.save();
+    await shared.save('${data.lat},${data.lon}');
+    await Shared(key: SharedKeys.tracker).add('.');
+    GPS gps = GPS(data.lat, data.lon);
+    TrackPoint.trackBackground(gps);
+    Duration duration = DateTime.now().difference(t);
+    int dur = duration.inMilliseconds;
+    print('### handleBackgroundUpdated finished in $dur');
   });
 }
 
@@ -23,11 +30,14 @@ class Tracking {
   static Tracking? _instance;
   Tracking._() {
     initialize();
-    Shared(key: SharedKeys.gps, data: '').observe(
+    Shared(key: SharedKeys.gps).observe(
         duration: const Duration(seconds: 1),
         fn: (String data) {
           List<String> parts = data.split(',');
-          eventOnGps.fire(GPS(double.parse(parts[0]), double.parse(parts[1])));
+          GPS gps = GPS(double.parse(parts[0]), double.parse(parts[1]));
+          TrackPoint.trackBackground(gps);
+
+          //eventOnGps.fire();
         });
   }
   factory Tracking() => _instance ??= Tracking._();
@@ -50,7 +60,7 @@ class Tracking {
 
   void startTracking() {
     if (_isTracking) {
-      logInfo('Tracking::startTracking: already tracking');
+      print('### Tracking::startTracking: already tracking');
       return;
     }
     BackgroundLocationTrackerManager.startTracking(config: config());
@@ -78,7 +88,7 @@ class Tracking {
     return await BackgroundLocationTrackerManager.initialize(
       backgroundCallback,
       config: BackgroundLocationTrackerConfig(
-        loggingEnabled: false,
+        loggingEnabled: true,
         androidConfig: config(),
         iOSConfig: const IOSConfig(
           activityType: ActivityType.FITNESS,

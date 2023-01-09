@@ -82,6 +82,7 @@ class TrackPoint {
   /// creates new Trackpoint, waits after status changed,
   ///
   static void _checkStatus(ModelTrackPoint tp) {
+    if (_trackPoints.length > 2) _statusChanged(tp);
     // wait after status changed
     if (_lastStatusChange
         .add(Globals.waitTimeAfterStatusChanged)

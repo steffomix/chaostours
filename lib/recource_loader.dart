@@ -15,11 +15,13 @@ import 'package:chaostours/log.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/tracking_calendar.dart';
 import 'package:chaostours/notifications.dart';
+import 'package:chaostours/shared.dart';
 
 class RecourceLoader {
   ///
   /// preload recources
   static Future<void> preload() async {
+    Shared(key: SharedKeys.tracker).save('');
     try {
       try {
         var m1 = await ModelAlias.open();

@@ -11,6 +11,7 @@ import 'package:chaostours/model_alias.dart';
 import 'package:chaostours/model_task.dart';
 import 'package:chaostours/model_trackpoint.dart';
 import 'package:chaostours/tracking.dart';
+import 'package:chaostours/shared.dart';
 
 class WidgetTrackPointList extends StatefulWidget {
   const WidgetTrackPointList({super.key});
@@ -74,9 +75,10 @@ class _TrackPointListView extends State<WidgetTrackPointList> {
   }
 
   // update last trackpoint list item
-  void onTrackPoint(ModelTrackPoint event) {
+  void onTrackPoint(ModelTrackPoint event) async {
     activeItem ??= _ActiveListItem(event);
-    activeItem?.update(event);
+    activeItem?.update(
+        event, (await Shared(key: SharedKeys.tracker).load() ?? ''));
     setState(() {});
   }
 
@@ -86,7 +88,6 @@ class _TrackPointListView extends State<WidgetTrackPointList> {
       activeItem?.widget ?? const Text('...waiting for Trackpoint.')
     ];
     items.addAll(listView.reversed.toList());
-    String db = '';
 
     items.add(TextField(
       keyboardType: TextInputType.multiline,
@@ -108,23 +109,23 @@ class _ActiveListItem {
   _ActiveListItem(this.event);
 
   Widget get widget {
-    Widget w = _widget ??= _createWidget();
+    Widget w = _widget ??= _createWidget('');
     return w;
   }
 
-  Widget update(ModelTrackPoint tp) {
+  Widget update(ModelTrackPoint tp, String info) {
     event.deleted = tp.deleted;
     event.gps = tp.gps;
     event.address = tp.address;
     event.idAlias = tp.idAlias;
     event.timeEnd = DateTime.now();
-    return (_widget = _createWidget());
+    return (_widget = _createWidget(info));
   }
 
   ///
   /// creates a list item from TrackPoint
   ///
-  Widget _createWidget() {
+  Widget _createWidget(String info) {
     // calculate duration and distance
     String duration = event.timeElapsed();
 
@@ -237,7 +238,11 @@ class _ActiveListItem {
         const TableRow(
             children: [TableCell(child: Text('')), TableCell(child: Text(''))]),
         ...tasks,
-        gpsInfo
+        gpsInfo,
+        TableRow(children: [
+          const TableCell(child: Text('')),
+          TableCell(child: Text(info))
+        ])
       ],
     );
   }

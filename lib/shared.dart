@@ -2,7 +2,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:chaostours/log.dart';
 
 enum SharedKeys {
-  gps;
+  gps,
+  tracker;
 }
 
 class Shared {
@@ -13,10 +14,7 @@ class Shared {
   int get id => _id;
   //
   SharedKeys key;
-  late String _data;
-  Shared({required this.key, required String data}) {
-    _data = data;
-  }
+  Shared({required this.key});
 
   /// prepare module
   static SharedPreferences? _shared;
@@ -25,21 +23,27 @@ class Shared {
 
   ///
   Future<String?> load() async {
-    String? s = await _load();
+    String? s = await _loadRaw();
     if (s != null) {
       return _decode(s);
     }
     return null;
   }
 
-  Future<String?> _load() async {
+  Future<void> add(String value) async {
+    String l = await load() ?? '';
+    l += value;
+    await save(l);
+  }
+
+  Future<String?> _loadRaw() async {
     final sh = await shared;
     await sh.reload();
     return sh.getString(key.name);
   }
 
-  Future<void> save() async {
-    await (await shared).setString(key.name, _encode(_data));
+  Future<void> save(String data) async {
+    await (await shared).setString(key.name, _encode(data));
   }
 
   String _encode(String data) {
@@ -55,7 +59,7 @@ class Shared {
 
   void observe(
       {required Duration duration, required Function(String data) fn}) async {
-    _observed = await _load() ?? '';
+    _observed = await _loadRaw() ?? '';
     Future.delayed(duration, () {
       _observe(duration: duration, fn: fn);
     });
@@ -65,8 +69,9 @@ class Shared {
   Future<void> _observe(
       {required Duration duration, required Function(String data) fn}) async {
     if (!_observing) return;
-    String obs = await _load() ?? '';
+    String obs = await _loadRaw() ?? '';
     if (obs != _observed) {
+      print('### observed new gps: $obs');
       _observed = obs;
       try {
         fn(_decode(obs));
