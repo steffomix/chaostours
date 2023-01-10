@@ -77,8 +77,7 @@ class _TrackPointListView extends State<WidgetTrackPointList> {
   // update last trackpoint list item
   void onTrackPoint(ModelTrackPoint event) async {
     activeItem ??= _ActiveListItem(event);
-    activeItem?.update(
-        event, (await Shared(key: SharedKeys.tracker).load() ?? ''));
+    activeItem?.update(event, (await Shared(SharedKeys.tracker).load() ?? ''));
     setState(() {});
   }
 

@@ -6,6 +6,7 @@ import 'package:chaostours/recource_loader.dart';
 import 'package:chaostours/model_alias.dart';
 import 'package:chaostours/events.dart';
 import 'package:chaostours/globals.dart';
+import 'package:chaostours/event_manager.dart';
 
 class GPS {
   static int _nextId = 0;

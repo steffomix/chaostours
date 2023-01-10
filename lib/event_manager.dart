@@ -1,37 +1,49 @@
-enum Events {
+import 'package:chaostours/events.dart';
+
+enum EventKeys {
   onGps,
   onTrackPoint,
   onStatusChanged,
   onMainPaneChanged,
-
   ;
 }
 
 class EventManager {
-  static  final Map<Events, Set<Event>> _register = {
-    Events.onGps: {},
-    Events.onTrackPoint: {},
-    Events.onMainPaneChanged: {}
-  };
-  
-  void fnDefault (Event e){
-    //
+  static final Map<EventKeys, Set<Event>> _register = {};
+
+  final EventKeys eventKey;
+  EventManager(this.eventKey);
+
+  /// // create a class first
+  /// class MyLister extends Event{
+  ///   myData = 'blabla';
+  /// }
+  ///
+  /// // listen with a method that receives the class
+  /// listen((Event e){
+  ///   e.myData;
+  /// })
+  bool listen(Function(Event) fn) {
+    Event event = Event();
+    event._fn = fn;
+    return (_register[eventKey] ??= {}).add(event);
   }
 
-  bool addListener (Events e, Event ex) => _register[e].add(ex);
-  EventManager(Events ev) { 
-    }
+  bool cancel(dynamic Function(void Function(dynamic)) event) {
+    return (_register[eventKey] ??= {}).remove(event);
   }
 
-  void addListener(void Function(Event) fn) => _event!.listeners.add(fn);
-  void removeListener(void Function(dynamic) fn) =>
-      _event!.listeners.remove(fn);
-
-  void fire(dynamic data) {
-    for (var fn in _event!.listeners) {
-      fn(data);
+  void fire(Event event) {
+    for (var listener in _register[eventKey] ??= {}) {
+      try {
+        listener._fn(event);
+      } catch (e) {
+        print(e);
+      }
     }
   }
 }
 
-class Event {}
+class Event {
+  late Function(Event) _fn;
+}

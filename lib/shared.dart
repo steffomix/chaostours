@@ -2,7 +2,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:chaostours/log.dart';
 
 enum SharedKeys {
-  gps,
+  backgroundGps,
   tracker;
 }
 
@@ -14,7 +14,7 @@ class Shared {
   int get id => _id;
   //
   SharedKeys key;
-  Shared({required this.key});
+  Shared(this.key);
 
   /// prepare module
   static SharedPreferences? _shared;

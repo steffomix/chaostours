@@ -21,7 +21,7 @@ class RecourceLoader {
   ///
   /// preload recources
   static Future<void> preload() async {
-    Shared(key: SharedKeys.tracker).save('');
+    Shared(SharedKeys.tracker).save('');
     try {
       try {
         var m1 = await ModelAlias.open();
@@ -84,8 +84,9 @@ class RecourceLoader {
   static Future<io.File> fileHandle(String filename) async {
     io.Directory appDir =
         await path_provider.getApplicationDocumentsDirectory();
-    //List<String> parts = [appDir.path, ...localPath, filename];
-    io.File file = await io.File(path.join(appDir.path, filename)).create();
+    // List<String> parts = [appDir.path, ...localPath, filename];
+    io.File file =
+        await io.File(path.join(appDir.path, 'chaostours', filename)).create();
     return file;
   }
 
