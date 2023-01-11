@@ -6,7 +6,7 @@ class Permissions {
   Permissions._();
   factory Permissions() => _instance ??= Permissions._();
 
-  Future<void> requestNotificationPermission() async {
+  static Future<void> requestNotificationPermission() async {
     final result = await Permission.notification.request();
     if (result == PermissionStatus.granted) {
       logInfo('Notification Permission GRANTED'); // ignore: avoid_print
@@ -15,7 +15,7 @@ class Permissions {
     }
   }
 
-  Future<void> requestLocationPermission() async {
+  static Future<void> requestLocationPermission() async {
     final result = await Permission.locationAlways.request();
     if (result == PermissionStatus.granted) {
       print('Location Permission GRANTED'); // ignore: avoid_print

@@ -1,27 +1,17 @@
-//import 'dart:async';
-//import 'dart:math';
-//import 'package:background_location_tracker/background_location_tracker.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-//import 'package:shared_preferences/shared_preferences.dart';
-import 'package:chaostours/events.dart';
-import 'package:chaostours/gps.dart';
+//
 import 'package:chaostours/log.dart';
-import 'package:googleapis/cloudsearch/v1.dart';
 
 class Notifications {
   static Notifications? _instance;
   Notifications._() {
-    eventOnGps.on<GPS>().listen(onGps);
+    _initialize();
   }
   factory Notifications() => _instance ??= Notifications._();
   //
   static int id = DateTime.now().millisecond;
   static FlutterLocalNotificationsPlugin? plugin;
   bool pluginInitialized = false;
-
-  void onGps(GPS gps) {
-    logInfo('Notification Event onGps: ${gps.lat}, ${gps.lon}');
-  }
 
   final settings = const InitializationSettings(
     android: AndroidInitializationSettings('mipmap/ic_launcher'),
@@ -32,7 +22,7 @@ class Notifications {
     ),
   );
 
-  Future<void> initialize() async {
+  Future<void> _initialize() async {
     if (pluginInitialized) return;
     plugin ??= FlutterLocalNotificationsPlugin();
     pluginInitialized = await plugin!.initialize(

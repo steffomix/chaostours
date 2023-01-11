@@ -77,7 +77,7 @@ class _TrackPointListView extends State<WidgetTrackPointList> {
   // update last trackpoint list item
   void onTrackPoint(ModelTrackPoint event) async {
     activeItem ??= _ActiveListItem(event);
-    activeItem?.update(event, (await Shared(SharedKeys.tracker).load() ?? ''));
+    activeItem?.update(event);
     setState(() {});
   }
 
@@ -108,23 +108,23 @@ class _ActiveListItem {
   _ActiveListItem(this.event);
 
   Widget get widget {
-    Widget w = _widget ??= _createWidget('');
+    Widget w = _widget ??= _createWidget();
     return w;
   }
 
-  Widget update(ModelTrackPoint tp, String info) {
+  Widget update(ModelTrackPoint tp) {
     event.deleted = tp.deleted;
     event.gps = tp.gps;
     event.address = tp.address;
     event.idAlias = tp.idAlias;
     event.timeEnd = DateTime.now();
-    return (_widget = _createWidget(info));
+    return (_widget = _createWidget());
   }
 
   ///
   /// creates a list item from TrackPoint
   ///
-  Widget _createWidget(String info) {
+  Widget _createWidget() {
     // calculate duration and distance
     String duration = event.timeElapsed();
 
@@ -237,11 +237,7 @@ class _ActiveListItem {
         const TableRow(
             children: [TableCell(child: Text('')), TableCell(child: Text(''))]),
         ...tasks,
-        gpsInfo,
-        TableRow(children: [
-          const TableCell(child: Text('')),
-          TableCell(child: Text(info))
-        ])
+        gpsInfo
       ],
     );
   }

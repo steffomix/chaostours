@@ -3,7 +3,7 @@ import 'package:chaostours/log.dart';
 
 enum SharedKeys {
   backgroundGps,
-  tracker;
+  activeTrackpoint;
 }
 
 class Shared {

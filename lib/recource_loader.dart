@@ -16,52 +16,37 @@ import 'package:chaostours/gps.dart';
 import 'package:chaostours/tracking_calendar.dart';
 import 'package:chaostours/notifications.dart';
 import 'package:chaostours/shared.dart';
+import 'package:chaostours/event_manager.dart';
+import 'package:chaostours/trackpoint.dart';
+
+class EventOnGps {
+  final GPS gps;
+  EventOnGps(this.gps);
+}
 
 class RecourceLoader {
   ///
   /// preload recources
   static Future<void> preload() async {
-    Shared(SharedKeys.tracker).save('');
     try {
-      try {
-        var m1 = await ModelAlias.open();
-        var m2 = await ModelTrackPoint.open();
-        var m3 = await ModelTask.open();
-        await Future.delayed(
-            const Duration(milliseconds: 200), ModelAlias.write);
-        await Future.delayed(
-            const Duration(milliseconds: 200), ModelTrackPoint.write);
-        await Future.delayed(
-            const Duration(milliseconds: 200), ModelTask.write);
-      } catch (e) {
-        logError(e);
+      // load database
+      await ModelAlias.open();
+      await ModelTrackPoint.open();
+      await ModelTask.open();
+      if (ModelAlias.length < 1) {
+        await ModelAlias.openFromAsset();
       }
-      try {
-        if (ModelAlias.length < 1) {
-          var ass = await ModelAlias.openFromAsset();
-          var y = await Future.delayed(
-              const Duration(milliseconds: 200), ModelAlias.write);
-        }
-      } catch (e) {
-        logError(e);
-      }
-
-      try {
-        if (ModelTask.length < 1) {
-          var ass = await ModelTask.openFromAsset();
-          var y = await Future.delayed(
-              const Duration(milliseconds: 200), ModelTask.write);
-        }
-      } catch (e) {
-        logError(e);
+      if (ModelTask.length < 1) {
+        await ModelTask.openFromAsset();
       }
 
       logInfo('TableAlias ${ModelAlias.length}');
       logInfo('TableTrackPoints ${ModelTrackPoint.length}');
       logInfo('TableTask ${ModelTask.length}');
 
+      // init Machines
       TrackingCalendar();
-      Notifications().initialize();
+      Notifications();
 
       await webKey();
       await defaultCalendarId();
@@ -69,6 +54,18 @@ class RecourceLoader {
     } catch (e, stk) {
       logFatal('Preload failed', e, stk);
     }
+
+    Shared(SharedKeys.backgroundGps).observe(
+        duration: const Duration(seconds: 1),
+        fn: (String data) {
+          List<String> geo = data.split(',');
+          double lat = double.parse(geo[0]);
+          double lon = double.parse(geo[1]);
+          EventManager.fire<EventOnGps>(EventOnGps(GPS(lat, lon)));
+        });
+    EventManager.listen<EventOnGps>((EventOnGps event) {
+      TrackPoint.trackBackground(event.gps);
+    });
   }
 
   ///

@@ -38,9 +38,9 @@ class _WidgetSettingsPermissionsState extends State<WidgetSettingsPermissions> {
           Expanded(
             child: Column(
               children: [
-                ElevatedButton(
-                  onPressed: Permissions().requestLocationPermission,
-                  child: const Text('Request background location permission'),
+                const ElevatedButton(
+                  onPressed: Permissions.requestLocationPermission,
+                  child: Text('Request background location permission'),
                 ),
                 if (Platform.isAndroid) ...[
                   const Text(
@@ -49,9 +49,9 @@ class _WidgetSettingsPermissionsState extends State<WidgetSettingsPermissions> {
                       'Android 13, Tiramisu, API Level 33 since August 15, 2022\n'
                       'https://en.wikipedia.org/wiki/Android_version_history#Overview'),
                 ],
-                ElevatedButton(
-                  onPressed: Permissions().requestNotificationPermission,
-                  child: const Text('Request Notification permission'),
+                const ElevatedButton(
+                  onPressed: Permissions.requestNotificationPermission,
+                  child: Text('Request Notification permission'),
                 ),
                 ElevatedButton(
                   child: const Text('Test notification'),
