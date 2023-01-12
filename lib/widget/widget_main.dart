@@ -4,9 +4,8 @@ import 'package:flutter/material.dart';
 //
 import 'package:chaostours/widget/widget_trackpoints_listview.dart';
 import 'package:chaostours/widget/widget_drawer.dart';
-import 'package:chaostours/log.dart';
 import 'package:chaostours/enum.dart';
-import 'package:chaostours/globals.dart';
+import 'package:chaostours/logger.dart';
 
 class App extends StatefulWidget {
   const App({super.key});
@@ -21,6 +20,7 @@ class App extends StatefulWidget {
 ///
 ///
 class _AppState extends State<App> {
+  static Logger logger = Logger.logger<App>();
   static StreamSubscription? onScreenChanged;
   static Widget? _pane;
 
@@ -79,13 +79,13 @@ class _AppState extends State<App> {
     Widget myBody = const Text('Waiting for TrackPoints...');
     try {
       myBody = const WidgetTrackPointList();
-    } catch (e) {
-      logWarn('Waiting for TrackPoints...', e);
+    } catch (e, stk) {
+      logger.logFatal('create WidgetTrackPointList failed', stk);
     }
     return MaterialApp(
         home: Scaffold(
       appBar: appbar(),
-      drawer: WidgetDrawer(),
+      drawer: const WidgetDrawer(),
       body: pane,
     ));
   }

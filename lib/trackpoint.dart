@@ -1,5 +1,5 @@
 import 'package:chaostours/globals.dart';
-import 'package:chaostours/log.dart';
+import 'package:chaostours/log_.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/events.dart';
 import 'package:chaostours/model_alias.dart';

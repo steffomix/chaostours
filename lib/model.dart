@@ -3,11 +3,13 @@ import 'package:file/file.dart' show FileMode;
 //
 import 'package:chaostours/enum.dart';
 import 'package:chaostours/file_handler.dart';
+import 'package:chaostours/logger.dart';
 
 var decode = Uri.decodeFull; // util.base64Codec().decode;
 var encode = Uri.encodeFull; //util.base64Codec().encode;
 
 class Model {
+  static Logger logger = Logger.logger<Model>();
   static const lineSep = '\n';
   static const rowEnd = '\t|';
 
@@ -24,7 +26,7 @@ class Model {
     }
     io.File file =
         await handle.writeAsString(out, mode: FileMode.write, flush: true);
-    return Future<io.File>.value(file);
+    return file;
   }
 
   static Future<List<String>> readTable(DatabaseFile file) async {
