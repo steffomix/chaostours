@@ -11,27 +11,33 @@ import 'package:path_provider/path_provider.dart' as path_provider;
 import 'package:chaostours/model_alias.dart';
 import 'package:chaostours/model_trackpoint.dart';
 import 'package:chaostours/model_task.dart';
-import 'package:chaostours/log.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/tracking_calendar.dart';
 import 'package:chaostours/notifications.dart';
 import 'package:chaostours/shared.dart';
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/trackpoint.dart';
+import 'package:chaostours/logger.dart';
 
 class EventOnGps {
   final GPS gps;
   EventOnGps(this.gps);
 }
 
-class RecourceLoader {
+class AppLoader {
+  static Logger logger = Logger.logger<AppLoader>();
+
   ///
   /// preload recources
   static Future<void> preload() async {
+    logger.log('start Preload sequence...');
     try {
       // load database
-      await ModelAlias.open();
+      logger.log('load MoxdelTrackPoint');
       await ModelTrackPoint.open();
+      logger.log('load ModelAlias');
+      await ModelAlias.open();
+      logger.log('load ModelTask');
       await ModelTask.open();
       if (ModelAlias.length < 1) {
         await ModelAlias.openFromAsset();
@@ -40,21 +46,23 @@ class RecourceLoader {
         await ModelTask.openFromAsset();
       }
 
-      logInfo('TableAlias ${ModelAlias.length}');
-      logInfo('TableTrackPoints ${ModelTrackPoint.length}');
-      logInfo('TableTask ${ModelTask.length}');
-
       // init Machines
+      logger.log('initialize Tracking Calendar');
       TrackingCalendar();
+      logger.log('initialize Notifications');
       Notifications();
 
+      logger.log('preparing HTTP SSL Key');
       await webKey();
+      logger.log('load default Calendar ID from assets');
       await defaultCalendarId();
+      logger.log('load calendar credentials from assets');
       await calendarApiFromCredentials();
     } catch (e, stk) {
-      logFatal('Preload failed', e, stk);
+      logger.logFatal('Preload sequence failed: $e', stk);
     }
 
+    logger.log('start backgroundGPS observer with 1sec. interval');
     Shared(SharedKeys.backgroundGps).observe(
         duration: const Duration(seconds: 1),
         fn: (String data) {
@@ -64,6 +72,7 @@ class RecourceLoader {
           EventManager.fire<EventOnGps>(EventOnGps(GPS(lat, lon)));
         });
     EventManager.listen<EventOnGps>((EventOnGps event) {
+      logger.logVerbose('EventOnGps received: ${event.gps}');
       TrackPoint.trackBackground(event.gps);
     });
   }
@@ -75,15 +84,15 @@ class RecourceLoader {
         await PlatformAssetBundle().load('assets/ca/lets-encrypt-r3.pem');
     io.SecurityContext.defaultContext
         .setTrustedCertificatesBytes(data.buffer.asUint8List());
-    logInfo('RecourceLoader::WebKey loaded');
+    logger.log('SSL Key loaded');
   }
 
   static Future<io.File> fileHandle(String filename) async {
     io.Directory appDir =
         await path_provider.getApplicationDocumentsDirectory();
-    // List<String> parts = [appDir.path, ...localPath, filename];
-    io.File file =
-        await io.File(path.join(appDir.path, 'chaostours', filename)).create();
+    String p = path.join(appDir.path, /*'chaostours',*/ filename);
+    io.File file = await io.File(p).create();
+    logger.log('file handle created for file: $p');
     return file;
   }
 
@@ -93,7 +102,7 @@ class RecourceLoader {
     var url = Uri.https('nominatim.openstreetmap.org', '/reverse',
         {'lat': gps.lat.toString(), 'lon': gps.lon.toString()});
     http.Response response = await http.get(url);
-    //logInfo('osmReverseLookup for gps #${gps.id}');
+    logger.log('OpenStreetMap reverse lookup for gps #${gps.id} at $gps');
     return response;
   }
 
@@ -115,7 +124,7 @@ class RecourceLoader {
         ServiceAccountCredentials.fromJson(jsonString), scopes);
     CalendarApi api = CalendarApi(client);
     _calendarApi = api;
-    logInfo('RecourceLoader::Calendar api loaded');
+    logger.log('Calendar api loaded');
     return api;
   }
 
@@ -127,32 +136,38 @@ class RecourceLoader {
     if (_calendarId != null) return Future<String>.value(_calendarId);
     String calendarId = await rootBundle.loadString(calendarIdFile);
     _calendarId = calendarId;
-    logInfo('RecourceLoader::Calendar ID loaded');
+    logger.log('Calendar ID loaded');
     return calendarId;
   }
 
   static Future<Position> gps() async {
     bool serviceEnabled;
     LocationPermission permission;
-
+    String msg;
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      return Future.error('Location services are disabled.');
+      msg = 'Location services are disabled.';
+      logger.logWarn(msg);
+      return Future.error(msg);
     }
 
     permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
-        return Future.error('Location permissions are denied');
+        msg = 'Location permissions are denied';
+        logger.logWarn(msg);
+        return Future.error(msg);
       }
     }
 
     if (permission == LocationPermission.deniedForever) {
-      return Future.error(
-          'Location permissions are permanently denied, we cannot request permissions.');
+      msg = 'Location permissions are permanently denied, '
+          'we cannot request permissions.';
+      logger.logWarn(msg);
+      return Future.error(msg);
     }
-
+    logger.log('request GPS ${!serviceEnabled ? 'anyway' : ''}');
     Position pos = await Geolocator.getCurrentPosition();
     return pos;
   }

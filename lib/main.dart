@@ -1,19 +1,9 @@
-import 'dart:isolate';
-
-import 'package:logger/logger.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:flutter/material.dart';
 //
 import 'package:chaostours/recource_loader.dart';
-import 'package:chaostours/log.dart';
-// import 'package:chaostours/tracking_calendar.dart';
 import 'package:chaostours/globals.dart';
-import 'package:chaostours/tracking.dart';
-import 'package:chaostours/trackpoint.dart';
-import 'package:chaostours/shared.dart';
-import 'package:chaostours/event_manager.dart';
-import 'package:chaostours/gps.dart';
-import 'dart:async';
+import 'package:chaostours/logger.dart';
 
 // android native code
 
@@ -24,18 +14,18 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // set loglevel
-  Logger.level = Level.info;
+  Logger.logLevel = LogLevel.log;
 
   // preload recources
-  await RecourceLoader.preload();
-
+  await AppLoader.preload();
+/*
   try {
     PackageInfo packageInfo = await PackageInfo.fromPlatform();
     Globals.version = packageInfo.version;
   } catch (e) {
-    logError(e);
+    logger.logError(e);
   }
-
+*/
   // start frontend
   runApp(Globals.app);
 }

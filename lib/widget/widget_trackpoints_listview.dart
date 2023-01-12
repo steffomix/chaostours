@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:chaostours/events.dart';
 import 'package:chaostours/trackpoint.dart';
-import 'package:chaostours/log.dart';
 import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/enum.dart';
 import 'package:chaostours/widget/widget_add_tasks.dart';
@@ -12,6 +11,7 @@ import 'package:chaostours/model_task.dart';
 import 'package:chaostours/model_trackpoint.dart';
 import 'package:chaostours/tracking.dart';
 import 'package:chaostours/shared.dart';
+import 'package:chaostours/logger.dart';
 
 class WidgetTrackPointList extends StatefulWidget {
   const WidgetTrackPointList({super.key});
@@ -21,6 +21,7 @@ class WidgetTrackPointList extends StatefulWidget {
 }
 
 class _TrackPointListView extends State<WidgetTrackPointList> {
+  static Logger logger = Logger.logger<WidgetTrackPointList>();
   static _ActiveListItem? activeItem;
   static final List<Widget> listView = [];
   StreamSubscription? _trackingStatusListener;
@@ -71,7 +72,7 @@ class _TrackPointListView extends State<WidgetTrackPointList> {
   }
 
   void onTapItem(TrackPoint trackPoint, TrackingStatus status) {
-    logInfo('OnTapItem');
+    logger.log('OnTapItem');
   }
 
   // update last trackpoint list item
@@ -103,6 +104,7 @@ class _TrackPointListView extends State<WidgetTrackPointList> {
 ///
 
 class _ActiveListItem {
+  static Logger logger = Logger.logger<_ActiveListItem>();
   final ModelTrackPoint event;
   Widget? _widget;
   _ActiveListItem(this.event);

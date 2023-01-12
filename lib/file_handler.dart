@@ -2,8 +2,10 @@ import 'dart:io' as io;
 //
 import 'package:chaostours/recource_loader.dart';
 import 'package:chaostours/enum.dart';
+import 'package:chaostours/logger.dart';
 
 class FileHandler {
+  static Logger logger = Logger.logger<FileHandler>();
   static Map<DatabaseFile, io.File?> handles = {
     DatabaseFile.alias: null,
     DatabaseFile.task: null,
@@ -14,15 +16,8 @@ class FileHandler {
   static Future<io.File> get station async => await file(DatabaseFile.station);
 
   static Future<io.File> file(DatabaseFile filehandle) async {
-    /*
-    if (handles[filehandle] != null) {
-      return Future<io.File>.value(handles[filehandle]);
-    }
-    handles[filehandle] =
-        await RecourceLoader.fileHandle('${filehandle.name}.tsv');
-    //return Future<io.File>.value(handles[filehandle]);
-    */
+    logger.log('Provide File; ${filehandle.name}.tsv');
     return handles[filehandle] ??=
-        await RecourceLoader.fileHandle('${filehandle.name}.tsv');
+        await AppLoader.fileHandle('${filehandle.name}.tsv');
   }
 }

@@ -3,8 +3,10 @@ import 'package:chaostours/enum.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/model.dart';
 import 'package:chaostours/shared.dart';
+import 'package:chaostours/logger.dart';
 
-class SharedTracking {
+class SharedModelTracking {
+  static Logger logger = Logger.logger<SharedModelTracking>();
   GPS gps;
   //
   TrackingStatus status = TrackingStatus.none;
@@ -16,7 +18,7 @@ class SharedTracking {
   String notes = '';
   late Address address;
 
-  SharedTracking(this.gps) {
+  SharedModelTracking(this.gps) {
     address = Address(gps);
   }
 
@@ -50,11 +52,11 @@ class SharedTracking {
   /// 3: trackPoints [lat,lon;...]
   /// 4: tasks [id, ...]
   /// 5: notes
-  static SharedTracking toModel(String row) {
+  static SharedModelTracking toModel(String row) {
     List<String> p = row.split('\t');
     List<String> latLon = p[0].split(',');
     GPS gps = GPS(double.parse(latLon[0]), double.parse(latLon[1]));
-    SharedTracking st = SharedTracking(gps);
+    SharedModelTracking st = SharedModelTracking(gps);
     st.address = Address(gps);
     st.timeStart = DateTime.parse(p[1]);
     st.timeEnd = DateTime.parse(p[2]);

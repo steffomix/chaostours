@@ -1,12 +1,24 @@
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:chaostours/log.dart';
+import 'package:chaostours/logger.dart';
+import 'package:chaostours/event_manager.dart';
 
 enum SharedKeys {
   backgroundGps,
   activeTrackpoint;
 }
 
+class EventOnSharedKeyChanged {
+  DateTime time = DateTime.now();
+  SharedKeys key;
+  String oldData;
+  String newData;
+
+  EventOnSharedKeyChanged(
+      {required this.key, required this.oldData, required this.newData});
+}
+
 class Shared {
+  static Logger logger = Logger.logger<Shared>();
   String _observed = '';
   bool _observing = false;
   static int _nextId = 0;
@@ -25,13 +37,16 @@ class Shared {
   Future<String?> load() async {
     String? s = await _loadRaw();
     if (s != null) {
-      return _decode(s);
+      s = _decode(s);
+      logger.log('load key ${key.name}: $s');
+      return s;
     }
     return null;
   }
 
   Future<void> add(String value) async {
     String l = await load() ?? '';
+    logger.log('at ${key.name} add "$value" to "$l"');
     l += value;
     await save(l);
   }
@@ -39,11 +54,15 @@ class Shared {
   Future<String?> _loadRaw() async {
     final sh = await shared;
     await sh.reload();
-    return sh.getString(key.name);
+    String? value = sh.getString(key.name);
+    logger.logVerbose('load raw data: "$value"');
+    return value;
   }
 
   Future<void> save(String data) async {
-    await (await shared).setString(key.name, _encode(data));
+    String encoded = _encode(data);
+    logger.log('save key ${key.name} with data "$data" to encoded "$encoded"');
+    await (await shared).setString(key.name, encoded);
   }
 
   String _encode(String data) {
@@ -59,6 +78,8 @@ class Shared {
 
   void observe(
       {required Duration duration, required Function(String data) fn}) async {
+    logger
+        .log('observe ${key.name} with ${duration.inMilliseconds}ms interval');
     _observed = await _loadRaw() ?? '';
     Future.delayed(duration, () {
       _observe(duration: duration, fn: fn);
@@ -71,12 +92,14 @@ class Shared {
     if (!_observing) return;
     String obs = await _loadRaw() ?? '';
     if (obs != _observed) {
-      print('### observed new gps: $obs');
+      EventManager.fire<EventOnSharedKeyChanged>(
+          EventOnSharedKeyChanged(key: key, oldData: _observed, newData: obs));
+      logger.log('Key ${key.name} changed from $_observed to $obs');
       _observed = obs;
       try {
         fn(_decode(obs));
-      } catch (e) {
-        logError(e);
+      } catch (e, stk) {
+        logger.logError('observing failed with $e', stk);
       }
     }
     Future.delayed(duration, () {
@@ -85,6 +108,7 @@ class Shared {
   }
 
   void cancel() {
+    logger.log('cancel observing on key ${key.name}');
     _observing = false;
   }
 }

@@ -1,11 +1,12 @@
 import 'package:flutter/services.dart';
 //
 import 'package:chaostours/model.dart';
-import 'package:chaostours/log.dart';
 import 'package:chaostours/file_handler.dart';
 import 'package:chaostours/enum.dart';
+import 'package:chaostours/logger.dart';
 
 class ModelTask {
+  static Logger logger = Logger.logger<ModelTask>();
   static final List<ModelTask> _table = [];
   int _id = 1;
   int get id => _id;
@@ -50,35 +51,37 @@ class ModelTask {
     for (var row in lines) {
       _table.add(toModel(row));
     }
-    logInfo('tasks loaded ${_table.length} rows');
-    return Future<int>.value(_table.length);
+    logger.log('Table Tasks loaded with ${_table.length} rows');
+    return _table.length;
   }
 
   static Future<int> insert(ModelTask m) async {
     _table.add(m);
     m._id = _table.length;
+    logger.log('Insert Task ${m.task} \n    which now has ID $m._id');
     await write();
-    return Future<int>.value(m._id);
+    return m._id;
   }
 
-  static Future<bool> update() async {
+  static Future<void> update() async {
+    logger.logVerbose('Update');
     await write();
-    return Future<bool>.value(true);
   }
 
-  static Future<bool> delete(ModelTask m) async {
+  static Future<void> delete(ModelTask m) async {
     m.deleted = 1;
+    logger.log('Delete Task ${m.task} with ID ${m.id}');
     await write();
-    return Future<bool>.value(true);
   }
 
   // writes the entire table back to disc
-  static Future<bool> write() async {
-    Model.writeTable(handle: await FileHandler.task, table: _table);
-    return Future<bool>.value(true);
+  static Future<void> write() async {
+    logger.logVerbose('Write Table');
+    await Model.writeTable(handle: await FileHandler.task, table: _table);
   }
 
   static Future<int> openFromAsset() async {
+    logger.logWarn('Load built-in Tasks from assets');
     String string = await rootBundle.loadString('assets/task.tsv');
     List<String> lines = string.trim().split(Model.lineSep);
     _table.clear();

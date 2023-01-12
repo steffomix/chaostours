@@ -1,4 +1,4 @@
-import 'log.dart';
+import 'log_.dart';
 import 'dart:async';
 import 'package:googleapis/calendar/v3.dart' as calendar;
 //
@@ -104,9 +104,8 @@ class TrackingCalendar {
 
   /// send event with calendar api
   Future<calendar.Event> addEvent(calendar.Event event) async {
-    String id = await RecourceLoader.defaultCalendarId();
-    calendar.CalendarApi api =
-        await RecourceLoader.calendarApiFromCredentials();
+    String id = await AppLoader.defaultCalendarId();
+    calendar.CalendarApi api = await AppLoader.calendarApiFromCredentials();
     if (!Globals.debugMode) {
       //logFatal('Skip send Calendar Event due to debug mode: ${event.summary}');
       return event;

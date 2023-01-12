@@ -1,4 +1,4 @@
-import 'package:logger/logger.dart';
+import 'package:chaostours/logger.dart';
 
 /*
 enum EventKeys {
@@ -9,14 +9,24 @@ enum EventKeys {
   ;
 }
 */
+
 class EventManager {
+  static Logger logger = Logger.logger<EventManager>();
   static final List<Set<dynamic>> _list = [];
 
-  static bool listen<T>(Function(T) fn) => _get<T>().add(fn);
+  static bool listen<T>(Function(T) fn) {
+    logger.log('Add Listener ${T.runtimeType}');
+    return _get<T>().add(fn);
+  }
 
   static void fire<T>(T instance) {
+    logger.log('Fire Event ${T.runtimeType}');
     for (var fn in _get<T>()) {
-      fn(instance);
+      try {
+        fn(instance);
+      } catch (e) {
+        logger.logWarn(e.toString());
+      }
     }
   }
 

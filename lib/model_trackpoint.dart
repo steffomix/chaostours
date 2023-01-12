@@ -1,15 +1,15 @@
 import 'package:chaostours/model.dart';
 import 'package:chaostours/model_task.dart';
 import 'package:chaostours/model_alias.dart';
-import 'package:chaostours/log.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/file_handler.dart';
 import 'package:chaostours/enum.dart';
 import 'package:chaostours/address.dart';
 import 'package:chaostours/util.dart' as util;
-import 'package:flutter/cupertino.dart';
+import 'package:chaostours/logger.dart';
 
 class ModelTrackPoint {
+  static Logger logger = Logger.logger<ModelTrackPoint>();
   static final List<ModelTrackPoint> _table = [];
 
   ///
@@ -107,6 +107,10 @@ class ModelTrackPoint {
     if (m._id == null) {
       _table.add(m);
       m._id = _table.length;
+      logger.log('Insert TrackPoint ${m.gps}\n   which has now ID ${m._id}');
+    } else {
+      logger.logWarn(
+          'Insert Trackpoint skipped. TrackPoint already inserted with ID ${m._id}');
     }
     await write();
   }
@@ -119,6 +123,8 @@ class ModelTrackPoint {
   ///
   static Future<void> update(ModelTrackPoint tp) async {
     if (tp._id == null) {
+      logger.logWarn(
+          'Update Trackpoint forwarded to insert due to TrackPoint has no ID');
       await insert(tp);
     } else {
       await write();
@@ -126,6 +132,7 @@ class ModelTrackPoint {
   }
 
   static Future<void> write() async {
+    logger.logVerbose('Write');
     await Model.writeTable(handle: await FileHandler.station, table: _table);
   }
 
@@ -135,7 +142,7 @@ class ModelTrackPoint {
     for (var row in lines) {
       _table.add(toModel(row));
     }
-    logInfo('Trackpoints loaded ${_table.length} rows');
+    logger.log('Trackpoints loaded with ${_table.length} rows');
   }
 
   void addAlias(ModelAlias m) => idAlias.add(m.id);
@@ -149,6 +156,7 @@ class ModelTrackPoint {
     for (int id in idAlias) {
       list.add(ModelAlias.getAlias(id));
     }
+    logger.logVerbose('get ${list.length} alias from TrackPoint ID $id');
     return list;
   }
 
@@ -158,6 +166,7 @@ class ModelTrackPoint {
     while (--max >= 0 && --i >= 0) {
       list.add(_table[i]);
     }
+    logger.logVerbose('${list.length} recentTrackPoints');
     return list.reversed.toList();
   }
 
@@ -166,6 +175,7 @@ class ModelTrackPoint {
     for (int id in idAlias) {
       list.add(ModelTask.getTask(id));
     }
+    logger.log('get Tasks: $list');
     return list;
   }
 

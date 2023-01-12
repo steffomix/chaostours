@@ -1,9 +1,9 @@
-import 'log.dart';
 import 'gps.dart';
 import 'package:http/http.dart' as http;
 import 'package:sprintf/sprintf.dart' show sprintf;
 //
 import 'package:chaostours/recource_loader.dart';
+import 'package:chaostours/logger.dart';
 
 ///
 ///<addressparts>
@@ -23,6 +23,7 @@ import 'package:chaostours/recource_loader.dart';
 ///</addressparts>
 ///
 class Address {
+  static Logger logger = Logger.logger<Address>();
   final GPS _gps;
   final DateTime _time = DateTime.now();
   bool _loaded = false;
@@ -57,7 +58,7 @@ class Address {
 
   Future<Address> lookupAddress() async {
     try {
-      http.Response response = await RecourceLoader.osmReverseLookup(_gps);
+      http.Response response = await AppLoader.osmReverseLookup(_gps);
       if (response.statusCode == 200) {
         String body = response.body;
         String pattern = r'<%s>(.*)<\/%s>';
@@ -89,14 +90,15 @@ class Address {
         state = tags['state'] ?? '';
         postcode = tags['postcode'] ?? '';
       } else {
-        logWarn(
+        logger.logWarn(
             'lookup address failed with status code: ${response.statusCode}\n'
             '${response.body}');
       }
     } catch (e, stk) {
       // ignore
-      logError('Address::lookupAdress', e, stk);
+      logger.logError('lookupAdress failed  $e', stk);
     }
+    logger.log('Lookup Address: $asString');
     _loaded = true;
     //logInfo('Address parsed OSM reverse lookup result on GPS #${_gps.id}:\n$asString');
     return this;

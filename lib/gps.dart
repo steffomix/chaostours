@@ -1,14 +1,11 @@
 import 'dart:async';
-import 'log.dart';
 import 'package:geolocator/geolocator.dart' show Position, Geolocator;
 //
 import 'package:chaostours/recource_loader.dart';
-import 'package:chaostours/model_alias.dart';
-import 'package:chaostours/events.dart';
-import 'package:chaostours/globals.dart';
-import 'package:chaostours/event_manager.dart';
+import 'package:chaostours/logger.dart';
 
 class GPS {
+  static Logger logger = Logger.logger<GPS>();
   static int _nextId = 0;
   final int _id = ++_nextId;
   int get id => _id;
@@ -18,56 +15,24 @@ class GPS {
   double lon;
 
   GPS(this.lat, this.lon) {
-    logVerbose('GPS #$id at $lat, $lon');
+    logger.logVerbose('GPS #$id at $lat, $lon');
   }
 
   static Future<GPS> gps() async {
+    Position pos;
     try {
-      Position pos = await RecourceLoader.gps();
-      GPS gps = Globals.debugMode
-          ? SimulateGps.next()
-          : GPS(pos.latitude, pos.longitude);
-      return Future<GPS>.value(gps);
+      pos = await AppLoader.gps();
+      GPS gps = GPS(pos.latitude, pos.longitude);
+      return gps;
     } catch (e, stk) {
-      logFatal('GPS::gps', e, stk);
+      logger.logFatal('GPS lookup failed: $e', stk);
     }
-    return Future<GPS>.value(GPS(0, 0));
-  }
-}
-
-var x = SimulateGps();
-
-class SimulateGps {
-  static double lat = 52.32741;
-  static double lon = 9.19255;
-  static double slow = 0.0001;
-  double fast = 0.0001;
-  static StreamSubscription<Tapped>? _listener;
-
-  static StreamSubscription<Tapped> addListener() {
-    var x = eventBusTapBottomNavBarIcon.on<Tapped>().listen((Tapped tapped) {
-      switch (tapped.id) {
-        case 0:
-          lat += slow;
-          break;
-        case 1:
-          ModelAlias alias = ModelAlias.random;
-          lat = alias.lat;
-          lon = alias.lon;
-          break;
-        case 2:
-          lat -= slow;
-          break;
-        default:
-          break;
-      }
-    });
-    return x;
+    logger.log('create spare GPS(0,0)');
+    return GPS(0, 0);
   }
 
-  static GPS next() {
-    _listener ??= addListener();
-    SimulateGps();
-    return GPS(lat, lon);
+  @override
+  String toString() {
+    return '$lat,$lon';
   }
 }

@@ -1,8 +1,9 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 //
-import 'package:chaostours/log.dart';
+import 'package:chaostours/logger.dart';
 
 class Notifications {
+  static Logger logger = Logger.logger<Notifications>();
   static Notifications? _instance;
   Notifications._() {
     _initialize();
@@ -23,6 +24,7 @@ class Notifications {
   );
 
   Future<void> _initialize() async {
+    logger.log('initialize');
     if (pluginInitialized) return;
     plugin ??= FlutterLocalNotificationsPlugin();
     pluginInitialized = await plugin!.initialize(
@@ -34,10 +36,11 @@ class Notifications {
 
   Future<void> onSelectNotification(String? data) async {
     data ??= '-no Data-';
-    logInfo('onSelectNotification Data: $data');
+    logger.log('onSelectNotification Data: $data');
   }
 
-  Future<void> send(String title, String text, {String data = ''}) {
+  Future<void> send(String title, String text, {String data = ''}) async {
+    logger.log('Send title: $title; text:text; data: data');
     FlutterLocalNotificationsPlugin().show(
       id,
       title,
@@ -48,6 +51,5 @@ class Notifications {
         iOS: IOSNotificationDetails(),
       ),
     );
-    return Future<void>.value();
   }
 }

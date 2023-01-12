@@ -5,10 +5,11 @@ import 'dart:math';
 import 'package:chaostours/enum.dart';
 import 'package:chaostours/model.dart';
 import 'package:chaostours/file_handler.dart';
-import 'package:chaostours/log.dart';
 import 'package:chaostours/gps.dart';
+import 'package:chaostours/logger.dart';
 
 class ModelAlias {
+  static Logger logger = Logger.logger<ModelAlias>();
   static final List<ModelAlias> _table = [];
   int _id = 0;
   int deleted;
@@ -75,19 +76,20 @@ class ModelAlias {
   static Future<int> insert(ModelAlias m) async {
     _table.add(m);
     m._id = _table.length;
+    logger.log('Insert Alias ${m.alias}\n    which has now ID ${m._id}');
     await write();
-    return Future<int>.value(m._id);
+    return m._id;
   }
 
-  static Future<bool> update() async {
+  static Future<void> update() async {
+    logger.logVerbose('Update');
     await write();
-    return Future<bool>.value(true);
   }
 
-  static Future<bool> delete(ModelAlias m) async {
+  static Future<void> delete(ModelAlias m) async {
+    logger.log('Delete ${m.alias} with ID ${m.id}');
     m.deleted = 1;
     await write();
-    return Future<bool>.value(true);
   }
 
   // opens, read and parse database
@@ -96,14 +98,15 @@ class ModelAlias {
     for (var row in lines) {
       _table.add(toModel(row));
     }
-    logInfo('alias loaded ${_table.length} rows');
-    return Future<int>.value(_table.length);
+    logger.log('Table Alias loaded with ${_table.length} rows');
+    return _table.length;
   }
 
   // writes the entire table back to disc
   static Future<bool> write() async {
+    logger.logVerbose('Write Table');
     await Model.writeTable(handle: await FileHandler.alias, table: _table);
-    return Future<bool>.value(true);
+    return true;
   }
 
   static ModelAlias get random {
@@ -119,7 +122,7 @@ class ModelAlias {
   /// else
   ///   returns all alias sorted by distance from gps
   ///
-  /// The member sortDistance in meter can be used for user information
+  /// The property sortDistance in meter can be used for user information
   static List<ModelAlias> nextAlias(GPS gps, [bool all = false]) {
     ModelAlias m;
     List<ModelAlias> list = [];
@@ -134,10 +137,12 @@ class ModelAlias {
       }
     }
     list.sort((a, b) => a.sortDistance.compareTo(b.sortDistance));
+    logger.logVerbose('Found ${list.length} nearest Alias');
     return list;
   }
 
   static Future<int> openFromAsset() async {
+    logger.logWarn('Loading built-in alias List from assets');
     String string = await rootBundle.loadString('assets/alias.tsv');
     List<String> lines = string.trim().split(Model.lineSep);
     _table.clear();
