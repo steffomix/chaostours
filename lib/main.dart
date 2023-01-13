@@ -17,7 +17,6 @@ void main() async {
   Logger.logLevel = LogLevel.log;
 
   // preload recources
-  await AppLoader.preload();
 /*
   try {
     PackageInfo packageInfo = await PackageInfo.fromPlatform();
@@ -28,4 +27,5 @@ void main() async {
 */
   // start frontend
   runApp(Globals.app);
+  Future.delayed(const Duration(seconds: 2), AppLoader.preload);
 }

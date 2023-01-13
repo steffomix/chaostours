@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+//
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/events.dart';
 
@@ -14,6 +16,7 @@ enum LogLevel {
 }
 
 class Logger {
+  static List<Widget> widgetLogs = [];
   static Function(String) printerVerbose = printMessage;
   static Function(String) printerLog = printMessage;
   static Function(String) printerWarn = printMessage;
@@ -67,11 +70,14 @@ class Logger {
     }
   }
 
-  void verbose(String msg) {
+  void verbose(String msg, [fireEvent = true]) {
     msg = '$_prefix <$_name>:: $msg';
-    EventManager.fire<EventOnLogVerbose>(EventOnLogVerbose(msg));
+    if (fireEvent) {
+      EventManager.fire<EventOnLogVerbose>(EventOnLogVerbose(msg));
+    }
     if (logLevel.level <= 0 && enabled) {
       printerVerbose(msg);
+      addLog(createLogVerbose(msg));
     }
   }
 
@@ -82,30 +88,79 @@ class Logger {
     }
     if (logLevel.level <= 1 && enabled) {
       printerLog(msg);
+      addLog(createLogDefault(msg));
     }
   }
 
-  void warn(String msg) {
+  void warn(String msg, [fireEvent = true]) {
     msg = '$_prefix <$_name>:: $msg';
-    EventManager.fire<EventOnLogWarn>(EventOnLogWarn(msg));
+    if (fireEvent) {
+      EventManager.fire<EventOnLogWarn>(EventOnLogWarn(msg));
+    }
     if (logLevel.level <= 2 && enabled) {
       printerWarn(msg);
+      addLog(createLogWarn(msg));
     }
   }
 
-  void error(String msg, StackTrace? stackTrace) {
+  void error(String msg, StackTrace? stackTrace, [fireEvent = true]) {
     msg = '$_prefix <$_name>:: $msg';
-    EventManager.fire<EventOnLogError>(EventOnLogError(msg, stackTrace));
+    if (fireEvent) {
+      EventManager.fire<EventOnLogError>(EventOnLogError(msg, stackTrace));
+    }
     if (logLevel.level <= 3 && enabled) {
       printerError(msg, stackTrace);
+      addLog(createLogError(msg, stackTrace));
     }
   }
 
-  void fatal(String msg, StackTrace? stackTrace) {
+  void fatal(String msg, StackTrace? stackTrace, [fireEvent = true]) {
     msg = '$_prefix <$_name>:: $msg';
-    EventManager.fire<EventOnLogFatal>(EventOnLogFatal(msg, stackTrace));
+    if (fireEvent) {
+      EventManager.fire<EventOnLogFatal>(EventOnLogFatal(msg, stackTrace));
+    }
     if (logLevel.level <= 4 && enabled) {
       printerFatal(msg, stackTrace);
+      createLogFatal(msg, stackTrace);
     }
+  }
+
+  Widget createLogVerbose(String msg) {
+    return Container(
+        color: Colors.white,
+        child: Text(msg, style: const TextStyle(color: Colors.black45)));
+  }
+
+  Widget createLogDefault(String msg) {
+    return Container(
+        color: Colors.white,
+        child: Text(msg, style: const TextStyle(color: Colors.black)));
+  }
+
+  Widget createLogWarn(String msg) {
+    return Container(
+        color: Colors.yellow,
+        child: Text(msg, style: const TextStyle(color: Colors.black)));
+  }
+
+  Widget createLogError(String msg, StackTrace? stackTrace) {
+    return Container(
+        color: Colors.red,
+        child: Text('$msg\n$stackTrace',
+            style: const TextStyle(color: Colors.white)));
+  }
+
+  Widget createLogFatal(String msg, StackTrace? stackTrace) {
+    return Container(
+        color: Colors.purple,
+        child: Text('$msg\n$stackTrace',
+            style: const TextStyle(color: Colors.white)));
+  }
+
+  void addLog(Widget log) {
+    while (widgetLogs.length > 200) {
+      widgetLogs.removeAt(0);
+    }
+    widgetLogs.add(log);
   }
 }

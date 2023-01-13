@@ -12,75 +12,69 @@ class WidgetLogger extends StatefulWidget {
 
 class _WidgetLogger extends State<WidgetLogger> {
   static List<Widget> logs = [];
-  static _WidgetLogger? _instance;
-  _WidgetLogger._() {
+  _WidgetLogger() {
+    EventManager.listen<EventOnLogVerbose>(onLogVerbose);
     EventManager.listen<EventOnLogDefault>(onLogDefault);
-  }
-  factory _WidgetLogger() => _instance ??= _WidgetLogger._();
-  Widget createLogVerbose(String msg) {
-    return Container(
-        color: Colors.white,
-        child: Text(msg, style: const TextStyle(color: Colors.black45)));
+    EventManager.listen<EventOnLogWarn>(onLogWarn);
+    EventManager.listen<EventOnLogError>(onLogError);
+    EventManager.listen<EventOnLogFatal>(onLogFatal);
   }
 
-  Widget createLogDefault(String msg) {
-    return Container(
-        color: Colors.white,
-        child: Text(msg, style: const TextStyle(color: Colors.black)));
-  }
-
-  Widget createLogWarn(String msg) {
-    return Container(
-        color: Colors.yellow,
-        child: Text(msg, style: const TextStyle(color: Colors.black)));
-  }
-
-  Widget createLogError(String msg, StackTrace? stackTrace) {
-    return Container(
-        color: Colors.red,
-        child: Text('$msg\n$stackTrace',
-            style: const TextStyle(color: Colors.white)));
-  }
-
-  Widget createLogFatal(String msg, StackTrace? stackTrace) {
-    return Container(
-        color: Colors.purple,
-        child: Text('$msg\n$stackTrace',
-            style: const TextStyle(color: Colors.white)));
+  @override
+  void dispose() {
+    EventManager.remove<EventOnLogVerbose>(onLogVerbose);
+    EventManager.remove<EventOnLogDefault>(onLogDefault);
+    EventManager.remove<EventOnLogWarn>(onLogWarn);
+    EventManager.remove<EventOnLogError>(onLogError);
+    EventManager.remove<EventOnLogFatal>(onLogFatal);
+    super.dispose();
   }
 
   void onLogVerbose(EventOnLogVerbose event) {
-    setState(() {
-      logs.add(createLogVerbose(event.msg));
-    });
+    if (mounted) {
+      setState(() {
+        //addLog(createLogVerbose(event.msg));
+      });
+    }
   }
 
   void onLogDefault(EventOnLogDefault event) {
-    setState(() {
-      logs.add(createLogDefault(event.msg));
-    });
+    if (mounted) {
+      setState(() {
+        //addLog(createLogDefault(event.msg));
+      });
+    }
   }
 
   void onLogWarn(EventOnLogWarn event) {
-    setState(() {
-      logs.add(createLogWarn(event.msg));
-    });
+    if (mounted) {
+      setState(() {
+        //addLog(createLogWarn(event.msg));
+      });
+    }
   }
 
   void onLogError(EventOnLogError event) {
-    setState(() {
-      logs.add(createLogError(event.msg, event.stacktrace));
-    });
+    if (mounted) {
+      setState(() {
+        //addLog(createLogError(event.msg, event.stacktrace));
+      });
+    }
   }
 
   void onLogFatal(EventOnLogFatal event) {
-    setState(() {
-      logs.add(createLogFatal(event.msg, event.stacktrace));
-    });
+    if (mounted) {
+      setState(() {
+        //addLog(createLogFatal(event.msg, event.stacktrace));
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return ListView(children: logs.reversed.toList());
+    return ListView(children: [
+      ...Logger.widgetLogs.reversed.toList(),
+      Text('Waiting for Logs...${Logger.widgetLogs.length}')
+    ]);
   }
 }

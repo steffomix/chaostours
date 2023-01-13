@@ -24,6 +24,7 @@ class _AppState extends State<App> {
   _AppState._() {
     EventManager.listen<EventOnMainPaneChanged>((EventOnMainPaneChanged p) {
       _pane = p.pane;
+      logger.log('main pane changed to ${p.pane.runtimeType.toString()}');
       setState(() {});
     });
   }

@@ -20,8 +20,8 @@ class EventManager {
     if (added) {
       logger.log('add Listener ${T.toString()}');
     } else {
-      logger
-          .warn('add Listener  ${T.toString()} skipped: Listener already set');
+      logger.warn(
+          'add Listener  ${T.toString()} skipped: Listener already set', false);
     }
     return added;
   }
@@ -35,7 +35,7 @@ class EventManager {
                 const Duration(microseconds: 1), () => fn(instance))
             : fn(instance);
       } catch (e) {
-        logger.warn(e.toString());
+        logger.warn(e.toString(), false);
       }
     }
   }
@@ -47,7 +47,8 @@ class EventManager {
       logger.log('remove Listener ${T.toString()}');
     } else {
       logger.warn(
-          'remove Listener ${T.toString()} skipped: Listener not present');
+          'remove Listener ${T.toString()} skipped: Listener not present',
+          false);
     }
   }
 
