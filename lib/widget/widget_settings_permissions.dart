@@ -1,8 +1,5 @@
-import 'dart:async';
 import 'dart:io';
-//import 'package:background_location_tracker/background_location_tracker.dart';
 import 'package:flutter/material.dart';
-//import 'package:permission_handler/permission_handler.dart';
 //
 import 'package:chaostours/notifications.dart';
 import 'package:chaostours/permissions.dart';

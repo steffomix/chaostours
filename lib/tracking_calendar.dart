@@ -1,42 +1,41 @@
-import 'log_.dart';
 import 'dart:async';
+import 'package:chaostours/trackpoint.dart';
 import 'package:googleapis/calendar/v3.dart' as calendar;
 //
 import 'package:chaostours/recource_loader.dart';
 import 'package:chaostours/util.dart';
-import 'package:chaostours/events.dart';
 import 'package:chaostours/model_trackpoint.dart';
 import 'package:chaostours/model_alias.dart';
 import 'package:chaostours/model_task.dart';
 import 'package:chaostours/globals.dart';
 import 'package:chaostours/enum.dart';
+import 'package:chaostours/logger.dart';
+import 'package:chaostours/event_manager.dart';
+import 'package:chaostours/events.dart';
 
 class TrackingCalendar {
+  static final Logger logger = Logger.logger<TrackingCalendar>();
   // singelton
-  static StreamSubscription? _trackingStatusListener;
-  static final TrackingCalendar _instance = TrackingCalendar._createInstance();
-  TrackingCalendar._createInstance() {
-    logInfo('addListener');
-    _trackingStatusListener ??= eventBusTrackingStatusChanged
-        .on<ModelTrackPoint>()
-        .listen(onTrackingStatusChanged);
+  static TrackingCalendar? _instance;
+  TrackingCalendar._() {
+    EventManager.listen<EventOnTrackingStatusChanged>(onTrackingStatusChanged);
   }
-  factory TrackingCalendar() {
-    return _instance;
-  }
+  factory TrackingCalendar() => _instance ??= TrackingCalendar._();
 
-  void onTrackingStatusChanged(ModelTrackPoint event) async {
-    if (event.status == TrackingStatus.none) return;
+  void onTrackingStatusChanged(EventOnTrackingStatusChanged event) async {
+    ModelTrackPoint tp = event.tp;
+    if (tp.status == TrackingStatus.none) return;
     //logInfo('---- create Event --- $event');
     //return;
     try {
-      addEvent(await createEvent(event));
+      addEvent(await createEvent(tp));
     } catch (e, stk) {
-      logError('TrackingCalendar::onTrackingStatusChanged', e, stk);
+      logger.error('$e', stk);
     }
   }
 
-  createEvent(ModelTrackPoint tp) {
+  createEvent(ModelTrackPoint tp) async {
+    logger.log('create Event from ModelTrackPoint ID #${tp.id}');
     // statusStop = start to stop
     // statusStart = stop to start
     TrackingStatus status = tp.status;
@@ -50,7 +49,7 @@ class TrackingCalendar {
     String address = tp.address.asString;
 
     String fTimeStart = formatDate(tp.timeStart);
-    String fTimeStop = formatDate(tp.timeEnd);
+    String fTimeEnd = formatDate(tp.timeEnd);
 
     // nearest alias
     String alias = tp.idAlias.isEmpty
@@ -71,20 +70,19 @@ class TrackingCalendar {
       summary += '${distance}km Fahrt in $duration';
     }
 
-    String body = '$summary\n\n';
+    String body = '$summary\n(Von $fTimeStart bis $fTimeEnd)\n\n';
 
-    String tasks = 'Tasks (${tp.idTask.length}):\n';
+    String tasks = 'Erledigte Aufgaben (${tp.idTask.length}):\n';
     for (var t in tp.idTask) {
       tasks += '- ${ModelTask.getTask(t).task}\n';
     }
-    body += '\n$tasks';
+    body += '\n$tasks\n\n<hr>\n';
     String move = 'GPS route (save to file and upload at '
         '<a href="https://www.gpsvisualizer.com">gpsvisualizer.com</a>\n\n'
         'latitude,longitude\n';
     for (var t in tp.trackPoints) {
       move += '${t.gps.lat},${t.gps.lon}\n';
     }
-
     body += move;
 
     if (status == TrackingStatus.moving) {}
@@ -97,21 +95,26 @@ class TrackingCalendar {
     e.colorId = status == TrackingStatus.standing ? '1' : '4';
     e.location = '$lat,$lon';
 
-    logInfo('Calendar:\n$summary\n$body');
-    return Future<calendar.Event>.value(e);
+    return await Future<calendar.Event>.value(e);
     //
   }
 
   /// send event with calendar api
   Future<calendar.Event> addEvent(calendar.Event event) async {
+    logger.log('sending "${event.summary}"...');
     String id = await AppLoader.defaultCalendarId();
     calendar.CalendarApi api = await AppLoader.calendarApiFromCredentials();
-    if (!Globals.debugMode) {
-      //logFatal('Skip send Calendar Event due to debug mode: ${event.summary}');
+    if (Globals.debugMode) {
+      logger.warn(
+          'Skip send Calendar Event due to Globals.debugMode=true:\n ${event.summary}');
       return event;
     } else {
-      calendar.Event send = await api.events.insert(event, id);
-      return send;
+      try {
+        await api.events.insert(event, id);
+      } catch (e, stk) {
+        logger.error('addEvent failed: $e', stk);
+      }
+      return event;
     }
   }
 }

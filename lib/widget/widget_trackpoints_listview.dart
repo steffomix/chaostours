@@ -10,8 +10,9 @@ import 'package:chaostours/model_alias.dart';
 import 'package:chaostours/model_task.dart';
 import 'package:chaostours/model_trackpoint.dart';
 import 'package:chaostours/tracking.dart';
-import 'package:chaostours/shared.dart';
 import 'package:chaostours/logger.dart';
+import 'package:chaostours/event_manager.dart';
+import 'package:chaostours/events.dart';
 
 class WidgetTrackPointList extends StatefulWidget {
   const WidgetTrackPointList({super.key});
@@ -21,18 +22,51 @@ class WidgetTrackPointList extends StatefulWidget {
 }
 
 class _TrackPointListView extends State<WidgetTrackPointList> {
+  static _TrackPointListView? _instance;
+  factory _TrackPointListView() => _instance ??= _TrackPointListView._();
+  _TrackPointListView._() {
+    EventManager.listen<EventOnTrackingStatusChanged>(onTrackingStatusChanged);
+    EventManager.listen<EventOnTrackPoint>(onTrackPoint);
+  }
   static Logger logger = Logger.logger<WidgetTrackPointList>();
   static _ActiveListItem? activeItem;
   static final List<Widget> listView = [];
-  StreamSubscription? _trackingStatusListener;
-  StreamSubscription? _trackPointListener;
 
-  _TrackPointListView() {
-    _trackingStatusListener ??= eventBusTrackingStatusChanged
-        .on<ModelTrackPoint>()
-        .listen(onTrackingStatusChanged);
-    _trackPointListener ??=
-        eventBusTrackPointCreated.on<ModelTrackPoint>().listen(onTrackPoint);
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
+  // add a new Trackpoint list item
+  // and prune list to max of 100
+  void onTrackingStatusChanged(EventOnTrackingStatusChanged event) {
+    ModelTrackPoint tp = event.tp;
+    if (activeItem == null) {
+      return onTrackPoint(EventOnTrackPoint(tp));
+    } else {
+      listView.add(activeItem!.widget);
+      activeItem = _ActiveListItem(tp);
+    }
+
+    while (listView.length > 100) {
+      listView.removeLast();
+    }
+    setState(() {});
+  }
+
+  void onTapItem(TrackPoint trackPoint, TrackingStatus status) {
+    logger.log('OnTapItem');
+  }
+
+  // update last trackpoint list item
+  void onTrackPoint(EventOnTrackPoint event) async {
+    ModelTrackPoint tp = event.tp;
+    activeItem ??= _ActiveListItem(tp);
+    activeItem?.update(tp);
+    setState(() {});
+  }
+
+  void resetListView() {
     listView.clear();
     int count = 30;
     for (var e in ModelTrackPoint.recentTrackPoints(max: count)) {
@@ -49,41 +83,8 @@ class _TrackPointListView extends State<WidgetTrackPointList> {
   }
 
   @override
-  void dispose() {
-    _trackingStatusListener?.cancel();
-    _trackPointListener?.cancel();
-    super.dispose();
-  }
-
-  // add a new Trackpoint list item
-  // and prune list to max of 100
-  void onTrackingStatusChanged(ModelTrackPoint event) {
-    if (activeItem == null) {
-      return onTrackPoint(event);
-    } else {
-      listView.add(activeItem!.widget);
-      activeItem = _ActiveListItem(event);
-    }
-
-    while (listView.length > 100) {
-      listView.removeLast();
-    }
-    setState(() {});
-  }
-
-  void onTapItem(TrackPoint trackPoint, TrackingStatus status) {
-    logger.log('OnTapItem');
-  }
-
-  // update last trackpoint list item
-  void onTrackPoint(ModelTrackPoint event) async {
-    activeItem ??= _ActiveListItem(event);
-    activeItem?.update(event);
-    setState(() {});
-  }
-
-  @override
   Widget build(BuildContext context) {
+    resetListView();
     List<Widget> items = [
       activeItem?.widget ?? const Text('...waiting for Trackpoint.')
     ];
@@ -142,7 +143,8 @@ class _ActiveListItem {
     Widget left = IconButton(
       icon: Icon(icon),
       onPressed: () {
-        eventBusMainPaneChanged.fire(WidgetAddTasks(trackPoint: event));
+        EventManager.fire<EventOnMainPaneChanged>(
+            EventOnMainPaneChanged(WidgetAddTasks(trackPoint: event)));
       },
     );
 

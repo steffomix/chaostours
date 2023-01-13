@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/events.dart';
 import 'package:chaostours/enum.dart';
 
@@ -11,13 +12,20 @@ class WidgetDrawer extends StatefulWidget {
 
 class _WidgetDrawer extends State<WidgetDrawer> {
   void onPressedTracking(BuildContext ctx) {
-    eventBusMainPaneChanged.fire(Panes.trackPointList.value);
+    EventManager.fire<EventOnMainPaneChanged>(
+        EventOnMainPaneChanged(Panes.trackPointList.value));
     Navigator.pop(ctx);
   }
 
   void onPressedPermissions(BuildContext ctx) {
-    eventBusMainPaneChanged.fire(Panes.permissions.value);
+    EventManager.fire<EventOnMainPaneChanged>(
+        EventOnMainPaneChanged(Panes.permissions.value));
     Navigator.pop(ctx);
+  }
+
+  void onPressedLogger(BuildContext ctx) {
+    EventManager.fire<EventOnMainPaneChanged>(
+        EventOnMainPaneChanged(Panes.logger.value));
   }
 
   @override
@@ -34,7 +42,12 @@ class _WidgetDrawer extends State<WidgetDrawer> {
           onPressed: () {
             onPressedPermissions(context);
           },
-          child: const Text('Android Permissions'))
+          child: const Text('Android Permissions')),
+      ElevatedButton(
+          onPressed: () {
+            onPressedLogger(context);
+          },
+          child: const Text('Logger'))
     ]));
   }
 }

@@ -15,7 +15,7 @@ class GPS {
   double lon;
 
   GPS(this.lat, this.lon) {
-    logger.logVerbose('GPS #$id at $lat, $lon');
+    logger.verbose('GPS #$id at $lat, $lon');
   }
 
   static Future<GPS> gps() async {
@@ -25,7 +25,7 @@ class GPS {
       GPS gps = GPS(pos.latitude, pos.longitude);
       return gps;
     } catch (e, stk) {
-      logger.logFatal('GPS lookup failed: $e', stk);
+      logger.fatal('GPS lookup failed: $e', stk);
     }
     logger.log('create spare GPS(0,0)');
     return GPS(0, 0);

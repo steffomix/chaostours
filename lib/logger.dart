@@ -1,102 +1,101 @@
 import 'package:chaostours/event_manager.dart';
+import 'package:chaostours/events.dart';
 
 enum LogLevel {
   verbose(0),
   log(1),
   warn(2),
   error(3),
-  fatal(4);
+  fatal(4),
+  off(5);
 
   final int level;
   const LogLevel(this.level);
 }
 
 class Logger {
+  static final Logger _selfLogger = logger<Logger>();
+  static Function(String) printerVerbose = printMessage;
+  static Function(String) printerLog = printMessage;
+  static Function(String) printerWarn = printMessage;
+  static Function(String, StackTrace?) printerError = printError;
+  static Function(String, StackTrace?) printerFatal = printError;
   static LogLevel logLevel = LogLevel.log;
-  static Function(String) printerVerbose = print;
-  static Function(String) printerLog = print;
-  static Function(String) printerWarn = print;
-  static Function(String) printerError = print;
-  static Function(String) printerFatal = print;
+  static final Map<String, Logger> _logger = {};
+  static List<String> get names => _logger.keys.toList();
+  static Logger? getLoggerByName(String name) => _logger[name];
+  bool addLevel = true;
+  String prefix = '#';
+  bool enabled = true;
+  String _name = ''; // runtimeType
+  String get name => _name;
 
-  static void mute() {
-    printerVerbose = printerLog =
-        printerWarn = printerError = printerFatal = (String msg) {};
+  String get time {
+    DateTime t = DateTime.now();
+    var s = t.second;
+    var ms = t.millisecond;
+    return '$s:$ms';
   }
 
-  static void unMute() {
-    printerVerbose =
-        printerLog = printerWarn = printerError = printerFatal = print;
-  }
-
-  String rt = ''; // runtimeType
+  //
   static Logger logger<T>() {
-    Logger l = Logger();
-    l.rt = T.runtimeType.toString();
-    return l;
+    Logger logger = Logger();
+    String n = logger._name = T.runtimeType.toString();
+    _logger[logger._name] = logger;
+    _selfLogger.verbose('Logger $n created');
+    return logger;
   }
 
-  void logVerbose(String msg) {
-    EventManager.fire<EventLogVerbose>(EventLogVerbose(msg));
-    if (logLevel.level <= 0) {
-      printerVerbose('Verbose: $rt: $msg');
+  static void printMessage(String msg) {
+    try {
+      // ignore: avoid_print
+      print(msg);
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  static void printError(String msg, StackTrace? stk) {
+    try {
+      // ignore: avoid_print
+      print('$msg\n$stk');
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  void verbose(String msg) {
+    EventManager.fire<EventOnLogVerbose>(EventOnLogVerbose(msg));
+    if (logLevel.level <= 0 && enabled) {
+      printerVerbose('$time Verbose: $_name: $msg');
     }
   }
 
   void log(String msg) {
-    EventManager.fire<EventLog>(EventLog(msg));
-    if (logLevel.level <= 1) {
-      printerLog('Log: $rt: $msg');
+    EventManager.fire<EventOnLogDefault>(EventOnLogDefault(msg));
+    if (logLevel.level <= 1 && enabled) {
+      printerLog('$time Log: $_name: $msg');
     }
   }
 
-  void logWarn(String msg) {
-    EventManager.fire<EventLogWarn>(EventLogWarn(msg));
-    if (logLevel.level <= 2) {
-      printerError('Warning $rt: $msg');
+  void warn(String msg) {
+    EventManager.fire<EventOnLogWarn>(EventOnLogWarn(msg));
+    if (logLevel.level <= 2 && enabled) {
+      printerWarn('$time Warning $_name: $msg');
     }
   }
 
-  void logError(String msg, StackTrace? stackTrace) {
-    EventManager.fire<EventLogError>(EventLogError(msg, stackTrace));
-    String stk = '$stackTrace'.trim();
-    if (logLevel.level <= 3) {
-      printerError('Error $rt: $msg ${stk.isEmpty ? '' : '\n$stk'}');
+  void error(String msg, StackTrace? stackTrace) {
+    EventManager.fire<EventOnLogError>(EventOnLogError(msg, stackTrace));
+    if (logLevel.level <= 3 && enabled) {
+      printerError('$time Error $_name: $msg', stackTrace);
     }
   }
 
-  void logFatal(String msg, StackTrace? stackTrace) {
-    EventManager.fire<EventLogFatal>(EventLogFatal(msg, stackTrace));
-    String stk = '$stackTrace'.trim();
-    if (logLevel.level <= 4) {
-      printerFatal('Fatal Error $rt: $msg ${stk.isEmpty ? '' : '\n$stk'}');
+  void fatal(String msg, StackTrace? stackTrace) {
+    EventManager.fire<EventOnLogFatal>(EventOnLogFatal(msg, stackTrace));
+    if (logLevel.level <= 4 && enabled) {
+      printerFatal('$time Fatal Error $_name: $msg', stackTrace);
     }
   }
-}
-
-class EventLogVerbose {
-  String msg;
-  EventLogVerbose(this.msg);
-}
-
-class EventLog {
-  String msg;
-  EventLog(this.msg);
-}
-
-class EventLogWarn {
-  String msg;
-  EventLogWarn(this.msg);
-}
-
-class EventLogError {
-  String msg;
-  StackTrace? stacktrace;
-  EventLogError(this.msg, [this.stacktrace]);
-}
-
-class EventLogFatal {
-  String msg;
-  StackTrace? stacktrace;
-  EventLogFatal(this.msg, [this.stacktrace]);
 }

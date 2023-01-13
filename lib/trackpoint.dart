@@ -1,27 +1,21 @@
 import 'package:chaostours/globals.dart';
-import 'package:chaostours/log_.dart';
 import 'package:chaostours/gps.dart';
-import 'package:chaostours/events.dart';
 import 'package:chaostours/model_alias.dart';
 import 'package:chaostours/address.dart';
 import 'package:chaostours/enum.dart';
 import 'package:chaostours/model_trackpoint.dart';
 import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/event_manager.dart';
+import 'package:chaostours/logger.dart';
+import 'package:chaostours/events.dart';
 
 class TrackPoint {
+  static final Logger logger = Logger.logger<TrackPoint>();
+  factory TrackPoint() => _instance ??= TrackPoint._();
   static TrackPoint? _instance;
   TrackPoint._() {
-    /*
-    EventManager(Events.onGps).addListener((dynamic gps) {
-      trackBackground(gps as GPS);
-    });
-    */
-    eventOnGps.on<GPS>().listen((GPS gps) async {
-      await trackBackground(gps);
-    });
+    EventManager.listen<EventOnGps>(trackPoint);
   }
-  factory TrackPoint() => _instance ??= TrackPoint._();
 
   //static int _nextId = 0;
   // contains all trackpoints from current state start or stop
@@ -34,8 +28,8 @@ class TrackPoint {
   static DateTime _lastStatusChange = DateTime.now();
 
   // if tracker is running
-  static bool _tracking = false;
-  static bool get tracking => _tracking;
+  //static bool _tracking = false;
+  //static bool get tracking => _tracking;
 
   static String timeElapsed() {
     if (_trackPoints.isEmpty) return '00:00:00';
@@ -56,21 +50,24 @@ class TrackPoint {
 
   static Future<void> _statusChanged(ModelTrackPoint tp) async {
     // create a new TrackPoint as event
+    logger.log('Tracking Status changed to $status');
     ModelTrackPoint event = await createEvent();
     if (Globals.osmLookup == OsmLookup.onStatus) {
+      logger.log('lookup address');
       await tp.address.lookupAddress();
     }
-    //if (_status == TrackingStatus.standing) {
     await ModelTrackPoint.insert(event);
-    //}
-    eventBusTrackingStatusChanged.fire(event);
+
+    EventManager.fire<EventOnTrackingStatusChanged>(
+        EventOnTrackingStatusChanged(tp));
     _trackPoints.clear();
     _trackPoints.add(tp);
     _lastStatusChange = DateTime.now();
   }
 
   static Future<ModelTrackPoint> createEvent() async {
-    ModelTrackPoint event = await create();
+    logger.verbose('create trackpoint event');
+    ModelTrackPoint event = await create(EventOnGps(await GPS.gps()));
     event.status = _status;
     event.timeStart = _trackPoints.first.timeStart;
     event.timeEnd = DateTime.now();
@@ -82,6 +79,7 @@ class TrackPoint {
   /// creates new Trackpoint, waits after status changed,
   ///
   static void _checkStatus(ModelTrackPoint tp) {
+    logger.verbose('check status');
     // wait after status changed
     if (_lastStatusChange
         .add(Globals.waitTimeAfterStatusChanged)
@@ -134,7 +132,7 @@ class TrackPoint {
       dist = GPS.distance(tl[i].gps, tRef.gps);
       if (dist > distMoved) distMoved = dist;
     }
-    logVerbose('moved: $distMoved in ${tl.length} tracks');
+    logger.verbose('moved: $distMoved in ${tl.length} tracks');
     if (distMoved < Globals.distanceTreshold) {
       return true;
     }
@@ -168,8 +166,9 @@ class TrackPoint {
     return dist;
   }
 
-  static Future<ModelTrackPoint> create({GPS? backgroundGps}) async {
-    GPS gps = backgroundGps ??= await GPS.gps();
+  static Future<ModelTrackPoint> create(EventOnGps event) async {
+    logger.verbose('create trackpoint');
+    GPS gps = event.gps;
     Address address = Address(gps);
     if (Globals.osmLookup == OsmLookup.always) await address.lookupAddress();
 
@@ -184,41 +183,45 @@ class TrackPoint {
   }
 
   static bool _first = true;
-  static Future<void> trackBackground(GPS gps) async {
+  static Future<void> trackPoint(EventOnGps event) async {
+    logger.log('trackpoint!');
     ModelTrackPoint tp;
     try {
-      tp = await create();
+      tp = await create(event);
       tp.status = _status;
       _trackPoints.add(tp);
       if (_first) {
         tp = await createEvent();
         tp.timeEnd = DateTime.now();
         _status = TrackingStatus.standing;
-        eventBusTrackingStatusChanged.fire(await createEvent());
+        EventManager.fire<EventOnTrackingStatusChanged>(
+            EventOnTrackingStatusChanged(await createEvent()));
         _first = false;
       } else {
         _checkStatus(tp);
-        eventBusTrackPointCreated.fire(tp);
+        EventManager.fire<EventOnTrackingStatusChanged>(
+            EventOnTrackingStatusChanged(tp));
       }
     } catch (e, stk) {
       // ignore
-      logFatal('TrackPoint::create', e, stk);
+      logger.fatal('trackPoint: $e', stk);
     }
   }
-
+/*
   /// tracking heartbeat with <trackingTickTime> speed
   static Future<void> _track() async {
     if (!_tracking) return;
     Future.delayed(Globals.trackPointTickTime, () async {
       ModelTrackPoint tp;
       try {
-        tp = await create();
+        tp = await create(EventOnGps(await GPS.gps()));
         tp.status = _status;
         _trackPoints.add(tp);
         if (_first) {
           tp = await createEvent();
           tp.timeEnd = DateTime.now();
           _status = TrackingStatus.standing;
+
           eventBusTrackingStatusChanged.fire(await createEvent());
           _first = false;
         } else {
@@ -227,7 +230,7 @@ class TrackPoint {
         }
       } catch (e, stk) {
         // ignore
-        logFatal('TrackPoint::create', e, stk);
+        fatal('TrackPoint::create', e, stk);
       }
       _track();
     });
@@ -248,4 +251,5 @@ class TrackPoint {
     logInfo('stop tracking');
     _tracking = false;
   }
+  */
 }

@@ -109,7 +109,7 @@ class ModelTrackPoint {
       m._id = _table.length;
       logger.log('Insert TrackPoint ${m.gps}\n   which has now ID ${m._id}');
     } else {
-      logger.logWarn(
+      logger.warn(
           'Insert Trackpoint skipped. TrackPoint already inserted with ID ${m._id}');
     }
     await write();
@@ -123,7 +123,7 @@ class ModelTrackPoint {
   ///
   static Future<void> update(ModelTrackPoint tp) async {
     if (tp._id == null) {
-      logger.logWarn(
+      logger.warn(
           'Update Trackpoint forwarded to insert due to TrackPoint has no ID');
       await insert(tp);
     } else {
@@ -132,7 +132,7 @@ class ModelTrackPoint {
   }
 
   static Future<void> write() async {
-    logger.logVerbose('Write');
+    logger.verbose('Write');
     await Model.writeTable(handle: await FileHandler.station, table: _table);
   }
 
@@ -156,7 +156,7 @@ class ModelTrackPoint {
     for (int id in idAlias) {
       list.add(ModelAlias.getAlias(id));
     }
-    logger.logVerbose('get ${list.length} alias from TrackPoint ID $id');
+    logger.verbose('get ${list.length} alias from TrackPoint ID $id');
     return list;
   }
 
@@ -166,7 +166,7 @@ class ModelTrackPoint {
     while (--max >= 0 && --i >= 0) {
       list.add(_table[i]);
     }
-    logger.logVerbose('${list.length} recentTrackPoints');
+    logger.verbose('${list.length} recentTrackPoints');
     return list.reversed.toList();
   }
 

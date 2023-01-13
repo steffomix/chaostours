@@ -64,7 +64,7 @@ class ModelTask {
   }
 
   static Future<void> update() async {
-    logger.logVerbose('Update');
+    logger.verbose('Update');
     await write();
   }
 
@@ -76,12 +76,12 @@ class ModelTask {
 
   // writes the entire table back to disc
   static Future<void> write() async {
-    logger.logVerbose('Write Table');
+    logger.verbose('Write Table');
     await Model.writeTable(handle: await FileHandler.task, table: _table);
   }
 
   static Future<int> openFromAsset() async {
-    logger.logWarn('Load built-in Tasks from assets');
+    logger.warn('Load built-in Tasks from assets');
     String string = await rootBundle.loadString('assets/task.tsv');
     List<String> lines = string.trim().split(Model.lineSep);
     _table.clear();

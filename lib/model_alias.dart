@@ -82,7 +82,7 @@ class ModelAlias {
   }
 
   static Future<void> update() async {
-    logger.logVerbose('Update');
+    logger.verbose('Update');
     await write();
   }
 
@@ -104,7 +104,7 @@ class ModelAlias {
 
   // writes the entire table back to disc
   static Future<bool> write() async {
-    logger.logVerbose('Write Table');
+    logger.verbose('Write Table');
     await Model.writeTable(handle: await FileHandler.alias, table: _table);
     return true;
   }
@@ -137,12 +137,12 @@ class ModelAlias {
       }
     }
     list.sort((a, b) => a.sortDistance.compareTo(b.sortDistance));
-    logger.logVerbose('Found ${list.length} nearest Alias');
+    logger.verbose('Found ${list.length} nearest Alias');
     return list;
   }
 
   static Future<int> openFromAsset() async {
-    logger.logWarn('Loading built-in alias List from assets');
+    logger.warn('Loading built-in alias List from assets');
     String string = await rootBundle.loadString('assets/alias.tsv');
     List<String> lines = string.trim().split(Model.lineSep);
     _table.clear();

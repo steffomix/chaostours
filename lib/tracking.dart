@@ -1,5 +1,7 @@
 import 'package:background_location_tracker/background_location_tracker.dart';
 import 'package:chaostours/shared.dart';
+import 'package:chaostours/gps.dart';
+import 'package:chaostours/events.dart';
 
 @pragma('vm:entry-point')
 void backgroundCallback() {

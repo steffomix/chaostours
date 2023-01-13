@@ -1,11 +1,12 @@
 import 'dart:async';
-import 'package:chaostours/events.dart';
 import 'package:flutter/material.dart';
 //
 import 'package:chaostours/widget/widget_trackpoints_listview.dart';
 import 'package:chaostours/widget/widget_drawer.dart';
 import 'package:chaostours/enum.dart';
 import 'package:chaostours/logger.dart';
+import 'package:chaostours/events.dart';
+import 'package:chaostours/event_manager.dart';
 
 class App extends StatefulWidget {
   const App({super.key});
@@ -18,21 +19,21 @@ class App extends StatefulWidget {
 ///
 ///
 ///
-///
 class _AppState extends State<App> {
+  static _AppState? _instance;
+  _AppState._() {
+    EventManager.listen<EventOnMainPaneChanged>((EventOnMainPaneChanged p) {
+      _pane = p.pane;
+      setState(() {});
+    });
+  }
+  factory _AppState() => _instance ??= _AppState._();
+
   static Logger logger = Logger.logger<App>();
-  static StreamSubscription? onScreenChanged;
   static Widget? _pane;
 
   Widget get pane {
     return _pane ??= Panes.trackPointList.value;
-  }
-
-  _AppState() {
-    onScreenChanged ??= eventBusMainPaneChanged.on<Widget>().listen((Widget p) {
-      _pane = p;
-      setState(() {});
-    });
   }
 
   @override
@@ -70,7 +71,8 @@ class _AppState extends State<App> {
               icon: Icon(Icons.keyboard_arrow_right), label: 'x'),
         ],
         onTap: (int id) {
-          eventBusTapBottomNavBarIcon.fire(Tapped(id));
+          logger.log('BottomNavBar tapped but no method connected');
+          //eventBusTapBottomNavBarIcon.fire(Tapped(id));
         });
   }
 
@@ -80,7 +82,7 @@ class _AppState extends State<App> {
     try {
       myBody = const WidgetTrackPointList();
     } catch (e, stk) {
-      logger.logFatal('create WidgetTrackPointList failed', stk);
+      logger.fatal('create WidgetTrackPointList failed', stk);
     }
     return MaterialApp(
         home: Scaffold(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 //
 import 'package:chaostours/widget/widget_trackpoints_listview.dart';
 import 'package:chaostours/widget/widget_settings_permissions.dart';
+import 'package:chaostours/widget/widget_logger.dart';
 
 enum TrackingStatus {
   none(0),
@@ -21,7 +22,8 @@ enum TrackingStatus {
 // pane widgets that does't need any initial values
 enum Panes {
   trackPointList(WidgetTrackPointList()),
-  permissions(WidgetSettingsPermissions());
+  permissions(WidgetSettingsPermissions()),
+  logger(WidgetLogger());
 
   final Widget value;
   const Panes(this.value);
@@ -54,9 +56,6 @@ enum AliasStatus {
 
 enum DatabaseFile {
   alias,
-  tmpalias,
   task,
-  tmptask,
-  station,
-  tmpstation;
+  station;
 }

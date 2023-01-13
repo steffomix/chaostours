@@ -16,13 +16,8 @@ import 'package:chaostours/tracking_calendar.dart';
 import 'package:chaostours/notifications.dart';
 import 'package:chaostours/shared.dart';
 import 'package:chaostours/event_manager.dart';
-import 'package:chaostours/trackpoint.dart';
 import 'package:chaostours/logger.dart';
-
-class EventOnGps {
-  final GPS gps;
-  EventOnGps(this.gps);
-}
+import 'package:chaostours/events.dart';
 
 class AppLoader {
   static Logger logger = Logger.logger<AppLoader>();
@@ -59,10 +54,10 @@ class AppLoader {
       logger.log('load calendar credentials from assets');
       await calendarApiFromCredentials();
     } catch (e, stk) {
-      logger.logFatal('Preload sequence failed: $e', stk);
+      logger.fatal('Preload sequence failed: $e', stk);
     }
 
-    logger.log('start backgroundGPS observer with 1sec. interval');
+    logger.log('start shared observer for backgroundGPS with 1sec. interval');
     Shared(SharedKeys.backgroundGps).observe(
         duration: const Duration(seconds: 1),
         fn: (String data) {
@@ -71,10 +66,6 @@ class AppLoader {
           double lon = double.parse(geo[1]);
           EventManager.fire<EventOnGps>(EventOnGps(GPS(lat, lon)));
         });
-    EventManager.listen<EventOnGps>((EventOnGps event) {
-      logger.logVerbose('EventOnGps received: ${event.gps}');
-      TrackPoint.trackBackground(event.gps);
-    });
   }
 
   ///
@@ -147,7 +138,7 @@ class AppLoader {
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       msg = 'Location services are disabled.';
-      logger.logWarn(msg);
+      logger.warn(msg);
       return Future.error(msg);
     }
 
@@ -156,7 +147,7 @@ class AppLoader {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
         msg = 'Location permissions are denied';
-        logger.logWarn(msg);
+        logger.warn(msg);
         return Future.error(msg);
       }
     }
@@ -164,7 +155,7 @@ class AppLoader {
     if (permission == LocationPermission.deniedForever) {
       msg = 'Location permissions are permanently denied, '
           'we cannot request permissions.';
-      logger.logWarn(msg);
+      logger.warn(msg);
       return Future.error(msg);
     }
     logger.log('request GPS ${!serviceEnabled ? 'anyway' : ''}');

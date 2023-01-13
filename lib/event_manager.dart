@@ -1,4 +1,5 @@
 import 'package:chaostours/logger.dart';
+import 'package:chaostours/events.dart';
 
 /*
 enum EventKeys {
@@ -19,13 +20,16 @@ class EventManager {
     return _get<T>().add(fn);
   }
 
-  static void fire<T>(T instance) {
+  static void fire<T>(T instance, [async = false]) {
     logger.log('Fire Event ${T.runtimeType}');
     for (var fn in _get<T>()) {
       try {
-        fn(instance);
+        async
+            ? Future.delayed(
+                const Duration(microseconds: 1), () => fn(instance))
+            : fn(instance);
       } catch (e) {
-        logger.logWarn(e.toString());
+        logger.warn(e.toString());
       }
     }
   }

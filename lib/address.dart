@@ -90,13 +90,13 @@ class Address {
         state = tags['state'] ?? '';
         postcode = tags['postcode'] ?? '';
       } else {
-        logger.logWarn(
+        logger.warn(
             'lookup address failed with status code: ${response.statusCode}\n'
             '${response.body}');
       }
     } catch (e, stk) {
       // ignore
-      logger.logError('lookupAdress failed  $e', stk);
+      logger.error('lookupAdress failed  $e', stk);
     }
     logger.log('Lookup Address: $asString');
     _loaded = true;

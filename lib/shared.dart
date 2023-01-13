@@ -1,20 +1,11 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/event_manager.dart';
+import 'package:chaostours/events.dart';
 
 enum SharedKeys {
   backgroundGps,
   activeTrackpoint;
-}
-
-class EventOnSharedKeyChanged {
-  DateTime time = DateTime.now();
-  SharedKeys key;
-  String oldData;
-  String newData;
-
-  EventOnSharedKeyChanged(
-      {required this.key, required this.oldData, required this.newData});
 }
 
 class Shared {
@@ -55,7 +46,7 @@ class Shared {
     final sh = await shared;
     await sh.reload();
     String? value = sh.getString(key.name);
-    logger.logVerbose('load raw data: "$value"');
+    logger.verbose('load raw data: "$value"');
     return value;
   }
 
@@ -99,7 +90,7 @@ class Shared {
       try {
         fn(_decode(obs));
       } catch (e, stk) {
-        logger.logError('observing failed with $e', stk);
+        logger.error('observing failed with $e', stk);
       }
     }
     Future.delayed(duration, () {
