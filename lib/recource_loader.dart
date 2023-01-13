@@ -28,11 +28,11 @@ class AppLoader {
     logger.log('start Preload sequence...');
     try {
       // load database
-      logger.log('load MoxdelTrackPoint');
+      logger.log('load Database Table ModelTrackPoint');
       await ModelTrackPoint.open();
-      logger.log('load ModelAlias');
+      logger.log('load Database Table ModelAlias');
       await ModelAlias.open();
-      logger.log('load ModelTask');
+      logger.log('load Database Table ModelTask');
       await ModelTask.open();
       if (ModelAlias.length < 1) {
         await ModelAlias.openFromAsset();

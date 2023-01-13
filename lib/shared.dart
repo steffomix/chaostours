@@ -57,7 +57,7 @@ class Shared {
   }
 
   String _encode(String data) {
-    _id = ++_nextId;
+    _id = (++_nextId);
     return Uri.encodeFull('$id\t$data');
   }
 

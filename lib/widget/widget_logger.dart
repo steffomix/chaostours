@@ -13,26 +13,71 @@ class WidgetLogger extends StatefulWidget {
 class _WidgetLogger extends State<WidgetLogger> {
   static List<Widget> logs = [];
   static _WidgetLogger? _instance;
-  _WidgetLogger._();
+  _WidgetLogger._() {
+    EventManager.listen<EventOnLogDefault>(onLogDefault);
+  }
   factory _WidgetLogger() => _instance ??= _WidgetLogger._();
-
-  Widget createMessage(String msg) {
+  Widget createLogVerbose(String msg) {
     return Container(
-        color: Colors.grey,
-        child: Text(msg, style: const TextStyle(color: Colors.blue)));
+        color: Colors.white,
+        child: Text(msg, style: const TextStyle(color: Colors.black45)));
   }
 
-  void onLog(EventOnLog event) {
+  Widget createLogDefault(String msg) {
+    return Container(
+        color: Colors.white,
+        child: Text(msg, style: const TextStyle(color: Colors.black)));
+  }
+
+  Widget createLogWarn(String msg) {
+    return Container(
+        color: Colors.yellow,
+        child: Text(msg, style: const TextStyle(color: Colors.black)));
+  }
+
+  Widget createLogError(String msg, StackTrace? stackTrace) {
+    return Container(
+        color: Colors.red,
+        child: Text('$msg\n$stackTrace',
+            style: const TextStyle(color: Colors.white)));
+  }
+
+  Widget createLogFatal(String msg, StackTrace? stackTrace) {
+    return Container(
+        color: Colors.purple,
+        child: Text('$msg\n$stackTrace',
+            style: const TextStyle(color: Colors.white)));
+  }
+
+  void onLogVerbose(EventOnLogVerbose event) {
     setState(() {
-      logs.add(createMessage(event.msg));
+      logs.add(createLogVerbose(event.msg));
     });
   }
 
-  void onLogVerbose(EventOnLogVerbose event) {}
-  void onLogDefault(EventOnLogDefault event) {}
-  void onLogWarn(EventOnLogDefault event) {}
-  void onLogError(EventOnLogError event) {}
-  void onLogFatal(EventOnLogFatal event) {}
+  void onLogDefault(EventOnLogDefault event) {
+    setState(() {
+      logs.add(createLogDefault(event.msg));
+    });
+  }
+
+  void onLogWarn(EventOnLogWarn event) {
+    setState(() {
+      logs.add(createLogWarn(event.msg));
+    });
+  }
+
+  void onLogError(EventOnLogError event) {
+    setState(() {
+      logs.add(createLogError(event.msg, event.stacktrace));
+    });
+  }
+
+  void onLogFatal(EventOnLogFatal event) {
+    setState(() {
+      logs.add(createLogFatal(event.msg, event.stacktrace));
+    });
+  }
 
   @override
   Widget build(BuildContext context) {

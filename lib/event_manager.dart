@@ -16,12 +16,18 @@ class EventManager {
   static final List<Set<dynamic>> _list = [];
 
   static bool listen<T>(Function(T) fn) {
-    logger.log('Add Listener ${T.runtimeType}');
-    return _get<T>().add(fn);
+    bool added = _get<T>().add(fn);
+    if (added) {
+      logger.log('add Listener ${T.toString()}');
+    } else {
+      logger
+          .warn('add Listener  ${T.toString()} skipped: Listener already set');
+    }
+    return added;
   }
 
   static void fire<T>(T instance, [async = false]) {
-    logger.log('Fire Event ${T.runtimeType}');
+    //logger.log('Fire Event ${T.toString()}', false);
     for (var fn in _get<T>()) {
       try {
         async
@@ -34,8 +40,16 @@ class EventManager {
     }
   }
 
-  static void cancel<T>(Function(T) fn) =>
-      _get<T>().removeWhere((element) => element == fn);
+  static void remove<T>(Function(T) fn) {
+    var set = _get<T>();
+    if (set.contains(fn)) {
+      _get<T>().removeWhere((el) => el == fn);
+      logger.log('remove Listener ${T.toString()}');
+    } else {
+      logger.warn(
+          'remove Listener ${T.toString()} skipped: Listener not present');
+    }
+  }
 
   static Set<Function(T)> _get<T>() {
     try {

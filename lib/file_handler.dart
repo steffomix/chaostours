@@ -16,7 +16,7 @@ class FileHandler {
   static Future<io.File> get station async => await file(DatabaseFile.station);
 
   static Future<io.File> file(DatabaseFile filehandle) async {
-    logger.log('Provide File; ${filehandle.name}.tsv');
+    logger.log('Provide File: ${filehandle.name}.tsv');
     return handles[filehandle] ??=
         await AppLoader.fileHandle('${filehandle.name}.tsv');
   }
