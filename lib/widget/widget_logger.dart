@@ -11,64 +11,17 @@ class WidgetLogger extends StatefulWidget {
 }
 
 class _WidgetLogger extends State<WidgetLogger> {
-  static List<Widget> logs = [];
   _WidgetLogger() {
-    EventManager.listen<EventOnLogVerbose>(onLogVerbose);
-    EventManager.listen<EventOnLogDefault>(onLogDefault);
-    EventManager.listen<EventOnLogWarn>(onLogWarn);
-    EventManager.listen<EventOnLogError>(onLogError);
-    EventManager.listen<EventOnLogFatal>(onLogFatal);
+    EventManager.listen<EventOnLog>(onLog);
   }
 
   @override
   void dispose() {
-    EventManager.remove<EventOnLogVerbose>(onLogVerbose);
-    EventManager.remove<EventOnLogDefault>(onLogDefault);
-    EventManager.remove<EventOnLogWarn>(onLogWarn);
-    EventManager.remove<EventOnLogError>(onLogError);
-    EventManager.remove<EventOnLogFatal>(onLogFatal);
+    EventManager.remove<EventOnLog>(onLog);
     super.dispose();
   }
 
-  void onLogVerbose(EventOnLogVerbose event) {
-    if (mounted) {
-      setState(() {
-        //addLog(createLogVerbose(event.msg));
-      });
-    }
-  }
-
-  void onLogDefault(EventOnLogDefault event) {
-    if (mounted) {
-      setState(() {
-        //addLog(createLogDefault(event.msg));
-      });
-    }
-  }
-
-  void onLogWarn(EventOnLogWarn event) {
-    if (mounted) {
-      setState(() {
-        //addLog(createLogWarn(event.msg));
-      });
-    }
-  }
-
-  void onLogError(EventOnLogError event) {
-    if (mounted) {
-      setState(() {
-        //addLog(createLogError(event.msg, event.stacktrace));
-      });
-    }
-  }
-
-  void onLogFatal(EventOnLogFatal event) {
-    if (mounted) {
-      setState(() {
-        //addLog(createLogFatal(event.msg, event.stacktrace));
-      });
-    }
-  }
+  void onLog(EventOnLog event) => mounted ? setState(() {}) : () {};
 
   @override
   Widget build(BuildContext context) {

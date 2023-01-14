@@ -1,6 +1,6 @@
 import 'dart:io' as io;
 //
-import 'package:chaostours/recource_loader.dart';
+import 'package:chaostours/app_loader.dart';
 import 'package:chaostours/enum.dart';
 import 'package:chaostours/logger.dart';
 

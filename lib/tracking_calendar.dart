@@ -2,11 +2,11 @@ import 'dart:async';
 import 'package:chaostours/trackpoint.dart';
 import 'package:googleapis/calendar/v3.dart' as calendar;
 //
-import 'package:chaostours/recource_loader.dart';
+import 'package:chaostours/app_loader.dart';
 import 'package:chaostours/util.dart';
-import 'package:chaostours/model_trackpoint.dart';
-import 'package:chaostours/model_alias.dart';
-import 'package:chaostours/model_task.dart';
+import 'package:chaostours/model/model_trackpoint.dart';
+import 'package:chaostours/model/model_alias.dart';
+import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/globals.dart';
 import 'package:chaostours/enum.dart';
 import 'package:chaostours/logger.dart';

@@ -1,7 +1,10 @@
 import 'package:chaostours/gps.dart';
 import 'package:flutter/material.dart';
-import 'model_trackpoint.dart';
-import 'package:chaostours/shared.dart';
+import 'model/model_trackpoint.dart';
+import 'package:chaostours/shared_model/shared.dart';
+import 'shared_model/gps_background_tracking.dart';
+import 'shared_model/shared_model_tracking.dart';
+import 'package:chaostours/logger.dart';
 
 class EventOnSharedKeyChanged {
   DateTime time = DateTime.now();
@@ -23,6 +26,11 @@ class EventOnTrackingStatusChanged {
   EventOnTrackingStatusChanged(this.tp);
 }
 
+class EventOnTracking {}
+
+/// <p><b>Deprecated!</b></p>
+/// moved to background tracking<br>
+/// EventOnTracking
 class EventOnTrackPoint {
   ModelTrackPoint tp;
   EventOnTrackPoint(this.tp);
@@ -34,31 +42,8 @@ class EventOnGps {
 }
 
 class EventOnLog {
-  String msg;
-  StackTrace? stacktrace;
-  EventOnLog(this.msg, [this.stacktrace]);
-}
-
-class EventOnLogVerbose extends EventOnLog {
-  EventOnLogVerbose(String msg, [StackTrace? stacktrace])
-      : super(msg, stacktrace);
-}
-
-class EventOnLogDefault extends EventOnLog {
-  EventOnLogDefault(String msg, [StackTrace? stacktrace])
-      : super(msg, stacktrace);
-}
-
-class EventOnLogWarn extends EventOnLog {
-  EventOnLogWarn(String msg, [StackTrace? stacktrace]) : super(msg, stacktrace);
-}
-
-class EventOnLogError extends EventOnLog {
-  EventOnLogError(String msg, [StackTrace? stacktrace])
-      : super(msg, stacktrace);
-}
-
-class EventOnLogFatal extends EventOnLog {
-  EventOnLogFatal(String msg, [StackTrace? stacktrace])
-      : super(msg, stacktrace);
+  final String msg;
+  final StackTrace? stacktrace;
+  final LogLevel level;
+  EventOnLog(this.level, this.msg, [this.stacktrace]);
 }

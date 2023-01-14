@@ -1,6 +1,6 @@
-import 'package:chaostours/model.dart';
-import 'package:chaostours/model_task.dart';
-import 'package:chaostours/model_alias.dart';
+import 'package:chaostours/model/model.dart';
+import 'package:chaostours/model/model_task.dart';
+import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/file_handler.dart';
 import 'package:chaostours/enum.dart';

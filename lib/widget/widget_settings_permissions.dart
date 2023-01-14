@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 //
 import 'package:chaostours/notifications.dart';
 import 'package:chaostours/permissions.dart';
-import 'package:chaostours/tracking.dart';
+import 'package:chaostours/shared_model/gps_background_tracking.dart';
 
 @override
 class WidgetSettingsPermissions extends StatefulWidget {

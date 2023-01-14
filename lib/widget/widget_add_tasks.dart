@@ -2,8 +2,8 @@
 
 import 'package:flutter/material.dart';
 //
-import 'package:chaostours/model_task.dart';
-import 'package:chaostours/model_trackpoint.dart';
+import 'package:chaostours/model/model_task.dart';
+import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/events.dart';
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/enum.dart';

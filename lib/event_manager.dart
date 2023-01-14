@@ -13,7 +13,7 @@ enum EventKeys {
 
 class EventManager {
   static Logger logger = Logger.logger<EventManager>();
-  static final List<Set<dynamic>> _list = [];
+  static final List<Set<dynamic>> _register = [];
 
   static bool listen<T>(Function(T) fn) {
     bool added = _get<T>().add(fn);
@@ -27,7 +27,6 @@ class EventManager {
   }
 
   static void fire<T>(T instance, [async = false]) {
-    //logger.log('Fire Event ${T.toString()}', false);
     for (var fn in _get<T>()) {
       try {
         async
@@ -54,11 +53,11 @@ class EventManager {
 
   static Set<Function(T)> _get<T>() {
     try {
-      _list.whereType<Set<Function(T)>>().first;
+      _register.whereType<Set<Function(T)>>().first;
     } catch (e) {
       Set<Function(T)> s = {};
-      _list.add(s);
+      _register.add(s);
     }
-    return _list.whereType<Set<Function(T)>>().first;
+    return _register.whereType<Set<Function(T)>>().first;
   }
 }

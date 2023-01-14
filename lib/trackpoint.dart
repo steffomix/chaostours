@@ -1,9 +1,9 @@
 import 'package:chaostours/globals.dart';
 import 'package:chaostours/gps.dart';
-import 'package:chaostours/model_alias.dart';
+import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/address.dart';
 import 'package:chaostours/enum.dart';
-import 'package:chaostours/model_trackpoint.dart';
+import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/logger.dart';

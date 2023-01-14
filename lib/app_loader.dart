@@ -8,13 +8,13 @@ import 'dart:io' as io;
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart' as path_provider;
 //
-import 'package:chaostours/model_alias.dart';
-import 'package:chaostours/model_trackpoint.dart';
-import 'package:chaostours/model_task.dart';
+import 'package:chaostours/model/model_alias.dart';
+import 'package:chaostours/model/model_trackpoint.dart';
+import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/tracking_calendar.dart';
 import 'package:chaostours/notifications.dart';
-import 'package:chaostours/shared.dart';
+import 'package:chaostours/shared_model/shared.dart';
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/events.dart';
