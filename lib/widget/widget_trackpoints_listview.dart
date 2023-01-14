@@ -9,10 +9,11 @@ import 'package:chaostours/widget/widget_add_tasks.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
-import 'package:chaostours/shared_model/gps_background_tracking.dart';
+import 'package:chaostours/shared_model/tracking.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/events.dart';
+import 'package:chaostours/shared_model/shared.dart';
 
 class WidgetTrackPointList extends StatefulWidget {
   const WidgetTrackPointList({super.key});
@@ -22,11 +23,10 @@ class WidgetTrackPointList extends StatefulWidget {
 }
 
 class _TrackPointListView extends State<WidgetTrackPointList> {
-  static _TrackPointListView? _instance;
-  factory _TrackPointListView() => _instance ??= _TrackPointListView._();
-  _TrackPointListView._() {
+  _TrackPointListView() {
     EventManager.listen<EventOnTrackingStatusChanged>(onTrackingStatusChanged);
     EventManager.listen<EventOnTrackPoint>(onTrackPoint);
+    resetListView();
   }
   static Logger logger = Logger.logger<WidgetTrackPointList>();
   static _ActiveListItem? activeItem;
@@ -34,22 +34,22 @@ class _TrackPointListView extends State<WidgetTrackPointList> {
 
   @override
   void dispose() {
+    EventManager.remove<EventOnTrackingStatusChanged>(onTrackingStatusChanged);
+    EventManager.remove<EventOnTrackPoint>(onTrackPoint);
     super.dispose();
   }
 
   // add a new Trackpoint list item
   // and prune list to max of 100
-  void onTrackingStatusChanged(EventOnTrackingStatusChanged event) {
-    ModelTrackPoint tp = event.tp;
-    if (activeItem == null) {
-      return onTrackPoint(EventOnTrackPoint(tp));
-    } else {
-      listView.add(activeItem!.widget);
-      activeItem = _ActiveListItem(tp);
-    }
-
-    while (listView.length > 100) {
-      listView.removeLast();
+  void onTrackingStatusChanged(EventOnTrackingStatusChanged event) async {
+    activeItem = _ActiveListItem(event.tp);
+    listView.clear();
+    List<String> recent =
+        (await Shared(SharedKeys.recentTrackpoints).load() ?? '')
+            .trim()
+            .split('\n');
+    for (var item in recent) {
+      listView.add(_ActiveListItem(ModelTrackPoint.toSharedModel(item)).widget);
     }
     setState(() {});
   }

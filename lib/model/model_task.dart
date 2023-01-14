@@ -29,7 +29,8 @@ class ModelTask {
       _id.toString(),
       deleted.toString(),
       encode(task),
-      encode(notes)
+      encode(notes),
+      '|'
     ];
     return parts.join('\t');
   }

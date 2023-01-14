@@ -7,22 +7,23 @@ import 'package:chaostours/shared_model/shared.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/event_manager.dart';
 
+/*
 class SharedTracker {
   static SharedTracker? _instance;
   SharedTracker._() {
-    EventManager.listen<EventOnGps>(onGps);
+    EventManager.listen<EventOnBackgroundGpsChanged>(onGps);
   }
   factory SharedTracker() => _instance ??= SharedTracker._();
   static SharedModelTracking? activeModel;
 
-  void onGps(EventOnGps event) {
+  void onGps(EventOnBackgroundGpsChanged event) {
     GPS gps = event.gps;
     SharedModelTracking model = SharedModelTracking(gps);
     SharedModelTracking lastActiveModel = activeModel ?? model;
     activeModel = model;
   }
 }
-
+*/
 class SharedModelTracking {
   static Logger logger = Logger.logger<SharedModelTracking>();
 
@@ -41,7 +42,7 @@ class SharedModelTracking {
     address = Address(gps);
   }
 
-  /// <p><b>TSV collumns: </b></p>
+  /// <p><b>TSV columns: </b></p>
   /// 0 TrackingStatus index<br>
   /// 1 gps.lat<br>
   /// 2 gps.lon<br>
@@ -75,7 +76,7 @@ class SharedModelTracking {
     return cols.join('\t');
   }
 
-  /// <p><b>TSV collumns: </b></p>
+  /// <p><b>TSV columns: </b></p>
   /// 0 TrackingStatus index<br>
   /// 1 gps.lat <br>
   /// 2 gps.lon<br>

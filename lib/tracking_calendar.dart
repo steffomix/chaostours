@@ -81,7 +81,7 @@ class TrackingCalendar {
         '<a href="https://www.gpsvisualizer.com">gpsvisualizer.com</a>\n\n'
         'latitude,longitude\n';
     for (var t in tp.trackPoints) {
-      move += '${t.gps.lat},${t.gps.lon}\n';
+      move += '${t.lat},${t.lon}\n';
     }
     body += move;
 

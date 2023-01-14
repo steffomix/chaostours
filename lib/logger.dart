@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 //
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/events.dart';
+import 'package:googleapis/sheets/v4.dart';
 
 enum LogLevel {
   verbose(1),
@@ -24,11 +25,11 @@ class Logger {
       printer = logPrinter;
   static Function(LogLevel level, String msg, [StackTrace? stackTrace])
       logRenderer = renderLog;
-  static LogLevel logLevel = LogLevel.log;
+  static LogLevel logLevel = LogLevel.verbose;
   static final Map<String, Logger> _logger = {};
   static List<String> get names => _logger.keys.toList();
   static Logger? getLoggerByName(String name) => _logger[name];
-  static String prefix = '#';
+  static String prefix = '##';
   bool enabled = true;
   String _name = 'Logger'; // runtimeType
   String get name => _name;
@@ -65,7 +66,7 @@ class Logger {
   void fatal(String msg, StackTrace? stackTrace, [fireEvent = true]) =>
       _log(LogLevel.fatal, msg, stackTrace);
 
-  static void logPrinter(
+  static String logPrinter(
       String loggerName, LogLevel level, String msg, StackTrace? stackTrace) {
     String stk = '';
     if (stackTrace != null) {
@@ -79,6 +80,7 @@ class Logger {
     } catch (e) {
       // ignore
     }
+    return msg;
   }
 
   void _log(LogLevel level, String msg, StackTrace? stackTrace,
@@ -86,9 +88,9 @@ class Logger {
     if (level.level >= logLevel.level && enabled) {
       // prevent stack overflow due to EventManager.fire triggers a log
       if (fireEvent) {
-        EventManager.fire<EventOnLog>(EventOnLog(level, msg));
+        EventManager.fire<EventOnLog>(EventOnLog(level, msg), true);
       }
-      logPrinter(_name, level, msg, stackTrace);
+      msg = logPrinter(_name, level, msg, stackTrace);
       _addLogWidget(logRenderer(level, msg, stackTrace));
     }
   }
@@ -105,16 +107,19 @@ class Logger {
     switch (level) {
       case LogLevel.verbose:
         return Container(
+            margin: const EdgeInsets.only(top: 6),
             color: Colors.white,
             child: Text(msg, style: const TextStyle(color: Colors.black45)));
 
       case LogLevel.log:
         return Container(
+            margin: const EdgeInsets.only(top: 6),
             color: Colors.white,
             child: Text(msg, style: const TextStyle(color: Colors.black)));
 
       case LogLevel.important:
         return Container(
+            margin: const EdgeInsets.only(top: 6),
             color: Colors.greenAccent,
             child: Text(msg,
                 style: const TextStyle(
@@ -122,17 +127,20 @@ class Logger {
 
       case LogLevel.warn:
         return Container(
+            margin: const EdgeInsets.only(top: 6),
             color: Colors.yellow,
             child: Text(msg, style: const TextStyle(color: Colors.black)));
 
       case LogLevel.error:
         return Container(
+            margin: const EdgeInsets.only(top: 6),
             color: Colors.red,
             child: Text('$msg\n$stackTrace',
                 style: const TextStyle(color: Colors.white)));
 
       default: // LogLevel.fatal:
         return Container(
+            margin: const EdgeInsets.only(top: 6),
             color: Colors.purple,
             child: Text('$msg\n$stackTrace',
                 style: const TextStyle(

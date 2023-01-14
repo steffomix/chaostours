@@ -25,7 +25,7 @@ class ModelTrackPoint {
   int? _id;
   int deleted = 0; // 0 or 1
   GPS gps;
-  List<ModelTrackPoint> trackPoints; // "lat,lon;lat,lon;..."
+  List<GPS> trackPoints; // "lat,lon;lat,lon;..."
   DateTime timeStart;
   DateTime timeEnd = DateTime.now();
   List<int> idAlias = []; // "id,id,..." needs to be sorted by distance
@@ -68,9 +68,8 @@ class ModelTrackPoint {
     for (var line in _table) {
       lines.add(line.toString());
     }
-    String end = '${Model.rowEnd}${Model.lineSep}';
-    String dump = lines.join(end);
-    dump += end;
+    String dump = lines.join(Model.lineSep);
+    dump += Model.lineSep;
     return dump;
   }
 
@@ -80,7 +79,7 @@ class ModelTrackPoint {
     if (trackPoints.isEmpty) return 0.0;
     double dist;
     if (status == TrackingStatus.standing) {
-      dist = GPS.distance(trackPoints.first.gps, trackPoints.last.gps);
+      dist = GPS.distance(trackPoints.first, trackPoints.last);
     } else {
       dist = _distanceRoute();
     }
@@ -91,10 +90,10 @@ class ModelTrackPoint {
   double _distanceRoute() {
     if (trackPoints.length < 2) return 0;
     double dist = 0;
-    GPS gps = trackPoints[0].gps;
+    GPS gps = trackPoints[0];
     for (var i = 1; i < trackPoints.length; i++) {
-      dist += GPS.distance(gps, trackPoints[i].gps);
-      gps = trackPoints[i].gps;
+      dist += GPS.distance(gps, trackPoints[i]);
+      gps = trackPoints[i];
     }
     return dist;
   }
@@ -187,7 +186,7 @@ class ModelTrackPoint {
         gps: gps,
         address: Address(gps),
         timeStart: DateTime.parse(p[5]),
-        trackPoints: parseTrackPointList(p[7]),
+        trackPoints: parseGpsList(p[7]),
         idAlias: Model.parseIdList(p[8]),
         notes: decode(p[10]));
 
@@ -210,35 +209,89 @@ class ModelTrackPoint {
       timeEnd.toIso8601String(), // 6
       status == TrackingStatus.moving
           ? trackPoints
-              .map((tp) => '${(tp.gps.lat * 10000).round() / 10000},'
-                  '${(tp.gps.lon * 10000).round() / 10000}')
+              .map((gps) => '${(gps.lat * 10000).round() / 10000},'
+                  '${(gps.lon * 10000).round() / 10000}')
               .toList()
               .join(';')
           : '', //list.join(';'), // 7
       idAlias.join(','), // 8
       idTask.join(','), // 9
-      encode(notes) // 10
+      encode(notes), // 10
+      '|'
     ];
     return cols.join('\t');
   }
 
+  /// <p><b>TSV columns: </b></p>
+  /// 0 TrackingStatus index<br>
+  /// 1 gps.lat<br>
+  /// 2 gps.lon<br>
+  /// 3 timeStart as toIso8601String<br>
+  /// 4 timeEnd as above<br>
+  /// 5 idAlias separated by ,<br>
+  /// 6 idTask separated by ,<br>
+  /// 7 notes Uri.encodeFull encoded<br>
+  /// 8 lat, lon TrackPoints separated by ; and reduced to four digits<br>
+  /// 9 | as line end
+  String toSharedString() {
+    List<String> cols = [
+      status.index.toString(), // 0
+      gps.lat.toString(), // 1
+      gps.lon.toString(), // 2
+      timeStart.toIso8601String(), // 3
+      timeEnd.toIso8601String(), // 4
+      idAlias.join(','), // 5
+      idTask.join(','), // 6
+      encode(notes), // 7
+      status == TrackingStatus.moving
+          ? trackPoints
+              .map((gps) => '${(gps.lat * 10000).round() / 10000},'
+                  '${(gps.lon * 10000).round() / 10000}')
+              .toList()
+              .join(';')
+          : '', // 8
+      '|' // 9 (secure line end)
+    ];
+    return cols.join('\t');
+  }
+
+  /// <p><b>TSV columns: </b></p>
+  /// 0 TrackingStatus index<br>
+  /// 1 gps.lat <br>
+  /// 2 gps.lon<br>
+  /// 3 timeStart as toIso8601String<br>
+  /// 4 timeEnd as above<br>
+  /// 5 idAlias separated by ,<br>
+  /// 6 idTask separated by ,<br>
+  /// 7 notes Uri.encodeFull encoded<br>
+  /// 8 lat, lon TrackPoints separated by ; and reduced to four digits<br>
+  /// 9 | as line end
+  static ModelTrackPoint toSharedModel(String row) {
+    List<String> p = row.split('\t');
+    GPS gps = GPS(double.parse(p[1]), double.parse(p[2]));
+    ModelTrackPoint model = ModelTrackPoint(
+        gps: gps,
+        address: Address(gps),
+        timeStart: DateTime.parse(p[3]),
+        idAlias: Model.parseIdList(p[5]),
+        trackPoints: parseGpsList(p[8]),
+        deleted: 0,
+        notes: decode(p[7]));
+    model.status = TrackingStatus.byValue(int.parse(p[0]));
+    model.idTask = Model.parseIdList(p[6]);
+    model.timeEnd = DateTime.parse(p[4]);
+    return model;
+  }
+
   //
-  static List<ModelTrackPoint> parseTrackPointList(String string) {
+  static List<GPS> parseGpsList(String string) {
     //return tps;
-    List<String> list = string.split(';').where((e) => e.isNotEmpty).toList();
-    GPS gps;
-    List<ModelTrackPoint> tps = [];
-    for (var item in list) {
+    List<String> src = string.split(';').where((e) => e.isNotEmpty).toList();
+    List<GPS> gpsList = [];
+    for (var item in src) {
       List<String> coords = item.split(',');
-      gps = GPS(double.parse(coords[0]), double.parse(coords[1]));
-      ModelTrackPoint tp = ModelTrackPoint(
-          gps: gps,
-          address: Address(gps),
-          trackPoints: <ModelTrackPoint>[],
-          idAlias: ModelAlias.nextAlias(gps).map((m) => m.id).toList(),
-          timeStart: DateTime.now());
-      tps.add(tp);
+      gpsList.add(GPS(double.parse(coords[0]), double.parse(coords[1])));
     }
-    return tps;
+    return gpsList;
   }
 }

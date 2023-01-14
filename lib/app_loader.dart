@@ -18,6 +18,10 @@ import 'package:chaostours/shared_model/shared.dart';
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/events.dart';
+import 'package:chaostours/trackpoint.dart';
+import 'shared_model/shared_tracker.dart';
+import 'package:chaostours/permissions.dart';
+import 'shared_model/tracking.dart';
 
 class AppLoader {
   static Logger logger = Logger.logger<AppLoader>();
@@ -25,14 +29,14 @@ class AppLoader {
   ///
   /// preload recources
   static Future<void> preload() async {
-    logger.log('start Preload sequence...');
+    logger.important('start Preload sequence...');
     try {
       // load database
-      logger.log('load Database Table ModelTrackPoint');
+      logger.important('load Database Table ModelTrackPoint');
       await ModelTrackPoint.open();
-      logger.log('load Database Table ModelAlias');
+      logger.important('load Database Table ModelAlias');
       await ModelAlias.open();
-      logger.log('load Database Table ModelTask');
+      logger.important('load Database Table ModelTask');
       await ModelTask.open();
       if (ModelAlias.length < 1) {
         await ModelAlias.openFromAsset();
@@ -42,30 +46,43 @@ class AppLoader {
       }
 
       // init Machines
-      logger.log('initialize Tracking Calendar');
+      logger.important('initialize Tracking Calendar');
       TrackingCalendar();
-      logger.log('initialize Notifications');
+      logger.important('initialize Notifications');
       Notifications();
+      logger.important('initialize Trackpoint');
+      TrackPoint();
+      logger.important('initialize SharedTracker');
+      SharedTracker();
+      logger.important('initialize Permissions');
+      await Permissions.requestLocationPermission();
+      await Permissions.requestNotificationPermission();
+      logger.important('start background gps tracking');
+      await Tracking.initialize();
+      await Tracking.startTracking();
 
-      logger.log('preparing HTTP SSL Key');
+      logger.important('preparing HTTP SSL Key');
       await webKey();
       logger.log('load default Calendar ID from assets');
       await defaultCalendarId();
       logger.log('load calendar credentials from assets');
       await calendarApiFromCredentials();
+
+      logger.important(
+          'start shared observer for backgroundGPS with 1sec. interval');
+      Shared(SharedKeys.backgroundGps).observe(
+          duration: const Duration(seconds: 1),
+          fn: (String data) {
+            List<String> geo = data.split(',');
+            double lat = double.parse(geo[0]);
+            double lon = double.parse(geo[1]);
+            EventManager.fire<EventOnBackgroundGpsChanged>(
+                EventOnBackgroundGpsChanged(GPS(lat, lon)));
+          });
+      logger.important('preload finished successful');
     } catch (e, stk) {
       logger.fatal('Preload sequence failed: $e', stk);
     }
-
-    logger.log('start shared observer for backgroundGPS with 1sec. interval');
-    Shared(SharedKeys.backgroundGps).observe(
-        duration: const Duration(seconds: 1),
-        fn: (String data) {
-          List<String> geo = data.split(',');
-          double lat = double.parse(geo[0]);
-          double lon = double.parse(geo[1]);
-          EventManager.fire<EventOnGps>(EventOnGps(GPS(lat, lon)));
-        });
   }
 
   ///

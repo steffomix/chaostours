@@ -18,7 +18,7 @@ class EventManager {
   static bool listen<T>(Function(T) fn) {
     bool added = _get<T>().add(fn);
     if (added) {
-      logger.log('add Listener ${T.toString()}');
+      logger.log('add Listener ${T.toString()}', false);
     } else {
       logger.warn(
           'add Listener  ${T.toString()} skipped: Listener already set', false);
@@ -26,7 +26,7 @@ class EventManager {
     return added;
   }
 
-  static void fire<T>(T instance, [async = false]) {
+  static Future<void> fire<T>(T instance, [async = true]) async {
     for (var fn in _get<T>()) {
       try {
         async
@@ -34,7 +34,11 @@ class EventManager {
                 const Duration(microseconds: 1), () => fn(instance))
             : fn(instance);
       } catch (e) {
-        logger.warn(e.toString(), false);
+        // log async
+        Future.delayed(const Duration(milliseconds: 10), () {
+          logger.warn(e.toString(), false);
+        });
+        ;
       }
     }
   }
@@ -43,7 +47,7 @@ class EventManager {
     var set = _get<T>();
     if (set.contains(fn)) {
       _get<T>().removeWhere((el) => el == fn);
-      logger.log('remove Listener ${T.toString()}');
+      logger.log('remove Listener ${T.toString()}', false);
     } else {
       logger.warn(
           'remove Listener ${T.toString()} skipped: Listener not present',

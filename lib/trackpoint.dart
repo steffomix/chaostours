@@ -14,7 +14,7 @@ class TrackPoint {
   factory TrackPoint() => _instance ??= TrackPoint._();
   static TrackPoint? _instance;
   TrackPoint._() {
-    EventManager.listen<EventOnGps>(trackPoint);
+    EventManager.listen<EventOnBackgroundGpsChanged>(trackPoint);
   }
 
   //static int _nextId = 0;
@@ -50,7 +50,7 @@ class TrackPoint {
 
   static Future<void> _statusChanged(ModelTrackPoint tp) async {
     // create a new TrackPoint as event
-    logger.log('Tracking Status changed to $status');
+    logger.important('Tracking Status changed to $status');
     ModelTrackPoint event = await createEvent();
     if (Globals.osmLookup == OsmLookup.onStatus) {
       logger.log('lookup address');
@@ -67,11 +67,12 @@ class TrackPoint {
 
   static Future<ModelTrackPoint> createEvent() async {
     logger.verbose('create trackpoint event');
-    ModelTrackPoint event = await create(EventOnGps(await GPS.gps()));
+    ModelTrackPoint event =
+        await create(EventOnBackgroundGpsChanged(await GPS.gps()));
     event.status = _status;
     event.timeStart = _trackPoints.first.timeStart;
     event.timeEnd = DateTime.now();
-    event.trackPoints = [..._trackPoints];
+    event.trackPoints = _trackPoints.map((e) => e.gps).toList();
     return event;
   }
 
@@ -166,25 +167,27 @@ class TrackPoint {
     return dist;
   }
 
-  static Future<ModelTrackPoint> create(EventOnGps event) async {
-    logger.verbose('create trackpoint');
+  static Future<ModelTrackPoint> create(
+      EventOnBackgroundGpsChanged event) async {
+    logger.verbose(
+        'create trackpoint from gps ${event.gps.lat},${event.gps.lon}');
     GPS gps = event.gps;
     Address address = Address(gps);
     if (Globals.osmLookup == OsmLookup.always) await address.lookupAddress();
 
     ModelTrackPoint tp = ModelTrackPoint(
         gps: gps,
-        trackPoints: <ModelTrackPoint>[],
+        trackPoints: <GPS>[],
         idAlias: ModelAlias.nextAlias(gps).map((e) => e.id).toList(),
         timeStart: DateTime.now(),
         address: address);
-
+    logger.important('trigger EventOnTrackPoint');
+    EventManager.fire<EventOnTrackPoint>(EventOnTrackPoint(tp));
     return tp;
   }
 
   static bool _first = true;
-  static Future<void> trackPoint(EventOnGps event) async {
-    logger.log('trackpoint!');
+  static Future<void> trackPoint(EventOnBackgroundGpsChanged event) async {
     ModelTrackPoint tp;
     try {
       tp = await create(event);
@@ -199,8 +202,6 @@ class TrackPoint {
         _first = false;
       } else {
         _checkStatus(tp);
-        EventManager.fire<EventOnTrackingStatusChanged>(
-            EventOnTrackingStatusChanged(tp));
       }
     } catch (e, stk) {
       // ignore

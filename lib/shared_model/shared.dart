@@ -5,7 +5,8 @@ import 'package:chaostours/events.dart';
 
 enum SharedKeys {
   backgroundGps,
-  activeTrackpoint;
+  activeTrackpoint,
+  recentTrackpoints;
 }
 
 class Shared {
@@ -29,7 +30,7 @@ class Shared {
     String? s = await _loadRaw();
     if (s != null) {
       s = _decode(s);
-      logger.log('load key ${key.name}: $s');
+      //logger.log('load key ${key.name}: $s');
       return s;
     }
     return null;
@@ -37,7 +38,7 @@ class Shared {
 
   Future<void> add(String value) async {
     String l = await load() ?? '';
-    logger.log('at ${key.name} add "$value" to "$l"');
+    //logger.log('at ${key.name} add "$value" to "$l"');
     l += value;
     await save(l);
   }
@@ -52,7 +53,7 @@ class Shared {
 
   Future<void> save(String data) async {
     String encoded = _encode(data);
-    logger.log('save key ${key.name} with data "$data" to encoded "$encoded"');
+    //logger.log('save key ${key.name} with data "$data" to encoded "$encoded"');
     await (await shared).setString(key.name, encoded);
   }
 

@@ -68,7 +68,8 @@ class ModelAlias {
       encode(notes),
       status.value.toString(),
       lastVisited.toIso8601String(),
-      timesVisited.toString()
+      timesVisited.toString(),
+      '|'
     ];
     return l.join('\t');
   }

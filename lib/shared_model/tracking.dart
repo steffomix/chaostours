@@ -11,13 +11,8 @@ void backgroundCallback() {
 }
 
 class Tracking {
-  Logger logger = Logger.logger<Tracking>();
+  static Logger logger = Logger.logger<Tracking>();
   static int counter = 0;
-  static Tracking? _instance;
-  factory Tracking() => _instance ??= Tracking._();
-  Tracking._() {
-    initialize();
-  }
   static bool _isTracking = false;
 
   static AndroidConfig config(
@@ -35,36 +30,37 @@ class Tracking {
   }
 
   /// returns the current status without checking
-  bool get tracking => _isTracking;
+  static bool get tracking => _isTracking;
 
-  Future<bool> isTracking() async {
+  static Future<bool> isTracking() async {
     _isTracking = await BackgroundLocationTrackerManager.isTracking();
     return _isTracking;
   }
 
-  Future<void> startTracking() async {
+  static Future<void> startTracking() async {
     if (await isTracking() == true) {
       logger.warn(
           'start gps background tracking skipped: tracking already started');
       return;
     }
-    logger.log('start gps background tracking');
+    logger.important('--START-- GPS background tracking');
     BackgroundLocationTrackerManager.startTracking(config: config());
     _isTracking = true;
   }
 
-  Future<void> stopTracking() async {
+  static Future<void> stopTracking() async {
     if (await isTracking() == false) {
       logger.warn(
           'stop gps background tracking skipped: tracking already stopped');
       return;
     }
+    logger.important('--STOP-- GPS background tracking');
     BackgroundLocationTrackerManager.stopTracking();
     _isTracking = false;
   }
 
-  Future<void> initialize() async {
-    return await BackgroundLocationTrackerManager.initialize(
+  static Future<void> initialize() async {
+    await BackgroundLocationTrackerManager.initialize(
       backgroundCallback,
       config: BackgroundLocationTrackerConfig(
         loggingEnabled: true,

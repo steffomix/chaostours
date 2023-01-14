@@ -11,7 +11,6 @@ var encode = Uri.encodeFull; //util.base64Codec().encode;
 class Model {
   static Logger logger = Logger.logger<Model>();
   static const lineSep = '\n';
-  static const rowEnd = '\t|';
 
   static Future<io.File> writeTable(
       {required io.File handle, required List<dynamic> table}) async {
@@ -21,8 +20,7 @@ class Model {
       for (var m in table) {
         lines.add(m.toString());
       }
-      out = lines.join('$rowEnd$lineSep'); // line end + newline
-      out += rowEnd; // don't foret the line end on last line :s
+      out = lines.join(lineSep); // line end + newline
     }
     io.File file =
         await handle.writeAsString(out, mode: FileMode.write, flush: true);
@@ -34,7 +32,7 @@ class Model {
     String string = await handle.readAsString();
     string = string.trim();
     if (string.isEmpty) return <String>[];
-    List<String> lines = string.split('$rowEnd$lineSep');
+    List<String> lines = string.split(lineSep);
     return lines;
   }
 

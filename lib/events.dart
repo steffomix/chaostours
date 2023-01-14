@@ -1,9 +1,10 @@
-import 'package:chaostours/gps.dart';
 import 'package:flutter/material.dart';
-import 'model/model_trackpoint.dart';
+//
+import 'package:chaostours/gps.dart';
+import 'package:chaostours/model/model_trackpoint.dart';
+import 'package:chaostours/shared_model/shared_model_tracking.dart';
 import 'package:chaostours/shared_model/shared.dart';
-import 'shared_model/gps_background_tracking.dart';
-import 'shared_model/shared_model_tracking.dart';
+import 'package:chaostours/shared_model/shared_tracker.dart';
 import 'package:chaostours/logger.dart';
 
 class EventOnSharedKeyChanged {
@@ -26,7 +27,10 @@ class EventOnTrackingStatusChanged {
   EventOnTrackingStatusChanged(this.tp);
 }
 
-class EventOnTracking {}
+class EventOnTracking {
+  final SharedTracker trackPoint;
+  EventOnTracking(this.trackPoint);
+}
 
 /// <p><b>Deprecated!</b></p>
 /// moved to background tracking<br>
@@ -36,9 +40,9 @@ class EventOnTrackPoint {
   EventOnTrackPoint(this.tp);
 }
 
-class EventOnGps {
+class EventOnBackgroundGpsChanged {
   final GPS gps;
-  EventOnGps(this.gps);
+  EventOnBackgroundGpsChanged(this.gps);
 }
 
 class EventOnLog {

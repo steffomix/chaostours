@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 //
 import 'package:chaostours/notifications.dart';
 import 'package:chaostours/permissions.dart';
-import 'package:chaostours/shared_model/gps_background_tracking.dart';
+import 'package:chaostours/shared_model/tracking.dart';
 
 @override
 class WidgetSettingsPermissions extends StatefulWidget {
@@ -55,13 +55,13 @@ class _WidgetSettingsPermissionsState extends State<WidgetSettingsPermissions> {
                   onPressed: () => Notifications().send(
                       'Hello from Chaos Tours', 'The ultimate Tracking app'),
                 ),
-                ElevatedButton(
-                  onPressed: Tracking().startTracking,
-                  child: const Text('Ok, let\'s go! Start Tracking'),
+                const ElevatedButton(
+                  onPressed: Tracking.startTracking,
+                  child: Text('Ok, let\'s go! Start Tracking'),
                 ),
-                ElevatedButton(
-                  onPressed: Tracking().stopTracking,
-                  child: const Text('Stop Tracking'),
+                const ElevatedButton(
+                  onPressed: Tracking.stopTracking,
+                  child: Text('Stop Tracking'),
                 ),
               ],
             ),
