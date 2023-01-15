@@ -8,14 +8,24 @@ import 'package:chaostours/logger.dart';
 class ModelTask {
   static Logger logger = Logger.logger<ModelTask>();
   static final List<ModelTask> _table = [];
-  int _id = 1;
+  static int _unsavedId = 0;
+
+  /// autoincrement unsaved models into negative ids
+  static get _nextUnsavedId => --_unsavedId;
+  int _id = 0;
+
+  /// real ID<br>
+  /// Is set only once during save to disk
+  /// and represents the current _table.length
   int get id => _id;
   static int get length => _table.length;
 
   String task;
   String notes = '';
   int deleted;
-  ModelTask({required this.task, this.notes = '', this.deleted = 0});
+  ModelTask({required this.task, this.notes = '', this.deleted = 0}) {
+    _id = _nextUnsavedId;
+  }
 
   static ModelTask getTask(int id) {
     return _table[id - 1];

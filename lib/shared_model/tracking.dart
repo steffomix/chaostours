@@ -1,6 +1,9 @@
-import 'package:background_location_tracker/background_location_tracker.dart';
+/*import 'package:background_location_tracker/background_location_tracker.dart';
 import 'package:chaostours/shared_model/shared.dart';
 import 'package:chaostours/logger.dart';
+import 'package:chaostours/event_manager.dart';
+import 'package:chaostours/events.dart';
+import 'package:chaostours/gps.dart';
 
 @pragma('vm:entry-point')
 void backgroundCallback() {
@@ -74,3 +77,4 @@ class Tracking {
     );
   }
 }
+*/

@@ -12,7 +12,6 @@ import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/shared_model/tracking.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/event_manager.dart';
-import 'package:chaostours/events.dart';
 import 'package:chaostours/shared_model/shared.dart';
 
 class WidgetTrackPointList extends StatefulWidget {
@@ -23,12 +22,12 @@ class WidgetTrackPointList extends StatefulWidget {
 }
 
 class _TrackPointListView extends State<WidgetTrackPointList> {
+  static Logger logger = Logger.logger<WidgetTrackPointList>();
   _TrackPointListView() {
+    resetListView();
     EventManager.listen<EventOnTrackingStatusChanged>(onTrackingStatusChanged);
     EventManager.listen<EventOnTrackPoint>(onTrackPoint);
-    resetListView();
   }
-  static Logger logger = Logger.logger<WidgetTrackPointList>();
   static _ActiveListItem? activeItem;
   static final List<Widget> listView = [];
 
@@ -44,14 +43,14 @@ class _TrackPointListView extends State<WidgetTrackPointList> {
   void onTrackingStatusChanged(EventOnTrackingStatusChanged event) async {
     activeItem = _ActiveListItem(event.tp);
     listView.clear();
-    List<String> recent =
-        (await Shared(SharedKeys.recentTrackpoints).load() ?? '')
-            .trim()
-            .split('\n');
+    String raw = await Shared(SharedKeys.recentTrackpoints).load();
+    List<String> recent = raw.trim().split('\n');
     for (var item in recent) {
       listView.add(_ActiveListItem(ModelTrackPoint.toSharedModel(item)).widget);
     }
-    setState(() {});
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   void onTapItem(TrackPoint trackPoint, TrackingStatus status) {
@@ -63,7 +62,9 @@ class _TrackPointListView extends State<WidgetTrackPointList> {
     ModelTrackPoint tp = event.tp;
     activeItem ??= _ActiveListItem(tp);
     activeItem?.update(tp);
-    setState(() {});
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   void resetListView() {
@@ -220,8 +221,7 @@ class _ActiveListItem {
       ]));
     }
 
-    String gpsText =
-        'Trackpoints: ${TrackPoint.length}, Trackings: ${Tracking.counter}';
+    String gpsText = 'Trackpoints: ${TrackPoint.length}';
     TableRow gpsInfo = TableRow(children: [
       const TableCell(child: Text('')),
       TableCell(child: Text(gpsText))

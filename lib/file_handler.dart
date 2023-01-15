@@ -1,6 +1,7 @@
 import 'dart:io' as io;
+import 'package:path/path.dart' as path;
+import 'package:path_provider/path_provider.dart' as path_provider;
 //
-import 'package:chaostours/app_loader.dart';
 import 'package:chaostours/enum.dart';
 import 'package:chaostours/logger.dart';
 
@@ -17,7 +18,15 @@ class FileHandler {
 
   static Future<io.File> file(DatabaseFile filehandle) async {
     logger.log('Provide File: ${filehandle.name}.tsv');
-    return handles[filehandle] ??=
-        await AppLoader.fileHandle('${filehandle.name}.tsv');
+    return handles[filehandle] ??= await fileHandle('${filehandle.name}.tsv');
+  }
+
+  static Future<io.File> fileHandle(String filename) async {
+    io.Directory appDir =
+        await path_provider.getApplicationDocumentsDirectory();
+    String p = path.join(appDir.path, /*'chaostours',*/ filename);
+    io.File file = await io.File(p).create();
+    logger.log('file handle created for file: $p');
+    return file;
   }
 }

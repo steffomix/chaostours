@@ -11,7 +11,6 @@ import 'package:chaostours/logger.dart';
 class ModelAlias {
   static Logger logger = Logger.logger<ModelAlias>();
   static final List<ModelAlias> _table = [];
-  int _id = 0;
   int deleted;
   final double lat;
   final double lon;
@@ -21,11 +20,19 @@ class ModelAlias {
   final AliasStatus status;
   final DateTime lastVisited;
   final int timesVisited;
+  static int _unsavedId = 0;
 
+  /// autoincrement unsaved models into negative ids
+  static get _nextUnsavedId => --_unsavedId;
+  int _id = 0;
+
+  /// real ID<br>
+  /// Is set only once during save to disk
+  /// and represents the current _table.length
   int get id => _id;
   static int get length => _table.length;
 
-  // temporary set during search for neares Alias
+  /// temporary set during search for nearest Alias
   int sortDistance = 0;
 
   ModelAlias(
@@ -37,7 +44,9 @@ class ModelAlias {
       this.radius = 100,
       this.notes = '',
       this.status = AliasStatus.public,
-      this.timesVisited = 0});
+      this.timesVisited = 0}) {
+    _id = _nextUnsavedId;
+  }
 
   static ModelAlias toModel(String row) {
     List<String> p = row.trim().split('\t');
@@ -77,7 +86,7 @@ class ModelAlias {
   static Future<int> insert(ModelAlias m) async {
     _table.add(m);
     m._id = _table.length;
-    logger.log('Insert Alias ${m.alias}\n    which has now ID ${m._id}');
+    logger.log('Insert Alias ${m.alias}\nwith ID #${m._id}');
     await write();
     return m._id;
   }
@@ -96,6 +105,7 @@ class ModelAlias {
   // opens, read and parse database
   static Future<int> open() async {
     List<String> lines = await Model.readTable(DatabaseFile.alias);
+    _table.clear();
     for (var row in lines) {
       _table.add(toModel(row));
     }

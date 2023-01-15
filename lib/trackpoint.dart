@@ -14,7 +14,7 @@ class TrackPoint {
   factory TrackPoint() => _instance ??= TrackPoint._();
   static TrackPoint? _instance;
   TrackPoint._() {
-    EventManager.listen<EventOnBackgroundGpsChanged>(trackPoint);
+    EventManager.listen<EventOnGPS>(trackPoint);
   }
 
   //static int _nextId = 0;
@@ -67,8 +67,7 @@ class TrackPoint {
 
   static Future<ModelTrackPoint> createEvent() async {
     logger.verbose('create trackpoint event');
-    ModelTrackPoint event =
-        await create(EventOnBackgroundGpsChanged(await GPS.gps()));
+    ModelTrackPoint event = await create(EventOnGPS(await GPS.gps()));
     event.status = _status;
     event.timeStart = _trackPoints.first.timeStart;
     event.timeEnd = DateTime.now();
@@ -80,7 +79,7 @@ class TrackPoint {
   /// creates new Trackpoint, waits after status changed,
   ///
   static void _checkStatus(ModelTrackPoint tp) {
-    logger.verbose('check status');
+    logger.verbose('check status _trackPoints: ${_trackPoints.length}');
     // wait after status changed
     if (_lastStatusChange
         .add(Globals.waitTimeAfterStatusChanged)
@@ -167,8 +166,7 @@ class TrackPoint {
     return dist;
   }
 
-  static Future<ModelTrackPoint> create(
-      EventOnBackgroundGpsChanged event) async {
+  static Future<ModelTrackPoint> create(EventOnGPS event) async {
     logger.verbose(
         'create trackpoint from gps ${event.gps.lat},${event.gps.lon}');
     GPS gps = event.gps;
@@ -187,7 +185,8 @@ class TrackPoint {
   }
 
   static bool _first = true;
-  static Future<void> trackPoint(EventOnBackgroundGpsChanged event) async {
+  static Future<void> trackPoint(EventOnGPS event) async {
+    logger.log('TrackPoint.trackpoint');
     ModelTrackPoint tp;
     try {
       tp = await create(event);

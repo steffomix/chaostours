@@ -5,23 +5,22 @@ import 'package:googleapis/calendar/v3.dart' show CalendarApi;
 import 'package:geolocator/geolocator.dart'
     show Position, LocationPermission, Geolocator;
 import 'dart:io' as io;
-import 'package:path/path.dart' as path;
-import 'package:path_provider/path_provider.dart' as path_provider;
 //
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_task.dart';
+import 'package:chaostours/shared_model/shared.dart';
+import 'package:chaostours/shared_model/shared_tracker.dart';
+import 'package:chaostours/shared_model/tracking.dart';
+import 'package:chaostours/trackpoint.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/tracking_calendar.dart';
 import 'package:chaostours/notifications.dart';
-import 'package:chaostours/shared_model/shared.dart';
-import 'package:chaostours/event_manager.dart';
-import 'package:chaostours/logger.dart';
-import 'package:chaostours/events.dart';
-import 'package:chaostours/trackpoint.dart';
-import 'shared_model/shared_tracker.dart';
 import 'package:chaostours/permissions.dart';
-import 'shared_model/tracking.dart';
+import 'package:chaostours/event_manager.dart';
+import 'package:chaostours/events.dart';
+import 'package:chaostours/logger.dart';
+import 'package:chaostours/workmanager.dart';
 
 class AppLoader {
   static Logger logger = Logger.logger<AppLoader>();
@@ -57,9 +56,6 @@ class AppLoader {
       logger.important('initialize Permissions');
       await Permissions.requestLocationPermission();
       await Permissions.requestNotificationPermission();
-      logger.important('start background gps tracking');
-      await Tracking.initialize();
-      await Tracking.startTracking();
 
       logger.important('preparing HTTP SSL Key');
       await webKey();
@@ -68,6 +64,15 @@ class AppLoader {
       logger.log('load calendar credentials from assets');
       await calendarApiFromCredentials();
 
+      logger.important('start background gps tracking');
+      //await Tracking.initialize();
+      //await Tracking.startTracking();
+
+      logger.important('reset shared values');
+      Shared(SharedKeys.activeTrackpoint).save('');
+      Shared(SharedKeys.backgroundGps).save('');
+      Shared(SharedKeys.recentTrackpoints).save('');
+/*
       logger.important(
           'start shared observer for backgroundGPS with 1sec. interval');
       Shared(SharedKeys.backgroundGps).observe(
@@ -76,9 +81,11 @@ class AppLoader {
             List<String> geo = data.split(',');
             double lat = double.parse(geo[0]);
             double lon = double.parse(geo[1]);
-            EventManager.fire<EventOnBackgroundGpsChanged>(
-                EventOnBackgroundGpsChanged(GPS(lat, lon)));
+            EventManager.fire<EventOnGPS>(EventOnGPS(GPS(lat, lon)));
           });
+          */
+      logger.important('initialize workmanager');
+      WorkManager();
       logger.important('preload finished successful');
     } catch (e, stk) {
       logger.fatal('Preload sequence failed: $e', stk);
@@ -93,15 +100,6 @@ class AppLoader {
     io.SecurityContext.defaultContext
         .setTrustedCertificatesBytes(data.buffer.asUint8List());
     logger.log('SSL Key loaded');
-  }
-
-  static Future<io.File> fileHandle(String filename) async {
-    io.Directory appDir =
-        await path_provider.getApplicationDocumentsDirectory();
-    String p = path.join(appDir.path, /*'chaostours',*/ filename);
-    io.File file = await io.File(p).create();
-    logger.log('file handle created for file: $p');
-    return file;
   }
 
   ///

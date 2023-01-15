@@ -16,13 +16,10 @@ class ModelTrackPoint {
   /// TrackPoint owners
   ///
   TrackingStatus status = TrackingStatus.none;
-  static int _nextTrackingId = 0;
-  int trackingId = 0; // needed for debug only
 
   ///
   /// Model owners
   ///
-  int? _id;
   int deleted = 0; // 0 or 1
   GPS gps;
   List<GPS> trackPoints; // "lat,lon;lat,lon;..."
@@ -32,19 +29,17 @@ class ModelTrackPoint {
   List<int> idTask = []; // "id,id,..." needs to be ordered by user
   String notes = '';
   Address address;
-/*
-  set timeEnd(DateTime t) => _timeEnd = t;
 
-  /// throws if timeEnd is [t] not yert set
-  DateTime get timeEnd {
-    if (_timeEnd == null) throw 'ModelTrackPoint _timeEnd not yet set';
-    return _timeEnd!;
-  }
-*/
-  int get id {
-    if (_id == null) throw 'ModelTrackPoint _id not yet set';
-    return _id!;
-  }
+  static int _unsavedId = 0;
+
+  /// autoincrement unsaved models into negative ids
+  static get _nextUnsavedId => --_unsavedId;
+  int _id = 0;
+
+  /// real ID<br>
+  /// Is set only once during save to disk
+  /// and represents the current _table.length
+  int get id => _id;
 
   static int get length => _table.length;
 
@@ -56,7 +51,7 @@ class ModelTrackPoint {
       required this.address,
       this.deleted = 0,
       this.notes = ''}) {
-    trackingId = ++_nextTrackingId;
+    _id = _nextUnsavedId;
   }
 
   String timeElapsed() {
@@ -103,7 +98,7 @@ class ModelTrackPoint {
   /// otherwise writes table to disk
   ///
   static Future<void> insert(ModelTrackPoint m) async {
-    if (m._id == null) {
+    if (m.id <= 0) {
       _table.add(m);
       m._id = _table.length;
       logger.log('Insert TrackPoint ${m.gps}\n   which has now ID ${m._id}');
@@ -121,9 +116,9 @@ class ModelTrackPoint {
   /// that reflects (is same as) Table length.
   ///
   static Future<void> update(ModelTrackPoint tp) async {
-    if (tp._id == null) {
-      logger.warn(
-          'Update Trackpoint forwarded to insert due to TrackPoint has no ID');
+    if (tp.id <= 0) {
+      logger.warn('Update Trackpoint forwarded to insert '
+          'due to negative TrackPoint ID ${tp.id}');
       await insert(tp);
     } else {
       await write();

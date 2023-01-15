@@ -1,3 +1,4 @@
+/*
 import 'package:chaostours/address.dart';
 import 'package:chaostours/enum.dart';
 import 'package:chaostours/events.dart';
@@ -7,23 +8,6 @@ import 'package:chaostours/shared_model/shared.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/event_manager.dart';
 
-/*
-class SharedTracker {
-  static SharedTracker? _instance;
-  SharedTracker._() {
-    EventManager.listen<EventOnBackgroundGpsChanged>(onGps);
-  }
-  factory SharedTracker() => _instance ??= SharedTracker._();
-  static SharedModelTracking? activeModel;
-
-  void onGps(EventOnBackgroundGpsChanged event) {
-    GPS gps = event.gps;
-    SharedModelTracking model = SharedModelTracking(gps);
-    SharedModelTracking lastActiveModel = activeModel ?? model;
-    activeModel = model;
-  }
-}
-*/
 class SharedModelTracking {
   static Logger logger = Logger.logger<SharedModelTracking>();
 
@@ -123,3 +107,4 @@ class SharedModelTracking {
     return ids;
   }
 }
+*/

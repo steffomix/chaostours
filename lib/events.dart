@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 //
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
-import 'package:chaostours/shared_model/shared_model_tracking.dart';
 import 'package:chaostours/shared_model/shared.dart';
 import 'package:chaostours/shared_model/shared_tracker.dart';
 import 'package:chaostours/logger.dart';
@@ -40,9 +39,9 @@ class EventOnTrackPoint {
   EventOnTrackPoint(this.tp);
 }
 
-class EventOnBackgroundGpsChanged {
+class EventOnGPS {
   final GPS gps;
-  EventOnBackgroundGpsChanged(this.gps);
+  EventOnGPS(this.gps);
 }
 
 class EventOnLog {
@@ -51,3 +50,5 @@ class EventOnLog {
   final LogLevel level;
   EventOnLog(this.level, this.msg, [this.stacktrace]);
 }
+
+class EventOnTick {}

@@ -4,21 +4,37 @@ import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/events.dart';
 
 enum SharedKeys {
+  /// gps
   backgroundGps,
+
+  /// current running trackpoint
   activeTrackpoint,
-  recentTrackpoints;
+
+  /// last saved trackpoints
+  recentTrackpoints,
+
+  /// workmanager logs
+  backLog;
+}
+
+enum SharedTypes {
+  string,
+  list;
 }
 
 class Shared {
   static Logger logger = Logger.logger<Shared>();
   String _observed = '';
   bool _observing = false;
-  static int _nextId = 0;
   int _id = 0;
-  int get id => _id;
+  int get id => ++_id;
   //
   SharedKeys key;
   Shared(this.key);
+
+  String _typeName(SharedTypes type) {
+    return '${key.name}_${type.name}';
+  }
 
   /// prepare module
   static SharedPreferences? _shared;
@@ -26,53 +42,41 @@ class Shared {
       _shared ??= await SharedPreferences.getInstance();
 
   ///
-  Future<String?> load() async {
-    String? s = await _loadRaw();
-    if (s != null) {
-      s = _decode(s);
-      //logger.log('load key ${key.name}: $s');
-      return s;
-    }
-    return null;
-  }
-
   Future<void> add(String value) async {
-    String l = await load() ?? '';
-    //logger.log('at ${key.name} add "$value" to "$l"');
+    String l = await load();
+    //logger.verbose('add to ${key.name}');
     l += value;
     await save(l);
   }
 
-  Future<String?> _loadRaw() async {
-    final sh = await shared;
+  Future<List<String>> loadList() async {
+    SharedPreferences sh = await shared;
     await sh.reload();
-    String? value = sh.getString(key.name);
-    logger.verbose('load raw data: "$value"');
+    List<String> value =
+        sh.getStringList(_typeName(SharedTypes.list)) ?? <String>[];
+    return value;
+  }
+
+  Future<void> saveList(List<String> list) async {
+    await (await shared).setStringList(_typeName(SharedTypes.list), list);
+  }
+
+  Future<String> load() async {
+    SharedPreferences sh = await shared;
+    await sh.reload();
+    String value = sh.getString(_typeName(SharedTypes.string)) ?? '0\t';
     return value;
   }
 
   Future<void> save(String data) async {
-    String encoded = _encode(data);
-    //logger.log('save key ${key.name} with data "$data" to encoded "$encoded"');
-    await (await shared).setString(key.name, encoded);
+    await (await shared).setString(_typeName(SharedTypes.string), data);
   }
 
-  String _encode(String data) {
-    _id = (++_nextId);
-    return Uri.encodeFull('$id\t$data');
-  }
-
-  String _decode(String data) {
-    data = Uri.decodeFull(data);
-    List<String> parts = data.split('\t');
-    return parts[1];
-  }
-
+  /// observes only string types
   void observe(
       {required Duration duration, required Function(String data) fn}) async {
-    logger
-        .log('observe ${key.name} with ${duration.inMilliseconds}ms interval');
-    _observed = await _loadRaw() ?? '';
+    if (_observing) return;
+    _observed = await load();
     Future.delayed(duration, () {
       _observe(duration: duration, fn: fn);
     });
@@ -81,22 +85,25 @@ class Shared {
 
   Future<void> _observe(
       {required Duration duration, required Function(String data) fn}) async {
-    if (!_observing) return;
-    String obs = await _loadRaw() ?? '';
-    if (obs != _observed) {
-      EventManager.fire<EventOnSharedKeyChanged>(
-          EventOnSharedKeyChanged(key: key, oldData: _observed, newData: obs));
-      logger.log('Key ${key.name} changed from $_observed to $obs');
-      _observed = obs;
+    String obs;
+    while (true) {
+      if (!_observing) break;
       try {
-        fn(_decode(obs));
+        obs = await load();
       } catch (e, stk) {
         logger.error('observing failed with $e', stk);
+        obs = '';
       }
+      if (obs != _observed) {
+        _observed = obs;
+        try {
+          fn(obs);
+        } catch (e, stk) {
+          logger.error('observing failed with $e', stk);
+        }
+      }
+      await Future.delayed(duration);
     }
-    Future.delayed(duration, () {
-      _observe(duration: duration, fn: fn);
-    });
   }
 
   void cancel() {

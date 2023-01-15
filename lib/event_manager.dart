@@ -26,19 +26,25 @@ class EventManager {
     return added;
   }
 
-  static Future<void> fire<T>(T instance, [async = true]) async {
-    for (var fn in _get<T>()) {
+  static Future<void> fire<T>(T instance, [dispatchAsync = false]) async {
+    DateTime t = DateTime.now();
+    int m = t.minute;
+    int s = t.second;
+    int ms = t.millisecond;
+
+    var list = _get<T>();
+    print(
+        '## $m:$s.$ms EventManager.fire<${T.toString()}>() _register.length: ${list.length}');
+    for (var fn in list) {
       try {
-        async
-            ? Future.delayed(
-                const Duration(microseconds: 1), () => fn(instance))
-            : fn(instance);
+        if (dispatchAsync) {
+          Future.delayed(const Duration(microseconds: 10), () => fn(instance));
+        } else {
+          fn(instance);
+        }
       } catch (e) {
         // log async
-        Future.delayed(const Duration(milliseconds: 10), () {
-          logger.warn(e.toString(), false);
-        });
-        ;
+        print('## EventManager failed on ${T.toString()}');
       }
     }
   }
@@ -62,6 +68,7 @@ class EventManager {
       Set<Function(T)> s = {};
       _register.add(s);
     }
-    return _register.whereType<Set<Function(T)>>().first;
+    var f = _register.whereType<Set<Function(T)>>().first;
+    return f;
   }
 }
