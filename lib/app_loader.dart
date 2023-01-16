@@ -72,6 +72,9 @@ class AppLoader {
       Shared(SharedKeys.activeTrackpoint).save('');
       Shared(SharedKeys.backgroundGps).save('');
       Shared(SharedKeys.recentTrackpoints).save('');
+
+      logger.important('start App Tick with 1sec. interval');
+      Future.delayed(const Duration(seconds: 1), appTick);
 /*
       logger.important(
           'start shared observer for backgroundGPS with 1sec. interval');
@@ -90,6 +93,14 @@ class AppLoader {
     } catch (e, stk) {
       logger.fatal('Preload sequence failed: $e', stk);
     }
+  }
+
+  static int tick = 0;
+  static void appTick() {
+    tick++;
+    print('Tick #$tick');
+    EventManager.fire<EventOnTick>(EventOnTick());
+    Future.delayed(const Duration(seconds: 1), appTick);
   }
 
   ///

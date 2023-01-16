@@ -3,6 +3,7 @@ import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/events.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/shared_model/shared.dart';
+import 'package:googleapis/displayvideo/v1.dart';
 
 class WidgetLogger extends StatefulWidget {
   const WidgetLogger({super.key});
@@ -13,83 +14,31 @@ class WidgetLogger extends StatefulWidget {
 
 class _WidgetLogger extends State<WidgetLogger> {
   _WidgetLogger() {
-    EventManager.listen<EventOnLog>(onLog);
+    EventManager.listen<EventOnTick>(onLog);
   }
+
+  Widget pane = ListView(children: const [Text('Waiting for Logs')]);
 
   @override
   void dispose() {
-    EventManager.remove<EventOnLog>(onLog);
+    EventManager.remove<EventOnTick>(onLog);
     super.dispose();
   }
 
-  static Widget renderLog(
-      String name, String level, String msg, String stackTrace) {
-    String stk = '';
-    if (stackTrace.isNotEmpty) {
-      stk = '\n$stackTrace';
-    }
-    msg = '~~ $time ::${level} $time<$name>:: $msg$stk';
-    switch (level) {
-      case 'verbose':
-        return Container(
-            margin: const EdgeInsets.only(top: 6),
-            color: Colors.white,
-            child: Text(msg, style: const TextStyle(color: Colors.black45)));
-
-      case 'log':
-        return Container(
-            margin: const EdgeInsets.only(top: 6),
-            color: Colors.white,
-            child: Text(msg, style: const TextStyle(color: Colors.black)));
-
-      case 'important':
-        return Container(
-            margin: const EdgeInsets.only(top: 6),
-            color: Colors.greenAccent,
-            child: Text(msg,
-                style: const TextStyle(
-                    color: Colors.black, fontWeight: FontWeight.bold)));
-
-      case 'warn':
-        return Container(
-            margin: const EdgeInsets.only(top: 6),
-            color: Colors.yellow,
-            child: Text(msg, style: const TextStyle(color: Colors.black)));
-
-      case 'error':
-        return Container(
-            margin: const EdgeInsets.only(top: 6),
-            color: Colors.red,
-            child: Text('$msg\n$stackTrace',
-                style: const TextStyle(color: Colors.white)));
-
-      default: // LogLevel.fatal:
-        return Container(
-            margin: const EdgeInsets.only(top: 6),
-            color: Colors.purple,
-            child: Text('$msg\n$stackTrace',
-                style: const TextStyle(
-                    color: Colors.white, fontWeight: FontWeight.bold)));
-    }
+  void onLog(EventOnTick event) {
+    pane = ListView(children: const [Text('Waiting for Logs')]);
+    setState(() {});
+    pane = ListView(children: [...Logger.widgetLogs.reversed.toList()]);
+    setState(() {});
   }
 
-  static String get time {
-    DateTime t = DateTime.now();
-    var s = t.second;
-    var ms = t.millisecond;
-    return '$s:$ms';
-  }
-
-  static List<Widget> backLog = [];
-
-  void onLog(EventOnLog event) => mounted ? setState(() {}) : () {};
+  int i = 0;
 
   @override
   Widget build(BuildContext context) {
+    i++;
+    List<Widget> list = Logger.getWidgetLogs();
     //renderBackLog();
-    return ListView(children: [
-      ...Logger.widgetLogs.reversed.toList(),
-      Text('Waiting for Logs...${Logger.widgetLogs.length}')
-    ]);
+    return ListView(children: [Container(child: Text('$i')), ...list]);
   }
 }

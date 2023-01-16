@@ -34,11 +34,6 @@ enum Panes {
   }
 }
 
-enum AppBodyScreens {
-  trackPointListView,
-  trackPointEditView;
-}
-
 enum AliasStatus {
   disabled(0),
   public(1),

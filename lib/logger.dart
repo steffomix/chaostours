@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 //
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/events.dart';
-import 'shared_model/shared.dart';
+import 'package:chaostours/shared_model/shared.dart';
+import 'package:chaostours/globals.dart';
 
 enum LogLevel {
   verbose(1),
@@ -17,42 +18,65 @@ enum LogLevel {
   const LogLevel(this.level);
 }
 
+/// onTick event is triggered only in foreground thread
+bool success = EventManager.listen<EventOnTick>(Logger.onTick);
+
+/*
+class WidgetLogData {
+  final String loggerName;
+  final LogLevel level;
+  final String msg;
+  final String? stackTrace;
+}
+*/
 class Logger {
+  static onTick(EventOnTick event) {
+    /// render events from background thread
+    /// and add them to widgetLogs
+    renderBackLog();
+  }
+
+  /// rendered widgetLogs to be displayed in WidgetLogger
   static List<Widget> widgetLogs = [];
-  static List<String> _sharedLogs = [];
-  static int maxSharedCount = 200;
+
+  static List<Widget> getWidgetLogs() {
+    List<Widget> list = [];
+    int i = 0;
+    for (var w in widgetLogs) {
+      list.add(w);
+    }
+    return list;
+  }
+
+  /// max events from background stored in Shared
+  static int maxSharedCount = 50;
+
+  /// max events to be displayed
   static int maxWidgetCount = 200;
-  //
-  static Function(String, LogLevel, String, [String?]) printer = logPrinter;
-  //
-  static Set<void Function(String, LogLevel, String, String?)>
-      additionalPrinter = {};
-  //
-  static Function(LogLevel, String, [String?]) logRenderer = renderLog;
-  //
+
+  /// backgroundLogger does not render widgets or render from Shared,
+  /// but renders only to Shared
+  static bool backgroundLogger = false;
   static LogLevel logLevel = LogLevel.verbose;
-  //
+
+  /// To be different from background logger
   static String prefix = '##';
   bool enabled = true;
-  String _name = 'Logger'; // runtimeType
-  String get name => _name;
 
-  static bool addPrinter(Function(String, LogLevel, String, String?) p) {
-    return additionalPrinter.add(p);
-  }
-
-  static bool removePrinter(Function(String, LogLevel, String, String?) p) {
-    return additionalPrinter.remove(p);
-  }
+  /// Class name of what class created the logger.
+  /// defaults to Logger
+  String _name = 'Logger'; // ignore: prefer_final_fields
+  String get loggerId => _name;
 
   static String get time {
     DateTime t = DateTime.now();
+    var m = t.minute;
     var s = t.second;
     var ms = t.millisecond;
-    return '$s:$ms';
+    return '$m:$s.$ms';
   }
 
-  //
+  /// constructor
   static Logger logger<T>() {
     Logger l = Logger();
     String n = T.toString();
@@ -60,8 +84,16 @@ class Logger {
     return l;
   }
 
-  void verbose(String msg, [fireEvent = true]) =>
-      _log(LogLevel.verbose, msg, null);
+  /// Usage:
+  /// ```
+  /// MyClass{
+  ///   static Logger logger = Logger.logger<MyClass>();
+  /// ```
+  Logger() {
+    //throw 'Usage: static Logger logger = Logger.logger<MyClass>();';
+  }
+
+  void verbose(String msg) => _log(LogLevel.verbose, msg, null);
   //
   void log(String msg, [fireEvent = true]) => _log(LogLevel.log, msg, null);
   //
@@ -76,58 +108,47 @@ class Logger {
   void fatal(String msg, StackTrace? stackTrace, [fireEvent = true]) =>
       _log(LogLevel.fatal, msg, stackTrace.toString());
 
-  void _log(LogLevel level, String msg, String? stackTrace,
-      [fireEvent = true]) {
+  /// main log method
+  void _log(LogLevel level, String msg, String? stackTrace) {
     if (level.level >= logLevel.level && enabled) {
       // prevent stack overflow due to EventManager.fire triggers a log
-      if (fireEvent) {
-        EventManager.fire<EventOnLog>(EventOnLog(level, msg), true);
+      if (_name != 'EventManager') {
+        EventManager.fire<EventOnLog>(EventOnLog(level, msg));
       }
-      msg = logPrinter(_name, level, msg, stackTrace?.toString());
-      _addLogWidget(logRenderer(level, msg, stackTrace));
-      _addSharedLog(level, msg, stackTrace?.toString());
-      renderBackLog();
-    }
-  }
 
-  static String logPrinter(String loggerName, LogLevel level, String msg,
-      [String? stackTrace]) {
-    msg = composeMessage(loggerName, level, msg, stackTrace);
-
-    try {
-      // ignore: avoid_print
-      print(msg);
-    } catch (e) {
-      // ignore
-    }
-    for (var p in additionalPrinter) {
+      msg = composeMessage(_name, level, msg, stackTrace);
       try {
-        p(loggerName, level, msg, stackTrace);
-      } catch (e, stk) {
-        // ignore: avoid_print
-        print(e.toString());
+        if (!Globals.debugMode) {
+          print('$prefix $msg'); // ignore: avoid_print
+        }
+      } catch (e) {
+        // ignore
+      }
+      if (backgroundLogger) {
+        _addSharedLog(level, msg, stackTrace);
+      } else {
+        while (widgetLogs.length > maxWidgetCount) {
+          widgetLogs.removeAt(0);
+        }
+        widgetLogs.add(renderLog(prefix, level, msg, stackTrace));
+        renderBackLog();
       }
     }
-    return msg;
   }
 
+  /// compose without prefix due to background process uses a different one
   static String composeMessage(
       String loggerName, LogLevel level, String msg, String? stackTrace) {
     String stk = '';
     if (stackTrace != null) {
       stk = '\n$stackTrace';
     }
-    return '$prefix $time ::${level.name} $time<$loggerName>:: $msg$stk';
+    return '$time ::${level.name} $time<$loggerName>:: $msg$stk';
   }
 
-  static void _addLogWidget(Widget log) {
-    while (widgetLogs.length > maxWidgetCount) {
-      widgetLogs.removeAt(0);
-    }
-    widgetLogs.add(log);
-  }
-
-  static Widget renderLog(LogLevel level, String msg, [String? stackTrace]) {
+  static Widget renderLog(String prefix, LogLevel level, String msg,
+      [String? stackTrace]) {
+    msg = '$prefix $msg';
     switch (level) {
       case LogLevel.verbose:
         return Container(
@@ -174,9 +195,9 @@ class Logger {
 
   _addSharedLog(LogLevel level, String msg, String? stackTrace) async {
     List<String> parts = [
-      prefix,
-      name,
-      level.name,
+      Uri.encodeFull(prefix),
+      Uri.encodeFull(_name),
+      Uri.encodeFull(level.name),
       Uri.encodeFull(msg),
       Uri.encodeFull('$stackTrace'),
       '|'
@@ -186,32 +207,24 @@ class Logger {
     while (list.length >= maxSharedCount) {
       list.removeLast();
     }
-    _sharedLogs.insert(0, parts.join('\t'));
+    list.add(parts.join('\t'));
     await shared.saveList(list);
+    list = await shared.loadList();
   }
 
-  renderBackLog() async {
+  static renderBackLog() async {
     Shared shared = Shared(SharedKeys.backLog);
-    String data = await shared.load();
-    await shared.save('');
-    if (data.isEmpty) return;
-    List<String> dataList = data.split('\n');
-    String loggerName;
-    LogLevel level;
-    String msg;
-    String stackTrace;
-    List<String> p;
-    List<Widget> widgets = [];
-    for (var entry in dataList) {
-      p = entry.split('\t');
-      loggerName = p[0];
-      level = LogLevel.values.byName(p[1]);
-      msg = p[2];
-      stackTrace = p[3];
-
-      widgets
-          .add(renderLog(level, composeMessage(loggerName, level, msg, null)));
+    List<String> list = await shared.loadList();
+    await shared.saveList(<String>[]);
+    for (var item in list) {
+      List<String> p = item.split('\t');
+      String prefix = Uri.decodeFull(p[0]);
+      String loggerName = Uri.decodeFull(p[1]);
+      LogLevel level = LogLevel.values.byName(Uri.decodeFull(p[2]));
+      String msg = Uri.decodeFull(p[3]);
+      String stackTrace = Uri.decodeFull(p[4]);
+      msg = composeMessage(loggerName, level, msg, stackTrace);
+      widgetLogs.add(renderLog(prefix, level, msg));
     }
-    Logger.widgetLogs.addAll(widgets);
   }
 }

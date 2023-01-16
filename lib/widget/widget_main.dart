@@ -27,6 +27,7 @@ class _AppState extends State<App> {
       logger.log('main pane changed to ${p.pane.runtimeType.toString()}');
       setState(() {});
     });
+    EventManager.listen<EventOnTick>(onTick);
   }
   factory _AppState() => _instance ??= _AppState._();
 
@@ -37,8 +38,14 @@ class _AppState extends State<App> {
     return _pane ??= Panes.trackPointList.value;
   }
 
+  void onTick(EventOnTick event) {
+    // _pane = p.pane;
+    setState(() {});
+  }
+
   @override
   void dispose() {
+    EventManager.remove<EventOnTick>(onTick);
     //onScreenChanged?.cancel();
     super.dispose();
   }

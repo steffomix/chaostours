@@ -33,9 +33,8 @@ class EventManager {
     int ms = t.millisecond;
 
     var list = _get<T>();
-    print(
-        '## $m:$s.$ms EventManager.fire<${T.toString()}>() _register.length: ${list.length}');
     for (var fn in list) {
+      //print('## $m:$s.$ms EventManager.fire<${T.toString()}>() _register.length: ${list.length}');
       try {
         if (dispatchAsync) {
           Future.delayed(const Duration(microseconds: 10), () => fn(instance));

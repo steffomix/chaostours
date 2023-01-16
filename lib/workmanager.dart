@@ -42,9 +42,9 @@ logPrinter(String loggerName, LogLevel level, String msg,
 
 Future<void> backgroundTask() async {
   Logger logger = Logger.logger<Workmanager>();
+  Logger.backgroundLogger = true;
   Logger.prefix = '~~';
   Logger.logLevel = LogLevel.log;
-  Logger.printer = logPrinter;
   TrackPoint();
   ModelTrackPoint.open();
   ModelAlias.open();
@@ -53,6 +53,7 @@ Future<void> backgroundTask() async {
   while (true) {
     ++i;
     await Future.delayed(const Duration(seconds: 5), () async {
+      print('GPS');
       GPS gps = await GPS.gps();
       EventManager.fire<EventOnGPS>(EventOnGPS(gps));
       EventManager.fire<EventOnTick>(EventOnTick());
@@ -77,8 +78,9 @@ class WorkManager {
     await Workmanager().initialize(
         callbackDispatcher, // The top level function, aka callbackDispatcher
         isInDebugMode:
-            true // If enabled it will post a notification whenever the task is running. Handy for debugging tasks
+            false // If enabled it will post a notification whenever the task is running. Handy for debugging tasks
         );
-    await Workmanager().registerOneOffTask("task-identifier", "simpleTask");
+    await Workmanager()
+        .registerOneOffTask("com.stefanbrinkmann.chaostours.background", "gps");
   }
 }
