@@ -14,31 +14,35 @@ class WidgetLogger extends StatefulWidget {
 
 class _WidgetLogger extends State<WidgetLogger> {
   _WidgetLogger() {
-    EventManager.listen<EventOnTick>(onLog);
+    EventManager.listen<EventOnTick>(onTick);
+    EventManager.listen<EventOnLog>(onLog);
   }
 
   Widget pane = ListView(children: const [Text('Waiting for Logs')]);
 
   @override
   void dispose() {
-    EventManager.remove<EventOnTick>(onLog);
+    EventManager.remove<EventOnTick>(onTick);
+    EventManager.remove<EventOnLog>(onLog);
     super.dispose();
   }
 
-  void onLog(EventOnTick event) {
-    pane = ListView(children: const [Text('Waiting for Logs')]);
-    setState(() {});
-    pane = ListView(children: [...Logger.widgetLogs.reversed.toList()]);
+  void onTick(EventOnTick event) {}
+
+  void onLog(EventOnLog e) {
     setState(() {});
   }
 
   int i = 0;
-
+  int i2 = 5;
+  List<Widget> logs = [];
   @override
   Widget build(BuildContext context) {
+    logs.add(Text('$i'));
+    if (logs.length > 10) logs = [];
     i++;
-    List<Widget> list = Logger.getWidgetLogs();
+    i2++;
     //renderBackLog();
-    return ListView(children: [Container(child: Text('$i')), ...list]);
+    return ListView(children: [Text('$i'), Text('$i2'), ...logs]);
   }
 }

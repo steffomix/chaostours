@@ -62,7 +62,7 @@ class WidgetAddTasks extends StatefulWidget {
 
 void onBackToMainPane() {
   EventManager.fire<EventOnMainPaneChanged>(
-      EventOnMainPaneChanged(Panes.trackPointList.value));
+      EventOnMainPaneChanged(Panes.instance(Panes.trackPointList)));
 }
 
 Widget backToMainPane() {

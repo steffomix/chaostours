@@ -13,19 +13,19 @@ class WidgetDrawer extends StatefulWidget {
 class _WidgetDrawer extends State<WidgetDrawer> {
   void onPressedTracking(BuildContext ctx) {
     EventManager.fire<EventOnMainPaneChanged>(
-        EventOnMainPaneChanged(Panes.trackPointList.value));
-    Navigator.pop(ctx);
+        EventOnMainPaneChanged(Panes.instance(Panes.trackPointList)));
+    //Navigator.pop(ctx);
   }
 
   void onPressedPermissions(BuildContext ctx) {
     EventManager.fire<EventOnMainPaneChanged>(
-        EventOnMainPaneChanged(Panes.permissions.value));
+        EventOnMainPaneChanged(Panes.instance(Panes.permissions)));
     Navigator.pop(ctx);
   }
 
   void onPressedLogger(BuildContext ctx) {
     EventManager.fire<EventOnMainPaneChanged>(
-        EventOnMainPaneChanged(Panes.logger.value));
+        EventOnMainPaneChanged(Panes.instance(Panes.logger)));
   }
 
   @override

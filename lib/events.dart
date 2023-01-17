@@ -44,11 +44,4 @@ class EventOnGPS {
   EventOnGPS(this.gps);
 }
 
-class EventOnLog {
-  final String msg;
-  final StackTrace? stacktrace;
-  final LogLevel level;
-  EventOnLog(this.level, this.msg, [this.stacktrace]);
-}
-
 class EventOnTick {}

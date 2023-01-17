@@ -21,16 +21,21 @@ enum TrackingStatus {
 
 // pane widgets that does't need any initial values
 enum Panes {
-  trackPointList(WidgetTrackPointList()),
-  permissions(WidgetSettingsPermissions()),
-  logger(WidgetLogger());
+  trackPointList,
+  permissions,
+  logger;
 
-  final Widget value;
-  const Panes(this.value);
+  static Widget instance(Panes pane) {
+    switch (pane) {
+      case Panes.logger:
+        return const WidgetLogger();
 
-  static Panes byValue(int id) {
-    Panes status = Panes.values.firstWhere((status) => status.value == id);
-    return status;
+      case Panes.permissions:
+        return const WidgetSettingsPermissions();
+
+      default:
+        return const WidgetTrackPointList();
+    }
   }
 }
 

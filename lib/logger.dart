@@ -18,31 +18,41 @@ enum LogLevel {
   const LogLevel(this.level);
 }
 
-/// onTick event is triggered only in foreground thread
-bool success = EventManager.listen<EventOnTick>(Logger.onTick);
-
-/*
-class WidgetLogData {
-  final String loggerName;
+class EventOnLog {
+  final Logger logger;
+  final String prefix;
+  final String name;
   final LogLevel level;
   final String msg;
   final String? stackTrace;
+  EventOnLog(
+      {required this.logger,
+      required this.prefix,
+      required this.name,
+      required this.level,
+      required this.msg,
+      required this.stackTrace});
 }
-*/
+
 class Logger {
-  static onTick(EventOnTick event) {
+  static bool dispatch = EventManager.listen<EventOnTick>((EventOnTick event) {
     /// render events from background thread
     /// and add them to widgetLogs
     renderBackLog();
+  });
+  static Future<void> onTick(EventOnTick event) async {
+    /// render events from background thread
+    /// and add them to widgetLogs
+    await renderBackLog();
   }
 
   /// rendered widgetLogs to be displayed in WidgetLogger
-  static List<Widget> widgetLogs = [];
+  static List<Widget> widgets = [];
 
   static List<Widget> getWidgetLogs() {
     List<Widget> list = [];
     int i = 0;
-    for (var w in widgetLogs) {
+    for (var w in widgets) {
       list.add(w);
     }
     return list;
@@ -58,6 +68,8 @@ class Logger {
   /// but renders only to Shared
   static bool backgroundLogger = false;
   static LogLevel logLevel = LogLevel.verbose;
+
+  static final Map<String, Logger> _register = {};
 
   /// To be different from background logger
   static String prefix = '##';
@@ -80,6 +92,8 @@ class Logger {
   static Logger logger<T>() {
     Logger l = Logger();
     String n = T.toString();
+    l._name = n;
+    _register[n] = l;
     l.log('Logger for class $n created');
     return l;
   }
@@ -111,11 +125,6 @@ class Logger {
   /// main log method
   void _log(LogLevel level, String msg, String? stackTrace) {
     if (level.level >= logLevel.level && enabled) {
-      // prevent stack overflow due to EventManager.fire triggers a log
-      if (_name != 'EventManager') {
-        EventManager.fire<EventOnLog>(EventOnLog(level, msg));
-      }
-
       msg = composeMessage(_name, level, msg, stackTrace);
       try {
         if (!Globals.debugMode) {
@@ -127,11 +136,21 @@ class Logger {
       if (backgroundLogger) {
         _addSharedLog(level, msg, stackTrace);
       } else {
-        while (widgetLogs.length > maxWidgetCount) {
-          widgetLogs.removeAt(0);
+        while (widgets.length > maxWidgetCount) {
+          widgets.removeAt(0);
         }
-        widgetLogs.add(renderLog(prefix, level, msg, stackTrace));
+        _addLogWidget(renderLog(prefix, level, msg, stackTrace));
         renderBackLog();
+      }
+      // prevent stack overflow due to EventManager.fire triggers a log
+      if (_name != 'EventManager') {
+        EventManager.fire<EventOnLog>(EventOnLog(
+            logger: this,
+            prefix: prefix,
+            name: loggerId,
+            level: level,
+            msg: msg,
+            stackTrace: stackTrace));
       }
     }
   }
@@ -212,7 +231,7 @@ class Logger {
     list = await shared.loadList();
   }
 
-  static renderBackLog() async {
+  static Future<void> renderBackLog() async {
     Shared shared = Shared(SharedKeys.backLog);
     List<String> list = await shared.loadList();
     await shared.saveList(<String>[]);
@@ -224,7 +243,21 @@ class Logger {
       String msg = Uri.decodeFull(p[3]);
       String stackTrace = Uri.decodeFull(p[4]);
       msg = composeMessage(loggerName, level, msg, stackTrace);
-      widgetLogs.add(renderLog(prefix, level, msg));
+      EventManager.fire<EventOnLog>(EventOnLog(
+          logger: _register[loggerName] ?? Logger.logger<EventOnLog>(),
+          prefix: prefix,
+          name: loggerName,
+          level: level,
+          msg: msg,
+          stackTrace: stackTrace));
+      _addLogWidget(renderLog(prefix, level, msg));
+    }
+  }
+
+  static _addLogWidget(Widget widget) {
+    widgets.insert(0, widget);
+    while (widgets.length > 200) {
+      widgets.removeLast();
     }
   }
 }

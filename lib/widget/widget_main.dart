@@ -22,6 +22,7 @@ class App extends StatefulWidget {
 class _AppState extends State<App> {
   static _AppState? _instance;
   _AppState._() {
+    EventManager.listen<EventOnLog>(onLog);
     EventManager.listen<EventOnMainPaneChanged>((EventOnMainPaneChanged p) {
       _pane = p.pane;
       logger.log('main pane changed to ${p.pane.runtimeType.toString()}');
@@ -32,20 +33,27 @@ class _AppState extends State<App> {
   factory _AppState() => _instance ??= _AppState._();
 
   static Logger logger = Logger.logger<App>();
-  static Widget? _pane;
+  static dynamic _pane;
 
-  Widget get pane {
-    return _pane ??= Panes.trackPointList.value;
+  dynamic get pane {
+    return _pane ??= Panes.instance(Panes.trackPointList);
   }
 
   void onTick(EventOnTick event) {
     // _pane = p.pane;
-    setState(() {});
+    //setState(() {});
+  }
+
+  int i = 0;
+  void onLog(EventOnLog event) {
+    i++;
+    setState(() => i);
   }
 
   @override
   void dispose() {
     EventManager.remove<EventOnTick>(onTick);
+    EventManager.remove<EventOnLog>(onLog);
     //onScreenChanged?.cancel();
     super.dispose();
   }
