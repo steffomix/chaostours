@@ -9,10 +9,10 @@ import 'package:chaostours/widget/widget_add_tasks.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
-import 'package:chaostours/shared_model/tracking.dart';
+import 'package:chaostours/shared/tracking.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/event_manager.dart';
-import 'package:chaostours/shared_model/shared.dart';
+import 'package:chaostours/shared/shared.dart';
 
 class WidgetTrackPointList extends StatefulWidget {
   const WidgetTrackPointList({super.key});

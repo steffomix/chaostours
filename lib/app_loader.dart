@@ -9,9 +9,9 @@ import 'dart:io' as io;
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_task.dart';
-import 'package:chaostours/shared_model/shared.dart';
-import 'package:chaostours/shared_model/shared_tracker.dart';
-import 'package:chaostours/shared_model/tracking.dart';
+import 'package:chaostours/shared/shared.dart';
+import 'package:chaostours/shared/shared_tracker.dart';
+import 'package:chaostours/shared/tracking.dart';
 import 'package:chaostours/trackpoint.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/tracking_calendar.dart';
@@ -30,18 +30,22 @@ class AppLoader {
   static Future<void> preload() async {
     logger.important('start Preload sequence...');
     try {
-      // load database
-      logger.important('load Database Table ModelTrackPoint');
-      await ModelTrackPoint.open();
-      logger.important('load Database Table ModelAlias');
-      await ModelAlias.open();
-      logger.important('load Database Table ModelTask');
-      await ModelTask.open();
-      if (ModelAlias.length < 1) {
-        await ModelAlias.openFromAsset();
-      }
-      if (ModelTask.length < 1) {
-        await ModelTask.openFromAsset();
+      try {
+        // load database
+        logger.important('load Database Table ModelTrackPoint');
+        await ModelTrackPoint.open();
+        logger.important('load Database Table ModelAlias');
+        await ModelAlias.open();
+        logger.important('load Database Table ModelTask');
+        await ModelTask.open();
+        if (ModelAlias.length < 1) {
+          await ModelAlias.openFromAsset();
+        }
+        if (ModelTask.length < 1) {
+          await ModelTask.openFromAsset();
+        }
+      } catch (e, stk) {
+        logger.fatal(e.toString(), stk);
       }
 
       // init Machines
@@ -54,8 +58,6 @@ class AppLoader {
       logger.important('initialize SharedTracker');
       SharedTracker();
       logger.important('initialize Permissions');
-      await Permissions.requestLocationPermission();
-      await Permissions.requestNotificationPermission();
 
       logger.important('preparing HTTP SSL Key');
       await webKey();
@@ -75,32 +77,32 @@ class AppLoader {
 
       logger.important('start App Tick with 1sec. interval');
       Future.delayed(const Duration(seconds: 1), appTick);
-/*
-      logger.important(
-          'start shared observer for backgroundGPS with 1sec. interval');
-      Shared(SharedKeys.backgroundGps).observe(
-          duration: const Duration(seconds: 1),
-          fn: (String data) {
-            List<String> geo = data.split(',');
-            double lat = double.parse(geo[0]);
-            double lon = double.parse(geo[1]);
-            EventManager.fire<EventOnGPS>(EventOnGPS(GPS(lat, lon)));
-          });
-          */
+
       logger.important('initialize workmanager');
       WorkManager();
       logger.important('preload finished successful');
+
+      Logger.listenOnTick();
     } catch (e, stk) {
       logger.fatal('Preload sequence failed: $e', stk);
     }
   }
 
   static int tick = 0;
-  static void appTick() {
-    tick++;
-    print('Tick #$tick');
-    EventManager.fire<EventOnTick>(EventOnTick());
-    Future.delayed(const Duration(seconds: 1), appTick);
+  static Future<void> appTick() async {
+    while (true) {
+      tick++;
+      try {
+        print('Tick #$tick');
+        EventManager.fire<EventOnTick>(EventOnTick());
+        //logger.log('Tick #$tick');
+      } catch (e) {
+        print('appTick failed: $e');
+      }
+      await Future.delayed(const Duration(seconds: 1));
+      if (tick < 0) break;
+    }
+    Logger.alert('###### Tick ended ######');
   }
 
   ///
@@ -164,7 +166,7 @@ class AppLoader {
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       msg = 'Location services are disabled.';
-      logger.warn(msg);
+      logger.error(msg, null);
       return Future.error(msg);
     }
 
@@ -173,7 +175,7 @@ class AppLoader {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
         msg = 'Location permissions are denied';
-        logger.warn(msg);
+        logger.error(msg, null);
         return Future.error(msg);
       }
     }
@@ -181,10 +183,9 @@ class AppLoader {
     if (permission == LocationPermission.deniedForever) {
       msg = 'Location permissions are permanently denied, '
           'we cannot request permissions.';
-      logger.warn(msg);
+      logger.error(msg, null);
       return Future.error(msg);
     }
-    logger.log('request GPS ${!serviceEnabled ? 'anyway' : ''}');
     Position pos = await Geolocator.getCurrentPosition();
     return pos;
   }

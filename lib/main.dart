@@ -7,7 +7,7 @@ import 'package:chaostours/logger.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  Logger.logLevel = LogLevel.log;
+  Logger.logLevel = LogLevel.verbose;
   await Future.delayed(const Duration(seconds: 1), AppLoader.preload);
   runApp(Globals.app);
 }

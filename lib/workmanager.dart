@@ -7,7 +7,9 @@ import 'package:chaostours/gps.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_alias.dart';
-import 'shared_model/shared.dart';
+import 'shared/shared.dart';
+
+Logger logger = Logger.logger<Workmanager>();
 
 @pragma(
     'vm:entry-point') // Mandatory if the App is obfuscated or using Flutter 3.1+
@@ -16,50 +18,33 @@ void callbackDispatcher() {
     while (true) {
       try {
         await backgroundTask();
-      } catch (e) {
-        print(
-            '######\nworkmanager failed with $e\nRestart in 10 seconds#######');
+      } catch (e, stk) {
+        logger.fatal('Workmanager failed with $e', stk);
       }
       await Future.delayed(const Duration(seconds: 10));
     }
   });
 }
 
-logPrinter(String loggerName, LogLevel level, String msg,
-    [String? stackTrace]) async {
-  List<String> logParts = [
-    loggerName,
-    level.name,
-    Uri.encodeFull(msg),
-    stackTrace.toString(),
-    '|'
-  ];
-  String old = await Shared(SharedKeys.backLog).load();
-  List<String> oldList = old.split('\n');
-  oldList.add(logParts.join('\t'));
-  await Shared(SharedKeys.backLog).save(oldList.join('\n'));
-}
-
 Future<void> backgroundTask() async {
-  Logger logger = Logger.logger<Workmanager>();
   Logger.backgroundLogger = true;
   Logger.prefix = '~~';
-  Logger.logLevel = LogLevel.log;
+  Logger.logLevel = LogLevel.verbose;
   TrackPoint();
   ModelTrackPoint.open();
   ModelAlias.open();
   ModelTask.open();
-  int i = -200;
   while (true) {
-    ++i;
-    await Future.delayed(const Duration(seconds: 5), () async {
-      print('GPS');
+    await Future.delayed(const Duration(seconds: 5));
+    try {
       GPS gps = await GPS.gps();
       EventManager.fire<EventOnGPS>(EventOnGPS(gps));
       EventManager.fire<EventOnTick>(EventOnTick());
       logger.log('$gps');
       logger.log('ModelTrackPoint length: ${ModelTrackPoint.length}');
-    });
+    } catch (e, stk) {
+      logger.fatal(e.toString(), stk);
+    }
   }
 }
 

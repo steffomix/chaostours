@@ -4,7 +4,18 @@ import 'package:chaostours/logger.dart';
 class Permissions {
   static Logger logger = Logger.logger<Permissions>();
   static Permissions? _instance;
-  Permissions._();
+  Permissions._() {
+    try {
+      Permissions.requestLocationPermission();
+    } catch (e, stk) {
+      logger.fatal(e.toString(), stk);
+    }
+    try {
+      Permissions.requestNotificationPermission();
+    } catch (e, stk) {
+      logger.fatal(e.toString(), stk);
+    }
+  }
   factory Permissions() => _instance ??= Permissions._();
 
   static Future<void> requestNotificationPermission() async {

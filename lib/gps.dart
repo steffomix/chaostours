@@ -23,11 +23,12 @@ class GPS {
     try {
       pos = await AppLoader.gps();
       GPS gps = GPS(pos.latitude, pos.longitude);
+      logger.important('GPS: $gps');
       return gps;
     } catch (e, stk) {
       logger.fatal('GPS lookup failed: $e', stk);
+      logger.log('create spare GPS(0,0)');
     }
-    logger.log('create spare GPS(0,0)');
     return GPS(0, 0);
   }
 

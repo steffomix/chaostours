@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 //
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/events.dart';
-import 'package:chaostours/shared_model/shared.dart';
+import 'package:chaostours/shared/shared.dart';
 import 'package:chaostours/globals.dart';
 
 enum LogLevel {
@@ -35,15 +35,19 @@ class EventOnLog {
 }
 
 class Logger {
-  static bool dispatch = EventManager.listen<EventOnTick>((EventOnTick event) {
-    /// render events from background thread
-    /// and add them to widgetLogs
-    renderBackLog();
-  });
+  static Logger _logger = Logger.logger<Logger>();
+  static void alert(Object? msg) {
+    if (Globals.debugMode) print(msg);
+  }
+
+  static listenOnTick() {
+    EventManager.listen<EventOnTick>(onTick);
+  }
+
   static Future<void> onTick(EventOnTick event) async {
     /// render events from background thread
-    /// and add them to widgetLogs
-    await renderBackLog();
+    //print('§§ Logger.onTick()');
+    await renderSharedLogs();
   }
 
   /// rendered widgetLogs to be displayed in WidgetLogger
@@ -103,31 +107,28 @@ class Logger {
   /// MyClass{
   ///   static Logger logger = Logger.logger<MyClass>();
   /// ```
-  Logger() {
-    //throw 'Usage: static Logger logger = Logger.logger<MyClass>();';
-  }
+  Logger();
 
-  void verbose(String msg) => _log(LogLevel.verbose, msg, null);
+  void verbose(String msg) => _log(LogLevel.verbose, msg);
   //
-  void log(String msg, [fireEvent = true]) => _log(LogLevel.log, msg, null);
+  void log(String msg) => _log(LogLevel.log, msg);
   //
-  void important(String msg, [fireEvent = true]) =>
-      _log(LogLevel.important, msg, null);
+  void important(String msg) => _log(LogLevel.important, msg);
   //
-  void warn(String msg, [fireEvent = true]) => _log(LogLevel.warn, msg, null);
+  void warn(String msg) => _log(LogLevel.warn, msg);
   //
-  void error(String msg, StackTrace? stackTrace, [fireEvent = true]) =>
+  void error(String msg, StackTrace? stackTrace) =>
       _log(LogLevel.error, msg, stackTrace.toString());
   //
-  void fatal(String msg, StackTrace? stackTrace, [fireEvent = true]) =>
+  void fatal(String msg, StackTrace? stackTrace) =>
       _log(LogLevel.fatal, msg, stackTrace.toString());
 
   /// main log method
-  void _log(LogLevel level, String msg, String? stackTrace) {
+  void _log(LogLevel level, String msg, [String? stackTrace]) {
     if (level.level >= logLevel.level && enabled) {
       msg = composeMessage(_name, level, msg, stackTrace);
       try {
-        if (!Globals.debugMode) {
+        if (true || Globals.debugMode) {
           print('$prefix $msg'); // ignore: avoid_print
         }
       } catch (e) {
@@ -137,10 +138,10 @@ class Logger {
         _addSharedLog(level, msg, stackTrace);
       } else {
         while (widgets.length > maxWidgetCount) {
-          widgets.removeAt(0);
+          widgets.removeLast();
         }
         _addLogWidget(renderLog(prefix, level, msg, stackTrace));
-        renderBackLog();
+        renderSharedLogs();
       }
       // prevent stack overflow due to EventManager.fire triggers a log
       if (_name != 'EventManager') {
@@ -231,32 +232,36 @@ class Logger {
     list = await shared.loadList();
   }
 
-  static Future<void> renderBackLog() async {
+  static Future<void> renderSharedLogs() async {
     Shared shared = Shared(SharedKeys.backLog);
     List<String> list = await shared.loadList();
     await shared.saveList(<String>[]);
     for (var item in list) {
-      List<String> p = item.split('\t');
-      String prefix = Uri.decodeFull(p[0]);
-      String loggerName = Uri.decodeFull(p[1]);
-      LogLevel level = LogLevel.values.byName(Uri.decodeFull(p[2]));
-      String msg = Uri.decodeFull(p[3]);
-      String stackTrace = Uri.decodeFull(p[4]);
-      msg = composeMessage(loggerName, level, msg, stackTrace);
-      EventManager.fire<EventOnLog>(EventOnLog(
-          logger: _register[loggerName] ?? Logger.logger<EventOnLog>(),
-          prefix: prefix,
-          name: loggerName,
-          level: level,
-          msg: msg,
-          stackTrace: stackTrace));
-      _addLogWidget(renderLog(prefix, level, msg));
+      try {
+        List<String> p = item.split('\t');
+        String prefix = Uri.decodeFull(p[0]);
+        String loggerName = Uri.decodeFull(p[1]);
+        LogLevel level = LogLevel.values.byName(Uri.decodeFull(p[2]));
+        String msg = Uri.decodeFull(p[3]);
+        String stackTrace = Uri.decodeFull(p[4]);
+        msg = composeMessage(loggerName, level, msg, stackTrace);
+        EventManager.fire<EventOnLog>(EventOnLog(
+            logger: _logger,
+            prefix: prefix,
+            name: loggerName,
+            level: level,
+            msg: msg,
+            stackTrace: stackTrace));
+        _addLogWidget(renderLog(prefix, level, msg));
+      } catch (e, stk) {
+        _logger.error('render shared log: $item', null);
+      }
     }
   }
 
   static _addLogWidget(Widget widget) {
     widgets.insert(0, widget);
-    while (widgets.length > 200) {
+    while (widgets.length > maxWidgetCount) {
       widgets.removeLast();
     }
   }
