@@ -66,9 +66,8 @@ class AppLoader {
       logger.log('load calendar credentials from assets');
       await calendarApiFromCredentials();
 
-      logger.important('start background gps tracking');
-      //await Tracking.initialize();
-      //await Tracking.startTracking();
+      await Tracking.initialize();
+      await Tracking.startTracking();
 
       logger.important('reset shared values');
       Shared(SharedKeys.activeTrackpoint).save('');
@@ -78,8 +77,9 @@ class AppLoader {
       logger.important('start App Tick with 1sec. interval');
       Future.delayed(const Duration(seconds: 1), appTick);
 
-      logger.important('initialize workmanager');
-      WorkManager();
+      //logger.important('start background gps tracking');
+      //logger.important('initialize workmanager');
+      //WorkManager();
       logger.important('preload finished successful');
 
       Logger.listenOnTick();

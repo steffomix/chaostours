@@ -10,6 +10,8 @@ enum SharedKeys {
   /// current running trackpoint
   activeTrackpoint,
 
+  runningTrackpoints,
+
   /// last saved trackpoints
   recentTrackpoints,
 

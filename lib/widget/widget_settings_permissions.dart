@@ -55,16 +55,15 @@ class _WidgetSettingsPermissionsState extends State<WidgetSettingsPermissions> {
                   onPressed: () => Notifications().send(
                       'Hello from Chaos Tours', 'The ultimate Tracking app'),
                 ),
-                /*
-                ElevatedButton(
+                const Text('---------------------------'),
+                const ElevatedButton(
                   onPressed: Tracking.startTracking,
-                  child: const Text('Ok, let\'s go! Start Tracking'),
+                  child: Text('Start Tracking'),
                 ),
                 const ElevatedButton(
                   onPressed: Tracking.stopTracking,
                   child: Text('Stop Tracking'),
                 ),
-                */
               ],
             ),
           ),

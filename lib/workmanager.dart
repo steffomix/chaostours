@@ -39,7 +39,6 @@ Future<void> backgroundTask() async {
     try {
       GPS gps = await GPS.gps();
       EventManager.fire<EventOnGPS>(EventOnGPS(gps));
-      EventManager.fire<EventOnTick>(EventOnTick());
       logger.log('$gps');
       logger.log('ModelTrackPoint length: ${ModelTrackPoint.length}');
     } catch (e, stk) {
