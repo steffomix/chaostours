@@ -18,15 +18,24 @@ class FileHandler {
 
   static Future<io.File> file(DatabaseFile filehandle) async {
     logger.log('Provide File: ${filehandle.name}.tsv');
-    return handles[filehandle] ??= await fileHandle('${filehandle.name}.tsv');
-  }
 
+    //return handles[filehandle] ??= await fileHandle('${filehandle.name}.tsv');
+    String filename = '${filehandle.name}.tsv';
+    io.Directory appDir =
+        await path_provider.getApplicationDocumentsDirectory();
+    String p = path.join(appDir.path, /*'chaostours',*/ filename);
+    io.File file = await io.File(p).create(recursive: true);
+    logger.log('file handle created for file: $p');
+    return file;
+  }
+/*
   static Future<io.File> fileHandle(String filename) async {
     io.Directory appDir =
         await path_provider.getApplicationDocumentsDirectory();
     String p = path.join(appDir.path, /*'chaostours',*/ filename);
-    io.File file = await io.File(p).create();
     logger.log('file handle created for file: $p');
+    io.File file = await io.File(p).create(recursive: true);
     return file;
   }
+  */
 }

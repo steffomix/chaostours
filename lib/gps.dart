@@ -14,16 +14,14 @@ class GPS {
   double lat;
   double lon;
 
-  GPS(this.lat, this.lon) {
-    logger.verbose('GPS #$id at $lat, $lon');
-  }
+  GPS(this.lat, this.lon);
 
   static Future<GPS> gps() async {
     Position pos;
     try {
       pos = await AppLoader.gps();
       GPS gps = GPS(pos.latitude, pos.longitude);
-      logger.important('GPS: $gps');
+      logger.verbose('GPS #$gps.id at $gps.lat, $gps.lon');
       return gps;
     } catch (e, stk) {
       logger.fatal('GPS lookup failed: $e', stk);

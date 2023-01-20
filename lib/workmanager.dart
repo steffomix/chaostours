@@ -35,11 +35,16 @@ Future<void> backgroundTask() async {
   ModelAlias.open();
   ModelTask.open();
   while (true) {
-    await Future.delayed(const Duration(seconds: 5));
+    await Future.delayed(const Duration(seconds: 20));
     try {
+      Shared shared = Shared(SharedKeys.counterWorkmanager);
+      int counter = await shared.loadInt() ?? 0;
+      counter++;
+      await shared.saveInt(counter);
+
       GPS gps = await GPS.gps();
+      await ModelTrackPoint.open();
       EventManager.fire<EventOnGPS>(EventOnGPS(gps));
-      logger.log('$gps');
       logger.log('ModelTrackPoint length: ${ModelTrackPoint.length}');
     } catch (e, stk) {
       logger.fatal(e.toString(), stk);

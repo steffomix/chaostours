@@ -1,3 +1,4 @@
+/*
 import 'package:background_location_tracker/background_location_tracker.dart';
 import 'package:chaostours/shared/shared.dart';
 import 'package:chaostours/logger.dart';
@@ -51,9 +52,13 @@ Future<void> backgroundTask(GPS gps) async {
   Logger.logLevel = LogLevel.verbose;
   // database
   logger.log('Load Databases ModelTrackPoint, ModelAlias, ModelTask');
-  await ModelTrackPoint.open();
-  await ModelAlias.open();
-  await ModelTask.open();
+  try {
+    await ModelTrackPoint.open();
+    await ModelAlias.open();
+    await ModelTask.open();
+  } catch (e, stk) {
+    logger.fatal(e.toString(), stk);
+  }
   logger.log('loaded ModelTrackPoint with ${ModelTrackPoint.length} rows');
   logger.log('loaded ModelAlias with ${ModelAlias.length} rows');
   logger.log('loaded ModelTask with ${ModelTask.length} rows');
@@ -65,6 +70,7 @@ Future<void> backgroundTask(GPS gps) async {
   TrackPoint.trackPoint(EventOnGPS(gps));
   logger.log('processing gps finished, save running trackpoints');
   saveRunningTrackPoints();
+  await Future.delayed(const Duration(seconds: 3));
 }
 
 class Tracking {
@@ -73,7 +79,7 @@ class Tracking {
   static bool _isTracking = false;
 
   static AndroidConfig config(
-      {Duration duration = const Duration(seconds: 10)}) {
+      {Duration duration = const Duration(seconds: 30)}) {
     return AndroidConfig(
         channelName: 'Chaos Tours Background Tracking',
         notificationBody:
@@ -131,3 +137,4 @@ class Tracking {
     );
   }
 }
+*/

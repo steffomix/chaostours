@@ -56,6 +56,7 @@ class _WidgetSettingsPermissionsState extends State<WidgetSettingsPermissions> {
                       'Hello from Chaos Tours', 'The ultimate Tracking app'),
                 ),
                 const Text('---------------------------'),
+                /*
                 const ElevatedButton(
                   onPressed: Tracking.startTracking,
                   child: Text('Start Tracking'),
@@ -64,6 +65,7 @@ class _WidgetSettingsPermissionsState extends State<WidgetSettingsPermissions> {
                   onPressed: Tracking.stopTracking,
                   child: Text('Stop Tracking'),
                 ),
+                */
               ],
             ),
           ),

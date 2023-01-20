@@ -111,30 +111,28 @@ class Logger {
       _log(LogLevel.fatal, msg, stackTrace.toString());
 
   /// main log method
-  Future<void> _log(LogLevel level, String msg, [String? stackTrace]) async {
-    Future.delayed(const Duration(milliseconds: 1), () {
-      if (level.level >= logLevel.level && loggerEnabled) {
-        try {
-          print(
-              '$prefix ${composeMessage(_name, level, msg, stackTrace)}'); // ignore: avoid_print
+  _log(LogLevel level, String msg, [String? stackTrace]) {
+    if (level.level >= logLevel.level && loggerEnabled) {
+      try {
+        print(
+            '$prefix ${composeMessage(_name, level, msg, stackTrace)}'); // ignore: avoid_print
 
-        } catch (e) {
-          // ignore
-        }
-        if (backgroundLogger) {
-          _addSharedLog(level, msg, stackTrace);
-        } else {
-          // prevent stack overflow due to EventManager.fire triggers a log
-          EventManager.fire<EventOnLog>(EventOnLog(
-              logger: this,
-              prefix: prefix,
-              name: loggerId,
-              level: level,
-              msg: msg,
-              stackTrace: stackTrace));
-        }
+      } catch (e) {
+        // ignore
       }
-    });
+      if (backgroundLogger) {
+        _addSharedLog(level, msg, stackTrace);
+      } else {
+        // prevent stack overflow due to EventManager.fire triggers a log
+        EventManager.fire<EventOnLog>(EventOnLog(
+            logger: this,
+            prefix: prefix,
+            name: loggerId,
+            level: level,
+            msg: msg,
+            stackTrace: stackTrace));
+      }
+    }
   }
 
   /// compose without prefix due to background process uses a different one
@@ -163,7 +161,6 @@ class Logger {
     }
     list.add(parts.join('\t'));
     await shared.saveList(list);
-    list = await shared.loadList();
   }
 
   static Future<void> _renderSharedLogs() async {

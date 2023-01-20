@@ -29,6 +29,13 @@ class AppLoader {
   /// preload recources
   static Future<void> preload() async {
     logger.important('start Preload sequence...');
+
+    //logger.important('start background gps tracking');
+    //logger.important('initialize workmanager');
+    WorkManager();
+
+    //await Tracking.initialize();
+    //await Tracking.startTracking();
     try {
       try {
         // load database
@@ -66,20 +73,14 @@ class AppLoader {
       logger.log('load calendar credentials from assets');
       await calendarApiFromCredentials();
 
-      await Tracking.initialize();
-      await Tracking.startTracking();
-
       logger.important('reset shared values');
-      Shared(SharedKeys.activeTrackpoint).save('');
-      Shared(SharedKeys.backgroundGps).save('');
-      Shared(SharedKeys.recentTrackpoints).save('');
+      await Shared(SharedKeys.activeTrackpoint).save('');
+      await Shared(SharedKeys.backgroundGps).save('');
+      await Shared(SharedKeys.recentTrackpoints).save('');
 
       logger.important('start App Tick with 1sec. interval');
       Future.delayed(const Duration(seconds: 1), appTick);
 
-      //logger.important('start background gps tracking');
-      //logger.important('initialize workmanager');
-      //WorkManager();
       logger.important('preload finished successful');
 
       Logger.listenOnTick();

@@ -16,12 +16,16 @@ enum SharedKeys {
   recentTrackpoints,
 
   /// workmanager logs
-  backLog;
+  backLog,
+
+  ///Workmanager counter
+  counterWorkmanager;
 }
 
 enum SharedTypes {
   string,
-  list;
+  list,
+  int;
 }
 
 class Shared {
@@ -61,6 +65,17 @@ class Shared {
 
   Future<void> saveList(List<String> list) async {
     await (await shared).setStringList(_typeName(SharedTypes.list), list);
+  }
+
+  Future<int?> loadInt() async {
+    SharedPreferences sh = await shared;
+    await sh.reload();
+    int? value = sh.getInt(_typeName(SharedTypes.int));
+    return value;
+  }
+
+  Future<void> saveInt(int i) async {
+    await (await shared).setInt(_typeName(SharedTypes.int), i);
   }
 
   Future<String> load() async {

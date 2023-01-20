@@ -93,18 +93,21 @@ class _WidgetLogger extends State<WidgetLogger> {
     //setState(() {});
   }
 
-  void onLog(EventOnLog e) {
+  void onLog(EventOnLog e) async {
     Widget widget = renderLog(e.prefix, e.level, e.msg, e.stackTrace);
     logs.insert(0, widget);
     while (logs.length > 200) {
       logs.removeLast();
     }
+    Shared shared = Shared(SharedKeys.counterWorkmanager);
+    counter = await shared.loadInt() ?? 0;
     setState(() {});
   }
 
   List<Widget> logs = [];
+  int counter = 0;
   @override
   Widget build(BuildContext context) {
-    return ListView(children: [...logs]);
+    return ListView(children: [Text('Background ticks: $counter'), ...logs]);
   }
 }
