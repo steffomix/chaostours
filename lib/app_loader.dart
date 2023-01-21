@@ -29,6 +29,8 @@ class AppLoader {
   static Future<void> preload() async {
     logger.important('start Preload sequence...');
 
+    Shared sharedAlias = Shared(SharedKeys.modelAlias);
+    sharedAlias.saveList([]);
     //logger.important('start background gps tracking');
     //logger.important('initialize workmanager');
     WorkManager();

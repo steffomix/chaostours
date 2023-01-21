@@ -1,4 +1,3 @@
-//import 'package:package_info_plus/package_info_plus.dart';
 import 'package:flutter/material.dart';
 //
 import 'package:chaostours/app_loader.dart';
@@ -28,22 +27,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-/*
-        primarySwatch: Colors.blue,
-        primaryColor: const Color(0xFF2196f3),
-        accentColor: const Color(0xFF2196f3),
-        canvasColor: const Color(0xFFfafafa),
-      ),
-
-
-      <resources>
-  <color name="primaryColor">#7cb342</color>
-  <color name="primaryLightColor">#aee571</color>
-  <color name="primaryDarkColor">#4b830d</color>
-  <color name="secondaryColor">#ffb300</color>
-  <color name="secondaryLightColor">#ffe54c</color>
-  <color name="secondaryDarkColor">#c68400</color>
-  <color name="primaryTextColor">#000000</color>
-  <color name="secondaryTextColor">#000000</color>
-</resources>
-*/

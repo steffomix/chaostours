@@ -57,7 +57,7 @@ class ModelTask {
   }
 
   static Future<int> open() async {
-    List<String> lines = await Model.readTable(DatabaseFile.task);
+    List<String> lines = await Model.readTable<ModelTask>();
     _table.clear();
     for (var row in lines) {
       _table.add(toModel(row));
@@ -88,7 +88,7 @@ class ModelTask {
   // writes the entire table back to disc
   static Future<void> write() async {
     logger.verbose('Write Table');
-    await Model.writeTable(handle: await FileHandler.task, table: _table);
+    await Model.writeTable<ModelTask>(_table.map((e) => e.toString()).toList());
   }
 
   static String dump() {
@@ -96,7 +96,7 @@ class ModelTask {
     for (var i in _table) {
       dump.add(i.toString());
     }
-    return dump.join('\n');
+    return dump.join(Model.lineSep);
   }
 
   static Future<int> openFromAsset() async {

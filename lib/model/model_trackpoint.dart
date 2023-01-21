@@ -63,7 +63,7 @@ class ModelTrackPoint {
     for (var i in _table) {
       dump.add(i.toString());
     }
-    return dump.join('\n');
+    return dump.join(Model.lineSep);
   }
 
   /// calculates route or distance, depending on TrackingStatus status
@@ -125,11 +125,12 @@ class ModelTrackPoint {
 
   static Future<void> write() async {
     logger.verbose('Write');
-    await Model.writeTable(handle: await FileHandler.station, table: _table);
+    await Model.writeTable<ModelTrackPoint>(
+        _table.map((e) => e.toString()).toList());
   }
 
   static Future<void> open() async {
-    List<String> lines = await Model.readTable(DatabaseFile.station);
+    List<String> lines = await Model.readTable<ModelTrackPoint>();
     _table.clear();
     for (var row in lines) {
       _table.add(toModel(row));

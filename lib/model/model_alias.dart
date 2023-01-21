@@ -104,7 +104,7 @@ class ModelAlias {
 
   // opens, read and parse database
   static Future<int> open() async {
-    List<String> lines = await Model.readTable(DatabaseFile.alias);
+    List<String> lines = await Model.readTable<ModelAlias>();
     _table.clear();
     for (var row in lines) {
       _table.add(toModel(row));
@@ -116,7 +116,8 @@ class ModelAlias {
   // writes the entire table back to disc
   static Future<bool> write() async {
     logger.verbose('Write Table');
-    await Model.writeTable(handle: await FileHandler.alias, table: _table);
+    await Model.writeTable<ModelAlias>(
+        _table.map((e) => e.toString()).toList());
     return true;
   }
 
@@ -125,7 +126,7 @@ class ModelAlias {
     for (var i in _table) {
       dump.add(i.toString());
     }
-    return dump.join('\n');
+    return dump.join(Model.lineSep);
   }
 
   static ModelAlias get random {
