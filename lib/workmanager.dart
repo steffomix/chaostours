@@ -7,6 +7,11 @@ import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'shared/shared.dart';
+////
+import 'dart:io';
+import 'package:path/path.dart';
+import 'package:path_provider/path_provider.dart';
+//
 
 Logger logger = Logger.logger<Workmanager>();
 
@@ -36,15 +41,24 @@ Future<void> backgroundTask() async {
   while (true) {
     await Future.delayed(const Duration(seconds: 5));
     try {
-      /*
       Shared sharedAlias = Shared(SharedKeys.modelAlias);
-      List<String> sharedAliasList = await sharedAlias.loadList();
+      List<String> sharedAliasList = [];
       String dump = ModelAlias.dump();
-      for (var i = 0; i < 1000; i++) {
-        sharedAliasList.add('$dump$i');
+      for (var i = 0; i < 500; i++) {
+        sharedAliasList.addAll(dump.split('\n'));
       }
       sharedAlias.saveList(sharedAliasList);
-*/
+      ////
+      String filename = 'test.tsv';
+      Directory appDir = await getApplicationDocumentsDirectory();
+      String p = join(appDir.path, /*'chaostours',*/ filename);
+      final file = File(p);
+      await file.writeAsString(sharedAliasList.join('\n'),
+          mode: FileMode.append);
+      int fileLength = file.lengthSync();
+
+      ///
+
       Shared shared = Shared(SharedKeys.counterWorkmanager);
       int counter = await shared.loadInt() ?? 0;
       counter++;
