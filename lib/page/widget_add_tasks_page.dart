@@ -1,13 +1,12 @@
-// ignore_for_file: no_logic_in_create_state
-
 import 'package:flutter/material.dart';
 //
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
-import 'package:chaostours/events.dart';
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/enum.dart';
-import 'package:chaostours/events.dart';
+import 'package:chaostours/widget/widget_drawer.dart';
+import 'package:chaostours/widget/widgets.dart';
+import 'package:chaostours/widget/widget_bottom_navbar.dart';
 
 ///
 /// checkbox
@@ -60,17 +59,6 @@ class WidgetAddTasks extends StatefulWidget {
       _WidgetAddTasksState(trackPoint: trackPoint);
 }
 
-void onBackToMainPane() {
-  EventManager.fire<EventOnMainPaneChanged>(
-      EventOnMainPaneChanged(Panes.instance(Panes.trackPointList)));
-}
-
-Widget backToMainPane() {
-  return const Center(
-      child:
-          IconButton(icon: Icon(Icons.done_all), onPressed: onBackToMainPane));
-}
-
 class _WidgetAddTasksState extends State<WidgetAddTasks> {
   final ModelTrackPoint trackPoint;
 
@@ -79,10 +67,15 @@ class _WidgetAddTasksState extends State<WidgetAddTasks> {
   @override
   Widget build(BuildContext context) {
     List<ModelTask> tasks = ModelTask.getAll();
-    List<Widget> widgets = [backToMainPane()];
+    List<Widget> widgets = [];
     for (var task in tasks) {
       widgets.add(WidgedTaskCheckbox(trackPoint: trackPoint, task: task));
     }
-    return ListView(children: widgets);
+    return Scaffold(
+      appBar: Widgets.appBar(),
+      drawer: const WidgetDrawer(),
+      body: ListView(children: widgets),
+      bottomNavigationBar: const WidgetBottomNavBar(),
+    );
   }
 }

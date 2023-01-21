@@ -1,8 +1,6 @@
-//import 'package:flutter/material.dart';
 //
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/shared/shared.dart';
-//import 'package:chaostours/globals.dart';
 
 enum LogLevel {
   verbose(1),

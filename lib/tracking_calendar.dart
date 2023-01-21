@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:chaostours/trackpoint.dart';
 import 'package:googleapis/calendar/v3.dart' as calendar;
 //
 import 'package:chaostours/app_loader.dart';
@@ -11,7 +10,6 @@ import 'package:chaostours/globals.dart';
 import 'package:chaostours/enum.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/event_manager.dart';
-import 'package:chaostours/events.dart';
 
 class TrackingCalendar {
   static final Logger logger = Logger.logger<TrackingCalendar>();

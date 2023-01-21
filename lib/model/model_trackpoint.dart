@@ -58,14 +58,12 @@ class ModelTrackPoint {
     return util.timeElapsed(timeStart, timeEnd);
   }
 
-  static String dumpTable() {
-    List<String> lines = [];
-    for (var line in _table) {
-      lines.add(line.toString());
+  static String dump() {
+    List<String> dump = [];
+    for (var i in _table) {
+      dump.add(i.toString());
     }
-    String dump = lines.join(Model.lineSep);
-    dump += Model.lineSep;
-    return dump;
+    return dump.join('\n');
   }
 
   /// calculates route or distance, depending on TrackingStatus status

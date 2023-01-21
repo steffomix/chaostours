@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:chaostours/event_manager.dart';
-import 'package:chaostours/events.dart';
-import 'package:chaostours/enum.dart';
+import 'package:chaostours/page/widget_tracking_page.dart';
+import 'package:chaostours/page/widget_permissions_page.dart';
+import 'package:chaostours/page/widget_logger_page.dart';
 
 class WidgetDrawer extends StatefulWidget {
   const WidgetDrawer({super.key});
@@ -11,23 +11,6 @@ class WidgetDrawer extends StatefulWidget {
 }
 
 class _WidgetDrawer extends State<WidgetDrawer> {
-  void onPressedTracking(BuildContext ctx) {
-    EventManager.fire<EventOnMainPaneChanged>(
-        EventOnMainPaneChanged(Panes.instance(Panes.trackPointList)));
-    //Navigator.pop(ctx);
-  }
-
-  void onPressedPermissions(BuildContext ctx) {
-    EventManager.fire<EventOnMainPaneChanged>(
-        EventOnMainPaneChanged(Panes.instance(Panes.permissions)));
-    Navigator.pop(ctx);
-  }
-
-  void onPressedLogger(BuildContext ctx) {
-    EventManager.fire<EventOnMainPaneChanged>(
-        EventOnMainPaneChanged(Panes.instance(Panes.logger)));
-  }
-
   @override
   Widget build(BuildContext context) {
     return Drawer(
@@ -35,17 +18,28 @@ class _WidgetDrawer extends State<WidgetDrawer> {
       const Text('Chaos Tours'),
       ElevatedButton(
           onPressed: () {
-            onPressedTracking(context);
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => const WidgetTrackingPage()),
+            );
           },
           child: const Text('Tracking')),
       ElevatedButton(
           onPressed: () {
-            onPressedPermissions(context);
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => const WidgetPermissionsPage()),
+            );
           },
           child: const Text('Android Permissions')),
       ElevatedButton(
           onPressed: () {
-            onPressedLogger(context);
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const WidgetLoggerPage()),
+            );
           },
           child: const Text('Logger'))
     ]));

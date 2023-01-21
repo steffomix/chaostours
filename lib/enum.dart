@@ -1,9 +1,3 @@
-import 'package:flutter/material.dart';
-//
-import 'package:chaostours/widget/widget_trackpoints_listview.dart';
-import 'package:chaostours/widget/widget_settings_permissions.dart';
-import 'package:chaostours/widget/widget_logger.dart';
-
 enum TrackingStatus {
   none(0),
   standing(1),
@@ -16,26 +10,6 @@ enum TrackingStatus {
     TrackingStatus status =
         TrackingStatus.values.firstWhere((status) => status.value == id);
     return status;
-  }
-}
-
-// pane widgets that does't need any initial values
-enum Panes {
-  trackPointList,
-  permissions,
-  logger;
-
-  static Widget instance(Panes pane) {
-    switch (pane) {
-      case Panes.logger:
-        return const WidgetLogger();
-
-      case Panes.permissions:
-        return const WidgetSettingsPermissions();
-
-      default:
-        return const WidgetTrackPointList();
-    }
   }
 }
 
@@ -52,10 +26,4 @@ enum AliasStatus {
         AliasStatus.values.firstWhere((status) => status.value == id);
     return status;
   }
-}
-
-enum DatabaseFile {
-  alias,
-  task,
-  station;
 }

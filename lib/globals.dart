@@ -1,4 +1,3 @@
-import 'package:chaostours/widget/widget_main.dart';
 import 'package:chaostours/logger.dart';
 
 enum OsmLookup { never, onStatus, always }
@@ -9,8 +8,6 @@ class Globals {
   ///
   /// App from widget_main
   ///
-  static App? _app;
-  static App get app => _app ??= const App();
 
   static String version = '';
   static const bool debugMode = false;

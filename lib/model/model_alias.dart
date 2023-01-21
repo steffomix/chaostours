@@ -120,6 +120,14 @@ class ModelAlias {
     return true;
   }
 
+  static String dump() {
+    List<String> dump = [];
+    for (var i in _table) {
+      dump.add(i.toString());
+    }
+    return dump.join('\n');
+  }
+
   static ModelAlias get random {
     return _table[Random().nextInt(_table.length - 1)];
   }

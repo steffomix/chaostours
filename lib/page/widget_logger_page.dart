@@ -1,19 +1,22 @@
 import 'package:flutter/material.dart';
+//
 import 'package:chaostours/event_manager.dart';
-import 'package:chaostours/events.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/shared/shared.dart';
-import 'package:googleapis/displayvideo/v1.dart';
+//
+import 'package:chaostours/widget/widget_drawer.dart';
+import 'package:chaostours/widget/widgets.dart';
+import 'package:chaostours/widget/widget_bottom_navbar.dart';
 
-class WidgetLogger extends StatefulWidget {
-  const WidgetLogger({super.key});
+class WidgetLoggerPage extends StatefulWidget {
+  const WidgetLoggerPage({super.key});
 
   @override
-  State<WidgetLogger> createState() => _WidgetLogger();
+  State<WidgetLoggerPage> createState() => _WidgetLoggerPage();
 }
 
-class _WidgetLogger extends State<WidgetLogger> {
-  _WidgetLogger() {
+class _WidgetLoggerPage extends State<WidgetLoggerPage> {
+  _WidgetLoggerPage() {
     EventManager.listen<EventOnTick>(onTick);
     EventManager.listen<EventOnLog>(onLog);
   }
@@ -108,6 +111,11 @@ class _WidgetLogger extends State<WidgetLogger> {
   int counter = 0;
   @override
   Widget build(BuildContext context) {
-    return ListView(children: [Text('Background ticks: $counter'), ...logs]);
+    return Scaffold(
+      appBar: Widgets.appBar(),
+      drawer: const WidgetDrawer(),
+      body: ListView(children: [Text('Background ticks: $counter'), ...logs]),
+      bottomNavigationBar: const WidgetBottomNavBar(),
+    );
   }
 }

@@ -18,7 +18,6 @@ import 'package:chaostours/tracking_calendar.dart';
 import 'package:chaostours/notifications.dart';
 import 'package:chaostours/permissions.dart';
 import 'package:chaostours/event_manager.dart';
-import 'package:chaostours/events.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/workmanager.dart';
 

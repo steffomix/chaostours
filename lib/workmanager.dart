@@ -1,7 +1,6 @@
 import 'package:workmanager/workmanager.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/trackpoint.dart';
-import 'package:chaostours/events.dart';
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
@@ -35,8 +34,17 @@ Future<void> backgroundTask() async {
   ModelAlias.open();
   ModelTask.open();
   while (true) {
-    await Future.delayed(const Duration(seconds: 20));
+    await Future.delayed(const Duration(seconds: 5));
     try {
+      /*
+      Shared sharedAlias = Shared(SharedKeys.modelAlias);
+      List<String> sharedAliasList = await sharedAlias.loadList();
+      String dump = ModelAlias.dump();
+      for (var i = 0; i < 1000; i++) {
+        sharedAliasList.add('$dump$i');
+      }
+      sharedAlias.saveList(sharedAliasList);
+*/
       Shared shared = Shared(SharedKeys.counterWorkmanager);
       int counter = await shared.loadInt() ?? 0;
       counter++;

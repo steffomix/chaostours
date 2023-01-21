@@ -1,7 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/event_manager.dart';
-import 'package:chaostours/events.dart';
 
 enum SharedKeys {
   /// gps
@@ -17,6 +16,10 @@ enum SharedKeys {
 
   /// workmanager logs
   backLog,
+
+  modelTracking,
+  modelAlias,
+  modelTasks,
 
   ///Workmanager counter
   counterWorkmanager;

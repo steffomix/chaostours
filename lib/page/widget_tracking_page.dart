@@ -1,29 +1,30 @@
-import 'dart:async';
-//
 import 'package:flutter/material.dart';
-import 'package:chaostours/events.dart';
+//
+import 'package:chaostours/logger.dart';
+import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/trackpoint.dart';
 import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/enum.dart';
-import 'package:chaostours/widget/widget_add_tasks.dart';
+import 'package:chaostours/shared/shared.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
-import 'package:chaostours/shared/tracking.dart';
-import 'package:chaostours/logger.dart';
-import 'package:chaostours/event_manager.dart';
-import 'package:chaostours/shared/shared.dart';
+//
+import 'package:chaostours/page/widget_add_tasks_page.dart';
+import 'package:chaostours/widget/widget_drawer.dart';
+import 'package:chaostours/widget/widgets.dart';
+import 'package:chaostours/widget/widget_bottom_navbar.dart';
 
-class WidgetTrackPointList extends StatefulWidget {
-  const WidgetTrackPointList({super.key});
+class WidgetTrackingPage extends StatefulWidget {
+  const WidgetTrackingPage({super.key});
 
   @override
-  State<WidgetTrackPointList> createState() => _TrackPointListView();
+  State<WidgetTrackingPage> createState() => _WidgetTrackingPage();
 }
 
-class _TrackPointListView extends State<WidgetTrackPointList> {
-  static Logger logger = Logger.logger<WidgetTrackPointList>();
-  _TrackPointListView() {
+class _WidgetTrackingPage extends State<WidgetTrackingPage> {
+  static Logger logger = Logger.logger<WidgetTrackingPage>();
+  _WidgetTrackingPage() {
     resetListView();
     EventManager.listen<EventOnTrackingStatusChanged>(onTrackingStatusChanged);
     EventManager.listen<EventOnTrackPoint>(onTrackPoint);
@@ -94,9 +95,14 @@ class _TrackPointListView extends State<WidgetTrackPointList> {
     items.add(TextField(
       keyboardType: TextInputType.multiline,
       maxLines: null,
-      controller: TextEditingController(text: ModelTrackPoint.dumpTable()),
+      controller: TextEditingController(text: ModelTrackPoint.dump()),
     ));
-    return ListView(children: items);
+    return Scaffold(
+      appBar: Widgets.appBar(),
+      drawer: const WidgetDrawer(),
+      body: ListView(children: items),
+      bottomNavigationBar: const WidgetBottomNavBar(),
+    );
   }
 }
 

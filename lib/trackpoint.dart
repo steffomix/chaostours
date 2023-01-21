@@ -7,7 +7,6 @@ import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/logger.dart';
-import 'package:chaostours/events.dart';
 
 class TrackPoint {
   static final Logger logger = Logger.logger<TrackPoint>();

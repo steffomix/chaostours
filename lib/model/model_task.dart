@@ -91,6 +91,14 @@ class ModelTask {
     await Model.writeTable(handle: await FileHandler.task, table: _table);
   }
 
+  static String dump() {
+    List<String> dump = [];
+    for (var i in _table) {
+      dump.add(i.toString());
+    }
+    return dump.join('\n');
+  }
+
   static Future<int> openFromAsset() async {
     logger.warn('Load built-in Tasks from assets');
     String string = await rootBundle.loadString('assets/task.tsv');

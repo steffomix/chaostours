@@ -2,8 +2,13 @@ import 'dart:io' as io;
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart' as path_provider;
 //
-import 'package:chaostours/enum.dart';
 import 'package:chaostours/logger.dart';
+
+enum DatabaseFile {
+  alias,
+  task,
+  station;
+}
 
 class FileHandler {
   static Logger logger = Logger.logger<FileHandler>();
