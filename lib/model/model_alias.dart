@@ -8,6 +8,21 @@ import 'package:chaostours/file_handler.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/logger.dart';
 
+enum AliasStatus {
+  disabled(0),
+  public(1),
+  privat(2);
+
+  final int value;
+  const AliasStatus(this.value);
+
+  static AliasStatus byValue(int id) {
+    AliasStatus status =
+        AliasStatus.values.firstWhere((status) => status.value == id);
+    return status;
+  }
+}
+
 class ModelAlias {
   static Logger logger = Logger.logger<ModelAlias>();
   static final List<ModelAlias> _table = [];

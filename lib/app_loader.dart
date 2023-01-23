@@ -104,7 +104,7 @@ class AppLoader {
       await Future.delayed(const Duration(seconds: 1));
       if (tick < 0) break;
     }
-    Logger.alert('###### Tick ended ######');
+    Logger.print('###### Tick ended ######');
   }
 
   ///

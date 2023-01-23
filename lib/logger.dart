@@ -31,10 +31,12 @@ class EventOnLog {
       required this.stackTrace});
 }
 
+var _print = print;
+
 class Logger {
   static final Logger _logger = Logger.logger<Logger>();
-  static void alert(Object? msg) {
-    print(msg);
+  static void print(Object? msg) {
+    _print(msg);
   }
 
   static listenOnTick() {
@@ -152,8 +154,8 @@ class Logger {
       Uri.encodeFull('$stackTrace'),
       '|'
     ];
-    Shared shared = Shared(SharedKeys.backLog);
-    List<String> list = await shared.loadList();
+    Shared shared = Shared(SharedKeys.workmanagerLogger);
+    List<String> list = (await shared.loadList()) ?? [];
     while (list.length >= maxSharedCount) {
       list.removeLast();
     }
@@ -162,8 +164,8 @@ class Logger {
   }
 
   static Future<void> _renderSharedLogs() async {
-    Shared shared = Shared(SharedKeys.backLog);
-    List<String> list = await shared.loadList();
+    Shared shared = Shared(SharedKeys.workmanagerLogger);
+    List<String> list = (await shared.loadList()) ?? [];
     await shared.saveList(<String>[]);
     for (var item in list) {
       try {

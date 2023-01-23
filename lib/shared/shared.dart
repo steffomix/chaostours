@@ -8,14 +8,14 @@ enum SharedKeys {
 
   /// current running trackpoint
   activeTrackpoint,
-
+  activeTrackPointTasks,
+  activeTrackPointNotes,
+  activeTrackPointStatus,
   runningTrackpoints,
-
-  /// last saved trackpoints
   recentTrackpoints,
 
   /// workmanager logs
-  backLog,
+  workmanagerLogger,
 
   modelTracking,
   modelAlias,
@@ -50,15 +50,7 @@ class Shared {
   static Future<SharedPreferences> get shared async =>
       _shared ??= await SharedPreferences.getInstance();
 
-  ///
-  Future<void> add(String value) async {
-    String l = await load();
-    //logger.verbose('add to ${key.name}');
-    l += value;
-    await save(l);
-  }
-
-  Future<List<String>> loadList() async {
+  Future<List<String>?> loadList() async {
     SharedPreferences sh = await shared;
     await sh.reload();
     List<String> value =
@@ -81,7 +73,7 @@ class Shared {
     await (await shared).setInt(_typeName(SharedTypes.int), i);
   }
 
-  Future<String> load() async {
+  Future<String?> load() async {
     SharedPreferences sh = await shared;
     await sh.reload();
     String value = sh.getString(_typeName(SharedTypes.string)) ?? '0\t';
@@ -96,7 +88,7 @@ class Shared {
   void observe(
       {required Duration duration, required Function(String data) fn}) async {
     if (_observing) return;
-    _observed = await load();
+    _observed = (await load()) ?? '';
     Future.delayed(duration, () {
       _observe(duration: duration, fn: fn);
     });
@@ -109,7 +101,7 @@ class Shared {
     while (true) {
       if (!_observing) break;
       try {
-        obs = await load();
+        obs = (await load()) ?? '';
       } catch (e, stk) {
         logger.error('observing failed with $e', stk);
         obs = '';

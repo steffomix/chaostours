@@ -1,9 +1,8 @@
 import 'package:chaostours/model/model.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_alias.dart';
+import 'package:chaostours/trackpoint.dart';
 import 'package:chaostours/gps.dart';
-import 'package:chaostours/file_handler.dart';
-import 'package:chaostours/enum.dart';
 import 'package:chaostours/address.dart';
 import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/logger.dart';
@@ -22,11 +21,17 @@ class ModelTrackPoint {
   ///
   int deleted = 0; // 0 or 1
   GPS gps;
-  List<GPS> trackPoints; // "lat,lon;lat,lon;..."
+
+  /// "lat,lon;lat,lon;..."
+  List<GPS> trackPoints;
   DateTime timeStart;
   DateTime timeEnd = DateTime.now();
-  List<int> idAlias = []; // "id,id,..." needs to be sorted by distance
-  List<int> idTask = []; // "id,id,..." needs to be ordered by user
+
+  /// "id,id,..." needs to be sorted by distance
+  List<int> idAlias = [];
+
+  /// "id,id,..." needs to be ordered by user
+  List<int> idTask = [];
   String notes = '';
   Address address;
 

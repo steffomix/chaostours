@@ -44,7 +44,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   void onTrackingStatusChanged(EventOnTrackingStatusChanged event) async {
     activeItem = _ActiveListItem(event.tp);
     listView.clear();
-    String raw = await Shared(SharedKeys.recentTrackpoints).load();
+    String raw = (await Shared(SharedKeys.recentTrackpoints).load()) ?? '';
     List<String> recent = raw.trim().split('\n');
     for (var item in recent) {
       listView.add(_ActiveListItem(ModelTrackPoint.toSharedModel(item)).widget);

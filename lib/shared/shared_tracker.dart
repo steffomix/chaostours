@@ -17,7 +17,7 @@ class SharedTracker {
 
   void onTrackPoint(EventOnTrackPoint event) async {
     await Shared(SharedKeys.activeTrackpoint).save(event.tp.toSharedString());
-    String s = await Shared(SharedKeys.activeTrackpoint).load();
+    String s = (await Shared(SharedKeys.activeTrackpoint).load()) ?? '';
     logger.log(s);
   }
 

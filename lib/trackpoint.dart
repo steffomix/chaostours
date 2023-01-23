@@ -1,3 +1,5 @@
+import 'dart:html';
+
 import 'package:chaostours/globals.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/model/model_alias.dart';
@@ -7,89 +9,207 @@ import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/logger.dart';
+import 'package:chaostours/shared/shared.dart';
+
+enum TrackingStatus {
+  none(0),
+  standing(1),
+  moving(2);
+
+  final int value;
+  const TrackingStatus(this.value);
+
+  static TrackingStatus byValue(int id) {
+    TrackingStatus status =
+        TrackingStatus.values.firstWhere((status) => status.value == id);
+    return status;
+  }
+}
+
+class RunningTrackPoint {
+  final GPS gps;
+  DateTime time = DateTime.now();
+
+  RunningTrackPoint(this.gps);
+
+  @override
+  String toString() {
+    return '${gps.toString()};${time.toIso8601String()}';
+  }
+
+  static RunningTrackPoint toModel(String row) {
+    List<String> p = row.split(';');
+    GPS gps = GPS.toObject(p[0]);
+    DateTime time = DateTime.parse(p[1]);
+    RunningTrackPoint tp = RunningTrackPoint(gps);
+    tp.time = time;
+    return tp;
+  }
+}
 
 class TrackPoint {
   static final Logger logger = Logger.logger<TrackPoint>();
+  /*
   factory TrackPoint() => _instance ??= TrackPoint._();
   static TrackPoint? _instance;
   TrackPoint._() {
     EventManager.listen<EventOnGPS>(trackPoint);
   }
+  */
+
+  startShared() async {
+    /// load model alias for activeTrackpoint
+    logger.log('load table alias');
+    await ModelAlias.open();
+
+    /// load recent trackpoints and save to shared
+    /// and to provide them to frontend
+    logger.log('load recent Trackpoints');
+    await ModelTrackPoint.open();
+    await Shared(SharedKeys.recentTrackpoints).saveList(
+        ModelTrackPoint.recentTrackPoints().map((e) => e.toString()).toList());
+
+    /// load running Trackpoints from shared
+    /// convert to objects and inject into class TrackPoint
+    logger.log('load running trackpoints');
+    _runningTrackPoints.clear();
+    _runningTrackPoints.addAll(
+        (await Shared(SharedKeys.runningTrackpoints).loadList() ?? [])
+            .map((String e) => RunningTrackPoint.toModel(e))
+            .toList());
+
+    /// load last tracking Status
+    logger.log('load tracking status');
+    _status = TrackingStatus.values.byName(
+        await Shared(SharedKeys.activeTrackPointStatus).load() ??
+            TrackingStatus.none.toString());
+
+    /// remember old status
+    _oldStatus = _status;
+
+    /// get gps
+    logger.log('lookup GPS');
+    GPS gps = await GPS.gps();
+
+    /// start trackpoint calculation process
+    logger.log('start trackpoint calculation');
+    trackPoint(gps);
+
+    ///
+    /// ################### trackpoint executed ###################
+    ///
+    if (_oldStatus != status) {
+      /// load recent trackpoints and save to shared
+      /// and to provide them to frontend
+      logger.log('load recent Trackpoints');
+      await ModelTrackPoint.open();
+      Shared(SharedKeys.recentTrackpoints).saveList(
+          ModelTrackPoint.recentTrackPoints()
+              .map((e) => e.toString())
+              .toList());
+
+      /// save new status
+      await Shared(SharedKeys.activeTrackPointStatus).save(status.toString());
+    }
+    await Shared(SharedKeys.runningTrackpoints)
+        .saveList(_runningTrackPoints.map((e) => e.toString()).toList());
+  }
 
   //static int _nextId = 0;
   // contains all trackpoints from current state start or stop
-  static final List<ModelTrackPoint> runningTrackPoints = [];
+  static final List<RunningTrackPoint> _runningTrackPoints = [];
   // contains all trackpoints during driving (from start to stop)
-  static int get length => runningTrackPoints.length;
+  static int get length => _runningTrackPoints.length;
   //
   static TrackingStatus _status = TrackingStatus.none;
   static TrackingStatus get status => _status;
-  static DateTime _lastStatusChange = DateTime.now();
+
+  static TrackingStatus _oldStatus = TrackingStatus.none;
 
   // if tracker is running
   //static bool _tracking = false;
   //static bool get tracking => _tracking;
 
   static String timeElapsed() {
-    if (runningTrackPoints.isEmpty) return '00:00:00';
+    if (_runningTrackPoints.isEmpty) return '00:00:00';
     return util.timeElapsed(
-        runningTrackPoints.first.timeStart, runningTrackPoints.last.timeStart);
+        _runningTrackPoints.first.time, _runningTrackPoints.last.time);
   }
 
   static double distance() {
-    if (runningTrackPoints.isEmpty) return 0.0;
+    if (_runningTrackPoints.isEmpty) return 0.0;
     double dist;
     if (_status == TrackingStatus.standing) {
       dist = GPS.distance(
-          runningTrackPoints.first.gps, runningTrackPoints.last.gps);
+          _runningTrackPoints.first.gps, _runningTrackPoints.last.gps);
     } else {
-      dist = movedDistance(runningTrackPoints);
+      dist = movedDistance(_runningTrackPoints);
     }
     return (dist * 1000).round() / 1000;
   }
 
-  static Future<void> _statusChanged(ModelTrackPoint tp) async {
+  static Future<void> _statusChanged(RunningTrackPoint tp) async {
     // create a new TrackPoint as event
     logger.important('Tracking Status changed to #${status.name}');
-    ModelTrackPoint event = createEvent(tp.gps);
-    if (Globals.osmLookup == OsmLookup.onStatus) {
-      logger.log('lookup address');
-      await tp.address.lookupAddress();
-    }
-    await ModelTrackPoint.insert(event);
+    logger.log('save new status #${status.name}');
+    await Shared(SharedKeys.activeTrackPointStatus).save(status.toString());
 
+    /// create active trackpoint
+    logger.log('create active trackpoint');
+    ModelTrackPoint activeTrackPoint = await createActiveTrackPoint(tp.gps);
+
+    /// save active trackpoint to database
+    //if (_oldStatus == TrackingStatus.standing) {
+    logger.log('insert new trackpoint to datatbase table trackpoints');
+    await ModelTrackPoint.insert(activeTrackPoint);
+    //}
+
+    /// fire event that status has changed
+    /// -- to be replaced with more direct! actions
     EventManager.fire<EventOnTrackingStatusChanged>(
-        EventOnTrackingStatusChanged(tp));
-    runningTrackPoints.clear();
-    runningTrackPoints.add(tp);
-    _lastStatusChange = DateTime.now();
+        EventOnTrackingStatusChanged(activeTrackPoint));
+
+    /// reset running trackpoints and add current one
+    _runningTrackPoints.clear();
+    _runningTrackPoints.add(tp);
   }
 
-  static ModelTrackPoint createEvent(GPS gps) {
-    logger.verbose('create trackpoint event');
-    ModelTrackPoint event = create(EventOnGPS(gps));
-    event.status = _status;
-    event.timeStart = runningTrackPoints.first.timeStart;
-    event.timeEnd = DateTime.now();
-    event.trackPoints = runningTrackPoints.map((e) => e.gps).toList();
-    return event;
+  static Future<ModelTrackPoint> createActiveTrackPoint(GPS gps) async {
+    logger.log('create trackpoint event');
+    ModelTrackPoint tp = ModelTrackPoint(
+        address: Address(gps),
+        trackPoints: _runningTrackPoints.map((e) => e.gps).toList(),
+        idAlias: ModelAlias.nextAlias(gps).map((e) => e.id).toList(),
+        timeStart: _runningTrackPoints.first.time,
+        gps: gps);
+    tp.status = _status;
+    tp.timeEnd = DateTime.now();
+    tp.idTask = (await Shared(SharedKeys.activeTrackPointTasks).loadList())
+            ?.map((e) => int.parse(e))
+            .toList() ??
+        <int>[];
+    tp.idAlias = ModelAlias.nextAlias(gps).map((e) => e.id).toList();
+    tp.trackPoints = _runningTrackPoints.map((e) => e.gps).toList();
+    return tp;
   }
 
   ///
   /// creates new Trackpoint, waits after status changed,
   ///
-  static bool _checkStatus(List<ModelTrackPoint> trackList) {
+  static Future<bool> _checkStatus(List<RunningTrackPoint> trackList) async {
     if (_status == TrackingStatus.standing || _status == TrackingStatus.none) {
       if (_checkMoved(trackList)) {
         // use the most recent Trackpoint as reference
-        _statusChanged(trackList.first);
+        await _statusChanged(trackList.first);
+        _oldStatus = status;
         _status = TrackingStatus.moving;
         return true;
       }
     } else {
       if (_checkStopped(trackList)) {
         // use the one before oldest trackpoint where we stopped as reference
-        _statusChanged(trackList.last);
+        await _statusChanged(trackList.last);
+        _oldStatus = status;
         _status = TrackingStatus.standing;
         return true;
       }
@@ -98,10 +218,10 @@ class TrackPoint {
     return false;
   }
 
-  static bool _checkMoved(List<ModelTrackPoint> tl) {
+  static bool _checkMoved(List<RunningTrackPoint> tl) {
     // check if moved
     double dist = 0;
-    ModelTrackPoint tRef = tl.last;
+    RunningTrackPoint tRef = tl.last;
     for (var i = 0; i < tl.length; i++) {
       dist = GPS.distance(tl[i].gps, tRef.gps);
       if (dist > Globals.distanceTreshold) {
@@ -111,10 +231,10 @@ class TrackPoint {
     return false;
   }
 
-  static bool _checkStopped(List<ModelTrackPoint> tl) {
+  static bool _checkStopped(List<RunningTrackPoint> tl) {
     double dist = 0;
     double distMoved = 0;
-    ModelTrackPoint tRef = tl.first;
+    RunningTrackPoint tRef = tl.first;
     // check if stopped
     for (var i = 0; i < tl.length; i++) {
       dist = GPS.distance(tl[i].gps, tRef.gps);
@@ -130,20 +250,20 @@ class TrackPoint {
   /// collect recent Trackpoints in backwards order since last status changed
   /// and until <timeTreshold>
   /// so that trackList[0] is most recent
-  static List<ModelTrackPoint> _recentTracks() {
-    List<ModelTrackPoint> trackList = [];
+  static List<RunningTrackPoint> _recentTracks() {
+    List<RunningTrackPoint> trackList = [];
     DateTime treshold = DateTime.now().subtract(Globals.stopTimeTreshold);
     bool outDated;
-    for (var i = runningTrackPoints.length - 1; i >= 0; i--) {
-      outDated = runningTrackPoints[i].timeStart.isBefore(treshold);
+    for (var i = _runningTrackPoints.length - 1; i >= 0; i--) {
+      outDated = _runningTrackPoints[i].time.isBefore(treshold);
       if (outDated) break;
-      trackList.add(runningTrackPoints[i]);
+      trackList.add(_runningTrackPoints[i]);
     }
     return trackList;
   }
 
   // calc distance over multiple trackpoints in meters
-  static double movedDistance(List<ModelTrackPoint> tracklist) {
+  static double movedDistance(List<RunningTrackPoint> tracklist) {
     if (tracklist.length < 2) return 0;
     double dist = 0;
     GPS gps = tracklist[0].gps;
@@ -154,10 +274,8 @@ class TrackPoint {
     return dist;
   }
 
-  static ModelTrackPoint create(EventOnGPS event) {
-    logger.verbose(
-        'create trackpoint from gps ${event.gps.lat},${event.gps.lon}');
-    GPS gps = event.gps;
+  static ModelTrackPoint create(GPS gps) {
+    logger.verbose('create trackpoint from gps ${gps.lat},${gps.lon}');
     Address address = Address(gps);
     //if (Globals.osmLookup == OsmLookup.always) await address.lookupAddress();
 
@@ -173,13 +291,13 @@ class TrackPoint {
   }
 
   static bool _first = true;
-  static Future<void> trackPoint(EventOnGPS event) async {
-    logger.log('processing trackpoint ${event.gps.toString()}');
+  static Future<void> trackPoint(GPS gps) async {
+    logger.log('processing trackpoint ${gps.toString()}');
     ModelTrackPoint tp;
     try {
-      tp = create(event);
+      tp = create(gps);
       tp.status = _status;
-      runningTrackPoints.add(tp);
+      _runningTrackPoints.add(RunningTrackPoint(gps));
 
       /*
       logger.log('check wait time after last change');
@@ -193,17 +311,17 @@ class TrackPoint {
       */
       // min length
       logger.verbose('check running trackpoints min count > 3');
-      if (runningTrackPoints.length < 4) {
+      if (_runningTrackPoints.length < 4) {
         logger.warn(
-            'trackpoints min count at ${runningTrackPoints.length}, skip processing');
+            'trackpoints min count at ${_runningTrackPoints.length}, skip processing');
         return;
       } else {
         logger.verbose(
-            'trackpoints min count at ${runningTrackPoints.length}, continue processing');
+            'trackpoints min count at ${_runningTrackPoints.length}, continue processing');
       }
 
       logger.log('filter running trackpoints for recent time range');
-      List<ModelTrackPoint> trackList = _recentTracks();
+      List<RunningTrackPoint> trackList = _recentTracks();
       // skip if nothing was found
       if (trackList.isEmpty) {
         logger.warn('after filter no trackpoints left, skip processing');
@@ -212,7 +330,7 @@ class TrackPoint {
         logger.verbose(
             'filter ${trackList.length} trackpoints, continue processing');
       }
-      _checkStatus(trackList);
+      await _checkStatus(trackList);
       /*
       if (_first) {
         tp = await createEvent();

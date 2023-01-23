@@ -30,6 +30,8 @@ void callbackDispatcher() {
   });
 }
 
+Future<void> executeTask() async {}
+
 Future<void> backgroundTask() async {
   Logger.backgroundLogger = true;
   Logger.prefix = '~~';
@@ -38,6 +40,7 @@ Future<void> backgroundTask() async {
   ModelTrackPoint.open();
   ModelAlias.open();
   ModelTask.open();
+
   while (true) {
     await Future.delayed(const Duration(seconds: 5));
     try {

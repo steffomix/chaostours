@@ -7,7 +7,7 @@ import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/globals.dart';
-import 'package:chaostours/enum.dart';
+import 'package:chaostours/trackpoint.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/event_manager.dart';
 

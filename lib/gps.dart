@@ -34,4 +34,11 @@ class GPS {
   String toString() {
     return '$lat,$lon';
   }
+
+  static GPS toObject(String row) {
+    List<String> p = row.split(',');
+    double lat = double.parse(p[0]);
+    double lon = double.parse(p[1]);
+    return GPS(lat, lon);
+  }
 }
