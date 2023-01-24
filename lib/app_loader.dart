@@ -1,7 +1,7 @@
 import 'package:http/http.dart' as http;
 import 'package:flutter/services.dart';
-import 'package:googleapis_auth/auth_io.dart';
-import 'package:googleapis/calendar/v3.dart' show CalendarApi;
+//import 'package:googleapis_auth/auth_io.dart';
+//import 'package:googleapis/calendar/v3.dart' show CalendarApi;
 import 'package:geolocator/geolocator.dart'
     show Position, LocationPermission, Geolocator;
 import 'dart:io' as io;
@@ -57,8 +57,8 @@ class AppLoader {
       }
 
       // init Machines
-      logger.important('initialize Tracking Calendar');
-      TrackingCalendar();
+      //logger.important('initialize Tracking Calendar');
+      //TrackingCalendar();
       logger.important('initialize Notifications');
       Notifications();
       logger.important('initialize Trackpoint');
@@ -69,24 +69,35 @@ class AppLoader {
 
       logger.important('preparing HTTP SSL Key');
       await webKey();
+      /*
       logger.log('load default Calendar ID from assets');
       await defaultCalendarId();
       logger.log('load calendar credentials from assets');
       await calendarApiFromCredentials();
-
-      logger.important('reset shared values');
-      await Shared(SharedKeys.activeTrackpoint).save('');
-      await Shared(SharedKeys.backgroundGps).save('');
-      await Shared(SharedKeys.recentTrackpoints).save('');
-
-      logger.important('start App Tick with 1sec. interval');
-      Future.delayed(const Duration(seconds: 1), appTick);
+*/
 
       logger.important('preload finished successful');
 
       Logger.listenOnTick();
+      logger.important('start App Tick with 1sec. interval');
+      Future.microtask(appTick);
+
+      logger.important('start workmanager simulation Tick');
+      Future.microtask(workmanagerTick);
     } catch (e, stk) {
       logger.fatal('Preload sequence failed: $e', stk);
+    }
+  }
+
+  static Future<void> workmanagerTick() async {
+    await TrackPoint.initializeShared();
+    while (true) {
+      try {
+        TrackPoint.startShared();
+      } catch (e, stk) {
+        logger.fatal(e.toString(), stk);
+      }
+      await Future.delayed(const Duration(seconds: 20));
     }
   }
 
@@ -100,11 +111,11 @@ class AppLoader {
         //logger.log('Tick #$tick');
       } catch (e) {
         print('appTick failed: $e');
+      } finally {
+        Logger.print('###### AppTick broke ######');
       }
       await Future.delayed(const Duration(seconds: 1));
-      if (tick < 0) break;
     }
-    Logger.print('###### Tick ended ######');
   }
 
   ///
@@ -127,6 +138,7 @@ class AppLoader {
     return response;
   }
 
+/*
   ///
   /// load calendar api from credentials asset file
   static CalendarApi? _calendarApi;
@@ -160,7 +172,7 @@ class AppLoader {
     logger.log('Calendar ID loaded');
     return calendarId;
   }
-
+*/
   static Future<Position> gps() async {
     bool serviceEnabled;
     LocationPermission permission;

@@ -21,7 +21,7 @@ class GPS {
     try {
       pos = await AppLoader.gps();
       GPS gps = GPS(pos.latitude, pos.longitude);
-      logger.verbose('GPS #$gps.id at $gps.lat, $gps.lon');
+      logger.verbose('GPS #${gps.id} at $gps');
       return gps;
     } catch (e, stk) {
       logger.fatal('GPS lookup failed: $e', stk);

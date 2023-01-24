@@ -10,7 +10,7 @@ enum SharedKeys {
   activeTrackpoint,
   activeTrackPointTasks,
   activeTrackPointNotes,
-  activeTrackPointStatus,
+  activeTrackPointStatusName,
   runningTrackpoints,
   recentTrackpoints,
 
@@ -22,7 +22,7 @@ enum SharedKeys {
   modelTasks,
 
   ///Workmanager counter
-  counterWorkmanager;
+  workmanagerLastTick;
 }
 
 enum SharedTypes {
@@ -82,6 +82,10 @@ class Shared {
 
   Future<void> save(String data) async {
     await (await shared).setString(_typeName(SharedTypes.string), data);
+  }
+
+  Future<void> remove() async {
+    await (await shared).remove(_typeName(SharedTypes.string));
   }
 
   /// observes only string types

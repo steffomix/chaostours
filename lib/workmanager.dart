@@ -1,16 +1,8 @@
 import 'package:workmanager/workmanager.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/trackpoint.dart';
-import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/gps.dart';
-import 'package:chaostours/model/model_trackpoint.dart';
-import 'package:chaostours/model/model_task.dart';
-import 'package:chaostours/model/model_alias.dart';
 import 'shared/shared.dart';
-////
-import 'dart:io';
-import 'package:path/path.dart';
-import 'package:path_provider/path_provider.dart';
 //
 
 Logger logger = Logger.logger<Workmanager>();
@@ -30,49 +22,41 @@ void callbackDispatcher() {
   });
 }
 
-Future<void> executeTask() async {}
-
 Future<void> backgroundTask() async {
   Logger.backgroundLogger = true;
   Logger.prefix = '~~';
   Logger.logLevel = LogLevel.verbose;
-  TrackPoint();
-  ModelTrackPoint.open();
-  ModelAlias.open();
-  ModelTask.open();
-
+  DateTime t;
+  Duration d;
+  int tickDuration = 20;
+  int diff;
+  String msg;
   while (true) {
-    await Future.delayed(const Duration(seconds: 5));
+    await Shared(SharedKeys.workmanagerLastTick)
+        .save(DateTime.now().toIso8601String());
     try {
-      Shared sharedAlias = Shared(SharedKeys.modelAlias);
-      List<String> sharedAliasList = [];
-      String dump = ModelAlias.dump();
-      for (var i = 0; i < 500; i++) {
-        sharedAliasList.addAll(dump.split('\n'));
-      }
-      sharedAlias.saveList(sharedAliasList);
-      ////
-      String filename = 'test.tsv';
-      Directory appDir = await getApplicationDocumentsDirectory();
-      String p = join(appDir.path, /*'chaostours',*/ filename);
-      final file = File(p);
-      await file.writeAsString(sharedAliasList.join('\n'),
-          mode: FileMode.append);
-      int fileLength = file.lengthSync();
-
-      ///
-
-      Shared shared = Shared(SharedKeys.counterWorkmanager);
-      int counter = await shared.loadInt() ?? 0;
-      counter++;
-      await shared.saveInt(counter);
-
-      GPS gps = await GPS.gps();
-      await ModelTrackPoint.open();
-      EventManager.fire<EventOnGPS>(EventOnGPS(gps));
-      logger.log('ModelTrackPoint length: ${ModelTrackPoint.length}');
+      logger.important(
+          'workmanager backgroundTask::TrackPoint.startShared() deactivated!');
+      //await TrackPoint.startShared();
     } catch (e, stk) {
       logger.fatal(e.toString(), stk);
+    }
+    await Future.delayed(Duration(seconds: tickDuration));
+
+    /// measure real tick time
+    /// and store fails into SharedKeys.workmanagerLastTick as list
+    t = DateTime.parse((await Shared(SharedKeys.workmanagerLastTick).load() ??
+        DateTime.now().toIso8601String()));
+    diff = DateTime.now().difference(t).inSeconds;
+    if (diff > tickDuration * 2) {
+      // it should not take that long
+      List<String> pause =
+          await Shared(SharedKeys.workmanagerLastTick).loadList() ?? [];
+      msg =
+          'at ${t.toIso8601String()}: $diff seconds workmanager tick duration but $tickDuration expected';
+      pause.add(msg);
+      await Shared(SharedKeys.workmanagerLastTick).saveList(pause);
+      logger.error(msg, null);
     }
   }
 }
