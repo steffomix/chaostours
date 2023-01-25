@@ -24,21 +24,30 @@ enum TrackingStatus {
 }
 
 class RunningTrackPoint {
+  late int _id;
+  int get id => _id;
   final GPS gps;
   DateTime time = DateTime.now();
 
-  RunningTrackPoint(this.gps);
+  RunningTrackPoint(this.gps) {
+    _id = gps.id;
+  }
 
   @override
   String toString() {
-    return '${gps.toString()};${time.toIso8601String()}';
+    return <String>[_id.toString(), gps.toString(), time.toIso8601String()]
+        .join(';');
   }
+
+  String toSharedString() => toString();
 
   static RunningTrackPoint toModel(String row) {
     List<String> p = row.split(';');
-    GPS gps = GPS.toObject(p[0]);
-    DateTime time = DateTime.parse(p[1]);
+    int id = int.parse(p[0]);
+    GPS gps = GPS.toObject(p[1]);
+    DateTime time = DateTime.parse(p[2]);
     RunningTrackPoint tp = RunningTrackPoint(gps);
+    tp._id = id;
     tp.time = time;
     return tp;
   }
@@ -58,31 +67,38 @@ class TrackPoint {
 
   static TrackingStatus _oldStatus = TrackingStatus.none;
 
+  /// set shared data to app start defaults
   static initializeShared() async {
     logger.log('reset shared data to app start defaults');
-    Shared(SharedKeys.activeTrackPointNotes).save('');
-    Shared(SharedKeys.activeTrackPointTasks).saveList(<String>[]);
+    Shared(SharedKeys.activeTrackpoint)
+        .save((await createModelTrackPoint()).toSharedString());
+    Shared(SharedKeys.runningTrackpoints).saveList(<String>[]);
     Shared(SharedKeys.activeTrackPointStatusName)
         .save(TrackingStatus.none.name);
-    Shared(SharedKeys.activeTrackpoint).save('');
+    Shared(SharedKeys.activeTrackPointNotes).save('');
+    Shared(SharedKeys.activeTrackPointTasks).saveList(<String>[]);
   }
 
+  ///
+  /// <b>provides shared data</b>
+  ///
+  /// <u>SharedKeys.activeTrackpoint</u>: initial single ModelTrackPoint
+  /// on start and every status changed event
+  ///
+  /// <u>SharedKeys.runningTrackpoints</u>: list of RunningTrackPoint
+  /// growing list on every gps lookup. reset on every status changed
+  ///
+  /// <u>SharedKeys.activeTrackPointStatusName</u>: enum name of TrackingStatus.
+  /// initial is none, then moving and standing
+  ///
+  /// <b>uses shared data for saving on status changed</b>
+  ///
+  /// <u>SharedKeys.activeTrackPointNotes</u>: String.
+  /// User notes
+  ///
+  /// <u>SharedKeys.activeTrackPointTasks</u>: list of ids.
+  /// user selection of tasks
   static startShared() async {
-    /// load model alias for activeTrackpoint
-
-    logger.log('load table alias');
-    await ModelAlias.open();
-    if (ModelAlias.length < 1) {
-      await ModelAlias.openFromAsset();
-    }
-
-    /// load recent trackpoints and save to shared
-    /// and to provide them to frontend
-    logger.log('load recent Trackpoints');
-    await ModelTrackPoint.open();
-    await Shared(SharedKeys.recentTrackpoints).saveList(
-        ModelTrackPoint.recentTrackPoints().map((e) => e.toString()).toList());
-
     /// load running Trackpoints from shared
     /// convert to objects and inject into class TrackPoint
     logger.log('load running trackpoints');
@@ -113,27 +129,26 @@ class TrackPoint {
     /// ################### trackpoint executed ###################
     ///
     if (_oldStatus != status) {
-      /// load recent trackpoints and save to shared
-      /// and to provide them to frontend
-      logger.log('load recent Trackpoints');
-      await ModelTrackPoint.open();
-      Shared(SharedKeys.recentTrackpoints).saveList(
-          ModelTrackPoint.recentTrackPoints()
-              .map((e) => e.toString())
-              .toList());
-
       /// save new status
+      logger.log(
+          'status changed. provide new status name TrackingStatus.${status.name}');
       await Shared(SharedKeys.activeTrackPointStatusName).save(status.name);
     }
-    await Shared(SharedKeys.runningTrackpoints)
-        .saveList(_runningTrackPoints.map((e) => e.toString()).toList());
+
+    logger.log('provide shared running trackpoints');
+    Shared(SharedKeys.runningTrackpoints)
+        .saveList(_runningTrackPoints.map((e) => e.toSharedString()).toList());
   }
 
   static Future<void> trackPoint(GPS gps) async {
     logger.log('processing trackpoint ${gps.toString()}');
     //ModelTrackPoint tp;
     try {
+      logger.log('create running trackpoint');
       _runningTrackPoints.add(RunningTrackPoint(gps));
+      while (_runningTrackPoints.length > 300) {
+        _runningTrackPoints.removeAt(0);
+      }
 
       // min length
       logger.verbose('check running trackpoints min count > 3');
@@ -193,21 +208,21 @@ class TrackPoint {
     _runningTrackPoints.add(tp);
   }
 
-  static Future<ModelTrackPoint> createModelTrackPoint(GPS gps) async {
+  static Future<ModelTrackPoint> createModelTrackPoint([GPS? gps]) async {
+    if (gps == null) {
+      logger.warn('no gps on trackpoint. lookup foreground gps');
+    }
+    gps ??= await GPS.gps();
     logger.log('create trackpoint event');
     ModelTrackPoint tp = ModelTrackPoint(
         address: Address(gps),
         trackPoints: _runningTrackPoints.map((e) => e.gps).toList(),
-        idAlias: ModelAlias.nextAlias(gps).map((e) => e.id).toList(),
+        idAlias: <int>[],
         timeStart: _runningTrackPoints.first.time,
         gps: gps);
     tp.status = _oldStatus;
     tp.timeEnd = DateTime.now();
-    tp.idTask = (await Shared(SharedKeys.activeTrackPointTasks).loadList())
-            ?.map((e) => int.parse(e))
-            .toList() ??
-        <int>[];
-    tp.idAlias = ModelAlias.nextAlias(gps).map((e) => e.id).toList();
+    tp.idTask = <int>[];
     tp.trackPoints = _runningTrackPoints.map((e) => e.gps).toList();
     return tp;
   }

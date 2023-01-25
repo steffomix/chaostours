@@ -10,7 +10,6 @@ import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/shared/shared.dart';
-import 'package:chaostours/shared/shared_tracker.dart';
 import 'package:chaostours/shared/tracking.dart';
 import 'package:chaostours/trackpoint.dart';
 import 'package:chaostours/gps.dart';
@@ -29,11 +28,11 @@ class AppLoader {
   static Future<void> preload() async {
     logger.important('start Preload sequence...');
 
-    Shared sharedAlias = Shared(SharedKeys.modelAlias);
-    sharedAlias.saveList([]);
+    logger.important('clear shared data');
+    Shared.clear();
     //logger.important('start background gps tracking');
     //logger.important('initialize workmanager');
-    WorkManager();
+    //WorkManager();
 
     //await Tracking.initialize();
     //await Tracking.startTracking();
@@ -60,11 +59,9 @@ class AppLoader {
       //logger.important('initialize Tracking Calendar');
       //TrackingCalendar();
       logger.important('initialize Notifications');
-      Notifications();
+      Future.microtask(() => Notifications());
       logger.important('initialize Trackpoint');
       TrackPoint();
-      logger.important('initialize SharedTracker');
-      SharedTracker();
       logger.important('initialize Permissions');
 
       logger.important('preparing HTTP SSL Key');
@@ -106,11 +103,9 @@ class AppLoader {
     while (true) {
       tick++;
       try {
-        print('Tick #$tick');
-        EventManager.fire<EventOnTick>(EventOnTick());
-        //logger.log('Tick #$tick');
-      } catch (e) {
-        print('appTick failed: $e');
+        EventManager.fire<EventOnTick>(EventOnTick(tick));
+      } catch (e, stk) {
+        logger.error(e.toString(), stk);
       } finally {
         Logger.print('###### AppTick broke ######');
       }

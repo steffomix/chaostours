@@ -45,6 +45,10 @@ class Shared {
     return '${key.name}_${type.name}';
   }
 
+  static void clear() async {
+    (await shared).clear();
+  }
+
   /// prepare module
   static SharedPreferences? _shared;
   static Future<SharedPreferences> get shared async =>

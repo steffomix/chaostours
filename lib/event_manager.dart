@@ -5,7 +5,6 @@ import 'package:chaostours/globals.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/shared/shared.dart';
-import 'package:chaostours/shared/shared_tracker.dart';
 
 class EventOnSharedKeyChanged extends EventOn {
   SharedKeys key;
@@ -26,11 +25,6 @@ class EventOnTrackingStatusChanged extends EventOn {
   EventOnTrackingStatusChanged(this.tp);
 }
 
-class EventOnTracking extends EventOn {
-  final SharedTracker trackPoint;
-  EventOnTracking(this.trackPoint);
-}
-
 /// <p><b>Deprecated!</b></p>
 /// moved to background tracking<br>
 /// EventOnTracking
@@ -44,7 +38,10 @@ class EventOnGPS extends EventOn {
   EventOnGPS(this.gps);
 }
 
-class EventOnTick extends EventOn {}
+class EventOnTick extends EventOn {
+  final int id;
+  EventOnTick(this.id);
+}
 
 class EventOn {
   /// EventManager will print this
