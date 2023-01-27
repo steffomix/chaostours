@@ -1,46 +1,56 @@
-import 'dart:io' as io;
-import 'package:path/path.dart' as path;
-import 'package:path_provider/path_provider.dart' as path_provider;
-//
 import 'package:chaostours/logger.dart';
 
-enum DatabaseFile {
-  alias,
-  task,
-  station;
-}
+////
+import 'dart:io';
+import 'package:path/path.dart';
+import 'package:path_provider/path_provider.dart';
+
+var decode = Uri.decodeFull; // util.base64Codec().decode;
+var encode = Uri.encodeFull; //util.base64Codec().encode;
 
 class FileHandler {
   static Logger logger = Logger.logger<FileHandler>();
-  static Map<DatabaseFile, io.File?> handles = {
-    DatabaseFile.alias: null,
-    DatabaseFile.task: null,
-    DatabaseFile.station: null
-  };
-  static Future<io.File> get alias async => await file(DatabaseFile.alias);
-  static Future<io.File> get task async => await file(DatabaseFile.task);
-  static Future<io.File> get station async => await file(DatabaseFile.station);
+  static const lineSep = '\n';
+  static Directory? _appDir;
+  static Future<Directory> get appDir async {
+    return _appDir ??= await getApplicationDocumentsDirectory();
+  }
 
-  static Future<io.File> file(DatabaseFile filehandle) async {
-    logger.log('Provide File: ${filehandle.name}.tsv');
-
-    //return handles[filehandle] ??= await fileHandle('${filehandle.name}.tsv');
-    String filename = '${filehandle.name}.tsv';
-    io.Directory appDir =
-        await path_provider.getApplicationDocumentsDirectory();
-    String p = path.join(appDir.path, /*'chaostours',*/ filename);
-    io.File file = await io.File(p).create(recursive: true);
-    logger.log('file handle created for file: $p');
+  static Future<File> getFile(String filename) async {
+    String f = '${filename.toLowerCase()}.tsv';
+    f = join((await appDir).path, f);
+    logger.log('request access to File $f');
+    File file = File(f);
+    if (!file.existsSync()) {
+      logger.important('file does not exist, create file $f');
+      file = await file.create(recursive: true);
+    }
     return file;
   }
-/*
-  static Future<io.File> fileHandle(String filename) async {
-    io.Directory appDir =
-        await path_provider.getApplicationDocumentsDirectory();
-    String p = path.join(appDir.path, /*'chaostours',*/ filename);
-    logger.log('file handle created for file: $p');
-    io.File file = await io.File(p).create(recursive: true);
-    return file;
+
+  static Future<int> write(String filename, String content) async {
+    File file = await getFile(filename);
+    await file.writeAsString(content);
+    return file.lengthSync();
   }
-  */
+
+  static Future<String> read(String filename) async {
+    return (await getFile(filename)).readAsString();
+  }
+
+  static Future<int> writeTable<T>(List<String> table) async {
+    File file = await getFile(T.toString());
+    await file.writeAsString(table.join(lineSep));
+    return file.lengthSync();
+  }
+
+  static Future<List<String>> readTable<T>() async {
+    File file = await getFile(T.toString());
+    String data = await file.readAsString();
+    if (data.trim().isEmpty) {
+      return <String>[];
+    }
+    List<String> lines = data.split(lineSep);
+    return lines;
+  }
 }

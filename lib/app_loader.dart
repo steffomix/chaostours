@@ -19,6 +19,7 @@ import 'package:chaostours/permissions.dart';
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/workmanager.dart';
+import 'shared/shared_data.dart';
 
 class AppLoader {
   static Logger logger = Logger.logger<AppLoader>();
@@ -30,6 +31,18 @@ class AppLoader {
 
     logger.important('clear shared data');
     Shared.clear();
+    Future.microtask(() async {
+      while (true) {
+        await Future.delayed(const Duration(seconds: 3));
+        try {
+          await SharedData.test();
+        } catch (e, stk) {
+          print(e.toString());
+          print(stk);
+        }
+      }
+    });
+
     //logger.important('start background gps tracking');
     //logger.important('initialize workmanager');
     //WorkManager();

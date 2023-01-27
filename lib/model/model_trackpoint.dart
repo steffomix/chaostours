@@ -1,4 +1,4 @@
-import 'package:chaostours/model/model.dart';
+import 'package:chaostours/file_handler.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/trackpoint.dart';
@@ -68,7 +68,7 @@ class ModelTrackPoint {
     for (var i in _table) {
       dump.add(i.toString());
     }
-    return dump.join(Model.lineSep);
+    return dump.join(FileHandler.lineSep);
   }
 
   /// calculates route or distance, depending on TrackingStatus status
@@ -130,12 +130,12 @@ class ModelTrackPoint {
 
   static Future<void> write() async {
     logger.verbose('Write');
-    await Model.writeTable<ModelTrackPoint>(
+    await FileHandler.writeTable<ModelTrackPoint>(
         _table.map((e) => e.toString()).toList());
   }
 
   static Future<void> open() async {
-    List<String> lines = await Model.readTable<ModelTrackPoint>();
+    List<String> lines = await FileHandler.readTable<ModelTrackPoint>();
     _table.clear();
     for (var row in lines) {
       _table.add(toModel(row));
@@ -186,12 +186,12 @@ class ModelTrackPoint {
         address: Address(gps),
         timeStart: DateTime.parse(p[5]),
         trackPoints: parseGpsList(p[7]),
-        idAlias: Model.parseIdList(p[8]),
+        idAlias: parseIdList(p[8]),
         notes: decode(p[10]));
 
     tp._id = int.parse(p[0]);
     tp.timeEnd = DateTime.parse(p[6]);
-    tp.idTask = Model.parseIdList(p[9]);
+    tp.idTask = parseIdList(p[9]);
     tp.status = TrackingStatus.byValue(int.parse(p[2]));
     return tp;
   }
@@ -272,12 +272,12 @@ class ModelTrackPoint {
         gps: gps,
         address: Address(gps),
         timeStart: DateTime.parse(p[3]),
-        idAlias: Model.parseIdList(p[5]),
+        idAlias: parseIdList(p[5]),
         trackPoints: parseGpsList(p[8]),
         deleted: 0,
         notes: decode(p[7]));
     model.status = TrackingStatus.byValue(int.parse(p[0]));
-    model.idTask = Model.parseIdList(p[6]);
+    model.idTask = parseIdList(p[6]);
     model.timeEnd = DateTime.parse(p[4]);
     return model;
   }
@@ -292,5 +292,16 @@ class ModelTrackPoint {
       gpsList.add(GPS(double.parse(coords[0]), double.parse(coords[1])));
     }
     return gpsList;
+  }
+
+  static List<int> parseIdList(String string) {
+    string = string.trim();
+    Set<int> ids = {}; // make sure they are unique
+    if (string.isEmpty) return ids.toList();
+    List<String> list = string.split(',');
+    for (var item in list) {
+      ids.add(int.parse(item));
+    }
+    return ids.toList();
   }
 }

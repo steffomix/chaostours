@@ -3,10 +3,10 @@ import 'package:flutter/services.dart';
 import 'dart:math';
 //
 import 'package:chaostours/enum.dart';
-import 'package:chaostours/model/model.dart';
 import 'package:chaostours/file_handler.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/logger.dart';
+import 'package:chaostours/file_handler.dart';
 
 enum AliasStatus {
   disabled(0),
@@ -119,7 +119,7 @@ class ModelAlias {
 
   // opens, read and parse database
   static Future<int> open() async {
-    List<String> lines = await Model.readTable<ModelAlias>();
+    List<String> lines = await FileHandler.readTable<ModelAlias>();
     _table.clear();
     for (var row in lines) {
       _table.add(toModel(row));
@@ -131,7 +131,7 @@ class ModelAlias {
   // writes the entire table back to disc
   static Future<bool> write() async {
     logger.verbose('Write Table');
-    await Model.writeTable<ModelAlias>(
+    await FileHandler.writeTable<ModelAlias>(
         _table.map((e) => e.toString()).toList());
     return true;
   }
@@ -141,7 +141,7 @@ class ModelAlias {
     for (var i in _table) {
       dump.add(i.toString());
     }
-    return dump.join(Model.lineSep);
+    return dump.join(FileHandler.lineSep);
   }
 
   static ModelAlias get random {
@@ -179,7 +179,7 @@ class ModelAlias {
   static Future<int> openFromAsset() async {
     logger.warn('Loading built-in alias List from assets');
     String string = await rootBundle.loadString('assets/alias.tsv');
-    List<String> lines = string.trim().split(Model.lineSep);
+    List<String> lines = string.trim().split(FileHandler.lineSep);
     _table.clear();
     for (var row in lines) {
       _table.add(toModel(row));

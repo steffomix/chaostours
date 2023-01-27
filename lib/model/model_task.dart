@@ -1,6 +1,6 @@
 import 'package:flutter/services.dart';
 //
-import 'package:chaostours/model/model.dart';
+import 'package:chaostours/file_handler.dart';
 import 'package:chaostours/file_handler.dart';
 import 'package:chaostours/enum.dart';
 import 'package:chaostours/logger.dart';
@@ -57,7 +57,7 @@ class ModelTask {
   }
 
   static Future<int> open() async {
-    List<String> lines = await Model.readTable<ModelTask>();
+    List<String> lines = await FileHandler.readTable<ModelTask>();
     _table.clear();
     for (var row in lines) {
       _table.add(toModel(row));
@@ -88,7 +88,8 @@ class ModelTask {
   // writes the entire table back to disc
   static Future<void> write() async {
     logger.verbose('Write Table');
-    await Model.writeTable<ModelTask>(_table.map((e) => e.toString()).toList());
+    await FileHandler.writeTable<ModelTask>(
+        _table.map((e) => e.toString()).toList());
   }
 
   static String dump() {
@@ -96,13 +97,13 @@ class ModelTask {
     for (var i in _table) {
       dump.add(i.toString());
     }
-    return dump.join(Model.lineSep);
+    return dump.join(FileHandler.lineSep);
   }
 
   static Future<int> openFromAsset() async {
     logger.warn('Load built-in Tasks from assets');
     String string = await rootBundle.loadString('assets/task.tsv');
-    List<String> lines = string.trim().split(Model.lineSep);
+    List<String> lines = string.trim().split(FileHandler.lineSep);
     _table.clear();
     for (var row in lines) {
       _table.add(toModel(row));
