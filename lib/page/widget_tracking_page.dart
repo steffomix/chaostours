@@ -1,4 +1,4 @@
-// ignore_for_file: prefer_final_fields
+// ignore_for_file: prefer_final_fields, prefer_const_constructors, prefer_const_literals_to_create_immutables
 
 import 'package:flutter/material.dart';
 //
@@ -57,58 +57,135 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     data = SharedData();
 
     await data.read();
-    var d = data;
 
     setState(() {});
   }
 
-  Widget renderActiveTrackpoint(BuildContext context) {
-    try {
-      String status =
-          data.status == TrackingStatus.standing ? 'Halt' : 'Fahren';
-      Duration dur = data.runningTrackPoints.last.time
-          .difference(data.runningTrackPoints.first.time);
-
-      return ListView(children: [
-        Center(
-            heightFactor: 1.5,
-            child: Text(
-              '$status für ${dur.toString()}',
-              textScaleFactor: 2,
-            )),
-        Text(data.runningTrackPoints.map((e) => e.toString()).join('\n'))
-      ]);
-    } catch (e) {
-      return SizedBox(
-          height: 100, child: Text('...waiting for trackpoints\n $e'));
-    }
-/*
-    /// try to get an alias from running trackpoints
-    String alias = '- no alias found -';
-    String address = '- no address found yet -';
-    if (activeRunningTrackpoints.isNotEmpty) {
-      List<ModelAlias> aliasList =
-          ModelAlias.nextAlias(activeRunningTrackpoints.last.gps);
-      if (aliasList.isNotEmpty) {
-        alias = aliasList.first.alias;
-      }
-    }
-
-    return Container();
-    */
-  }
-
-  Widget renderRecentTrackPoint(int id) {
-    return Container();
-  }
-
   @override
   Widget build(BuildContext context) {
+    Widget active = renderActiveTrackPoint(context);
+    List<Widget> stored = renderStoredTrackPoints(context);
     return Scaffold(
       appBar: Widgets.appBar(),
       drawer: const WidgetDrawer(),
-      body: renderActiveTrackpoint(context),
+      body: ListView(children: [active, ...stored]),
       bottomNavigationBar: const WidgetBottomNavBar(),
     );
+  }
+
+  Widget renderActiveTrackPoint(BuildContext context) {
+    try {
+      ModelTrackPoint tp = data.trackPoint;
+      List<RunningTrackPoint> runningTp = data.runningTrackPoints;
+      DateTime timeStart = runningTp.first.time;
+      DateTime timeEnd = runningTp.last.time;
+      Duration dur = timeStart.difference(timeEnd);
+      String status = tp.status == TrackingStatus.moving ? 'Fahren' : 'Halt';
+      String address = tp.address.asString;
+      String alias = tp.idAlias
+          .map((e) {
+            return '- ${ModelAlias.getAlias(e).alias}';
+          })
+          .toList()
+          .join('\n');
+      String task = tp.idTask
+          .map((e) {
+            return '- ${ModelTask.getTask(e).task}';
+          })
+          .toList()
+          .join('\n');
+      List<String> taskNotes = tp.idTask.map((e) {
+        return ModelTask.getTask(e).notes;
+      }).toList();
+      String notes = tp.notes;
+      return Table(columnWidths: {
+        1: FixedColumnWidth(10),
+        2: FixedColumnWidth(90)
+      }, children: [
+        /// Row 1
+        TableRow(children: [
+          /// Row 1, col 1 (icon button)
+          TableCell(
+              child: IconButton(
+                  icon: Icon(Icons.edit_attributes), onPressed: () {})),
+
+          /// Row 1, col 2 (trackpoint information in some rows)
+          TableCell(
+              child: Row(
+            children: [
+              Center(
+                  heightFactor: 1.5,
+                  child: Text(
+                      'Halt: von ${tp.timeStart.toIso8601String()} bis ${tp.timeEnd.toIso8601String()}')),
+              Text('OSM: "$address"'),
+              Text('Alias: $alias'),
+              Text('Aufgaben: $task')
+            ],
+          ))
+        ])
+      ]);
+    } catch (e, stk) {
+      logger.error(e.toString(), stk);
+      return Text('$e');
+    }
+  }
+
+  List<Widget> renderStoredTrackPoints(BuildContext context) {
+    try{
+    List<ModelTrackPoint> tpList = ModelTrackPoint.recentTrackPoints();
+    List<Widget> listItems = [];
+    for (var tp in tpList) {
+      Duration duration = tp.timeStart.difference(tp.timeEnd);
+      String status = tp.status == TrackingStatus.moving ? 'Fahren' : 'Halt';
+      String address = tp.address.asString;
+      String alias = tp.idAlias
+          .map((e) {
+            return '- ${ModelAlias.getAlias(e).alias}';
+          })
+          .toList()
+          .join('\n');
+      String task = tp.idTask
+          .map((e) {
+            return '- ${ModelTask.getTask(e).task}';
+          })
+          .toList()
+          .join('\n');
+      List<String> taskNotes = tp.idTask.map((e) {
+        return ModelTask.getTask(e).notes;
+      }).toList();
+      String notes = tp.notes;
+      if (tp.status == TrackingStatus.standing) {
+        listItems.add(Table(columnWidths: {
+          1: FixedColumnWidth(10),
+          2: FixedColumnWidth(90)
+        }, children: [
+          /// Row 1
+          TableRow(children: [
+            /// Row 1, col 1 (icon button)
+            TableCell(
+                child: IconButton(
+                    icon: Icon(Icons.edit_attributes), onPressed: () {})),
+
+            /// Row 1, col 2 (trackpoint information in some rows)
+            TableCell(
+                child: Row(
+              children: [
+                Center(
+                    heightFactor: 1.5,
+                    child: Text(
+                        'Halt: von ${tp.timeStart.toIso8601String()} bis ${tp.timeEnd.toIso8601String()}')),
+                Text('OSM: "$address"'),
+                Text('Alias: $alias'),
+                Text('Aufgaben: $task')
+              ],
+            ))
+          ])
+        ]));
+      } else {
+        return ListView(Text('wrong status');
+      }
+    }
+
+    return listItems.reversed.toList();
   }
 }
