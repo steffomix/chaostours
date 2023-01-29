@@ -4,8 +4,15 @@ import 'package:chaostours/trackpoint.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/file_handler.dart';
 import 'package:chaostours/address.dart';
+import 'package:chaostours/shared/shared.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SharedData {
+  /// prepare module
+  static SharedPreferences? _shared;
+  static Future<SharedPreferences> get shared async =>
+      _shared ??= await SharedPreferences.getInstance();
+
   static const filename = 'shareddata.xml';
 
   static Future<void> test() async {
@@ -32,7 +39,7 @@ class SharedData {
     sd.tasks = <int>[4, 3, 2, 1];
     sd.address = 'over there near the old tree';
 
-    int bytes = await sd.write();
+    //int bytes = await sd.write();
 
     sd = SharedData();
     await sd.read();
@@ -84,19 +91,28 @@ class SharedData {
   }
 
   Future<XmlDocument> read() async {
+    String f = (await shared).getString(filename) ??
+        '<?xml version="1.0"?><data></data>';
+    var doc = XmlDocument.parse(f);
+    _xml = doc;
+    return doc;
+    /*
     String f = await FileHandler.read(filename);
     XmlDocument doc = XmlDocument.parse(f);
     _xml = doc;
     return doc;
+    */
   }
 
   static Future<void> clear() async {
-    FileHandler.write(filename, '');
+    await (await shared).clear();
+    //FileHandler.write(filename, '');
   }
 
-  Future<int> write() async {
+  Future<bool> write() async {
     bakeXml();
-    return FileHandler.write(filename, xml.toXmlString(pretty: true));
+    return (await shared).setString(filename, xml.toXmlString(pretty: true));
+    //return FileHandler.write(filename, xml.toXmlString(pretty: true));
   }
 
   /// get, set status
