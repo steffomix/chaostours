@@ -18,7 +18,7 @@ import 'package:chaostours/widget/widgets.dart';
 import 'package:chaostours/widget/widget_bottom_navbar.dart';
 import 'package:chaostours/address.dart';
 import 'package:chaostours/gps.dart';
-import 'package:xml/xml.dart';
+import 'package:chaostours/shared/shared_data.dart';
 
 class WidgetTrackingPage extends StatefulWidget {
   const WidgetTrackingPage({super.key});
@@ -27,157 +27,13 @@ class WidgetTrackingPage extends StatefulWidget {
   State<WidgetTrackingPage> createState() => _WidgetTrackingPage();
 }
 
-class SharedData {
-  static const String lineSep = '\n';
-  static const String xmlHead = '<?xml version="1.0"?>';
-
-  /// encode, decode
-  static String encode(String s) => Uri.encodeFull(s);
-  static String decode(String s) => Uri.decodeFull(s);
-
-  String _status = 'none';
-  String _trackPoint = '';
-  String _runningTrackPoints = '';
-  String _notes = '';
-  String _tasks = '';
-  String _alias = '';
-  String _address = '';
-
-  /// xml nodes
-  final String nodeStatus = 'status';
-  final String nodeTrackPoint = 'trackpoint';
-  final String nodeRunningTrackPoints = 'runningtrackpoints';
-  final String nodeNotes = 'notes';
-  final String nodeTask = 'task';
-  final String nodeParentTasks = 'tasks';
-  final String nodeAlias = 'alias';
-  final String nodeAddress = 'address';
-  final String nodeListElement = 'node';
-
-  XmlDocument _xml = XmlDocument.parse('');
-
-  /// get, set status
-  TrackingStatus get status {
-    return TrackingStatus.values.byName(decode(textNode(nodeStatus)));
-  }
-
-  set status(TrackingStatus s) => _status = toNode(nodeStatus, encode(s.name));
-
-  /// get, set trackpoint
-  ModelTrackPoint get trackPoint =>
-      ModelTrackPoint.toSharedModel(decode(textNode(nodeTrackPoint)));
-  //
-  set trackPoint(ModelTrackPoint t) =>
-      _trackPoint = toNode(nodeTrackPoint, encode(t.toSharedString()));
-
-  /// running status
-  List<RunningTrackPoint> get runningTrackPoints {
-    List<RunningTrackPoint> list = [];
-    var children = node(nodeRunningTrackPoints).children;
-    for (var child in children) {
-      list.add(RunningTrackPoint.toModel(decode(child.innerText)));
-    }
-    return list;
-  }
-
-  set runningTrackPoints(List<RunningTrackPoint> tpList) {
-    List<String> xmlList = [];
-    for (var tp in tpList) {
-      xmlList.add(toNode(nodeListElement, encode(tp.toSharedString())));
-    }
-    _runningTrackPoints = toNode(nodeRunningTrackPoints, xmlList.join(lineSep));
-  }
-
-  set notes(String n) {
-    _notes = toNode(nodeNotes, encode(n));
-  }
-
-  String get notes {
-    return decode(textNode(nodeNotes));
-  }
-
-  /// tasks id list
-  set tasks(List<int> t) {
-    List<String> taskList = [];
-    for (var task in t) {
-      taskList.add(toNode(nodeListElement, task.toString()));
-    }
-    _tasks = toNode(nodeTask, taskList.join(lineSep));
-  }
-
-  List<int> get tasks {
-    List<int> taskList = [];
-    for (var child in node(nodeTask).children) {
-      taskList.add(int.parse(child.innerText));
-    }
-    return taskList;
-  }
-
-  /// alias id list
-  set alias(List<int> alias) {
-    List<String> aliasList = [];
-    for (var a in alias) {
-      aliasList.add(toNode(nodeAlias, a.toString()));
-    }
-    _alias = toNode(nodeAlias, aliasList.join(lineSep));
-  }
-
-  List<int> get alias {
-    List<int> ids = [];
-    for (var child in node(nodeAlias).children) {
-      ids.add(int.parse(child.innerText));
-    }
-    return ids;
-  }
-
-  set address(String address) {
-    _address = toNode(nodeAddress, encode(address));
-  }
-
-  String get address {
-    return decode(textNode(nodeAddress));
-  }
-
-  XmlDocument get xmlDocument {
-    String sx = <String>[
-      xmlHead,
-      _status,
-      _trackPoint,
-      _runningTrackPoints,
-      _notes,
-      _tasks,
-      _alias,
-      _address
-    ].join(lineSep);
-
-    return XmlDocument.parse(sx);
-  }
-
-  XmlElement node(String name) {
-    return _xml.findAllElements(name).first;
-  }
-
-  String textNode(String name) {
-    return _xml.findAllElements(name).first.innerText;
-  }
-
-  String toNode(String node, String value) {
-    return '<$node>$value</$node>';
-  }
-}
-
 class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   static Logger logger = Logger.logger<WidgetTrackingPage>();
 
   ///
   /// active trackpoint data
-  static TrackingStatus activeStatus = TrackingStatus.none;
-  static ModelTrackPoint? activeTrackPoint;
-  static List<RunningTrackPoint> activeRunningTrackpoints = [];
-  static String activeNotes = '';
-  static List<ModelTask> activeTasks = [];
-  static List<ModelAlias> activeAlias = [];
-  static Address activeAddress = Address(GPS(0, 0));
+  static SharedData data = SharedData();
+  static TrackingStatus lastStatus = TrackingStatus.none;
 
   /// recent or saved trackponts
   static List<ModelTrackPoint> recentTrackpoints = [];
@@ -189,24 +45,6 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
   Future<void> updateActiveTrackpoint() async {
     recentTrackpoints = ModelTrackPoint.recentTrackPoints();
-
-    /// load status
-    activeStatus = TrackingStatus.values.byName(
-        (await Shared(SharedKeys.activeTrackPointStatusName).load()) ??
-            TrackingStatus.none.name);
-
-    /// load active trackpoint
-    String? atp = await Shared(SharedKeys.activeTrackpoint).load();
-    if (atp != null) {
-      activeTrackPoint = ModelTrackPoint.toSharedModel(atp);
-
-      /// load running trackpoints
-      List<String> art =
-          (await Shared(SharedKeys.runningTrackpoints).loadList()) ??
-              <String>[];
-      activeRunningTrackpoints =
-          art.map((e) => RunningTrackPoint.toModel(e)).toList();
-    }
   }
 
   @override
@@ -216,23 +54,35 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   }
 
   void onTick(EventOnTick tick) async {
-    String none = TrackingStatus.none.name;
-    String status =
-        await Shared(SharedKeys.activeTrackPointStatusName).load() ?? none;
+    data = SharedData();
 
-    if (status != none) {
-      activeStatus = TrackingStatus.values.byName(status);
-      await updateActiveTrackpoint();
-      await Shared(SharedKeys.activeTrackPointStatusName).save(none);
-    }
+    await data.read();
+    var d = data;
+
     setState(() {});
   }
 
   Widget renderActiveTrackpoint(BuildContext context) {
-    if (activeTrackPoint == null) {
-      return (const Center(child: Text('Waiting for active Trackpoint...')));
-    }
+    try {
+      String status =
+          data.status == TrackingStatus.standing ? 'Halt' : 'Fahren';
+      Duration dur = data.runningTrackPoints.last.time
+          .difference(data.runningTrackPoints.first.time);
 
+      return ListView(children: [
+        Center(
+            heightFactor: 1.5,
+            child: Text(
+              '$status für ${dur.toString()}',
+              textScaleFactor: 2,
+            )),
+        Text(data.runningTrackPoints.map((e) => e.toString()).join('\n'))
+      ]);
+    } catch (e) {
+      return SizedBox(
+          height: 100, child: Text('...waiting for trackpoints\n $e'));
+    }
+/*
     /// try to get an alias from running trackpoints
     String alias = '- no alias found -';
     String address = '- no address found yet -';
@@ -245,6 +95,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     }
 
     return Container();
+    */
   }
 
   Widget renderRecentTrackPoint(int id) {
@@ -256,17 +107,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     return Scaffold(
       appBar: Widgets.appBar(),
       drawer: const WidgetDrawer(),
-      body: ListView.separated(
-        itemCount: recentTrackpoints.length + 1,
-        separatorBuilder: (BuildContext context, int index) => const Divider(),
-        itemBuilder: (BuildContext context, int index) {
-          if (index == 0) {
-            return renderActiveTrackpoint(context);
-          } else {
-            return renderRecentTrackPoint(index - 1);
-          }
-        },
-      ),
+      body: renderActiveTrackpoint(context),
       bottomNavigationBar: const WidgetBottomNavBar(),
     );
   }

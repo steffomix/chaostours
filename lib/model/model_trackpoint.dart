@@ -59,6 +59,8 @@ class ModelTrackPoint {
     _id = _nextUnsavedId;
   }
 
+  static ModelTrackPoint get last => _table.last;
+
   String timeElapsed() {
     return util.timeElapsed(timeStart, timeEnd);
   }

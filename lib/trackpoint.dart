@@ -7,6 +7,7 @@ import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/shared/shared.dart';
+import 'shared/shared_data.dart';
 
 enum TrackingStatus {
   none(0),
@@ -69,6 +70,33 @@ class TrackPoint {
 
   /// set shared data to app start defaults
   static initializeShared() async {
+    try {
+      var sd = SharedData();
+      await sd.read();
+    } catch (e, stk) {
+      logger.error('initial read SharedData: $e', stk);
+      logger.warn('create initial SharedData');
+      var sd = SharedData();
+      ModelTrackPoint mt = ModelTrackPoint(
+          gps: GPS(0, 0),
+          address: Address(GPS(0, 0)),
+          trackPoints: <GPS>[],
+          idAlias: [],
+          timeStart: DateTime.now(),
+          deleted: 0,
+          notes: '');
+      sd.runningTrackPoints = [];
+      sd.trackPoint = mt;
+      sd.status = TrackingStatus.standing;
+      sd.trackPoint = mt;
+      sd.notes = '';
+      sd.alias = <int>[];
+      sd.tasks = <int>[];
+      sd.address = '...waiting for trackpoints';
+
+      await sd.write();
+    }
+    /*
     logger.log('reset shared data to app start defaults');
     Shared(SharedKeys.activeTrackpoint)
         .save((await createModelTrackPoint()).toSharedString());
@@ -77,6 +105,7 @@ class TrackPoint {
         .save(TrackingStatus.none.name);
     Shared(SharedKeys.activeTrackPointNotes).save('');
     Shared(SharedKeys.activeTrackPointTasks).saveList(<String>[]);
+    */
   }
 
   ///
@@ -101,6 +130,7 @@ class TrackPoint {
   static startShared() async {
     /// load running Trackpoints from shared
     /// convert to objects and inject into class TrackPoint
+    /*
     logger.log('load running trackpoints');
     _runningTrackPoints.clear();
     _runningTrackPoints.addAll(
@@ -113,6 +143,15 @@ class TrackPoint {
     _status = TrackingStatus.values.byName(
         await Shared(SharedKeys.activeTrackPointStatusName).load() ??
             TrackingStatus.none.name);
+    */
+    SharedData sdIn = SharedData();
+    await sdIn.read();
+    logger.log('load running trackpoints');
+    _runningTrackPoints.clear();
+    _runningTrackPoints.addAll(sdIn.runningTrackPoints);
+
+    logger.log('load tracking status');
+    _status = sdIn.status;
 
     /// remember old status
     _oldStatus = _status;
@@ -120,6 +159,8 @@ class TrackPoint {
     /// get gps
     logger.log('lookup GPS');
     GPS gps = await GPS.gps();
+
+    SharedData sdOut = SharedData();
 
     /// start trackpoint calculation process
     logger.log('start trackpoint calculation');
@@ -132,12 +173,25 @@ class TrackPoint {
       /// save new status
       logger.log(
           'status changed. provide new status name TrackingStatus.${status.name}');
-      await Shared(SharedKeys.activeTrackPointStatusName).save(status.name);
+      //await Shared(SharedKeys.activeTrackPointStatusName).save(status.name);
+      await SharedData.clear();
+      ModelTrackPoint at = ModelTrackPoint.last;
+      sdOut.trackPoint = at;
+      sdOut.alias = at.idAlias;
+      sdOut.tasks = at.idTask;
+      sdOut.notes = at.notes;
+      sdOut.address = at.address.asString;
     }
 
+    sdOut.status = _status;
     logger.log('provide shared running trackpoints');
+    /*
     Shared(SharedKeys.runningTrackpoints)
         .saveList(_runningTrackPoints.map((e) => e.toSharedString()).toList());
+        */
+    sdOut.runningTrackPoints = _runningTrackPoints;
+
+    await sdOut.write();
   }
 
   static Future<void> trackPoint(GPS gps) async {

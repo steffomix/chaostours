@@ -7,13 +7,10 @@ import 'package:chaostours/address.dart';
 
 class SharedData {
   static const filename = 'shareddata.xml';
+
   static Future<void> test() async {
     var sd = SharedData();
-    sd.runningTrackPoints = [
-      RunningTrackPoint(GPS(0, 0)),
-      RunningTrackPoint(GPS(1, 1)),
-      RunningTrackPoint(GPS(2, 2))
-    ];
+
     ModelTrackPoint mt = ModelTrackPoint(
         gps: GPS(100, 100),
         address: Address(GPS(-1, -1)),
@@ -22,7 +19,12 @@ class SharedData {
         timeStart: DateTime.now(),
         deleted: 0,
         notes: 'don\'t forget');
-    //sd. trackPoints = <ModelTrackPoint>[mt, mt, mt, mt];
+    sd.runningTrackPoints = [
+      RunningTrackPoint(GPS(0, 0)),
+      RunningTrackPoint(GPS(1, 1)),
+      RunningTrackPoint(GPS(2, 2))
+    ];
+    sd.trackPoint = mt;
     sd.status = TrackingStatus.standing;
     sd.trackPoint = mt;
     sd.notes = 'pretty notes';
@@ -30,17 +32,17 @@ class SharedData {
     sd.tasks = <int>[4, 3, 2, 1];
     sd.address = 'over there near the old tree';
 
-    String xml = sd.xml.toXmlString(pretty: true);
+    int bytes = await sd.write();
 
-    //var status = sd.status;
+    sd = SharedData();
+    await sd.read();
+    var status = sd.status;
     var trackPoints = sd.runningTrackPoints;
     var trackPoint = sd.trackPoint;
     var notes = sd.notes;
     var tasks = sd.tasks;
     var alias = sd.alias;
     var address = sd.address;
-    String x = await sd.write();
-    sd.read();
   }
 
   static const String lineSep = '\n';
@@ -60,19 +62,42 @@ class SharedData {
   static const String nodeAddress = 'address';
   static const String nodeListElement = 'node';
 
-  String _status = '';
-  String _trackPoint = '';
-  String _runningTrackPoints = '';
-  String _notes = '';
-  String _tasks = '';
-  String _alias = '';
-  String _address = '';
+  static String toNode(String node, String value) {
+    return '<$node>$value</$node>';
+  }
 
-  XmlDocument _xml = XmlDocument.parse('$xmlHead\n<root></root>');
+  String _status = toNode(nodeStatus, '');
+  String _trackPoint = toNode(nodeTrackPoint, '');
+  String _runningTrackPoints = toNode(nodeRunningTrackPoint, '');
+  String _notes = toNode(nodeNotes, '');
+  String _tasks = toNode(nodeTask, '');
+  String _alias = toNode(nodeAlias, '');
+  String _address = toNode(nodeAddress, '');
 
-  read() async => await FileHandler.read(filename);
-  write() async =>
-      await FileHandler.write(filename, xml.toXmlString(pretty: true));
+  XmlDocument? _xml;
+
+  XmlDocument get xml {
+    if (_xml == null) {
+      throw ('xml not loaded. Use "await SharedData.read();" before using data');
+    }
+    return _xml!;
+  }
+
+  Future<XmlDocument> read() async {
+    String f = await FileHandler.read(filename);
+    XmlDocument doc = XmlDocument.parse(f);
+    _xml = doc;
+    return doc;
+  }
+
+  static Future<void> clear() async {
+    FileHandler.write(filename, '');
+  }
+
+  Future<int> write() async {
+    bakeXml();
+    return FileHandler.write(filename, xml.toXmlString(pretty: true));
+  }
 
   /// get, set status
   TrackingStatus get status {
@@ -155,11 +180,10 @@ class SharedData {
     return decode(textNode(nodeAddress));
   }
 
-  XmlDocument get xml {
-    String root = 'chaostours_shared_data';
-    String sx = <String>[
+  void bakeXml() {
+    _xml = XmlDocument.parse(<String>[
       xmlHead,
-      '<$root>',
+      '<root>',
       _status,
       _trackPoint,
       _runningTrackPoints,
@@ -167,14 +191,8 @@ class SharedData {
       _tasks,
       _alias,
       _address,
-      '</$root>'
-    ].join(lineSep);
-
-    return XmlDocument.parse(sx);
-  }
-
-  set xml(XmlDocument doc) {
-    _xml = doc;
+      '</root>'
+    ].join(lineSep));
   }
 
   XmlElement node(String name) {
@@ -185,12 +203,7 @@ class SharedData {
   String textNode(String name) {
     var el = xml.findAllElements(name);
     var first = el.first;
-    var text = first.innerText;
+    var text = first.text;
     return text;
-    //return _xml.findAllElements(name).first.innerText;
-  }
-
-  String toNode(String node, String value) {
-    return '<$node>$value</$node>';
   }
 }

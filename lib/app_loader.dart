@@ -32,14 +32,15 @@ class AppLoader {
     logger.important('clear shared data');
     Shared.clear();
     Future.microtask(() async {
-      while (true) {
-        await Future.delayed(const Duration(seconds: 3));
-        try {
-          await SharedData.test();
-        } catch (e, stk) {
-          print(e.toString());
-          print(stk);
-        }
+      //await Future.delayed(const Duration(seconds: 3));
+      logger.important('test shared data...');
+      try {
+        await SharedData.test();
+        await SharedData.clear();
+      } catch (e, stk) {
+        logger.fatal('shared data test failed: $e', stk);
+        print(e.toString());
+        print(stk);
       }
     });
 
@@ -119,10 +120,9 @@ class AppLoader {
         EventManager.fire<EventOnTick>(EventOnTick(tick));
       } catch (e, stk) {
         logger.error(e.toString(), stk);
-      } finally {
         Logger.print('###### AppTick broke ######');
       }
-      await Future.delayed(const Duration(seconds: 1));
+      await Future.delayed(const Duration(seconds: 3));
     }
   }
 

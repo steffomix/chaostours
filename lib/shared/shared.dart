@@ -3,6 +3,9 @@ import 'package:chaostours/logger.dart';
 import 'package:chaostours/event_manager.dart';
 
 enum SharedKeys {
+  /// structured data SharedData
+  xml,
+
   /// gps
   backgroundGps,
 
