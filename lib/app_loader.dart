@@ -30,7 +30,7 @@ class AppLoader {
     logger.important('start Preload sequence...');
 
     logger.important('clear shared data');
-    Shared.clear();
+    //Shared.clear();
     Future.microtask(() async {
       //await Future.delayed(const Duration(seconds: 3));
       logger.important('test shared data...');

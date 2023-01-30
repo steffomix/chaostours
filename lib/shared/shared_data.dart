@@ -6,8 +6,11 @@ import 'package:chaostours/file_handler.dart';
 import 'package:chaostours/address.dart';
 import 'package:chaostours/shared/shared.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:chaostours/logger.dart';
 
 class SharedData {
+  static final Logger logger = Logger.logger<SharedData>();
+
   /// prepare module
   static SharedPreferences? _shared;
   static Future<SharedPreferences> get shared async =>
@@ -73,7 +76,7 @@ class SharedData {
     return '<$node>$value</$node>';
   }
 
-  String _status = toNode(nodeStatus, '');
+  String _status = toNode(nodeStatus, TrackingStatus.none.name);
   String _trackPoint = toNode(nodeTrackPoint, '');
   String _runningTrackPoints = toNode(nodeRunningTrackPoint, '');
   String _notes = toNode(nodeNotes, '');
@@ -117,23 +120,36 @@ class SharedData {
 
   /// get, set status
   TrackingStatus get status {
-    return TrackingStatus.values.byName(decode(textNode(nodeStatus)));
+    String status = decode(textNode(nodeStatus));
+    return status == ''
+        ? TrackingStatus.none
+        : TrackingStatus.values.byName(decode(textNode(nodeStatus)));
   }
 
   set status(TrackingStatus s) => _status = toNode(nodeStatus, encode(s.name));
 
   /// get, set trackpoint
-  ModelTrackPoint get trackPoint =>
+  ModelTrackPoint? get trackPoint {
+    try {
       ModelTrackPoint.toSharedModel(decode(textNode(nodeTrackPoint)));
+    } catch (e, stk) {
+      logger.warn('no trackpoint found in xml file');
+    }
+  }
+
   //
-  set trackPoint(ModelTrackPoint t) =>
-      _trackPoint = toNode(nodeTrackPoint, encode(t.toSharedString()));
+  set trackPoint(ModelTrackPoint? t) =>
+      _trackPoint = toNode(nodeTrackPoint, encode(t!.toSharedString()));
 
   /// running status
   List<RunningTrackPoint> get runningTrackPoints {
     List<RunningTrackPoint> list = [];
-    for (var child in node(nodeRunningTrackPoint).childElements) {
-      list.add(RunningTrackPoint.toModel(decode(child.innerText)));
+    try {
+      for (var child in node(nodeRunningTrackPoint).childElements.toList()) {
+        list.add(RunningTrackPoint.toModel(decode(child.innerText)));
+      }
+    } catch (e, stk) {
+      logger.warn('no running trackpoints found in xml file');
     }
     return list;
   }
@@ -165,8 +181,12 @@ class SharedData {
 
   List<int> get tasks {
     List<int> taskList = [];
-    for (var child in node(nodeTask).childElements) {
-      taskList.add(int.parse(child.innerText));
+    try {
+      for (var child in node(nodeTask).childElements) {
+        taskList.add(int.parse(child.innerText));
+      }
+    } catch (e, stk) {
+      logger.warn('no tasks found in xml file');
     }
     return taskList;
   }
@@ -182,8 +202,12 @@ class SharedData {
 
   List<int> get alias {
     List<int> ids = [];
-    for (var child in node(nodeAlias).childElements) {
-      ids.add(int.parse(child.innerText));
+    try {
+      for (var child in node(nodeAlias).childElements) {
+        ids.add(int.parse(child.innerText));
+      }
+    } catch (e, stk) {
+      logger.warn('no alias found in xml file');
     }
     return ids;
   }
@@ -217,9 +241,14 @@ class SharedData {
   }
 
   String textNode(String name) {
-    var el = xml.findAllElements(name);
-    var first = el.first;
-    var text = first.text;
+    var text = '';
+    try {
+      var el = xml.findAllElements(name);
+      var first = el.first;
+      text = first.text;
+    } catch (e) {
+      logger.warn('no elements found in $name');
+    }
     return text;
   }
 }

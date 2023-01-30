@@ -68,6 +68,8 @@ class TrackPoint {
 
   static TrackingStatus _oldStatus = TrackingStatus.none;
 
+  static ModelTrackPoint? _activeTrackPoint;
+
   /// set shared data to app start defaults
   static initializeShared() async {
     try {
@@ -164,7 +166,8 @@ class TrackPoint {
 
     /// start trackpoint calculation process
     logger.log('start trackpoint calculation');
-    trackPoint(gps);
+    await trackPoint(gps);
+    logger.log('trackpoint executed');
 
     ///
     /// ################### trackpoint executed ###################
@@ -175,12 +178,12 @@ class TrackPoint {
           'status changed. provide new status name TrackingStatus.${status.name}');
       //await Shared(SharedKeys.activeTrackPointStatusName).save(status.name);
       await SharedData.clear();
-      ModelTrackPoint at = ModelTrackPoint.last;
+      ModelTrackPoint? at = _activeTrackPoint;
       sdOut.trackPoint = at;
-      sdOut.alias = at.idAlias;
-      sdOut.tasks = at.idTask;
-      sdOut.notes = at.notes;
-      sdOut.address = at.address.asString;
+      sdOut.alias = at?.idAlias ?? [];
+      sdOut.tasks = at?.idTask ?? [];
+      sdOut.notes = at?.notes ?? '';
+      sdOut.address = at?.address.asString ?? '';
     }
 
     sdOut.status = _status;
@@ -240,26 +243,28 @@ class TrackPoint {
     // create a new TrackPoint as event
     logger.important('Tracking Status changed to #${status.name}');
     logger.log('save new status #${status.name}');
-    await Shared(SharedKeys.activeTrackPointStatusName).save(status.toString());
+    //await Shared(SharedKeys.activeTrackPointStatusName).save(status.toString());
 
     /// create active trackpoint
     logger.log('create active trackpoint');
-    ModelTrackPoint activeTrackPoint = await createModelTrackPoint(tp.gps);
+    _activeTrackPoint = await createModelTrackPoint(tp.gps);
 
     /// save active trackpoint to database
     //if (_oldStatus == TrackingStatus.standing) {
     logger.log('insert new trackpoint to datatbase table trackpoints');
-    await ModelTrackPoint.insert(activeTrackPoint);
+    await ModelTrackPoint.insert(_activeTrackPoint!);
+    await ModelTrackPoint.open();
     //}
 
     /// fire event that status has changed
     /// -- to be replaced with more direct! actions
     EventManager.fire<EventOnTrackingStatusChanged>(
-        EventOnTrackingStatusChanged(activeTrackPoint));
+        EventOnTrackingStatusChanged(_activeTrackPoint!));
 
     /// reset running trackpoints and add current one
     _runningTrackPoints.clear();
     _runningTrackPoints.add(tp);
+    logger.log('processing trackpoint finished');
   }
 
   static Future<ModelTrackPoint> createModelTrackPoint([GPS? gps]) async {
@@ -285,6 +290,14 @@ class TrackPoint {
   /// creates new Trackpoint, waits after status changed,
   ///
   static Future<bool> _checkStatus(List<RunningTrackPoint> trackList) async {
+    if (_runningTrackPoints.length > 1) {
+      _oldStatus = _status;
+      _status =
+          _status == TrackingStatus.standing || _status == TrackingStatus.none
+              ? TrackingStatus.moving
+              : TrackingStatus.standing;
+      return true;
+    }
     if (_status == TrackingStatus.standing || _status == TrackingStatus.none) {
       if (_checkMoved(trackList)) {
         // use the most recent Trackpoint as reference
@@ -303,6 +316,8 @@ class TrackPoint {
       }
     }
     logger.log('No Status change detected, still Status #${status.name}');
+
+    logger.log('processing trackpoint finished');
     return false;
   }
 
