@@ -3,7 +3,7 @@ import 'package:chaostours/logger.dart';
 ////
 import 'dart:io';
 import 'package:path/path.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:path_provider/path_provider.dart' as pp;
 
 var decode = Uri.decodeFull; // util.base64Codec().decode;
 var encode = Uri.encodeFull; //util.base64Codec().encode;
@@ -13,13 +13,13 @@ class FileHandler {
   static const lineSep = '\n';
   static Directory? _appDir;
   static Future<Directory> get appDir async {
-    return _appDir ??= await getApplicationDocumentsDirectory();
+    return _appDir ??= (await pp.getExternalStorageDirectory() ??
+        await pp.getApplicationDocumentsDirectory());
   }
-
 
   static Future<File> getFile(String filename) async {
     String f = '${filename.toLowerCase()}.tsv';
-    f = join((await appDir).path, f);
+    f = join((await appDir).path, 'files', f);
     logger.log('request access to File $f');
     File file = File(f);
     if (!file.existsSync()) {
@@ -32,6 +32,7 @@ class FileHandler {
   static Future<int> write(String filename, String content) async {
     File file = await getFile(filename);
     await file.writeAsString(content);
+    logger.log('$filename\n$content');
     return file.lengthSync();
   }
 

@@ -61,9 +61,11 @@ class AppLoader {
         await ModelTask.open();
         if (ModelAlias.length < 1) {
           await ModelAlias.openFromAsset();
+          await ModelAlias.write();
         }
         if (ModelTask.length < 1) {
           await ModelTask.openFromAsset();
+          await ModelTask.write();
         }
       } catch (e, stk) {
         logger.fatal(e.toString(), stk);

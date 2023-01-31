@@ -130,71 +130,48 @@ class TrackPoint {
   /// <u>SharedKeys.activeTrackPointTasks</u>: list of ids.
   /// user selection of tasks
   static startShared() async {
-    /// load running Trackpoints from shared
-    /// convert to objects and inject into class TrackPoint
-    /*
+    await _beforeSharedTrackPoint();
+    GPS gps = await GPS.gps();
+    await trackPoint(gps);
+    await _afterSharedTrackPoint();
+  }
+
+  /// load last trackpoint results
+  static Future<void> _beforeSharedTrackPoint() async {
+    SharedData sd = SharedData();
+    await sd.read();
     logger.log('load running trackpoints');
     _runningTrackPoints.clear();
-    _runningTrackPoints.addAll(
-        (await Shared(SharedKeys.runningTrackpoints).loadList() ?? [])
-            .map((String e) => RunningTrackPoint.toModel(e))
-            .toList());
-
-    /// load last tracking Status
-    logger.log('load tracking status');
-    _status = TrackingStatus.values.byName(
-        await Shared(SharedKeys.activeTrackPointStatusName).load() ??
-            TrackingStatus.none.name);
-    */
-    SharedData sdIn = SharedData();
-    await sdIn.read();
-    logger.log('load running trackpoints');
-    _runningTrackPoints.clear();
-    _runningTrackPoints.addAll(sdIn.runningTrackPoints);
+    _runningTrackPoints.addAll(sd.runningTrackPoints);
 
     logger.log('load tracking status');
-    _status = sdIn.status;
+    _status = sd.status;
 
     /// remember old status
     _oldStatus = _status;
+  }
 
-    /// get gps
-    logger.log('lookup GPS');
-    GPS gps = await GPS.gps();
-
-    SharedData sdOut = SharedData();
-
-    /// start trackpoint calculation process
-    logger.log('start trackpoint calculation');
-    await trackPoint(gps);
-    logger.log('trackpoint executed');
-
-    ///
-    /// ################### trackpoint executed ###################
-    ///
+  static Future<void> _afterSharedTrackPoint() async {
+    if (_runningTrackPoints.isEmpty) {
+      throw 'no runningTrackpoint found';
+    }
     if (_oldStatus != status) {
       /// save new status
       logger.log(
           'status changed. provide new status name TrackingStatus.${status.name}');
-      //await Shared(SharedKeys.activeTrackPointStatusName).save(status.name);
-      await SharedData.clear();
-      ModelTrackPoint? at = _activeTrackPoint;
-      sdOut.trackPoint = at;
-      sdOut.alias = at?.idAlias ?? [];
-      sdOut.tasks = at?.idTask ?? [];
-      sdOut.notes = at?.notes ?? '';
-      sdOut.address = at?.address.asString ?? '';
+      _oldStatus = _status;
     }
-
-    sdOut.status = _status;
-    logger.log('provide shared running trackpoints');
-    /*
-    Shared(SharedKeys.runningTrackpoints)
-        .saveList(_runningTrackPoints.map((e) => e.toSharedString()).toList());
-        */
-    sdOut.runningTrackPoints = _runningTrackPoints;
-
-    await sdOut.write();
+    GPS gps = _runningTrackPoints.last.gps;
+    ModelTrackPoint tp = _activeTrackPoint ?? await createModelTrackPoint(gps);
+    SharedData sd = SharedData();
+    sd.trackPoint = tp;
+    sd.status = _status;
+    sd.alias = tp.idAlias;
+    sd.tasks = tp.idTask;
+    sd.notes = tp.notes;
+    sd.address = tp.address.asString;
+    sd.runningTrackPoints = _runningTrackPoints;
+    await sd.write();
   }
 
   static Future<void> trackPoint(GPS gps) async {
@@ -241,48 +218,47 @@ class TrackPoint {
 
   static Future<void> _statusChanged(RunningTrackPoint tp) async {
     // create a new TrackPoint as event
-    logger.important('Tracking Status changed to #${status.name}');
-    logger.log('save new status #${status.name}');
+    await logger.important('Tracking Status changed to #${status.name}');
+    await logger.log('save new status #${status.name}');
     //await Shared(SharedKeys.activeTrackPointStatusName).save(status.toString());
 
     /// create active trackpoint
-    logger.log('create active trackpoint');
+    await logger.log('create active trackpoint');
     _activeTrackPoint = await createModelTrackPoint(tp.gps);
 
     /// save active trackpoint to database
     //if (_oldStatus == TrackingStatus.standing) {
-    logger.log('insert new trackpoint to datatbase table trackpoints');
+    await logger.log('insert new trackpoint to datatbase table trackpoints');
     await ModelTrackPoint.insert(_activeTrackPoint!);
     await ModelTrackPoint.open();
     //}
 
     /// fire event that status has changed
     /// -- to be replaced with more direct! actions
-    EventManager.fire<EventOnTrackingStatusChanged>(
+    await EventManager.fire<EventOnTrackingStatusChanged>(
         EventOnTrackingStatusChanged(_activeTrackPoint!));
 
     /// reset running trackpoints and add current one
     _runningTrackPoints.clear();
     _runningTrackPoints.add(tp);
-    logger.log('processing trackpoint finished');
+    await logger.log('processing trackpoint finished');
   }
 
   static Future<ModelTrackPoint> createModelTrackPoint([GPS? gps]) async {
     if (gps == null) {
-      logger.warn('no gps on trackpoint. lookup foreground gps');
+      await logger.warn('no gps on trackpoint. lookup foreground gps');
     }
     gps ??= await GPS.gps();
-    logger.log('create trackpoint event');
+    await logger.log('create trackpoint event');
     ModelTrackPoint tp = ModelTrackPoint(
+        gps: gps,
         address: Address(gps),
         trackPoints: _runningTrackPoints.map((e) => e.gps).toList(),
         idAlias: <int>[],
-        timeStart: _runningTrackPoints.first.time,
-        gps: gps);
-    tp.status = _oldStatus;
+        timeStart: _runningTrackPoints.first.time);
+    tp.status = _status;
     tp.timeEnd = DateTime.now();
     tp.idTask = <int>[];
-    tp.trackPoints = _runningTrackPoints.map((e) => e.gps).toList();
     return tp;
   }
 
@@ -315,9 +291,9 @@ class TrackPoint {
         return true;
       }
     }
-    logger.log('No Status change detected, still Status #${status.name}');
+    await logger.log('No Status change detected, still Status #${status.name}');
 
-    logger.log('processing trackpoint finished');
+    await logger.log('processing trackpoint finished');
     return false;
   }
 

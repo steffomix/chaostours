@@ -93,29 +93,34 @@ class SharedData {
     return _xml!;
   }
 
-  Future<XmlDocument> read() async {
+  Future<XmlDocument> readShared() async {
     String f = (await shared).getString(filename) ??
         '<?xml version="1.0"?><data></data>';
     var doc = XmlDocument.parse(f);
     _xml = doc;
     return doc;
-    /*
+  }
+
+  Future<XmlDocument> read() async {
     String f = await FileHandler.read(filename);
     XmlDocument doc = XmlDocument.parse(f);
     _xml = doc;
     return doc;
-    */
   }
 
-  static Future<void> clear() async {
-    await (await shared).clear();
-    //FileHandler.write(filename, '');
-  }
+  static Future<void> clearShared() async => await (await shared).clear();
 
-  Future<bool> write() async {
+  static Future<void> clear() async => FileHandler.write(filename, '');
+
+  Future<bool> writeShared() async {
     bakeXml();
     return (await shared).setString(filename, xml.toXmlString(pretty: true));
     //return FileHandler.write(filename, xml.toXmlString(pretty: true));
+  }
+
+  Future<int> write() async {
+    bakeXml();
+    return await FileHandler.write(filename, xml.toXmlString(pretty: true));
   }
 
   /// get, set status
