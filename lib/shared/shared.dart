@@ -3,29 +3,17 @@ import 'package:chaostours/logger.dart';
 import 'package:chaostours/event_manager.dart';
 
 enum SharedKeys {
-  /// structured data SharedData
-  xml,
+  ///
+  /// List<String>
+  /// [0] status
+  /// [1-...] GPS trackPoints as sharedString
+  trackPointUp,
 
-  /// gps
-  backgroundGps,
+  /// ModelTrackPoint as sharedString
+  trackPointDown,
 
-  /// current running trackpoint
-  activeTrackpoint,
-  activeTrackPointTasks,
-  activeTrackPointNotes,
-  activeTrackPointStatusName,
-  runningTrackpoints,
-  recentTrackpoints,
-
-  /// workmanager logs
-  workmanagerLogger,
-
-  modelTracking,
-  modelAlias,
-  modelTasks,
-
-  ///Workmanager counter
-  workmanagerLastTick;
+  /// contains background Logger logs
+  workmanagerLogger;
 }
 
 enum SharedTypes {
@@ -54,12 +42,15 @@ class Shared {
 
   /// prepare module
   static SharedPreferences? _shared;
-  static Future<SharedPreferences> get shared async =>
-      _shared ??= await SharedPreferences.getInstance();
+  static Future<SharedPreferences> get shared async {
+    SharedPreferences s = (_shared ?? await SharedPreferences.getInstance());
+    _shared = s;
+    await s.reload();
+    return s;
+  }
 
   Future<List<String>?> loadList() async {
     SharedPreferences sh = await shared;
-    await sh.reload();
     List<String> value =
         sh.getStringList(_typeName(SharedTypes.list)) ?? <String>[];
     return value;
@@ -71,7 +62,6 @@ class Shared {
 
   Future<int?> loadInt() async {
     SharedPreferences sh = await shared;
-    await sh.reload();
     int? value = sh.getInt(_typeName(SharedTypes.int));
     return value;
   }
@@ -80,17 +70,17 @@ class Shared {
     await (await shared).setInt(_typeName(SharedTypes.int), i);
   }
 
-  Future<String?> load() async {
+  Future<String?> loadString() async {
     SharedPreferences sh = await shared;
-    await sh.reload();
     String value = sh.getString(_typeName(SharedTypes.string)) ?? '0\t';
     return value;
   }
 
-  Future<void> save(String data) async {
+  Future<void> saveString(String data) async {
     await (await shared).setString(_typeName(SharedTypes.string), data);
   }
 
+  /// set key to Null
   Future<void> remove() async {
     await (await shared).remove(_typeName(SharedTypes.string));
   }
@@ -99,7 +89,7 @@ class Shared {
   void observe(
       {required Duration duration, required Function(String data) fn}) async {
     if (_observing) return;
-    _observed = (await load()) ?? '';
+    _observed = (await loadString()) ?? '';
     Future.delayed(duration, () {
       _observe(duration: duration, fn: fn);
     });
@@ -112,7 +102,7 @@ class Shared {
     while (true) {
       if (!_observing) break;
       try {
-        obs = (await load()) ?? '';
+        obs = (await loadString()) ?? '';
       } catch (e, stk) {
         logger.error('observing failed with $e', stk);
         obs = '';

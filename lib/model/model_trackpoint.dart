@@ -11,6 +11,9 @@ class ModelTrackPoint {
   static Logger logger = Logger.logger<ModelTrackPoint>();
   static final List<ModelTrackPoint> _table = [];
 
+  /// user notes of current -not yet saved- trackpoint
+  static String pendingNotes = '';
+
   ///
   /// TrackPoint owners
   ///

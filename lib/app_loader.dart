@@ -29,21 +29,6 @@ class AppLoader {
   static Future<void> preload() async {
     logger.important('start Preload sequence...');
 
-    logger.important('clear shared data');
-    //Shared.clear();
-    Future.microtask(() async {
-      //await Future.delayed(const Duration(seconds: 3));
-      logger.important('test shared data...');
-      try {
-        await SharedData.test();
-        await SharedData.clear();
-      } catch (e, stk) {
-        logger.fatal('shared data test failed: $e', stk);
-        print(e.toString());
-        print(stk);
-      }
-    });
-
     //logger.important('start background gps tracking');
     //logger.important('initialize workmanager');
     //WorkManager();
@@ -70,15 +55,17 @@ class AppLoader {
       } catch (e, stk) {
         logger.fatal(e.toString(), stk);
       }
-
+      await Future.delayed(const Duration(seconds: 2));
       // init Machines
       //logger.important('initialize Tracking Calendar');
       //TrackingCalendar();
+      logger.important('initialize Permissions');
+      await Permissions.requestLocationPermission();
+      await Permissions.requestNotificationPermission();
+
+      ///
       logger.important('initialize Notifications');
       Future.microtask(() => Notifications());
-      logger.important('initialize Trackpoint');
-      TrackPoint();
-      logger.important('initialize Permissions');
 
       logger.important('preparing HTTP SSL Key');
       await webKey();
@@ -103,14 +90,13 @@ class AppLoader {
   }
 
   static Future<void> workmanagerTick() async {
-    await TrackPoint.initializeShared();
     while (true) {
       try {
         TrackPoint.startShared();
       } catch (e, stk) {
         logger.fatal(e.toString(), stk);
       }
-      await Future.delayed(const Duration(seconds: 20));
+      await Future.delayed(const Duration(seconds: 10));
     }
   }
 

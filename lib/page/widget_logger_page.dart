@@ -102,8 +102,6 @@ class _WidgetLoggerPage extends State<WidgetLoggerPage> {
     while (logs.length > 200) {
       logs.removeLast();
     }
-    Shared shared = Shared(SharedKeys.workmanagerLastTick);
-    counter = await shared.loadInt() ?? 0;
     setState(() {});
   }
 

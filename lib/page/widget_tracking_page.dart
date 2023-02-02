@@ -32,11 +32,11 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
   ///
   /// active trackpoint data
-  static SharedData data = SharedData();
   static TrackingStatus lastStatus = TrackingStatus.none;
 
   /// recent or saved trackponts
   static List<ModelTrackPoint> recentTrackpoints = [];
+  static List<GPS> runningTrackPoints = [];
 
   _WidgetTrackingPage() {
     updateActiveTrackpoint();
@@ -54,11 +54,57 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   }
 
   void onTick(EventOnTick tick) async {
-    data = SharedData();
+    Shared shared = Shared(SharedKeys.trackPointUp);
+    List<String> sharedList = await shared.loadList() ?? [];
+    if (sharedList.isNotEmpty) {
+      try {
+        /// get status
+        TrackingStatus status = TrackingStatus.values.byName(sharedList[0]);
+        if (sharedList.length > 1) {
+          sharedList.removeAt(0);
 
-    await data.read();
+          /// get trackpoints
+          List<GPS> trackPoints = [];
+          try {
+            for (var row in sharedList) {
+              trackPoints.add(GPS.toSharedObject(row));
+            }
+            if (status != lastStatus && lastStatus != TrackingStatus.none) {
+              await statusChanged(status, trackPoints);
+            }
+          } catch (e, stk) {
+            logger.error(e.toString(), stk);
+          }
+        }
+      } catch (e, stk) {
+        logger.error(e.toString(), stk);
+      }
+    }
 
     setState(() {});
+  }
+
+  Future<void> statusChanged(
+      TrackingStatus status, List<GPS> trackPoints) async {
+    logger.important(
+        'TrackingStatus changed from ${lastStatus.name} to ${status.name}');
+    if (lastStatus == TrackingStatus.standing) {
+      logger.important('insert new TrackPoint');
+      GPS gps = trackPoints.last;
+      ModelTrackPoint tp = ModelTrackPoint(
+          address: Address(gps),
+          gps: gps,
+          trackPoints: trackPoints,
+          idAlias: ModelAlias.nextAlias(gps).map((e) => e.id).toList(),
+          timeStart: gps.time);
+      tp.status = lastStatus;
+      tp.timeEnd = trackPoints.last.time;
+      tp.idTask = ModelTask.pendingTasks;
+      tp.notes = ModelTrackPoint.pendingNotes;
+      await ModelTrackPoint.insert(tp);
+      recentTrackpoints = ModelTrackPoint.recentTrackPoints();
+      lastStatus = status;
+    }
   }
 
   @override
@@ -74,33 +120,43 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   }
 
   Widget renderActiveTrackPoint(BuildContext context) {
-    var d = data;
     try {
-      ModelTrackPoint? tp = data.trackPoint;
-      List<RunningTrackPoint> runningTp = data.runningTrackPoints;
-      DateTime timeStart =
-          runningTp.isEmpty ? DateTime.now() : runningTp.first.time;
-      DateTime timeEnd =
-          runningTp.isEmpty ? DateTime.now() : runningTp.last.time;
+      List<GPS> rtp = runningTrackPoints;
+      DateTime timeStart = rtp.isEmpty ? DateTime.now() : rtp.first.time;
+      DateTime timeEnd = rtp.isEmpty ? DateTime.now() : rtp.last.time;
       Duration dur = timeStart.difference(timeEnd);
-      String status = tp?.status == TrackingStatus.moving ? 'Fahren' : 'Halt';
-      String address = tp?.address.asString ?? '';
-      String alias = (tp?.idAlias ?? [])
+      String status = lastStatus == TrackingStatus.moving ? 'Fahren' : 'Halt';
+
+      /// address
+      String address = 'not implemented';
+
+      /// alias
+      String alias = ModelAlias.nextAlias(rtp.last)
           .map((e) {
-            return '- ${ModelAlias.getAlias(e).alias}';
+            return '- ${e.alias}';
           })
           .toList()
           .join('\n');
-      String task = (tp?.idTask ?? [])
+
+      /// pending tasks
+      String task = ModelTask.pendingTasks
           .map((e) {
             return '- ${ModelTask.getTask(e).task}';
           })
           .toList()
           .join('\n');
-      List<String> taskNotes = (tp?.idTask ?? []).map((e) {
+
+      /// notes of pending tasks
+      List<String> taskNotes = (ModelTask.pendingTasks).map((e) {
         return ModelTask.getTask(e).notes;
       }).toList();
-      String notes = tp?.notes ?? '';
+
+      /// pending trackpoint notes
+      String notes = ModelTrackPoint.pendingNotes;
+
+      ///
+      /// create widget
+      ///
       return Table(defaultColumnWidth: IntrinsicColumnWidth(), columnWidths: {
         0: FixedColumnWidth(50),
         1: FractionColumnWidth(.8),
@@ -120,8 +176,9 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
             children: [
               Center(
                   heightFactor: 2,
-                  child: Text(
-                      'Halt: von ${tp?.timeStart.toIso8601String() ?? '---'} bis ${tp?.timeEnd.toIso8601String() ?? '---'} \n(${runningTp.isEmpty ? '---' : dur.inSeconds})sec.')),
+                  child: Text('Halt: von ${rtp.first.time.toIso8601String()} '
+                      'bis ${rtp.last.time.toIso8601String()} \n'
+                      '(${rtp.isEmpty ? '---' : dur.inSeconds})sec.')),
               Text('OSM: "$address"'),
               Text('Alias: $alias'),
               Text('Aufgaben: $task')
