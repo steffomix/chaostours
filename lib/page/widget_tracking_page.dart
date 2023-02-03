@@ -75,6 +75,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
           } catch (e, stk) {
             logger.error(e.toString(), stk);
           }
+          runningTrackPoints = trackPoints;
         }
       } catch (e, stk) {
         logger.error(e.toString(), stk);
@@ -114,81 +115,92 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     return Scaffold(
       appBar: Widgets.appBar(),
       drawer: const WidgetDrawer(),
-      body: ListView(children: [active, ...stored]),
+      body: ListView(children: [
+        active,
+        Divider(thickness: 2, indent: 10, endIndent: 10, color: Colors.black),
+        ...stored
+      ]),
       bottomNavigationBar: const WidgetBottomNavBar(),
     );
   }
 
   Widget renderActiveTrackPoint(BuildContext context) {
-    try {
-      List<GPS> rtp = runningTrackPoints;
-      DateTime timeStart = rtp.isEmpty ? DateTime.now() : rtp.first.time;
-      DateTime timeEnd = rtp.isEmpty ? DateTime.now() : rtp.last.time;
-      Duration dur = timeStart.difference(timeEnd);
-      String status = lastStatus == TrackingStatus.moving ? 'Fahren' : 'Halt';
+    if (runningTrackPoints.isEmpty) {
+      return const Text('...waiting for GPS...');
+    } else {
+      try {
+        List<GPS> rtp = runningTrackPoints;
+        DateTime timeStart = rtp.isEmpty ? DateTime.now() : rtp.first.time;
+        DateTime timeEnd = rtp.isEmpty ? DateTime.now() : rtp.last.time;
+        Duration dur = timeStart.difference(timeEnd);
+        String status =
+            lastStatus == TrackingStatus.moving ? 'Fahren' : 'Halten';
 
-      /// address
-      String address = 'not implemented';
+        /// address
+        String address = 'not implemented';
 
-      /// alias
-      String alias = ModelAlias.nextAlias(rtp.last)
-          .map((e) {
-            return '- ${e.alias}';
-          })
-          .toList()
-          .join('\n');
+        /// alias
+        String alias = ModelAlias.nextAlias(rtp.last)
+            .map((e) {
+              return '- ${e.alias}';
+            })
+            .toList()
+            .join('\n');
 
-      /// pending tasks
-      String task = ModelTask.pendingTasks
-          .map((e) {
-            return '- ${ModelTask.getTask(e).task}';
-          })
-          .toList()
-          .join('\n');
+        /// pending tasks
+        String task = ModelTask.pendingTasks
+            .map((e) => '- ${ModelTask.getTask(e).task}')
+            .toList()
+            .join('\n');
 
-      /// notes of pending tasks
-      List<String> taskNotes = (ModelTask.pendingTasks).map((e) {
-        return ModelTask.getTask(e).notes;
-      }).toList();
+        /// notes of pending tasks
+        List<String> taskNotes = (ModelTask.pendingTasks).map((e) {
+          return ModelTask.getTask(e).notes;
+        }).toList();
 
-      /// pending trackpoint notes
-      String notes = ModelTrackPoint.pendingNotes;
+        /// pending trackpoint notes
+        String notes = ModelTrackPoint.pendingNotes;
 
-      ///
-      /// create widget
-      ///
-      return Table(defaultColumnWidth: IntrinsicColumnWidth(), columnWidths: {
-        0: FixedColumnWidth(50),
-        1: FractionColumnWidth(.8),
-        //2: FixedColumnWidth(4),
-      }, children: [
-        /// Row 1
-        TableRow(children: [
-          /// Row 1, col 1 (icon button)
-          TableCell(
-              verticalAlignment: TableCellVerticalAlignment.middle,
-              child: IconButton(
-                  icon: Icon(size: 50, Icons.edit_location), onPressed: () {})),
+        ///
+        /// create widget
+        ///
+        return Table(defaultColumnWidth: IntrinsicColumnWidth(), columnWidths: {
+          0: FixedColumnWidth(50),
+          1: FractionColumnWidth(.8),
+        }, children: [
+          /// Row 1
+          TableRow(children: [
+            /// Row 1, col 1 (icon button)
+            TableCell(
+                verticalAlignment: TableCellVerticalAlignment.middle,
+                child: IconButton(
+                    icon: Icon(size: 50, Icons.edit_location),
+                    onPressed: () {})),
 
-          /// Row 1, col 2 (trackpoint information in some rows)
-          TableCell(
-              child: ListBody(
-            children: [
-              Center(
-                  heightFactor: 2,
-                  child: Text('Halt: von ${rtp.first.time.toIso8601String()} '
-                      'bis ${rtp.last.time.toIso8601String()} \n'
-                      '(${rtp.isEmpty ? '---' : dur.inSeconds})sec.')),
-              Text('OSM: "$address"'),
-              Text('Alias: $alias'),
-              Text('Aufgaben: $task')
-            ],
-          ))
-        ])
-      ]);
-    } catch (e, stk) {
-      logger.error(e.toString(), stk);
-      return Text('$e');
+            /// Row 1, col 2 (trackpoint information in some rows)
+            TableCell(
+                child: ListBody(
+              children: [
+                Center(
+                    heightFactor: 2,
+                    child: Text(status,
+                        style: TextStyle(letterSpacing: 2, fontSize: 20))),
+                Center(
+                    heightFactor: 1,
+                    child: Text('von ${util.formatDate(timeStart)} '
+                        '\nbis ${util.formatDate(timeEnd)} \n'
+                        '(${rtp.isEmpty ? '---' : util.timeElapsed(timeStart, timeEnd)})sec.')),
+                Text('OSM: "$address"'),
+                Text('Alias: $alias'),
+                Text('Aufgaben: $task')
+              ],
+            ))
+          ])
+        ]);
+      } catch (e, stk) {
+        logger.error(e.toString(), stk);
+        return Text('$e');
+      }
     }
   }
 
@@ -220,32 +232,37 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         }).toList();
         String notes = tp.notes;
         if (tp.status == TrackingStatus.standing) {
-          listItems.add(Table(columnWidths: {
-            1: FixedColumnWidth(10),
-            2: FixedColumnWidth(90)
-          }, children: [
-            /// Row 1
-            TableRow(children: [
-              /// Row 1, col 1 (icon button)
-              TableCell(
-                  child: IconButton(
-                      icon: Icon(Icons.edit_attributes), onPressed: () {})),
+          listItems.add(
+            Table(columnWidths: {
+              0: FixedColumnWidth(50),
+              1: FractionColumnWidth(.8),
+            }, children: [
+              /// Row 1
+              TableRow(children: [
+                /// Row 1, col 1 (icon button)
+                TableCell(
+                    child: IconButton(
+                        icon: Icon(Icons.edit_location_outlined),
+                        onPressed: () {})),
 
-              /// Row 1, col 2 (trackpoint information in some rows)
-              TableCell(
-                  child: Row(
-                children: [
-                  Center(
-                      heightFactor: 1.5,
-                      child: Text(
-                          'Halt: von ${tp.timeStart.toIso8601String()} bis ${tp.timeEnd.toIso8601String()}')),
-                  Text('OSM: "$address"'),
-                  Text('Alias: $alias'),
-                  Text('Aufgaben: $task')
-                ],
-              ))
-            ])
-          ]));
+                /// Row 1, col 2 (trackpoint information in some rows)
+                TableCell(
+                    child: ListBody(
+                  children: [
+                    Center(
+                        heightFactor: 1.5,
+                        child: Text(
+                            'Halt: von ${tp.timeStart.toIso8601String()} \nbis ${tp.timeEnd.toIso8601String()}')),
+                    Text('OSM: "$address"'),
+                    Text('Alias: $alias'),
+                    Text('Aufgaben: $task')
+                  ],
+                ))
+              ])
+            ]),
+          );
+          listItems.add(Divider(
+              thickness: 2, indent: 10, endIndent: 10, color: Colors.black));
         } else {
           //return <Widget>[Container(child: Text('wrong status'))];
         }

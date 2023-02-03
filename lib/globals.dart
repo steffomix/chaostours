@@ -8,6 +8,14 @@ class Globals {
   ///
   /// App from widget_main
   ///
+  /*
+  double width = MediaQuery.of(context).size.width;
+double height = MediaQuery.of(context).size.height;
+To get height just of SafeArea (for iOS 11 and above):
+
+var padding = MediaQuery.of(context).padding;
+double newheight = height - padding.top - padding.bottom;
+*/
 
   static String version = '';
   static const bool debugMode = false;

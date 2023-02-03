@@ -19,7 +19,7 @@ class FileHandler {
 
   static Future<File> getFile(String filename) async {
     String f = '${filename.toLowerCase()}.tsv';
-    f = join((await appDir).path, 'files', f);
+    f = join((await appDir).path, f);
     logger.log('request access to File $f');
     File file = File(f);
     if (!file.existsSync()) {
@@ -32,17 +32,20 @@ class FileHandler {
   static Future<int> write(String filename, String content) async {
     File file = await getFile(filename);
     await file.writeAsString(content);
-    logger.log('$filename\n$content');
+    await logger.log('write ${content.length} bytes to $filename');
     return file.lengthSync();
   }
 
   static Future<String> read(String filename) async {
-    return (await getFile(filename)).readAsString();
+    String content = await (await getFile(filename)).readAsString();
+    await logger.log('read ${content.length} bytes from $filename');
+    return content;
   }
 
   static Future<int> writeTable<T>(List<String> table) async {
     File file = await getFile(T.toString());
     await file.writeAsString(table.join(lineSep));
+    await logger.log('write ${table.length} rows to $file');
     return file.lengthSync();
   }
 
@@ -53,6 +56,7 @@ class FileHandler {
       return <String>[];
     }
     List<String> lines = data.split(lineSep);
+    await logger.log('write ${lines.length} rows to $file');
     return lines;
   }
 }

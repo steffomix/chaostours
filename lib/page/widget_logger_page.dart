@@ -97,7 +97,8 @@ class _WidgetLoggerPage extends State<WidgetLoggerPage> {
   }
 
   void onLog(EventOnLog e) async {
-    Widget widget = renderLog(e.prefix, e.level, e.msg, e.stackTrace);
+    Widget widget = renderLog(e.prefix, e.level,
+        composeMessage(e.name, e.level, e.msg, e.stackTrace), e.stackTrace);
     logs.insert(0, widget);
     while (logs.length > 200) {
       logs.removeLast();

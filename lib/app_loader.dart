@@ -36,57 +36,66 @@ class AppLoader {
     //await Tracking.initialize();
     //await Tracking.startTracking();
     try {
-      try {
-        // load database
-        logger.important('load Database Table ModelTrackPoint');
-        await ModelTrackPoint.open();
-        logger.important('load Database Table ModelAlias');
-        await ModelAlias.open();
-        logger.important('load Database Table ModelTask');
-        await ModelTask.open();
-        if (ModelAlias.length < 1) {
-          await ModelAlias.openFromAsset();
-          await ModelAlias.write();
-        }
-        if (ModelTask.length < 1) {
-          await ModelTask.openFromAsset();
-          await ModelTask.write();
-        }
-      } catch (e, stk) {
-        logger.fatal(e.toString(), stk);
+      // load database
+      logger.important('load Database Table ModelTrackPoint');
+      await ModelTrackPoint.open();
+      logger.important('load Database Table ModelAlias');
+      await ModelAlias.open();
+      logger.important('load Database Table ModelTask');
+      await ModelTask.open();
+      if (ModelAlias.length < 1) {
+        await ModelAlias.openFromAsset();
+        await ModelAlias.write();
       }
-      await Future.delayed(const Duration(seconds: 2));
-      // init Machines
-      //logger.important('initialize Tracking Calendar');
-      //TrackingCalendar();
+      if (ModelTask.length < 1) {
+        await ModelTask.openFromAsset();
+        await ModelTask.write();
+      }
+    } catch (e, stk) {
+      logger.fatal(
+          'app start database failure, wait 5 sec. \n${e.toString()}', stk);
+      await Future.delayed(const Duration(seconds: 5));
+    }
+
+    try {
       logger.important('initialize Permissions');
       await Permissions.requestLocationPermission();
-      await Permissions.requestNotificationPermission();
 
       ///
       logger.important('initialize Notifications');
-      Future.microtask(() => Notifications());
-
+      Notifications();
+      await Permissions.requestNotificationPermission();
+    } catch (e, stk) {
+      logger.fatal(
+          'app start permissions failure, wait 5 sec. \n${e.toString()}', stk);
+      await Future.delayed(const Duration(seconds: 5));
+    }
+    try {
       logger.important('preparing HTTP SSL Key');
       await webKey();
-      /*
+      //logger.important('initialize Tracking Calendar');
+      //TrackingCalendar();
+
+    } catch (e, stk) {
+      logger.fatal(
+          'app start calendar failure, wait 5 sec. \n${e.toString()}', stk);
+      await Future.delayed(const Duration(seconds: 5));
+    }
+    /*
       logger.log('load default Calendar ID from assets');
       await defaultCalendarId();
       logger.log('load calendar credentials from assets');
       await calendarApiFromCredentials();
 */
 
-      logger.important('preload finished successful');
+    logger.important('preload finished successful');
 
-      Logger.listenOnTick();
-      logger.important('start App Tick with 1sec. interval');
-      Future.microtask(appTick);
+    Logger.listenOnTick();
+    logger.important('start App Tick with 1sec. interval');
+    Future.microtask(appTick);
 
-      logger.important('start workmanager simulation Tick');
-      Future.microtask(workmanagerTick);
-    } catch (e, stk) {
-      logger.fatal('Preload sequence failed: $e', stk);
-    }
+    logger.important('start workmanager trackpoint simulation Tick');
+    Future.microtask(workmanagerTick);
   }
 
   static Future<void> workmanagerTick() async {

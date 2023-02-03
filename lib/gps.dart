@@ -48,7 +48,7 @@ class GPS {
 
   /// creates gps trackPoint with timestamp
   String toSharedString() {
-    return <String>[gps.toString(), time.toIso8601String()].join(';');
+    return <String>[toString(), time.toIso8601String()].join(';');
   }
 
   /// inverse of GPS.toSharedString()
