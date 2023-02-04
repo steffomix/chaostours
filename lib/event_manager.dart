@@ -38,9 +38,11 @@ class EventOnGPS extends EventOn {
   EventOnGPS(this.gps);
 }
 
-class EventOnTick extends EventOn {
+class EventOnAddressLookup extends EventOn {}
+
+class EventOnAppTick extends EventOn {
   final int id;
-  EventOnTick(this.id);
+  EventOnAppTick(this.id);
 }
 
 class EventOn {
@@ -87,10 +89,12 @@ class EventManager {
     Map<dynamic Function(T), dynamic> results = {};
     var list = _get<T>();
     for (var fn in list) {
+      /*
       if (Globals.debugMode) {
         Logger.print(
             '$prefix $m:$s.$ms EventManager.fire<${T.toString()}>() ${list.length} times $debugMessage');
       }
+      */
       try {
         if (dispatchAsync) {
           results[fn] = await Future.microtask(() => fn(instance));

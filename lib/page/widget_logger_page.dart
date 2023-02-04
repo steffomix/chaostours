@@ -17,12 +17,12 @@ class WidgetLoggerPage extends StatefulWidget {
 
 class _WidgetLoggerPage extends State<WidgetLoggerPage> {
   _WidgetLoggerPage() {
-    EventManager.listen<EventOnTick>(onTick);
+    EventManager.listen<EventOnAppTick>(onTick);
     EventManager.listen<EventOnLog>(onLog);
   }
   @override
   void dispose() {
-    EventManager.remove<EventOnTick>(onTick);
+    EventManager.remove<EventOnAppTick>(onTick);
     EventManager.remove<EventOnLog>(onLog);
     super.dispose();
   }
@@ -92,7 +92,7 @@ class _WidgetLoggerPage extends State<WidgetLoggerPage> {
     }
   }
 
-  void onTick(EventOnTick event) {
+  void onTick(EventOnAppTick event) {
     //setState(() {});
   }
 

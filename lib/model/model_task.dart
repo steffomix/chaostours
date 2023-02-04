@@ -10,10 +10,6 @@ class ModelTask {
   static final List<ModelTask> _table = [];
   static int _unsavedId = 0;
 
-  /// user tasks of current -not yet saved- tasks
-  static final List<int> pendingTasks = [];
-  static String pendingNotes = '';
-
   /// autoincrement unsaved models into negative ids
   static get _nextUnsavedId => --_unsavedId;
   int _id = 0;

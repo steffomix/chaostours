@@ -172,7 +172,7 @@ class ModelAlias {
       }
     }
     list.sort((a, b) => a.sortDistance.compareTo(b.sortDistance));
-    logger.verbose('Found ${list.length} nearest Alias');
+    //logger.verbose('Found ${list.length} nearest Alias');
     return list;
   }
 

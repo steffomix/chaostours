@@ -161,17 +161,20 @@ class TrackPoint {
     try {
       /// load user inputs
       Shared shared = Shared(SharedKeys.trackPointDown);
-      ModelTrackPoint tps =
-          ModelTrackPoint.toSharedModel(await shared.loadString() ?? '');
-      notes = tps.notes;
-      idTask = tps.idTask;
-      idAlias = tps.idAlias;
+      String? tpRow = await shared.loadString();
+      if (tpRow == null) {
+        logger.warn('no trackPoint Data found in SharedKeys.trackPointDown');
+      } else {
+        ModelTrackPoint tps = ModelTrackPoint.toSharedModel(tpRow);
+        notes = tps.notes;
+        idTask = tps.idTask;
+        idAlias = tps.idAlias;
 
-      /// reset user input and save back to shared
-      tps.notes = '';
-      tps.idTask = <int>[];
-      tps.idAlias = <int>[];
-      await shared.saveString(tps.toSharedString());
+        /// reset user input and save back to shared
+        tps.notes = '';
+        tps.idTask = <int>[];
+        tps.idAlias = <int>[];
+      }
     } catch (e, stk) {
       logger.error('load shared data for trackPoint: ${e.toString()}', stk);
     }
@@ -180,7 +183,7 @@ class TrackPoint {
         address: Address(gps),
         trackPoints: gpsPoints.map((e) => e).toList(),
         idAlias: idAlias,
-        timeStart: gpsPoints.first.time);
+        timeStart: gpsPoints.last.time);
     tp.status = _status;
     tp.timeEnd = DateTime.now();
     tp.idTask = idTask;
@@ -250,11 +253,12 @@ class TrackPoint {
   static List<GPS> _recentTracks() {
     List<GPS> gpsList = [];
     DateTime treshold = DateTime.now().subtract(Globals.stopTimeTreshold);
-    bool outDated;
-    for (var i = 0; i < gpsPoints.length; i++) {
-      outDated = gpsPoints[i].time.isBefore(treshold);
-      if (outDated) break;
-      gpsList.add(gpsPoints[i]);
+    for (var gps in gpsPoints) {
+      if (gps.time.isAfter(treshold)) {
+        gpsList.add(gps);
+      } else {
+        break;
+      }
     }
     return gpsList;
   }
@@ -268,14 +272,14 @@ class TrackPoint {
 
   static String timeElapsed() {
     if (gpsPoints.isEmpty) return '00:00:00';
-    return util.timeElapsed(gpsPoints.first.time, gpsPoints.last.time);
+    return util.timeElapsed(gpsPoints.last.time, gpsPoints.first.time);
   }
 
   static double distance() {
     if (gpsPoints.isEmpty) return 0.0;
     double dist;
     if (_status == TrackingStatus.standing) {
-      dist = GPS.distance(gpsPoints.first, gpsPoints.last);
+      dist = GPS.distance(gpsPoints.last, gpsPoints.first);
     } else {
       dist = movedDistance(gpsPoints);
     }

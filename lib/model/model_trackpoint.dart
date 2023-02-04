@@ -14,6 +14,14 @@ class ModelTrackPoint {
   /// user notes of current -not yet saved- trackpoint
   static String pendingNotes = '';
 
+  /// user tasks of current -not yet saved- tasks
+  static final List<int> pendingTasks = [];
+
+  /// not yet saved active running trackpoint
+  static ModelTrackPoint? pendingTrackPoint;
+
+  static String pendingAddressLookup = '';
+
   ///
   /// TrackPoint owners
   ///
@@ -109,7 +117,7 @@ class ModelTrackPoint {
     if (m.id <= 0) {
       _table.add(m);
       m._id = _table.length;
-      logger.log('Insert TrackPoint ${m.gps}\n   which has now ID ${m._id}');
+      logger.log('Insert TrackPoint ${m.gps} which has now ID ${m._id}');
     } else {
       logger.warn(
           'Insert Trackpoint skipped. TrackPoint already inserted with ID ${m._id}');
@@ -169,7 +177,6 @@ class ModelTrackPoint {
     while (--max >= 0 && --i >= 0) {
       list.add(_table[i]);
     }
-    logger.verbose('${list.length} recentTrackPoints');
     return list.reversed.toList();
   }
 

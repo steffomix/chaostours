@@ -17,60 +17,35 @@ String timeElapsed(DateTime t1, DateTime t2, [bool short = true]) {
     t1 = t2;
     t2 = t0;
   }
-  int days;
-  int hours;
-  int minutes;
-  int seconds;
-  int ms;
-  String s = '-';
+  String s = '';
+  int days = t1.difference(t2).inDays;
+  t2 = t2.add(Duration(days: days));
+  //
+  int hours = t1.difference(t2).inHours;
+  t2 = t2.add(Duration(hours: hours));
+  //
+  int minutes = t1.difference(t2).inMinutes;
+  t2 = t2.add(Duration(minutes: minutes));
+  //
+  int seconds = t1.difference(t2).inSeconds;
+  t2 = t2.add(Duration(seconds: seconds));
+  //
+  int ms = t1.difference(t2).inMilliseconds;
   if (short) {
-    days = t1.difference(t2).inDays;
-    t2 = t2.add(Duration(days: days));
-    //
-    hours = t1.difference(t2).inHours;
-    t2 = t2.add(Duration(hours: hours));
-    //
-    minutes = t1.difference(t2).inMinutes;
-    t2 = t2.add(Duration(minutes: minutes));
-    //
-    seconds = t1.difference(t2).inSeconds;
-    t2 = t2.add(Duration(seconds: seconds));
-    //
-    ms = t1.difference(t2).inMilliseconds;
-    //
-
     s = Globals.debugMode ? '$hours:$minutes::$seconds.$ms' : '$hours:$minutes';
   } else {
-    days = t1.difference(t2).inDays;
+    s = '';
     if (days > 0) {
       s += '$days Tage, ';
     }
-    //
-    hours = t1.difference(t2).inHours;
     if (hours > 0) {
       s += '$hours Stunden, ';
-      t2 = t2.add(Duration(hours: hours));
     }
-    //
-    minutes = t1.difference(t2).inMinutes;
     if (minutes > 0) {
-      s += '$minutes Minuten';
-      if (Globals.debugMode) {
-        s += ', ';
-      }
-      t2 = t2.add(Duration(minutes: minutes));
+      s += '$minutes Minuten, ';
     }
-    //
-    if (Globals.debugMode) {
-      seconds = t1.difference(t2).inSeconds;
-      if (seconds > 0) {
-        s += '$seconds Sekunden, ';
-        t2 = t2.add(Duration(seconds: seconds));
-      }
-      ms = t1.difference(t2).inMilliseconds;
-      if (ms > 0) {
-        s += ':::$ms';
-      }
+    if (seconds > 0) {
+      s += '$seconds Sekunden';
     }
   }
 

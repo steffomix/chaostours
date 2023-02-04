@@ -22,6 +22,23 @@ import 'package:chaostours/logger.dart';
 ///<country_code>de</country_code>
 ///</addressparts>
 ///
+///
+///
+enum OsmTags {
+  road,
+  // ignore: constant_identifier_names
+  house_number,
+  town,
+  retail,
+  suburb,
+  // ignore: constant_identifier_names
+  city_district,
+  city,
+  county,
+  state,
+  postcode
+}
+
 class Address {
   static Logger logger = Logger.logger<Address>();
   final GPS _gps;
@@ -61,34 +78,35 @@ class Address {
       http.Response response = await AppLoader.osmReverseLookup(_gps);
       if (response.statusCode == 200) {
         String body = response.body;
+        logger.log(body);
         String pattern = r'<%s>(.*)<\/%s>';
-        Map<String, String> tags = {
-          'road': '',
-          'hous_number': '',
-          'town': '',
-          'retail': '',
-          'suburb': '',
-          'city_district': '',
-          'city': '',
-          'county': '',
-          'state': '',
-          'postcode': '',
+        Map<OsmTags, String> tags = {
+          OsmTags.road: '',
+          OsmTags.house_number: '',
+          OsmTags.town: '',
+          OsmTags.retail: '',
+          OsmTags.suburb: '',
+          OsmTags.city_district: '',
+          OsmTags.city: '',
+          OsmTags.county: '',
+          OsmTags.state: '',
+          OsmTags.postcode: '',
         };
-        tags.forEach((String k, String v) {
-          RegExp rx = RegExp(sprintf(pattern, [k, k]));
-          tags[k] = rx.firstMatch(body)?.group(1) ?? '';
+        tags = tags.map((OsmTags key, String value) {
+          RegExp rx = RegExp(sprintf(pattern, [key.name, key.name]));
+          String res = rx.firstMatch(body)?.group(1) ?? '';
+          return MapEntry(key, res);
         });
-
-        road = tags['road'] ?? '';
-        house_number = tags['house_number'] ?? '';
-        town = tags['town'] ?? '';
-        retail = tags['retail'] ?? '';
-        suburb = tags['suburb'] ?? '';
-        city_district = tags['city_district'] ?? '';
-        city = tags['city'] ?? '';
-        county = tags['county'] ?? '';
-        state = tags['state'] ?? '';
-        postcode = tags['postcode'] ?? '';
+        road = tags[OsmTags.road] ?? '';
+        house_number = tags[OsmTags.house_number] ?? '';
+        town = tags[OsmTags.town] ?? '';
+        retail = tags[OsmTags.retail] ?? '';
+        suburb = tags[OsmTags.suburb] ?? '';
+        city_district = tags[OsmTags.city_district] ?? '';
+        city = tags[OsmTags.city] ?? '';
+        county = tags[OsmTags.county] ?? '';
+        state = tags[OsmTags.state] ?? '';
+        postcode = tags[OsmTags.postcode] ?? '';
       } else {
         logger.warn(
             'lookup address failed with status code: ${response.statusCode}\n'

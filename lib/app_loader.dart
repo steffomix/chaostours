@@ -19,7 +19,8 @@ import 'package:chaostours/permissions.dart';
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/workmanager.dart';
-import 'shared/shared_data.dart';
+import 'package:chaostours/shared/shared_data.dart';
+import 'package:chaostours/globals.dart';
 
 class AppLoader {
   static Logger logger = Logger.logger<AppLoader>();
@@ -57,6 +58,14 @@ class AppLoader {
       await Future.delayed(const Duration(seconds: 5));
     }
 
+    try {
+      Shared shared = Shared(SharedKeys.trackPointUp);
+      await shared.saveList(<String>[]);
+      shared = Shared(SharedKeys.trackPointDown);
+      await shared.saveString('');
+    } catch (e, stk) {
+      logger.error('reset shared data ${e.toString()}', stk);
+    }
     try {
       logger.important('initialize Permissions');
       await Permissions.requestLocationPermission();
@@ -96,6 +105,8 @@ class AppLoader {
 
     logger.important('start workmanager trackpoint simulation Tick');
     Future.microtask(workmanagerTick);
+
+    Future.microtask(addressLookup);
   }
 
   static Future<void> workmanagerTick() async {
@@ -105,7 +116,18 @@ class AppLoader {
       } catch (e, stk) {
         logger.fatal(e.toString(), stk);
       }
-      await Future.delayed(const Duration(seconds: 10));
+      await Future.delayed(Globals.tickTrackPointDuration);
+    }
+  }
+
+  static Future<void> addressLookup() async {
+    while (true) {
+      try {
+        EventManager.fire<EventOnAddressLookup>(EventOnAddressLookup());
+      } catch (e, stk) {
+        logger.error('fire addressLookup Event: ${e.toString()}', stk);
+      }
+      await Future.delayed(Globals.addressLookupDuration);
     }
   }
 
@@ -114,12 +136,12 @@ class AppLoader {
     while (true) {
       tick++;
       try {
-        EventManager.fire<EventOnTick>(EventOnTick(tick));
+        EventManager.fire<EventOnAppTick>(EventOnAppTick(tick));
       } catch (e, stk) {
         logger.error(e.toString(), stk);
         Logger.print('###### AppTick broke ######');
       }
-      await Future.delayed(const Duration(seconds: 3));
+      await Future.delayed(Globals.appTickDuration);
     }
   }
 

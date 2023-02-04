@@ -40,10 +40,10 @@ class Logger {
   }
 
   static listenOnTick() {
-    EventManager.listen<EventOnTick>(onTick);
+    EventManager.listen<EventOnAppTick>(onTick);
   }
 
-  static Future<void> onTick(EventOnTick event) async {
+  static Future<void> onTick(EventOnAppTick event) async {
     /// render events from background thread
     //print('§§ Logger.onTick()');
     _renderSharedLogs();

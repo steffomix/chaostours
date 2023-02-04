@@ -56,7 +56,7 @@ class FileHandler {
       return <String>[];
     }
     List<String> lines = data.split(lineSep);
-    await logger.log('write ${lines.length} rows to $file');
+    await logger.log('read ${lines.length} rows from $file');
     return lines;
   }
 }
