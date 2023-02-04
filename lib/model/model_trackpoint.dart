@@ -20,7 +20,11 @@ class ModelTrackPoint {
   /// not yet saved active running trackpoint
   static ModelTrackPoint? pendingTrackPoint;
 
+  /// interval updated address
   static String pendingAddressLookup = '';
+
+  /// list of edited tasks list from user selected trackpoint
+  static List<int> editTasks = [];
 
   ///
   /// TrackPoint owners

@@ -81,8 +81,9 @@ class TrackPoint {
     }
     Shared shared = Shared(SharedKeys.trackPointUp);
     List<String> sharedList = [_status.name];
-    for (var tp in gpsPoints) {
-      sharedList.add(tp.toSharedString());
+    var g = gpsPoints;
+    for (var gps in gpsPoints) {
+      sharedList.add(gps.toSharedString());
     }
     shared.saveList(sharedList);
   }

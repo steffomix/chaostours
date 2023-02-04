@@ -61,7 +61,9 @@ class Address {
   double get lon => _gps.lon;
   GPS get gps => _gps;
   DateTime get time => _time;
-  String get asString {
+
+  @override
+  String toString() {
     String addr = '$road $house_number, ';
     addr += town == ''
         ? '$postcode $city $city_district, $retail $suburb'
@@ -116,7 +118,7 @@ class Address {
       // ignore
       logger.error('lookupAdress failed  $e', stk);
     }
-    logger.log('Lookup Address: $asString');
+    logger.log('Lookup Address: ${toString()}');
     _loaded = true;
     //logInfo('Address parsed OSM reverse lookup result on GPS #${_gps.id}:\n$asString');
     return this;

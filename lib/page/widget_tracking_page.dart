@@ -18,7 +18,6 @@ import 'package:chaostours/widget/widgets.dart';
 import 'package:chaostours/widget/widget_bottom_navbar.dart';
 import 'package:chaostours/address.dart';
 import 'package:chaostours/gps.dart';
-import 'package:chaostours/shared/shared_data.dart';
 import 'package:chaostours/screen.dart';
 
 class WidgetTrackingPage extends StatefulWidget {
@@ -71,7 +70,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   Future<void> onAddressLookup(EventOnAddressLookup event) async {
     ModelTrackPoint.pendingAddressLookup =
         (await ModelTrackPoint.pendingTrackPoint?.address.lookupAddress())
-                ?.asString ??
+                ?.toString() ??
             '';
   }
 
@@ -81,9 +80,10 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     if (sharedList.isNotEmpty) {
       try {
         /// get status
-        TrackingStatus status = TrackingStatus.values.byName(sharedList[0]);
+        currentStatus = TrackingStatus.values.byName(sharedList[0]);
         if (sharedList.length > 1) {
           sharedList.removeAt(0);
+          var t = runningTrackPoints;
           try {
             runningTrackPoints.clear();
             for (var row in sharedList) {
@@ -93,7 +93,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
             /// update pendingTrackPoint
             if (ModelTrackPoint.pendingTrackPoint == null) {
               /// initial appStart
-              ModelTrackPoint.pendingTrackPoint = createTrackPoint(status);
+              ModelTrackPoint.pendingTrackPoint =
+                  createTrackPoint(currentStatus);
             } else {
               /// update
               ModelTrackPoint.pendingTrackPoint!
@@ -110,12 +111,6 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
             /// write to share user data to background thread
             await Shared(SharedKeys.trackPointDown).saveString(
                 ModelTrackPoint.pendingTrackPoint!.toSharedString());
-
-            /// status has changed
-            if (status != lastStatus && lastStatus != TrackingStatus.none) {
-              currentStatus = status;
-              await statusChanged();
-            }
           } catch (e, stk) {
             logger.error(e.toString(), stk);
           }
@@ -145,24 +140,6 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     return tp;
   }
 
-  Future<void> statusChanged() async {
-    logger.important(
-        'TrackingStatus changed from ${lastStatus.name} to ${currentStatus.name}');
-    if (lastStatus == TrackingStatus.standing) {
-      logger.important('insert new TrackPoint');
-      ModelTrackPoint tp =
-          ModelTrackPoint.pendingTrackPoint ?? createTrackPoint(lastStatus);
-      try {
-        await tp.address.lookupAddress();
-      } catch (e, stk) {
-        logger.error('lookup address on status changed: ${e.toString()}', stk);
-      }
-
-      //await ModelTrackPoint.insert(tp);
-      lastStatus = currentStatus;
-    }
-  }
-
   Widget trackPointInfo(
       {required TrackingStatus status,
       required DateTime timeStart,
@@ -176,7 +153,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       children: [
         Center(
             heightFactor: 2,
-            child: Text(status.name,
+            child: Text(status == TrackingStatus.standing ? 'Halten' : 'Fahren',
                 style: TextStyle(letterSpacing: 2, fontSize: 20))),
         Center(
             heightFactor: 1,
@@ -185,6 +162,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                 '\nbis ${util.formatDate(timeEnd)} \n'
                 '(${util.timeElapsed(timeStart, timeEnd, false)})',
                 softWrap: true)),
+        Divider(
+            thickness: 1, indent: 10, endIndent: 10, color: Colors.blueGrey),
         Text('OSM: "${ModelTrackPoint.pendingAddressLookup}"', softWrap: true),
         Text('Alias: ${alias.join('\n       ')}', softWrap: true),
         Divider(
@@ -203,39 +182,20 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       return const Text('...waiting for GPS...');
     } else {
       try {
-        GPS gps = runningTrackPoints.first;
-        List<GPS> rtp = runningTrackPoints;
-        DateTime timeStart = rtp.last.time;
-        DateTime timeEnd = rtp.first.time;
-        String readableDuration = util.timeElapsed(timeEnd, timeStart, false);
-        String status =
-            lastStatus == TrackingStatus.moving ? 'Fahren' : 'Halten';
-
-        /// address
-        String address = 'not implemented';
-
-        /// alias
-        List<String> alias = ModelAlias.nextAlias(rtp.last).map((e) {
-          return '- ${e.alias}';
-        }).toList();
-
-        /// pending tasks
-        List<String> task = ModelTrackPoint.pendingTasks
-            .map((e) => '- ${ModelTask.getTask(e).task}')
-            .toList();
-
-        /// pending trackpoint notes
-        String notes = ModelTrackPoint.pendingNotes;
-
         Widget textInfo = trackPointInfo(
             status: currentStatus,
             address: ModelTrackPoint.pendingTrackPoint!.address,
-            timeStart: timeStart,
-            timeEnd: timeEnd,
-            alias: alias,
-            task: task,
-            duration: util.duration(timeStart, timeEnd),
-            notes: notes);
+            timeStart: runningTrackPoints.last.time,
+            timeEnd: runningTrackPoints.first.time,
+            alias: ModelAlias.nextAlias(runningTrackPoints.last).map((e) {
+              return '- ${e.alias}';
+            }).toList(),
+            task: ModelTrackPoint.pendingTasks
+                .map((e) => '- ${ModelTask.getTask(e).task}')
+                .toList(),
+            duration: util.duration(
+                runningTrackPoints.last.time, runningTrackPoints.first.time),
+            notes: ModelTrackPoint.pendingNotes);
 
         ///
         /// create widget
@@ -272,28 +232,19 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     try {
       List<ModelTrackPoint> tpList = ModelTrackPoint.recentTrackPoints();
       for (var tp in tpList) {
-        DateTime timeStart = tp.timeStart;
-        DateTime timeEnd = tp.timeEnd;
-        String readableDuration = util.timeElapsed(timeEnd, timeStart, false);
-        String status = tp.status == TrackingStatus.moving ? 'Fahren' : 'Halt';
-        String address = tp.address.asString;
-        String alias = tp.idAlias
-            .map((e) {
-              return '- ${ModelAlias.getAlias(e).alias}';
-            })
-            .toList()
-            .join('\n');
-        String task = tp.idTask
-            .map((e) {
-              return '- ${ModelTask.getTask(e).task}';
-            })
-            .toList()
-            .join('\n');
-        List<String> taskNotes = tp.idTask.map((e) {
-          return ModelTask.getTask(e).notes;
-        }).toList();
-        String notes = tp.notes;
         if (tp.status == TrackingStatus.standing) {
+          Widget textInfo = trackPointInfo(
+              status: tp.status,
+              address: tp.address,
+              timeStart: tp.timeStart,
+              timeEnd: tp.timeEnd,
+              alias: tp.idAlias
+                  .map((id) => ModelAlias.getAlias(id).alias)
+                  .toList(),
+              task: tp.idTask.map((id) => ModelTask.getTask(id).task).toList(),
+              duration: util.duration(tp.timeStart, tp.timeEnd),
+              notes: tp.notes);
+
           listItems.add(
             Table(columnWidths: {
               0: FixedColumnWidth(50),
@@ -308,19 +259,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                         onPressed: () {})),
 
                 /// Row 1, col 2 (trackpoint information in some rows)
-                TableCell(
-                    child: ListBody(
-                  children: [
-                    Center(
-                        heightFactor: 1.5,
-                        child: Text('von ${util.formatDate(timeStart)} '
-                            '\nbis ${util.formatDate(timeEnd)} \n'
-                            '($readableDuration)')),
-                    Text('OSM: "$address"'),
-                    Text('Alias: $alias'),
-                    Text('Aufgaben: $task')
-                  ],
-                ))
+                TableCell(child: textInfo)
               ])
             ]),
           );
