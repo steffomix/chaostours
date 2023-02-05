@@ -112,7 +112,7 @@ class AppLoader {
   static Future<void> workmanagerTick() async {
     while (true) {
       try {
-        TrackPoint.startShared();
+        TrackPoint().startShared();
       } catch (e, stk) {
         logger.fatal(e.toString(), stk);
       }

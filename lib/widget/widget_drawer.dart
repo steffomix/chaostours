@@ -40,6 +40,7 @@ class _WidgetDrawer extends State<WidgetDrawer> {
               context,
               MaterialPageRoute(builder: (context) => const WidgetLoggerPage()),
             );
+            Navigator.pop(context);
           },
           child: const Text('Logger'))
     ]));

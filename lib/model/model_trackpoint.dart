@@ -7,24 +7,50 @@ import 'package:chaostours/address.dart';
 import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/logger.dart';
 
+class ModelTrackPointEdit {
+  static ModelTrackPointEdit? _instance;
+  ModelTrackPointEdit._() {
+    pendingTrackPoint = editTrackPoint = ModelTrackPoint(
+        gps: GPS(0, 0),
+        timeStart: DateTime.now(),
+        trackPoints: <GPS>[],
+        idAlias: <int>[],
+        deleted: 0,
+        notes: '');
+  }
+  factory ModelTrackPointEdit() => _instance ??= ModelTrackPointEdit._();
+
+  /// not yet saved active running trackpoint
+  late ModelTrackPoint pendingTrackPoint;
+
+  /// trackPoint stored for widgets to edit parts of it
+  late ModelTrackPoint editTrackPoint;
+  late ModelTrackPoint editTrackPointReference;
+
+  static void setEditTrackPoint(ModelTrackPoint reference) {}
+
+  /// interval updated address of not yet saved trackPoint
+  String pendingAddressLookup = '';
+}
+
 class ModelTrackPoint {
   static Logger logger = Logger.logger<ModelTrackPoint>();
   static final List<ModelTrackPoint> _table = [];
 
-  /// user notes of current -not yet saved- trackpoint
-  static String pendingNotes = '';
-
-  /// user tasks of current -not yet saved- tasks
-  static final List<int> pendingTasks = [];
-
   /// not yet saved active running trackpoint
-  static ModelTrackPoint? pendingTrackPoint;
+  static ModelTrackPoint pendingTrackPoint = ModelTrackPoint(
+      gps: GPS(0, 0),
+      timeStart: DateTime.now(),
+      trackPoints: <GPS>[],
+      idAlias: <int>[],
+      deleted: 0,
+      notes: '');
 
-  /// interval updated address
+  /// interval updated address of not yet saved trackPoint
   static String pendingAddressLookup = '';
 
-  /// list of edited tasks list from user selected trackpoint
-  static List<int> editTasks = [];
+  /// trackPoint stored for widgets to edit parts of it
+  static ModelTrackPoint editTrackPoint = pendingTrackPoint;
 
   ///
   /// TrackPoint owners
@@ -48,7 +74,7 @@ class ModelTrackPoint {
   /// "id,id,..." needs to be ordered by user
   List<int> idTask = [];
   String notes = '';
-  Address address;
+  late Address address;
 
   static int _unsavedId = 0;
 
@@ -68,10 +94,10 @@ class ModelTrackPoint {
       required this.trackPoints,
       required this.idAlias,
       required this.timeStart,
-      required this.address,
       this.deleted = 0,
       this.notes = ''}) {
     _id = _nextUnsavedId;
+    address = Address(gps);
   }
 
   static ModelTrackPoint get last => _table.last;
@@ -199,7 +225,6 @@ class ModelTrackPoint {
     ModelTrackPoint tp = ModelTrackPoint(
         deleted: int.parse(p[1]),
         gps: gps,
-        address: Address(gps),
         timeStart: DateTime.parse(p[5]),
         trackPoints: parseGpsList(p[7]),
         idAlias: parseIdList(p[8]),
@@ -286,7 +311,6 @@ class ModelTrackPoint {
     GPS gps = GPS(double.parse(p[1]), double.parse(p[2]));
     ModelTrackPoint model = ModelTrackPoint(
         gps: gps,
-        address: Address(gps),
         timeStart: DateTime.parse(p[3]),
         idAlias: parseIdList(p[5]),
         trackPoints: parseGpsList(p[8]),

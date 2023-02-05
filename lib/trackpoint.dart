@@ -1,9 +1,7 @@
 import 'package:chaostours/globals.dart';
 import 'package:chaostours/gps.dart';
-import 'package:chaostours/address.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/util.dart' as util;
-import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/shared/shared.dart';
 
@@ -23,22 +21,21 @@ enum TrackingStatus {
 }
 
 class TrackPoint {
-  static final Logger logger = Logger.logger<TrackPoint>();
+  final Logger logger = Logger.logger<TrackPoint>();
 
-  //static int _nextId = 0;
-  // contains all trackpoints from current state start or stop
-  static final List<GPS> gpsPoints = [];
-  // contains all trackpoints during driving (from start to stop)
-  static int get length => gpsPoints.length;
-  //
-  static TrackingStatus _status = TrackingStatus.none;
-  static TrackingStatus get status => _status;
+  static TrackPoint? _instance;
+  TrackPoint._();
+  factory TrackPoint() => _instance ??= TrackPoint._();
 
-  static TrackingStatus _oldStatus = TrackingStatus.none;
+  /// int _nextId = 0;
+  /// contains all trackpoints from current state start or stop
+  final List<GPS> gpsPoints = [];
 
-  static ModelTrackPoint? _activeTrackPoint;
+  ///
+  TrackingStatus _status = TrackingStatus.none;
+  TrackingStatus get status => _status;
 
-  static Future<void> startShared() async {
+  Future<void> startShared() async {
     await _beforeSharedTrackPoint();
     GPS gps = await GPS.gps();
     await trackPoint(gps);
@@ -46,7 +43,7 @@ class TrackPoint {
   }
 
   /// load last trackpoint results
-  static Future<void> _beforeSharedTrackPoint() async {
+  Future<void> _beforeSharedTrackPoint() async {
     Shared shared = Shared(SharedKeys.trackPointUp);
     List<String>? sharedList = await shared.loadList() ?? [];
     if (sharedList.isEmpty) {
@@ -75,7 +72,7 @@ class TrackPoint {
     }
   }
 
-  static Future<void> _afterSharedTrackPoint() async {
+  Future<void> _afterSharedTrackPoint() async {
     if (gpsPoints.isEmpty) {
       throw 'no runningTrackpoint found';
     }
@@ -88,9 +85,8 @@ class TrackPoint {
     shared.saveList(sharedList);
   }
 
-  static Future<void> trackPoint(GPS gps) async {
-    if (gpsPoints.length > 3) {
-      _oldStatus = _status;
+  Future<void> trackPoint(GPS gps) async {
+    if (gpsPoints.length > 10) {
       _status =
           _status == TrackingStatus.standing || _status == TrackingStatus.none
               ? TrackingStatus.moving
@@ -125,7 +121,7 @@ class TrackPoint {
     }
   }
 
-  static Future<void> _statusChanged(GPS gps) async {
+  Future<void> _statusChanged(GPS gps) async {
     // create a new TrackPoint as event
     await logger.important('Tracking Status changed to #${status.name}');
     await logger.log('save new status #${status.name}');
@@ -134,11 +130,10 @@ class TrackPoint {
     /// create active trackpoint
     await logger.log('create active trackpoint');
     ModelTrackPoint newEntry = await createModelTrackPoint(gps);
-    _activeTrackPoint = newEntry;
 
     /// save active trackpoint to database
     //if (_oldStatus == TrackingStatus.standing) {
-    await logger.log('insert new trackpoint to datatbase table trackpoints');
+    await logger.log('insert new trackpoint to database');
     await ModelTrackPoint.insert(newEntry);
     await ModelTrackPoint.open();
     //}
@@ -149,7 +144,7 @@ class TrackPoint {
     await logger.log('processing trackpoint finished');
   }
 
-  static Future<ModelTrackPoint> createModelTrackPoint([GPS? gps]) async {
+  Future<ModelTrackPoint> createModelTrackPoint([GPS? gps]) async {
     if (gps == null) {
       await logger.warn('no gps on trackpoint. lookup foreground gps');
     }
@@ -172,16 +167,18 @@ class TrackPoint {
         idAlias = tps.idAlias;
 
         /// reset user input and save back to shared
+        /*
         tps.notes = '';
         tps.idTask = <int>[];
         tps.idAlias = <int>[];
+        await shared.saveString(tps.toSharedString());
+        */
       }
     } catch (e, stk) {
       logger.error('load shared data for trackPoint: ${e.toString()}', stk);
     }
     ModelTrackPoint tp = ModelTrackPoint(
         gps: gps,
-        address: Address(gps),
         trackPoints: gpsPoints.map((e) => e).toList(),
         idAlias: idAlias,
         timeStart: gpsPoints.last.time);
@@ -195,12 +192,11 @@ class TrackPoint {
   ///
   /// creates new Trackpoint, waits after status changed,
   ///
-  static Future<bool> _checkStatus(List<GPS> gpsList) async {
+  Future<bool> _checkStatus(List<GPS> gpsList) async {
     if (_status == TrackingStatus.standing || _status == TrackingStatus.none) {
       if (_checkMoved(gpsList)) {
         // use the most recent Trackpoint as reference
         await _statusChanged(gpsList.first);
-        _oldStatus = status;
         _status = TrackingStatus.moving;
         return true;
       }
@@ -208,7 +204,6 @@ class TrackPoint {
       if (_checkStopped(gpsList)) {
         // use the one before oldest trackpoint where we stopped as reference
         await _statusChanged(gpsList.last);
-        _oldStatus = status;
         _status = TrackingStatus.standing;
         return true;
       }
@@ -219,7 +214,7 @@ class TrackPoint {
     return false;
   }
 
-  static bool _checkMoved(List<GPS> gpsList) {
+  bool _checkMoved(List<GPS> gpsList) {
     // check if moved
     double dist = 0;
     GPS tRef = gpsList.last;
@@ -232,7 +227,7 @@ class TrackPoint {
     return false;
   }
 
-  static bool _checkStopped(List<GPS> gpsList) {
+  bool _checkStopped(List<GPS> gpsList) {
     double dist = 0;
     double distMoved = 0;
     GPS tRef = gpsList.first;
@@ -251,7 +246,7 @@ class TrackPoint {
   /// collect recent Trackpoints since last status changed
   /// and until <timeTreshold>
   /// so that gpsList[0] is most recent
-  static List<GPS> _recentTracks() {
+  List<GPS> _recentTracks() {
     List<GPS> gpsList = [];
     DateTime treshold = DateTime.now().subtract(Globals.stopTimeTreshold);
     for (var gps in gpsPoints) {
@@ -271,12 +266,12 @@ class TrackPoint {
   ///
   ///
 
-  static String timeElapsed() {
+  String timeElapsed() {
     if (gpsPoints.isEmpty) return '00:00:00';
     return util.timeElapsed(gpsPoints.last.time, gpsPoints.first.time);
   }
 
-  static double distance() {
+  double distance() {
     if (gpsPoints.isEmpty) return 0.0;
     double dist;
     if (_status == TrackingStatus.standing) {
@@ -288,7 +283,7 @@ class TrackPoint {
   }
 
   // calc distance over multiple trackpoints in meters
-  static double movedDistance(List<GPS> tracklist) {
+  double movedDistance(List<GPS> tracklist) {
     if (tracklist.length < 2) return 0;
     double dist = 0;
     GPS gps = tracklist[0];

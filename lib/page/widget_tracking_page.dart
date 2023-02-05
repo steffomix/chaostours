@@ -1,21 +1,18 @@
 // ignore_for_file: prefer_final_fields, prefer_const_constructors, prefer_const_literals_to_create_immutables
 
+import 'package:chaostours/main.dart';
 import 'package:flutter/material.dart';
 //
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/trackpoint.dart';
 import 'package:chaostours/util.dart' as util;
-import 'package:chaostours/enum.dart';
 import 'package:chaostours/shared/shared.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 //
-import 'package:chaostours/page/widget_add_tasks_page.dart';
-import 'package:chaostours/widget/widget_drawer.dart';
 import 'package:chaostours/widget/widgets.dart';
-import 'package:chaostours/widget/widget_bottom_navbar.dart';
 import 'package:chaostours/address.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/screen.dart';
@@ -55,23 +52,21 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: Widgets.appBar(),
-      drawer: const WidgetDrawer(),
-      body: ListView(children: [
-        activeTrackPointRendered,
-        Divider(thickness: 2, indent: 10, endIndent: 10, color: Colors.black),
-        ...recentTrackPointsRendered
-      ]),
-      bottomNavigationBar: const WidgetBottomNavBar(),
-    );
+    activeTrackPointRendered = renderActiveTrackPoint(context);
+    recentTrackPointsRendered = renderRecentTrackPoints(context);
+    return Widgets.scaffold(
+        context,
+        ListView(children: [
+          activeTrackPointRendered,
+          Divider(thickness: 2, indent: 10, endIndent: 10, color: Colors.black),
+          ...recentTrackPointsRendered
+        ]));
   }
 
   Future<void> onAddressLookup(EventOnAddressLookup event) async {
     ModelTrackPoint.pendingAddressLookup =
-        (await ModelTrackPoint.pendingTrackPoint?.address.lookupAddress())
-                ?.toString() ??
-            '';
+        (await ModelTrackPoint.pendingTrackPoint.address.lookupAddress())
+            .toString();
   }
 
   Future<void> onTick(EventOnAppTick tick) async {
@@ -83,7 +78,6 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         currentStatus = TrackingStatus.values.byName(sharedList[0]);
         if (sharedList.length > 1) {
           sharedList.removeAt(0);
-          var t = runningTrackPoints;
           try {
             runningTrackPoints.clear();
             for (var row in sharedList) {
@@ -91,26 +85,31 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
             }
 
             /// update pendingTrackPoint
-            if (ModelTrackPoint.pendingTrackPoint == null) {
-              /// initial appStart
-              ModelTrackPoint.pendingTrackPoint =
-                  createTrackPoint(currentStatus);
-            } else {
+            if (currentStatus == lastStatus) {
               /// update
-              ModelTrackPoint.pendingTrackPoint!
+              ModelTrackPoint.pendingTrackPoint
+                ..gps = runningTrackPoints.last
                 ..address = Address(runningTrackPoints.first)
                 ..trackPoints = runningTrackPoints
+                ..timeStart = runningTrackPoints.last.time
                 ..timeEnd = runningTrackPoints.first.time
                 ..idAlias = ModelAlias.nextAlias(runningTrackPoints.first)
                     .map((e) => e.id)
                     .toList()
-                ..idTask = ModelTrackPoint.pendingTasks
-                ..notes = ModelTrackPoint.pendingNotes;
+                ..idTask = ModelTrackPoint.pendingTrackPoint.idTask
+                ..notes = ModelTrackPoint.pendingTrackPoint.notes;
+            } else {
+              ModelTrackPoint.pendingTrackPoint = ModelTrackPoint(
+                  gps: runningTrackPoints.last,
+                  trackPoints: runningTrackPoints,
+                  idAlias: <int>[],
+                  timeStart: runningTrackPoints.last.time);
+              lastStatus = currentStatus;
             }
 
             /// write to share user data to background thread
-            await Shared(SharedKeys.trackPointDown).saveString(
-                ModelTrackPoint.pendingTrackPoint!.toSharedString());
+            await Shared(SharedKeys.trackPointDown)
+                .saveString(ModelTrackPoint.pendingTrackPoint.toSharedString());
           } catch (e, stk) {
             logger.error(e.toString(), stk);
           }
@@ -119,8 +118,6 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         logger.error(e.toString(), stk);
       }
     }
-    activeTrackPointRendered = await renderActiveTrackPoint();
-    recentTrackPointsRendered = renderRecentTrackPoints();
 
     setState(() {});
   }
@@ -128,15 +125,14 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   ModelTrackPoint createTrackPoint(TrackingStatus status) {
     GPS gps = runningTrackPoints.first;
     ModelTrackPoint tp = ModelTrackPoint(
-        address: Address(gps),
         gps: gps,
         trackPoints: runningTrackPoints,
         idAlias: ModelAlias.nextAlias(gps).map((e) => e.id).toList(),
         timeStart: gps.time);
     tp.status = status;
     tp.timeEnd = runningTrackPoints.last.time;
-    tp.idTask = ModelTrackPoint.pendingTasks;
-    tp.notes = ModelTrackPoint.pendingNotes;
+    tp.idTask = ModelTrackPoint.pendingTrackPoint.idTask;
+    tp.notes = ModelTrackPoint.pendingTrackPoint.notes;
     return tp;
   }
 
@@ -176,7 +172,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     );
   }
 
-  Future<Widget> renderActiveTrackPoint() async {
+  Widget renderActiveTrackPoint(BuildContext context) {
     Screen screen = Screen(context);
     if (ModelTrackPoint.pendingTrackPoint == null) {
       return const Text('...waiting for GPS...');
@@ -184,18 +180,21 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       try {
         Widget textInfo = trackPointInfo(
             status: currentStatus,
-            address: ModelTrackPoint.pendingTrackPoint!.address,
+            address: ModelTrackPoint.pendingTrackPoint.address,
             timeStart: runningTrackPoints.last.time,
             timeEnd: runningTrackPoints.first.time,
-            alias: ModelAlias.nextAlias(runningTrackPoints.last).map((e) {
+            alias: ModelAlias.nextAlias(currentStatus == TrackingStatus.moving
+                    ? runningTrackPoints.first
+                    : runningTrackPoints.last)
+                .map((e) {
               return '- ${e.alias}';
             }).toList(),
-            task: ModelTrackPoint.pendingTasks
+            task: ModelTrackPoint.pendingTrackPoint.idTask
                 .map((e) => '- ${ModelTask.getTask(e).task}')
                 .toList(),
             duration: util.duration(
                 runningTrackPoints.last.time, runningTrackPoints.first.time),
-            notes: ModelTrackPoint.pendingNotes);
+            notes: ModelTrackPoint.pendingTrackPoint.notes);
 
         ///
         /// create widget
@@ -210,8 +209,13 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
             TableCell(
                 verticalAlignment: TableCellVerticalAlignment.middle,
                 child: IconButton(
-                    icon: Icon(size: 50, Icons.edit_location),
-                    onPressed: () {})),
+                    icon: Icon(size: 40, Icons.edit_location),
+                    onPressed: () {
+                      ModelTrackPoint.editTrackPoint =
+                          ModelTrackPoint.pendingTrackPoint;
+                      Navigator.pushNamed(
+                          context, AppRoutes.editTrackingTasks.route);
+                    })),
 
             /// Row 1, col 2 (trackpoint information in some rows)
             TableCell(child: textInfo)
@@ -227,7 +231,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   ///
   ///
   ///
-  List<Widget> renderRecentTrackPoints() {
+  List<Widget> renderRecentTrackPoints(BuildContext context) {
+    Screen screen = Screen(context);
     List<Widget> listItems = [];
     try {
       List<ModelTrackPoint> tpList = ModelTrackPoint.recentTrackPoints();
@@ -247,8 +252,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
           listItems.add(
             Table(columnWidths: {
-              0: FixedColumnWidth(50),
-              1: FractionColumnWidth(.8),
+              0: FixedColumnWidth(screen.percentWidth(10)),
+              1: FixedColumnWidth(screen.percentWidth(90)),
             }, children: [
               /// Row 1
               TableRow(children: [
@@ -256,7 +261,11 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                 TableCell(
                     child: IconButton(
                         icon: Icon(Icons.edit_location_outlined),
-                        onPressed: () {})),
+                        onPressed: () {
+                          ModelTrackPoint.editTrackPoint = tp;
+                          Navigator.pushNamed(
+                              context, AppRoutes.editTrackingTasks.route);
+                        })),
 
                 /// Row 1, col 2 (trackpoint information in some rows)
                 TableCell(child: textInfo)

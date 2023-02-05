@@ -66,11 +66,6 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: Widgets.appBar(),
-      drawer: const WidgetDrawer(),
-      body: pageBody(),
-      bottomNavigationBar: const WidgetBottomNavBar(),
-    );
+    return Widgets.scaffold(context, pageBody());
   }
 }
