@@ -78,11 +78,11 @@ class TrackPoint {
     }
     Shared shared = Shared(SharedKeys.trackPointUp);
     List<String> sharedList = [_status.name];
-    var g = gpsPoints;
     for (var gps in gpsPoints) {
       sharedList.add(gps.toSharedString());
     }
-    shared.saveList(sharedList);
+    logger.log('save trackPointsUp to shared');
+    await shared.saveList(sharedList);
   }
 
   Future<void> trackPoint(GPS gps) async {
@@ -125,7 +125,6 @@ class TrackPoint {
     // create a new TrackPoint as event
     await logger.important('Tracking Status changed to #${status.name}');
     await logger.log('save new status #${status.name}');
-    //await Shared(SharedKeys.activeTrackPointStatusName).save(status.toString());
 
     /// create active trackpoint
     await logger.log('create active trackpoint');
@@ -139,8 +138,12 @@ class TrackPoint {
     //}
 
     /// reset running trackpoints and add current one
+    await logger.log('reset gpsPoints');
+    Shared shared = Shared(SharedKeys.trackPointUp);
     gpsPoints.clear();
     gpsPoints.add(gps);
+    shared = Shared(SharedKeys.trackPointUp);
+    await shared.saveList(<String>[status.name, gps.toSharedString()]);
     await logger.log('processing trackpoint finished');
   }
 
@@ -193,6 +196,7 @@ class TrackPoint {
   /// creates new Trackpoint, waits after status changed,
   ///
   Future<bool> _checkStatus(List<GPS> gpsList) async {
+    logger.log('check status');
     if (_status == TrackingStatus.standing || _status == TrackingStatus.none) {
       if (_checkMoved(gpsList)) {
         // use the most recent Trackpoint as reference

@@ -7,32 +7,6 @@ import 'package:chaostours/address.dart';
 import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/logger.dart';
 
-class ModelTrackPointEdit {
-  static ModelTrackPointEdit? _instance;
-  ModelTrackPointEdit._() {
-    pendingTrackPoint = editTrackPoint = ModelTrackPoint(
-        gps: GPS(0, 0),
-        timeStart: DateTime.now(),
-        trackPoints: <GPS>[],
-        idAlias: <int>[],
-        deleted: 0,
-        notes: '');
-  }
-  factory ModelTrackPointEdit() => _instance ??= ModelTrackPointEdit._();
-
-  /// not yet saved active running trackpoint
-  late ModelTrackPoint pendingTrackPoint;
-
-  /// trackPoint stored for widgets to edit parts of it
-  late ModelTrackPoint editTrackPoint;
-  late ModelTrackPoint editTrackPointReference;
-
-  static void setEditTrackPoint(ModelTrackPoint reference) {}
-
-  /// interval updated address of not yet saved trackPoint
-  String pendingAddressLookup = '';
-}
-
 class ModelTrackPoint {
   static Logger logger = Logger.logger<ModelTrackPoint>();
   static final List<ModelTrackPoint> _table = [];

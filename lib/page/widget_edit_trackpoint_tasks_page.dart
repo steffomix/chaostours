@@ -2,47 +2,8 @@ import 'package:flutter/material.dart';
 //
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
-import 'package:chaostours/widget/widget_drawer.dart';
 import 'package:chaostours/widget/widgets.dart';
-import 'package:chaostours/widget/widget_bottom_navbar.dart';
-
-class CheckboxModel {
-  final int id;
-  String title;
-  bool checked;
-  String notes = '';
-  bool shouldToggle = true;
-  VoidCallback? onToggle;
-  List<int> tasks = ModelTrackPoint.editTrackPoint.idTask;
-  CheckboxModel({
-    required this.id,
-    required this.title,
-    required this.checked,
-    this.notes = '',
-    this.onToggle,
-    this.shouldToggle = true,
-  }) {
-    onToggle = toggle;
-  }
-  void toggle() {
-    if (shouldToggle) checked = !checked;
-    if (checked) {
-      if (!tasks.contains(id)) tasks.add(id);
-    } else {
-      tasks.removeWhere((i) => i == id);
-    }
-  }
-
-  void enable(bool state) => shouldToggle = state;
-  bool get isEnabled => shouldToggle;
-  VoidCallback? handler() {
-    if (shouldToggle) {
-      return onToggle;
-    } else {
-      return null;
-    }
-  }
-}
+import 'package:chaostours/model/model_checkbox.dart';
 
 ///
 /// CheckBox list
@@ -57,11 +18,12 @@ class WidgetEditTrackpointTasks extends StatefulWidget {
 class _WidgetAddTasksState extends State<WidgetEditTrackpointTasks> {
   ///
   Widget createCheckbox(CheckboxModel model) {
-    TextStyle style = model.shouldToggle
+    TextStyle style = model.enabled
         ? const TextStyle(color: Colors.black)
         : const TextStyle(color: Colors.grey);
     return ListTile(
-      subtitle: Text(model.notes, style: const TextStyle(color: Colors.grey)),
+      subtitle:
+          Text(model.subtitle, style: const TextStyle(color: Colors.grey)),
       title: Text(
         model.title,
         style: style,
@@ -72,8 +34,6 @@ class _WidgetAddTasksState extends State<WidgetEditTrackpointTasks> {
           setState(
             () {
               model.handler()?.call();
-              //model.toggle();
-              //swapEnabledGroup(checkboxes[2].value);
             },
           );
         },
@@ -81,9 +41,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackpointTasks> {
       onTap: () {
         setState(
           () {
-            //swapEnabledGroup(checkboxes[2].value);
             model.handler()?.call();
-            //model.toggle();
           },
         );
       },
@@ -93,7 +51,6 @@ class _WidgetAddTasksState extends State<WidgetEditTrackpointTasks> {
   Widget backButton(BuildContext context) {
     return IconButton(
         onPressed: () {
-          // ModelTrackPoint.pendingTrackPoint = ModelTrackPoint.editTrackPoint;
           Navigator.pop(context);
         },
         icon: const Icon(Icons.done_outline_rounded));
@@ -102,11 +59,12 @@ class _WidgetAddTasksState extends State<WidgetEditTrackpointTasks> {
   @override
   Widget build(BuildContext context) {
     List<Widget> checkBoxes = ModelTask.getAll().map((ModelTask task) {
+      List<int> referenceList = ModelTrackPoint.editTrackPoint.idTask;
       return createCheckbox(CheckboxModel(
-          id: task.id,
-          checked: ModelTrackPoint.editTrackPoint.idTask.contains(task.id),
+          idReference: task.id,
+          referenceList: referenceList,
           title: task.task,
-          notes: task.notes));
+          subtitle: task.notes));
     }).toList();
     return Widgets.scaffold(
         context, ListView(children: [backButton(context), ...checkBoxes]));

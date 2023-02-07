@@ -17,6 +17,14 @@ import 'package:chaostours/address.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/screen.dart';
 
+enum TrackingPageDisplayMode {
+  /// trackpoints from current location
+  lastVisited,
+
+  /// recent trackpoints ordered by time
+  recent;
+}
+
 class WidgetTrackingPage extends StatefulWidget {
   const WidgetTrackingPage({super.key});
 
@@ -27,13 +35,12 @@ class WidgetTrackingPage extends StatefulWidget {
 class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   static Logger logger = Logger.logger<WidgetTrackingPage>();
 
+  static TrackingPageDisplayMode displayMode = TrackingPageDisplayMode.recent;
+
   ///
   /// active trackpoint data
   static TrackingStatus lastStatus = TrackingStatus.none;
   static TrackingStatus currentStatus = TrackingStatus.none;
-
-  Widget activeTrackPointRendered = Text('...waiting for GPS...');
-  List<Widget> recentTrackPointsRendered = [];
 
   /// recent or saved trackponts
   static List<GPS> runningTrackPoints = [];
@@ -52,14 +59,12 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
   @override
   Widget build(BuildContext context) {
-    activeTrackPointRendered = renderActiveTrackPoint(context);
-    recentTrackPointsRendered = renderRecentTrackPoints(context);
     return Widgets.scaffold(
         context,
         ListView(children: [
-          activeTrackPointRendered,
+          renderActiveTrackPoint(context),
           Divider(thickness: 2, indent: 10, endIndent: 10, color: Colors.black),
-          ...recentTrackPointsRendered
+          ...renderRecentTrackPoints(context)
         ]));
   }
 
@@ -136,7 +141,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     return tp;
   }
 
-  Widget trackPointInfo(
+  Widget activeTrackPointInfo(
       {required TrackingStatus status,
       required DateTime timeStart,
       required DateTime timeEnd,
@@ -145,18 +150,21 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       required List<String> alias,
       required List<String> task,
       required String notes}) {
+    String time = '${DateTime.now().hour}:${DateTime.now().minute}';
     return ListBody(
       children: [
         Center(
             heightFactor: 2,
-            child: Text(status == TrackingStatus.standing ? 'Halten' : 'Fahren',
+            child: Text(
+                status == TrackingStatus.standing
+                    ? '$time Halten'
+                    : '$time Fahren',
                 style: TextStyle(letterSpacing: 2, fontSize: 20))),
         Center(
             heightFactor: 1,
             child: Text(
-                'von ${util.formatDate(timeStart)} '
-                '\nbis ${util.formatDate(timeEnd)} \n'
-                '(${util.timeElapsed(timeStart, timeEnd, false)})',
+                'seit ${timeStart.hour}:${timeStart.minute}\n'
+                '(${util.timeElapsed(timeStart, timeEnd, false)}) ${runningTrackPoints.length}',
                 softWrap: true)),
         Divider(
             thickness: 1, indent: 10, endIndent: 10, color: Colors.blueGrey),
@@ -172,13 +180,34 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     );
   }
 
+  Widget recentTrackPointInfo(ModelTrackPoint tp) {
+    List<String> alias =
+        tp.idAlias.map((id) => ModelAlias.getAlias(id).alias).toList();
+
+    List<String> tasks =
+        tp.idTask.map((id) => ModelTask.getTask(id).task).toList();
+    String duration = util.timeElapsed(tp.timeStart, tp.timeEnd);
+
+    ///
+    return ListBody(children: [
+      Center(
+          heightFactor: 2,
+          child: alias.isEmpty
+              ? Text(tp.address.toString())
+              : Text('- ${alias.join('\n- ')}')),
+      Center(child: Text(duration)),
+      Text(
+          'Aufgaben:${tasks.isEmpty ? ' -' : '\n   - ${tasks.join('\n   - ')}'}'),
+      Text('Notizen ${tp.notes}')
+    ]);
+  }
+
   Widget renderActiveTrackPoint(BuildContext context) {
-    Screen screen = Screen(context);
-    if (ModelTrackPoint.pendingTrackPoint == null) {
+    if (runningTrackPoints.isEmpty) {
       return const Text('...waiting for GPS...');
     } else {
       try {
-        Widget textInfo = trackPointInfo(
+        Widget textInfo = activeTrackPointInfo(
             status: currentStatus,
             address: ModelTrackPoint.pendingTrackPoint.address,
             timeStart: runningTrackPoints.last.time,
@@ -199,30 +228,19 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         ///
         /// create widget
         ///
-        return Table(defaultColumnWidth: IntrinsicColumnWidth(), columnWidths: {
-          0: FixedColumnWidth(screen.percentWidth(10)),
-          1: FixedColumnWidth(screen.percentWidth(90)),
-        }, children: [
-          /// Row 1
-          TableRow(children: [
-            /// Row 1, col 1 (icon button)
-            TableCell(
-                verticalAlignment: TableCellVerticalAlignment.middle,
-                child: IconButton(
-                    icon: Icon(size: 40, Icons.edit_location),
-                    onPressed: () {
-                      ModelTrackPoint.editTrackPoint =
-                          ModelTrackPoint.pendingTrackPoint;
-                      Navigator.pushNamed(
-                          context, AppRoutes.editTrackingTasks.route);
-                    })),
-
-            /// Row 1, col 2 (trackpoint information in some rows)
-            TableCell(child: textInfo)
-          ])
-        ]);
+        ///
+        return ListTile(
+            leading: IconButton(
+                icon: Icon(size: 40, Icons.edit_location),
+                onPressed: () {
+                  ModelTrackPoint.editTrackPoint =
+                      ModelTrackPoint.pendingTrackPoint;
+                  Navigator.pushNamed(
+                      context, AppRoutes.editTrackingTasks.route);
+                }),
+            title: textInfo);
       } catch (e, stk) {
-        logger.error(e.toString(), stk);
+        logger.warn(e.toString());
         return Text('$e');
       }
     }
@@ -232,46 +250,21 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   ///
   ///
   List<Widget> renderRecentTrackPoints(BuildContext context) {
-    Screen screen = Screen(context);
     List<Widget> listItems = [];
     try {
       List<ModelTrackPoint> tpList = ModelTrackPoint.recentTrackPoints();
       for (var tp in tpList) {
         if (tp.status == TrackingStatus.standing) {
-          Widget textInfo = trackPointInfo(
-              status: tp.status,
-              address: tp.address,
-              timeStart: tp.timeStart,
-              timeEnd: tp.timeEnd,
-              alias: tp.idAlias
-                  .map((id) => ModelAlias.getAlias(id).alias)
-                  .toList(),
-              task: tp.idTask.map((id) => ModelTask.getTask(id).task).toList(),
-              duration: util.duration(tp.timeStart, tp.timeEnd),
-              notes: tp.notes);
-
-          listItems.add(
-            Table(columnWidths: {
-              0: FixedColumnWidth(screen.percentWidth(10)),
-              1: FixedColumnWidth(screen.percentWidth(90)),
-            }, children: [
-              /// Row 1
-              TableRow(children: [
-                /// Row 1, col 1 (icon button)
-                TableCell(
-                    child: IconButton(
-                        icon: Icon(Icons.edit_location_outlined),
-                        onPressed: () {
-                          ModelTrackPoint.editTrackPoint = tp;
-                          Navigator.pushNamed(
-                              context, AppRoutes.editTrackingTasks.route);
-                        })),
-
-                /// Row 1, col 2 (trackpoint information in some rows)
-                TableCell(child: textInfo)
-              ])
-            ]),
-          );
+          listItems.add(ListTile(
+            title: recentTrackPointInfo(tp),
+            leading: IconButton(
+                icon: Icon(Icons.edit_location_outlined),
+                onPressed: () {
+                  ModelTrackPoint.editTrackPoint = tp;
+                  Navigator.pushNamed(
+                      context, AppRoutes.editTrackingTasks.route);
+                }),
+          ));
           listItems.add(Divider(
               thickness: 2, indent: 10, endIndent: 10, color: Colors.black));
         } else {
