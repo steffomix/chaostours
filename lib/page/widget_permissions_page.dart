@@ -5,9 +5,7 @@ import 'package:chaostours/notifications.dart';
 import 'package:chaostours/permissions.dart';
 
 //
-import 'package:chaostours/widget/widget_drawer.dart';
 import 'package:chaostours/widget/widgets.dart';
-import 'package:chaostours/widget/widget_bottom_navbar.dart';
 
 @override
 class WidgetPermissionsPage extends StatefulWidget {
@@ -66,6 +64,6 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Widgets.scaffold(context, pageBody());
+    return Widgets.scaffold(context, body: pageBody());
   }
 }

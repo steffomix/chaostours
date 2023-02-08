@@ -10,7 +10,7 @@ import 'package:chaostours/model/model_trackpoint.dart';
 ///       idReference: task.id,
 ///       referenceList: referenceList,
 ///       title: task.task,
-///       subtitle: task.subTitle));
+///       subtitle: task.subtitle));
 ///   }).toList();
 ///
 ///   ... ListTile using title and subTitle

@@ -1,4 +1,5 @@
 import 'package:chaostours/file_handler.dart';
+import 'package:chaostours/globals.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/trackpoint.dart';
@@ -182,6 +183,26 @@ class ModelTrackPoint {
       list.add(_table[i]);
     }
     return list.reversed.toList();
+  }
+
+  static List<ModelTrackPoint> lastVisited(GPS gps, {int max = 30}) {
+    List<ModelTrackPoint> list = [];
+    List<ModelAlias> alias = ModelAlias.nextAlias(gps);
+    double distance = Globals.distanceTreshold;
+    if (alias.isNotEmpty) {
+      gps = GPS(alias.first.lat, alias.first.lon);
+      distance = alias.first.radius.toDouble();
+    }
+    DateTime time = DateTime.now().subtract(const Duration(days: 365));
+    for (var tp in _table.reversed) {
+      if (tp.timeStart.isBefore(time)) {
+        break;
+      }
+      if (GPS.distance(gps, tp.gps) <= distance) {
+        list.add(tp);
+      }
+    }
+    return list;
   }
 
   Set<ModelTask> getTask() {

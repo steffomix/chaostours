@@ -6,7 +6,6 @@ import 'package:chaostours/shared/shared.dart';
 //
 import 'package:chaostours/widget/widget_drawer.dart';
 import 'package:chaostours/widget/widgets.dart';
-import 'package:chaostours/widget/widget_bottom_navbar.dart';
 
 class WidgetLoggerPage extends StatefulWidget {
   const WidgetLoggerPage({super.key});
@@ -111,6 +110,7 @@ class _WidgetLoggerPage extends State<WidgetLoggerPage> {
   @override
   Widget build(BuildContext context) {
     return Widgets.scaffold(context,
-        ListView(children: [Text('Background ticks: $counter'), ...logs]));
+        body:
+            ListView(children: [Text('Background ticks: $counter'), ...logs]));
   }
 }

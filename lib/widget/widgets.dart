@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/widget/widget_drawer.dart';
-import 'package:chaostours/widget/widget_bottom_navbar.dart';
 import 'package:chaostours/page/widget_tracking_page.dart';
 import 'package:chaostours/page/widget_logger_page.dart';
 import 'package:chaostours/page/widget_permissions_page.dart';
@@ -45,16 +44,32 @@ class Widgets {
     );
   }
 
-  static Widget scaffold(BuildContext context, Widget body) {
+  static Widget scaffold(BuildContext context,
+      {required Widget body, BottomNavigationBar? navBar, AppBar? appBar}) {
     return Scaffold(
-      appBar: Widgets.appBar(context),
+      appBar: appBar ?? Widgets.appBar(context),
       drawer: const WidgetDrawer(),
       body: body,
-      bottomNavigationBar: const WidgetBottomNavBar(),
+      bottomNavigationBar: navBar ?? bottomNavBar(context),
     );
   }
 
   static AppBar appBar(BuildContext context) {
     return AppBar(title: const Text('ChaosTours'));
+  }
+
+  static BottomNavigationBar bottomNavBar(context) {
+    return BottomNavigationBar(
+        items: const [
+          BottomNavigationBarItem(
+              icon: Icon(Icons.keyboard_arrow_left), label: 'x'),
+          BottomNavigationBarItem(icon: Icon(Icons.location_city), label: 'x'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.keyboard_arrow_right), label: 'x'),
+        ],
+        onTap: (int id) {
+          logger.log('BottomNavBar tapped but no method connected');
+          //eventBusTapBottomNavBarIcon.fire(Tapped(id));
+        });
   }
 }

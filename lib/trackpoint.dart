@@ -24,7 +24,9 @@ class TrackPoint {
   final Logger logger = Logger.logger<TrackPoint>();
 
   static TrackPoint? _instance;
-  TrackPoint._();
+  TrackPoint._() {
+    _oldStatus = _status;
+  }
   factory TrackPoint() => _instance ??= TrackPoint._();
 
   /// int _nextId = 0;
@@ -35,11 +37,18 @@ class TrackPoint {
   TrackingStatus _status = TrackingStatus.none;
   TrackingStatus get status => _status;
 
+  late TrackingStatus _oldStatus;
+
   Future<void> startShared() async {
-    await _beforeSharedTrackPoint();
-    GPS gps = await GPS.gps();
-    await trackPoint(gps);
-    await _afterSharedTrackPoint();
+    try {
+      await _beforeSharedTrackPoint();
+      GPS gps = await GPS.gps();
+      await trackPoint(gps);
+      await _afterSharedTrackPoint();
+    } catch (e, stk) {
+      logger.error(e.toString(), stk);
+    }
+    _oldStatus = _status;
   }
 
   /// load last trackpoint results
@@ -76,12 +85,16 @@ class TrackPoint {
     if (gpsPoints.isEmpty) {
       throw 'no runningTrackpoint found';
     }
-    Shared shared = Shared(SharedKeys.trackPointUp);
-    List<String> sharedList = [_status.name];
-    for (var gps in gpsPoints) {
-      sharedList.add(gps.toSharedString());
-    }
     logger.log('save trackPointsUp to shared');
+    List<String> sharedList = [_status.name];
+    if (_status == _oldStatus) {
+      for (var gps in gpsPoints) {
+        sharedList.add(gps.toSharedString());
+      }
+    } else {
+      sharedList.add(gpsPoints.first.toSharedString());
+    }
+    Shared shared = Shared(SharedKeys.trackPointUp);
     await shared.saveList(sharedList);
   }
 
@@ -123,8 +136,8 @@ class TrackPoint {
 
   Future<void> _statusChanged(GPS gps) async {
     // create a new TrackPoint as event
-    await logger.important('Tracking Status changed to #${status.name}');
-    await logger.log('save new status #${status.name}');
+    await logger.important('Tracking Status changed to #${_status.name}');
+    await logger.log('save new status #${_status.name}');
 
     /// create active trackpoint
     await logger.log('create active trackpoint');
@@ -139,11 +152,8 @@ class TrackPoint {
 
     /// reset running trackpoints and add current one
     await logger.log('reset gpsPoints');
-    Shared shared = Shared(SharedKeys.trackPointUp);
     gpsPoints.clear();
     gpsPoints.add(gps);
-    shared = Shared(SharedKeys.trackPointUp);
-    await shared.saveList(<String>[status.name, gps.toSharedString()]);
     await logger.log('processing trackpoint finished');
   }
 
@@ -212,7 +222,8 @@ class TrackPoint {
         return true;
       }
     }
-    await logger.log('No Status change detected, still Status #${status.name}');
+    await logger
+        .log('No Status change detected, still Status #${_status.name}');
 
     await logger.log('processing trackpoint finished');
     return false;

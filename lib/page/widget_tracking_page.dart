@@ -11,6 +11,7 @@ import 'package:chaostours/shared/shared.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
+import 'package:chaostours/model/model_checkbox.dart';
 //
 import 'package:chaostours/widget/widgets.dart';
 import 'package:chaostours/address.dart';
@@ -22,7 +23,10 @@ enum TrackingPageDisplayMode {
   lastVisited,
 
   /// recent trackpoints ordered by time
-  recent;
+  recent,
+
+  /// display task checkboxes and notes input;
+  tasks;
 }
 
 class WidgetTrackingPage extends StatefulWidget {
@@ -41,13 +45,17 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   /// active trackpoint data
   static TrackingStatus lastStatus = TrackingStatus.none;
   static TrackingStatus currentStatus = TrackingStatus.none;
+  late TextEditingController _controller;
 
   /// recent or saved trackponts
   static List<GPS> runningTrackPoints = [];
 
-  _WidgetTrackingPage() {
+  @override
+  void initState() {
     EventManager.listen<EventOnAppTick>(onTick);
     EventManager.listen<EventOnAddressLookup>(onAddressLookup);
+    _controller = TextEditingController();
+    super.initState();
   }
 
   @override
@@ -59,13 +67,75 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Widgets.scaffold(
-        context,
-        ListView(children: [
-          renderActiveTrackPoint(context),
-          Divider(thickness: 2, indent: 10, endIndent: 10, color: Colors.black),
-          ...renderRecentTrackPoints(context)
-        ]));
+    List<Widget> list = [];
+    switch (displayMode) {
+
+      /// tasks mode
+      case TrackingPageDisplayMode.tasks:
+        List<int> referenceList = ModelTrackPoint.pendingTrackPoint.idTask;
+        list = ModelTask.getAll().map((ModelTask task) {
+          return editTasks(
+              context,
+              CheckboxModel(
+                  idReference: task.id,
+                  referenceList: referenceList,
+                  title: task.task,
+                  subtitle: task.notes));
+        }).toList();
+        list.add(divider());
+        list.add(TextField(
+            maxLines: null,
+            controller: _controller,
+            onChanged: (String? s) =>
+                ModelTrackPoint.pendingTrackPoint.notes = s ?? ''));
+        break;
+
+      /// last visited mode
+      case TrackingPageDisplayMode.lastVisited:
+        if (runningTrackPoints.isNotEmpty) {
+          GPS gps = runningTrackPoints.first;
+          list =
+              renderTrackPointList(context, ModelTrackPoint.lastVisited(gps));
+        }
+        break;
+
+      /// recent mode
+      default:
+        list =
+            renderTrackPointList(context, ModelTrackPoint.recentTrackPoints());
+    }
+
+    Widget body = ListView(children: [
+      renderActiveTrackPoint(context),
+      Divider(thickness: 2, indent: 10, endIndent: 10, color: Colors.black),
+      ...list
+    ]);
+
+    return Widgets.scaffold(context, body: body, navBar: bottomNavBar(context));
+  }
+
+  BottomNavigationBar bottomNavBar(BuildContext context) {
+    return BottomNavigationBar(
+        items: const [
+          BottomNavigationBarItem(
+              icon: Icon(Icons.recent_actors), label: 'Zuletzt besucht'),
+          BottomNavigationBarItem(icon: Icon(Icons.task), label: 'Aufgaben'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.timer), label: 'Chronologisch'),
+        ],
+        onTap: (int id) {
+          switch (id) {
+            case 1:
+              displayMode = TrackingPageDisplayMode.tasks;
+              break;
+            case 2:
+              displayMode = TrackingPageDisplayMode.lastVisited;
+              break;
+            default:
+              displayMode = TrackingPageDisplayMode.recent;
+          }
+          logger.log('BottomNavBar tapped but no method connected');
+        });
   }
 
   Future<void> onAddressLookup(EventOnAddressLookup event) async {
@@ -141,6 +211,11 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     return tp;
   }
 
+  Widget divider() {
+    return Divider(
+        thickness: 1, indent: 10, endIndent: 10, color: Colors.blueGrey);
+  }
+
   Widget activeTrackPointInfo(
       {required TrackingStatus status,
       required DateTime timeStart,
@@ -166,17 +241,45 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                 'seit ${timeStart.hour}:${timeStart.minute}\n'
                 '(${util.timeElapsed(timeStart, timeEnd, false)}) ${runningTrackPoints.length}',
                 softWrap: true)),
-        Divider(
-            thickness: 1, indent: 10, endIndent: 10, color: Colors.blueGrey),
+        divider(),
         Text('OSM: "${ModelTrackPoint.pendingAddressLookup}"', softWrap: true),
         Text('Alias: ${alias.join('\n       ')}', softWrap: true),
-        Divider(
-            thickness: 1, indent: 10, endIndent: 10, color: Colors.blueGrey),
+        divider(),
         Text('Aufgaben: ${task.join('\n      ')}', softWrap: true),
-        Divider(
-            thickness: 1, indent: 10, endIndent: 10, color: Colors.blueGrey),
+        divider(),
         Text('Notizen: $notes')
       ],
+    );
+  }
+
+  Widget editTasks(BuildContext context, CheckboxModel model) {
+    TextStyle style = model.enabled
+        ? const TextStyle(color: Colors.black)
+        : const TextStyle(color: Colors.grey);
+    return ListTile(
+      subtitle:
+          Text(model.subtitle, style: const TextStyle(color: Colors.grey)),
+      title: Text(
+        model.title,
+        style: style,
+      ),
+      leading: Checkbox(
+        value: model.checked,
+        onChanged: (_) {
+          setState(
+            () {
+              model.handler()?.call();
+            },
+          );
+        },
+      ),
+      onTap: () {
+        setState(
+          () {
+            model.handler()?.call();
+          },
+        );
+      },
     );
   }
 
@@ -249,10 +352,10 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   ///
   ///
   ///
-  List<Widget> renderRecentTrackPoints(BuildContext context) {
+  List<Widget> renderTrackPointList(
+      BuildContext context, List<ModelTrackPoint> tpList) {
     List<Widget> listItems = [];
     try {
-      List<ModelTrackPoint> tpList = ModelTrackPoint.recentTrackPoints();
       for (var tp in tpList) {
         if (tp.status == TrackingStatus.standing) {
           listItems.add(ListTile(

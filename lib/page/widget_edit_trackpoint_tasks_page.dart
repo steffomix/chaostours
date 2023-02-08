@@ -66,7 +66,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackpointTasks> {
           title: task.task,
           subtitle: task.notes));
     }).toList();
-    return Widgets.scaffold(
-        context, ListView(children: [backButton(context), ...checkBoxes]));
+    return Widgets.scaffold(context,
+        body: ListView(children: [backButton(context), ...checkBoxes]));
   }
 }
