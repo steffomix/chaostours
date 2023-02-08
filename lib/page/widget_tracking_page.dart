@@ -40,6 +40,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   static Logger logger = Logger.logger<WidgetTrackingPage>();
 
   static TrackingPageDisplayMode displayMode = TrackingPageDisplayMode.recent;
+  static int _bottomBarIndex = 0;
 
   ///
   /// active trackpoint data
@@ -116,6 +117,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
   BottomNavigationBar bottomNavBar(BuildContext context) {
     return BottomNavigationBar(
+        currentIndex: _bottomBarIndex,
         items: const [
           BottomNavigationBarItem(
               icon: Icon(Icons.recent_actors), label: 'Zuletzt besucht'),
@@ -134,7 +136,9 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
             default:
               displayMode = TrackingPageDisplayMode.recent;
           }
-          logger.log('BottomNavBar tapped but no method connected');
+          _bottomBarIndex = id;
+          setState(() {});
+          //logger.log('BottomNavBar tapped but no method connected');
         });
   }
 
