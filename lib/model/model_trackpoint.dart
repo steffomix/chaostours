@@ -22,7 +22,7 @@ class ModelTrackPoint {
       notes: '');
 
   /// interval updated address of not yet saved trackPoint
-  static String pendingAddressLookup = '';
+  static String pendingAddress = '';
 
   /// trackPoint stored for widgets to edit parts of it
   static ModelTrackPoint editTrackPoint = pendingTrackPoint;
@@ -49,7 +49,7 @@ class ModelTrackPoint {
   /// "id,id,..." needs to be ordered by user
   List<int> idTask = [];
   String notes = '';
-  late Address address;
+  String address = '';
 
   static int _unsavedId = 0;
 
@@ -72,7 +72,6 @@ class ModelTrackPoint {
       this.deleted = 0,
       this.notes = ''}) {
     _id = _nextUnsavedId;
-    address = Address(gps);
   }
 
   static ModelTrackPoint get last => _table.last;
@@ -223,12 +222,13 @@ class ModelTrackPoint {
         timeStart: DateTime.parse(p[5]),
         trackPoints: parseGpsList(p[7]),
         idAlias: parseIdList(p[8]),
-        notes: decode(p[10]));
+        notes: decode(p[11]));
 
     tp._id = int.parse(p[0]);
+    tp.status = TrackingStatus.byValue(int.parse(p[2]));
     tp.timeEnd = DateTime.parse(p[6]);
     tp.idTask = parseIdList(p[9]);
-    tp.status = TrackingStatus.byValue(int.parse(p[2]));
+    tp.address = decode(p[10]);
     return tp;
   }
 
@@ -251,7 +251,8 @@ class ModelTrackPoint {
           : '', //list.join(';'), // 7
       idAlias.join(','), // 8
       idTask.join(','), // 9
-      encode(notes), // 10
+      encode(address), // 10
+      encode(notes), // 11
       '|'
     ];
     return cols.join('\t');
@@ -265,9 +266,8 @@ class ModelTrackPoint {
   /// 4 timeEnd as above<br>
   /// 5 idAlias separated by ,<br>
   /// 6 idTask separated by ,<br>
-  /// 7 notes Uri.encodeFull encoded<br>
-  /// 8 lat, lon TrackPoints separated by ; and reduced to four digits<br>
-  /// 9 | as line end
+  /// 7 lat, lon TrackPoints separated by ; and reduced to four digits<br>
+  /// 8 | as line end
   String toSharedString() {
     List<String> cols = [
       status.index.toString(), // 0
@@ -277,15 +277,14 @@ class ModelTrackPoint {
       timeEnd.toIso8601String(), // 4
       idAlias.join(','), // 5
       idTask.join(','), // 6
-      encode(notes), // 7
       status == TrackingStatus.moving
           ? trackPoints
               .map((gps) => '${(gps.lat * 10000).round() / 10000},'
                   '${(gps.lon * 10000).round() / 10000}')
               .toList()
               .join(';')
-          : '', // 8
-      '|' // 9 (secure line end)
+          : '', // 7
+      '|' // 8 (secure line end)
     ];
     return cols.join('\t');
   }
@@ -298,9 +297,8 @@ class ModelTrackPoint {
   /// 4 timeEnd as above<br>
   /// 5 idAlias separated by ,<br>
   /// 6 idTask separated by ,<br>
-  /// 7 notes Uri.encodeFull encoded<br>
-  /// 8 lat, lon TrackPoints separated by ; and reduced to four digits<br>
-  /// 9 | as line end
+  /// 7 lat, lon TrackPoints separated by ; and reduced to four digits<br>
+  /// 8 | as line end
   static ModelTrackPoint toSharedModel(String row) {
     List<String> p = row.split('\t');
     GPS gps = GPS(double.parse(p[1]), double.parse(p[2]));
@@ -308,9 +306,8 @@ class ModelTrackPoint {
         gps: gps,
         timeStart: DateTime.parse(p[3]),
         idAlias: parseIdList(p[5]),
-        trackPoints: parseGpsList(p[8]),
-        deleted: 0,
-        notes: decode(p[7]));
+        trackPoints: parseGpsList(p[7]),
+        deleted: 0);
     model.status = TrackingStatus.byValue(int.parse(p[0]));
     model.idTask = parseIdList(p[6]);
     model.timeEnd = DateTime.parse(p[4]);

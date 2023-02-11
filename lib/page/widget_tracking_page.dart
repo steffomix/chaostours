@@ -143,9 +143,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   }
 
   Future<void> onAddressLookup(EventOnAddressLookup event) async {
-    ModelTrackPoint.pendingAddressLookup =
-        (await ModelTrackPoint.pendingTrackPoint.address.lookupAddress())
-            .toString();
+    ModelTrackPoint.pendingAddress =
+        (await Address(runningTrackPoints.first).lookupAddress()).toString();
   }
 
   Future<void> onTick(EventOnAppTick tick) async {
@@ -168,7 +167,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
               /// update
               ModelTrackPoint.pendingTrackPoint
                 ..gps = runningTrackPoints.last
-                ..address = Address(runningTrackPoints.first)
+                ..address = ModelTrackPoint.pendingAddress
                 ..trackPoints = runningTrackPoints
                 ..timeStart = runningTrackPoints.last.time
                 ..timeEnd = runningTrackPoints.first.time
@@ -225,7 +224,6 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       required DateTime timeStart,
       required DateTime timeEnd,
       required Duration duration,
-      required Address address,
       required List<String> alias,
       required List<String> task,
       required String notes}) {
@@ -246,7 +244,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                 '(${util.timeElapsed(timeStart, timeEnd, false)}) ${runningTrackPoints.length}',
                 softWrap: true)),
         divider(),
-        Text('OSM: "${ModelTrackPoint.pendingAddressLookup}"', softWrap: true),
+        Text('OSM: "${ModelTrackPoint.pendingAddress}"', softWrap: true),
         Text('Alias: ${alias.join('\n       ')}', softWrap: true),
         divider(),
         Text('Aufgaben: ${task.join('\n      ')}', softWrap: true),
@@ -300,8 +298,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       Center(
           heightFactor: 2,
           child: alias.isEmpty
-              ? Text(tp.address.toString())
-              : Text('- ${alias.join('\n- ')}')),
+              ? Text('OSM Addr: ${tp.address}')
+              : Text('Alias: - ${alias.join('\n- ')}')),
       Center(child: Text(duration)),
       Text(
           'Aufgaben:${tasks.isEmpty ? ' -' : '\n   - ${tasks.join('\n   - ')}'}'),
@@ -316,7 +314,6 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       try {
         Widget textInfo = activeTrackPointInfo(
             status: currentStatus,
-            address: ModelTrackPoint.pendingTrackPoint.address,
             timeStart: runningTrackPoints.last.time,
             timeEnd: runningTrackPoints.first.time,
             alias: ModelAlias.nextAlias(currentStatus == TrackingStatus.moving

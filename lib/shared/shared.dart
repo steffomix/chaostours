@@ -12,6 +12,9 @@ enum SharedKeys {
   /// ModelTrackPoint as sharedString
   trackPointDown,
 
+  /// address lookup when detected status standing
+  addressStanding,
+
   /// contains background Logger logs
   workmanagerLogger;
 }

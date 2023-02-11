@@ -11,8 +11,6 @@ class GPS {
   int get id => _id;
   DateTime? _time;
   DateTime get time => _time ??= DateTime.now();
-  static double distance(GPS g1, GPS g2) =>
-      Geolocator.distanceBetween(g1.lat, g1.lon, g2.lat, g2.lon);
   double lat;
   double lon;
 
@@ -59,5 +57,20 @@ class GPS {
     GPS gps = GPS.toObject(p[0]);
     gps._time = DateTime.parse(p[1]);
     return gps;
+  }
+
+  static double distance(GPS g1, GPS g2) =>
+      Geolocator.distanceBetween(g1.lat, g1.lon, g2.lat, g2.lon);
+
+  // calc distance over multiple trackpoints in meters
+  static double distanceoverTrackList(List<GPS> tracklist) {
+    if (tracklist.length < 2) return 0;
+    double dist = 0;
+    GPS gps = tracklist[0];
+    for (var i = 1; i < tracklist.length; i++) {
+      dist += GPS.distance(gps, tracklist[i]);
+      gps = tracklist[i];
+    }
+    return dist;
   }
 }
