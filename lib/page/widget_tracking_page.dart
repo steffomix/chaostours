@@ -46,7 +46,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   /// active trackpoint data
   static TrackingStatus lastStatus = TrackingStatus.none;
   static TrackingStatus currentStatus = TrackingStatus.none;
-  late TextEditingController _controller;
+  static TextEditingController _controller =
+      TextEditingController(text: ModelTrackPoint.pendingTrackPoint.notes);
 
   /// recent or saved trackponts
   static List<GPS> runningTrackPoints = [];
@@ -55,7 +56,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   void initState() {
     EventManager.listen<EventOnAppTick>(onTick);
     EventManager.listen<EventOnAddressLookup>(onAddressLookup);
-    _controller = TextEditingController();
+    //_controller = TextEditingController(text: ModelTrackPoint.pendingTrackPoint.notes);
     super.initState();
   }
 
@@ -74,6 +75,17 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       /// tasks mode
       case TrackingPageDisplayMode.tasks:
         List<int> referenceList = ModelTrackPoint.pendingTrackPoint.idTask;
+        list
+          ..add(Text('Notizen:'))
+          ..add(TextField(
+              decoration: InputDecoration(
+                  label: Text('Notizen'), contentPadding: EdgeInsets.all(2)),
+              expands: true,
+              maxLines: null,
+              controller: _controller,
+              onChanged: (String? s) =>
+                  ModelTrackPoint.pendingTrackPoint.notes = s ?? ''))
+          ..add(divider());
         list = ModelTask.getAll().map((ModelTask task) {
           return editTasks(
               context,
@@ -83,12 +95,6 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                   title: task.task,
                   subtitle: task.notes));
         }).toList();
-        list.add(divider());
-        list.add(TextField(
-            maxLines: null,
-            controller: _controller,
-            onChanged: (String? s) =>
-                ModelTrackPoint.pendingTrackPoint.notes = s ?? ''));
         break;
 
       /// last visited mode
@@ -166,7 +172,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
             if (currentStatus == lastStatus) {
               /// update
               ModelTrackPoint.pendingTrackPoint
-                ..gps = runningTrackPoints.last
+                ..gps = runningTrackPoints.first
                 ..address = ModelTrackPoint.pendingAddress
                 ..trackPoints = runningTrackPoints
                 ..timeStart = runningTrackPoints.last.time
@@ -183,6 +189,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                   idAlias: <int>[],
                   timeStart: runningTrackPoints.last.time);
               lastStatus = currentStatus;
+              _controller = TextEditingController(
+                  text: ModelTrackPoint.pendingTrackPoint.notes);
             }
 
             /// write to share user data to background thread

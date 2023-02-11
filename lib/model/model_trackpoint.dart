@@ -177,11 +177,13 @@ class ModelTrackPoint {
 
   static List<ModelTrackPoint> recentTrackPoints({int max = 30}) {
     List<ModelTrackPoint> list = [];
-    int i = _table.length;
-    while (--max >= 0 && --i >= 0) {
-      list.add(_table[i]);
+    for (var tp in _table.reversed) {
+      list.add(tp);
+      if (--max <= 0) {
+        break;
+      }
     }
-    return list.reversed.toList();
+    return list;
   }
 
   static List<ModelTrackPoint> lastVisited(GPS gps, {int max = 30}) {
@@ -267,7 +269,8 @@ class ModelTrackPoint {
   /// 5 idAlias separated by ,<br>
   /// 6 idTask separated by ,<br>
   /// 7 lat, lon TrackPoints separated by ; and reduced to four digits<br>
-  /// 8 | as line end
+  /// 8 notes
+  /// 9 | as line end
   String toSharedString() {
     List<String> cols = [
       status.index.toString(), // 0
@@ -284,6 +287,7 @@ class ModelTrackPoint {
               .toList()
               .join(';')
           : '', // 7
+      encode(notes),
       '|' // 8 (secure line end)
     ];
     return cols.join('\t');
@@ -298,7 +302,8 @@ class ModelTrackPoint {
   /// 5 idAlias separated by ,<br>
   /// 6 idTask separated by ,<br>
   /// 7 lat, lon TrackPoints separated by ; and reduced to four digits<br>
-  /// 8 | as line end
+  /// 8 notes
+  /// 9 | as line end
   static ModelTrackPoint toSharedModel(String row) {
     List<String> p = row.split('\t');
     GPS gps = GPS(double.parse(p[1]), double.parse(p[2]));
@@ -309,8 +314,9 @@ class ModelTrackPoint {
         trackPoints: parseGpsList(p[7]),
         deleted: 0);
     model.status = TrackingStatus.byValue(int.parse(p[0]));
-    model.idTask = parseIdList(p[6]);
     model.timeEnd = DateTime.parse(p[4]);
+    model.idTask = parseIdList(p[6]);
+    model.notes = decode(p[8]);
     return model;
   }
 
