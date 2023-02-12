@@ -46,6 +46,8 @@ class ModelTrackPoint {
   /// "id,id,..." needs to be sorted by distance
   List<int> idAlias = [];
 
+  List<int> idUser = [];
+
   /// "id,id,..." needs to be ordered by user
   List<int> idTask = [];
   String notes = '';
@@ -183,7 +185,7 @@ class ModelTrackPoint {
         break;
       }
     }
-    return list;
+    return list.reversed.toList();
   }
 
   static List<ModelTrackPoint> lastVisited(GPS gps, {int max = 30}) {
@@ -203,7 +205,7 @@ class ModelTrackPoint {
         list.add(tp);
       }
     }
-    return list;
+    return list.reversed.toList();
   }
 
   Set<ModelTask> getTask() {

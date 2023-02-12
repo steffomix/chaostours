@@ -1,5 +1,3 @@
-// ignore_for_file: prefer_final_fields, prefer_const_constructors, prefer_const_literals_to_create_immutables
-
 import 'package:chaostours/main.dart';
 import 'package:flutter/material.dart';
 //
@@ -56,7 +54,6 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   void initState() {
     EventManager.listen<EventOnAppTick>(onTick);
     EventManager.listen<EventOnAddressLookup>(onAddressLookup);
-    //_controller = TextEditingController(text: ModelTrackPoint.pendingTrackPoint.notes);
     super.initState();
   }
 
@@ -74,27 +71,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
       /// tasks mode
       case TrackingPageDisplayMode.tasks:
-        List<int> referenceList = ModelTrackPoint.pendingTrackPoint.idTask;
-        list
-          ..add(Text('Notizen:'))
-          ..add(TextField(
-              decoration: InputDecoration(
-                  label: Text('Notizen'), contentPadding: EdgeInsets.all(2)),
-              expands: true,
-              maxLines: null,
-              controller: _controller,
-              onChanged: (String? s) =>
-                  ModelTrackPoint.pendingTrackPoint.notes = s ?? ''))
-          ..add(divider());
-        list = ModelTask.getAll().map((ModelTask task) {
-          return editTasks(
-              context,
-              CheckboxModel(
-                  idReference: task.id,
-                  referenceList: referenceList,
-                  title: task.task,
-                  subtitle: task.notes));
-        }).toList();
+        list.addAll(renderTasks(context));
         break;
 
       /// last visited mode
@@ -114,7 +91,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
     Widget body = ListView(children: [
       renderActiveTrackPoint(context),
-      Divider(thickness: 2, indent: 10, endIndent: 10, color: Colors.black),
+      const Divider(
+          thickness: 2, indent: 10, endIndent: 10, color: Colors.black),
       ...list
     ]);
 
@@ -223,7 +201,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   }
 
   Widget divider() {
-    return Divider(
+    return const Divider(
         thickness: 1, indent: 10, endIndent: 10, color: Colors.blueGrey);
   }
 
@@ -235,7 +213,9 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       required List<String> alias,
       required List<String> task,
       required String notes}) {
-    String time = '${DateTime.now().hour}:${DateTime.now().minute}';
+    String time = '${timeStart.hour}:${timeStart.minute}';
+    String sAlias = alias.isEmpty ? ' -' : '\n  -${alias.join('\n  -')}';
+    String sTasks = task.isEmpty ? ' -' : '\n  -${task.join('\n  -')}';
     return ListBody(
       children: [
         Center(
@@ -244,52 +224,20 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                 status == TrackingStatus.standing
                     ? '$time Halten'
                     : '$time Fahren',
-                style: TextStyle(letterSpacing: 2, fontSize: 20))),
+                style: const TextStyle(letterSpacing: 2, fontSize: 20))),
         Center(
             heightFactor: 1,
             child: Text(
-                'seit ${timeStart.hour}:${timeStart.minute}\n'
                 '(${util.timeElapsed(timeStart, timeEnd, false)}) ${runningTrackPoints.length}',
                 softWrap: true)),
         divider(),
         Text('OSM: "${ModelTrackPoint.pendingAddress}"', softWrap: true),
-        Text('Alias: ${alias.join('\n       ')}', softWrap: true),
+        Text('Alias: $sAlias', softWrap: true),
         divider(),
-        Text('Aufgaben: ${task.join('\n      ')}', softWrap: true),
+        Text('Aufgaben: $sTasks', softWrap: true),
         divider(),
         Text('Notizen: $notes')
       ],
-    );
-  }
-
-  Widget editTasks(BuildContext context, CheckboxModel model) {
-    TextStyle style = model.enabled
-        ? const TextStyle(color: Colors.black)
-        : const TextStyle(color: Colors.grey);
-    return ListTile(
-      subtitle:
-          Text(model.subtitle, style: const TextStyle(color: Colors.grey)),
-      title: Text(
-        model.title,
-        style: style,
-      ),
-      leading: Checkbox(
-        value: model.checked,
-        onChanged: (_) {
-          setState(
-            () {
-              model.handler()?.call();
-            },
-          );
-        },
-      ),
-      onTap: () {
-        setState(
-          () {
-            model.handler()?.call();
-          },
-        );
-      },
     );
   }
 
@@ -343,7 +291,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         ///
         return ListTile(
             leading: IconButton(
-                icon: Icon(size: 40, Icons.edit_location),
+                icon: const Icon(size: 40, Icons.edit_location),
                 onPressed: () {
                   ModelTrackPoint.editTrackPoint =
                       ModelTrackPoint.pendingTrackPoint;
@@ -370,14 +318,14 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
           listItems.add(ListTile(
             title: recentTrackPointInfo(tp),
             leading: IconButton(
-                icon: Icon(Icons.edit_location_outlined),
+                icon: const Icon(Icons.edit_location_outlined),
                 onPressed: () {
                   ModelTrackPoint.editTrackPoint = tp;
                   Navigator.pushNamed(
                       context, AppRoutes.editTrackingTasks.route);
                 }),
           ));
-          listItems.add(Divider(
+          listItems.add(const Divider(
               thickness: 2, indent: 10, endIndent: 10, color: Colors.black));
         } else {
           //return <Widget>[Container(child: Text('wrong status'))];
@@ -389,5 +337,64 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     }
 
     return listItems.reversed.toList();
+  }
+
+  List<Widget> renderTasks(BuildContext context) {
+    List<int> referenceList = ModelTrackPoint.pendingTrackPoint.idTask;
+    List<Widget> list = [
+      Container(
+          padding: const EdgeInsets.all(10),
+          child: TextField(
+              decoration: const InputDecoration(
+                  label: Text('Notizen'), contentPadding: EdgeInsets.all(2)),
+              //expands: true,
+              maxLines: null,
+              minLines: 5,
+              controller: _controller,
+              onChanged: (String? s) =>
+                  ModelTrackPoint.pendingTrackPoint.notes = s ?? '')),
+      divider(),
+      ...ModelTask.getAll().map((ModelTask task) {
+        return editTasks(
+            context,
+            CheckboxModel(
+                idReference: task.id,
+                referenceList: referenceList,
+                title: task.task,
+                subtitle: task.notes));
+      }).toList()
+    ];
+    return list;
+  }
+
+  Widget editTasks(BuildContext context, CheckboxModel model) {
+    TextStyle style = model.enabled
+        ? const TextStyle(color: Colors.black)
+        : const TextStyle(color: Colors.grey);
+    return ListTile(
+      subtitle:
+          Text(model.subtitle, style: const TextStyle(color: Colors.grey)),
+      title: Text(
+        model.title,
+        style: style,
+      ),
+      leading: Checkbox(
+        value: model.checked,
+        onChanged: (_) {
+          setState(
+            () {
+              model.handler()?.call();
+            },
+          );
+        },
+      ),
+      onTap: () {
+        setState(
+          () {
+            model.handler()?.call();
+          },
+        );
+      },
+    );
   }
 }

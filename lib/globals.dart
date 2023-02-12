@@ -22,7 +22,9 @@ double newheight = height - padding.top - padding.bottom;
   static double distanceTreshold = 100; //meters
   static OsmLookup osmLookup = OsmLookup.always;
 
-  static Duration get appTickDuration => Duration(seconds: 1);
+  static Duration get appTickDuration => const Duration(seconds: 1);
+
+  static List<String> weekDays = ['', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
 
   // durations and distances
   // skip status check for given time to prevent ugly things
