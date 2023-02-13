@@ -109,7 +109,7 @@ class _WidgetLoggerPage extends State<WidgetLoggerPage> {
   int counter = 0;
   @override
   Widget build(BuildContext context) {
-    return Widgets.scaffold(context,
+    return AppWidgets.scaffold(context,
         body:
             ListView(children: [Text('Background ticks: $counter'), ...logs]));
   }

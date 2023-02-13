@@ -15,6 +15,9 @@ enum SharedKeys {
   /// address lookup when detected status standing
   addressStanding,
 
+  /// list of trackpoints to update
+  updateTrackPointQueue,
+
   /// contains background Logger logs
   workmanagerLogger;
 }

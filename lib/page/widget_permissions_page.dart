@@ -64,6 +64,6 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Widgets.scaffold(context, body: pageBody());
+    return AppWidgets.scaffold(context, body: pageBody());
   }
 }

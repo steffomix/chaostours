@@ -53,10 +53,6 @@ class ModelTrackPoint {
   String notes = '';
   String address = '';
 
-  static int _unsavedId = 0;
-
-  /// autoincrement unsaved models into negative ids
-  static get _nextUnsavedId => --_unsavedId;
   int _id = 0;
 
   /// real ID<br>
@@ -72,9 +68,7 @@ class ModelTrackPoint {
       required this.idAlias,
       required this.timeStart,
       this.deleted = 0,
-      this.notes = ''}) {
-    _id = _nextUnsavedId;
-  }
+      this.notes = ''});
 
   static ModelTrackPoint get last => _table.last;
 

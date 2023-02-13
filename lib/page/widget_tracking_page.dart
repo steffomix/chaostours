@@ -96,7 +96,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       ...list
     ]);
 
-    return Widgets.scaffold(context, body: body, navBar: bottomNavBar(context));
+    return AppWidgets.scaffold(context,
+        body: body, navBar: bottomNavBar(context));
   }
 
   BottomNavigationBar bottomNavBar(BuildContext context) {
@@ -161,6 +162,9 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                 ..idTask = ModelTrackPoint.pendingTrackPoint.idTask
                 ..notes = ModelTrackPoint.pendingTrackPoint.notes;
             } else {
+              await EventManager.fire<EventOnTrackingStatusChanged>(
+                  EventOnTrackingStatusChanged(
+                      ModelTrackPoint.pendingTrackPoint));
               ModelTrackPoint.pendingTrackPoint = ModelTrackPoint(
                   gps: runningTrackPoints.last,
                   trackPoints: runningTrackPoints,
@@ -200,11 +204,6 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     return tp;
   }
 
-  Widget divider() {
-    return const Divider(
-        thickness: 1, indent: 10, endIndent: 10, color: Colors.blueGrey);
-  }
-
   Widget activeTrackPointInfo(
       {required TrackingStatus status,
       required DateTime timeStart,
@@ -230,12 +229,12 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
             child: Text(
                 '(${util.timeElapsed(timeStart, timeEnd, false)}) ${runningTrackPoints.length}',
                 softWrap: true)),
-        divider(),
+        AppWidgets.divider(),
         Text('OSM: "${ModelTrackPoint.pendingAddress}"', softWrap: true),
         Text('Alias: $sAlias', softWrap: true),
-        divider(),
+        AppWidgets.divider(),
         Text('Aufgaben: $sTasks', softWrap: true),
-        divider(),
+        AppWidgets.divider(),
         Text('Notizen: $notes')
       ],
     );
@@ -325,8 +324,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                       context, AppRoutes.editTrackingTasks.route);
                 }),
           ));
-          listItems.add(const Divider(
-              thickness: 2, indent: 10, endIndent: 10, color: Colors.black));
+          listItems.add(AppWidgets.divider(color: Colors.black));
         } else {
           //return <Widget>[Container(child: Text('wrong status'))];
         }
@@ -353,7 +351,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
               controller: _controller,
               onChanged: (String? s) =>
                   ModelTrackPoint.pendingTrackPoint.notes = s ?? '')),
-      divider(),
+      AppWidgets.divider(),
       ...ModelTask.getAll().map((ModelTask task) {
         return editTasks(
             context,

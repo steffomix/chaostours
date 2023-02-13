@@ -37,7 +37,22 @@ class TrackPoint {
   TrackingStatus _oldStatus = TrackingStatus.none;
   List<String> _sharedData = [];
 
+  Future<void> updateTrackPointQueue() async {
+    Shared shared = Shared(SharedKeys.updateTrackPointQueue);
+    try {
+      List<String> queue = await shared.loadList() ?? [];
+      for (var row in queue) {
+        ModelTrackPoint tp = ModelTrackPoint.toModel(row);
+        await ModelTrackPoint.update(tp);
+      }
+    } catch (e, stk) {
+      logger.error(e.toString(), stk);
+    }
+    shared.saveList([]);
+  }
+
   Future<void> startShared() async {
+    updateTrackPointQueue();
     gpsPoints.clear();
     try {
       /// load shared data

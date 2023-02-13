@@ -17,6 +17,6 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Widgets.materialApp(context);
+    return AppWidgets.materialApp(context);
   }
 }

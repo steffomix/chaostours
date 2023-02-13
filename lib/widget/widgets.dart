@@ -21,8 +21,8 @@ enum AppRoutes {
   const AppRoutes(this.route);
 }
 
-class Widgets {
-  static final Logger logger = Logger.logger<Widgets>();
+class AppWidgets {
+  static final Logger logger = Logger.logger<AppWidgets>();
 
   static Widget materialApp(BuildContext context) {
     return MaterialApp(
@@ -47,7 +47,7 @@ class Widgets {
   static Widget scaffold(BuildContext context,
       {required Widget body, BottomNavigationBar? navBar, AppBar? appBar}) {
     return Scaffold(
-      appBar: appBar ?? Widgets.appBar(context),
+      appBar: appBar ?? AppWidgets.appBar(context),
       drawer: const WidgetDrawer(),
       body: body,
       bottomNavigationBar: navBar ?? bottomNavBar(context),
@@ -71,5 +71,9 @@ class Widgets {
           logger.log('BottomNavBar tapped but no method connected');
           //eventBusTapBottomNavBarIcon.fire(Tapped(id));
         });
+  }
+
+  static Widget divider({Color color = Colors.blueGrey}) {
+    return Divider(thickness: 1, indent: 10, endIndent: 10, color: color);
   }
 }
