@@ -49,7 +49,7 @@ class AppWidgets {
         AppRoutes.permissions.route: (context) => const WidgetPermissionsPage(),
         AppRoutes.editTrackingTasks.route: (context) =>
             const WidgetEditTrackpointTasks(),
-        AppRoutes.listAlias.route: (context) => const WidgetUserList(),
+        AppRoutes.listUsers.route: (context) => const WidgetUserList(),
         AppRoutes.listTasks.route: (context) => const WidgetTaskList(),
         AppRoutes.listAlias.route: (context) => const WidgetAliasList(),
       },

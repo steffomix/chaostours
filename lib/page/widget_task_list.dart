@@ -34,6 +34,6 @@ class _WidgetTaskList extends State<WidgetTaskList> {
               }));
     }).toList();
 
-    return ListView(children: tasks);
+    return AppWidgets.scaffold(context, body: ListView(children: tasks));
   }
 }

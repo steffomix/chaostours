@@ -34,6 +34,6 @@ class _WidgetAliasList extends State<WidgetAliasList> {
               }));
     }).toList();
 
-    return ListView(children: alias);
+    return AppWidgets.scaffold(context, body: ListView(children: alias));
   }
 }

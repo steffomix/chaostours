@@ -34,6 +34,6 @@ class _WidgetUserList extends State<WidgetUserList> {
               }));
     }).toList();
 
-    return ListView(children: users);
+    return AppWidgets.scaffold(context, body: ListView(children: users));
   }
 }

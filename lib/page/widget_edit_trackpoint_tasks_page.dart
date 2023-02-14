@@ -1,4 +1,3 @@
-import 'package:chaostours/event_manager.dart';
 import 'package:flutter/material.dart';
 //
 import 'package:chaostours/model/model_task.dart';
@@ -9,6 +8,8 @@ import 'package:chaostours/widget/widgets.dart';
 import 'package:chaostours/model/model_checkbox.dart';
 import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/shared/shared.dart';
+import 'package:chaostours/event_manager.dart';
+import 'package:chaostours/logger.dart';
 
 ///
 /// CheckBox list
@@ -21,7 +22,10 @@ class WidgetEditTrackpointTasks extends StatefulWidget {
 }
 
 class _WidgetAddTasksState extends State<WidgetEditTrackpointTasks> {
+  Logger logger = Logger.logger<WidgetEditTrackpointTasks>();
   BuildContext? _context;
+  static TextEditingController _controller =
+      TextEditingController(text: ModelTrackPoint.editTrackPoint.notes);
   @override
   void initState() {
     EventManager.listen<EventOnTrackingStatusChanged>(onTrackingStatusChanged);
@@ -151,10 +155,11 @@ class _WidgetAddTasksState extends State<WidgetEditTrackpointTasks> {
                   //expands: true,
                   maxLines: null,
                   minLines: 5,
-                  controller: TextEditingController(
-                      text: ModelTrackPoint.editTrackPoint.notes),
-                  onChanged: (String? s) =>
-                      ModelTrackPoint.pendingTrackPoint.notes = s ?? '')),
+                  controller: _controller,
+                  onChanged: (String? s) {
+                    ModelTrackPoint.pendingTrackPoint.notes = s ?? '';
+                    logger.log('$s');
+                  })),
           divider(),
           ...checkBoxes
         ]));
