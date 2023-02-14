@@ -9,6 +9,7 @@ import 'dart:io' as io;
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_task.dart';
+import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/shared/shared.dart';
 import 'package:chaostours/shared/tracking.dart';
 import 'package:chaostours/trackpoint.dart';
@@ -44,9 +45,17 @@ class AppLoader {
       await ModelAlias.open();
       logger.important('load Database Table ModelTask');
       await ModelTask.open();
+      logger.important('load Database Table ModelUser');
+      await ModelUser.open();
+
+      ///
       if (ModelAlias.length < 1) {
         await ModelAlias.openFromAsset();
         await ModelAlias.write();
+      }
+      if (ModelUser.length < 1) {
+        await ModelUser.openFromAsset();
+        await ModelUser.write();
       }
       if (ModelTask.length < 1) {
         await ModelTask.openFromAsset();

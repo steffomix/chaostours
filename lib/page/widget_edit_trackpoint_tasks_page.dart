@@ -101,11 +101,6 @@ class _WidgetAddTasksState extends State<WidgetEditTrackpointTasks> {
 
     List<String> tasks =
         tp.idTask.map((id) => ModelTask.getTask(id).task).toList();
-    String day =
-        '${Globals.weekDays[tp.timeStart.weekday]}. den ${tp.timeStart.day}.${tp.timeStart.month}.${tp.timeStart.year}';
-    String timeStart = '${tp.timeStart.hour}:${tp.timeStart.minute}';
-    String timeEnd = '${tp.timeEnd.hour}:${tp.timeEnd.minute}';
-    String duration = util.timeElapsed(tp.timeStart, tp.timeEnd, false);
 
     ///
     return Container(
@@ -116,7 +111,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackpointTasks> {
               child: alias.isEmpty
                   ? Text('OSM: ${tp.address}')
                   : Text('Alias: - ${alias.join('\n- ')}')),
-          Text('$day, $timeStart - $timeEnd\n ($duration)\n'),
+          Text(AppWidgets.timeInfo(tp.timeStart, tp.timeEnd)),
           Text(
               'Aufgaben:${tasks.isEmpty ? ' -' : '\n   - ${tasks.join('\n   - ')}'}')
         ]));
@@ -135,10 +130,12 @@ class _WidgetAddTasksState extends State<WidgetEditTrackpointTasks> {
     }).toList();
     List<Widget> activeTrackPointInfo = [];
     if (ModelTrackPoint.pendingTrackPoint == ModelTrackPoint.editTrackPoint) {
-      activeTrackPointInfo.add(const Text(
-          'Achtung! Sie bearbeiten einen aktiven Trackpoint. '
-          'Panel schließt sobald sich der fahren/halten Status ändert.',
-          style: TextStyle(color: Colors.red)));
+      activeTrackPointInfo.add(Container(
+          padding: const EdgeInsets.all(10),
+          child: const Text(
+              'Achtung! Sie bearbeiten einen aktiven Haltepunkt.\n'
+              'Panel schließt sobald sich der Fahren/Halten Status ändert.',
+              style: TextStyle(color: Colors.red))));
     }
     return AppWidgets.scaffold(context,
         body: ListView(children: [

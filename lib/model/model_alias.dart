@@ -35,10 +35,6 @@ class ModelAlias {
   final AliasStatus status;
   final DateTime lastVisited;
   final int timesVisited;
-  static int _unsavedId = 0;
-
-  /// autoincrement unsaved models into negative ids
-  static get _nextUnsavedId => --_unsavedId;
   int _id = 0;
 
   /// real ID<br>
@@ -59,9 +55,9 @@ class ModelAlias {
       this.radius = 100,
       this.notes = '',
       this.status = AliasStatus.public,
-      this.timesVisited = 0}) {
-    _id = _nextUnsavedId;
-  }
+      this.timesVisited = 0});
+
+  static List<ModelAlias> getAll() => <ModelAlias>[..._table];
 
   static ModelAlias toModel(String row) {
     List<String> p = row.trim().split('\t');
