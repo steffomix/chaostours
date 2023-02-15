@@ -24,7 +24,11 @@ class _WidgetTaskList extends State<WidgetTaskList> {
   Widget build(BuildContext context) {
     List<ListTile> tasks = ModelTask.getAll().map((ModelTask task) {
       return ListTile(
-          title: Text(task.task),
+          title: Text(task.task,
+              style: TextStyle(
+                  decoration: task.deleted > 0
+                      ? TextDecoration.lineThrough
+                      : TextDecoration.none)),
           subtitle: Text(task.notes),
           leading: IconButton(
               icon: const Icon(Icons.edit),
@@ -34,6 +38,18 @@ class _WidgetTaskList extends State<WidgetTaskList> {
               }));
     }).toList();
 
-    return AppWidgets.scaffold(context, body: ListView(children: tasks));
+    return AppWidgets.scaffold(context,
+        body: ListView(children: [
+          Center(
+            child: IconButton(
+              icon: const Icon(Icons.add),
+              onPressed: () {
+                Navigator.pushNamed(context, AppRoutes.editTasks.route,
+                    arguments: 0);
+              },
+            ),
+          ),
+          ...tasks
+        ]));
   }
 }

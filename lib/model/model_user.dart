@@ -22,7 +22,7 @@ class ModelUser {
   int deleted;
   ModelUser({required this.user, this.notes = '', this.deleted = 0});
 
-  static ModelUser getTask(int id) {
+  static ModelUser getUser(int id) {
     return _table[id - 1];
   }
 

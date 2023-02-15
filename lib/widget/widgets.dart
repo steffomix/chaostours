@@ -12,6 +12,8 @@ import 'package:chaostours/globals.dart';
 import 'package:chaostours/page/widget_user_list.dart';
 import 'package:chaostours/page/widget_task_list.dart';
 import 'package:chaostours/page/widget_alias_list.dart';
+import 'package:chaostours/page/widget_task_edit.dart';
+import 'package:chaostours/page/widget_user_edit.dart';
 
 /// use value instead of name to get the right
 enum AppRoutes {
@@ -44,13 +46,24 @@ class AppWidgets {
       title: 'Chaos Tours',
       initialRoute: AppRoutes.home.route,
       routes: {
+        // home routes
         AppRoutes.home.route: (context) => const WidgetTrackingPage(),
+
+        /// system config routes
         AppRoutes.logger.route: (context) => const WidgetLoggerPage(),
         AppRoutes.permissions.route: (context) => const WidgetPermissionsPage(),
+
+        /// add/edit items routes
+        // trackpoint
         AppRoutes.editTrackingTasks.route: (context) =>
             const WidgetEditTrackpointTasks(),
+        // user
         AppRoutes.listUsers.route: (context) => const WidgetUserList(),
+        AppRoutes.editUser.route: (context) => const WidgetUserEdit(),
+        // task
         AppRoutes.listTasks.route: (context) => const WidgetTaskList(),
+        AppRoutes.editTasks.route: (context) => const WidgetTaskEdit(),
+        // alias
         AppRoutes.listAlias.route: (context) => const WidgetAliasList(),
       },
       theme: ThemeData(

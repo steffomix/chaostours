@@ -28,6 +28,7 @@ class CheckboxModel {
   final int idReference;
   String title;
   late bool checked;
+  bool deleted;
   String subtitle;
   bool enabled;
   int group;
@@ -39,6 +40,7 @@ class CheckboxModel {
     required this.title,
     this.group = 0,
     this.subtitle = '',
+    this.deleted = false,
     this.onToggle,
     this.enabled = true,
   }) {

@@ -48,9 +48,11 @@ class _WidgetAddTasksState extends State<WidgetEditTrackpointTasks> {
 
   ///
   Widget createCheckbox(CheckboxModel model) {
-    TextStyle style = model.enabled
-        ? const TextStyle(color: Colors.black)
-        : const TextStyle(color: Colors.grey);
+    TextStyle style = TextStyle(
+        color: model.enabled ? Colors.black : Colors.grey,
+        decoration:
+            model.deleted ? TextDecoration.lineThrough : TextDecoration.none);
+
     return ListTile(
       subtitle:
           Text(model.subtitle, style: const TextStyle(color: Colors.grey)),
@@ -125,13 +127,18 @@ class _WidgetAddTasksState extends State<WidgetEditTrackpointTasks> {
   Widget build(BuildContext context) {
     _context = context;
     List<int> referenceList = ModelTrackPoint.editTrackPoint.idTask;
-    List<Widget> checkBoxes = ModelTask.getAll().map((ModelTask task) {
-      return createCheckbox(CheckboxModel(
-          idReference: task.id,
-          referenceList: referenceList,
-          title: task.task,
-          subtitle: task.notes));
-    }).toList();
+    List<Widget> checkBoxes = [];
+    for (var t in ModelTask.getAll()) {
+      if (t.deleted <= 0) {
+        checkBoxes.add(createCheckbox(CheckboxModel(
+            idReference: t.id,
+            referenceList: referenceList,
+            deleted: t.deleted > 0,
+            title: t.task,
+            subtitle: t.notes)));
+      }
+    }
+
     List<Widget> activeTrackPointInfo = [];
     if (ModelTrackPoint.pendingTrackPoint == ModelTrackPoint.editTrackPoint) {
       activeTrackPointInfo.add(Container(

@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:chaostours/widget/widgets.dart';
 import 'package:flutter/material.dart';
 
@@ -24,7 +26,11 @@ class _WidgetUserList extends State<WidgetUserList> {
   Widget build(BuildContext context) {
     List<ListTile> users = ModelUser.getAll().map((ModelUser user) {
       return ListTile(
-          title: Text(user.user),
+          title: Text(user.user,
+              style: TextStyle(
+                  decoration: user.deleted > 0
+                      ? TextDecoration.lineThrough
+                      : TextDecoration.none)),
           subtitle: Text(user.notes),
           leading: IconButton(
               icon: const Icon(Icons.edit),
@@ -34,6 +40,18 @@ class _WidgetUserList extends State<WidgetUserList> {
               }));
     }).toList();
 
-    return AppWidgets.scaffold(context, body: ListView(children: users));
+    return AppWidgets.scaffold(context,
+        body: ListView(children: [
+          Center(
+            child: IconButton(
+              icon: const Icon(Icons.add),
+              onPressed: () {
+                Navigator.pushNamed(context, AppRoutes.editUser.route,
+                    arguments: 0);
+              },
+            ),
+          ),
+          ...users
+        ]));
   }
 }
