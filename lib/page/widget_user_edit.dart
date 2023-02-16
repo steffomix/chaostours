@@ -27,10 +27,10 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
     final id = ModalRoute.of(context)!.settings.arguments as int;
     bool create = id <= 0;
     _user ??= create
-        ? ModelUser(user: '', deleted: 0, notes: '')
+        ? ModelUser(user: '', deleted: false, notes: '')
         : ModelUser.getUser(id);
     ModelUser user = _user!;
-    _deleted ??= user.deleted > 0;
+    _deleted ??= user.deleted;
     bool deleted = _deleted!;
 
     return AppWidgets.scaffold(context,
@@ -84,7 +84,7 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
                   setState(() {
                     _deleted = val;
                   });
-                  user.deleted = (val ?? false) ? 1 : 0;
+                  user.deleted = val ?? false;
                 },
               ))
         ]));

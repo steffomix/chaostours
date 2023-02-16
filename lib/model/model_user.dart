@@ -19,8 +19,8 @@ class ModelUser {
 
   String user;
   String notes = '';
-  int deleted;
-  ModelUser({required this.user, this.notes = '', this.deleted = 0});
+  bool deleted;
+  ModelUser({required this.user, this.notes = '', this.deleted = false});
 
   static ModelUser getUser(int id) {
     return _table[id - 1];
@@ -32,7 +32,7 @@ class ModelUser {
   String toString() {
     List<String> parts = [
       _id.toString(),
-      deleted.toString(),
+      deleted ? '1' : '0',
       encode(user),
       encode(notes),
       '|'
@@ -44,7 +44,7 @@ class ModelUser {
     List<String> parts = row.split('\t');
     int id = int.parse(parts[0]);
     ModelUser model = ModelUser(
-        deleted: int.parse(parts[1]),
+        deleted: parts[1] == '1' ? true : false,
         user: decode(parts[2]),
         notes: decode(parts[3]));
     model._id = id;
@@ -75,7 +75,7 @@ class ModelUser {
   }
 
   static Future<void> delete(ModelUser m) async {
-    m.deleted = 1;
+    m.deleted = true;
     logger.log('Delete Task ${m.user} with ID ${m.id}');
     await write();
   }

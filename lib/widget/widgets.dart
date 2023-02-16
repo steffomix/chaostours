@@ -14,6 +14,8 @@ import 'package:chaostours/page/widget_task_list.dart';
 import 'package:chaostours/page/widget_alias_list.dart';
 import 'package:chaostours/page/widget_task_edit.dart';
 import 'package:chaostours/page/widget_user_edit.dart';
+import 'package:chaostours/page/widget_alias_edit.dart';
+import 'package:chaostours/page/widget_osm.dart';
 
 /// use value instead of name to get the right
 enum AppRoutes {
@@ -32,10 +34,17 @@ enum AppRoutes {
   //
   listUsers('/listUsers'),
   editUser('/listUsers/editUser'),
-  createUser('/listUsers/editUser/createUser');
+  createUser('/listUsers/editUser/createUser'),
+  //
+  osm('/osm');
 
   final String route;
   const AppRoutes(this.route);
+}
+
+class NavigatorArguments {
+  int id = 0;
+  Map<String, String> params = {};
 }
 
 class AppWidgets {
@@ -65,6 +74,9 @@ class AppWidgets {
         AppRoutes.editTasks.route: (context) => const WidgetTaskEdit(),
         // alias
         AppRoutes.listAlias.route: (context) => const WidgetAliasList(),
+        AppRoutes.editAlias.route: (context) => const WidgetAliasEdit(),
+        // osm
+        AppRoutes.osm.route: (context) => const WidgetOsm(),
       },
       theme: ThemeData(
         primarySwatch: Colors.amber,

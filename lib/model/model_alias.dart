@@ -26,15 +26,15 @@ enum AliasStatus {
 class ModelAlias {
   static Logger logger = Logger.logger<ModelAlias>();
   static final List<ModelAlias> _table = [];
-  int deleted;
-  final double lat;
-  final double lon;
-  final int radius;
-  final String alias;
-  final String notes;
-  final AliasStatus status;
+  bool deleted;
+  double lat;
+  double lon;
+  int radius;
+  String alias;
+  String notes;
+  AliasStatus status;
   final DateTime lastVisited;
-  final int timesVisited;
+  int timesVisited;
   int _id = 0;
 
   /// real ID<br>
@@ -51,7 +51,7 @@ class ModelAlias {
       required this.lon,
       required this.alias,
       required this.lastVisited,
-      this.deleted = 0,
+      this.deleted = false,
       this.radius = 100,
       this.notes = '',
       this.status = AliasStatus.public,
@@ -63,7 +63,7 @@ class ModelAlias {
     List<String> p = row.trim().split('\t');
     int id = int.parse(p[0]);
     ModelAlias a = ModelAlias(
-        deleted: int.parse(p[1]),
+        deleted: p[1] == '1' ? true : false,
         lat: double.parse(p[2]),
         lon: double.parse(p[3]),
         radius: int.parse(p[4]),
@@ -80,7 +80,7 @@ class ModelAlias {
   String toString() {
     List<String> l = [
       id.toString(),
-      deleted.toString(),
+      deleted ? '1' : '0',
       lat.toString(),
       lon.toString(),
       radius.toString(),
@@ -109,7 +109,7 @@ class ModelAlias {
 
   static Future<void> delete(ModelAlias m) async {
     logger.log('Delete ${m.alias} with ID ${m.id}');
-    m.deleted = 1;
+    m.deleted = true;
     await write();
   }
 

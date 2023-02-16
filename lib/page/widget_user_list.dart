@@ -28,7 +28,7 @@ class _WidgetUserList extends State<WidgetUserList> {
       return ListTile(
           title: Text(user.user,
               style: TextStyle(
-                  decoration: user.deleted > 0
+                  decoration: user.deleted
                       ? TextDecoration.lineThrough
                       : TextDecoration.none)),
           subtitle: Text(user.notes),

@@ -26,7 +26,7 @@ class _WidgetTaskList extends State<WidgetTaskList> {
       return ListTile(
           title: Text(task.task,
               style: TextStyle(
-                  decoration: task.deleted > 0
+                  decoration: task.deleted
                       ? TextDecoration.lineThrough
                       : TextDecoration.none)),
           subtitle: Text(task.notes),

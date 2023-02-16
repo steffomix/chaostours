@@ -27,10 +27,10 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
     final id = ModalRoute.of(context)!.settings.arguments as int;
     bool create = id <= 0;
     _task ??= create
-        ? ModelTask(task: '', deleted: 0, notes: '')
+        ? ModelTask(task: '', deleted: false, notes: '')
         : ModelTask.getTask(id);
     var task = _task!;
-    _deleted ??= task.deleted > 0;
+    _deleted ??= task.deleted;
 
     var deleted = _deleted!;
 
@@ -45,7 +45,7 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
               if (task.task.isEmpty) {
                 task.task = 'Person #${task.id}';
               }
-              task.deleted = deleted ? 1 : 0;
+              task.deleted = deleted;
               create ? ModelTask.insert(task) : ModelTask.write();
               Navigator.pop(context);
               Navigator.pushNamed(context, AppRoutes.listTasks.route);
@@ -88,7 +88,7 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
                   setState(() {
                     _deleted = val;
                   });
-                  task.deleted = (val ?? false) ? 1 : 0;
+                  task.deleted = val ?? false;
                 },
               ))
         ]));

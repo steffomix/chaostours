@@ -129,11 +129,11 @@ class _WidgetAddTasksState extends State<WidgetEditTrackpointTasks> {
     List<int> referenceList = ModelTrackPoint.editTrackPoint.idTask;
     List<Widget> checkBoxes = [];
     for (var t in ModelTask.getAll()) {
-      if (t.deleted <= 0) {
+      if (!t.deleted) {
         checkBoxes.add(createCheckbox(CheckboxModel(
             idReference: t.id,
             referenceList: referenceList,
-            deleted: t.deleted > 0,
+            deleted: t.deleted,
             title: t.task,
             subtitle: t.notes)));
       }

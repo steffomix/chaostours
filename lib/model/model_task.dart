@@ -18,8 +18,8 @@ class ModelTask {
 
   String task;
   String notes = '';
-  int deleted;
-  ModelTask({required this.task, this.notes = '', this.deleted = 0});
+  bool deleted;
+  ModelTask({required this.task, this.notes = '', this.deleted = false});
 
   static ModelTask getTask(int id) {
     return _table[id - 1];
@@ -31,7 +31,7 @@ class ModelTask {
   String toString() {
     List<String> parts = [
       _id.toString(),
-      deleted.toString(),
+      deleted ? '1' : '0',
       encode(task),
       encode(notes),
       '|'
@@ -43,7 +43,7 @@ class ModelTask {
     List<String> parts = row.split('\t');
     int id = int.parse(parts[0]);
     ModelTask model = ModelTask(
-        deleted: int.parse(parts[1]),
+        deleted: parts[1] == '1' ? true : false,
         task: decode(parts[2]),
         notes: decode(parts[3]));
     model._id = id;
@@ -74,7 +74,7 @@ class ModelTask {
   }
 
   static Future<void> delete(ModelTask m) async {
-    m.deleted = 1;
+    m.deleted = true;
     logger.log('Delete Task ${m.task} with ID ${m.id}');
     await write();
   }
