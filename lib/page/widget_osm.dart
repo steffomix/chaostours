@@ -1,9 +1,12 @@
+import 'package:chaostours/model/model_alias.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
 
 ///
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/widget/widgets.dart';
+import 'package:chaostours/gps.dart';
+import 'package:chaostours/address.dart' as addr;
 
 ///
 class WidgetOsm extends StatefulWidget {
@@ -16,30 +19,17 @@ class WidgetOsm extends StatefulWidget {
 class _WidgetOsm extends State<WidgetOsm> {
   static final Logger logger = Logger.logger<WidgetOsm>();
 
-  MapController controller = MapController(
-    initMapWithUserPosition: false,
-    initPosition: GeoPoint(latitude: 47.4358055, longitude: 8.4737324),
-    areaLimit: BoundingBox(
-      east: 10.4922941,
-      north: 47.8084648,
-      south: 45.817995,
-      west: 5.9559113,
-    ),
-  );
+  GPS _gps = GPS(0, 0);
+  String _address = '';
+  int _id = 0;
 
-  Widget osm() {
-    return OSMFlutter(
-      androidHotReloadSupport: true,
-      showZoomController: true,
-      isPicker: true,
-      controller: controller,
-      showDefaultInfoWindow: true,
-      trackMyPosition: true,
-      initZoom: 12,
-      minZoomLevel: 5,
-      maxZoomLevel: 19,
-      stepZoom: 1.0,
-    );
+  @override
+  void initState() {
+    GPS.gps().then(((gps) {
+      _gps = gps;
+      //updateController();
+    }));
+    super.initState();
   }
 
   @override
@@ -48,37 +38,167 @@ class _WidgetOsm extends State<WidgetOsm> {
     super.dispose();
   }
 
-  Widget body() {
-    return Container(child: osm());
-    return ListBody(
-      children: [
-        Row(
-          children: const [Text('test'), Text('2')],
-        ),
-        Container(child: osm())
-      ],
+  late MapController controller;
+
+  Widget osm() {
+    return OSMFlutter(
+      androidHotReloadSupport: true,
+      isPicker: true,
+      controller: controller,
+      initZoom: 12,
+      minZoomLevel: 8,
+      maxZoomLevel: 19,
+      stepZoom: 1.0,
     );
+  }
+
+  Widget infoAddress() {
+    return ListTile(
+      leading: IconButton(
+          icon: const Icon(color: Colors.red, size: 40, Icons.question_mark),
+          onPressed: () {
+            controller.getCurrentPositionAdvancedPositionPicker().then((loc) {
+              _gps = GPS(loc.latitude, loc.longitude);
+              controller
+                  .goToLocation(
+                      GeoPoint(latitude: _gps.lat, longitude: _gps.lon))
+                  .then((_) {
+                addr.Address(_gps).lookupAddress().then((address) {
+                  _address = address.toString();
+                  setState(() {});
+                }).onError((error, stackTrace) {
+                  logger.error(error.toString(), stackTrace);
+                });
+              });
+            }).onError((error, stackTrace) {
+              logger.error(error.toString(), stackTrace);
+            });
+          }),
+      title: Text(_address),
+      subtitle: Text('GPS: $_gps'),
+    );
+  }
+
+  Widget infoBox() {
+    return SizedBox(
+        height: 120,
+        width: 1000,
+        child: Container(
+            alignment: Alignment.center,
+            decoration: const BoxDecoration(color: Colors.white70),
+            child: infoAddress()));
+  }
+
+  BottomNavigationBar editNavBar(context) {
+    return BottomNavigationBar(
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.cancel), label: 'Abbruch'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.home), label: 'Meine Position'),
+          BottomNavigationBarItem(icon: Icon(Icons.done), label: 'OK')
+        ],
+        onTap: (int id) async {
+          switch (id) {
+            case 0:
+              Navigator.pushNamed(context, AppRoutes.editAlias.route,
+                  arguments: _id);
+              break;
+            case 1:
+              GPS.gps().then(((gps) {
+                _gps = gps;
+                controller.goToLocation(
+                    GeoPoint(latitude: _gps.lat, longitude: _gps.lon));
+              }));
+              break;
+            case 2:
+              controller.getCurrentPositionAdvancedPositionPicker().then((pos) {
+                var alias = ModelAlias.getAlias(_id);
+                alias.lat = pos.latitude;
+                alias.lon = pos.longitude;
+                addr.Address(GPS(alias.lat, alias.lon))
+                    .lookupAddress()
+                    .then((adr) {
+                  alias.alias = adr.toString();
+                  ModelAlias.update();
+                  Navigator.pushNamed(context, AppRoutes.editAlias.route,
+                      arguments: _id);
+                });
+              });
+              break;
+            default:
+            // do nothing
+          }
+        });
+  }
+
+  BottomNavigationBar createNavBar(context) {
+    return BottomNavigationBar(
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.cancel), label: 'Abbruch'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.home), label: 'Meine Position'),
+          BottomNavigationBarItem(icon: Icon(Icons.done), label: 'OK')
+        ],
+        onTap: (int id) async {
+          switch (id) {
+            case 0:
+              Navigator.pushNamed(context, AppRoutes.editAlias.route,
+                  arguments: 0);
+              break;
+            case 1:
+              GPS.gps().then(((gps) {
+                _gps = gps;
+                controller.goToLocation(
+                    GeoPoint(latitude: _gps.lat, longitude: _gps.lon));
+              }));
+              break;
+            case 2:
+              controller.getCurrentPositionAdvancedPositionPicker().then((pos) {
+                var alias = ModelAlias(
+                    lat: pos.latitude,
+                    lon: pos.longitude,
+                    alias: '',
+                    lastVisited: DateTime.now());
+
+                ModelAlias.insert(alias);
+                _id = alias.id;
+                Navigator.pushNamed(context, AppRoutes.editAlias.route,
+                    arguments: alias.id);
+              });
+              break;
+            default:
+            // do nothing
+          }
+        });
   }
 
   @override
   Widget build(BuildContext context) {
-    return AppWidgets.scaffold(context,
-        body: body(), navBar: null, appBar: null);
-  }
+    try {
+      _id = ModalRoute.of(context)!.settings.arguments as int;
+      if (_id > 0) {
+        var alias = ModelAlias.getAlias(_id);
+        _gps = GPS(alias.lat, alias.lon);
+        if (_address.isEmpty) {
+          _address = alias.alias;
+        }
+        controller = MapController(
+            initMapWithUserPosition: false,
+            initPosition: GeoPoint(latitude: _gps.lat, longitude: _gps.lon));
+      } else {
+        controller = MapController(initMapWithUserPosition: true);
+      }
+    } catch (e) {
+      controller = MapController(initMapWithUserPosition: true);
+      logger.warn('no id found in ModalRoute');
+    }
 
-  BottomNavigationBar bottomNavBar(context) {
-    return BottomNavigationBar(
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.done), label: 'OK'),
-          BottomNavigationBarItem(icon: Icon(Icons.done), label: 'OK')
-        ],
-        onTap: (int id) async {
-          var bounds = await controller.bounds;
-          var location =
-              await controller.getCurrentPositionAdvancedPositionPicker();
-          logger.log('BottomNavBar tapped but no method connected');
-          setState(() {});
-          //eventBusTapBottomNavBarIcon.fire(Tapped(id));
-        });
+    return AppWidgets.scaffold(context,
+        body: Stack(children: [
+          osm(),
+          infoBox(),
+        ]),
+        navBar: _id > 0 ? editNavBar(context) : createNavBar(context),
+        appBar: null);
   }
 }

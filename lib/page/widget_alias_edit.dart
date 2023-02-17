@@ -56,7 +56,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
           Container(
               padding: const EdgeInsets.all(10),
               child: TextField(
-                decoration: const InputDecoration(label: Text('Aufgabe')),
+                decoration: const InputDecoration(label: Text('Alias/Adresse')),
                 onChanged: ((value) {
                   alias.alias = value;
                 }),
@@ -72,7 +72,8 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                 child: Text('GPS: ${alias.lat}, ${alias.lon}'),
                 onPressed: () {
                   ///
-                  Navigator.pushNamed(context, AppRoutes.osm.route);
+                  Navigator.pushNamed(context, AppRoutes.osm.route,
+                      arguments: alias.id);
                 },
               )),
 
@@ -106,7 +107,8 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                 }),
                 maxLines: 1,
                 minLines: 1,
-                controller: TextEditingController(text: alias.alias),
+                controller:
+                    TextEditingController(text: alias.radius.toString()),
               )),
 
           /// deleted
