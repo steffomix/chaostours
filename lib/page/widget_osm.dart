@@ -40,7 +40,7 @@ class _WidgetOsm extends State<WidgetOsm> {
 
   late MapController controller;
 
-  Widget osm() {
+  Widget osm(context) {
     return OSMFlutter(
       androidHotReloadSupport: true,
       isPicker: true,
@@ -52,10 +52,11 @@ class _WidgetOsm extends State<WidgetOsm> {
     );
   }
 
-  Widget infoAddress() {
-    return ListTile(
+  Widget infoBox(context) {
+    var boxContent = ListTile(
       leading: IconButton(
-          icon: const Icon(color: Colors.red, size: 40, Icons.question_mark),
+          icon: const Icon(
+              color: Colors.amber, size: 40, Icons.location_searching),
           onPressed: () {
             controller.getCurrentPositionAdvancedPositionPicker().then((loc) {
               _gps = GPS(loc.latitude, loc.longitude);
@@ -77,16 +78,14 @@ class _WidgetOsm extends State<WidgetOsm> {
       title: Text(_address),
       subtitle: Text('GPS: $_gps'),
     );
-  }
 
-  Widget infoBox() {
     return SizedBox(
         height: 120,
         width: 1000,
         child: Container(
             alignment: Alignment.center,
             decoration: const BoxDecoration(color: Colors.white70),
-            child: infoAddress()));
+            child: boxContent));
   }
 
   BottomNavigationBar editNavBar(context) {
@@ -195,8 +194,8 @@ class _WidgetOsm extends State<WidgetOsm> {
 
     return AppWidgets.scaffold(context,
         body: Stack(children: [
-          osm(),
-          infoBox(),
+          osm(context),
+          infoBox(context),
         ]),
         navBar: _id > 0 ? editNavBar(context) : createNavBar(context),
         appBar: null);

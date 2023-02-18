@@ -80,19 +80,19 @@ class _WidgetAddTasksState extends State<WidgetEditTrackpointTasks> {
     );
   }
 
-  Future<void> onPressBackButton() async {
-    Navigator.pop(_context!);
-    if (ModelTrackPoint.editTrackPoint.id > 0) {
-      Shared shared = Shared(SharedKeys.updateTrackPointQueue);
-      List<String> queue = await shared.loadList() ?? [];
-      queue.add(ModelTrackPoint.editTrackPoint.toString());
-      shared.saveList(queue);
-    }
-  }
-
   Widget backButton(BuildContext context) {
     return IconButton(
-        onPressed: onPressBackButton,
+        onPressed: () {
+          Navigator.pop(context);
+          if (ModelTrackPoint.editTrackPoint.id > 0) {
+            Shared shared = Shared(SharedKeys.updateTrackPointQueue);
+            shared.loadList().then((_) {
+              var q = _ ??= [];
+              q.add(ModelTrackPoint.editTrackPoint.toString());
+              shared.saveList(q);
+            });
+          }
+        },
         icon: const Icon(size: 50, Icons.done_outline_rounded));
   }
 
@@ -101,12 +101,9 @@ class _WidgetAddTasksState extends State<WidgetEditTrackpointTasks> {
         thickness: 1, indent: 10, endIndent: 10, color: Colors.blueGrey);
   }
 
-  Widget recentTrackPointInfo(ModelTrackPoint tp) {
-    List<String> alias =
-        tp.idAlias.map((id) => ModelAlias.getAlias(id).alias).toList();
-
-    List<String> tasks =
-        tp.idTask.map((id) => ModelTask.getTask(id).task).toList();
+  Widget trackPointInfo(ModelTrackPoint tp) {
+    var alias = tp.idAlias.map((id) => ModelAlias.getAlias(id).alias).toList();
+    var tasks = tp.idTask.map((id) => ModelTask.getTask(id).task).toList();
 
     ///
     return Container(
@@ -126,8 +123,8 @@ class _WidgetAddTasksState extends State<WidgetEditTrackpointTasks> {
   @override
   Widget build(BuildContext context) {
     _context = context;
-    List<int> referenceList = ModelTrackPoint.editTrackPoint.idTask;
-    List<Widget> checkBoxes = [];
+    var referenceList = ModelTrackPoint.editTrackPoint.idTask;
+    var checkBoxes = <Widget>[];
     for (var t in ModelTask.getAll()) {
       if (!t.deleted) {
         checkBoxes.add(createCheckbox(CheckboxModel(
@@ -139,7 +136,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackpointTasks> {
       }
     }
 
-    List<Widget> activeTrackPointInfo = [];
+    var activeTrackPointInfo = <Widget>[];
     if (ModelTrackPoint.pendingTrackPoint == ModelTrackPoint.editTrackPoint) {
       activeTrackPointInfo.add(Container(
           padding: const EdgeInsets.all(10),
@@ -148,27 +145,26 @@ class _WidgetAddTasksState extends State<WidgetEditTrackpointTasks> {
               'Panel schließt sobald sich der Fahren/Halten Status ändert.',
               style: TextStyle(color: Colors.red))));
     }
-    return AppWidgets.scaffold(context,
-        body: ListView(children: [
-          ...activeTrackPointInfo,
-          backButton(context),
-          recentTrackPointInfo(ModelTrackPoint.editTrackPoint),
-          Container(
-              padding: const EdgeInsets.all(10),
-              child: TextField(
-                  decoration: const InputDecoration(
-                      label: Text('Notizen'),
-                      contentPadding: EdgeInsets.all(2)),
-                  //expands: true,
-                  maxLines: null,
-                  minLines: 5,
-                  controller: _controller,
-                  onChanged: (String? s) {
-                    ModelTrackPoint.pendingTrackPoint.notes = s ?? '';
-                    logger.log('$s');
-                  })),
-          divider(),
-          ...checkBoxes
-        ]));
+    var body = ListView(children: [
+      ...activeTrackPointInfo,
+      backButton(context),
+      trackPointInfo(ModelTrackPoint.editTrackPoint),
+      Container(
+          padding: const EdgeInsets.all(10),
+          child: TextField(
+              decoration: const InputDecoration(
+                  label: Text('Notizen'), contentPadding: EdgeInsets.all(2)),
+              //expands: true,
+              maxLines: null,
+              minLines: 5,
+              controller: _controller,
+              onChanged: (String? s) {
+                ModelTrackPoint.pendingTrackPoint.notes = s ?? '';
+                logger.log('$s');
+              })),
+      divider(),
+      ...checkBoxes
+    ]);
+    return AppWidgets.scaffold(context, body: body);
   }
 }

@@ -18,6 +18,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
 
   bool? _deleted;
   ModelAlias? _alias;
+  AliasStatus? _status;
   @override
   void dispose() {
     super.dispose();
@@ -46,11 +47,13 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                 alias.alias = 'Alias #${alias.id}';
               }
               alias.deleted = deleted;
+              alias.status = _status ?? AliasStatus.restricted;
               ModelAlias.write();
               Navigator.pop(context);
               Navigator.pushNamed(context, AppRoutes.listAlias.route);
             },
           )),
+          AppWidgets.divider(),
 
           /// aliasname
           Container(
@@ -64,6 +67,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                 minLines: 1,
                 controller: TextEditingController(text: alias.alias),
               )),
+          AppWidgets.divider(),
 
           /// gps
           Container(
@@ -76,6 +80,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                       arguments: alias.id);
                 },
               )),
+          AppWidgets.divider(),
 
           /// notes
           Container(
@@ -87,6 +92,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                 minLines: 3,
                 controller: TextEditingController(text: alias.notes),
               )),
+          AppWidgets.divider(),
 
           /// radius
           Container(
@@ -103,19 +109,78 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                     alias.radius = int.parse(value);
                   } catch (e) {
                     //
+
                   }
                 }),
-                maxLines: 1,
+                maxLines: 1, //
                 minLines: 1,
                 controller:
                     TextEditingController(text: alias.radius.toString()),
               )),
+          AppWidgets.divider(),
+
+          /// type
+          Container(
+              padding: const EdgeInsets.all(10),
+              child: ListBody(children: [
+                const ListTile(
+                  title: Text('Type'),
+                  subtitle: Text(
+                    'Definiert ob und wie Haltepunkte verarbeitet werden.',
+                    softWrap: true,
+                  ),
+                ),
+                ListTile(
+                    title: const Text('Öffentlich'),
+                    subtitle: const Text(
+                      'Ereignisse die diesen Ort betreffen können gespeichert und '
+                      'z.B. automatisch in einem privaten oder öffentlichen Kalender publiziert werden.',
+                      softWrap: true,
+                    ),
+                    leading: Radio<AliasStatus>(
+                        value: AliasStatus.public,
+                        groupValue: _status,
+                        onChanged: (AliasStatus? val) {
+                          _status = val;
+                        })),
+                ListTile(
+                    title: const Text('Privat'),
+                    subtitle: const Text(
+                      'Ereignisse die diesen Ort betreffen verlassen ihr Gerät nicht, '
+                      'es sei denn sie exportieren z.B. die Datenbank, machen Screenshots etc. '
+                      'und geben die Informationen selst an Dritte weiter.',
+                      softWrap: true,
+                    ),
+                    leading: Radio<AliasStatus>(
+                        value: AliasStatus.privat,
+                        groupValue: _status,
+                        onChanged: (AliasStatus? val) {
+                          _status = val;
+                        })),
+                ListTile(
+                    title: const Text('Geheim'),
+                    subtitle: const Text(
+                      'An diesem Ort werden keine Haltepunkte aufgezeichnent, als wäre das Gerät ausgeschaltet. '
+                      'Das bedeutet, wenn Sie diesen Ort erreichen, halten und wieder losfahren, '
+                      'fehlt die gesamte Aufzeichnung vom losfahren zu diesem Ort bis zum erreichen des nächsten Ortes. '
+                      'Die daraus resultierende Aufzeichnung erweckt den Eindruck, als hätten sie sich von Ort A, '
+                      'über Ort B(geheim) nach Ort C über einen bisher unbekannten Subraum transportiert.',
+                      softWrap: true,
+                    ),
+                    leading: Radio<AliasStatus>(
+                        value: AliasStatus.restricted,
+                        groupValue: _status,
+                        onChanged: (AliasStatus? val) {
+                          _status = val;
+                        }))
+              ])),
+          AppWidgets.divider(),
 
           /// deleted
           ListTile(
               title: const Text('Deaktiviert / gelöscht'),
               subtitle: const Text(
-                'Definiert ob diese Aufgabe gelistet und auswählbar ist',
+                'Wenn deaktiviert bzw. gelöscht, wird dieser Alias so behandelt wie ein "gelöschter" Fakebook Account.',
                 softWrap: true,
               ),
               leading: Checkbox(

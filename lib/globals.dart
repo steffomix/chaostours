@@ -1,6 +1,21 @@
+import 'package:flutter/material.dart';
+
+///
 import 'package:chaostours/logger.dart';
 
 enum OsmLookup { never, onStatus, always }
+
+enum AppColors {
+  yellow(Colors.amber),
+  green(Color(0xFF4b830d)),
+  black(Colors.black),
+  black54(Colors.black54),
+  white(Color(0xFFDDDDDD)),
+  white54(Colors.white54);
+
+  final Color color;
+  const AppColors(this.color);
+}
 
 class Globals {
   static Logger logger = Logger.logger<Globals>();

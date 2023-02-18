@@ -2,6 +2,7 @@ import 'package:chaostours/globals.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/address.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
+import 'package:chaostours/model/model_alias.dart'; // for read only
 import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/shared/shared.dart';
@@ -123,13 +124,26 @@ class TrackPoint {
           /// which is the last gpsPoints entry
           ModelTrackPoint newEntry =
               await createModelTrackPoint(gpsPoints.last);
-          await ModelTrackPoint.insert(newEntry);
 
-          /// this is not needed except trackpoint is running in foreground
-          await ModelTrackPoint.open();
+          /// write new entry only if no restricted alias is present
+          var restricted = false;
+          await ModelAlias.open();
+          for (int id in newEntry.idAlias) {
+            if (ModelAlias.getAlias(id).status == AliasStatus.restricted) {
+              restricted = true;
+              break;
+            }
+          }
+          if (!restricted) {
+            await ModelTrackPoint.insert(newEntry);
+
+            /// this is not needed except trackpoint is running in foreground
+            await ModelTrackPoint.open();
+          }
         } else {
-          /// remember address from where we detected standing
-          /// to be used in createModelTrackPoint
+          /// new status is standing
+          /// remember address from detecting standing
+          /// to be used in createModelTrackPoint on next status change
           await Shared(SharedKeys.addressStanding)
               .saveString((await Address(gps).lookupAddress()).toString());
         }
@@ -138,7 +152,7 @@ class TrackPoint {
       /// save status and gpsPoints for next session and foreground live tracking view
       await shared.saveList(_sharedData);
     } catch (e, stk) {
-      logger.error(e.toString(), stk);
+      logger.fatal(e.toString(), stk);
     }
   }
 

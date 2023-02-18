@@ -1,8 +1,6 @@
 import 'package:flutter/services.dart';
 //
 import 'package:chaostours/file_handler.dart';
-import 'package:chaostours/file_handler.dart';
-import 'package:chaostours/enum.dart';
 import 'package:chaostours/logger.dart';
 
 class ModelTask {
