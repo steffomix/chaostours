@@ -41,7 +41,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackpointTasks> {
   void onTrackingStatusChanged(EventOnTrackingStatusChanged e) {
     if (ModelTrackPoint.pendingTrackPoint == ModelTrackPoint.editTrackPoint) {
       if (_context != null) {
-        Navigator.pushNamed(_context!, AppRoutes.home.route);
+        Navigator.pop(_context!);
       }
     }
   }

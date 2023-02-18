@@ -23,8 +23,7 @@ class _WidgetDrawer extends State<WidgetDrawer> {
       ///
       ElevatedButton(
           onPressed: () {
-            Navigator.pop(context);
-            Navigator.pushNamed(context, AppRoutes.home.route);
+            AppWidgets.navigate(context, AppRoutes.home);
           },
           child: const Text('Tracking')),
       divider,
@@ -32,8 +31,7 @@ class _WidgetDrawer extends State<WidgetDrawer> {
       ///
       ElevatedButton(
           onPressed: () {
-            Navigator.pop(context);
-            Navigator.pushNamed(context, AppRoutes.permissions.route);
+            AppWidgets.navigate(context, AppRoutes.permissions);
           },
           child: const Text('Android Permissions')),
       divider,
@@ -41,8 +39,7 @@ class _WidgetDrawer extends State<WidgetDrawer> {
       ///
       ElevatedButton(
           onPressed: () {
-            Navigator.pop(context);
-            Navigator.pushNamed(context, AppRoutes.logger.route);
+            AppWidgets.navigate(context, AppRoutes.logger);
           },
           child: const Text('Logger')),
       divider,
@@ -50,24 +47,21 @@ class _WidgetDrawer extends State<WidgetDrawer> {
       ///
       ElevatedButton(
           onPressed: () {
-            Navigator.pop(context);
-            Navigator.pushNamed(context, AppRoutes.listUsers.route);
+            AppWidgets.navigate(context, AppRoutes.listUsers);
           },
           child: const Text('Personal')),
 
       ///
       ElevatedButton(
           onPressed: () {
-            Navigator.pop(context);
-            Navigator.pushNamed(context, AppRoutes.listTasks.route);
+            AppWidgets.navigate(context, AppRoutes.listTasks);
           },
           child: const Text('Aufgaben')),
 
       ///
       ElevatedButton(
           onPressed: () {
-            Navigator.pop(context);
-            Navigator.pushNamed(context, AppRoutes.listAlias.route);
+            AppWidgets.navigate(context, AppRoutes.listAlias);
           },
           child: const Text('Orte (Alias)')),
     ]));

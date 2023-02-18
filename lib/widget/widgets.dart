@@ -42,11 +42,6 @@ enum AppRoutes {
   const AppRoutes(this.route);
 }
 
-class NavigatorArguments {
-  int id = 0;
-  Map<String, String> params = {};
-}
-
 class AppWidgets {
   static final Logger logger = Logger.logger<AppWidgets>();
 
@@ -87,13 +82,21 @@ class AppWidgets {
     );
   }
 
+  static void navigate(BuildContext context, AppRoutes route,
+      [Object? arguments]) {
+    while (Navigator.canPop(context)) {
+      Navigator.pop(context);
+    }
+    Navigator.pushNamed(context, route.route, arguments: arguments);
+  }
+
   static Widget scaffold(BuildContext context,
       {required Widget body, BottomNavigationBar? navBar, AppBar? appBar}) {
     return Scaffold(
       appBar: appBar ?? AppWidgets.appBar(context),
       drawer: const WidgetDrawer(),
       body: body,
-      bottomNavigationBar: navBar ?? bottomNavBar(context),
+      bottomNavigationBar: navBar,
     );
   }
 

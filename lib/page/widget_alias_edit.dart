@@ -32,28 +32,27 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
     _alias ??= ModelAlias.getAlias(id);
     var alias = _alias!;
     _deleted ??= alias.deleted;
+    _status ??= alias.status;
 
     var deleted = _deleted!;
 
     return AppWidgets.scaffold(context,
+        navBar: null,
         body: ListView(children: [
           ///
           /// ok/add button
           Center(
               child: IconButton(
-            icon: const Icon(Icons.done, size: 50),
-            onPressed: () {
-              if (alias.alias.isEmpty) {
-                alias.alias = 'Alias #${alias.id}';
-              }
-              alias.deleted = deleted;
-              alias.status = _status ?? AliasStatus.restricted;
-              ModelAlias.write();
-              Navigator.pop(context);
-              Navigator.pushNamed(context, AppRoutes.listAlias.route);
-            },
-          )),
-          AppWidgets.divider(),
+                  icon: const Icon(Icons.done, size: 50),
+                  onPressed: () {
+                    if (alias.alias.isEmpty) {
+                      alias.alias = 'Alias #${alias.id}';
+                    }
+                    alias.deleted = deleted;
+                    alias.status = _status ?? AliasStatus.restricted;
+                    ModelAlias.write();
+                    AppWidgets.navigate(context, AppRoutes.listAlias);
+                  })),
 
           /// aliasname
           Container(
@@ -67,19 +66,25 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                 minLines: 1,
                 controller: TextEditingController(text: alias.alias),
               )),
-          AppWidgets.divider(),
 
           /// gps
-          Container(
-              padding: const EdgeInsets.all(10),
-              child: ElevatedButton(
-                child: Text('GPS: ${alias.lat}, ${alias.lon}'),
-                onPressed: () {
-                  ///
-                  Navigator.pushNamed(context, AppRoutes.osm.route,
-                      arguments: alias.id);
-                },
-              )),
+          Column(children: [
+            const Text('Alias GPS Koordinaten', softWrap: true),
+            Container(
+                padding: const EdgeInsets.all(10),
+                child: ElevatedButton(
+                  child: ListTile(
+                      leading: const Icon(Icons.near_me),
+                      title: Text('GPS: ${alias.lat}, ${alias.lon}')),
+
+                  //Text('GPS: ${alias.lat}, ${alias.lon}'),
+                  onPressed: () {
+                    ///
+                    Navigator.pushNamed(context, AppRoutes.osm.route,
+                        arguments: alias.id);
+                  },
+                ))
+          ]),
           AppWidgets.divider(),
 
           /// notes
@@ -92,7 +97,6 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                 minLines: 3,
                 controller: TextEditingController(text: alias.notes),
               )),
-          AppWidgets.divider(),
 
           /// radius
           Container(
@@ -102,8 +106,8 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                 inputFormatters: [
                   FilteringTextInputFormatter.allow(RegExp('[0-9]')),
                 ],
-                decoration:
-                    const InputDecoration(label: Text('Radius in meter')),
+                decoration: const InputDecoration(
+                    label: Text('Gültigkeitsbereich (Radius) in meter.')),
                 onChanged: ((value) {
                   try {
                     alias.radius = int.parse(value);
@@ -117,14 +121,13 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                 controller:
                     TextEditingController(text: alias.radius.toString()),
               )),
-          AppWidgets.divider(),
 
           /// type
           Container(
               padding: const EdgeInsets.all(10),
-              child: ListBody(children: [
+              child: Column(children: [
                 const ListTile(
-                  title: Text('Type'),
+                  title: Text('Typ'),
                   subtitle: Text(
                     'Definiert ob und wie Haltepunkte verarbeitet werden.',
                     softWrap: true,
@@ -142,6 +145,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                         groupValue: _status,
                         onChanged: (AliasStatus? val) {
                           _status = val;
+                          setState(() {});
                         })),
                 ListTile(
                     title: const Text('Privat'),
@@ -156,6 +160,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                         groupValue: _status,
                         onChanged: (AliasStatus? val) {
                           _status = val;
+                          setState(() {});
                         })),
                 ListTile(
                     title: const Text('Geheim'),
@@ -172,6 +177,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                         groupValue: _status,
                         onChanged: (AliasStatus? val) {
                           _status = val;
+                          setState(() {});
                         }))
               ])),
           AppWidgets.divider(),
@@ -180,7 +186,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
           ListTile(
               title: const Text('Deaktiviert / gelöscht'),
               subtitle: const Text(
-                'Wenn deaktiviert bzw. gelöscht, wird dieser Alias so behandelt wie ein "gelöschter" Fakebook Account.',
+                'Wenn deaktiviert bzw. gelöscht, wird dieser Alias behandelt wie ein "gelöschter" Fakebook Account.',
                 softWrap: true,
               ),
               leading: Checkbox(

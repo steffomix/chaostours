@@ -44,7 +44,6 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
               }
               create ? ModelUser.insert(user) : ModelUser.write();
               Navigator.pop(context);
-              Navigator.pushNamed(context, AppRoutes.listUsers.route);
             },
           ),
 

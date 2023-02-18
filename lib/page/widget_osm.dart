@@ -22,13 +22,11 @@ class _WidgetOsm extends State<WidgetOsm> {
   GPS _gps = GPS(0, 0);
   String _address = '';
   int _id = 0;
+  bool widgetActive = false;
+  bool _init = false;
 
   @override
   void initState() {
-    GPS.gps().then(((gps) {
-      _gps = gps;
-      //updateController();
-    }));
     super.initState();
   }
 
@@ -36,27 +34,60 @@ class _WidgetOsm extends State<WidgetOsm> {
   void dispose() {
     controller.dispose();
     super.dispose();
+    widgetActive = false;
   }
 
   late MapController controller;
 
-  Widget osm(context) {
+  Widget osm(BuildContext context, [double zoom = 12]) {
     return OSMFlutter(
       androidHotReloadSupport: true,
       isPicker: true,
       controller: controller,
-      initZoom: 12,
+      initZoom: zoom,
       minZoomLevel: 8,
       maxZoomLevel: 19,
       stepZoom: 1.0,
+      userLocationMarker: UserLocationMaker(
+        personMarker: const MarkerIcon(
+          icon: Icon(
+            Icons.location_history_rounded,
+            color: Colors.red,
+            size: 48,
+          ),
+        ),
+        directionArrowMarker: const MarkerIcon(
+          icon: Icon(
+            Icons.double_arrow,
+            size: 48,
+          ),
+        ),
+      ),
+      roadConfiguration: RoadConfiguration(
+        startIcon: const MarkerIcon(
+          icon: Icon(
+            Icons.person,
+            size: 64,
+            color: Colors.brown,
+          ),
+        ),
+        roadColor: Colors.yellowAccent,
+      ),
+      markerOption: MarkerOption(
+          defaultMarker: const MarkerIcon(
+        icon: Icon(
+          Icons.person_pin_circle,
+          color: Colors.blue,
+          size: 56,
+        ),
+      )),
     );
   }
 
   Widget infoBox(context) {
     var boxContent = ListTile(
       leading: IconButton(
-          icon: const Icon(
-              color: Colors.amber, size: 40, Icons.location_searching),
+          icon: const Icon(color: Colors.amber, size: 40, Icons.rotate_left),
           onPressed: () {
             controller.getCurrentPositionAdvancedPositionPicker().then((loc) {
               _gps = GPS(loc.latitude, loc.longitude);
@@ -92,36 +123,26 @@ class _WidgetOsm extends State<WidgetOsm> {
     return BottomNavigationBar(
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.cancel), label: 'Abbruch'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.home), label: 'Meine Position'),
-          BottomNavigationBarItem(icon: Icon(Icons.done), label: 'OK')
+          BottomNavigationBarItem(icon: Icon(Icons.near_me), label: 'Zurück'),
+          BottomNavigationBarItem(icon: Icon(Icons.done), label: 'Speichern')
         ],
         onTap: (int id) async {
           switch (id) {
             case 0:
-              Navigator.pushNamed(context, AppRoutes.editAlias.route,
-                  arguments: _id);
+              Navigator.pop(context);
               break;
             case 1:
-              GPS.gps().then(((gps) {
-                _gps = gps;
-                controller.goToLocation(
-                    GeoPoint(latitude: _gps.lat, longitude: _gps.lon));
-              }));
+              controller.goToLocation(
+                  GeoPoint(latitude: _gps.lat, longitude: _gps.lon));
+
               break;
             case 2:
               controller.getCurrentPositionAdvancedPositionPicker().then((pos) {
                 var alias = ModelAlias.getAlias(_id);
                 alias.lat = pos.latitude;
                 alias.lon = pos.longitude;
-                addr.Address(GPS(alias.lat, alias.lon))
-                    .lookupAddress()
-                    .then((adr) {
-                  alias.alias = adr.toString();
-                  ModelAlias.update();
-                  Navigator.pushNamed(context, AppRoutes.editAlias.route,
-                      arguments: _id);
-                });
+                ModelAlias.update();
+                AppWidgets.navigate(context, AppRoutes.editAlias, _id);
               });
               break;
             default:
@@ -136,13 +157,12 @@ class _WidgetOsm extends State<WidgetOsm> {
           BottomNavigationBarItem(icon: Icon(Icons.cancel), label: 'Abbruch'),
           BottomNavigationBarItem(
               icon: Icon(Icons.home), label: 'Meine Position'),
-          BottomNavigationBarItem(icon: Icon(Icons.done), label: 'OK')
+          BottomNavigationBarItem(icon: Icon(Icons.done), label: 'Speichern')
         ],
         onTap: (int id) async {
           switch (id) {
             case 0:
-              Navigator.pushNamed(context, AppRoutes.editAlias.route,
-                  arguments: 0);
+              Navigator.pop(context);
               break;
             case 1:
               GPS.gps().then(((gps) {
@@ -158,11 +178,17 @@ class _WidgetOsm extends State<WidgetOsm> {
                     lon: pos.longitude,
                     alias: '',
                     lastVisited: DateTime.now());
-
-                ModelAlias.insert(alias);
-                _id = alias.id;
-                Navigator.pushNamed(context, AppRoutes.editAlias.route,
-                    arguments: alias.id);
+                addr.Address(GPS(alias.lat, alias.lon))
+                    .lookupAddress()
+                    .then((adr) {
+                  alias.alias = adr.toString();
+                  ModelAlias.insert(alias);
+                  _id = alias.id;
+                  Navigator.popUntil(
+                      context, ModalRoute.withName(AppRoutes.listAlias.route));
+                  Navigator.pushNamed(context, AppRoutes.editAlias.route,
+                      arguments: _id);
+                });
               });
               break;
             default:
@@ -173,28 +199,99 @@ class _WidgetOsm extends State<WidgetOsm> {
 
   @override
   Widget build(BuildContext context) {
-    try {
-      _id = ModalRoute.of(context)!.settings.arguments as int;
-      if (_id > 0) {
-        var alias = ModelAlias.getAlias(_id);
-        _gps = GPS(alias.lat, alias.lon);
-        if (_address.isEmpty) {
-          _address = alias.alias;
-        }
-        controller = MapController(
-            initMapWithUserPosition: false,
-            initPosition: GeoPoint(latitude: _gps.lat, longitude: _gps.lon));
-      } else {
-        controller = MapController(initMapWithUserPosition: true);
+    _id = ModalRoute.of(context)?.settings.arguments as int? ?? 0;
+    if (_id > 0) {
+      var alias = ModelAlias.getAlias(_id);
+      _gps = GPS(alias.lat, alias.lon);
+      if (_address.isEmpty) {
+        _address = alias.alias;
       }
-    } catch (e) {
+      controller = MapController(
+          initMapWithUserPosition: false,
+          initPosition: GeoPoint(latitude: _gps.lat, longitude: _gps.lon),
+          areaLimit: BoundingBox(
+            east: _gps.lon + 2,
+            north: _gps.lat + 2,
+            south: _gps.lat - 2,
+            west: _gps.lon - 2,
+          ));
+    } else {
       controller = MapController(initMapWithUserPosition: true);
-      logger.warn('no id found in ModalRoute');
+      if (!_init) {
+        GPS.gps().then(((gps) {
+          _gps = gps;
+          addr.Address(gps).lookupAddress().then((addr.Address address) {
+            _address = address.toString();
+            setState(() {});
+          });
+        })).whenComplete(() {
+          _init = true;
+        });
+      }
     }
+    Future.delayed(const Duration(seconds: 2), () async {
+      widgetActive = true;
+      var i = 0;
+      var list = ModelAlias.getAll();
+      while (list.isNotEmpty) {
+        if (!widgetActive) {
+          break;
+        }
+        var alias = list.last;
+        try {
+          Color color;
+          if (alias.status == AliasStatus.public) {
+            color = Colors.green;
+          } else if (alias.status == AliasStatus.privat) {
+            color = Colors.yellow;
+          } else {
+            color = Colors.red;
+          }
+
+          controller.drawCircle(CircleOSM(
+            key: "circle${++i}",
+            centerPoint: GeoPoint(latitude: alias.lat, longitude: alias.lon),
+            radius: alias.radius.toDouble(),
+            color: color,
+            strokeWidth: 10,
+          ));
+          /*
+          controller.addMarker(
+              GeoPoint(latitude: alias.lat, longitude: alias.lon),
+              markerIcon: const MarkerIcon(
+                  icon: Icon(
+                Icons.person,
+                size: 64,
+              )));
+              */
+        } catch (e, stk) {
+          logger.error(e.toString(), stk);
+          await Future.delayed(const Duration(seconds: 1));
+        }
+        list.removeLast();
+      }
+    });
+
+    /// to draw
+    /*
+      await controller.drawCircle(CircleOSM(
+        key: "circle0",
+        centerPoint: GeoPoint(latitude: 47.4333594, longitude: 8.4680184),
+        radius: 1200.0,
+        color: Colors.red,
+        strokeWidth: 0.3,
+      ));
+
+      /// to remove Circle using Key
+      await controller.removeCircle("circle0");
+
+      /// to remove All Circle in the map
+      await controller.removeAllCircle();
+      */
 
     return AppWidgets.scaffold(context,
         body: Stack(children: [
-          osm(context),
+          osm(context, _id > 0 ? 17 : 12),
           infoBox(context),
         ]),
         navBar: _id > 0 ? editNavBar(context) : createNavBar(context),
