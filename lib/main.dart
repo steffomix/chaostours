@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 //
 import 'package:chaostours/app_loader.dart';
 import 'package:chaostours/logger.dart';
-import 'widget/widgets.dart';
+import 'view/app_widgets.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
