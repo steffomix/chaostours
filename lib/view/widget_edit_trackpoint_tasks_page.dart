@@ -5,7 +5,7 @@ import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/globals.dart';
 import 'package:chaostours/view/app_widgets.dart';
-import 'package:chaostours/model/model_checkbox.dart';
+import 'package:chaostours/checkbox_controller.dart';
 import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/shared/shared.dart';
 import 'package:chaostours/event_manager.dart';
@@ -47,7 +47,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackpointTasks> {
   }
 
   ///
-  Widget createCheckbox(CheckboxModel model) {
+  Widget createCheckbox(CheckboxController model) {
     TextStyle style = TextStyle(
         color: model.enabled ? Colors.black : Colors.grey,
         decoration:
@@ -127,7 +127,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackpointTasks> {
     var checkBoxes = <Widget>[];
     for (var t in ModelTask.getAll()) {
       if (!t.deleted) {
-        checkBoxes.add(createCheckbox(CheckboxModel(
+        checkBoxes.add(createCheckbox(CheckboxController(
             idReference: t.id,
             referenceList: referenceList,
             deleted: t.deleted,

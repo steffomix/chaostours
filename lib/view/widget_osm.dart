@@ -1,6 +1,9 @@
 import 'package:chaostours/model/model_alias.dart';
+import 'package:chaostours/screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 ///
 import 'package:chaostours/logger.dart';
@@ -20,10 +23,16 @@ class _WidgetOsm extends State<WidgetOsm> {
   static final Logger logger = Logger.logger<WidgetOsm>();
 
   GPS _gps = GPS(0, 0);
-  String _address = '';
+  ValueNotifier<String> _address = ValueNotifier<String>('');
   int _id = 0;
+
   bool widgetActive = false;
   bool _init = false;
+
+  /// search
+  String search = '';
+  Duration searchDelay = const Duration(milliseconds: 3000);
+  DateTime lastSearch = DateTime.now();
 
   @override
   void initState() {
@@ -32,90 +41,111 @@ class _WidgetOsm extends State<WidgetOsm> {
 
   @override
   void dispose() {
+    _address.dispose();
     controller.dispose();
     super.dispose();
     widgetActive = false;
   }
 
-  late MapController controller;
+  MapController controller = MapController(initMapWithUserPosition: true);
 
-  Widget osm(BuildContext context, [double zoom = 12]) {
-    return OSMFlutter(
-      androidHotReloadSupport: true,
-      isPicker: true,
-      controller: controller,
-      initZoom: zoom,
-      minZoomLevel: 8,
-      maxZoomLevel: 19,
-      stepZoom: 1.0,
-      userLocationMarker: UserLocationMaker(
-        personMarker: const MarkerIcon(
-          icon: Icon(
-            Icons.location_history_rounded,
-            color: Colors.red,
-            size: 48,
-          ),
-        ),
-        directionArrowMarker: const MarkerIcon(
-          icon: Icon(
-            Icons.double_arrow,
-            size: 48,
-          ),
-        ),
-      ),
-      roadConfiguration: RoadConfiguration(
-        startIcon: const MarkerIcon(
-          icon: Icon(
-            Icons.person,
-            size: 64,
-            color: Colors.brown,
-          ),
-        ),
-        roadColor: Colors.yellowAccent,
-      ),
-      markerOption: MarkerOption(
-          defaultMarker: const MarkerIcon(
-        icon: Icon(
-          Icons.person_pin_circle,
-          color: Colors.blue,
-          size: 56,
-        ),
-      )),
-    );
+  Future<void> lookupGps(String query) async {
+    var t = DateTime.now();
+    if (lastSearch.add(searchDelay).isAfter(t) && query == search) {
+      // return later
+      Future.delayed(searchDelay, () {
+        lookupGps(query);
+      });
+      return;
+    }
+
+    if (query != search) {
+      // search has changed
+      return;
+    }
+
+    /// search
+    lastSearch = DateTime.now();
+    var url = Uri.https('nominatim.openstreetmap.org', '/search',
+        {'format': 'geojson', 'q': query});
+    http.get(url).then((http.Response res) {
+      if (res.body.isEmpty) {
+        return;
+      }
+      logger.log(res.body);
+      if (!res.body.contains("coordinates")) {
+        return;
+      }
+      try {
+        var json = jsonDecode(res.body);
+        if ((json["features"] ?? []).length > 1) {
+          return;
+        }
+        var futures = json["features"];
+        var first = futures?[0];
+        var goemetry = first?["geometry"];
+        var coords = goemetry?["coordinates"];
+        if (coords != null && coords.length > 1) {
+          var lon = coords[0];
+          var lat = coords[1];
+          controller.goToLocation(GeoPoint(latitude: lat, longitude: lon));
+        }
+      } catch (e) {
+        logger.warn(e.toString());
+      }
+    });
   }
 
   Widget infoBox(context) {
-    var boxContent = ListTile(
-      leading: IconButton(
-          icon: const Icon(color: Colors.amber, size: 40, Icons.rotate_left),
-          onPressed: () {
-            controller.getCurrentPositionAdvancedPositionPicker().then((loc) {
-              _gps = GPS(loc.latitude, loc.longitude);
-              controller
-                  .goToLocation(
-                      GeoPoint(latitude: _gps.lat, longitude: _gps.lon))
-                  .then((_) {
-                addr.Address(_gps).lookupAddress().then((address) {
-                  _address = address.toString();
-                  setState(() {});
-                }).onError((error, stackTrace) {
-                  logger.error(error.toString(), stackTrace);
-                });
-              });
-            }).onError((error, stackTrace) {
-              logger.error(error.toString(), stackTrace);
-            });
-          }),
-      title: Text(_address),
-      subtitle: Text('GPS: $_gps'),
-    );
+    var boxContent = Column(children: [
+      ListTile(
+          leading: const Icon(Icons.search),
+          title: TextField(
+            controller: TextEditingController(),
+            onChanged: (val) {
+              lookupGps(val);
+              Future.delayed(
+                  const Duration(milliseconds: 100), () => search = val);
+            },
+          )),
+      ValueListenableBuilder(
+          valueListenable: _address,
+          builder: (context, value, child) => ListTile(
+                leading: IconButton(
+                    icon: const Icon(
+                        color: Colors.amber, size: 40, Icons.rotate_left),
+                    onPressed: () {
+                      controller
+                          .getCurrentPositionAdvancedPositionPicker()
+                          .then((loc) {
+                        _gps = GPS(loc.latitude, loc.longitude);
+                        controller
+                            .goToLocation(GeoPoint(
+                                latitude: _gps.lat, longitude: _gps.lon))
+                            .then((_) {
+                          addr.Address(_gps).lookupAddress().then((address) {
+                            _address.value = address.toString();
+                            //setState(() {});
+                          }).onError((error, stackTrace) {
+                            logger.error(error.toString(), stackTrace);
+                          });
+                        });
+                      }).onError((error, stackTrace) {
+                        logger.error(error.toString(), stackTrace);
+                      });
+                    }),
+                title: Text(_address.value),
+                //subtitle: Text('GPS: $_gps'),
+              ))
+    ]);
 
     return SizedBox(
-        height: 120,
+        height: 140,
         width: 1000,
         child: Container(
             alignment: Alignment.center,
-            decoration: const BoxDecoration(color: Colors.white70),
+            decoration:
+                const BoxDecoration(color: Color.fromARGB(94, 255, 255, 255)),
             child: boxContent));
   }
 
@@ -149,6 +179,15 @@ class _WidgetOsm extends State<WidgetOsm> {
             // do nothing
           }
         });
+  }
+
+  Widget centerAim(context) {
+    double iconsize = 30;
+    var screen = Screen(context);
+    return Positioned(
+        left: screen.width / 2 - iconsize / 2,
+        top: (screen.height - 140) / 2 - iconsize / 2 - 5,
+        child: Icon(Icons.add_circle_outline_outlined, size: iconsize));
   }
 
   BottomNavigationBar createNavBar(context) {
@@ -199,13 +238,13 @@ class _WidgetOsm extends State<WidgetOsm> {
 
   @override
   Widget build(BuildContext context) {
+    _address.dispose();
     _id = ModalRoute.of(context)?.settings.arguments as int? ?? 0;
     if (_id > 0) {
       var alias = ModelAlias.getAlias(_id);
       _gps = GPS(alias.lat, alias.lon);
-      if (_address.isEmpty) {
-        _address = alias.alias;
-      }
+      _address = ValueNotifier<String>(alias.alias);
+      //
       controller = MapController(
           initMapWithUserPosition: false,
           initPosition: GeoPoint(latitude: _gps.lat, longitude: _gps.lon),
@@ -217,18 +256,14 @@ class _WidgetOsm extends State<WidgetOsm> {
           ));
     } else {
       controller = MapController(initMapWithUserPosition: true);
-      if (!_init) {
-        GPS.gps().then(((gps) {
-          _gps = gps;
-          addr.Address(gps).lookupAddress().then((addr.Address address) {
-            _address = address.toString();
-            setState(() {});
-          });
-        })).whenComplete(() {
-          _init = true;
+      GPS.gps().then(((gps) {
+        _gps = gps;
+        addr.Address(gps).lookupAddress().then((addr.Address address) {
+          _address = ValueNotifier<String>(address.toString());
         });
-      }
+      }));
     }
+
     Future.delayed(const Duration(seconds: 2), () async {
       widgetActive = true;
       var i = 0;
@@ -255,15 +290,6 @@ class _WidgetOsm extends State<WidgetOsm> {
             color: color,
             strokeWidth: 10,
           ));
-          /*
-          controller.addMarker(
-              GeoPoint(latitude: alias.lat, longitude: alias.lon),
-              markerIcon: const MarkerIcon(
-                  icon: Icon(
-                Icons.person,
-                size: 64,
-              )));
-              */
         } catch (e, stk) {
           logger.error(e.toString(), stk);
           await Future.delayed(const Duration(seconds: 1));
@@ -288,12 +314,18 @@ class _WidgetOsm extends State<WidgetOsm> {
       /// to remove All Circle in the map
       await controller.removeAllCircle();
       */
+    var osm = OSMFlutter(
+      androidHotReloadSupport: true,
+      isPicker: true,
+      controller: controller,
+      initZoom: _id > 0 ? 17 : 12,
+      minZoomLevel: 8,
+      maxZoomLevel: 19,
+      stepZoom: 1.0,
+    );
 
     return AppWidgets.scaffold(context,
-        body: Stack(children: [
-          osm(context, _id > 0 ? 17 : 12),
-          infoBox(context),
-        ]),
+        body: Stack(children: [osm, centerAim(context), infoBox(context)]),
         navBar: _id > 0 ? editNavBar(context) : createNavBar(context),
         appBar: null);
   }

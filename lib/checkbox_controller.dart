@@ -24,7 +24,7 @@ import 'package:chaostours/model/model_trackpoint.dart';
 ///   }
 ///
 /// ```
-class CheckboxModel {
+class CheckboxController {
   final int idReference;
   String title;
   late bool checked;
@@ -34,7 +34,7 @@ class CheckboxModel {
   int group;
   VoidCallback? onToggle;
   List<int> referenceList;
-  CheckboxModel({
+  CheckboxController({
     required this.idReference,
     required this.referenceList,
     required this.title,

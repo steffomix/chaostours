@@ -9,7 +9,7 @@ import 'package:chaostours/shared/shared.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
-import 'package:chaostours/model/model_checkbox.dart';
+import 'package:chaostours/checkbox_controller.dart';
 //
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/address.dart';
@@ -338,7 +338,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       ...ModelTask.getAll().map((ModelTask task) {
         return editTasks(
             context,
-            CheckboxModel(
+            CheckboxController(
                 idReference: task.id,
                 referenceList: referenceList,
                 title: task.task,
@@ -348,7 +348,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     return list;
   }
 
-  Widget editTasks(BuildContext context, CheckboxModel model) {
+  Widget editTasks(BuildContext context, CheckboxController model) {
     TextStyle style = model.enabled
         ? const TextStyle(color: Colors.black)
         : const TextStyle(color: Colors.grey);
