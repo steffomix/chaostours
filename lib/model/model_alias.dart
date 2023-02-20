@@ -32,7 +32,9 @@ class ModelAlias {
   String alias;
   String notes;
   AliasStatus status;
+  final List<int> idTrackPoint = [];
   final DateTime lastVisited;
+
   int timesVisited;
   int _id = 0;
 
@@ -167,7 +169,12 @@ class ModelAlias {
       }
     }
     list.sort((a, b) => a.sortDistance.compareTo(b.sortDistance));
-    //logger.verbose('Found ${list.length} nearest Alias');
+    return list;
+  }
+
+  static List<ModelAlias> lastVisitedAlias([bool all = false]) {
+    List<ModelAlias> list = [..._table];
+    list.sort((a, b) => a.lastVisited.compareTo(b.lastVisited));
     return list;
   }
 

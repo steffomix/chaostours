@@ -4,12 +4,51 @@ import 'package:flutter/material.dart';
 import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:android_intent_plus/android_intent.dart';
+import 'package:android_intent_plus/flag.dart';
+import 'package:flutter/services.dart';
 
 ///
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/address.dart' as addr;
+import 'package:chaostours/event_manager.dart';
+import 'package:url_launcher/url_launcher_string.dart';
+
+class EventTextfield {
+  final TextEditingController controller;
+  EventTextfield(this.controller);
+}
+
+class WidgetTextField extends StatefulWidget {
+  const WidgetTextField({super.key});
+
+  @override
+  State<WidgetTextField> createState() => _WidgetTextField();
+}
+
+class _WidgetTextField extends State<WidgetTextField> {
+  static final Logger logger = Logger.logger<WidgetTextField>();
+
+  TextEditingController controller = TextEditingController();
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      onChanged: (val) {
+        EventManager.fire<EventTextfield>(EventTextfield(controller));
+        //
+      },
+    );
+  }
+}
 
 ///
 class WidgetOsm extends StatefulWidget {
@@ -21,13 +60,22 @@ class WidgetOsm extends StatefulWidget {
 
 class _WidgetOsm extends State<WidgetOsm> {
   static final Logger logger = Logger.logger<WidgetOsm>();
+  static TextEditingController textController = TextEditingController();
 
+  /// controller
+  MapController controller = MapController(initMapWithUserPosition: true);
+
+  /// map controller position
   GPS _gps = GPS(0, 0);
+
+  /// search textfield
   ValueNotifier<String> _address = ValueNotifier<String>('');
+
+  /// alias id
   int _id = 0;
 
+  /// draw circles
   bool widgetActive = false;
-  bool _init = false;
 
   /// search
   String search = '';
@@ -39,15 +87,22 @@ class _WidgetOsm extends State<WidgetOsm> {
     super.initState();
   }
 
+  _WidgetOsm() {
+    EventManager.listen<EventTextfield>(onTextfieldChanged);
+  }
+
+  void onTextfieldChanged(EventTextfield e) {
+    lookupGps(e.controller.text);
+  }
+
   @override
   void dispose() {
+    EventManager.remove<EventTextfield>(onTextfieldChanged);
     _address.dispose();
     controller.dispose();
     super.dispose();
     widgetActive = false;
   }
-
-  MapController controller = MapController(initMapWithUserPosition: true);
 
   Future<void> lookupGps(String query) async {
     var t = DateTime.now();
@@ -99,43 +154,55 @@ class _WidgetOsm extends State<WidgetOsm> {
   Widget infoBox(context) {
     var boxContent = Column(children: [
       ListTile(
-          leading: const Icon(Icons.search),
+          leading: Stack(children: [
+            const Icon(Icons.search, size: 40),
+            Container(
+                padding: const EdgeInsets.all(10),
+                child: const Text('15', style: TextStyle(fontSize: 8)))
+          ]),
           title: TextField(
-            controller: TextEditingController(),
-            onChanged: (val) {
-              lookupGps(val);
-              Future.delayed(
-                  const Duration(milliseconds: 100), () => search = val);
-            },
-          )),
+              controller: textController,
+              onChanged: (val) {
+                lookupGps(val);
+                Future.delayed(
+                    const Duration(milliseconds: 100), () => search = val);
+              })),
       ValueListenableBuilder(
           valueListenable: _address,
           builder: (context, value, child) => ListTile(
-                leading: IconButton(
-                    icon: const Icon(
-                        color: Colors.amber, size: 40, Icons.rotate_left),
-                    onPressed: () {
+              leading: IconButton(
+                  icon: const Icon(size: 40, Icons.rotate_left),
+                  onPressed: () {
+                    controller
+                        .getCurrentPositionAdvancedPositionPicker()
+                        .then((loc) {
+                      _gps = GPS(loc.latitude, loc.longitude);
                       controller
-                          .getCurrentPositionAdvancedPositionPicker()
-                          .then((loc) {
-                        _gps = GPS(loc.latitude, loc.longitude);
-                        controller
-                            .goToLocation(GeoPoint(
-                                latitude: _gps.lat, longitude: _gps.lon))
-                            .then((_) {
-                          addr.Address(_gps).lookupAddress().then((address) {
-                            _address.value = address.toString();
-                            //setState(() {});
-                          }).onError((error, stackTrace) {
-                            logger.error(error.toString(), stackTrace);
-                          });
+                          .goToLocation(
+                              GeoPoint(latitude: _gps.lat, longitude: _gps.lon))
+                          .then((_) {
+                        addr.Address(_gps).lookupAddress().then((address) {
+                          _address.value = address.toString();
+                          //setState(() {});
+                        }).onError((error, stackTrace) {
+                          logger.error(error.toString(), stackTrace);
                         });
-                      }).onError((error, stackTrace) {
-                        logger.error(error.toString(), stackTrace);
                       });
-                    }),
-                title: Text(_address.value),
-                //subtitle: Text('GPS: $_gps'),
+                    }).onError((error, stackTrace) {
+                      logger.error(error.toString(), stackTrace);
+                    });
+                  }),
+              title: Text(
+                _address.value,
+                maxLines: 3,
+              ),
+              trailing: IconButton(
+                  icon: const Icon(Icons.copy, size: 20),
+                  onPressed: () async {
+                    await Clipboard.setData(
+                        ClipboardData(text: _address.value));
+                  })
+              //subtitle: Text('GPS: $_gps'),
               ))
     ]);
 
@@ -145,28 +212,38 @@ class _WidgetOsm extends State<WidgetOsm> {
         child: Container(
             alignment: Alignment.center,
             decoration:
-                const BoxDecoration(color: Color.fromARGB(94, 255, 255, 255)),
+                const BoxDecoration(color: Color.fromARGB(92, 255, 255, 255)),
             child: boxContent));
+  }
+
+  launchGoogleMaps() {
+    controller.getCurrentPositionAdvancedPositionPicker().then((p) {
+      var gps = GPS.lastGps!;
+      var lat = gps.lat;
+      var lon = gps.lon;
+      var lat1 = p.latitude;
+      var lon1 = p.longitude;
+      var url =
+          'https://www.google.com/maps/dir/?api=1&origin=$lat%2c$lon&destination=$lat1%2c$lon1&travelmode=driving';
+
+      final intent = AndroidIntent(
+          action: 'action_view',
+          data: url,
+          package: 'com.google.android.apps.maps');
+      intent.launch();
+    });
   }
 
   BottomNavigationBar editNavBar(context) {
     return BottomNavigationBar(
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.cancel), label: 'Abbruch'),
-          BottomNavigationBarItem(icon: Icon(Icons.near_me), label: 'Zurück'),
-          BottomNavigationBarItem(icon: Icon(Icons.done), label: 'Speichern')
+          BottomNavigationBarItem(icon: Icon(Icons.done), label: 'Speichern'),
+          BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Google Maps'),
+          BottomNavigationBarItem(icon: Icon(Icons.cancel), label: 'Abbrechen'),
         ],
         onTap: (int id) async {
           switch (id) {
             case 0:
-              Navigator.pop(context);
-              break;
-            case 1:
-              controller.goToLocation(
-                  GeoPoint(latitude: _gps.lat, longitude: _gps.lon));
-
-              break;
-            case 2:
               controller.getCurrentPositionAdvancedPositionPicker().then((pos) {
                 var alias = ModelAlias.getAlias(_id);
                 alias.lat = pos.latitude;
@@ -174,6 +251,17 @@ class _WidgetOsm extends State<WidgetOsm> {
                 ModelAlias.update();
                 AppWidgets.navigate(context, AppRoutes.editAlias, _id);
               });
+              break;
+            case 1:
+              if (GPS.lastGps != null) {
+                launchGoogleMaps();
+              } else {
+                GPS.gps().then((_) => launchGoogleMaps());
+              }
+
+              break;
+            case 2:
+              Navigator.pop(context);
               break;
             default:
             // do nothing
@@ -186,31 +274,21 @@ class _WidgetOsm extends State<WidgetOsm> {
     var screen = Screen(context);
     return Positioned(
         left: screen.width / 2 - iconsize / 2,
-        top: (screen.height - 140) / 2 - iconsize / 2 - 5,
+        top: (screen.height - 130) / 2 - iconsize / 2 - 5,
         child: Icon(Icons.add_circle_outline_outlined, size: iconsize));
   }
 
   BottomNavigationBar createNavBar(context) {
     return BottomNavigationBar(
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.cancel), label: 'Abbruch'),
+          BottomNavigationBarItem(icon: Icon(Icons.done), label: 'Speichern'),
           BottomNavigationBarItem(
               icon: Icon(Icons.home), label: 'Meine Position'),
-          BottomNavigationBarItem(icon: Icon(Icons.done), label: 'Speichern')
+          BottomNavigationBarItem(icon: Icon(Icons.cancel), label: 'Abbruch'),
         ],
         onTap: (int id) async {
           switch (id) {
             case 0:
-              Navigator.pop(context);
-              break;
-            case 1:
-              GPS.gps().then(((gps) {
-                _gps = gps;
-                controller.goToLocation(
-                    GeoPoint(latitude: _gps.lat, longitude: _gps.lon));
-              }));
-              break;
-            case 2:
               controller.getCurrentPositionAdvancedPositionPicker().then((pos) {
                 var alias = ModelAlias(
                     lat: pos.latitude,
@@ -230,6 +308,16 @@ class _WidgetOsm extends State<WidgetOsm> {
                 });
               });
               break;
+            case 1:
+              GPS.gps().then(((gps) {
+                _gps = gps;
+                controller.goToLocation(
+                    GeoPoint(latitude: _gps.lat, longitude: _gps.lon));
+              }));
+              break;
+            case 2:
+              Navigator.pop(context);
+              break;
             default:
             // do nothing
           }
@@ -238,32 +326,28 @@ class _WidgetOsm extends State<WidgetOsm> {
 
   @override
   Widget build(BuildContext context) {
-    _address.dispose();
     _id = ModalRoute.of(context)?.settings.arguments as int? ?? 0;
     if (_id > 0) {
       var alias = ModelAlias.getAlias(_id);
       _gps = GPS(alias.lat, alias.lon);
       _address = ValueNotifier<String>(alias.alias);
       //
-      controller = MapController(
-          initMapWithUserPosition: false,
-          initPosition: GeoPoint(latitude: _gps.lat, longitude: _gps.lon),
-          areaLimit: BoundingBox(
-            east: _gps.lon + 2,
-            north: _gps.lat + 2,
-            south: _gps.lat - 2,
-            west: _gps.lon - 2,
-          ));
+      Future.delayed(
+          const Duration(seconds: 1),
+          () => controller
+              .goToLocation(GeoPoint(latitude: _gps.lat, longitude: _gps.lon)));
     } else {
-      controller = MapController(initMapWithUserPosition: true);
       GPS.gps().then(((gps) {
         _gps = gps;
         addr.Address(gps).lookupAddress().then((addr.Address address) {
           _address = ValueNotifier<String>(address.toString());
         });
-      }));
+      })).onError((e, stk) {
+        _address = ValueNotifier<String>('');
+      });
     }
 
+    /// draw cirles
     Future.delayed(const Duration(seconds: 2), () async {
       widgetActive = true;
       var i = 0;
@@ -298,24 +382,8 @@ class _WidgetOsm extends State<WidgetOsm> {
       }
     });
 
-    /// to draw
-    /*
-      await controller.drawCircle(CircleOSM(
-        key: "circle0",
-        centerPoint: GeoPoint(latitude: 47.4333594, longitude: 8.4680184),
-        radius: 1200.0,
-        color: Colors.red,
-        strokeWidth: 0.3,
-      ));
-
-      /// to remove Circle using Key
-      await controller.removeCircle("circle0");
-
-      /// to remove All Circle in the map
-      await controller.removeAllCircle();
-      */
     var osm = OSMFlutter(
-      androidHotReloadSupport: true,
+      //androidHotReloadSupport: true,
       isPicker: true,
       controller: controller,
       initZoom: _id > 0 ? 17 : 12,

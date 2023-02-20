@@ -41,8 +41,13 @@ double newheight = height - padding.top - padding.bottom;
 
   static List<String> weekDays = ['', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
 
+  /// save battery with cache time
+  static Duration get cacheGpsTime {
+    return const Duration(seconds: 20);
+  }
+
   // durations and distances
-  // skip status check for given time to prevent ugly things
+  // skip status check for given time to prevent mass actions
   static Duration get waitTimeAfterStatusChanged {
     return debugMode
         ? const Duration(seconds: 10)

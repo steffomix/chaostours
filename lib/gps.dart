@@ -2,10 +2,13 @@ import 'dart:async';
 import 'package:geolocator/geolocator.dart' show Position, Geolocator;
 //
 import 'package:chaostours/app_loader.dart';
+import 'package:chaostours/globals.dart';
 import 'package:chaostours/logger.dart';
 
 class GPS {
   static Logger logger = Logger.logger<GPS>();
+
+  static GPS? lastGps;
   static int _nextId = 0;
   final int _id = ++_nextId;
   int get id => _id;
@@ -17,12 +20,19 @@ class GPS {
   GPS(this.lat, this.lon);
 
   static Future<GPS> gps() async {
-    Position pos;
+    /// use cache?
+    var t = DateTime.now();
+    if (lastGps != null &&
+        lastGps!.time.add(Globals.cacheGpsTime).isBefore(t)) {
+      return lastGps!;
+    }
+
     try {
-      pos = await AppLoader.gps();
-      GPS gps = GPS(pos.latitude, pos.longitude);
+      var pos = await AppLoader.gps();
+      var gps = GPS(pos.latitude, pos.longitude);
       gps._time = DateTime.now();
       logger.verbose('GPS #${gps.id} at $gps');
+      lastGps = gps;
       return gps;
     } catch (e, stk) {
       logger.fatal('GPS lookup failed: $e', stk);

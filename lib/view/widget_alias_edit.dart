@@ -37,23 +37,24 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
     var deleted = _deleted!;
 
     return AppWidgets.scaffold(context,
-        navBar: null,
+        navBar: BottomNavigationBar(
+            items: const [
+              // 0 alphabethic
+              BottomNavigationBarItem(
+                  icon: Icon(Icons.done), label: 'Speichern'),
+              // 1 nearest
+              BottomNavigationBarItem(
+                  icon: Icon(Icons.cancel), label: 'Abbrechen'),
+            ],
+            onTap: (int id) {
+              if (id == 1) {
+                ModelAlias.update();
+                Navigator.pop(context);
+              } else if (id == 0) {
+                Navigator.pop(context);
+              }
+            }),
         body: ListView(children: [
-          ///
-          /// ok/add button
-          Center(
-              child: IconButton(
-                  icon: const Icon(Icons.done, size: 50),
-                  onPressed: () {
-                    if (alias.alias.isEmpty) {
-                      alias.alias = 'Alias #${alias.id}';
-                    }
-                    alias.deleted = deleted;
-                    alias.status = _status ?? AliasStatus.restricted;
-                    ModelAlias.write();
-                    AppWidgets.navigate(context, AppRoutes.listAlias);
-                  })),
-
           /// aliasname
           Container(
               padding: const EdgeInsets.all(10),
@@ -62,8 +63,8 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                 onChanged: ((value) {
                   alias.alias = value;
                 }),
-                maxLines: 1,
-                minLines: 1,
+                maxLines: 3,
+                minLines: 3,
                 controller: TextEditingController(text: alias.alias),
               )),
 
@@ -74,10 +75,12 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                 padding: const EdgeInsets.all(10),
                 child: ElevatedButton(
                   child: ListTile(
-                      leading: const Icon(Icons.near_me),
-                      title: Text('GPS: ${alias.lat}, ${alias.lon}')),
-
-                  //Text('GPS: ${alias.lat}, ${alias.lon}'),
+                      leading: const Icon(
+                        Icons.near_me,
+                        size: 40,
+                      ),
+                      title: Text(
+                          'Latitude/Breitengrad:\n${alias.lat}\n\nLongitude/Längengrad:\n${alias.lon}')),
                   onPressed: () {
                     ///
                     Navigator.pushNamed(context, AppRoutes.osm.route,
@@ -116,6 +119,10 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
 
                   }
                 }),
+                onSubmitted: (value) {
+                  alias.radius = int.parse(value);
+                  ModelAlias.update();
+                },
                 maxLines: 1, //
                 minLines: 1,
                 controller:
