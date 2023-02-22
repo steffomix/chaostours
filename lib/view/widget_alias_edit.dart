@@ -38,6 +38,11 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
 
     return AppWidgets.scaffold(context,
         navBar: BottomNavigationBar(
+            selectedFontSize: 14,
+            unselectedFontSize: 14,
+            backgroundColor: AppColors.yellow.color,
+            selectedItemColor: AppColors.black.color,
+            unselectedItemColor: AppColors.black.color,
             items: const [
               // 0 alphabethic
               BottomNavigationBarItem(

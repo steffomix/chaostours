@@ -69,6 +69,7 @@ dependencies:
   flutter_osm_plugin: ^0.42.0
   bubble: ^1.2.1
   android_intent_plus: ^3.1.6
+  loading_animation_widget: ^1.2.0+4
 
 dev_dependencies:
   flutter_test:

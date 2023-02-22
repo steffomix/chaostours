@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 
 ///
 import 'package:chaostours/util.dart' as util;
@@ -17,6 +18,17 @@ import 'package:chaostours/view/widget_user_edit.dart';
 import 'package:chaostours/view/widget_alias_edit.dart';
 import 'package:chaostours/view/widget_osm.dart';
 
+enum AppColors {
+  yellow(Colors.amber),
+  green(Color(0xFF4b830d)),
+  black(Color.fromARGB(255, 51, 51, 51)),
+  white(Color(0xFFDDDDDD)),
+  white54(Colors.white54);
+
+  final Color color;
+  const AppColors(this.color);
+}
+
 /// use value instead of name to get the right
 enum AppRoutes {
   home('/'),
@@ -30,7 +42,7 @@ enum AppRoutes {
   //
   listAlias('/listAlias'),
   editAlias('/listAlias/editAlias'),
-  createAlias('/listAlias/editAlias/createAlias'),
+  listAliasTrackpoints('/listAlias/editAlias/listAliasTrackpoints'),
   //
   listUsers('/listUsers'),
   editUser('/listUsers/editUser'),
@@ -112,6 +124,11 @@ class AppWidgets {
 
   static BottomNavigationBar bottomNavBar(context) {
     return BottomNavigationBar(
+        selectedFontSize: 14,
+        unselectedFontSize: 14,
+        backgroundColor: AppColors.yellow.color,
+        selectedItemColor: AppColors.black.color,
+        unselectedItemColor: AppColors.black.color,
         items: const [
           BottomNavigationBarItem(
               icon: Icon(Icons.keyboard_arrow_left), label: 'x'),
@@ -134,6 +151,11 @@ class AppWidgets {
         ' ${timeStart.day}.${timeStart.month}.${timeStart.year}';
     String duration = util.timeElapsed(timeStart, timeEnd, false);
     return '$day, ${timeStart.hour}:${timeStart.minute} - ${timeEnd.hour}:${timeEnd.minute}\n ($duration)';
+  }
+
+  static Widget loading({double? size, Color? color}) {
+    return LoadingAnimationWidget.staggeredDotsWave(
+        color: color ?? AppColors.black.color, size: size ?? 30);
   }
 }
 

@@ -65,23 +65,13 @@ class _WidgetAliasList extends State<WidgetAliasList> {
     return IconButton(
       icon: const Icon(Icons.info_outline_rounded, size: 30),
       onPressed: () {
-        Navigator.pushNamed(context, AppRoutes.listAlias.route,
+        Navigator.pushNamed(context, AppRoutes.editAlias.route,
             arguments: alias.id);
       },
     );
   }
 
-  Widget btnEdit(BuildContext context, alias) {
-    return IconButton(
-        icon: const Icon(Icons.edit, size: 30),
-        onPressed: () {
-          Navigator.pushNamed(context, AppRoutes.editAlias.route,
-              arguments: alias.id);
-        });
-  }
-
   Widget body(BuildContext context) {
-    var screen = Screen(context);
     _id = ModalRoute.of(context)?.settings.arguments as int? ?? 0;
     var list = <ModelAlias>[];
     var select = _listMode == 1
@@ -116,23 +106,11 @@ class _WidgetAliasList extends State<WidgetAliasList> {
 
     ///
     for (var alias in list) {
-      widgets.add(Table(columnWidths: {
-        0: const FixedColumnWidth(50),
-        1: FixedColumnWidth(screen.width - 50)
-      }, children: [
-        TableRow(children: [
-          TableCell(
-              verticalAlignment: TableCellVerticalAlignment.bottom,
-              child: btnInfo(context, alias)),
-          TableCell(child: title(context, alias)),
-        ]),
-        TableRow(children: [
-          TableCell(
-              verticalAlignment: TableCellVerticalAlignment.top,
-              child: btnEdit(context, alias)),
-          TableCell(child: subtitle(context, alias)),
-        ]),
-      ]));
+      widgets.add(ListTile(
+        leading: btnInfo(context, alias),
+        title: title(context, alias),
+        subtitle: subtitle(context, alias),
+      ));
       widgets.add(AppWidgets.divider());
     }
     return ListView(children: widgets);
@@ -140,13 +118,17 @@ class _WidgetAliasList extends State<WidgetAliasList> {
 
   BottomNavigationBar navBar(BuildContext context) {
     return BottomNavigationBar(
+        selectedFontSize: 14,
+        unselectedFontSize: 14,
+        backgroundColor: AppColors.yellow.color,
+        selectedItemColor: AppColors.black.color,
+        unselectedItemColor: AppColors.black.color,
         items: const [
           // 0 alphabethic
           BottomNavigationBarItem(
               icon: Icon(Icons.timer), label: 'Zuletzt besucht'),
           // 1 nearest
-          BottomNavigationBarItem(
-              icon: Icon(Icons.near_me), label: 'In der Nähe'),
+          BottomNavigationBarItem(icon: Icon(Icons.near_me), label: 'In Nähe'),
         ],
         onTap: (int id) {
           _listMode = id;
