@@ -5,17 +5,18 @@ import 'package:loading_animation_widget/loading_animation_widget.dart';
 ///
 import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/logger.dart';
+import 'package:chaostours/globals.dart';
 import 'package:chaostours/view/widget_tracking_page.dart';
 import 'package:chaostours/view/widget_logger_page.dart';
 import 'package:chaostours/view/widget_permissions_page.dart';
 import 'package:chaostours/view/widget_edit_trackpoint_tasks_page.dart';
-import 'package:chaostours/globals.dart';
 import 'package:chaostours/view/widget_user_list.dart';
 import 'package:chaostours/view/widget_task_list.dart';
 import 'package:chaostours/view/widget_alias_list.dart';
 import 'package:chaostours/view/widget_task_edit.dart';
 import 'package:chaostours/view/widget_user_edit.dart';
 import 'package:chaostours/view/widget_alias_edit.dart';
+import 'package:chaostours/view/widget_alias_trackpoint_list.dart';
 import 'package:chaostours/view/widget_osm.dart';
 
 enum AppColors {
@@ -88,6 +89,8 @@ class AppWidgets {
         // alias
         AppRoutes.listAlias.route: (context) => const WidgetAliasList(),
         AppRoutes.editAlias.route: (context) => const WidgetAliasEdit(),
+        AppRoutes.listAliasTrackpoints.route: (context) =>
+            const WidgetAliasTrackpoint(),
         // osm
         AppRoutes.osm.route: (context) => const WidgetOsm(),
       },

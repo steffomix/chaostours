@@ -182,6 +182,16 @@ class ModelTrackPoint {
     return list.reversed.toList();
   }
 
+  static List<ModelTrackPoint> byAlias(int id) {
+    var list = <ModelTrackPoint>[];
+    for (var item in _table.reversed) {
+      if (item.idAlias.contains(id)) {
+        list.add(item);
+      }
+    }
+    return list;
+  }
+
   static List<ModelTrackPoint> lastVisited(GPS gps, {int max = 30}) {
     List<ModelTrackPoint> list = [];
     List<ModelAlias> alias = ModelAlias.nextAlias(gps);

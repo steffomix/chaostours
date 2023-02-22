@@ -51,8 +51,7 @@ class _WidgetAliasList extends State<WidgetAliasList> {
         (alias.alias.length / 50).round() + (alias.alias.split('\n').length);
     return TextField(
         style: const TextStyle(fontSize: 12),
-        decoration: const InputDecoration(
-            hintText: 'Notizen', border: InputBorder.none),
+        decoration: const InputDecoration(border: InputBorder.none),
         minLines: lines,
         maxLines: lines + 2,
         controller: TextEditingController(text: alias.notes),
@@ -65,7 +64,7 @@ class _WidgetAliasList extends State<WidgetAliasList> {
     return IconButton(
       icon: const Icon(Icons.info_outline_rounded, size: 30),
       onPressed: () {
-        Navigator.pushNamed(context, AppRoutes.editAlias.route,
+        Navigator.pushNamed(context, AppRoutes.listAliasTrackpoints.route,
             arguments: alias.id);
       },
     );
@@ -107,7 +106,7 @@ class _WidgetAliasList extends State<WidgetAliasList> {
     ///
     for (var alias in list) {
       widgets.add(ListTile(
-        leading: btnInfo(context, alias),
+        trailing: btnInfo(context, alias),
         title: title(context, alias),
         subtitle: subtitle(context, alias),
       ));
