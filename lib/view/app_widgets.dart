@@ -1,3 +1,4 @@
+import 'package:chaostours/model/model_alias.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
@@ -20,11 +21,35 @@ import 'package:chaostours/view/widget_alias_trackpoint_list.dart';
 import 'package:chaostours/view/widget_osm.dart';
 
 enum AppColors {
+  /// theme colors
   yellow(Colors.amber),
   green(Color(0xFF4b830d)),
+
+  /// icons
   black(Color.fromARGB(255, 51, 51, 51)),
+
+  ///Background
   white(Color(0xFFDDDDDD)),
-  white54(Colors.white54);
+
+  /// transparent background
+  white54(Colors.white54),
+
+  /// alias colors
+  aliasRestricted(Colors.red),
+  aliasPrivate(Colors.blue),
+  aliasPubplic(Colors.green);
+
+  static Color aliasStatusColor(AliasStatus status) {
+    Color color;
+    if (status == AliasStatus.privat) {
+      color = AppColors.aliasPrivate.color;
+    } else if (status == AliasStatus.restricted) {
+      color = AppColors.aliasRestricted.color;
+    } else {
+      color = AppColors.aliasPubplic.color;
+    }
+    return color;
+  }
 
   final Color color;
   const AppColors(this.color);

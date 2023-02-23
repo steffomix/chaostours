@@ -16,9 +16,9 @@ class WidgetAliasEdit extends StatefulWidget {
 class _WidgetAliasEdit extends State<WidgetAliasEdit> {
   static final Logger logger = Logger.logger<WidgetAliasEdit>();
 
-  bool? _deleted;
-  ModelAlias? _alias;
-  AliasStatus? _status;
+  late bool _deleted;
+  late ModelAlias _alias;
+  late AliasStatus _status;
   @override
   void dispose() {
     super.dispose();
@@ -29,12 +29,12 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
     final id = ModalRoute.of(context)!.settings.arguments as int;
 
     ///
-    _alias ??= ModelAlias.getAlias(id);
-    var alias = _alias!;
-    _deleted ??= alias.deleted;
-    _status ??= alias.status;
+    _alias = ModelAlias.getAlias(id);
+    var alias = _alias;
+    _deleted = alias.deleted;
+    _status = alias.status;
 
-    var deleted = _deleted!;
+    var deleted = _deleted;
 
     return AppWidgets.scaffold(context,
         navBar: BottomNavigationBar(
@@ -52,9 +52,10 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                   icon: Icon(Icons.cancel), label: 'Abbrechen'),
             ],
             onTap: (int id) {
-              if (id == 1) {
-                ModelAlias.update();
-                Navigator.pop(context);
+              if (id == 0) {
+                alias.deleted = _deleted;
+                ModelAlias.update().then(
+                    (_) => AppWidgets.navigate(context, AppRoutes.listAlias));
               } else if (id == 0) {
                 Navigator.pop(context);
               }
@@ -155,10 +156,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                     leading: Radio<AliasStatus>(
                         value: AliasStatus.public,
                         groupValue: _status,
-                        onChanged: (AliasStatus? val) {
-                          _status = val;
-                          setState(() {});
-                        })),
+                        onChanged: (AliasStatus? val) => setStatus(val))),
                 ListTile(
                     title: const Text('Privat'),
                     subtitle: const Text(
@@ -170,10 +168,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                     leading: Radio<AliasStatus>(
                         value: AliasStatus.privat,
                         groupValue: _status,
-                        onChanged: (AliasStatus? val) {
-                          _status = val;
-                          setState(() {});
-                        })),
+                        onChanged: (AliasStatus? val) => setStatus(val))),
                 ListTile(
                     title: const Text('Geheim'),
                     subtitle: const Text(
@@ -187,10 +182,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                     leading: Radio<AliasStatus>(
                         value: AliasStatus.restricted,
                         groupValue: _status,
-                        onChanged: (AliasStatus? val) {
-                          _status = val;
-                          setState(() {});
-                        }))
+                        onChanged: (AliasStatus? val) => setStatus(val)))
               ])),
           AppWidgets.divider(),
 
@@ -204,12 +196,16 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
               leading: Checkbox(
                 value: deleted,
                 onChanged: (val) {
-                  setState(() {
-                    _deleted = val;
-                  });
-                  alias.deleted = val ?? false;
+                  _deleted = val ?? false;
+                  setState(() {});
                 },
               ))
         ]));
+  }
+
+  void setStatus(AliasStatus? val) {
+    setState(() {
+      _status = val ?? AliasStatus.restricted;
+    });
   }
 }
