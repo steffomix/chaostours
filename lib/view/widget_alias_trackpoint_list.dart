@@ -26,6 +26,8 @@ class _WidgetAliasTrackpoint extends State<WidgetAliasTrackpoint> {
   static int mode = 0;
   int _id = 0;
   List _tpList = <ModelTrackPoint>[];
+  String _search = '';
+  TextEditingController controller = TextEditingController();
 
   List trackPointList = <ModelTrackPoint>[];
   @override
@@ -49,6 +51,20 @@ class _WidgetAliasTrackpoint extends State<WidgetAliasTrackpoint> {
     ModelTrackPoint.open().then((_) {
       setState(() {});
     });
+  }
+
+  Widget search(BuildContext context) {
+    return TextField(
+      controller: controller,
+      minLines: 1,
+      maxLines: 1,
+      decoration: const InputDecoration(
+          icon: Icon(Icons.search, size: 30), border: InputBorder.none),
+      onChanged: (value) {
+        _search = value.toLowerCase();
+        setState(() {});
+      },
+    );
   }
 
   Widget alias(BuildContext context) {
@@ -77,18 +93,6 @@ class _WidgetAliasTrackpoint extends State<WidgetAliasTrackpoint> {
         ));
   }
 
-  Widget body(BuildContext context) {
-    return ListView.builder(
-        itemCount: _tpList.length + 1,
-        itemBuilder: (context, id) {
-          if (id == 0) {
-            return alias(context);
-          } else {
-            return trackPoint(context, _tpList[id - 1]);
-          }
-        });
-  }
-
   Widget trackPoint(BuildContext context, ModelTrackPoint tp) {
     var date = '${Globals.weekDays[tp.timeStart.weekday]}. '
         '${tp.timeStart.day}.${tp.timeStart.month}.${tp.timeStart.year}';
@@ -108,16 +112,23 @@ class _WidgetAliasTrackpoint extends State<WidgetAliasTrackpoint> {
               Navigator.pushNamed(context, AppRoutes.editTrackingTasks.route);
             },
           )),
-      ListTile(
-        title: const Text('Personal'),
-        subtitle: Text(users.isEmpty ? '-' : '- ${users.join('\n- ')}'),
-      ),
-      ListTile(
-        title: const Text('Aufgaben'),
-        subtitle: Text(tasks.isEmpty ? '-' : '- ${tasks.join('\n- ')}'),
-      )
     ];
-    if (true) {
+
+    if (users.isNotEmpty) {
+      widgets.add(ListTile(
+        title: const Text('Aufgaben'),
+        subtitle: Text('- ${users.join('\n- ')}'),
+      ));
+    }
+
+    if (tasks.isNotEmpty) {
+      widgets.add(ListTile(
+        title: const Text('Personal'),
+        subtitle: Text('- ${tasks.join('\n- ')}'),
+      ));
+    }
+
+    if (tp.notes.trim().isNotEmpty) {
       widgets.add(ListTile(
           title: const Text('Notizen'),
           subtitle: Text(tp.notes),
@@ -130,11 +141,67 @@ class _WidgetAliasTrackpoint extends State<WidgetAliasTrackpoint> {
     return Column(children: widgets);
   }
 
+  Widget body(BuildContext context) {
+    return ListView.builder(
+        itemCount: _tpList.length + 1,
+        itemBuilder: (context, id) {
+          if (id == 0) {
+            return Container(
+                padding: const EdgeInsets.only(bottom: 15),
+                child: Column(children: [search(context), alias(context)]));
+          } else {
+            return trackPoint(context, _tpList[id - 1]);
+          }
+        });
+  }
+
   @override
   Widget build(BuildContext context) {
     _id = ModalRoute.of(context)!.settings.arguments as int;
 
-    _tpList = ModelTrackPoint.byAlias(_id);
+    if (_search.trim().isEmpty) {
+      _tpList = ModelTrackPoint.byAlias(_id);
+    } else {
+      _tpList.clear();
+
+      /// pre-search idUser and idTask
+      List<int> hasTask = [];
+      List<int> hasUser = [];
+      for (var item in ModelTask.getAll()) {
+        if (item.task.toLowerCase().contains(_search)) {
+          hasTask.add(item.id);
+        }
+      }
+      for (var item in ModelUser.getAll()) {
+        if (item.user.toLowerCase().contains(_search)) {
+          hasUser.add(item.id);
+        }
+      }
+
+      /// begin search
+      for (var item in ModelTrackPoint.byAlias(_id)) {
+        var found = false;
+        if (item.notes.toLowerCase().contains(_search)) {
+          _tpList.add(item);
+          continue;
+        }
+        for (var id in hasTask) {
+          if (item.idTask.contains(id)) {
+            _tpList.add(item);
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          for (var id in hasUser) {
+            if (item.idUser.contains(id)) {
+              _tpList.add(item);
+              break;
+            }
+          }
+        }
+      }
+    }
 
     if (ModelTrackPoint.length == 0) {
       return Scaffold(

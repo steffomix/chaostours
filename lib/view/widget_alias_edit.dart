@@ -16,11 +16,15 @@ class WidgetAliasEdit extends StatefulWidget {
 class _WidgetAliasEdit extends State<WidgetAliasEdit> {
   static final Logger logger = Logger.logger<WidgetAliasEdit>();
 
-  late bool _deleted;
-  late ModelAlias _alias;
-  late AliasStatus _status;
+  ValueNotifier<bool> modified = ValueNotifier<bool>(false);
+  late ModelAlias alias;
+  TextEditingController addressController = TextEditingController();
+  TextEditingController notesController = TextEditingController();
+  TextEditingController radiusController = TextEditingController();
+
   @override
   void dispose() {
+    modified.dispose();
     super.dispose();
   }
 
@@ -29,31 +33,37 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
     final id = ModalRoute.of(context)!.settings.arguments as int;
 
     ///
-    _alias = ModelAlias.getAlias(id);
-    var alias = _alias;
-    _deleted = alias.deleted;
-    _status = alias.status;
+    alias = ModelAlias.getAlias(id);
 
-    var deleted = _deleted;
+    addressController.text = alias.alias;
+    notesController.text = alias.notes;
+    radiusController.text = alias.radius.toString();
 
     return AppWidgets.scaffold(context,
         navBar: BottomNavigationBar(
+            fixedColor: AppColors.black.color,
             selectedFontSize: 14,
             unselectedFontSize: 14,
             backgroundColor: AppColors.yellow.color,
-            selectedItemColor: AppColors.black.color,
-            unselectedItemColor: AppColors.black.color,
-            items: const [
+            items: [
               // 0 alphabethic
               BottomNavigationBarItem(
-                  icon: Icon(Icons.done), label: 'Speichern'),
+                  icon: ValueListenableBuilder(
+                      valueListenable: modified,
+                      builder: ((context, value, child) {
+                        return Icon(Icons.done,
+                            size: 30,
+                            color: modified.value == true
+                                ? AppColors.black.color
+                                : AppColors.white54.color);
+                      })),
+                  label: 'Speichern'),
               // 1 nearest
-              BottomNavigationBarItem(
+              const BottomNavigationBarItem(
                   icon: Icon(Icons.cancel), label: 'Abbrechen'),
             ],
             onTap: (int id) {
               if (id == 0) {
-                alias.deleted = _deleted;
                 ModelAlias.update().then(
                     (_) => AppWidgets.navigate(context, AppRoutes.listAlias));
               } else if (id == 0) {
@@ -68,10 +78,11 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                 decoration: const InputDecoration(label: Text('Alias/Adresse')),
                 onChanged: ((value) {
                   alias.alias = value;
+                  modify();
                 }),
                 maxLines: 3,
                 minLines: 3,
-                controller: TextEditingController(text: alias.alias),
+                controller: addressController,
               )),
 
           /// gps
@@ -88,7 +99,6 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                       title: Text(
                           'Latitude/Breitengrad:\n${alias.lat}\n\nLongitude/Längengrad:\n${alias.lon}')),
                   onPressed: () {
-                    ///
                     Navigator.pushNamed(context, AppRoutes.osm.route,
                         arguments: alias.id);
                   },
@@ -104,7 +114,11 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                 decoration: const InputDecoration(label: Text('Notizen')),
                 maxLines: null,
                 minLines: 3,
-                controller: TextEditingController(text: alias.notes),
+                controller: notesController,
+                onChanged: (value) {
+                  modify();
+                  alias.notes = value.trim();
+                },
               )),
 
           /// radius
@@ -120,19 +134,15 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                 onChanged: ((value) {
                   try {
                     alias.radius = int.parse(value);
+                    modify();
                   } catch (e) {
                     //
 
                   }
                 }),
-                onSubmitted: (value) {
-                  alias.radius = int.parse(value);
-                  ModelAlias.update();
-                },
                 maxLines: 1, //
                 minLines: 1,
-                controller:
-                    TextEditingController(text: alias.radius.toString()),
+                controller: radiusController,
               )),
 
           /// type
@@ -155,8 +165,9 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                     ),
                     leading: Radio<AliasStatus>(
                         value: AliasStatus.public,
-                        groupValue: _status,
-                        onChanged: (AliasStatus? val) => setStatus(val))),
+                        groupValue: alias.status,
+                        onChanged: (AliasStatus? val) =>
+                            setStatus(context, val))),
                 ListTile(
                     title: const Text('Privat'),
                     subtitle: const Text(
@@ -167,8 +178,9 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                     ),
                     leading: Radio<AliasStatus>(
                         value: AliasStatus.privat,
-                        groupValue: _status,
-                        onChanged: (AliasStatus? val) => setStatus(val))),
+                        groupValue: alias.status,
+                        onChanged: (AliasStatus? val) =>
+                            setStatus(context, val))),
                 ListTile(
                     title: const Text('Geheim'),
                     subtitle: const Text(
@@ -181,8 +193,9 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                     ),
                     leading: Radio<AliasStatus>(
                         value: AliasStatus.restricted,
-                        groupValue: _status,
-                        onChanged: (AliasStatus? val) => setStatus(val)))
+                        groupValue: alias.status,
+                        onChanged: (AliasStatus? val) =>
+                            setStatus(context, val)))
               ])),
           AppWidgets.divider(),
 
@@ -194,18 +207,21 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                 softWrap: true,
               ),
               leading: Checkbox(
-                value: deleted,
+                value: alias.deleted,
                 onChanged: (val) {
-                  _deleted = val ?? false;
-                  setState(() {});
+                  alias.deleted = val ?? false;
+                  modify();
                 },
               ))
         ]));
   }
 
-  void setStatus(AliasStatus? val) {
-    setState(() {
-      _status = val ?? AliasStatus.restricted;
-    });
+  void modify() {
+    modified.value = true;
+  }
+
+  void setStatus(BuildContext context, AliasStatus? val) {
+    alias.status = val ?? AliasStatus.restricted;
+    modified.value = true;
   }
 }

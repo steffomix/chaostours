@@ -76,9 +76,10 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
 
           /// deleted
           ListTile(
-              title: const Text('Deaktiviert / gelöscht'),
+              title: const Text('Deaktiviert'),
               subtitle: const Text(
-                'Definiert ob diese Aufgabe gelistet und auswählbar ist',
+                'Definiert ob diese Aufgabe sichtbar ist. '
+                '\nBereits zugewiesene Aufgaben bleiben grundsätzlich sichtbar.',
                 softWrap: true,
               ),
               leading: Checkbox(
