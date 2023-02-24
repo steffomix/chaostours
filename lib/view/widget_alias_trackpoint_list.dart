@@ -116,14 +116,14 @@ class _WidgetAliasTrackpoint extends State<WidgetAliasTrackpoint> {
 
     if (users.isNotEmpty) {
       widgets.add(ListTile(
-        title: const Text('Aufgaben'),
+        title: const Text('Personal'),
         subtitle: Text('- ${users.join('\n- ')}'),
       ));
     }
 
     if (tasks.isNotEmpty) {
       widgets.add(ListTile(
-        title: const Text('Personal'),
+        title: const Text('Arbeiten'),
         subtitle: Text('- ${tasks.join('\n- ')}'),
       ));
     }
@@ -216,26 +216,7 @@ class _WidgetAliasTrackpoint extends State<WidgetAliasTrackpoint> {
                     AppWidgets.loading(),
                   ])));
     } else {
-      return Scaffold(
-          appBar: AppWidgets.appBar(context),
-          body: body(context),
-          bottomNavigationBar: BottomNavigationBar(
-              selectedFontSize: 14,
-              unselectedFontSize: 14,
-              backgroundColor: AppColors.yellow.color,
-              selectedItemColor: AppColors.black.color,
-              unselectedItemColor: AppColors.black.color,
-              items: const [
-                // 0 alphabethic
-                BottomNavigationBarItem(
-                    icon: Icon(Icons.timer), label: 'Zuletzt besucht'),
-                // 1 nearest
-                BottomNavigationBarItem(
-                    icon: Icon(Icons.near_me), label: 'In Nähe'),
-              ],
-              onTap: (int id) {
-                var m = mode;
-              }));
+      return Scaffold(appBar: AppWidgets.appBar(context), body: body(context));
     }
   }
 }

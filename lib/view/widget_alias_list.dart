@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 ///
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/model/model_alias.dart';
+import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/screen.dart';
 
@@ -29,31 +30,42 @@ class _WidgetAliasList extends State<WidgetAliasList> {
     super.dispose();
   }
 
-  Widget title(BuildContext context, alias) {
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  Widget title(BuildContext context, ModelAlias alias) {
     var lines =
         (alias.alias.length / 50).round() + (alias.alias.split('\n').length);
-    return TextField(
-        //style: const TextStyle(fontSize: 10),
-        decoration: const InputDecoration(
-            hintText: 'Alias Bezeichnung', border: InputBorder.none),
-        minLines: lines,
-        maxLines: lines + 2,
-        controller: TextEditingController(text: alias.alias),
-        onChanged: ((value) {
-          if (value.isNotEmpty) {
-            alias.alias = value;
-          }
-        }));
+    int dur = DateTime.now().difference(alias.lastVisited).inDays;
+    int count = ModelTrackPoint.countTask(alias.id);
+    return ListTile(
+        subtitle: Text('${count}x, vor $dur Tagen'),
+        title: TextField(
+            readOnly: true,
+            decoration: const InputDecoration(
+                hintText: 'Alias Bezeichnung', border: InputBorder.none),
+            minLines: lines,
+            maxLines: lines + 2,
+            controller: TextEditingController(text: alias.alias),
+            onChanged: ((value) {
+              if (value.isNotEmpty) {
+                alias.alias = value;
+              }
+            })));
   }
 
   Widget subtitle(BuildContext context, alias) {
     var lines =
         (alias.alias.length / 50).round() + (alias.alias.split('\n').length);
     return TextField(
+        readOnly: true,
         style: const TextStyle(fontSize: 12),
-        decoration: const InputDecoration(border: InputBorder.none),
-        minLines: lines,
-        maxLines: lines + 2,
+        decoration:
+            const InputDecoration(border: InputBorder.none, isDense: true),
+        minLines: 1,
+        maxLines: lines,
         controller: TextEditingController(text: alias.notes),
         onChanged: ((value) {
           alias.notes = value;
@@ -71,11 +83,25 @@ class _WidgetAliasList extends State<WidgetAliasList> {
     );
   }
 
+  Widget searchWidget(BuildContext context) {
+    return TextField(
+      controller: controller,
+      minLines: 1,
+      maxLines: 1,
+      decoration: const InputDecoration(
+          icon: Icon(Icons.search, size: 30), border: InputBorder.none),
+      onChanged: (value) {
+        search = value;
+        setState(() {});
+      },
+    );
+  }
+
   Widget body(BuildContext context) {
     _id = ModalRoute.of(context)?.settings.arguments as int? ?? 0;
     var list = <ModelAlias>[];
     var select = _listMode == 1
-        ? ModelAlias.nextAlias(_gps, true)
+        ? ModelAlias.nextAlias(gps: _gps, all: true)
         : ModelAlias.lastVisitedAlias(true);
 
     for (var alias in select) {
@@ -88,41 +114,41 @@ class _WidgetAliasList extends State<WidgetAliasList> {
     }
 
     var widgets = <Widget>[];
-    var searchWidget = TextField(
-      controller: controller,
-      minLines: 1,
-      maxLines: 1,
-      decoration: const InputDecoration(
-          icon: Icon(Icons.search, size: 30), border: InputBorder.none),
-      onChanged: (value) {
-        search = value;
-        setState(() {});
-      },
-    );
 
     ///
-    widgets.add(searchWidget);
+    widgets.add(searchWidget(context));
     widgets.add(AppWidgets.divider());
 
-    ///
-    for (var alias in list) {
-      widgets.add(ListTile(
-        trailing: btnInfo(context, alias),
-        title: title(context, alias),
-        subtitle: subtitle(context, alias),
-      ));
-      widgets.add(AppWidgets.divider());
-    }
-    return ListView(children: widgets);
+    return ListView.builder(
+        itemCount: list.length + 1,
+        itemBuilder: (BuildContext context, int id) {
+          if (id == 0) {
+            return ListBody(
+                children: [searchWidget(context), AppWidgets.divider()]);
+          }
+          var alias = list[id - 1];
+          return ListBody(children: [
+            alias.notes.trim().isEmpty
+                ? ListTile(
+                    trailing: btnInfo(context, alias),
+                    title: title(context, alias))
+                : ListTile(
+                    trailing: btnInfo(context, alias),
+                    title: title(context, alias),
+                    subtitle: subtitle(context, alias),
+                  ),
+            AppWidgets.divider()
+          ]);
+        });
   }
 
+  int selectedNavBarItem = 0;
   BottomNavigationBar navBar(BuildContext context) {
     return BottomNavigationBar(
-        selectedFontSize: 14,
-        unselectedFontSize: 14,
-        backgroundColor: AppColors.yellow.color,
-        selectedItemColor: AppColors.black.color,
+        selectedItemColor: AppColors.green.color,
         unselectedItemColor: AppColors.black.color,
+        currentIndex: selectedNavBarItem,
+        backgroundColor: AppColors.yellow.color,
         items: const [
           // 0 alphabethic
           BottomNavigationBarItem(
@@ -131,6 +157,7 @@ class _WidgetAliasList extends State<WidgetAliasList> {
           BottomNavigationBarItem(icon: Icon(Icons.near_me), label: 'In Nähe'),
         ],
         onTap: (int id) {
+          selectedNavBarItem = id;
           _listMode = id;
           if (id == 1) {
             GPS.gps().then((GPS gps) {

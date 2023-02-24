@@ -157,20 +157,38 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                 ..trackPoints = runningTrackPoints
                 ..timeStart = runningTrackPoints.last.time
                 ..timeEnd = runningTrackPoints.first.time
-                ..idAlias = ModelAlias.nextAlias(runningTrackPoints.first)
+                ..idAlias = ModelAlias.nextAlias(gps: runningTrackPoints.first)
                     .map((e) => e.id)
                     .toList()
                 ..idTask = ModelTrackPoint.pendingTrackPoint.idTask
                 ..notes = ModelTrackPoint.pendingTrackPoint.notes;
             } else {
+              /// update last visited in ModelAlias
+              if (currentStatus == TrackingStatus.standing) {
+                for (var item
+                    in ModelAlias.nextAlias(gps: runningTrackPoints.first)) {
+                  if (!item.deleted) {
+                    item.lastVisited = DateTime.now();
+                  }
+                }
+                ModelAlias.write();
+              }
+
+              /// notify edit page
               await EventManager.fire<EventOnTrackingStatusChanged>(
                   EventOnTrackingStatusChanged(
                       ModelTrackPoint.pendingTrackPoint));
+
+              /// create new Trackpoint
               ModelTrackPoint.pendingTrackPoint = ModelTrackPoint(
                   gps: runningTrackPoints.last,
                   trackPoints: runningTrackPoints,
                   idAlias: <int>[],
                   timeStart: runningTrackPoints.last.time);
+
+              /// add preselected users
+              ModelTrackPoint.pendingTrackPoint.idUser
+                  .addAll(Globals.preselectedUsers);
               lastStatus = currentStatus;
               _controller = TextEditingController(
                   text: ModelTrackPoint.pendingTrackPoint.notes);
@@ -196,7 +214,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     ModelTrackPoint tp = ModelTrackPoint(
         gps: gps,
         trackPoints: runningTrackPoints,
-        idAlias: ModelAlias.nextAlias(gps).map((e) => e.id).toList(),
+        idAlias: ModelAlias.nextAlias(gps: gps).map((e) => e.id).toList(),
         timeStart: gps.time);
     tp.status = status;
     tp.timeEnd = runningTrackPoints.last.time;
@@ -212,9 +230,10 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       try {
         var tp = ModelTrackPoint.pendingTrackPoint;
         var duration = util.timeElapsed(tp.timeStart, tp.timeEnd, false);
-        var alias = ModelAlias.nextAlias(currentStatus == TrackingStatus.moving
-                ? runningTrackPoints.first
-                : runningTrackPoints.last)
+        var alias = ModelAlias.nextAlias(
+                gps: currentStatus == TrackingStatus.moving
+                    ? runningTrackPoints.first
+                    : runningTrackPoints.last)
             .map((e) {
           return '- ${e.alias}';
         }).toList();

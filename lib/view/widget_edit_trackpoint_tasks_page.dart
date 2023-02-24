@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 //
+import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
@@ -23,9 +24,23 @@ class WidgetEditTrackpointTasks extends StatefulWidget {
 
 class _WidgetAddTasksState extends State<WidgetEditTrackpointTasks> {
   Logger logger = Logger.logger<WidgetEditTrackpointTasks>();
+
+  /// EventListener
   BuildContext? _context;
-  static TextEditingController _controller =
+
+  /// notes
+  ValueNotifier<bool> textModified = ValueNotifier<bool>(false);
+
+  /// edit notes
+  static TextEditingController textController =
       TextEditingController(text: ModelTrackPoint.editTrackPoint.notes);
+
+  /// modify
+  bool modified = false;
+  void modify() {
+    modified = true;
+  }
+
   @override
   void initState() {
     EventManager.listen<EventOnTrackingStatusChanged>(onTrackingStatusChanged);
@@ -38,6 +53,8 @@ class _WidgetAddTasksState extends State<WidgetEditTrackpointTasks> {
     super.dispose();
   }
 
+  /// pop edit window if current Trackpoint
+  /// is active (not yet saved) and status changes
   void onTrackingStatusChanged(EventOnTrackingStatusChanged e) {
     if (ModelTrackPoint.pendingTrackPoint == ModelTrackPoint.editTrackPoint) {
       if (_context != null) {
@@ -46,7 +63,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackpointTasks> {
     }
   }
 
-  ///
+  /// render multiple checkboxes
   Widget createCheckbox(CheckboxController model) {
     TextStyle style = TextStyle(
         color: model.enabled ? Colors.black : Colors.grey,
@@ -54,8 +71,9 @@ class _WidgetAddTasksState extends State<WidgetEditTrackpointTasks> {
             model.deleted ? TextDecoration.lineThrough : TextDecoration.none);
 
     return ListTile(
-      subtitle:
-          Text(model.subtitle, style: const TextStyle(color: Colors.grey)),
+      subtitle: model.subtitle.trim().isEmpty
+          ? null
+          : Text(model.subtitle, style: const TextStyle(color: Colors.grey)),
       title: Text(
         model.title,
         style: style,
@@ -80,32 +98,12 @@ class _WidgetAddTasksState extends State<WidgetEditTrackpointTasks> {
     );
   }
 
-  Widget backButton(BuildContext context) {
-    return IconButton(
-        onPressed: () {
-          Navigator.pop(context);
-          if (ModelTrackPoint.editTrackPoint.id > 0) {
-            Shared shared = Shared(SharedKeys.updateTrackPointQueue);
-            shared.loadList().then((_) {
-              var q = _ ??= [];
-              q.add(ModelTrackPoint.editTrackPoint.toString());
-              shared.saveList(q);
-            });
-          }
-        },
-        icon: const Icon(size: 50, Icons.done_outline_rounded));
-  }
-
-  Widget divider() {
-    return const Divider(
-        thickness: 1, indent: 10, endIndent: 10, color: Colors.blueGrey);
-  }
-
-  Widget trackPointInfo(ModelTrackPoint tp) {
+  /// current trackpoint
+  Widget trackPointInfo(BuildContext context) {
+    var tp = ModelTrackPoint.editTrackPoint;
     var alias = tp.idAlias.map((id) => ModelAlias.getAlias(id).alias).toList();
     var tasks = tp.idTask.map((id) => ModelTask.getTask(id).task).toList();
 
-    ///
     return Container(
         padding: const EdgeInsets.all(10),
         child: ListBody(children: [
@@ -113,58 +111,193 @@ class _WidgetAddTasksState extends State<WidgetEditTrackpointTasks> {
               heightFactor: 2,
               child: alias.isEmpty
                   ? Text('OSM: ${tp.address}')
-                  : Text('Alias: - ${alias.join('\n- ')}')),
+                  : Text('Alias: ${alias.join('\n- ')}')),
           Text(AppWidgets.timeInfo(tp.timeStart, tp.timeEnd)),
           Text(
               'Aufgaben:${tasks.isEmpty ? ' -' : '\n   - ${tasks.join('\n   - ')}'}')
         ]));
   }
 
-  @override
-  Widget build(BuildContext context) {
-    _context = context;
+  List<Widget> taskCheckboxes(context) {
     var referenceList = ModelTrackPoint.editTrackPoint.idTask;
     var checkBoxes = <Widget>[];
-    for (var t in ModelTask.getAll()) {
-      if (!t.deleted) {
+    for (var tp in ModelTask.getAll()) {
+      if (!tp.deleted) {
         checkBoxes.add(createCheckbox(CheckboxController(
-            idReference: t.id,
+            idReference: tp.id,
             referenceList: referenceList,
-            deleted: t.deleted,
-            title: t.task,
-            subtitle: t.notes)));
+            deleted: tp.deleted,
+            title: tp.task,
+            subtitle: tp.notes)));
       }
     }
+    return checkBoxes;
+  }
 
-    var activeTrackPointInfo = <Widget>[];
+  List<Widget> userCheckboxes(context) {
+    var referenceList = ModelTrackPoint.editTrackPoint.idUser;
+    var checkBoxes = <Widget>[];
+    for (var tp in ModelUser.getAll()) {
+      if (!tp.deleted) {
+        checkBoxes.add(createCheckbox(CheckboxController(
+            idReference: tp.id,
+            referenceList: referenceList,
+            deleted: tp.deleted,
+            title: tp.user,
+            subtitle: tp.notes)));
+      }
+    }
+    return checkBoxes;
+  }
+
+  bool dropdownUserIsOpen = false;
+  Widget dropdownUser(context) {
+    /// render selected users
+    List<String> userList = [];
+    for (var item in ModelUser.getAll()) {
+      if (ModelTrackPoint.editTrackPoint.idUser.contains(item.id)) {
+        userList.add('- ${item.user}');
+      }
+    }
+    String users = userList.isNotEmpty ? '\n${userList.join('\n')}' : ' - ';
+
+    /// dropdown menu botten with selected users
+    List<Widget> items = [
+      ElevatedButton(
+        child: ListTile(
+            trailing: const Icon(Icons.menu), title: Text('Personal:$users')),
+        onPressed: () {
+          dropdownUserIsOpen = !dropdownUserIsOpen;
+          setState(() {});
+        },
+      ),
+      !dropdownUserIsOpen
+          ? const SizedBox.shrink()
+          : Column(children: userCheckboxes(context))
+    ];
+
+    /// add items
+    if (dropdownUserIsOpen) {
+      items.addAll(userCheckboxes(context));
+    }
+    return ListBody(children: items);
+  }
+
+  bool dropdownTasksIsOpen = false;
+  Widget dropdownTasks(context) {
+    /// render selected tasks
+    List<String> taskList = [];
+    for (var item in ModelTask.getAll()) {
+      if (ModelTrackPoint.editTrackPoint.idTask.contains(item.id)) {
+        taskList.add('- ${item.task}');
+      }
+    }
+    String tasks = taskList.isNotEmpty ? '\n${taskList.join('\n')}' : ' - ';
+
+    /// dropdown menu botten with selected tasks
+    List<Widget> items = [
+      ElevatedButton(
+        child: ListTile(
+            trailing: const Icon(Icons.menu), title: Text('Personal:$tasks')),
+        onPressed: () {
+          dropdownTasksIsOpen = !dropdownTasksIsOpen;
+          setState(() {});
+        },
+      ),
+      !dropdownTasksIsOpen
+          ? const SizedBox.shrink()
+          : Column(children: taskCheckboxes(context))
+    ];
+
+    /// add items
+    if (dropdownTasksIsOpen) {
+      items.addAll(taskCheckboxes(context));
+    }
+    return ListBody(children: items);
+  }
+
+  Widget notes(BuildContext context) {
+    return Container(
+        padding: const EdgeInsets.all(10),
+        child: TextField(
+            decoration: const InputDecoration(
+                label: Text('Notizen'),
+                contentPadding: EdgeInsets.all(2),
+                border: InputBorder.none),
+            //expands: true,
+            maxLines: null,
+            minLines: 2,
+            controller: textController,
+            onChanged: (String? s) {
+              ModelTrackPoint.pendingTrackPoint.notes = s ?? '';
+              textModified.value = true;
+              logger.log('$s');
+            }));
+  }
+
+  Widget warning(BuildContext context) {
     if (ModelTrackPoint.pendingTrackPoint == ModelTrackPoint.editTrackPoint) {
-      activeTrackPointInfo.add(Container(
+      return Container(
           padding: const EdgeInsets.all(10),
           child: const Text(
               'Achtung! Sie bearbeiten einen aktiven Haltepunkt.\n'
               'Panel schließt sobald sich der Fahren/Halten Status ändert.',
-              style: TextStyle(color: Colors.red))));
+              style: TextStyle(color: Colors.red)));
     }
+    return const SizedBox.shrink();
+  }
+
+  ///
+  @override
+  Widget build(BuildContext context) {
+    /// required for EventListener
+    _context = context;
+
     var body = ListView(children: [
-      ...activeTrackPointInfo,
-      backButton(context),
-      trackPointInfo(ModelTrackPoint.editTrackPoint),
-      Container(
-          padding: const EdgeInsets.all(10),
-          child: TextField(
-              decoration: const InputDecoration(
-                  label: Text('Notizen'), contentPadding: EdgeInsets.all(2)),
-              //expands: true,
-              maxLines: null,
-              minLines: 5,
-              controller: _controller,
-              onChanged: (String? s) {
-                ModelTrackPoint.pendingTrackPoint.notes = s ?? '';
-                logger.log('$s');
-              })),
-      divider(),
-      ...checkBoxes
+      warning(context),
+
+      /// current Trackpoint time info
+      trackPointInfo(context),
+      AppWidgets.divider(),
+      notes(context),
+      AppWidgets.divider(),
+      dropdownUser(context),
+      AppWidgets.divider(),
+      dropdownTasks(context)
     ]);
-    return AppWidgets.scaffold(context, body: body);
+    return AppWidgets.scaffold(
+      context,
+      body: body,
+      navBar: BottomNavigationBar(
+          fixedColor: AppColors.black.color,
+          selectedFontSize: 14,
+          unselectedFontSize: 14,
+          backgroundColor: AppColors.yellow.color,
+          items: [
+            // 0 alphabethic
+            BottomNavigationBarItem(
+                icon: ValueListenableBuilder(
+                    valueListenable: textModified,
+                    builder: ((context, value, child) {
+                      return Icon(Icons.done,
+                          size: 30,
+                          color: textModified.value == true
+                              ? AppColors.green.color
+                              : AppColors.white54.color);
+                    })),
+                label: 'Speichern'),
+            // 1 nearest
+            const BottomNavigationBarItem(
+                icon: Icon(Icons.cancel), label: 'Abbrechen'),
+          ],
+          onTap: (int id) {
+            if (id == 0) {
+              ModelAlias.update().then(
+                  (_) => AppWidgets.navigate(context, AppRoutes.listAlias));
+            } else {
+              Navigator.pop(context);
+            }
+          }),
+    );
   }
 }

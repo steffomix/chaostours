@@ -33,7 +33,7 @@ class ModelAlias {
   String notes;
   AliasStatus status;
   final List<int> idTrackPoint = [];
-  final DateTime lastVisited;
+  DateTime lastVisited;
 
   int timesVisited;
   int _id = 0;
@@ -155,13 +155,18 @@ class ModelAlias {
   ///   returns all alias sorted by distance from gps
   ///
   /// The property sortDistance in meter can be used for user information
-  static List<ModelAlias> nextAlias(GPS gps, [bool all = false]) {
+  static List<ModelAlias> nextAlias(
+      {required GPS gps, bool all = false, excludeDeleted = false}) {
     ModelAlias m;
     List<ModelAlias> list = [];
     for (var i = 0; i < _table.length - 1; i++) {
       m = _table[i];
+      if (excludeDeleted && m.deleted) {
+        continue;
+      }
       m.sortDistance =
           Geolocator.distanceBetween(m.lat, m.lon, gps.lat, gps.lon).round();
+
       if (all) {
         list.add(m);
       } else {
@@ -174,7 +179,7 @@ class ModelAlias {
 
   static List<ModelAlias> lastVisitedAlias([bool all = false]) {
     List<ModelAlias> list = [..._table];
-    list.sort((a, b) => a.lastVisited.compareTo(b.lastVisited));
+    list.sort((a, b) => b.lastVisited.compareTo(a.lastVisited));
     return list;
   }
 

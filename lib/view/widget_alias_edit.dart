@@ -54,7 +54,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                         return Icon(Icons.done,
                             size: 30,
                             color: modified.value == true
-                                ? AppColors.black.color
+                                ? AppColors.green.color
                                 : AppColors.white54.color);
                       })),
                   label: 'Speichern'),
@@ -66,7 +66,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
               if (id == 0) {
                 ModelAlias.update().then(
                     (_) => AppWidgets.navigate(context, AppRoutes.listAlias));
-              } else if (id == 0) {
+              } else {
                 Navigator.pop(context);
               }
             }),
@@ -157,7 +157,10 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                   ),
                 ),
                 ListTile(
-                    title: const Text('Öffentlich'),
+                    title: Text('Öffentlich',
+                        style: TextStyle(
+                          backgroundColor: AppColors.aliasPubplic.color,
+                        )),
                     subtitle: const Text(
                       'Ereignisse die diesen Ort betreffen können gespeichert und '
                       'z.B. automatisch in einem privaten oder öffentlichen Kalender publiziert werden.',
@@ -169,7 +172,10 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                         onChanged: (AliasStatus? val) =>
                             setStatus(context, val))),
                 ListTile(
-                    title: const Text('Privat'),
+                    title: Text('Privat',
+                        style: TextStyle(
+                          backgroundColor: AppColors.aliasPrivate.color,
+                        )),
                     subtitle: const Text(
                       'Ereignisse die diesen Ort betreffen verlassen ihr Gerät nicht, '
                       'es sei denn sie exportieren z.B. die Datenbank, machen Screenshots etc. '
@@ -182,7 +188,10 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                         onChanged: (AliasStatus? val) =>
                             setStatus(context, val))),
                 ListTile(
-                    title: const Text('Geheim'),
+                    title: Text('Geheim',
+                        style: TextStyle(
+                          backgroundColor: AppColors.aliasRestricted.color,
+                        )),
                     subtitle: const Text(
                       'An diesem Ort werden keine Haltepunkte aufgezeichnent, als wäre das Gerät ausgeschaltet. '
                       'Das bedeutet, wenn Sie diesen Ort erreichen, halten und wieder losfahren, '
@@ -211,6 +220,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                 onChanged: (val) {
                   alias.deleted = val ?? false;
                   modify();
+                  setState(() {});
                 },
               ))
         ]));
@@ -223,5 +233,6 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
   void setStatus(BuildContext context, AliasStatus? val) {
     alias.status = val ?? AliasStatus.restricted;
     modified.value = true;
+    setState(() {});
   }
 }

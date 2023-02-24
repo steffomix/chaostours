@@ -27,6 +27,8 @@ double newheight = height - padding.top - padding.bottom;
 
   static List<String> weekDays = ['', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
 
+  static final List<int> preselectedUsers = [1, 2];
+
   /// save battery with cache time
   static Duration get cacheGpsTime {
     return const Duration(seconds: 20);

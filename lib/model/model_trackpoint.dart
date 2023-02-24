@@ -84,6 +84,16 @@ class ModelTrackPoint {
     return dump.join(FileHandler.lineSep);
   }
 
+  static countTask(int id) {
+    int count = 0;
+    for (var item in _table) {
+      if (item.idTask.contains(id)) {
+        count++;
+      }
+    }
+    return count;
+  }
+
   /// calculates route or distance, depending on TrackingStatus status
   /// route on moving and distance on standing
   double distance() {
@@ -194,7 +204,7 @@ class ModelTrackPoint {
 
   static List<ModelTrackPoint> lastVisited(GPS gps, {int max = 30}) {
     List<ModelTrackPoint> list = [];
-    List<ModelAlias> alias = ModelAlias.nextAlias(gps);
+    List<ModelAlias> alias = ModelAlias.nextAlias(gps: gps);
     double distance = Globals.distanceTreshold;
     if (alias.isNotEmpty) {
       gps = GPS(alias.first.lat, alias.first.lon);
