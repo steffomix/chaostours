@@ -1,4 +1,5 @@
 import 'package:chaostours/view/app_widgets.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 ///
@@ -17,9 +18,14 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
 
   ModelUser? _user;
   bool? _deleted;
+  ValueNotifier<bool> modified = ValueNotifier<bool>(false);
   @override
   void dispose() {
     super.dispose();
+  }
+
+  void modify() {
+    modified.value = true;
   }
 
   @override
@@ -34,26 +40,45 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
     bool deleted = _deleted!;
 
     return AppWidgets.scaffold(context,
-        body: ListView(children: [
-          /// ok button
-          IconButton(
-            icon: Icon(create ? Icons.add : Icons.done),
-            onPressed: () {
-              if (user.user.isEmpty) {
-                user.user = 'Person #${user.id}';
+        navBar: BottomNavigationBar(
+            fixedColor: AppColors.black.color,
+            selectedFontSize: 14,
+            unselectedFontSize: 14,
+            backgroundColor: AppColors.yellow.color,
+            items: [
+              // 0 alphabethic
+              BottomNavigationBarItem(
+                  icon: ValueListenableBuilder(
+                      valueListenable: modified,
+                      builder: ((context, value, child) {
+                        return Icon(Icons.done,
+                            size: 30,
+                            color: modified.value == true
+                                ? AppColors.green.color
+                                : AppColors.white54.color);
+                      })),
+                  label: 'Speichern'),
+              // 1 nearest
+              const BottomNavigationBarItem(
+                  icon: Icon(Icons.cancel), label: 'Abbrechen'),
+            ],
+            onTap: (int id) {
+              if (id == 0) {
+                ModelUser.update().then(
+                    (_) => AppWidgets.navigate(context, AppRoutes.listUsers));
+              } else {
+                Navigator.pop(context);
               }
-              create ? ModelUser.insert(user) : ModelUser.write();
-              Navigator.pop(context);
-            },
-          ),
-
+            }),
+        body: ListView(children: [
           /// username
           Container(
               padding: const EdgeInsets.all(10),
               child: TextField(
                 decoration: const InputDecoration(label: Text('Name')),
                 onChanged: ((value) {
-                  user.user = value;
+                  modify();
+                  user.user = value.trim();
                 }),
                 maxLines: 1,
                 minLines: 1,
@@ -64,11 +89,15 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
           Container(
               padding: const EdgeInsets.all(10),
               child: TextField(
-                decoration: const InputDecoration(label: Text('Notizen')),
-                maxLines: null,
-                minLines: 3,
-                controller: TextEditingController(text: user.notes),
-              )),
+                  decoration: const InputDecoration(label: Text('Notizen')),
+                  maxLines: null,
+                  minLines: 3,
+                  controller: TextEditingController(text: user.notes),
+                  onChanged: (value) {
+                    user.notes = value.trim();
+
+                    modify();
+                  })),
 
           /// deleted
           ListTile(
@@ -80,10 +109,11 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
               leading: Checkbox(
                 value: deleted,
                 onChanged: (val) {
+                  user.deleted = val ?? false;
+                  modify();
                   setState(() {
                     _deleted = val;
                   });
-                  user.deleted = val ?? false;
                 },
               ))
         ]));

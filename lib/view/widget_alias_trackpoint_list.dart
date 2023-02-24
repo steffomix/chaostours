@@ -70,14 +70,6 @@ class _WidgetAliasTrackpoint extends State<WidgetAliasTrackpoint> {
   Widget alias(BuildContext context) {
     var alias = ModelAlias.getAlias(_id);
     var type = alias.status;
-    Color color;
-    if (type == AliasStatus.privat) {
-      color = AppColors.aliasPrivate.color;
-    } else if (type == AliasStatus.restricted) {
-      color = AppColors.aliasRestricted.color;
-    } else {
-      color = AppColors.aliasPubplic.color;
-    }
     return ListTile(
         title: Text(alias.alias),
         subtitle: Text(alias.notes),
@@ -148,7 +140,11 @@ class _WidgetAliasTrackpoint extends State<WidgetAliasTrackpoint> {
           if (id == 0) {
             return Container(
                 padding: const EdgeInsets.only(bottom: 15),
-                child: Column(children: [search(context), alias(context)]));
+                child: Column(children: [
+                  search(context),
+                  alias(context),
+                  AppWidgets.divider()
+                ]));
           } else {
             return trackPoint(context, _tpList[id - 1]);
           }

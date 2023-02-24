@@ -48,6 +48,9 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
               task.deleted = deleted;
               create ? ModelTask.insert(task) : ModelTask.write();
               Navigator.pop(context);
+
+              Navigator.pop(context);
+              Navigator.pushNamed(context, AppRoutes.listTasks.route);
             },
           )),
 

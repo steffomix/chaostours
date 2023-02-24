@@ -2,10 +2,11 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
+import 'package:osm_flutter_hooks/osm_flutter_hooks.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:android_intent_plus/android_intent.dart';
-import 'package:android_intent_plus/flag.dart';
+// import 'package:android_intent_plus/flag.dart';
 import 'package:flutter/services.dart';
 
 ///
@@ -37,7 +38,7 @@ class _WidgetOsm extends State<WidgetOsm> {
   static final Logger logger = Logger.logger<WidgetOsm>();
 
   /// _controller
-  MapController _controller = MapController(initMapWithUserPosition: true);
+  late MapController _controller;
 
   /// init - prevent init sequence in build called twice
   bool _initialized = false;
@@ -54,6 +55,7 @@ class _WidgetOsm extends State<WidgetOsm> {
 
   /// draw circles
   bool _widgetActive = false;
+  int circleId = 0;
 
   /// search
   static String _searchText = '';
@@ -69,6 +71,7 @@ class _WidgetOsm extends State<WidgetOsm> {
 
   @override
   void initState() {
+    _controller = MapController(initMapWithUserPosition: true);
     super.initState();
   }
 
@@ -77,6 +80,7 @@ class _WidgetOsm extends State<WidgetOsm> {
   @override
   void dispose() {
     _address.dispose();
+    _controller.removeAllCircle();
     _controller.dispose();
     super.dispose();
     _widgetActive = false;
@@ -411,6 +415,44 @@ class _WidgetOsm extends State<WidgetOsm> {
         });
   }
 
+  Future<void> drawCircles() async {
+    /// draw cirles
+    _widgetActive = true;
+    var i = 0;
+    var list = ModelAlias.getAll();
+    while (list.isNotEmpty) {
+      if (!_widgetActive) {
+        break;
+      }
+      var alias = list.last;
+      try {
+        Color color;
+        if (alias.status == AliasStatus.public) {
+          color = AppColors.aliasPubplic.color;
+        } else if (alias.status == AliasStatus.privat) {
+          color = AppColors.aliasPrivate.color;
+        } else {
+          color = AppColors.aliasRestricted.color;
+        }
+
+        _controller.drawCircle(CircleOSM(
+          key: "circle${++circleId}",
+          centerPoint: GeoPoint(latitude: alias.lat, longitude: alias.lon),
+          radius: alias.radius.toDouble(),
+          color: color,
+          strokeWidth: 10,
+        ));
+      } catch (e, stk) {
+        logger.error(e.toString(), stk);
+        await Future.delayed(const Duration(seconds: 1));
+      }
+      list.removeLast();
+    }
+  }
+
+  ///
+  ///
+  ///
   @override
   Widget build(BuildContext context) {
     _screen = Screen(context);
@@ -421,15 +463,19 @@ class _WidgetOsm extends State<WidgetOsm> {
         _gps = GPS(alias.lat, alias.lon);
         _address.value = alias.alias;
         //
-        Future.delayed(
-            const Duration(seconds: 1),
-            () => _controller.goToLocation(
-                GeoPoint(latitude: _gps.lat, longitude: _gps.lon)));
       } else {
         GPS.gps().then(((gps) {
           _gps = gps;
           addr.Address(gps).lookupAddress().then((addr.Address address) {
             _address.value = address.toString();
+          }).then((_) async {
+            await _controller
+                .goToLocation(GeoPoint(latitude: _gps.lat, longitude: _gps.lon))
+                .then((_) async {
+              await _controller.setZoom(zoomLevel: 12).then((_) {
+                Future.delayed(const Duration(seconds: 3), drawCircles);
+              });
+            });
           });
         })).onError((e, stk) {
           logger.error(e.toString(), stk);
@@ -437,41 +483,6 @@ class _WidgetOsm extends State<WidgetOsm> {
       }
       _initialized = true;
     }
-
-    /// draw cirles
-    Future.delayed(const Duration(seconds: 2), () async {
-      _widgetActive = true;
-      var i = 0;
-      var list = ModelAlias.getAll();
-      while (list.isNotEmpty) {
-        if (!_widgetActive) {
-          break;
-        }
-        var alias = list.last;
-        try {
-          Color color;
-          if (alias.status == AliasStatus.public) {
-            color = Colors.green;
-          } else if (alias.status == AliasStatus.privat) {
-            color = Colors.yellow;
-          } else {
-            color = Colors.red;
-          }
-
-          _controller.drawCircle(CircleOSM(
-            key: "circle${++i}",
-            centerPoint: GeoPoint(latitude: alias.lat, longitude: alias.lon),
-            radius: alias.radius.toDouble(),
-            color: color,
-            strokeWidth: 10,
-          ));
-        } catch (e, stk) {
-          logger.error(e.toString(), stk);
-          await Future.delayed(const Duration(seconds: 1));
-        }
-        list.removeLast();
-      }
-    });
 
     var osm = OSMFlutter(
       //androidHotReloadSupport: true,
@@ -482,6 +493,16 @@ class _WidgetOsm extends State<WidgetOsm> {
       maxZoomLevel: 19,
       stepZoom: 1.0,
     );
+
+    Future.delayed(const Duration(milliseconds: 500), () async {
+      await _controller
+          .goToLocation(GeoPoint(latitude: _gps.lat, longitude: _gps.lon))
+          .then((_) async {
+        await _controller.setZoom(zoomLevel: 17).then((_) {
+          Future.delayed(const Duration(seconds: 3), drawCircles);
+        });
+      });
+    });
 
     return AppWidgets.scaffold(context,
         body: Stack(children: [

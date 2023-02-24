@@ -150,10 +150,13 @@ class _WidgetAliasList extends State<WidgetAliasList> {
         currentIndex: selectedNavBarItem,
         backgroundColor: AppColors.yellow.color,
         items: const [
-          // 0 alphabethic
+          // new on osm
+          BottomNavigationBarItem(icon: Icon(Icons.add), label: '*Neu*'),
+
+          // 1 alphabethic
           BottomNavigationBarItem(
               icon: Icon(Icons.timer), label: 'Zuletzt besucht'),
-          // 1 nearest
+          // 2 nearest
           BottomNavigationBarItem(icon: Icon(Icons.near_me), label: 'In Nähe'),
         ],
         onTap: (int id) {
@@ -164,8 +167,10 @@ class _WidgetAliasList extends State<WidgetAliasList> {
               _gps = gps;
               setState(() {});
             });
-          } else {
+          } else if (id == 2) {
             setState(() {});
+          } else {
+            Navigator.pushNamed(context, AppRoutes.osm.route, arguments: 0);
           }
         });
   }
