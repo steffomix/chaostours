@@ -10,6 +10,7 @@ import 'package:android_intent_plus/android_intent.dart';
 import 'package:flutter/services.dart';
 
 ///
+import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/gps.dart';
@@ -26,6 +27,31 @@ class OsmSearchResult {
       {required this.address, required this.lat, required this.lon});
 }
 
+class WidgetMapIsLoading extends StatefulWidget {
+  const WidgetMapIsLoading({super.key});
+
+  @override
+  State<WidgetMapIsLoading> createState() => _WidgetMapIsLoading();
+}
+
+class EventOnOsmIsLoading {}
+
+class _WidgetMapIsLoading extends State<WidgetMapIsLoading> {
+  static final Logger logger = Logger.logger<WidgetMapIsLoading>();
+
+  @override
+  void dispose() {
+    EventManager.fire<EventOnOsmIsLoading>(EventOnOsmIsLoading());
+    logger.log('loading disposed');
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const SizedBox.shrink();
+  }
+}
+
 ///
 class WidgetOsm extends StatefulWidget {
   const WidgetOsm({super.key});
@@ -37,31 +63,35 @@ class WidgetOsm extends StatefulWidget {
 class _WidgetOsm extends State<WidgetOsm> {
   static final Logger logger = Logger.logger<WidgetOsm>();
 
+  /// screen
+  //late SizeChangedLayoutNotifier screenListener;
+
+  /// alias id
+  int _id = 0;
+
   /// _controller
   late MapController _controller;
+
+  late OSMFlutter osm;
 
   /// init - prevent init sequence in build called twice
   bool _initialized = false;
 
   /// map _controller position
-  GPS _gps = GPS(0, 0);
+  late GPS _gps;
 
   /// search textfield
   final ValueNotifier<String> _address = ValueNotifier<String>('');
   final ValueNotifier<bool> _loading = ValueNotifier<bool>(false);
-
-  /// alias id
-  int _id = 0;
 
   /// draw circles
   bool _widgetActive = false;
   int circleId = 0;
 
   /// search
-  static String _searchText = '';
+  String _searchText = '';
   bool searchTextChanged = true;
-  TextEditingController textController =
-      TextEditingController(text: _searchText);
+  TextEditingController textController = TextEditingController(text: '');
   Duration _searchDelay = const Duration(milliseconds: 1200);
   DateTime _lastSearch = DateTime.now();
 
@@ -71,19 +101,24 @@ class _WidgetOsm extends State<WidgetOsm> {
 
   @override
   void initState() {
-    _controller = MapController(initMapWithUserPosition: true);
+    EventManager.listen<EventOnOsmIsLoading>(onOsmLoad);
+    _id = 0;
+    _initialized = false;
     super.initState();
   }
 
-  _WidgetOsm();
+  void onOsmLoad(EventOnOsmIsLoading e) {
+    drawCircles();
+  }
 
   @override
   void dispose() {
+    EventManager.remove<EventOnOsmIsLoading>(onOsmLoad);
+    _widgetActive = false;
     _address.dispose();
     _controller.removeAllCircle();
     _controller.dispose();
     super.dispose();
-    _widgetActive = false;
   }
 
   Future<void> lookupGps([String? query]) async {
@@ -312,45 +347,78 @@ class _WidgetOsm extends State<WidgetOsm> {
     });
   }
 
-  BottomNavigationBar editNavBar(context) {
+  BottomNavigationBar navBar(context) {
     return BottomNavigationBar(
         selectedFontSize: 14,
         unselectedFontSize: 14,
         backgroundColor: AppColors.yellow.color,
         selectedItemColor: AppColors.black.color,
         unselectedItemColor: AppColors.black.color,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.done), label: 'Speichern'),
-          BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Google Maps'),
-          BottomNavigationBarItem(icon: Icon(Icons.cancel), label: 'Abbrechen'),
+        items: [
+          BottomNavigationBarItem(
+              icon: const Icon(Icons.done),
+              label: _id > 0 ? 'Speichern' : 'Erstellen'),
+          const BottomNavigationBarItem(
+              icon: Icon(Icons.map), label: 'Google Maps'),
+          const BottomNavigationBarItem(
+              icon: Icon(Icons.cancel), label: 'Abbrechen'),
         ],
-        onTap: (int id) async {
-          switch (id) {
-            case 0:
-              _controller
-                  .getCurrentPositionAdvancedPositionPicker()
-                  .then((pos) {
-                var alias = ModelAlias.getAlias(_id);
-                alias.lat = pos.latitude;
-                alias.lon = pos.longitude;
-                ModelAlias.update();
-                AppWidgets.navigate(context, AppRoutes.editAlias, _id);
-              });
-              break;
-            case 1:
-              if (GPS.lastGps != null) {
-                launchGoogleMaps();
-              } else {
-                GPS.gps().then((_) => launchGoogleMaps());
-              }
+        onTap: (int buttonId) {
+          /// get current position
+          _controller
+              .getCurrentPositionAdvancedPositionPicker()
+              .then((pos) async {
+            switch (buttonId) {
+              case 0:
+                if (_id > 0) {
+                  logger.log('save/update id: $_id');
+                  ModelAlias alias = ModelAlias.getAlias(_id);
+                  alias.lat = pos.latitude;
+                  alias.lon = pos.longitude;
 
-              break;
-            case 2:
-              Navigator.pop(context);
-              break;
-            default:
-            // do nothing
-          }
+                  ModelAlias.update();
+                  AppWidgets.navigate(context, AppRoutes.listAlias);
+                  Navigator.pushNamed(context, AppRoutes.editAlias.route,
+                      arguments: _id);
+                } else {
+                  logger.log('create new alias...');
+
+                  /// create alias
+                  String address =
+                      (await addr.Address(GPS(pos.latitude, pos.longitude))
+                              .lookupAddress())
+                          .toString();
+
+                  ModelAlias alias = ModelAlias(
+                      lat: pos.latitude,
+                      lon: pos.longitude,
+                      alias: address,
+                      lastVisited: DateTime.now());
+
+                  ModelAlias.insert(alias).then((_) {
+                    AppWidgets.navigate(context, AppRoutes.listAlias);
+                    Navigator.pushNamed(context, AppRoutes.editAlias.route,
+                        arguments: alias.id);
+                    logger.log('created new alias #${alias.id}');
+                  }).onError((error, stackTrace) {
+                    logger.error(error.toString(), stackTrace);
+                  });
+                }
+                break;
+              case 1:
+                logger.log('launch google maps');
+                if (GPS.lastGps != null) {
+                  launchGoogleMaps();
+                } else {
+                  GPS.gps().then((_) => launchGoogleMaps());
+                }
+
+                break;
+              default:
+                logger.log('return to last view');
+                Navigator.pop(context);
+            }
+          });
         });
   }
 
@@ -362,60 +430,9 @@ class _WidgetOsm extends State<WidgetOsm> {
         child: Icon(Icons.add_circle_outline_outlined, size: iconsize));
   }
 
-  BottomNavigationBar createNavBar(context) {
-    return BottomNavigationBar(
-        selectedFontSize: 14,
-        unselectedFontSize: 14,
-        backgroundColor: AppColors.yellow.color,
-        selectedItemColor: AppColors.black.color,
-        unselectedItemColor: AppColors.black.color,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.done), label: 'Speichern'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.home), label: 'Meine Position'),
-          BottomNavigationBarItem(icon: Icon(Icons.cancel), label: 'Abbruch'),
-        ],
-        onTap: (int id) async {
-          switch (id) {
-            case 0:
-              _controller
-                  .getCurrentPositionAdvancedPositionPicker()
-                  .then((pos) {
-                var alias = ModelAlias(
-                    lat: pos.latitude,
-                    lon: pos.longitude,
-                    alias: '',
-                    lastVisited: DateTime.now());
-                addr.Address(GPS(alias.lat, alias.lon))
-                    .lookupAddress()
-                    .then((adr) {
-                  alias.alias = adr.toString();
-                  ModelAlias.insert(alias);
-                  _id = alias.id;
-                  Navigator.popUntil(
-                      context, ModalRoute.withName(AppRoutes.listAlias.route));
-                  Navigator.pushNamed(context, AppRoutes.editAlias.route,
-                      arguments: _id);
-                });
-              });
-              break;
-            case 1:
-              GPS.gps().then(((gps) {
-                _gps = gps;
-                _controller.goToLocation(
-                    GeoPoint(latitude: _gps.lat, longitude: _gps.lon));
-              }));
-              break;
-            case 2:
-              Navigator.pop(context);
-              break;
-            default:
-            // do nothing
-          }
-        });
-  }
-
   Future<void> drawCircles() async {
+    await _controller.removeAllCircle();
+
     /// draw cirles
     _widgetActive = true;
     var i = 0;
@@ -456,62 +473,55 @@ class _WidgetOsm extends State<WidgetOsm> {
   @override
   Widget build(BuildContext context) {
     _screen = Screen(context);
+
     if (!_initialized) {
       _id = ModalRoute.of(context)?.settings.arguments as int? ?? 0;
       if (_id > 0) {
         var alias = ModelAlias.getAlias(_id);
         _gps = GPS(alias.lat, alias.lon);
         _address.value = alias.alias;
-        //
-      } else {
-        GPS.gps().then(((gps) {
-          _gps = gps;
-          addr.Address(gps).lookupAddress().then((addr.Address address) {
-            _address.value = address.toString();
-          }).then((_) async {
-            await _controller
-                .goToLocation(GeoPoint(latitude: _gps.lat, longitude: _gps.lon))
-                .then((_) async {
-              await _controller.setZoom(zoomLevel: 12).then((_) {
-                Future.delayed(const Duration(seconds: 3), drawCircles);
-              });
+        _controller = MapController(
+            initMapWithUserPosition: false,
+            initPosition: (GeoPoint(latitude: _gps.lat, longitude: _gps.lon)));
+
+        osm = OSMFlutter(
+          mapIsLoading: const WidgetMapIsLoading(),
+          //androidHotReloadSupport: true,
+          controller: _controller,
+          initZoom: 17,
+          minZoomLevel: 8,
+          maxZoomLevel: 19,
+          stepZoom: 1.0,
+        );
+        Future.delayed(const Duration(milliseconds: 1000), () async {
+          await _controller
+              .goToLocation(GeoPoint(latitude: _gps.lat, longitude: _gps.lon))
+              .then((_) async {
+            await _controller.setZoom(zoomLevel: 17).then((_) {
+              //Future.delayed(const Duration(seconds: 3), drawCircles);
             });
           });
-        })).onError((e, stk) {
-          logger.error(e.toString(), stk);
         });
       }
-      _initialized = true;
     }
-
-    var osm = OSMFlutter(
-      //androidHotReloadSupport: true,
-      isPicker: true,
-      controller: _controller,
-      initZoom: _id > 0 ? 17 : 12,
-      minZoomLevel: 8,
-      maxZoomLevel: 19,
-      stepZoom: 1.0,
-    );
-
-    Future.delayed(const Duration(milliseconds: 500), () async {
-      await _controller
-          .goToLocation(GeoPoint(latitude: _gps.lat, longitude: _gps.lon))
-          .then((_) async {
-        await _controller.setZoom(zoomLevel: 17).then((_) {
-          Future.delayed(const Duration(seconds: 3), drawCircles);
-        });
-      });
-    });
-
-    return AppWidgets.scaffold(context,
+    if (_initialized) {
+      Future.delayed(const Duration(seconds: 2), drawCircles);
+    }
+    var body = AppWidgets.scaffold(context,
         body: Stack(children: [
           osm,
           centerAim(context),
           searchResultContainer(context),
           infoBox(context)
         ]),
-        navBar: _id > 0 ? editNavBar(context) : createNavBar(context),
+        navBar: navBar(context),
         appBar: null);
+
+    if (!_initialized) {
+      SizeChangedLayoutNotifier(child: body);
+    }
+
+    _initialized = true;
+    return body;
   }
 }

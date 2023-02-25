@@ -21,12 +21,13 @@ class GPS {
 
   static Future<GPS> gps() async {
     /// use cache?
+    /*
     var t = DateTime.now();
     if (lastGps != null &&
         lastGps!.time.add(Globals.cacheGpsTime).isBefore(t)) {
       return lastGps!;
     }
-
+*/
     try {
       var pos = await AppLoader.gps();
       var gps = GPS(pos.latitude, pos.longitude);

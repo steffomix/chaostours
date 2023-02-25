@@ -46,6 +46,8 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
             unselectedFontSize: 14,
             backgroundColor: AppColors.yellow.color,
             items: [
+              const BottomNavigationBarItem(
+                  icon: Icon(Icons.add), label: 'Neu'),
               // 0 alphabethic
               BottomNavigationBarItem(
                   icon: ValueListenableBuilder(
@@ -64,9 +66,11 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
             ],
             onTap: (int id) {
               if (id == 0) {
+                Navigator.pushNamed(context, AppRoutes.osm.route, arguments: 0);
+              } else if (id == 1) {
                 ModelAlias.update().then(
                     (_) => AppWidgets.navigate(context, AppRoutes.listAlias));
-              } else {
+              } else if (id == 2) {
                 Navigator.pop(context);
               }
             }),
@@ -137,7 +141,6 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                     modify();
                   } catch (e) {
                     //
-
                   }
                 }),
                 maxLines: 1, //

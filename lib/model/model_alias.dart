@@ -53,7 +53,7 @@ class ModelAlias {
       required this.alias,
       required this.lastVisited,
       this.deleted = false,
-      this.radius = 100,
+      this.radius = 50,
       this.notes = '',
       this.status = AliasStatus.public,
       this.timesVisited = 0});

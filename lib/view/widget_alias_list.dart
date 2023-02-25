@@ -41,7 +41,8 @@ class _WidgetAliasList extends State<WidgetAliasList> {
     int dur = DateTime.now().difference(alias.lastVisited).inDays;
     int count = ModelTrackPoint.countTask(alias.id);
     return ListTile(
-        subtitle: Text('${count}x, vor $dur Tagen'),
+        subtitle:
+            Text('${count}x, ${count == 0 ? 'noch nie' : 'vor $dur Tage'}'),
         title: TextField(
             readOnly: true,
             decoration: const InputDecoration(
@@ -162,15 +163,25 @@ class _WidgetAliasList extends State<WidgetAliasList> {
         onTap: (int id) {
           selectedNavBarItem = id;
           _listMode = id;
-          if (id == 1) {
-            GPS.gps().then((GPS gps) {
-              _gps = gps;
+
+          switch (id) {
+            /// create
+            case 0:
+              Navigator.pushNamed(context, AppRoutes.osm.route, arguments: 0);
+              break;
+
+            /// last visited
+            case 1:
+              GPS.gps().then((GPS gps) {
+                _gps = gps;
+                setState(() {});
+              });
+              break;
+
+            /// default view
+            default:
               setState(() {});
-            });
-          } else if (id == 2) {
-            setState(() {});
-          } else {
-            Navigator.pushNamed(context, AppRoutes.osm.route, arguments: 0);
+            //
           }
         });
   }
