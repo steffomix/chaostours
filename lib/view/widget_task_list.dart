@@ -15,41 +15,92 @@ class WidgetTaskList extends StatefulWidget {
 class _WidgetTaskList extends State<WidgetTaskList> {
   static final Logger logger = Logger.logger<WidgetTaskList>();
 
+  bool showDeleted = false;
+  String search = '';
+  TextEditingController controller = TextEditingController();
+
   @override
   void dispose() {
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    List<ListTile> tasks = ModelTask.getAll().map((ModelTask task) {
-      return ListTile(
+  Widget taskWidget(BuildContext context, ModelTask task) {
+    return ListBody(children: [
+      ListTile(
           title: Text(task.task,
               style: TextStyle(
                   decoration: task.deleted
                       ? TextDecoration.lineThrough
                       : TextDecoration.none)),
-          subtitle: Text(task.notes),
-          leading: IconButton(
+          subtitle: TextField(
+              controller: TextEditingController(text: task.notes),
+              style: const TextStyle(fontSize: 12),
+              enabled: false,
+              readOnly: true,
+              minLines: 1,
+              maxLines: 5,
+              decoration: const InputDecoration(border: InputBorder.none)),
+          trailing: IconButton(
               icon: const Icon(Icons.edit),
               onPressed: () {
                 Navigator.pushNamed(context, AppRoutes.editTasks.route,
                     arguments: task.id);
-              }));
-    }).toList();
+              })),
+      AppWidgets.divider()
+    ]);
+  }
+
+  Widget searchWidget(BuildContext context) {
+    return TextField(
+      controller: controller,
+      minLines: 1,
+      maxLines: 1,
+      decoration: const InputDecoration(
+          icon: Icon(Icons.search, size: 30), border: InputBorder.none),
+      onChanged: (value) {
+        search = value;
+        setState(() {});
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    List<Widget> tasks = [];
+    for (var item in ModelTask.getAll()) {
+      if (!showDeleted && item.deleted) {
+        continue;
+      }
+      if (search.trim().isNotEmpty &&
+          (item.task.contains(search) || item.notes.contains(search))) {
+        tasks.add(taskWidget(context, item));
+      } else {
+        tasks.add(taskWidget(context, item));
+      }
+    }
 
     return AppWidgets.scaffold(context,
-        body: ListView(children: [
-          Center(
-            child: IconButton(
-              icon: const Icon(Icons.add),
-              onPressed: () {
+        body: ListView(children: [searchWidget(context), ...tasks]),
+        navBar: BottomNavigationBar(
+            backgroundColor: AppColors.yellow.color,
+            fixedColor: AppColors.black.color,
+            items: [
+              const BottomNavigationBarItem(
+                  icon: Icon(Icons.add), label: 'Neu'),
+              BottomNavigationBarItem(
+                  icon: const Icon(Icons.remove_red_eye),
+                  label: showDeleted
+                      ? 'Gelöschte verbergen'
+                      : 'Gelöschte anzeigen'),
+            ],
+            onTap: (int id) {
+              if (id == 0) {
                 Navigator.pushNamed(context, AppRoutes.editTasks.route,
                     arguments: 0);
-              },
-            ),
-          ),
-          ...tasks
-        ]));
+              } else {
+                showDeleted = !showDeleted;
+                setState(() {});
+              }
+            }));
   }
 }

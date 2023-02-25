@@ -68,6 +68,7 @@ class _WidgetOsm extends State<WidgetOsm> {
 
   /// alias id
   int _id = 0;
+  late ModelAlias _alias;
 
   /// _controller
   late MapController _controller;
@@ -83,6 +84,8 @@ class _WidgetOsm extends State<WidgetOsm> {
   /// search textfield
   final ValueNotifier<String> _address = ValueNotifier<String>('');
   final ValueNotifier<bool> _loading = ValueNotifier<bool>(false);
+
+  bool debugPaintPointersEnabled = true;
 
   /// draw circles
   bool _widgetActive = false;
@@ -349,6 +352,7 @@ class _WidgetOsm extends State<WidgetOsm> {
 
   BottomNavigationBar navBar(context) {
     return BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
         selectedFontSize: 14,
         unselectedFontSize: 14,
         backgroundColor: AppColors.yellow.color,
@@ -361,22 +365,23 @@ class _WidgetOsm extends State<WidgetOsm> {
           const BottomNavigationBarItem(
               icon: Icon(Icons.map), label: 'Google Maps'),
           const BottomNavigationBarItem(
+              icon: Icon(Icons.search), label: 'Alias'),
+          const BottomNavigationBarItem(
               icon: Icon(Icons.cancel), label: 'Abbrechen'),
         ],
         onTap: (int buttonId) {
           /// get current position
-          _controller
-              .getCurrentPositionAdvancedPositionPicker()
-              .then((pos) async {
+          var future = _controller.getCurrentPositionAdvancedPositionPicker();
+          future.then((pos) async {
             switch (buttonId) {
               case 0:
                 if (_id > 0) {
                   logger.log('save/update id: $_id');
-                  ModelAlias alias = ModelAlias.getAlias(_id);
+                  ModelAlias alias = _alias; //ModelAlias.getAlias(_id);
                   alias.lat = pos.latitude;
                   alias.lon = pos.longitude;
 
-                  ModelAlias.update();
+                  ModelAlias.update(_alias);
                   AppWidgets.navigate(context, AppRoutes.listAlias);
                   Navigator.pushNamed(context, AppRoutes.editAlias.route,
                       arguments: _id);
@@ -414,10 +419,24 @@ class _WidgetOsm extends State<WidgetOsm> {
                 }
 
                 break;
+              case 2:
+                _controller
+                    .getCurrentPositionAdvancedPositionPicker()
+                    .then((GeoPoint pos) {
+                  List<ModelAlias> list = ModelAlias.nextAlias(
+                      gps: GPS(pos.latitude, pos.longitude));
+                  if (list.isNotEmpty) {
+                    Navigator.pushNamed(context, AppRoutes.editAlias.route,
+                        arguments: list.first.id);
+                  }
+                });
+                break;
               default:
                 logger.log('return to last view');
                 Navigator.pop(context);
             }
+          }).onError((error, stackTrace) {
+            logger.error(error.toString(), stackTrace);
           });
         });
   }
@@ -478,16 +497,28 @@ class _WidgetOsm extends State<WidgetOsm> {
       _id = ModalRoute.of(context)?.settings.arguments as int? ?? 0;
       if (_id > 0) {
         var alias = ModelAlias.getAlias(_id);
+        _alias = alias.clone();
         _gps = GPS(alias.lat, alias.lon);
         _address.value = alias.alias;
         _controller = MapController(
             initMapWithUserPosition: false,
             initPosition: (GeoPoint(latitude: _gps.lat, longitude: _gps.lon)));
 
+        _controller.listenerMapLongTapping.addListener(() {
+          _controller.selectAdvancedPositionPicker().then((GeoPoint pos) {
+            List<ModelAlias> list =
+                ModelAlias.nextAlias(gps: GPS(pos.latitude, pos.longitude));
+            if (list.isNotEmpty) {
+              ModelAlias alias = list[0];
+            }
+          });
+        });
+
         osm = OSMFlutter(
           mapIsLoading: const WidgetMapIsLoading(),
-          //androidHotReloadSupport: true,
+          androidHotReloadSupport: true,
           controller: _controller,
+          isPicker: true,
           initZoom: 17,
           minZoomLevel: 8,
           maxZoomLevel: 19,

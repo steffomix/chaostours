@@ -103,9 +103,15 @@ class ModelAlias {
     return m._id;
   }
 
-  static Future<void> update() async {
-    logger.verbose('Update');
+  static Future<void> update([ModelAlias? m]) async {
+    if (m != null && _table.indexWhere((e) => e.id == m.id) >= 0) {
+      _table[m.id - 1] = m;
+    }
     await write();
+  }
+
+  ModelAlias clone() {
+    return toModel(toString());
   }
 
   static Future<void> delete(ModelAlias m) async {

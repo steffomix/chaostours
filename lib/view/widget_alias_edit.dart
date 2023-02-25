@@ -2,6 +2,9 @@ import 'package:chaostours/view/app_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'package:android_intent_plus/android_intent.dart';
+import 'package:chaostours/gps.dart';
+
 ///
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/model/model_alias.dart';
@@ -33,7 +36,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
     final id = ModalRoute.of(context)!.settings.arguments as int;
 
     ///
-    alias = ModelAlias.getAlias(id);
+    alias = ModelAlias.getAlias(id).clone();
 
     addressController.text = alias.alias;
     notesController.text = alias.notes;
@@ -41,6 +44,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
 
     return AppWidgets.scaffold(context,
         navBar: BottomNavigationBar(
+            type: BottomNavigationBarType.fixed,
             fixedColor: AppColors.black.color,
             selectedFontSize: 14,
             unselectedFontSize: 14,
@@ -48,6 +52,8 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
             items: [
               const BottomNavigationBarItem(
                   icon: Icon(Icons.add), label: 'Neu'),
+              const BottomNavigationBarItem(
+                  icon: Icon(Icons.map), label: 'Route'),
               // 0 alphabethic
               BottomNavigationBarItem(
                   icon: ValueListenableBuilder(
@@ -68,9 +74,28 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
               if (id == 0) {
                 Navigator.pushNamed(context, AppRoutes.osm.route, arguments: 0);
               } else if (id == 1) {
-                ModelAlias.update().then(
-                    (_) => AppWidgets.navigate(context, AppRoutes.listAlias));
+                var gps = GPS.lastGps!;
+                var lat = gps.lat;
+                var lon = gps.lon;
+                var lat1 = alias.lat;
+                var lon1 = alias.lon;
+                var url = 'https://www.google.com/maps/dir/?'
+                    'api=1&origin=$lat%2c$lon&destination=$lat1%2c$lon1&'
+                    'travelmode=driving';
+
+                final intent = AndroidIntent(
+                    action: 'action_view',
+                    data: url,
+                    package: 'com.google.android.apps.maps');
+                intent.launch();
               } else if (id == 2) {
+                ModelAlias.update(alias).then((_) {
+                  AppWidgets.navigate(context, AppRoutes.listAlias);
+                  Navigator.pushNamed(
+                      context, AppRoutes.listAliasTrackpoints.route,
+                      arguments: alias.id);
+                });
+              } else if (id == 3) {
                 Navigator.pop(context);
               }
             }),

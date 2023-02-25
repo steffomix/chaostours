@@ -26,7 +26,6 @@ class _WidgetAliasList extends State<WidgetAliasList> {
 
   @override
   void dispose() {
-    ModelAlias.update();
     super.dispose();
   }
 

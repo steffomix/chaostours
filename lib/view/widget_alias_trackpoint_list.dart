@@ -1,18 +1,20 @@
 import 'package:chaostours/event_manager.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:android_intent_plus/android_intent.dart';
+import 'package:chaostours/gps.dart';
+import 'package:flutter/services.dart';
 
 ///
 import 'package:chaostours/globals.dart';
 import 'package:chaostours/logger.dart';
-import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/util.dart';
+import 'package:chaostours/screen.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_user.dart';
-import 'package:flutter/services.dart';
 
 class WidgetAliasTrackpoint extends StatefulWidget {
   const WidgetAliasTrackpoint({super.key});
@@ -28,6 +30,7 @@ class _WidgetAliasTrackpoint extends State<WidgetAliasTrackpoint> {
   List _tpList = <ModelTrackPoint>[];
   String _search = '';
   TextEditingController controller = TextEditingController();
+  late ModelAlias _alias;
 
   List trackPointList = <ModelTrackPoint>[];
   @override
@@ -53,18 +56,42 @@ class _WidgetAliasTrackpoint extends State<WidgetAliasTrackpoint> {
     });
   }
 
+  Widget map(context) {
+    Screen screen = Screen(context);
+    return SizedBox(
+        width: screen.width,
+        height: 25,
+        child: IconButton(
+            icon: Icon(Icons.map),
+            onPressed: () {
+              var gps = GPS.lastGps!;
+              var lat = gps.lat;
+              var lon = gps.lon;
+              var lat1 = _alias.lat;
+              var lon1 = _alias.lon;
+              var url = 'https://www.google.com/maps/dir/?'
+                  'api=1&origin=$lat%2c$lon&destination=$lat1%2c$lon1&'
+                  'travelmode=driving';
+
+              final intent = AndroidIntent(
+                  action: 'action_view',
+                  data: url,
+                  package: 'com.google.android.apps.maps');
+              intent.launch();
+            }));
+  }
+
   Widget search(BuildContext context) {
     return TextField(
-      controller: controller,
-      minLines: 1,
-      maxLines: 1,
-      decoration: const InputDecoration(
-          icon: Icon(Icons.search, size: 30), border: InputBorder.none),
-      onChanged: (value) {
-        _search = value.toLowerCase();
-        setState(() {});
-      },
-    );
+        controller: controller,
+        minLines: 1,
+        maxLines: 1,
+        decoration: const InputDecoration(
+            icon: Icon(Icons.search, size: 30), border: InputBorder.none),
+        onChanged: (value) {
+          _search = value.toLowerCase();
+          setState(() {});
+        });
   }
 
   Widget alias(BuildContext context) {
@@ -141,6 +168,7 @@ class _WidgetAliasTrackpoint extends State<WidgetAliasTrackpoint> {
             return Container(
                 padding: const EdgeInsets.only(bottom: 15),
                 child: Column(children: [
+                  map(context),
                   search(context),
                   alias(context),
                   AppWidgets.divider()
@@ -154,6 +182,8 @@ class _WidgetAliasTrackpoint extends State<WidgetAliasTrackpoint> {
   @override
   Widget build(BuildContext context) {
     _id = ModalRoute.of(context)!.settings.arguments as int;
+
+    _alias = ModelAlias.getAlias(_id);
 
     if (_search.trim().isEmpty) {
       _tpList = ModelTrackPoint.byAlias(_id);

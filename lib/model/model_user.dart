@@ -67,9 +67,15 @@ class ModelUser {
     return m._id;
   }
 
-  static Future<void> update() async {
-    logger.verbose('Update');
+  static Future<void> update([ModelUser? m]) async {
+    if (m != null && _table.indexWhere((e) => e.id == m.id) >= 0) {
+      _table[m.id - 1] = m;
+    }
     await write();
+  }
+
+  ModelUser clone() {
+    return toModel(toString());
   }
 
   static Future<void> delete(ModelUser m) async {

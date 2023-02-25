@@ -15,45 +15,75 @@ class WidgetTaskEdit extends StatefulWidget {
 class _WidgetTaskEdit extends State<WidgetTaskEdit> {
   static final Logger logger = Logger.logger<WidgetTaskEdit>();
 
-  bool? _deleted;
-  ModelTask? _task;
+  ValueNotifier<bool> modified = ValueNotifier<bool>(false);
+  //TextEditingController nameController = TextEditingController();
+  //TextEditingController notesController = TextEditingController();
+
+  late bool? deleted;
+  late bool create;
+  late ModelTask task;
+  bool _initialized = false;
   @override
   void dispose() {
     super.dispose();
   }
 
+  void modify() {
+    modified.value = true;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final id = ModalRoute.of(context)!.settings.arguments as int;
-    bool create = id <= 0;
-    _task ??= create
-        ? ModelTask(task: '', deleted: false, notes: '')
-        : ModelTask.getTask(id);
-    var task = _task!;
-    _deleted ??= task.deleted;
-
-    var deleted = _deleted!;
+    final id = (ModalRoute.of(context)?.settings.arguments ?? 0) as int;
+    if (!_initialized) {
+      create = id <= 0;
+      task = create
+          ? ModelTask(task: '', deleted: false, notes: '')
+          : ModelTask.getTask(id).clone();
+      deleted = task.deleted;
+      _initialized = true;
+    }
 
     return AppWidgets.scaffold(context,
-        body: ListView(children: [
-          ///
-          /// ok/add button
-          Center(
-              child: IconButton(
-            icon: Icon(create ? Icons.add : Icons.done, size: 50),
-            onPressed: () {
-              if (task.task.isEmpty) {
-                task.task = 'Person #${task.id}';
+        navBar: BottomNavigationBar(
+            fixedColor: AppColors.black.color,
+            selectedFontSize: 14,
+            unselectedFontSize: 14,
+            backgroundColor: AppColors.yellow.color,
+            items: [
+              // 0 alphabethic
+              BottomNavigationBarItem(
+                  icon: ValueListenableBuilder(
+                      valueListenable: modified,
+                      builder: ((context, value, child) {
+                        return Icon(Icons.done,
+                            size: 30,
+                            color: modified.value == true
+                                ? AppColors.green.color
+                                : AppColors.white54.color);
+                      })),
+                  label: 'Speichern'),
+              // 1 nearest
+              const BottomNavigationBarItem(
+                  icon: Icon(Icons.cancel), label: 'Abbrechen'),
+            ],
+            onTap: (int id) {
+              if (id == 0) {
+                if (create) {
+                  if (task.task.trim().isEmpty) {
+                    task.task = 'Aufgabe #${ModelTask.length + 1}';
+                  }
+                  ModelTask.insert(task);
+                } else {
+                  ModelTask.update(task).then((_) {
+                    AppWidgets.navigate(context, AppRoutes.listTasks);
+                  });
+                }
+              } else if (id == 1) {
+                Navigator.pop(context);
               }
-              task.deleted = deleted;
-              create ? ModelTask.insert(task) : ModelTask.write();
-              Navigator.pop(context);
-
-              Navigator.pop(context);
-              Navigator.pushNamed(context, AppRoutes.listTasks.route);
-            },
-          )),
-
+            }),
+        body: ListView(children: [
           /// taskname
           Container(
               padding: const EdgeInsets.all(10),
@@ -61,6 +91,7 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
                 decoration: const InputDecoration(label: Text('Aufgabe')),
                 onChanged: ((value) {
                   task.task = value;
+                  modify();
                 }),
                 maxLines: 1,
                 minLines: 1,
@@ -75,6 +106,10 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
                 maxLines: null,
                 minLines: 3,
                 controller: TextEditingController(text: task.notes),
+                onChanged: (val) {
+                  task.notes = val;
+                  modify();
+                },
               )),
 
           /// deleted
@@ -88,10 +123,10 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
               leading: Checkbox(
                 value: deleted,
                 onChanged: (val) {
-                  setState(() {
-                    _deleted = val;
-                  });
                   task.deleted = val ?? false;
+                  deleted = task.deleted;
+                  modify();
+                  setState(() {});
                 },
               ))
         ]));

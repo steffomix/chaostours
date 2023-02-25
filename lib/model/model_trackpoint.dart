@@ -7,6 +7,7 @@ import 'package:chaostours/gps.dart';
 import 'package:chaostours/address.dart';
 import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/logger.dart';
+import 'package:flutter/material.dart';
 
 class ModelTrackPoint {
   static Logger logger = Logger.logger<ModelTrackPoint>();
@@ -141,14 +142,21 @@ class ModelTrackPoint {
   /// The Model will then have a valid id
   /// that reflects (is same as) Table length.
   ///
-  static Future<void> update(ModelTrackPoint tp) async {
-    if (tp.id <= 0) {
+  static Future<void> update(ModelTrackPoint m) async {
+    if (m.id <= 0) {
       logger.warn('Update Trackpoint forwarded to insert '
-          'due to negative TrackPoint ID ${tp.id}');
-      await insert(tp);
+          'due to negative TrackPoint ID ${m.id}');
+      await insert(m);
     } else {
+      if (_table.indexWhere((e) => e.id == m.id) >= 0) {
+        _table[m.id - 1] = m;
+      }
       await write();
     }
+  }
+
+  ModelTrackPoint clone() {
+    return toModel(toString());
   }
 
   static Future<void> write() async {
