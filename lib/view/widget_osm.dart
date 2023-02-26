@@ -353,11 +353,8 @@ class _WidgetOsm extends State<WidgetOsm> {
   BottomNavigationBar navBar(context) {
     return BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
-        selectedFontSize: 14,
-        unselectedFontSize: 14,
         backgroundColor: AppColors.yellow.color,
-        selectedItemColor: AppColors.black.color,
-        unselectedItemColor: AppColors.black.color,
+        fixedColor: AppColors.black.color,
         items: [
           BottomNavigationBarItem(
               icon: const Icon(Icons.done),
@@ -382,9 +379,7 @@ class _WidgetOsm extends State<WidgetOsm> {
                   alias.lon = pos.longitude;
 
                   ModelAlias.update(_alias);
-                  AppWidgets.navigate(context, AppRoutes.listAlias);
-                  Navigator.pushNamed(context, AppRoutes.editAlias.route,
-                      arguments: _id);
+                  Navigator.pop(context);
                 } else {
                   logger.log('create new alias...');
 
@@ -401,9 +396,7 @@ class _WidgetOsm extends State<WidgetOsm> {
                       lastVisited: DateTime.now());
 
                   ModelAlias.insert(alias).then((_) {
-                    AppWidgets.navigate(context, AppRoutes.listAlias);
-                    Navigator.pushNamed(context, AppRoutes.editAlias.route,
-                        arguments: alias.id);
+                    Navigator.pop(context);
                     logger.log('created new alias #${alias.id}');
                   }).onError((error, stackTrace) {
                     logger.error(error.toString(), stackTrace);
@@ -420,18 +413,22 @@ class _WidgetOsm extends State<WidgetOsm> {
 
                 break;
               case 2:
+                // search for alias
                 _controller
                     .getCurrentPositionAdvancedPositionPicker()
                     .then((GeoPoint pos) {
                   List<ModelAlias> list = ModelAlias.nextAlias(
                       gps: GPS(pos.latitude, pos.longitude));
                   if (list.isNotEmpty) {
-                    Navigator.pushNamed(context, AppRoutes.editAlias.route,
+                    Navigator.pushNamed(
+                        context, AppRoutes.listAliasTrackpoints.route,
                         arguments: list.first.id);
                   }
                 });
                 break;
               default:
+
+                /// return to previous
                 logger.log('return to last view');
                 Navigator.pop(context);
             }

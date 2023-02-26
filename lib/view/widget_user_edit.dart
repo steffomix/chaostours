@@ -41,9 +41,8 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
 
     return AppWidgets.scaffold(context,
         navBar: BottomNavigationBar(
+            type: BottomNavigationBarType.fixed,
             fixedColor: AppColors.black.color,
-            selectedFontSize: 14,
-            unselectedFontSize: 14,
             backgroundColor: AppColors.yellow.color,
             items: [
               // 0 alphabethic
@@ -103,7 +102,8 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
           ListTile(
               title: const Text('Deaktiviert / gelöscht'),
               subtitle: const Text(
-                'Definiert ob diese Person gelistet und auswählbar ist',
+                'Definiert ob diese Person gelistet und auswählbar ist.'
+                '\nBereits zugewiesenes Personal bleibt grundsätzlich sichtbar.',
                 softWrap: true,
               ),
               leading: Checkbox(

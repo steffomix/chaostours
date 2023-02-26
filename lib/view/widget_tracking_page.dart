@@ -69,7 +69,6 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   Widget build(BuildContext context) {
     List<Widget> list = [];
     switch (displayMode) {
-
       /// tasks mode
       case TrackingPageDisplayMode.tasks:
         list.addAll(renderTasks(context));
@@ -104,6 +103,9 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   BottomNavigationBar bottomNavBar(BuildContext context) {
     return BottomNavigationBar(
         currentIndex: _bottomBarIndex,
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: AppColors.yellow.color,
+        fixedColor: AppColors.black.color,
         items: const [
           BottomNavigationBarItem(
               icon: Icon(Icons.recent_actors), label: 'Zuletzt besucht'),

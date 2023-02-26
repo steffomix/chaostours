@@ -269,9 +269,8 @@ class _WidgetAddTasksState extends State<WidgetEditTrackpointTasks> {
       context,
       body: body,
       navBar: BottomNavigationBar(
+          type: BottomNavigationBarType.fixed,
           fixedColor: AppColors.black.color,
-          selectedFontSize: 14,
-          unselectedFontSize: 14,
           backgroundColor: AppColors.yellow.color,
           items: [
             // 0 alphabethic

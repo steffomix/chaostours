@@ -78,7 +78,10 @@ class _WidgetAliasList extends State<WidgetAliasList> {
           size: 30, color: AppColors.aliasStatusColor(alias.status)),
       onPressed: () {
         Navigator.pushNamed(context, AppRoutes.listAliasTrackpoints.route,
-            arguments: alias.id);
+                arguments: alias.id)
+            .then((_) {
+          setState(() {});
+        });
       },
     );
   }
@@ -145,9 +148,8 @@ class _WidgetAliasList extends State<WidgetAliasList> {
   int selectedNavBarItem = 0;
   BottomNavigationBar navBar(BuildContext context) {
     return BottomNavigationBar(
-        selectedItemColor: AppColors.green.color,
-        unselectedItemColor: AppColors.black.color,
         currentIndex: selectedNavBarItem,
+        fixedColor: AppColors.black.color,
         backgroundColor: AppColors.yellow.color,
         items: const [
           // new on osm
@@ -166,7 +168,10 @@ class _WidgetAliasList extends State<WidgetAliasList> {
           switch (id) {
             /// create
             case 0:
-              Navigator.pushNamed(context, AppRoutes.osm.route, arguments: 0);
+              Navigator.pushNamed(context, AppRoutes.osm.route, arguments: 0)
+                  .then((_) {
+                setState(() {});
+              });
               break;
 
             /// last visited

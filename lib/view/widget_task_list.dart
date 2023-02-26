@@ -82,6 +82,7 @@ class _WidgetTaskList extends State<WidgetTaskList> {
     return AppWidgets.scaffold(context,
         body: ListView(children: [searchWidget(context), ...tasks]),
         navBar: BottomNavigationBar(
+            type: BottomNavigationBarType.fixed,
             backgroundColor: AppColors.yellow.color,
             fixedColor: AppColors.black.color,
             items: [

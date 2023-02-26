@@ -46,8 +46,6 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
         navBar: BottomNavigationBar(
             type: BottomNavigationBarType.fixed,
             fixedColor: AppColors.black.color,
-            selectedFontSize: 14,
-            unselectedFontSize: 14,
             backgroundColor: AppColors.yellow.color,
             items: [
               const BottomNavigationBarItem(
@@ -72,7 +70,10 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
             ],
             onTap: (int id) {
               if (id == 0) {
-                Navigator.pushNamed(context, AppRoutes.osm.route, arguments: 0);
+                Navigator.pushNamed(context, AppRoutes.osm.route, arguments: 0)
+                    .then((_) {
+                  setState(() {});
+                });
               } else if (id == 1) {
                 var gps = GPS.lastGps!;
                 var lat = gps.lat;
@@ -90,10 +91,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                 intent.launch();
               } else if (id == 2) {
                 ModelAlias.update(alias).then((_) {
-                  AppWidgets.navigate(context, AppRoutes.listAlias);
-                  Navigator.pushNamed(
-                      context, AppRoutes.listAliasTrackpoints.route,
-                      arguments: alias.id);
+                  Navigator.pop(context);
                 });
               } else if (id == 3) {
                 Navigator.pop(context);
@@ -129,7 +127,12 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                           'Latitude/Breitengrad:\n${alias.lat}\n\nLongitude/Längengrad:\n${alias.lon}')),
                   onPressed: () {
                     Navigator.pushNamed(context, AppRoutes.osm.route,
-                        arguments: alias.id);
+                            arguments: alias.id)
+                        .then(
+                      (value) {
+                        setState(() {});
+                      },
+                    );
                   },
                 ))
           ]),

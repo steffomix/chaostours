@@ -107,7 +107,10 @@ class _WidgetAliasTrackpoint extends State<WidgetAliasTrackpoint> {
           icon: Icon(Icons.edit, size: 30, color: AppColors.black.color),
           onPressed: () {
             Navigator.pushNamed(context, AppRoutes.editAlias.route,
-                arguments: _id);
+                    arguments: _id)
+                .then((_) {
+              setState(() {});
+            });
           },
         ));
   }
@@ -128,7 +131,10 @@ class _WidgetAliasTrackpoint extends State<WidgetAliasTrackpoint> {
             icon: const Icon(Icons.edit, size: 30),
             onPressed: () {
               ModelTrackPoint.editTrackPoint = tp;
-              Navigator.pushNamed(context, AppRoutes.editTrackingTasks.route);
+              Navigator.pushNamed(context, AppRoutes.editTrackingTasks.route)
+                  .then((_) {
+                setState(() {});
+              });
             },
           )),
     ];

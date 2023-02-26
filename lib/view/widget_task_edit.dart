@@ -47,8 +47,7 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
     return AppWidgets.scaffold(context,
         navBar: BottomNavigationBar(
             fixedColor: AppColors.black.color,
-            selectedFontSize: 14,
-            unselectedFontSize: 14,
+            type: BottomNavigationBarType.fixed,
             backgroundColor: AppColors.yellow.color,
             items: [
               // 0 alphabethic
@@ -73,7 +72,9 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
                   if (task.task.trim().isEmpty) {
                     task.task = 'Aufgabe #${ModelTask.length + 1}';
                   }
-                  ModelTask.insert(task);
+                  ModelTask.insert(task).then((_) {
+                    AppWidgets.navigate(context, AppRoutes.listTasks);
+                  });
                 } else {
                   ModelTask.update(task).then((_) {
                     AppWidgets.navigate(context, AppRoutes.listTasks);
