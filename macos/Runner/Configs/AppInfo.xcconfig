@@ -11,4 +11,4 @@ PRODUCT_NAME = chaostours
 PRODUCT_BUNDLE_IDENTIFIER = com.stefanbrinkmann.chaostours
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2022 com.stefanbrinkann. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2022 com.stefanbrinkmann. All rights reserved.

@@ -5,7 +5,11 @@ import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart'
     show Position, LocationPermission, Geolocator;
 import 'dart:io' as io;
-//
+import 'package:path_provider/path_provider.dart' as pp;
+
+import 'package:permission_handler/permission_handler.dart';
+
+///
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_task.dart';
@@ -20,7 +24,6 @@ import 'package:chaostours/permissions.dart';
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/workmanager.dart';
-import 'package:chaostours/shared/shared_data.dart';
 import 'package:chaostours/globals.dart';
 
 class AppLoader {
@@ -38,6 +41,25 @@ class AppLoader {
     //await Tracking.initialize();
     //await Tracking.startTracking();
     try {
+      try {
+        /// load saved path with fallback to internal app directory
+        Globals.storagePath =
+            (await Shared(SharedKeys.storagePath).loadString()) ??
+                (await pp.getApplicationDocumentsDirectory()).path;
+        // load key with fallback to app internal
+        String? storageKey = await Shared(SharedKeys.storageKey).loadString();
+        if (storageKey != null) {
+          try {
+            Globals.storageKey = Storages.values.byName(storageKey);
+          } catch (e, stk) {
+            Globals.storageKey = Storages.appInternal;
+            logger.error(e.toString(), stk);
+          }
+        }
+      } catch (e, stk) {
+        logger.error(e.toString(), stk);
+      }
+
       // load database
       logger.important('load Database Table ModelTrackPoint');
       await ModelTrackPoint.open();
@@ -76,13 +98,12 @@ class AppLoader {
       logger.error('reset shared data ${e.toString()}', stk);
     }
     try {
-      logger.important('initialize Permissions');
-      await Permissions.requestLocationPermission();
-
-      ///
-      logger.important('initialize Notifications');
-      Notifications();
-      await Permissions.requestNotificationPermission();
+      logger.important('initialize permissions');
+      await Permission.locationAlways.request();
+      await Permission.locationAlways.request();
+      await Permission.storage.request();
+      await Permission.manageExternalStorage.request();
+      await Permission.notification.request();
     } catch (e, stk) {
       logger.fatal(
           'app start permissions failure, wait 5 sec. \n${e.toString()}', stk);
@@ -93,7 +114,6 @@ class AppLoader {
       await webKey();
       //logger.important('initialize Tracking Calendar');
       //TrackingCalendar();
-
     } catch (e, stk) {
       logger.fatal(
           'app start calendar failure, wait 5 sec. \n${e.toString()}', stk);

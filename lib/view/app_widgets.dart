@@ -19,6 +19,7 @@ import 'package:chaostours/view/widget_user_edit.dart';
 import 'package:chaostours/view/widget_alias_edit.dart';
 import 'package:chaostours/view/widget_alias_trackpoint_list.dart';
 import 'package:chaostours/view/widget_osm.dart';
+import 'package:chaostours/view/widget_storage_settings.dart';
 
 enum AppColors {
   /// theme colors
@@ -58,22 +59,25 @@ enum AppColors {
 /// use value instead of name to get the right
 enum AppRoutes {
   home('/'),
+  // system
   logger('/logger'),
   permissions('/permissions'),
+  storageSettings('/storagesettings'),
+  // live
   editTrackingTasks('/editTrackingTasks'),
-  //
+  // task
   listTasks('/listTasks'),
   editTasks('/listTasks/editTasks'),
   createTask('/listTasks/editTasks/createTask'),
-  //
+  // alias
   listAlias('/listAlias'),
   editAlias('/listAlias/editAlias'),
   listAliasTrackpoints('/listAlias/editAlias/listAliasTrackpoints'),
-  //
+  // user
   listUsers('/listUsers'),
   editUser('/listUsers/editUser'),
   createUser('/listUsers/editUser/createUser'),
-  //
+  // osm
   osm('/osm');
 
   final String route;
@@ -90,9 +94,10 @@ class AppWidgets {
   static final Logger logger = Logger.logger<AppWidgets>();
 
   static Widget materialApp(BuildContext context) {
+    String homeRoute = AppRoutes.home.route;
     return MaterialApp(
       title: 'Chaos Tours',
-      initialRoute: AppRoutes.home.route,
+      initialRoute: homeRoute,
       routes: {
         // home routes
         AppRoutes.home.route: (context) => const WidgetTrackingPage(),
@@ -100,6 +105,8 @@ class AppWidgets {
         /// system config routes
         AppRoutes.logger.route: (context) => const WidgetLoggerPage(),
         AppRoutes.permissions.route: (context) => const WidgetPermissionsPage(),
+        AppRoutes.storageSettings.route: (context) =>
+            const WidgetStorageSettings(),
 
         /// add/edit items routes
         // trackpoint
@@ -137,9 +144,11 @@ class AppWidgets {
   }
 
   static Widget scaffold(BuildContext context,
-      {required Widget body, BottomNavigationBar? navBar, AppBar? appBar}) {
+      {required Widget body,
+      BottomNavigationBar? navBar,
+      AppBar? customAppBar}) {
     return Scaffold(
-      appBar: appBar ?? AppWidgets.appBar(context),
+      appBar: appBar(context),
       drawer: const WidgetDrawer(),
       body: body,
       bottomNavigationBar: navBar,
@@ -148,26 +157,6 @@ class AppWidgets {
 
   static AppBar appBar(BuildContext context) {
     return AppBar(title: const Text('ChaosTours'));
-  }
-
-  static BottomNavigationBar bottomNavBar(context) {
-    return BottomNavigationBar(
-        selectedFontSize: 14,
-        unselectedFontSize: 14,
-        backgroundColor: AppColors.yellow.color,
-        selectedItemColor: AppColors.black.color,
-        unselectedItemColor: AppColors.black.color,
-        items: const [
-          BottomNavigationBarItem(
-              icon: Icon(Icons.keyboard_arrow_left), label: 'x'),
-          BottomNavigationBarItem(icon: Icon(Icons.location_city), label: 'x'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.keyboard_arrow_right), label: 'x'),
-        ],
-        onTap: (int id) {
-          logger.log('BottomNavBar tapped but no method connected');
-          //eventBusTapBottomNavBarIcon.fire(Tapped(id));
-        });
   }
 
   static Widget divider({Color color = Colors.blueGrey}) {
@@ -205,56 +194,76 @@ class _WidgetDrawer extends State<WidgetDrawer> {
   @override
   Widget build(BuildContext context) {
     var divider = AppWidgets.divider();
+    double boxHeight = 60;
     return Drawer(
-        child: ListView(padding: EdgeInsets.zero, children: [
-      const Text('Chaos Tours'),
-      divider,
+        child: Container(
+            padding: const EdgeInsets.all(20),
+            child: ListView(padding: EdgeInsets.zero, children: [
+              SizedBox(
+                  height: boxHeight,
+                  child: const Center(child: Text('Live Tracking'))),
 
-      ///
-      ElevatedButton(
-          onPressed: () {
-            AppWidgets.navigate(context, AppRoutes.home);
-          },
-          child: const Text('Tracking')),
-      divider,
+              ///
+              ElevatedButton(
+                  onPressed: () {
+                    AppWidgets.navigate(context, AppRoutes.home);
+                  },
+                  child: const Text('Tracking')),
 
-      ///
-      ElevatedButton(
-          onPressed: () {
-            AppWidgets.navigate(context, AppRoutes.permissions);
-          },
-          child: const Text('Android Permissions')),
-      divider,
+              SizedBox(
+                  height: boxHeight,
+                  child: const Center(child: Text('Assets'))),
 
-      ///
-      ElevatedButton(
-          onPressed: () {
-            AppWidgets.navigate(context, AppRoutes.logger);
-          },
-          child: const Text('Logger')),
-      divider,
+              ///
+              ElevatedButton(
+                  onPressed: () {
+                    AppWidgets.navigate(context, AppRoutes.listUsers);
+                  },
+                  child: const Text('Personal')),
 
-      ///
-      ElevatedButton(
-          onPressed: () {
-            AppWidgets.navigate(context, AppRoutes.listUsers);
-          },
-          child: const Text('Personal')),
+              ///
+              ElevatedButton(
+                  onPressed: () {
+                    AppWidgets.navigate(context, AppRoutes.listTasks);
+                  },
+                  child: const Text('Aufgaben')),
 
-      ///
-      ElevatedButton(
-          onPressed: () {
-            AppWidgets.navigate(context, AppRoutes.listTasks);
-          },
-          child: const Text('Aufgaben')),
+              ///
+              ElevatedButton(
+                  onPressed: () {
+                    AppWidgets.navigate(context, AppRoutes.listAlias);
+                  },
+                  child: const Text('Orte (Alias)')),
 
-      ///
-      ElevatedButton(
-          onPressed: () {
-            AppWidgets.navigate(context, AppRoutes.listAlias);
-          },
-          child: const Text('Orte (Alias)')),
-    ]));
+              SizedBox(
+                  height: boxHeight,
+                  child: const Center(child: Text('Einstellungen'))),
+
+              ///
+              ElevatedButton(
+                  onPressed: () {
+                    AppWidgets.navigate(context, AppRoutes.storageSettings);
+                  },
+                  child: const Text('Speicherort / Backup')),
+
+              ///
+              ElevatedButton(
+                  onPressed: () {
+                    AppWidgets.navigate(context, AppRoutes.permissions);
+                  },
+                  child: const Text('Android Permissions')),
+
+              SizedBox(
+                  height: boxHeight,
+                  child: const Center(child: Text('System'))),
+
+              ///
+              ElevatedButton(
+                  onPressed: () {
+                    AppWidgets.navigate(context, AppRoutes.logger);
+                  },
+                  child: const Text('App Logger'))
+            ])));
   }
 }
 

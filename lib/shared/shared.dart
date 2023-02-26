@@ -3,6 +3,12 @@ import 'package:chaostours/logger.dart';
 import 'package:chaostours/event_manager.dart';
 
 enum SharedKeys {
+  /// enum Storages key
+  storageKey,
+
+  /// string path of selected storage
+  storagePath,
+
   ///
   /// List<String>
   /// [0] status

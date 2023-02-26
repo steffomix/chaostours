@@ -3,7 +3,9 @@ import 'package:chaostours/logger.dart';
 ////
 import 'dart:io';
 import 'package:path/path.dart';
+import 'package:chaostours/globals.dart';
 import 'package:path_provider/path_provider.dart' as pp;
+import 'package:external_path/external_path.dart';
 
 var decode = Uri.decodeFull; // util.base64Codec().decode;
 var encode = Uri.encodeFull; //util.base64Codec().encode;
@@ -11,10 +13,9 @@ var encode = Uri.encodeFull; //util.base64Codec().encode;
 class FileHandler {
   static Logger logger = Logger.logger<FileHandler>();
   static const lineSep = '\n';
-  static Directory? _appDir;
   static Future<Directory> get appDir async {
-    return _appDir ??= (await pp.getExternalStorageDirectory() ??
-        await pp.getApplicationDocumentsDirectory());
+    return Directory(Globals.storagePath ??
+        (await pp.getApplicationDocumentsDirectory()).path);
   }
 
   static Future<File> getFile(String filename) async {

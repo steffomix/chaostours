@@ -1,7 +1,29 @@
+import 'package:path/path.dart';
+
 ///
 import 'package:chaostours/logger.dart';
 
 enum OsmLookup { never, onStatus, always }
+
+enum Storages {
+  /// app installation directory
+  /// unreachable
+  appInternal,
+
+  /// app data directory of internal storage
+  /// .android/data/com.stefanbrinkmann.chaostours/files/chaostours/1.0
+  /// on new devices only reachable with Computer and Datacable
+  appLocalStorageData,
+
+  /// app data directory of internal storage
+  /// localStorage/Documents
+  /// on new devices only reachable with Computer and Datacable
+  appLocalStorageDocuments,
+
+  /// Documents on sdCard
+  /// <sdCard>/Documents/chaostours/1.0
+  appSdCardDocuments;
+}
 
 class Globals {
   static Logger logger = Logger.logger<Globals>();
@@ -18,7 +40,11 @@ var padding = MediaQuery.of(context).padding;
 double newheight = height - padding.top - padding.bottom;
 */
 
-  static String version = '';
+  /// storage
+  static Storages? storageKey;
+  static String? storagePath;
+
+  static String version = '1.0';
   static const bool debugMode = true;
   static double distanceTreshold = 100; //meters
   static OsmLookup osmLookup = OsmLookup.always;

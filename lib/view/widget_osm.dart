@@ -2,7 +2,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
-import 'package:osm_flutter_hooks/osm_flutter_hooks.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:android_intent_plus/android_intent.dart';
@@ -542,8 +541,7 @@ class _WidgetOsm extends State<WidgetOsm> {
           searchResultContainer(context),
           infoBox(context)
         ]),
-        navBar: navBar(context),
-        appBar: null);
+        navBar: navBar(context));
 
     if (!_initialized) {
       SizeChangedLayoutNotifier(child: body);
