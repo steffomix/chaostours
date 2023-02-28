@@ -156,10 +156,10 @@ class _WidgetAddTasksState extends State<WidgetEditTrackpointTasks> {
     List<String> userList = [];
     for (var item in ModelUser.getAll()) {
       if (ModelTrackPoint.editTrackPoint.idUser.contains(item.id)) {
-        userList.add('- ${item.user}');
+        userList.add(item.user);
       }
     }
-    String users = userList.isNotEmpty ? '\n${userList.join('\n')}' : ' - ';
+    String users = userList.isNotEmpty ? '\n- ${userList.join('\n- ')}' : ' - ';
 
     /// dropdown menu botten with selected users
     List<Widget> items = [
@@ -176,10 +176,6 @@ class _WidgetAddTasksState extends State<WidgetEditTrackpointTasks> {
           : Column(children: userCheckboxes(context))
     ];
 
-    /// add items
-    if (dropdownUserIsOpen) {
-      items.addAll(userCheckboxes(context));
-    }
     return ListBody(children: items);
   }
 
@@ -189,16 +185,16 @@ class _WidgetAddTasksState extends State<WidgetEditTrackpointTasks> {
     List<String> taskList = [];
     for (var item in ModelTask.getAll()) {
       if (ModelTrackPoint.editTrackPoint.idTask.contains(item.id)) {
-        taskList.add('- ${item.task}');
+        taskList.add(item.task);
       }
     }
-    String tasks = taskList.isNotEmpty ? '\n${taskList.join('\n')}' : ' - ';
+    String tasks = taskList.isNotEmpty ? '\n- ${taskList.join('\n- ')}' : ' - ';
 
     /// dropdown menu botten with selected tasks
     List<Widget> items = [
       ElevatedButton(
         child: ListTile(
-            trailing: const Icon(Icons.menu), title: Text('Personal:$tasks')),
+            trailing: const Icon(Icons.menu), title: Text('Aufgaben:$tasks')),
         onPressed: () {
           dropdownTasksIsOpen = !dropdownTasksIsOpen;
           setState(() {});

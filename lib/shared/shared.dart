@@ -3,6 +3,9 @@ import 'package:chaostours/logger.dart';
 import 'package:chaostours/event_manager.dart';
 
 enum SharedKeys {
+  /// List<String> of key:value pairs
+  appSettings,
+
   /// enum Storages key
   storageKey,
 
@@ -15,16 +18,16 @@ enum SharedKeys {
   /// [1-...] GPS trackPoints as sharedString
   trackPointUp,
 
-  /// ModelTrackPoint as sharedString
+  /// String ModelTrackPoint as sharedString
   trackPointDown,
 
-  /// address lookup when detected status standing
+  /// String address lookup when detected status standing
   addressStanding,
 
-  /// list of trackpoints to update
+  /// List<String> of trackpoints to update
   updateTrackPointQueue,
 
-  /// contains background Logger logs
+  /// List<String> contains background Logger logs
   workmanagerLogger;
 }
 

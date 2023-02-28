@@ -1,3 +1,5 @@
+// ignore_for_file: prefer_const_constructors
+
 import 'package:path/path.dart';
 
 ///
@@ -45,49 +47,42 @@ double newheight = height - padding.top - padding.bottom;
   static String? storagePath;
 
   static String version = '1.0';
+
+  /// deprecated
   static const bool debugMode = true;
-  static double distanceTreshold = 100; //meters
-  static OsmLookup osmLookup = OsmLookup.always;
 
-  static Duration get appTickDuration => const Duration(seconds: 1);
+  ///
+  static bool statusStandingRequireAlias = true;
 
+  ///
+  static int distanceTreshold = 100; //meters
+  ///
+  static OsmLookup osmLookupCondition = OsmLookup.always;
+
+  ///
+  static Duration appTickDuration = Duration(seconds: 1);
+
+  ///
   static List<String> weekDays = ['', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
 
-  static final List<int> preselectedUsers = [1, 2];
+  ///
+  static List<int> preselectedUsers = [1, 2];
 
   /// save battery with cache time
-  static Duration get cacheGpsTime {
-    return const Duration(seconds: 20);
-  }
+  static Duration cacheGpsTime = Duration(seconds: 20);
 
   // durations and distances
   // skip status check for given time to prevent mass actions
-  static Duration get waitTimeAfterStatusChanged {
-    return debugMode
-        ? const Duration(seconds: 10)
-        : const Duration(seconds: 60);
-  }
+  static Duration waitTimeAfterStatusChanged = Duration(seconds: 60);
 
   /// stop time needed to trigger stop.
   /// Shoud be at least 3 times more than Globals.tickTrackPointDuration
-  static Duration get stopTimeTreshold {
-    return debugMode
-        ? const Duration(seconds: 30)
-        : const Duration(seconds: 180);
-  }
+  static Duration timeRangeTreshold = Duration(seconds: 360);
 
   /// check status interval.
   /// Should be at least 3 seconds due to GPS lookup needs at least 2 seconds
-  static Duration get tickTrackPointDuration {
-    return debugMode
-        ? const Duration(seconds: 10)
-        : const Duration(seconds: 60);
-  }
+  static Duration trackPointInterval = Duration(seconds: 30);
 
   /// consumes mobile data!
-  static Duration get addressLookupDuration {
-    return debugMode
-        ? const Duration(seconds: 10)
-        : const Duration(seconds: 60);
-  }
+  static Duration addressLookupInterval = Duration(seconds: 60);
 }

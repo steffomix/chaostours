@@ -16,15 +16,16 @@ import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/shared/shared.dart';
 import 'package:chaostours/shared/tracking.dart';
-import 'package:chaostours/trackpoint.dart';
+import 'package:chaostours/background_process/trackpoint.dart';
 import 'package:chaostours/gps.dart';
-import 'package:chaostours/tracking_calendar.dart';
+import 'package:chaostours/background_process/tracking_calendar.dart';
 import 'package:chaostours/notifications.dart';
 import 'package:chaostours/permissions.dart';
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/logger.dart';
-import 'package:chaostours/workmanager.dart';
+//import 'package:chaostours/background_process/workmanager.dart';
 import 'package:chaostours/globals.dart';
+import 'package:chaostours/app_settings.dart';
 
 class AppLoader {
   static Logger logger = Logger.logger<AppLoader>();
@@ -38,9 +39,12 @@ class AppLoader {
     //logger.important('initialize workmanager');
     //WorkManager();
 
-    //await Tracking.initialize();
-    //await Tracking.startTracking();
     try {
+      try {
+        await AppSettings.load();
+      } catch (e, stk) {
+        logger.error(e.toString(), stk);
+      }
       try {
         /// load saved path with fallback to internal app directory
         Globals.storagePath =
@@ -128,16 +132,30 @@ class AppLoader {
 
     logger.important('preload finished successful');
 
-    Logger.listenOnTick();
-    logger.important('start App Tick with 1sec. interval');
+    logger.important(
+        'start App Tick with ${Globals.appTickDuration}sec. interval');
     Future.microtask(appTick);
+    Logger.listenOnTick();
 
-    logger.important('start workmanager trackpoint simulation Tick');
-    Future.microtask(workmanagerTick);
+    /// debug only
+    //logger.important('start workmanager trackpoint simulation Tick');
+    //Future.microtask(workmanagerTick);
 
-    Future.microtask(addressLookup);
+    logger.important('Start background tracker');
+    await BackgroundTracking.startTracking();
+    bool started = await BackgroundTracking.isTracking();
+    if (started) {
+      logger.important('Background tracker started');
+    } else {
+      try {
+        throw 'Background tracker failed starting';
+      } catch (e, stk) {
+        logger.fatal(e.toString(), stk);
+      }
+    }
   }
 
+  /// debug only
   static Future<void> workmanagerTick() async {
     while (true) {
       try {
@@ -145,18 +163,7 @@ class AppLoader {
       } catch (e, stk) {
         logger.fatal(e.toString(), stk);
       }
-      await Future.delayed(Globals.tickTrackPointDuration);
-    }
-  }
-
-  static Future<void> addressLookup() async {
-    while (true) {
-      try {
-        EventManager.fire<EventOnAddressLookup>(EventOnAddressLookup());
-      } catch (e, stk) {
-        logger.error('fire addressLookup Event: ${e.toString()}', stk);
-      }
-      await Future.delayed(Globals.addressLookupDuration);
+      await Future.delayed(Globals.trackPointInterval);
     }
   }
 

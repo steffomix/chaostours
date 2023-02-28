@@ -20,6 +20,7 @@ import 'package:chaostours/view/widget_alias_edit.dart';
 import 'package:chaostours/view/widget_alias_trackpoint_list.dart';
 import 'package:chaostours/view/widget_osm.dart';
 import 'package:chaostours/view/widget_storage_settings.dart';
+import 'package:chaostours/view/widget_app_settings.dart';
 
 enum AppColors {
   /// theme colors
@@ -63,6 +64,7 @@ enum AppRoutes {
   logger('/logger'),
   permissions('/permissions'),
   storageSettings('/storagesettings'),
+  appSettings('/appsettings'),
   // live
   editTrackingTasks('/editTrackingTasks'),
   // task
@@ -107,6 +109,7 @@ class AppWidgets {
         AppRoutes.permissions.route: (context) => const WidgetPermissionsPage(),
         AppRoutes.storageSettings.route: (context) =>
             const WidgetStorageSettings(),
+        AppRoutes.appSettings.route: (context) => const WidgetAppSettings(),
 
         /// add/edit items routes
         // trackpoint
@@ -194,14 +197,14 @@ class _WidgetDrawer extends State<WidgetDrawer> {
   @override
   Widget build(BuildContext context) {
     var divider = AppWidgets.divider();
-    double boxHeight = 60;
+    double boxHeight = 45;
     return Drawer(
         child: Container(
             padding: const EdgeInsets.all(20),
             child: ListView(padding: EdgeInsets.zero, children: [
               SizedBox(
                   height: boxHeight,
-                  child: const Center(child: Text('Live Tracking'))),
+                  child: const Center(child: Text('\nLive Tracking'))),
 
               ///
               ElevatedButton(
@@ -212,7 +215,7 @@ class _WidgetDrawer extends State<WidgetDrawer> {
 
               SizedBox(
                   height: boxHeight,
-                  child: const Center(child: Text('Assets'))),
+                  child: const Center(child: Text('\nAssets'))),
 
               ///
               ElevatedButton(
@@ -237,14 +240,25 @@ class _WidgetDrawer extends State<WidgetDrawer> {
 
               SizedBox(
                   height: boxHeight,
-                  child: const Center(child: Text('Einstellungen'))),
+                  child: const Center(child: Text('\nEinstellungen'))),
 
               ///
               ElevatedButton(
                   onPressed: () {
                     AppWidgets.navigate(context, AppRoutes.storageSettings);
                   },
-                  child: const Text('Speicherort / Backup')),
+                  child: const Text('Speicherort')),
+
+              ///
+              ElevatedButton(
+                  onPressed: () {
+                    AppWidgets.navigate(context, AppRoutes.appSettings);
+                  },
+                  child: const Text('Einstellungen')),
+
+              SizedBox(
+                  height: boxHeight,
+                  child: const Center(child: Text('\nSystem'))),
 
               ///
               ElevatedButton(
@@ -252,10 +266,6 @@ class _WidgetDrawer extends State<WidgetDrawer> {
                     AppWidgets.navigate(context, AppRoutes.permissions);
                   },
                   child: const Text('Android Permissions')),
-
-              SizedBox(
-                  height: boxHeight,
-                  child: const Center(child: Text('System'))),
 
               ///
               ElevatedButton(

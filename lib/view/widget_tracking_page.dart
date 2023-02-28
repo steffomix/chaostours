@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 //
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/event_manager.dart';
-import 'package:chaostours/trackpoint.dart';
+import 'package:chaostours/background_process/trackpoint.dart';
 import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/shared/shared.dart';
 import 'package:chaostours/model/model_alias.dart';

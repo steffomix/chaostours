@@ -6,6 +6,7 @@ import 'package:chaostours/model/model_alias.dart'; // for read only
 import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/shared/shared.dart';
+import 'package:chaostours/app_settings.dart';
 
 enum TrackingStatus {
   none(0),
@@ -53,8 +54,15 @@ class TrackPoint {
   }
 
   Future<void> startShared() async {
+    /// update trackpoints
     updateTrackPointQueue();
+
+    /// load app settings
+    AppSettings.load();
+
+    /// only needed if method runs in foreground
     gpsPoints.clear();
+
     try {
       /// load shared data
       Shared shared = Shared(SharedKeys.trackPointUp);
@@ -134,11 +142,17 @@ class TrackPoint {
               break;
             }
           }
-          if (!restricted) {
-            await ModelTrackPoint.insert(newEntry);
 
-            /// this is not needed except trackpoint is running in foreground
-            await ModelTrackPoint.open();
+          if (!restricted &&
+              (!Globals.statusStandingRequireAlias ||
+                  (Globals.statusStandingRequireAlias &&
+                      newEntry.idAlias.isNotEmpty))) {
+            await ModelTrackPoint.insert(newEntry);
+            logger.important(
+                'Save new Trackpoint #${newEntry.id} with data: \n${newEntry.toString()}');
+          } else {
+            logger.important(
+                'New trackpoint not saved due to app settings- or alias restrictions');
           }
         } else {
           /// new status is standing
@@ -238,7 +252,7 @@ class TrackPoint {
   /// so that gpsList[0] is most recent
   List<GPS> _recentTracks() {
     List<GPS> gpsList = [];
-    DateTime treshold = DateTime.now().subtract(Globals.stopTimeTreshold);
+    DateTime treshold = DateTime.now().subtract(Globals.timeRangeTreshold);
     for (var gps in gpsPoints) {
       if (gps.time.isAfter(treshold)) {
         gpsList.add(gps);

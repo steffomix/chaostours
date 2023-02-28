@@ -41,7 +41,6 @@ dependencies:
   # english_words: ^4.0.0
   #package_info_plus: ^3.0.2
   #flutter_background: ^1.1.0
-  #background_location_tracker: ^1.4.0
   #image_picker: ^0.8.6+1
   #image_preview: ^1.0.1
   # https://pub.dev/packages/rollbar_flutter
@@ -71,6 +70,7 @@ dependencies:
   android_intent_plus: ^3.1.6
   loading_animation_widget: ^1.2.0+4
   confirm_dialog: ^1.0.1
+  background_location_tracker: ^1.4.0
 
 dev_dependencies:
   flutter_test:

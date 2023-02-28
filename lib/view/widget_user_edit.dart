@@ -63,8 +63,7 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
             ],
             onTap: (int id) {
               if (id == 0) {
-                ModelUser.update().then(
-                    (_) => AppWidgets.navigate(context, AppRoutes.listUsers));
+                ModelUser.update().then((_) => Navigator.pop(context));
               } else {
                 Navigator.pop(context);
               }

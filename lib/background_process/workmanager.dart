@@ -1,3 +1,4 @@
+/*
 import 'package:workmanager/workmanager.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/trackpoint.dart';
@@ -51,3 +52,4 @@ class WorkManager {
         .registerOneOffTask("com.stefanbrinkmann.chaostours.background", "gps");
   }
 }
+*/

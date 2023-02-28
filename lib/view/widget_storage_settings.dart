@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart' as pp;
 ///
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/globals.dart';
+import 'package:chaostours/shared/shared.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/shared/shared.dart';
 import 'package:confirm_dialog/confirm_dialog.dart';
@@ -34,6 +35,7 @@ class _WidgetStorageSettings extends State<WidgetStorageSettings> {
 
   ValueNotifier<bool> modified = ValueNotifier<bool>(false);
   bool confirmRequired = false;
+  bool corruptedSettings = false;
 
   void modify() {
     modified.value = true;
@@ -51,6 +53,22 @@ class _WidgetStorageSettings extends State<WidgetStorageSettings> {
 
   void lookupPathes() async {
     logger.log('lookup pathes');
+
+    try {
+      String? path = (await Shared(SharedKeys.storagePath).loadString());
+      Storages key = Storages.values
+          .byName((await Shared(SharedKeys.storagePath).loadString()) ?? '');
+      storages[key] = path;
+      logger.log('Found stored key $key with path $path');
+      selectedStorage = key;
+
+      /// if we have a key but no path, something went wrong
+      if (path == null) {
+        corruptedSettings = true;
+      }
+    } catch (e) {
+      logger.warn(e.toString());
+    }
 
     /// internal storages
     try {
@@ -91,6 +109,10 @@ class _WidgetStorageSettings extends State<WidgetStorageSettings> {
     } catch (e, stk) {
       logger.error(e.toString(), stk);
     }
+
+    /// basic and fallback setting
+    selectedStorage ??= Storages.appInternal;
+
     loading = false;
     setState(() {});
   }
@@ -121,6 +143,16 @@ class _WidgetStorageSettings extends State<WidgetStorageSettings> {
           body: Center(child: AppWidgets.loading()));
     }
     List<Widget> options = [];
+
+    if (corruptedSettings) {
+      options.add(Container(
+          padding: EdgeInsets.all(15),
+          child:
+              const Text('Die Speicherung dieser Einstellung ist beschädigt. '
+                  'Bitte speichern sie ihre Auswahl erneut.')));
+      modified.value = true;
+    }
+
     if (storages[Storages.appSdCardDocuments] != null) {
       options.add(ListTile(
           title: const Text('SdCard Documents',
@@ -299,7 +331,7 @@ class _WidgetStorageSettings extends State<WidgetStorageSettings> {
             ],
             onTap: (int id) {
               if (id == 0) {
-                if (!modified.value || selectedStorage == null) {
+                if (!corruptedSettings && !modified.value) {
                   return;
                 } else {
                   Shared(SharedKeys.storageKey)
