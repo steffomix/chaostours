@@ -1,4 +1,5 @@
 import 'package:chaostours/globals.dart';
+import 'package:chaostours/file_handler.dart';
 import 'package:chaostours/app_settings.dart';
 import 'package:background_location_tracker/background_location_tracker.dart';
 import 'package:chaostours/logger.dart';
@@ -13,7 +14,15 @@ void backgroundCallback() {
     Logger.logLevel = LogLevel.verbose;
     final Logger logger = Logger.logger<BackgroundTracking>();
     try {
-      logger.important('Start background tracking task');
+      logger.log('load app settings');
+
+      /// load app settings
+      AppSettings.load();
+      FileHandler().getStorage();
+      logger.log(
+          'using storage ${Globals.storageKey.name}::${Globals.storagePath}');
+
+      FileHandler.logger.important('Start background tracking task');
       await TrackPoint().startShared();
       logger.important('Start background tracking task');
     } catch (e, stk) {
@@ -50,11 +59,13 @@ class BackgroundTracking {
 
   static Future<void> startTracking() async {
     await AppSettings.load();
+
     if (await isTracking() == true) {
       logger.warn(
           'start gps background tracking skipped: tracking already started');
       return;
     }
+
     logger.important('--START-- GPS background tracking');
     BackgroundLocationTrackerManager.startTracking(config: config());
     _isTracking = true;

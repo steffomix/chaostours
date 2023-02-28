@@ -6,16 +6,18 @@ import 'package:geolocator/geolocator.dart'
     show Position, LocationPermission, Geolocator;
 import 'dart:io' as io;
 import 'package:path_provider/path_provider.dart' as pp;
-
 import 'package:permission_handler/permission_handler.dart';
+import 'dart:io';
+import 'package:path/path.dart';
 
 ///
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_user.dart';
-import 'package:chaostours/shared/shared.dart';
-import 'package:chaostours/shared/tracking.dart';
+import 'package:chaostours/shared.dart';
+import 'package:chaostours/file_handler.dart';
+import 'package:chaostours/background_process/tracking.dart';
 import 'package:chaostours/background_process/trackpoint.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/background_process/tracking_calendar.dart';
@@ -40,39 +42,18 @@ class AppLoader {
     //WorkManager();
 
     try {
-      try {
-        await AppSettings.load();
-      } catch (e, stk) {
-        logger.error(e.toString(), stk);
-      }
-      try {
-        /// load saved path with fallback to internal app directory
-        Globals.storagePath =
-            (await Shared(SharedKeys.storagePath).loadString()) ??
-                (await pp.getApplicationDocumentsDirectory()).path;
-        // load key with fallback to app internal
-        String? storageKey = await Shared(SharedKeys.storageKey).loadString();
-        if (storageKey != null) {
-          try {
-            Globals.storageKey = Storages.values.byName(storageKey);
-          } catch (e, stk) {
-            Globals.storageKey = Storages.appInternal;
-            logger.error(e.toString(), stk);
-          }
-        }
-      } catch (e, stk) {
-        logger.error(e.toString(), stk);
-      }
+      await AppSettings.load();
+      await FileHandler().getStorage();
 
       // load database
-      logger.important('load Database Table ModelTrackPoint');
-      await ModelTrackPoint.open();
-      logger.important('load Database Table ModelAlias');
-      await ModelAlias.open();
-      logger.important('load Database Table ModelTask');
-      await ModelTask.open();
       logger.important('load Database Table ModelUser');
       await ModelUser.open();
+      logger.important('load Database Table ModelTask');
+      await ModelTask.open();
+      logger.important('load Database Table ModelAlias');
+      await ModelAlias.open();
+      logger.important('load Database Table ModelTrackPoint');
+      await ModelTrackPoint.open();
 
       ///
       if (ModelAlias.length < 1) {
@@ -141,8 +122,13 @@ class AppLoader {
     //logger.important('start workmanager trackpoint simulation Tick');
     //Future.microtask(workmanagerTick);
 
+    /*
+    logger.important('initialize background tracker');
+    await BackgroundTracking.initialize();
+    logger.important('background tracker initialized');
     logger.important('Start background tracker');
     await BackgroundTracking.startTracking();
+
     bool started = await BackgroundTracking.isTracking();
     if (started) {
       logger.important('Background tracker started');
@@ -153,6 +139,7 @@ class AppLoader {
         logger.fatal(e.toString(), stk);
       }
     }
+    */
   }
 
   /// debug only

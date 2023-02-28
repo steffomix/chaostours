@@ -5,11 +5,12 @@ import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart' as pp;
 
 ///
+import 'package:chaostours/file_handler.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/globals.dart';
-import 'package:chaostours/shared/shared.dart';
+import 'package:chaostours/shared.dart';
 import 'package:chaostours/view/app_widgets.dart';
-import 'package:chaostours/shared/shared.dart';
+import 'package:chaostours/shared.dart';
 import 'package:confirm_dialog/confirm_dialog.dart';
 
 class WidgetStorageSettings extends StatefulWidget {
@@ -22,14 +23,9 @@ class WidgetStorageSettings extends StatefulWidget {
 class _WidgetStorageSettings extends State<WidgetStorageSettings> {
   static final Logger logger = Logger.logger<WidgetStorageSettings>();
 
-  final Map<Storages, String?> storages = {
-    Storages.appInternal: null,
-    Storages.appLocalStorageData: null,
-    Storages.appLocalStorageDocuments: null,
-    Storages.appSdCardDocuments: null
-  };
+  final Map<Storages, String?> storages = FileHandler.storages;
 
-  Storages? selectedStorage = Globals.storageKey;
+  Storages selectedStorage = Globals.storageKey;
 
   bool loading = true;
 
@@ -47,74 +43,14 @@ class _WidgetStorageSettings extends State<WidgetStorageSettings> {
     super.dispose();
   }
 
+  @override
   void initState() {
-    lookupPathes();
-  }
-
-  void lookupPathes() async {
-    logger.log('lookup pathes');
-
-    try {
-      String? path = (await Shared(SharedKeys.storagePath).loadString());
-      Storages key = Storages.values
-          .byName((await Shared(SharedKeys.storagePath).loadString()) ?? '');
-      storages[key] = path;
-      logger.log('Found stored key $key with path $path');
-      selectedStorage = key;
-
-      /// if we have a key but no path, something went wrong
-      if (path == null) {
-        corruptedSettings = true;
-      }
-    } catch (e) {
-      logger.warn(e.toString());
-    }
-
-    /// internal storages
-    try {
-      Directory appDir = await pp.getApplicationDocumentsDirectory();
-      String path = join(appDir.path, 'version_${Globals.version}');
-      createDir(path, Storages.appInternal);
-    } catch (e, stk) {
-      logger.error(e.toString(), stk);
-    }
-
-    /// external storage
-    try {
-      var appDir = await pp.getExternalStorageDirectory();
-      if (appDir?.path != null) {
-        String path = join(appDir!.path, 'version_${Globals.version}');
-        createDir(path, Storages.appLocalStorageData);
-      }
-    } catch (e, stk) {
-      logger.error(e.toString(), stk);
-    }
-
-    /// Phone Documents
-    try {
-      List<String> pathes = await ExternalPath.getExternalStorageDirectories();
-      String path = join(pathes[0], ExternalPath.DIRECTORY_DOCUMENTS,
-          'ChaosTours', 'version_${Globals.version}');
-      createDir(path, Storages.appLocalStorageDocuments);
-    } catch (e, stk) {
-      logger.error(e.toString(), stk);
-    }
-
-    /// sdCard documents
-    try {
-      List<String> pathes = await ExternalPath.getExternalStorageDirectories();
-      String path = join(pathes[1], ExternalPath.DIRECTORY_DOCUMENTS,
-          'ChaosTours', 'version_${Globals.version}');
-      createDir(path, Storages.appSdCardDocuments);
-    } catch (e, stk) {
-      logger.error(e.toString(), stk);
-    }
-
     /// basic and fallback setting
-    selectedStorage ??= Storages.appInternal;
+    selectedStorage = Globals.storageKey;
 
     loading = false;
     setState(() {});
+    super.initState();
   }
 
   Future<void> createDir(String path, Storages target) async {
@@ -335,7 +271,7 @@ class _WidgetStorageSettings extends State<WidgetStorageSettings> {
                   return;
                 } else {
                   Shared(SharedKeys.storageKey)
-                      .saveString(selectedStorage!.name)
+                      .saveString(selectedStorage.name)
                       .then((_) {
                     Shared(SharedKeys.storagePath)
                         .saveString(storages[selectedStorage]!);

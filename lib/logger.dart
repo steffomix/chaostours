@@ -1,6 +1,6 @@
 //
 import 'package:chaostours/event_manager.dart';
-import 'package:chaostours/shared/shared.dart';
+import 'package:chaostours/shared.dart';
 
 enum LogLevel {
   verbose(1),
@@ -120,7 +120,6 @@ class Logger {
       try {
         print(
             '$prefix ${composeMessage(_name, level, msg, stackTrace)}'); // ignore: avoid_print
-
       } catch (e) {
         // ignore
       }

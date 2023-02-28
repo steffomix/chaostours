@@ -5,7 +5,7 @@ import 'package:chaostours/logger.dart';
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/background_process/trackpoint.dart';
 import 'package:chaostours/util.dart' as util;
-import 'package:chaostours/shared/shared.dart';
+import 'package:chaostours/shared.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_trackpoint.dart';

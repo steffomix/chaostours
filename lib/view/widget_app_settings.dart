@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 
 import 'package:chaostours/globals.dart';
 import 'package:chaostours/view/app_widgets.dart';
-import 'package:chaostours/shared/shared.dart';
+import 'package:chaostours/shared.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/checkbox_controller.dart';
@@ -30,7 +30,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
 
   Map<AppSettings, String> settings = AppSettings.settings;
 
-  bool statusStandingRequireAlias = Globals.statusStandingRequireAlias;
+  bool? statusStandingRequireAlias = Globals.statusStandingRequireAlias;
 
   ValueNotifier<bool> modified = ValueNotifier<bool>(false);
 
@@ -231,13 +231,16 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
               leading: Checkbox(
                   value: statusStandingRequireAlias,
                   onChanged: (bool? b) {
-                    statusStandingRequireAlias = b ?? false;
+                    statusStandingRequireAlias = b;
+                    modify();
                   }),
               title: const Text('Haltepunkt benötigt Alias'),
               subtitle: const Text(
                   'Ein Haltepunkt wird nur gespeichert wenn sie in einem Alias stehen. '
                   'Dies verhindert das speichern von Haltepunkten wenn sie im Stau oder lange an einer Ampel stehen.'),
             )),
+
+        AppWidgets.divider(),
 
         ///
         /// trackPointInterval
@@ -427,7 +430,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
           onTap: (int id) {
             if (id == 0) {
               AppSettings.settings[AppSettings.statusStandingRequireAlias] =
-                  statusStandingRequireAlias ? '1' : '0';
+                  (statusStandingRequireAlias ?? false) ? '1' : '0';
               AppSettings.update();
               AppSettings.save().then((_) {
                 Navigator.pop(context);

@@ -5,7 +5,7 @@ import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_alias.dart'; // for read only
 import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/logger.dart';
-import 'package:chaostours/shared/shared.dart';
+import 'package:chaostours/shared.dart';
 import 'package:chaostours/app_settings.dart';
 
 enum TrackingStatus {
@@ -57,9 +57,6 @@ class TrackPoint {
     /// update trackpoints
     updateTrackPointQueue();
 
-    /// load app settings
-    AppSettings.load();
-
     /// only needed if method runs in foreground
     gpsPoints.clear();
 
@@ -67,6 +64,10 @@ class TrackPoint {
       /// load shared data
       Shared shared = Shared(SharedKeys.trackPointUp);
       List<String> sh = _sharedData = await shared.loadList() ?? [];
+      logger.log('#### Shared data from background process');
+      for (var i in sh) {
+        logger.log(i);
+      }
 
       /// create gpsPoint
       GPS gps = await GPS.gps();
@@ -171,6 +172,7 @@ class TrackPoint {
   }
 
   void trackPoint(GPS gps) {
+    /*
     /// debug - chnages status after each given gpsPoints
     if (gpsPoints.length > 10) {
       _status =
@@ -180,6 +182,7 @@ class TrackPoint {
       //_statusChanged(gps);
       return;
     }
+    */
     logger.log('processing trackpoint ${gps.toString()}');
 
     /// add gps to gpsPoints

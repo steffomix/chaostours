@@ -8,7 +8,7 @@ import 'package:chaostours/globals.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/checkbox_controller.dart';
 import 'package:chaostours/util.dart' as util;
-import 'package:chaostours/shared/shared.dart';
+import 'package:chaostours/shared.dart';
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/logger.dart';
 

@@ -43,7 +43,7 @@ double newheight = height - padding.top - padding.bottom;
 */
 
   /// storage
-  static Storages? storageKey;
+  static Storages storageKey = Storages.appInternal;
   static String? storagePath;
 
   static String version = '1.0';

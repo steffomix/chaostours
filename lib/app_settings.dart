@@ -1,4 +1,4 @@
-import 'package:chaostours/shared/shared.dart';
+import 'package:chaostours/shared.dart';
 import 'package:chaostours/globals.dart';
 import 'package:chaostours/logger.dart';
 
@@ -119,6 +119,12 @@ enum AppSettings {
 
   static Future<void> load() async {
     List<String> values = await Shared(SharedKeys.appSettings).loadList() ?? [];
+    if (values.isEmpty) {
+      /// app is running first time
+      /// store hard coded default values and reload again
+      await save();
+      values = await Shared(SharedKeys.appSettings).loadList() ?? [];
+    }
     for (var item in values) {
       if (item.isEmpty) {
         continue;
