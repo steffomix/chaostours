@@ -1,43 +1,17 @@
-import 'package:chaostours/globals.dart';
-import 'package:chaostours/file_handler.dart';
-import 'package:chaostours/app_settings.dart';
 import 'package:background_location_tracker/background_location_tracker.dart';
-import 'package:chaostours/logger.dart';
-import 'package:chaostours/background_process/trackpoint.dart';
 
 @pragma('vm:entry-point')
 void backgroundCallback() {
   BackgroundLocationTrackerManager.handleBackgroundUpdated(
-      (BackgroundLocationUpdateData data) async {
-    Logger.backgroundLogger = true;
-    Logger.prefix = '~~';
-    Logger.logLevel = LogLevel.verbose;
-    final Logger logger = Logger.logger<BackgroundTracking>();
-    try {
-      logger.log('load app settings');
-
-      /// load app settings
-      AppSettings.load();
-      FileHandler().getStorage();
-      logger.log(
-          'using storage ${Globals.storageKey.name}::${Globals.storagePath}');
-
-      FileHandler.logger.important('Start background tracking task');
-      await TrackPoint().startShared();
-      logger.important('Start background tracking task');
-    } catch (e, stk) {
-      logger.fatal(e.toString(), stk);
-    }
-  });
+      (BackgroundLocationUpdateData data) async {});
 }
 
 class BackgroundTracking {
-  static final Logger logger = Logger.logger<BackgroundTracking>();
   static int counter = 0;
   static bool _isTracking = false;
 
   static AndroidConfig config() {
-    return AndroidConfig(
+    return const AndroidConfig(
         channelName: 'Chaos Tours Background Tracking',
         notificationBody:
             'Background Tracking running, tap to open Chaos Tours App.',
@@ -45,7 +19,7 @@ class BackgroundTracking {
         enableNotificationLocationUpdates: false,
         cancelTrackingActionText: 'Stop Tracking',
         enableCancelTrackingAction: true,
-        trackingInterval: Globals.trackPointInterval,
+        trackingInterval: Duration(seconds: 30),
         distanceFilterMeters: 0.0);
   }
 
@@ -58,30 +32,18 @@ class BackgroundTracking {
   }
 
   static Future<void> startTracking() async {
-    await AppSettings.load();
-
-    if (await isTracking() == true) {
-      logger.warn(
-          'start gps background tracking skipped: tracking already started');
-      return;
-    }
-
-    logger.important('--START-- GPS background tracking');
     BackgroundLocationTrackerManager.startTracking(config: config());
     _isTracking = true;
   }
 
   static Future<void> stopTracking() async {
     if (await isTracking() == false) {
-      logger.warn(
-          'stop gps background tracking skipped: tracking already stopped');
-      return;
+      BackgroundLocationTrackerManager.stopTracking();
+      _isTracking = false;
     }
-    logger.important('--STOP-- GPS background tracking');
-    BackgroundLocationTrackerManager.stopTracking();
-    _isTracking = false;
   }
 
+  ///
   static Future<void> initialize() async {
     await BackgroundLocationTrackerManager.initialize(
       backgroundCallback,

@@ -5,24 +5,19 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "chaostours (debug)",
+            "name": "flutter-debug",
             "request": "launch",
             "type": "dart",
-            "flutterMode": "debug"
+            "args": ["--verbose"]
         },
         {
-            "name": "chaostours",
-            "request": "launch",
-            "type": "dart"
-        },
-        {
-            "name": "chaostours (profile mode)",
+            "name": "flutter-create (profile mode)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "profile"
         },
         {
-            "name": "chaostours (release mode)",
+            "name": "flutter-create (release mode)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "release"
