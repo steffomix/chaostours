@@ -123,9 +123,12 @@ class FileHandler {
 
   Future<void> _createBaseDir(String path, Storages target) async {
     Directory dir = Directory(path);
-    if (!dir.existsSync()) {
+    if (!await dir.exists()) {
       // thows exception
+
       dir = await dir.create(recursive: true);
+      File file = File(join(dir.path, 'readme.txt'));
+      file.writeAsString('App Database Info');
       storages[target] = dir.path;
       logger.log(dir.path);
     } else {

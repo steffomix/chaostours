@@ -28,11 +28,17 @@ class WidgetAppSettings extends StatefulWidget {
 class _WidgetAppSettings extends State<WidgetAppSettings> {
   static final Logger logger = Logger.logger<WidgetAppSettings>();
 
-  Map<AppSettings, String> settings = AppSettings.settings;
-
   bool? statusStandingRequireAlias = Globals.statusStandingRequireAlias;
 
   ValueNotifier<bool> modified = ValueNotifier<bool>(false);
+
+  TextEditingController? txTrackPointInterval;
+  TextEditingController? txAddressLookupInterval;
+  TextEditingController? txCacheGpsTime;
+  TextEditingController? txDistanceTrehold;
+  TextEditingController? txTimeRangeTreshold;
+  TextEditingController? txWaitTimeAfterStatusChanged;
+  TextEditingController? txAppTickDuration;
 
   @override
   void dispose() {
@@ -40,10 +46,9 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
   }
 
   void modify() {
-    if (!modified.value) {
-      modified.value = true;
-      setState(() {});
-    }
+    modified.value = true;
+
+    setState(() {});
   }
 
   void setStatus(BuildContext context, OsmLookup? val) {
@@ -87,7 +92,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                 if (maxValue > 0 && i > maxValue) {
                   i = maxValue;
                 }
-                settings[sharedKey] = i.toString();
+                AppSettings.settings[sharedKey] = i.toString();
                 modify();
               } catch (e) {
                 //
@@ -246,8 +251,8 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
         /// trackPointInterval
         numberField(
             context: context,
-            controller: TextEditingController(
-                text: settings[AppSettings.trackPointInterval]),
+            controller: txTrackPointInterval ??= TextEditingController(
+                text: AppSettings.settings[AppSettings.trackPointInterval]),
             sharedKey: AppSettings.trackPointInterval,
             minValue: 20,
             maxValue: 0,
@@ -256,22 +261,23 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                 'In welchen Zeitabständen in Sekunden das Hintergrung GPS abgefragt wird.\n'
                 'Bei Änderungen ist ein Neustart der App Erforderlich.'),
 
-        ///
+        /// addressLookupInterval
         numberField(
             context: context,
-            controller: TextEditingController(
-                text: settings[AppSettings.addressLookupInterval]),
+            controller: txAddressLookupInterval ??= TextEditingController(
+                text: AppSettings.settings[AppSettings.addressLookupInterval]),
             sharedKey: AppSettings.addressLookupInterval,
             minValue: 10,
             maxValue: 0,
             title: 'Live Tracking OSM Adress lookup Interval',
             description:
-                'In welchen Zeitabständen in Sekunden bei OpenStreetMap.com anhand der GPS Daten die Adresse abgefragt wird.\n'
+                'In welchen Zeitabständen in Sekunden beim kostenlosen Service von OpenStreetMap.com '
+                'anhand der GPS Daten die Adresse abgefragt werden.\n'
                 'Dieser Wert sollte nicht niedriger als der GPS Hintergrund Interval sein.\n'
-                'Die Online Abfrage verbraucht etwa 1kb Daten. Der mindestwert ist zwar 10 Sekunden,'
-                ' sie können aber auch mit 0 Sekunden die Funktion abschalten'),
+                'Eine einzelne Online Abfrage verbraucht etwa 1kb Mobile Daten.\nDer mindestwert ist zwar 10 Sekunden,'
+                ' sie können aber mit 0 Sekunden die Funktion abschalten'),
 
-        ///
+        /// OsmLookup
         Container(
             padding: const EdgeInsets.all(10),
             child: Column(children: [
@@ -279,7 +285,8 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                 title: Text('OSM lookup Hintergrundabfrage.'),
                 subtitle: Text(
                   'Definiert ob und wann im Hintergrundprozess die Adresse anhand '
-                  'der GPS Daten abgefragt werden.',
+                  'der GPS Daten abgefragt wird. Dies ist nur notwendig wenn Haltepunkte '
+                  'aufgezeichnet werden können, wo kein Alias ist. Siehe oben: "Haltepunkt benötigt Alias"',
                   softWrap: true,
                 ),
               ),
@@ -296,7 +303,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                       value: OsmLookup.never,
                       groupValue: Globals.osmLookupCondition,
                       onChanged: (OsmLookup? val) {
-                        settings[AppSettings.osmLookupCondition] =
+                        AppSettings.settings[AppSettings.osmLookupCondition] =
                             val?.name ?? OsmLookup.never.name;
                         setStatus(context, val);
                       })),
@@ -313,7 +320,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                       value: OsmLookup.onStatus,
                       groupValue: Globals.osmLookupCondition,
                       onChanged: (OsmLookup? val) {
-                        settings[AppSettings.osmLookupCondition] =
+                        AppSettings.settings[AppSettings.osmLookupCondition] =
                             val?.name ?? OsmLookup.never.name;
                         setStatus(context, val);
                       })),
@@ -331,17 +338,17 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                       value: OsmLookup.always,
                       groupValue: Globals.osmLookupCondition,
                       onChanged: (OsmLookup? val) {
-                        settings[AppSettings.osmLookupCondition] =
+                        AppSettings.settings[AppSettings.osmLookupCondition] =
                             val?.name ?? OsmLookup.never.name;
                         setStatus(context, val);
                       }))
             ])),
 
-        ///cacheGpsTime
+        /// cacheGpsTime
         numberField(
             context: context,
-            controller:
-                TextEditingController(text: settings[AppSettings.cacheGpsTime]),
+            controller: txCacheGpsTime ??= TextEditingController(
+                text: AppSettings.settings[AppSettings.cacheGpsTime]),
             sharedKey: AppSettings.cacheGpsTime,
             minValue: 0,
             maxValue: 0,
@@ -350,11 +357,11 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                 'Stellt ein wie viel Zeit in Sekunden vergehen muss bis das '
                 'vorgehaltene Vordergrund GPS verworfen und erneuert wird.'),
 
-        ///
+        /// distanceTreshold
         numberField(
             context: context,
-            controller: TextEditingController(
-                text: settings[AppSettings.distanceTreshold]),
+            controller: txDistanceTrehold ??= TextEditingController(
+                text: AppSettings.settings[AppSettings.distanceTreshold]),
             sharedKey: AppSettings.distanceTreshold,
             minValue: 20,
             maxValue: 0,
@@ -365,10 +372,11 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                 'die Distanz, die sie innerhalb von "Zeitschwellwert" unterschreiten müssen, '
                 'um in den Status Halten zu wechseln'),
 
+        /// timeRangeTreshold
         numberField(
             context: context,
-            controller: TextEditingController(
-                text: settings[AppSettings.timeRangeTreshold]),
+            controller: txTimeRangeTreshold ??= TextEditingController(
+                text: AppSettings.settings[AppSettings.timeRangeTreshold]),
             sharedKey: AppSettings.timeRangeTreshold,
             minValue: 20,
             maxValue: 0,
@@ -379,21 +387,24 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                 'müssen sie sich also mit einer gewissen Mindestgeschwindigkeit fortbewegen, die durch die durch die '
                 '"Distanzschwellwert" / "Zeitschwellwert" eingestellt werden kann'),
 
+        /// waitTimeAfterStatusChanged
         numberField(
             context: context,
-            controller: TextEditingController(
-                text: settings[AppSettings.waitTimeAfterStatusChanged]),
+            controller: txWaitTimeAfterStatusChanged ??= TextEditingController(
+                text: AppSettings
+                    .settings[AppSettings.waitTimeAfterStatusChanged]),
             sharedKey: AppSettings.waitTimeAfterStatusChanged,
             minValue: 0,
             maxValue: 0,
             title: 'Wartezeit nach Statuswechsel',
-            description:
-                'Die Zeit in Sekunden, in der nach einem Statuswechsel die GPS Hintergrund Berechnungen pausieren.'),
+            description: 'Die Zeit in Sekunden, in der nach einem Statuswechsel'
+                ' die GPS Hintergrund Berechnungen pausieren.'),
 
+        /// appTickDuration
         numberField(
             context: context,
-            controller: TextEditingController(
-                text: settings[AppSettings.appTickDuration]),
+            controller: txAppTickDuration ??= TextEditingController(
+                text: AppSettings.settings[AppSettings.appTickDuration]),
             sharedKey: AppSettings.appTickDuration,
             minValue: 5,
             maxValue: 0,
@@ -429,10 +440,11 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
           ],
           onTap: (int id) {
             if (id == 0) {
+              bool b = statusStandingRequireAlias ?? false;
               AppSettings.settings[AppSettings.statusStandingRequireAlias] =
-                  (statusStandingRequireAlias ?? false) ? '1' : '0';
-              AppSettings.update();
-              AppSettings.save().then((_) {
+                  b ? '1' : '0';
+              AppSettings.updateGlobals();
+              AppSettings.saveToShared().then((_) {
                 Navigator.pop(context);
               });
             } else {

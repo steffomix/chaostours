@@ -42,7 +42,7 @@ class AppLoader {
     //WorkManager();
 
     try {
-      await AppSettings.load();
+      await AppSettings.loadFromShared();
       await FileHandler().getStorage();
 
       // load database
