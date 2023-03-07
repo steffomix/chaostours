@@ -26,7 +26,7 @@ class FileHandler {
     f = join((await appDir).path, f);
     logger.log('request access to File $f');
     File file = File(f);
-    if (!file.existsSync()) {
+    if (!(await file.exists())) {
       logger.important('file does not exist, create file $f');
       file = await file.create(recursive: true);
     }

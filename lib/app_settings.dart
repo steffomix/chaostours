@@ -69,11 +69,12 @@ enum AppSettings {
       return;
     }
     try {
-      if (settings['preselectedUsers']?.isNotEmpty ?? false) {
-        Globals.preselectedUsers = (settings['preselectedUsers'] ?? '')
-            .split(',')
-            .map((e) => int.parse(e))
-            .toList();
+      if (settings[AppSettings.preselectedUsers]?.isNotEmpty ?? false) {
+        Globals.preselectedUsers =
+            (settings[AppSettings.preselectedUsers] ?? '')
+                .split(',')
+                .map((e) => int.parse(e))
+                .toList();
       } else {
         Globals.preselectedUsers = [];
       }
@@ -82,15 +83,19 @@ enum AppSettings {
     }
 
     try {
+      String? sr = settings[AppSettings.statusStandingRequireAlias];
+
       Globals.statusStandingRequireAlias =
-          (settings['statusStandingRequireAlias'] ?? '0') == '1' ? true : false;
+          (settings[AppSettings.statusStandingRequireAlias] ?? '0') == '1'
+              ? true
+              : false;
     } catch (e, stk) {
       logger.error(e.toString(), stk);
     }
     try {
       ///
-      Globals.trackPointInterval =
-          Duration(seconds: int.parse(settings['trackPointInterval'] ?? '30'));
+      Globals.trackPointInterval = Duration(
+          seconds: int.parse(settings[AppSettings.trackPointInterval] ?? '30'));
     } catch (e, stk) {
       logger.error(e.toString(), stk);
     }
@@ -99,39 +104,40 @@ enum AppSettings {
     int iv = 0;
     try {
       // 0 = disabled but 10 = min value
-      iv = int.parse(settings['addressLookupInterval'] ?? '0');
+      iv = int.parse(settings[AppSettings.addressLookupInterval] ?? '0');
       if (iv > 0 && iv < 10) {
         iv = 10;
       }
     } catch (e) {
       logger.warn(
-          'addressLookupInterval has invalid value: ${settings['addressLookupInterval']}');
+          'addressLookupInterval has invalid value: ${settings[AppSettings.addressLookupInterval]}');
     }
     Globals.addressLookupInterval = Duration(seconds: iv);
 
     try {
       ///
-      Globals.osmLookupCondition = OsmLookup.values
-          .byName(settings['osmLookupCondition'] ?? OsmLookup.never.name);
+      Globals.osmLookupCondition = OsmLookup.values.byName(
+          settings[AppSettings.osmLookupCondition] ?? OsmLookup.never.name);
     } catch (e, stk) {
       logger.error(e.toString(), stk);
     }
 
     try {
       ///
-      Globals.cacheGpsTime =
-          Duration(seconds: int.parse(settings['cacheGpsTime'] ?? '10'));
+      Globals.cacheGpsTime = Duration(
+          seconds: int.parse(settings[AppSettings.cacheGpsTime] ?? '10'));
     } catch (e, stk) {
       logger.error(e.toString(), stk);
     }
 
     ///
-    Globals.distanceTreshold = int.parse(settings['distanceTreshold'] ?? '100');
+    Globals.distanceTreshold =
+        int.parse(settings[AppSettings.distanceTreshold] ?? '100');
 
     try {
       ///
-      Globals.timeRangeTreshold =
-          Duration(seconds: int.parse(settings['timeRangeTreshold'] ?? '300'));
+      Globals.timeRangeTreshold = Duration(
+          seconds: int.parse(settings[AppSettings.timeRangeTreshold] ?? '300'));
     } catch (e, stk) {
       logger.error(e.toString(), stk);
     }
@@ -139,11 +145,12 @@ enum AppSettings {
     try {
       ///
       Globals.waitTimeAfterStatusChanged = Duration(
-          seconds: int.parse(settings['waitTimeAfterStatusChanged'] ?? '300'));
+          seconds: int.parse(
+              settings[AppSettings.waitTimeAfterStatusChanged] ?? '300'));
 
       ///
-      Globals.appTickDuration =
-          Duration(seconds: int.parse(settings['appTickDuration'] ?? '1'));
+      Globals.appTickDuration = Duration(
+          seconds: int.parse(settings[AppSettings.appTickDuration] ?? '1'));
     } catch (e, stk) {
       logger.error(e.toString(), stk);
     }
@@ -177,63 +184,69 @@ enum AppSettings {
       }
       try {
         List<String> parts = item.split(':');
-        String key = parts[0];
         String value = parts[1];
-        switch (key) {
-          /// defaults to Globals.preselectedUsers
-          case 'preselectedUsers':
-            Globals.preselectedUsers =
-                value.split(',').map((e) => int.parse(e)).toList();
-            break;
+        try {
+          AppSettings key = AppSettings.values.byName(parts[0]);
+          switch (key) {
+            /// defaults to Globals.preselectedUsers
+            case AppSettings.preselectedUsers:
+              Globals.preselectedUsers =
+                  value.split(',').map((e) => int.parse(e)).toList();
+              break;
 
-          /// defaults to false
-          case 'statusStandingRequireAlias':
-            Globals.statusStandingRequireAlias = value == '1' ? true : false;
-            break;
+            /// defaults to false
+            case AppSettings.statusStandingRequireAlias:
+              Globals.statusStandingRequireAlias = value == '1' ? true : false;
+              break;
 
-          /// defaults to Globals.trackPointInterval
-          case 'trackPointInterval':
-            Globals.trackPointInterval = Duration(seconds: int.parse(value));
-            break;
+            /// defaults to Globals.trackPointInterval
+            case AppSettings.trackPointInterval:
+              Globals.trackPointInterval = Duration(seconds: int.parse(value));
+              break;
 
-          /// defaults to Globals.addressLookupInterval
-          case 'addressLookupInterval':
-            Globals.addressLookupInterval = Duration(seconds: int.parse(value));
-            break;
+            /// defaults to Globals.addressLookupInterval
+            case AppSettings.addressLookupInterval:
+              Globals.addressLookupInterval =
+                  Duration(seconds: int.parse(value));
+              break;
 
-          /// defaults to Globals.osmLookupCondition
-          case 'osmLookupCondition':
-            Globals.osmLookupCondition = OsmLookup.values.byName(value);
-            break;
-          // defaults to lobals.cacheGpsTime
-          case 'cacheGpsTime':
-            Globals.cacheGpsTime = Duration(seconds: int.parse(value));
-            break;
+            /// defaults to Globals.osmLookupCondition
+            case AppSettings.osmLookupCondition:
+              Globals.osmLookupCondition = OsmLookup.values.byName(value);
+              break;
+            // defaults to lobals.cacheGpsTime
+            case AppSettings.cacheGpsTime:
+              Globals.cacheGpsTime = Duration(seconds: int.parse(value));
+              break;
 
-          /// defaults to Globals.distanceTreshold
-          case 'distanceTreshold':
-            Globals.distanceTreshold = int.parse(value);
-            break;
+            /// defaults to Globals.distanceTreshold
+            case AppSettings.distanceTreshold:
+              Globals.distanceTreshold = int.parse(value);
+              break;
 
-          /// defaults to Globals.timeRangeTreshold
-          case 'timeRangeTreshold':
-            Globals.timeRangeTreshold = Duration(seconds: int.parse(value));
-            break;
+            /// defaults to Globals.timeRangeTreshold
+            case AppSettings.timeRangeTreshold:
+              Globals.timeRangeTreshold = Duration(seconds: int.parse(value));
+              break;
 
-          /// defaults to Globals.waitTimeAfterStatusChanged
-          case 'waitTimeAfterStatusChanged':
-            Globals.waitTimeAfterStatusChanged =
-                Duration(seconds: int.parse(value));
-            break;
+            /// defaults to Globals.waitTimeAfterStatusChanged
+            case AppSettings.waitTimeAfterStatusChanged:
+              Globals.waitTimeAfterStatusChanged =
+                  Duration(seconds: int.parse(value));
+              break;
 
-          /// defaults to Globals.appTickDuration
-          case 'appTickDuration':
-            Globals.appTickDuration = Duration(seconds: int.parse(value));
-            break;
-          default:
-          // do nothing
+            /// defaults to Globals.appTickDuration
+            case AppSettings.appTickDuration:
+              Globals.appTickDuration = Duration(seconds: int.parse(value));
+              break;
+            default:
+            // do nothing
+          }
+        } catch (e, stk) {
+          logger.error(e.toString(), stk);
+          continue;
         }
-        logger.log('load setting $key : $value');
+        logger.log('load setting ${parts[0]} : $value');
       } catch (e, stk) {
         logger.error('Shared loaded AppSetting "$item" invalid', stk);
       }
