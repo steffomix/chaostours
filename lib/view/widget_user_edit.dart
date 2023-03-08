@@ -16,7 +16,9 @@ class WidgetUserEdit extends StatefulWidget {
 class _WidgetUserEdit extends State<WidgetUserEdit> {
   static final Logger logger = Logger.logger<WidgetUserEdit>();
 
-  ModelUser? _user;
+  int userId = 0;
+  ModelUser _user = ModelUser(user: '', deleted: false, notes: '');
+  // checkbox
   bool? _deleted;
   ValueNotifier<bool> modified = ValueNotifier<bool>(false);
   @override
@@ -30,13 +32,11 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
 
   @override
   Widget build(BuildContext context) {
-    final id = ModalRoute.of(context)!.settings.arguments as int;
-    bool create = id <= 0;
-    _user ??= create
-        ? ModelUser(user: '', deleted: false, notes: '')
-        : ModelUser.getUser(id);
-    ModelUser user = _user!;
-    _deleted ??= user.deleted;
+    final userId = ModalRoute.of(context)!.settings.arguments as int;
+    if (userId > 0) {
+      _user = ModelUser.getUser(userId).clone();
+    }
+    _deleted ??= _user.deleted;
     bool deleted = _deleted!;
 
     return AppWidgets.scaffold(context,
@@ -62,8 +62,24 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
                   icon: Icon(Icons.cancel), label: 'Abbrechen'),
             ],
             onTap: (int id) {
-              if (id == 0) {
-                ModelUser.update().then((_) => Navigator.pop(context));
+              if (id == 0 && modified.value) {
+                if (_user.user.trim().isEmpty) {
+                  _user.user = '#${_user.id}';
+                }
+                if (userId == 0) {
+                  ModelUser.insert(_user).then((int id) {
+                    if (_user.user.isEmpty) {
+                      _user.user = '#${_user.id}';
+                      ModelUser.update().then((_) {
+                        Navigator.pop(context);
+                      });
+                      return;
+                    }
+                  });
+                  Navigator.pop(context);
+                } else {
+                  ModelUser.update(_user).then((_) => Navigator.pop(context));
+                }
               } else {
                 Navigator.pop(context);
               }
@@ -76,11 +92,11 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
                 decoration: const InputDecoration(label: Text('Name')),
                 onChanged: ((value) {
                   modify();
-                  user.user = value.trim();
+                  _user.user = value.trim();
                 }),
                 maxLines: 1,
                 minLines: 1,
-                controller: TextEditingController(text: user.user),
+                controller: TextEditingController(text: _user.user),
               )),
 
           /// notes
@@ -90,9 +106,9 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
                   decoration: const InputDecoration(label: Text('Notizen')),
                   maxLines: null,
                   minLines: 3,
-                  controller: TextEditingController(text: user.notes),
+                  controller: TextEditingController(text: _user.notes),
                   onChanged: (value) {
-                    user.notes = value.trim();
+                    _user.notes = value.trim();
 
                     modify();
                   })),
@@ -108,7 +124,7 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
               leading: Checkbox(
                 value: deleted,
                 onChanged: (val) {
-                  user.deleted = val ?? false;
+                  _user.deleted = val ?? false;
                   modify();
                   setState(() {
                     _deleted = val;

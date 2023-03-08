@@ -19,6 +19,8 @@ class _WidgetUserList extends State<WidgetUserList> {
 
   TextEditingController controller = TextEditingController();
   String search = '';
+  bool showDeleted = false;
+
   @override
   void dispose() {
     super.dispose();
@@ -41,7 +43,10 @@ class _WidgetUserList extends State<WidgetUserList> {
   Widget usersWidget(context) {
     /// search
     List<ModelUser> userlist = [];
-    for (var item in ModelUser.getAll()) {
+    for (var item in ModelUser.getAll().reversed) {
+      if (!showDeleted && item.deleted) {
+        continue;
+      }
       if (search.trim().isEmpty) {
         userlist.add(item);
       } else {
@@ -70,7 +75,8 @@ class _WidgetUserList extends State<WidgetUserList> {
                       icon: const Icon(Icons.edit),
                       onPressed: () {
                         Navigator.pushNamed(context, AppRoutes.editUser.route,
-                            arguments: user.id);
+                                arguments: user.id)
+                            .then((_) => setState(() {}));
                       })),
               AppWidgets.divider()
             ]);
@@ -80,25 +86,30 @@ class _WidgetUserList extends State<WidgetUserList> {
 
   @override
   Widget build(BuildContext context) {
-    List<Widget> users = ModelUser.getAll().map((ModelUser user) {
-      return ListBody(children: [
-        ListTile(
-            title: Text(user.user,
-                style: TextStyle(
-                    decoration: user.deleted
-                        ? TextDecoration.lineThrough
-                        : TextDecoration.none)),
-            subtitle: Text(user.notes),
-            trailing: IconButton(
-                icon: const Icon(Icons.edit),
-                onPressed: () {
-                  Navigator.pushNamed(context, AppRoutes.editUser.route,
-                      arguments: user.id);
-                })),
-        AppWidgets.divider()
-      ]);
-    }).toList();
-
-    return AppWidgets.scaffold(context, body: usersWidget(context));
+    return AppWidgets.scaffold(context,
+        body: usersWidget(context),
+        navBar: BottomNavigationBar(
+            type: BottomNavigationBarType.fixed,
+            backgroundColor: AppColors.yellow.color,
+            fixedColor: AppColors.black.color,
+            items: [
+              const BottomNavigationBarItem(
+                  icon: Icon(Icons.add), label: 'Neu'),
+              BottomNavigationBarItem(
+                  icon: const Icon(Icons.remove_red_eye),
+                  label: showDeleted
+                      ? 'Gelöschte verbergen'
+                      : 'Gelöschte anzeigen'),
+            ],
+            onTap: (int id) {
+              if (id == 0) {
+                Navigator.pushNamed(context, AppRoutes.editUser.route,
+                        arguments: 0)
+                    .then((_) => setState(() {}));
+              } else {
+                showDeleted = !showDeleted;
+                setState(() {});
+              }
+            }));
   }
 }

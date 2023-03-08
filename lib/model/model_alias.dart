@@ -95,6 +95,7 @@ class ModelAlias {
     return l.join('\t');
   }
 
+  /// returns alias id
   static Future<int> insert(ModelAlias m) async {
     _table.add(m);
     m._id = _table.length;

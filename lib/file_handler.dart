@@ -17,20 +17,52 @@ class FileHandler {
   static Logger logger = Logger.logger<FileHandler>();
   static const lineSep = '\n';
   static Future<Directory> get appDir async {
-    return Directory(Globals.storagePath ??
+    Directory dir = Directory(Globals.storagePath ??
         (await pp.getApplicationDocumentsDirectory()).path);
+    for (var f in dir.listSync()) {
+      print(f.uri);
+    }
+    return dir;
   }
 
   static Future<File> getFile(String filename) async {
-    String f = '${filename.toLowerCase()}.tsv.txt';
+    String f = '${filename.toLowerCase()}.tsv';
     f = join((await appDir).path, f);
     logger.log('request access to File $f');
     File file = File(f);
+    try {
+      var s = await file.readAsString();
+    } catch (e, stk) {
+      file = await file.create();
+    }
     if (!(await file.exists())) {
       logger.important('file does not exist, create file $f');
       file = await file.create(recursive: true);
     }
     return file;
+  }
+
+  /// A File deleted from user keeps existing as a ghost.
+  /// Even empty bin or phone restart doesn't help.
+  /// These ghostfiles refuse to get checked properly
+  /// with the File::exists() method
+  Future<void> fileCreateBug(String path) async {
+    File file = File(path);
+    if (!(await file.exists())) {
+      file = await file.create(recursive: true);
+    }
+  }
+
+  /// However, a simple attempt to read this file
+  /// what most likely fails, updates the file cache
+  /// and the file can get recreated
+  Future<void> fileCreateBugWorkaround(String path) async {
+    File file = File(path);
+    try {
+      await file.readAsString();
+    } catch (e) {
+      file = await file.create();
+    }
   }
 
   static Future<int> write(String filename, String content) async {

@@ -108,11 +108,11 @@ enum AppSettings {
       if (iv > 0 && iv < 10) {
         iv = 10;
       }
+      Globals.addressLookupInterval = Duration(seconds: iv);
     } catch (e) {
       logger.warn(
           'addressLookupInterval has invalid value: ${settings[AppSettings.addressLookupInterval]}');
     }
-    Globals.addressLookupInterval = Duration(seconds: iv);
 
     try {
       ///
@@ -130,9 +130,13 @@ enum AppSettings {
       logger.error(e.toString(), stk);
     }
 
-    ///
-    Globals.distanceTreshold =
-        int.parse(settings[AppSettings.distanceTreshold] ?? '100');
+    try {
+      ///
+      Globals.distanceTreshold =
+          int.parse(settings[AppSettings.distanceTreshold] ?? '100');
+    } catch (e, stk) {
+      logger.error(e.toString(), stk);
+    }
 
     try {
       ///

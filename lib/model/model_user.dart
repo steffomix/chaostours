@@ -59,6 +59,7 @@ class ModelUser {
     return _table.length;
   }
 
+  /// returns user id
   static Future<int> insert(ModelUser m) async {
     _table.add(m);
     m._id = _table.length;

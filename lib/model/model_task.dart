@@ -58,6 +58,7 @@ class ModelTask {
     return _table.length;
   }
 
+  /// returns task id
   static Future<int> insert(ModelTask m) async {
     _table.add(m);
     m._id = _table.length;

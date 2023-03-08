@@ -21,7 +21,8 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
 
   late bool? deleted;
   late bool create;
-  late ModelTask task;
+  ModelTask task = ModelTask(task: '', deleted: false, notes: '');
+  int taskId = 0;
   bool _initialized = false;
   @override
   void dispose() {
@@ -34,12 +35,10 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
 
   @override
   Widget build(BuildContext context) {
-    final id = (ModalRoute.of(context)?.settings.arguments ?? 0) as int;
+    final taskId = (ModalRoute.of(context)?.settings.arguments ?? 0) as int;
     if (!_initialized) {
-      create = id <= 0;
-      task = create
-          ? ModelTask(task: '', deleted: false, notes: '')
-          : ModelTask.getTask(id).clone();
+      create = taskId <= 0;
+      task = ModelTask.getTask(taskId).clone();
       deleted = task.deleted;
       _initialized = true;
     }
@@ -66,21 +65,21 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
               const BottomNavigationBarItem(
                   icon: Icon(Icons.cancel), label: 'Abbrechen'),
             ],
-            onTap: (int id) {
-              if (id == 0) {
-                if (create) {
-                  if (task.task.trim().isEmpty) {
-                    task.task = 'Aufgabe #${ModelTask.length + 1}';
-                  }
-                  ModelTask.insert(task).then((_) {
-                    AppWidgets.navigate(context, AppRoutes.listTasks);
+            onTap: (int tapId) {
+              if (tapId == 0 && modified.value) {
+                if (taskId == 0) {
+                  ModelTask.insert(task).then((id) {
+                    if (task.task.trim().isEmpty) {
+                      task.task = '#$id';
+                    }
+                    Navigator.pop(context);
                   });
                 } else {
                   ModelTask.update(task).then((_) {
-                    AppWidgets.navigate(context, AppRoutes.listTasks);
+                    Navigator.pop(context);
                   });
                 }
-              } else if (id == 1) {
+              } else if (tapId == 1) {
                 Navigator.pop(context);
               }
             }),
