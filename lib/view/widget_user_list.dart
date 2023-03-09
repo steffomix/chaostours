@@ -1,11 +1,12 @@
-import 'dart:ui';
-
-import 'package:chaostours/view/app_widgets.dart';
 import 'package:flutter/material.dart';
 
 ///
+import 'package:chaostours/globals.dart';
+import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/model/model_user.dart';
+import 'package:chaostours/checkbox_controller.dart';
+import 'package:chaostours/app_settings.dart';
 
 class WidgetUserList extends StatefulWidget {
   const WidgetUserList({super.key});
@@ -21,21 +22,129 @@ class _WidgetUserList extends State<WidgetUserList> {
   String search = '';
   bool showDeleted = false;
 
+  ValueNotifier<bool> modified = ValueNotifier<bool>(false);
+
+  void modify() {
+    modified.value = true;
+
+    setState(() {});
+  }
+
+  Set<int> preselectedUsers = Globals.preselectedUsers.toSet();
+
   @override
   void dispose() {
     super.dispose();
   }
 
   Widget searchWidget(BuildContext context) {
-    return TextField(
-      controller: controller,
-      minLines: 1,
-      maxLines: 1,
-      decoration: const InputDecoration(
-          icon: Icon(Icons.search, size: 30), border: InputBorder.none),
-      onChanged: (value) {
-        search = value;
-        setState(() {});
+    return Column(children: [
+      TextField(
+        controller: controller,
+        minLines: 1,
+        maxLines: 1,
+        decoration: const InputDecoration(
+            icon: Icon(Icons.search, size: 30), border: InputBorder.none),
+        onChanged: (value) {
+          search = value;
+          setState(() {});
+        },
+      ),
+
+      ///
+      Container(child: dropdownUser(context)),
+      Container(padding: const EdgeInsets.all(5), child: AppWidgets.divider()),
+    ]);
+  }
+
+  bool dropdownUserIsOpen = false;
+  Widget dropdownUser(context) {
+    /// render selected users
+    List<String> userList = [];
+    for (var id in preselectedUsers) {
+      var user = ModelUser.getUser(id);
+      if (!user.deleted) {
+        userList.add(ModelUser.getUser(id).user);
+      }
+    }
+    String users =
+        userList.isNotEmpty ? '- ${userList.join('\n- ')}' : 'Keine Ausgewählt';
+
+    /// dropdown menu botten with selected users
+    List<Widget> items = [
+      ElevatedButton(
+        child: Column(children: [
+          Center(
+              child: Container(
+                  padding: const EdgeInsets.all(5),
+                  child: const Text('Vorausgewähltes Personal',
+                      style: TextStyle(fontSize: 16)))),
+          ListTile(trailing: const Icon(Icons.menu), title: Text(users)),
+        ]),
+        onPressed: () {
+          dropdownUserIsOpen = !dropdownUserIsOpen;
+          setState(() {});
+        },
+      ),
+      !dropdownUserIsOpen
+          ? const SizedBox.shrink()
+          : Column(children: userCheckboxes(context))
+    ];
+    return ListBody(children: items);
+  }
+
+  List<Widget> userCheckboxes(context) {
+    var checkBoxes = <Widget>[];
+    for (var m in ModelUser.getAll()) {
+      if (!m.deleted) {
+        checkBoxes.add(createCheckbox(CheckboxController(
+            idReference: m.id,
+            referenceList: preselectedUsers.toList(),
+            deleted: m.deleted,
+            title: m.user,
+            subtitle: m.notes)));
+      }
+    }
+    return checkBoxes;
+  }
+
+  /// render multiple checkboxes
+  Widget createCheckbox(CheckboxController model) {
+    TextStyle style = TextStyle(
+        color: model.enabled ? Colors.black : Colors.grey,
+        decoration:
+            model.deleted ? TextDecoration.lineThrough : TextDecoration.none);
+
+    return ListTile(
+      subtitle: model.subtitle.trim().isEmpty
+          ? null
+          : Text(model.subtitle, style: const TextStyle(color: Colors.grey)),
+      title: Text(
+        model.title,
+        style: style,
+      ),
+      leading: Checkbox(
+        value: model.checked,
+        onChanged: (bool? checked) {
+          if (checked ?? false) {
+            preselectedUsers.add(model.idReference);
+          } else {
+            preselectedUsers.remove(model.idReference);
+          }
+          modify();
+          setState(
+            () {
+              model.handler()?.call();
+            },
+          );
+        },
+      ),
+      onTap: () {
+        setState(
+          () {
+            model.handler()?.call();
+          },
+        );
       },
     );
   }
@@ -93,6 +202,17 @@ class _WidgetUserList extends State<WidgetUserList> {
             backgroundColor: AppColors.yellow.color,
             fixedColor: AppColors.black.color,
             items: [
+              BottomNavigationBarItem(
+                  icon: ValueListenableBuilder(
+                      valueListenable: modified,
+                      builder: ((context, value, child) {
+                        return Icon(Icons.done,
+                            size: 30,
+                            color: modified.value == true
+                                ? AppColors.green.color
+                                : AppColors.white54.color);
+                      })),
+                  label: 'Speichern'),
               const BottomNavigationBarItem(
                   icon: Icon(Icons.add), label: 'Neu'),
               BottomNavigationBarItem(
@@ -103,6 +223,16 @@ class _WidgetUserList extends State<WidgetUserList> {
             ],
             onTap: (int id) {
               if (id == 0) {
+                AppSettings.settings[AppSettings.preselectedUsers] =
+                    preselectedUsers.join(',');
+                AppSettings.updateGlobals();
+                AppSettings.saveToShared().then((_) {
+                  modified.value = false;
+                  dropdownUserIsOpen = false;
+                  setState(() {});
+                });
+              }
+              if (id == 1) {
                 Navigator.pushNamed(context, AppRoutes.editUser.route,
                         arguments: 0)
                     .then((_) => setState(() {}));

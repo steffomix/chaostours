@@ -74,9 +74,9 @@ enum AppSettings {
             (settings[AppSettings.preselectedUsers] ?? '')
                 .split(',')
                 .map((e) => int.parse(e))
-                .toList();
+                .toSet();
       } else {
-        Globals.preselectedUsers = [];
+        Globals.preselectedUsers = {};
       }
     } catch (e, stk) {
       logger.error(e.toString(), stk);
@@ -195,7 +195,7 @@ enum AppSettings {
             /// defaults to Globals.preselectedUsers
             case AppSettings.preselectedUsers:
               Globals.preselectedUsers =
-                  value.split(',').map((e) => int.parse(e)).toList();
+                  value.split(',').map((e) => int.parse(e)).toSet();
               break;
 
             /// defaults to false

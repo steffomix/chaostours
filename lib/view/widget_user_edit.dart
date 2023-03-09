@@ -22,6 +22,8 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
   bool? _deleted;
   ValueNotifier<bool> modified = ValueNotifier<bool>(false);
   @override
+  bool initialized = false;
+
   void dispose() {
     super.dispose();
   }
@@ -32,13 +34,15 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
 
   @override
   Widget build(BuildContext context) {
-    final userId = ModalRoute.of(context)!.settings.arguments as int;
-    if (userId > 0) {
-      _user = ModelUser.getUser(userId).clone();
+    if (!initialized) {
+      userId = ModalRoute.of(context)!.settings.arguments as int;
+      if (userId > 0) {
+        _user = ModelUser.getUser(userId).clone();
+      }
+      _deleted ??= _user.deleted;
+      //bool deleted = _deleted!;
+      initialized = true;
     }
-    _deleted ??= _user.deleted;
-    bool deleted = _deleted!;
-
     return AppWidgets.scaffold(context,
         navBar: BottomNavigationBar(
             type: BottomNavigationBarType.fixed,
@@ -122,12 +126,13 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
                 softWrap: true,
               ),
               leading: Checkbox(
-                value: deleted,
+                value: _deleted,
                 onChanged: (val) {
+                  _deleted = val;
                   _user.deleted = val ?? false;
                   modify();
                   setState(() {
-                    _deleted = val;
+                    //_deleted = val;
                   });
                 },
               ))

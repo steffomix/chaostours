@@ -66,7 +66,7 @@ double newheight = height - padding.top - padding.bottom;
   static List<String> weekDays = ['', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
 
   ///
-  static List<int> preselectedUsers = [1, 2];
+  static Set<int> preselectedUsers = {1, 2};
 
   /// save battery with cache time
   static Duration cacheGpsTime = Duration(seconds: 20);

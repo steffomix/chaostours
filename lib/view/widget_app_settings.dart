@@ -30,8 +30,6 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
 
   bool? statusStandingRequireAlias = Globals.statusStandingRequireAlias;
 
-  ValueNotifier<bool> modified = ValueNotifier<bool>(false);
-
   TextEditingController? txTrackPointInterval;
   TextEditingController? txAddressLookupInterval;
   TextEditingController? txCacheGpsTime;
@@ -40,10 +38,14 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
   TextEditingController? txWaitTimeAfterStatusChanged;
   TextEditingController? txAppTickDuration;
 
+  Set<int> preselectedUsers = Globals.preselectedUsers.toSet();
+
   @override
   void dispose() {
     super.dispose();
   }
+
+  ValueNotifier<bool> modified = ValueNotifier<bool>(false);
 
   void modify() {
     modified.value = true;
@@ -122,7 +124,13 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
       ),
       leading: Checkbox(
         value: model.checked,
-        onChanged: (_) {
+        onChanged: (bool? checked) {
+          if (checked ?? false) {
+            preselectedUsers.add(model.idReference);
+          } else {
+            preselectedUsers.remove(model.idReference);
+          }
+          modify();
           setState(
             () {
               model.handler()?.call();
@@ -141,16 +149,15 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
   }
 
   List<Widget> userCheckboxes(context) {
-    var referenceList = Globals.preselectedUsers;
     var checkBoxes = <Widget>[];
-    for (var tp in ModelUser.getAll()) {
-      if (!tp.deleted) {
+    for (var m in ModelUser.getAll()) {
+      if (!m.deleted) {
         checkBoxes.add(createCheckbox(CheckboxController(
-            idReference: tp.id,
-            referenceList: referenceList,
-            deleted: tp.deleted,
-            title: tp.user,
-            subtitle: tp.notes)));
+            idReference: m.id,
+            referenceList: preselectedUsers.toList(),
+            deleted: m.deleted,
+            title: m.user,
+            subtitle: m.notes)));
       }
     }
     return checkBoxes;
@@ -159,7 +166,13 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
   bool dropdownUserIsOpen = false;
   Widget dropdownUser(context) {
     /// render selected users
-    List<String> userList = ModelUser.getAll().map((e) => e.user).toList();
+    List<String> userList = [];
+    for (var id in preselectedUsers) {
+      var user = ModelUser.getUser(id);
+      if (!user.deleted) {
+        userList.add(ModelUser.getUser(id).user);
+      }
+    }
     String users =
         userList.isNotEmpty ? '- ${userList.join('\n- ')}' : 'Keine Ausgewählt';
 
@@ -444,6 +457,8 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
           ],
           onTap: (int id) {
             if (id == 0) {
+              AppSettings.settings[AppSettings.preselectedUsers] =
+                  preselectedUsers.join(',');
               bool b = statusStandingRequireAlias ?? false;
               AppSettings.settings[AppSettings.statusStandingRequireAlias] =
                   b ? '1' : '0';

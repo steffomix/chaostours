@@ -166,19 +166,37 @@ class _WidgetAliasTrackpoint extends State<WidgetAliasTrackpoint> {
     return Column(children: widgets);
   }
 
+  Widget header(context) {
+    return Container(
+        padding: const EdgeInsets.only(bottom: 15),
+        child: Column(children: [
+          map(context),
+          search(context),
+          alias(context),
+          AppWidgets.divider()
+        ]));
+  }
+
   Widget body(BuildContext context) {
+    if (_tpList.isEmpty) {
+      return ListView(
+        children: [
+          header(context),
+          Container(
+              padding: const EdgeInsets.all(30),
+              child: const Center(
+                  child: Text(
+                      'Für diesen Ort wurden noch keine Haltepunkte aufgezeichnet.',
+                      softWrap: true,
+                      style: TextStyle(fontSize: 15))))
+        ],
+      );
+    }
     return ListView.builder(
         itemCount: _tpList.length + 1,
         itemBuilder: (context, id) {
           if (id == 0) {
-            return Container(
-                padding: const EdgeInsets.only(bottom: 15),
-                child: Column(children: [
-                  map(context),
-                  search(context),
-                  alias(context),
-                  AppWidgets.divider()
-                ]));
+            return header(context);
           } else {
             return trackPoint(context, _tpList[id - 1]);
           }
@@ -235,20 +253,6 @@ class _WidgetAliasTrackpoint extends State<WidgetAliasTrackpoint> {
       }
     }
 
-    if (ModelTrackPoint.length == 0) {
-      return Scaffold(
-          appBar: AppWidgets.appBar(context),
-          body: Container(
-              alignment: Alignment.center,
-              child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    const Text('Warte auf / lade Haltepunkte\n\n'),
-                    AppWidgets.loading(),
-                  ])));
-    } else {
-      return Scaffold(appBar: AppWidgets.appBar(context), body: body(context));
-    }
+    return Scaffold(appBar: AppWidgets.appBar(context), body: body(context));
   }
 }
