@@ -13,11 +13,43 @@ import 'package:chaostours/shared.dart';
 var decode = Uri.decodeFull; // util.base64Codec().decode;
 var encode = Uri.encodeFull; //util.base64Codec().encode;
 
+enum JsonKeys {
+  status,
+  gpsPoints,
+  address;
+}
+
+enum Storages {
+  /// app installation directory
+  /// unreachable
+  appInternal,
+
+  /// app data directory of internal storage
+  /// .android/data/com.stefanbrinkmann.chaostours/files/chaostours/1.0
+  /// on new devices only reachable with Computer and Datacable
+  appLocalStorageData,
+
+  /// app data directory of internal storage
+  /// localStorage/Documents
+  /// on new devices only reachable with Computer and Datacable
+  appLocalStorageDocuments,
+
+  /// Documents on sdCard
+  /// <sdCard>/Documents/chaostours/1.0
+  appSdCardDocuments;
+}
+
 class FileHandler {
+  /// storage
+  static Storages storageKey = Storages.appInternal;
+  static String? storagePath;
+
+  static String sharedFile = 'chaos.json';
+
   static Logger logger = Logger.logger<FileHandler>();
   static const lineSep = '\n';
   static Future<Directory> get appDir async {
-    Directory dir = Directory(Globals.storagePath ??
+    Directory dir = Directory(FileHandler.storagePath ??
         (await pp.getApplicationDocumentsDirectory()).path);
     for (var f in dir.listSync()) {
       print(f.uri);
@@ -96,6 +128,8 @@ class FileHandler {
     return lines;
   }
 
+  static const combinePath = join;
+
   ///
   ///
   ///
@@ -105,7 +139,7 @@ class FileHandler {
   ///
   ///
   ///
-
+  ///
   ///
   Future<String?> getStorage() async {
     Map<Storages, String?> storages = await _getAllStorages();
@@ -117,6 +151,7 @@ class FileHandler {
     }
   }
 
+  /// stores the path to the storage if storage is writeable
   static final Map<Storages, String?> storages = {
     Storages.appInternal: null,
     Storages.appLocalStorageData: null,
@@ -147,8 +182,8 @@ class FileHandler {
   }
 
   Future<void> _setStorage(Storages key, String path) async {
-    Globals.storageKey = key;
-    Globals.storagePath = path;
+    FileHandler.storageKey = key;
+    FileHandler.storagePath = path;
     Shared(SharedKeys.storageKey).saveString(key.name);
     Shared(SharedKeys.storagePath).saveString(path);
   }

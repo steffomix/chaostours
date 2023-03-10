@@ -38,8 +38,6 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
   TextEditingController? txWaitTimeAfterStatusChanged;
   TextEditingController? txAppTickDuration;
 
-  Set<int> preselectedUsers = Globals.preselectedUsers.toSet();
-
   @override
   void dispose() {
     super.dispose();
@@ -107,91 +105,6 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
         ]));
   }
 
-  /// render multiple checkboxes
-  Widget createCheckbox(CheckboxController model) {
-    TextStyle style = TextStyle(
-        color: model.enabled ? Colors.black : Colors.grey,
-        decoration:
-            model.deleted ? TextDecoration.lineThrough : TextDecoration.none);
-
-    return ListTile(
-      subtitle: model.subtitle.trim().isEmpty
-          ? null
-          : Text(model.subtitle, style: const TextStyle(color: Colors.grey)),
-      title: Text(
-        model.title,
-        style: style,
-      ),
-      leading: Checkbox(
-        value: model.checked,
-        onChanged: (bool? checked) {
-          if (checked ?? false) {
-            preselectedUsers.add(model.idReference);
-          } else {
-            preselectedUsers.remove(model.idReference);
-          }
-          modify();
-          setState(
-            () {
-              model.handler()?.call();
-            },
-          );
-        },
-      ),
-      onTap: () {
-        setState(
-          () {
-            model.handler()?.call();
-          },
-        );
-      },
-    );
-  }
-
-  List<Widget> userCheckboxes(context) {
-    var checkBoxes = <Widget>[];
-    for (var m in ModelUser.getAll()) {
-      if (!m.deleted) {
-        checkBoxes.add(createCheckbox(CheckboxController(
-            idReference: m.id,
-            referenceList: preselectedUsers.toList(),
-            deleted: m.deleted,
-            title: m.user,
-            subtitle: m.notes)));
-      }
-    }
-    return checkBoxes;
-  }
-
-  bool dropdownUserIsOpen = false;
-  Widget dropdownUser(context) {
-    /// render selected users
-    List<String> userList = [];
-    for (var id in preselectedUsers) {
-      var user = ModelUser.getUser(id);
-      if (!user.deleted) {
-        userList.add(ModelUser.getUser(id).user);
-      }
-    }
-    String users =
-        userList.isNotEmpty ? '- ${userList.join('\n- ')}' : 'Keine Ausgewählt';
-
-    /// dropdown menu botten with selected users
-    List<Widget> items = [
-      ElevatedButton(
-        child: ListTile(trailing: const Icon(Icons.menu), title: Text(users)),
-        onPressed: () {
-          dropdownUserIsOpen = !dropdownUserIsOpen;
-          setState(() {});
-        },
-      ),
-      !dropdownUserIsOpen
-          ? const SizedBox.shrink()
-          : Column(children: userCheckboxes(context))
-    ];
-    return ListBody(children: items);
-  }
-
   Widget osmLookup(BuildContext context) {
     List<OsmLookup> list = [
       OsmLookup.always,
@@ -234,18 +147,6 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
     return AppWidgets.scaffold(
       context,
       body: ListView(children: [
-        ///
-        Center(
-            child: Container(
-                padding: const EdgeInsets.all(20),
-                child: const Text('Vorausgewähltes Personal',
-                    style: TextStyle(fontSize: 16)))),
-
-        ///
-        Container(child: dropdownUser(context)),
-        Container(
-            padding: const EdgeInsets.all(5), child: AppWidgets.divider()),
-
         ///
         Container(
             padding: const EdgeInsets.all(5),
@@ -457,8 +358,6 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
           ],
           onTap: (int id) {
             if (id == 0) {
-              AppSettings.settings[AppSettings.preselectedUsers] =
-                  preselectedUsers.join(',');
               bool b = statusStandingRequireAlias ?? false;
               AppSettings.settings[AppSettings.statusStandingRequireAlias] =
                   b ? '1' : '0';

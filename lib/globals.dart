@@ -7,26 +7,6 @@ import 'package:chaostours/logger.dart';
 
 enum OsmLookup { never, onStatus, always }
 
-enum Storages {
-  /// app installation directory
-  /// unreachable
-  appInternal,
-
-  /// app data directory of internal storage
-  /// .android/data/com.stefanbrinkmann.chaostours/files/chaostours/1.0
-  /// on new devices only reachable with Computer and Datacable
-  appLocalStorageData,
-
-  /// app data directory of internal storage
-  /// localStorage/Documents
-  /// on new devices only reachable with Computer and Datacable
-  appLocalStorageDocuments,
-
-  /// Documents on sdCard
-  /// <sdCard>/Documents/chaostours/1.0
-  appSdCardDocuments;
-}
-
 class Globals {
   static Logger logger = Logger.logger<Globals>();
 
@@ -42,10 +22,6 @@ var padding = MediaQuery.of(context).padding;
 double newheight = height - padding.top - padding.bottom;
 */
 
-  /// storage
-  static Storages storageKey = Storages.appInternal;
-  static String? storagePath;
-
   static String version = '1.0';
 
   /// deprecated
@@ -56,6 +32,7 @@ double newheight = height - padding.top - padding.bottom;
 
   ///
   static int distanceTreshold = 100; //meters
+
   ///
   static OsmLookup osmLookupCondition = OsmLookup.always;
 
@@ -81,7 +58,7 @@ double newheight = height - padding.top - padding.bottom;
 
   /// check status interval.
   /// Should be at least 3 seconds due to GPS lookup needs at least 2 seconds
-  static Duration trackPointInterval = Duration(seconds: 30);
+  static Duration trackPointInterval = Duration(seconds: 15);
 
   /// consumes mobile data!
   static Duration addressLookupInterval = Duration(seconds: 60);

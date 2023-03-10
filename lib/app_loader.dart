@@ -122,7 +122,6 @@ class AppLoader {
     //logger.important('start workmanager trackpoint simulation Tick');
     //Future.microtask(workmanagerTick);
 
-    /*
     logger.important('initialize background tracker');
     await BackgroundTracking.initialize();
     logger.important('background tracker initialized');
@@ -139,7 +138,6 @@ class AppLoader {
         logger.fatal(e.toString(), stk);
       }
     }
-    */
   }
 
   /// debug only

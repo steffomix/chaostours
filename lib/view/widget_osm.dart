@@ -16,6 +16,7 @@ import 'package:chaostours/gps.dart';
 import 'package:chaostours/address.dart' as addr;
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/screen.dart';
+import 'package:chaostours/file_handler.dart';
 
 class OsmSearchResult {
   final double lat;
@@ -450,7 +451,6 @@ class _WidgetOsm extends State<WidgetOsm> {
 
     /// draw cirles
     _widgetActive = true;
-    var i = 0;
     var list = ModelAlias.getAll();
     while (list.isNotEmpty) {
       if (!_widgetActive) {
@@ -479,6 +479,34 @@ class _WidgetOsm extends State<WidgetOsm> {
         await Future.delayed(const Duration(seconds: 1));
       }
       list.removeLast();
+    }
+
+    /// draw gps points
+    try {
+      String storage = FileHandler.combinePath(
+          FileHandler.storages[Storages.appInternal]!, FileHandler.sharedFile);
+      String jsonString = await FileHandler.read(storage);
+
+      Map<String, dynamic> json = {JsonKeys.gpsPoints.name: []};
+      try {
+        json = jsonDecode(jsonString);
+      } catch (e, stk) {
+        logger.error(e.toString(), stk);
+      }
+
+      for (String s in json[JsonKeys.gpsPoints.name]) {
+        GPS gps = GPS.toSharedObject(s);
+
+        _controller.drawCircle(CircleOSM(
+          key: "circle${++circleId}",
+          centerPoint: GeoPoint(latitude: gps.lat, longitude: gps.lon),
+          radius: 3,
+          color: Colors.black,
+          strokeWidth: 10,
+        ));
+      }
+    } catch (e, stk) {
+      logger.error(e.toString(), stk);
     }
   }
 

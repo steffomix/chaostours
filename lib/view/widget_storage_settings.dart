@@ -25,7 +25,7 @@ class _WidgetStorageSettings extends State<WidgetStorageSettings> {
 
   final Map<Storages, String?> storages = FileHandler.storages;
 
-  Storages selectedStorage = Globals.storageKey;
+  Storages selectedStorage = FileHandler.storageKey;
 
   bool loading = true;
 
@@ -46,7 +46,7 @@ class _WidgetStorageSettings extends State<WidgetStorageSettings> {
   @override
   void initState() {
     /// basic and fallback setting
-    selectedStorage = Globals.storageKey;
+    selectedStorage = FileHandler.storageKey;
 
     loading = false;
     setState(() {});
@@ -280,8 +280,8 @@ class _WidgetStorageSettings extends State<WidgetStorageSettings> {
                     setState(() {});
                   });
                 }
-                Globals.storageKey = selectedStorage;
-                Globals.storagePath = storages[selectedStorage];
+                FileHandler.storageKey = selectedStorage;
+                FileHandler.storagePath = storages[selectedStorage];
               } else {
                 Navigator.pop(context);
               }

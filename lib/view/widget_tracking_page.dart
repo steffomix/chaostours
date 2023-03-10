@@ -1,8 +1,10 @@
 import 'package:chaostours/main.dart';
 import 'package:flutter/material.dart';
+import 'dart:convert';
 //
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/event_manager.dart';
+import 'package:chaostours/file_handler.dart';
 import 'package:chaostours/background_process/trackpoint.dart';
 import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/shared.dart';
@@ -18,6 +20,9 @@ import 'package:chaostours/globals.dart';
 import 'package:chaostours/screen.dart';
 
 enum TrackingPageDisplayMode {
+  /// shows gps list
+  gps,
+
   /// trackpoints from current location
   lastVisited,
 
@@ -69,9 +74,14 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   Widget build(BuildContext context) {
     List<Widget> list = [];
     switch (displayMode) {
+      case TrackingPageDisplayMode.recent:
+        list = renderRecentTrackPointList(
+            context, ModelTrackPoint.recentTrackPoints());
+        break;
+
       /// tasks mode
       case TrackingPageDisplayMode.tasks:
-        list.addAll(renderTasks(context));
+        list = renderTasks(context);
         break;
 
       /// last visited mode
@@ -85,8 +95,24 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
       /// recent mode
       default:
-        list = renderRecentTrackPointList(
-            context, ModelTrackPoint.recentTrackPoints());
+        GPS lastPoint = runningTrackPoints.first;
+        list = runningTrackPoints.map((gps) {
+          int h = gps.time.hour;
+          int m = gps.time.minute;
+          int s = gps.time.second;
+          double lat = gps.lat;
+          double lon = gps.lon;
+          double dist = (GPS.distance(lastPoint, gps) / 10).round() / 100;
+          lastPoint = gps;
+          return ListTile(
+            title: Text('$h:$m:$s - $dist km'),
+            subtitle: Text('$lat,$lon'),
+            leading: const Icon(Icons.map),
+          );
+        }).toList();
+        double allDist =
+            (GPS.distanceoverTrackList(runningTrackPoints) / 10).round() / 100;
+        list.insert(0, ListTile(leading: Text('Gesamt Distanz: $allDist km')));
     }
 
     Widget body = ListView(children: [
@@ -107,22 +133,25 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         backgroundColor: AppColors.yellow.color,
         fixedColor: AppColors.black.color,
         items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.map), label: 'GPS'),
           BottomNavigationBarItem(
-              icon: Icon(Icons.recent_actors), label: 'Zuletzt besucht'),
+              icon: Icon(Icons.recent_actors), label: 'Zul. besucht'),
           BottomNavigationBarItem(icon: Icon(Icons.task), label: 'Aufgaben'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.timer), label: 'Chronologisch'),
+          BottomNavigationBarItem(icon: Icon(Icons.timer), label: 'Chronol.'),
         ],
         onTap: (int id) {
           switch (id) {
             case 1:
-              displayMode = TrackingPageDisplayMode.tasks;
+              displayMode = TrackingPageDisplayMode.recent;
               break;
             case 2:
+              displayMode = TrackingPageDisplayMode.tasks;
+              break;
+            case 3:
               displayMode = TrackingPageDisplayMode.lastVisited;
               break;
             default:
-              displayMode = TrackingPageDisplayMode.recent;
+              displayMode = TrackingPageDisplayMode.gps;
           }
           _bottomBarIndex = id;
           setState(() {});
@@ -136,19 +165,34 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   }
 
   Future<void> onTick(EventOnAppTick tick) async {
+    String storage = FileHandler.combinePath(
+        FileHandler.storages[Storages.appInternal]!, FileHandler.sharedFile);
+    String jsonString = await FileHandler.read(storage);
+
+    Map<String, dynamic> json = {
+      JsonKeys.status.name: TrackingStatus.none.name,
+      JsonKeys.gpsPoints.name: [],
+      JsonKeys.address.name: ''
+    };
+    try {
+      json = jsonDecode(jsonString);
+    } catch (e, stk) {
+      logger.error(e.toString(), stk);
+    }
+
     Shared shared = Shared(SharedKeys.trackPointUp);
     List<String> sharedList = await shared.loadList() ?? [];
-    if (sharedList.isNotEmpty) {
+    if (json[JsonKeys.status.name] != TrackingStatus.none.name) {
       try {
         /// get status
-        currentStatus = TrackingStatus.values.byName(sharedList[0]);
-        if (sharedList.length > 1) {
-          sharedList.removeAt(0);
+        currentStatus =
+            TrackingStatus.values.byName(json[JsonKeys.status.name]);
+        if ((json[JsonKeys.gpsPoints.name] as List).isNotEmpty) {
           try {
             runningTrackPoints.clear();
-            for (var row in sharedList) {
-              runningTrackPoints.add(GPS.toSharedObject(row));
-            }
+            runningTrackPoints.addAll((json[JsonKeys.gpsPoints.name] as List)
+                .map((e) => GPS.toSharedObject(e))
+                .toList());
 
             /// update pendingTrackPoint
             if (currentStatus == lastStatus) {

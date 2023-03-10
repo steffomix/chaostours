@@ -32,10 +32,7 @@
             "program": "lib/main.dart",
             "deviceId": "RZCTB0XPR6H",
             "request": "launch",
-            "type": "dart",
-            "args": [
-                "--verbose"
-            ]
+            "type": "dart"
         }
     ]
 }

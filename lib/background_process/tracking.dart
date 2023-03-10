@@ -1,9 +1,12 @@
 import 'package:background_location_tracker/background_location_tracker.dart';
+import 'package:chaostours/background_process/trackpoint.dart';
 
 @pragma('vm:entry-point')
 void backgroundCallback() {
   BackgroundLocationTrackerManager.handleBackgroundUpdated(
-      (BackgroundLocationUpdateData data) async {});
+      (BackgroundLocationUpdateData data) async {
+    await TrackPoint().startShared();
+  });
 }
 
 class BackgroundTracking {
