@@ -1,0 +1,2 @@
+changes:
+    C:\src\projects\chaostours\android\build.gradle

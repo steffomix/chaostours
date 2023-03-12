@@ -37,6 +37,19 @@ class AppLoader {
   static Future<void> preload() async {
     logger.important('start Preload sequence...');
 
+    try {
+      logger.important('initialize permissions');
+      await Permission.location.request();
+      await Permission.locationAlways.request();
+      await Permission.storage.request();
+      await Permission.manageExternalStorage.request();
+      await Permission.notification.request();
+      await Permission.calendar.request();
+    } catch (e, stk) {
+      logger.fatal(
+          'app start permissions failure, wait 5 sec. \n${e.toString()}', stk);
+      await Future.delayed(const Duration(seconds: 5));
+    }
     //logger.important('start background gps tracking');
     //logger.important('initialize workmanager');
     //WorkManager();
@@ -82,18 +95,7 @@ class AppLoader {
     } catch (e, stk) {
       logger.error('reset shared data ${e.toString()}', stk);
     }
-    try {
-      logger.important('initialize permissions');
-      await Permission.locationAlways.request();
-      await Permission.locationAlways.request();
-      await Permission.storage.request();
-      await Permission.manageExternalStorage.request();
-      await Permission.notification.request();
-    } catch (e, stk) {
-      logger.fatal(
-          'app start permissions failure, wait 5 sec. \n${e.toString()}', stk);
-      await Future.delayed(const Duration(seconds: 5));
-    }
+
     try {
       logger.important('preparing HTTP SSL Key');
       await webKey();

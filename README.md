@@ -1,6 +1,6 @@
 # chaostours
 
-A new Flutter project.
+Advanced Tracking Tool
 
 ## Getting Started
 

@@ -29,10 +29,8 @@ String timeElapsed(DateTime t1, DateTime t2, [bool short = true]) {
   //
   int seconds = t1.difference(t2).inSeconds;
   t2 = t2.add(Duration(seconds: seconds));
-  //
-  int ms = t1.difference(t2).inMilliseconds;
   if (short) {
-    s = Globals.debugMode ? '$hours:$minutes::$seconds.$ms' : '$hours:$minutes';
+    s = '$hours:$minutes';
   } else {
     s = '';
     if (days > 0) {

@@ -49,7 +49,7 @@ enum AppSettings {
     AppSettings.trackPointInterval:
         Globals.trackPointInterval.inSeconds.toString(), // int
     AppSettings.addressLookupInterval:
-        Globals.addressLookupInterval.inSeconds.toString(), // int
+        Globals.osmLookupInterval.inSeconds.toString(), // int
     AppSettings.osmLookupCondition:
         Globals.osmLookupCondition.name, // String enum name
     AppSettings.cacheGpsTime: Globals.cacheGpsTime.inSeconds.toString(), // int
@@ -108,7 +108,7 @@ enum AppSettings {
       if (iv > 0 && iv < 10) {
         iv = 10;
       }
-      Globals.addressLookupInterval = Duration(seconds: iv);
+      Globals.osmLookupInterval = Duration(seconds: iv);
     } catch (e) {
       logger.warn(
           'addressLookupInterval has invalid value: ${settings[AppSettings.addressLookupInterval]}');
@@ -210,8 +210,7 @@ enum AppSettings {
 
             /// defaults to Globals.addressLookupInterval
             case AppSettings.addressLookupInterval:
-              Globals.addressLookupInterval =
-                  Duration(seconds: int.parse(value));
+              Globals.osmLookupInterval = Duration(seconds: int.parse(value));
               break;
 
             /// defaults to Globals.osmLookupCondition

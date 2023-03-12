@@ -1,8 +1,11 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-//
+import 'package:permission_handler/permission_handler.dart';
 import 'package:chaostours/notifications.dart';
-import 'package:chaostours/permissions.dart';
+import 'package:app_settings/app_settings.dart';
+//
+import 'package:chaostours/globals.dart';
+import 'package:chaostours/logger.dart';
+import 'package:chaostours/view/app_widgets.dart';
 
 //
 import 'package:chaostours/view/app_widgets.dart';
@@ -17,6 +20,7 @@ class WidgetPermissionsPage extends StatefulWidget {
 class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
   @override
   void initState() {
+    permissionItems();
     super.initState();
   }
 
@@ -25,45 +29,24 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
     super.dispose();
   }
 
-  Widget pageBody() {
-    return ListView(
-      children: [
-        const ElevatedButton(
-          onPressed: Permissions.requestLocationPermission,
-          child: Text('Request background location permission'),
-        ),
-        if (Platform.isAndroid) ...[
-          const Text(
-              'You need to check the option "ALWAYS allow location lookup\n\n'
-              'This permission on android is only needed since API Level 33:\n'
-              'Android 13, Tiramisu, API Level 33 since August 15, 2022\n'
-              'https://en.wikipedia.org/wiki/Android_version_history#Overview'),
-        ],
-        const ElevatedButton(
-          onPressed: Permissions.requestNotificationPermission,
-          child: Text('Request Notification permission'),
-        ),
-        ElevatedButton(
-          child: const Text('Test notification'),
-          onPressed: () => Notifications()
-              .send('Hello from Chaos Tours', 'The ultimate Tracking app'),
-        ),
-        /*
-                const ElevatedButton(
-                  onPressed: Tracking.startTracking,
-                  child: Text('Start Tracking'),
-                ),
-                const ElevatedButton(
-                  onPressed: Tracking.stopTracking,
-                  child: Text('Stop Tracking'),
-                ),
-                */
-      ],
-    );
+  Widget body = AppWidgets.loading('Checking Permissions');
+
+  Future<void> permissionItems() async {
+    List<Widget> items = [];
+    if (!(await Permission.location.isGranted)) {
+      items.add(ListTile(
+          leading: const Text('Einfache GPS Ortung nicht erlaubt'),
+          subtitle: const Text(''),
+          trailing: IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () => AppSettings.openLocationSettings(),
+          )));
+    }
+    body = Container(child: Column(children: items));
   }
 
   @override
   Widget build(BuildContext context) {
-    return AppWidgets.scaffold(context, body: pageBody());
+    return AppWidgets.scaffold(context, body: body);
   }
 }

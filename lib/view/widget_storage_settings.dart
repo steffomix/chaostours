@@ -76,7 +76,7 @@ class _WidgetStorageSettings extends State<WidgetStorageSettings> {
   Widget build(BuildContext context) {
     if (loading) {
       return AppWidgets.scaffold(context,
-          body: Center(child: AppWidgets.loading()));
+          body: Center(child: AppWidgets.loading('')));
     }
     List<Widget> options = [];
 

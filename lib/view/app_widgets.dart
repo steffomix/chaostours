@@ -174,9 +174,13 @@ class AppWidgets {
     return '$day, ${timeStart.hour}:${timeStart.minute} - ${timeEnd.hour}:${timeEnd.minute}\n ($duration)';
   }
 
-  static Widget loading({double? size, Color? color}) {
-    return LoadingAnimationWidget.staggeredDotsWave(
-        color: color ?? AppColors.black.color, size: size ?? 30);
+  static Widget loading(String info) {
+    return Center(
+        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+      LoadingAnimationWidget.staggeredDotsWave(
+          color: AppColors.black.color, size: 30),
+      Text(info)
+    ]));
   }
 }
 

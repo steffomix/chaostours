@@ -321,7 +321,7 @@ class _WidgetOsm extends State<WidgetOsm> {
                   leading: ValueListenableBuilder(
                     builder: (context, value, child) {
                       return value == true
-                          ? AppWidgets.loading(size: 30)
+                          ? AppWidgets.loading('')
                           : const SizedBox(width: 30 + 5, height: 30 + 5);
                     },
                     valueListenable: _loading,

@@ -1,6 +1,7 @@
 import 'package:chaostours/main.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
+import 'package:permission_handler/permission_handler.dart';
 //
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/event_manager.dart';
@@ -20,17 +21,23 @@ import 'package:chaostours/globals.dart';
 import 'package:chaostours/screen.dart';
 
 enum TrackingPageDisplayMode {
+  /// checkPermissions
+  checkPermissions,
+
+  /// no gps signals yet
+  waitingForGPS,
+
   /// shows gps list
-  gps,
+  gpsList,
 
   /// trackpoints from current location
   lastVisited,
 
   /// recent trackpoints ordered by time
-  recent,
+  recentTrackPoints,
 
   /// display task checkboxes and notes input;
-  tasks;
+  editTasks;
 }
 
 class WidgetTrackingPage extends StatefulWidget {
@@ -43,7 +50,8 @@ class WidgetTrackingPage extends StatefulWidget {
 class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   static Logger logger = Logger.logger<WidgetTrackingPage>();
 
-  static TrackingPageDisplayMode displayMode = TrackingPageDisplayMode.recent;
+  static TrackingPageDisplayMode displayMode =
+      TrackingPageDisplayMode.recentTrackPoints;
   static int _bottomBarIndex = 0;
 
   ///
@@ -56,11 +64,39 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   /// recent or saved trackponts
   static List<GPS> runningTrackPoints = [];
 
+  /// both must be true
+  static bool permissionsChecked = false;
+  static bool permissionsOk = true;
+
   @override
   void initState() {
     EventManager.listen<EventOnAppTick>(onTick);
     EventManager.listen<EventOnAddressLookup>(onAddressLookup);
     super.initState();
+  }
+
+  void checkPermissions(BuildContext context) async {
+    List<Permission> pm = [
+      Permission.location,
+      Permission.locationAlways,
+
+      /// disabled due to always false and no way to grand this permission
+      //Permission.storage,
+      Permission.manageExternalStorage,
+      Permission.notification,
+      Permission.calendar
+
+      /// user also need to disable not-used app reset
+    ];
+    for (var p in pm) {
+      if (await p.isDenied || await p.isPermanentlyDenied) {
+        permissionsOk = false;
+        permissionsChecked = true;
+        return;
+      }
+    }
+    permissionsOk = true;
+    permissionsChecked = true;
   }
 
   @override
@@ -70,27 +106,68 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     super.dispose();
   }
 
+  Widget renderListViewBody(BuildContext context, List<Widget> list) {
+    return ListView(children: [
+      renderActiveTrackPoint(context),
+      const Divider(
+          thickness: 2, indent: 10, endIndent: 10, color: Colors.black),
+      ...list
+    ]);
+  }
+
   @override
   Widget build(BuildContext context) {
+    Screen screen = Screen(context);
+    Widget body = const Center(child: Text('No Body'));
     List<Widget> list = [];
+    checkPermissions(context);
+    if (permissionsChecked && !permissionsOk) {
+      // remove eventListener
+      Navigator.pop(context);
+      // navigate
+      Navigator.pushNamed(context, AppRoutes.permissions.route);
+    } else if (!permissionsChecked) {
+      displayMode = TrackingPageDisplayMode.checkPermissions;
+    } else if (runningTrackPoints.isEmpty) {
+      displayMode = TrackingPageDisplayMode.waitingForGPS;
+    } else if (permissionsChecked &&
+        permissionsOk &&
+        (displayMode == TrackingPageDisplayMode.checkPermissions ||
+            displayMode == TrackingPageDisplayMode.waitingForGPS)) {
+      displayMode = TrackingPageDisplayMode.recentTrackPoints;
+    }
+    //displayMode = TrackingPageDisplayMode.recentTrackPoints;
+
     switch (displayMode) {
-      case TrackingPageDisplayMode.recent:
+      case TrackingPageDisplayMode.checkPermissions:
+        body = AppWidgets.loading('Checking Permissions');
+        break;
+
+      case TrackingPageDisplayMode.waitingForGPS:
+        body = AppWidgets.loading('Waiting for next GPS Signal');
+        break;
+
+      case TrackingPageDisplayMode.recentTrackPoints:
         list = renderRecentTrackPointList(
             context, ModelTrackPoint.recentTrackPoints());
+
+        body = renderListViewBody(context, list);
         break;
 
       /// tasks mode
-      case TrackingPageDisplayMode.tasks:
+      case TrackingPageDisplayMode.editTasks:
         list = renderTasks(context);
+
+        body = renderListViewBody(context, list);
         break;
 
       /// last visited mode
       case TrackingPageDisplayMode.lastVisited:
-        if (runningTrackPoints.isNotEmpty) {
-          GPS gps = runningTrackPoints.first;
-          list = renderRecentTrackPointList(
-              context, ModelTrackPoint.lastVisited(gps));
-        }
+        GPS gps = runningTrackPoints.first;
+        list = renderRecentTrackPointList(
+            context, ModelTrackPoint.lastVisited(gps));
+
+        body = renderListViewBody(context, list);
         break;
 
       /// recent mode
@@ -113,14 +190,9 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         double allDist =
             (GPS.distanceoverTrackList(runningTrackPoints) / 10).round() / 100;
         list.insert(0, ListTile(leading: Text('Gesamt Distanz: $allDist km')));
-    }
 
-    Widget body = ListView(children: [
-      renderActiveTrackPoint(context),
-      const Divider(
-          thickness: 2, indent: 10, endIndent: 10, color: Colors.black),
-      ...list
-    ]);
+        body = renderListViewBody(context, list);
+    }
 
     return AppWidgets.scaffold(context,
         body: body, navBar: bottomNavBar(context));
@@ -142,16 +214,16 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         onTap: (int id) {
           switch (id) {
             case 1:
-              displayMode = TrackingPageDisplayMode.recent;
+              displayMode = TrackingPageDisplayMode.recentTrackPoints;
               break;
             case 2:
-              displayMode = TrackingPageDisplayMode.tasks;
+              displayMode = TrackingPageDisplayMode.editTasks;
               break;
             case 3:
               displayMode = TrackingPageDisplayMode.lastVisited;
               break;
             default:
-              displayMode = TrackingPageDisplayMode.gps;
+              displayMode = TrackingPageDisplayMode.gpsList;
           }
           _bottomBarIndex = id;
           setState(() {});
@@ -270,67 +342,62 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   }
 
   Widget renderActiveTrackPoint(BuildContext context) {
-    if (runningTrackPoints.isEmpty) {
-      return const Text('...waiting for GPS...');
-    } else {
-      try {
-        var tp = ModelTrackPoint.pendingTrackPoint;
-        var duration = util.timeElapsed(tp.timeStart, tp.timeEnd, false);
-        var alias = ModelAlias.nextAlias(
-                gps: currentStatus == TrackingStatus.moving
-                    ? runningTrackPoints.first
-                    : runningTrackPoints.last)
-            .map((e) {
-          return '- ${e.alias}';
-        }).toList();
+    try {
+      var tp = ModelTrackPoint.pendingTrackPoint;
+      var duration = util.timeElapsed(tp.timeStart, tp.timeEnd, false);
+      var alias = ModelAlias.nextAlias(
+              gps: currentStatus == TrackingStatus.moving
+                  ? runningTrackPoints.first
+                  : runningTrackPoints.last)
+          .map((e) {
+        return '- ${e.alias}';
+      }).toList();
 
-        var task =
-            tp.idTask.map((e) => '- ${ModelTask.getTask(e).task}').toList();
-        var notes = tp.notes;
+      var task =
+          tp.idTask.map((e) => '- ${ModelTask.getTask(e).task}').toList();
+      var notes = tp.notes;
 
-        var sAlias = alias.isEmpty ? ' -' : '\n  -${alias.join('\n  -')}';
-        var sTasks = task.isEmpty ? ' -' : '\n  -${task.join('\n  -')}';
-        var listBody = ListBody(
-          children: [
-            Center(
-                heightFactor: 2,
-                child: Text(
-                    currentStatus == TrackingStatus.standing
-                        ? '$duration Halten'
-                        : '~${(GPS.distanceoverTrackList(runningTrackPoints) / 10).round() / 100}km Fahren',
-                    style: const TextStyle(letterSpacing: 2, fontSize: 20))),
-            Center(
-              heightFactor: 1,
-              child: Text(AppWidgets.timeInfo(tp.timeStart, tp.timeEnd)),
-            ),
-            AppWidgets.divider(),
-            Text('OSM: "${ModelTrackPoint.pendingAddress}"', softWrap: true),
-            Text('Alias: $sAlias', softWrap: true),
-            AppWidgets.divider(),
-            Text('Aufgaben: $sTasks', softWrap: true),
-            AppWidgets.divider(),
-            Text('Notizen: $notes')
-          ],
-        );
+      var sAlias = alias.isEmpty ? ' -' : '\n  -${alias.join('\n  -')}';
+      var sTasks = task.isEmpty ? ' -' : '\n  -${task.join('\n  -')}';
+      var listBody = ListBody(
+        children: [
+          Center(
+              heightFactor: 2,
+              child: Text(
+                  currentStatus == TrackingStatus.standing
+                      ? '$duration Halten'
+                      : '~${(GPS.distanceoverTrackList(runningTrackPoints) / 10).round() / 100}km Fahren',
+                  style: const TextStyle(letterSpacing: 2, fontSize: 20))),
+          Center(
+            heightFactor: 1,
+            child: Text(AppWidgets.timeInfo(tp.timeStart, tp.timeEnd)),
+          ),
+          AppWidgets.divider(),
+          Text('OSM: "${ModelTrackPoint.pendingAddress}"', softWrap: true),
+          Text('Alias: $sAlias', softWrap: true),
+          AppWidgets.divider(),
+          Text('Aufgaben: $sTasks', softWrap: true),
+          AppWidgets.divider(),
+          Text('Notizen: $notes')
+        ],
+      );
 
-        ///
-        /// create widget
-        ///
-        ///
-        return ListTile(
-            leading: IconButton(
-                icon: const Icon(size: 40, Icons.edit_location),
-                onPressed: () {
-                  ModelTrackPoint.editTrackPoint =
-                      ModelTrackPoint.pendingTrackPoint;
-                  Navigator.pushNamed(
-                      context, AppRoutes.editTrackingTasks.route);
-                }),
-            title: listBody);
-      } catch (e, stk) {
-        logger.warn(e.toString());
-        return Text('$e \n$stk');
-      }
+      ///
+      /// create widget
+      ///
+      ///
+      return ListTile(
+          leading: IconButton(
+              icon: const Icon(size: 40, Icons.edit_location),
+              onPressed: () {
+                ModelTrackPoint.editTrackPoint =
+                    ModelTrackPoint.pendingTrackPoint;
+                Navigator.pushNamed(context, AppRoutes.editTrackingTasks.route);
+              }),
+          title: listBody);
+    } catch (e, stk) {
+      logger.warn(e.toString());
+      return Text('$e \n$stk');
     }
   }
 
