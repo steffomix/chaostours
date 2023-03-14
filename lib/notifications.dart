@@ -11,26 +11,22 @@ class Notifications {
   factory Notifications() => _instance ??= Notifications._();
   //
   static int id = DateTime.now().millisecond;
-  static FlutterLocalNotificationsPlugin? plugin;
+  static FlutterLocalNotificationsPlugin plugin =
+      FlutterLocalNotificationsPlugin();
   bool pluginInitialized = false;
-
-  final settings = const InitializationSettings(
-    android: AndroidInitializationSettings('mipmap/ic_launcher'),
-    iOS: IOSInitializationSettings(
-      requestAlertPermission: false,
-      requestBadgePermission: false,
-      requestSoundPermission: false,
-    ),
-  );
 
   Future<void> _initialize() async {
     logger.log('initialize');
     if (pluginInitialized) return;
-    plugin ??= FlutterLocalNotificationsPlugin();
-    pluginInitialized = await plugin!.initialize(
-          settings,
-          onSelectNotification: onSelectNotification,
-        ) ??
+    pluginInitialized = (await plugin.initialize(
+            const InitializationSettings(
+                android: AndroidInitializationSettings('mipmap/ic_launcher')),
+            onDidReceiveNotificationResponse: (NotificationResponse res) {
+          ///
+        }, onDidReceiveBackgroundNotificationResponse:
+                (NotificationResponse res) {
+          ///
+        })) ??
         false;
   }
 
@@ -46,10 +42,8 @@ class Notifications {
       title,
       text,
       const NotificationDetails(
-        android: AndroidNotificationDetails(
-            'Notification Informations', 'Notification'),
-        iOS: IOSNotificationDetails(),
-      ),
+          android: AndroidNotificationDetails(
+              'Notification Informations', 'Notification')),
     );
   }
 }

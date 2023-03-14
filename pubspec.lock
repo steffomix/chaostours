@@ -9,14 +9,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.1.6"
-  app_settings:
-    dependency: "direct main"
-    description:
-      name: app_settings
-      sha256: "66715a323ac36d6c8201035ba678777c0d2ea869e4d7064300d95af10c3bb8cb"
-      url: "https://pub.dev"
-    source: hosted
-    version: "4.2.0"
   args:
     dependency: transitive
     description:
@@ -105,22 +97,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.7.8"
-  device_calendar:
-    dependency: "direct main"
-    description:
-      name: device_calendar
-      sha256: "45aebe30b096c1fa904d617b4b9059b9f0cc37e7b2ddab34060f6f1e969781fb"
-      url: "https://pub.dev"
-    source: hosted
-    version: "4.3.0"
   dio:
     dependency: transitive
     description:
       name: dio
-      sha256: "7d328c4d898a61efc3cd93655a0955858e29a0aa647f0f9e02d59b3bb275e2e8"
+      sha256: "2644a9e0965a7aa3deb09cb8ce4081db4450c178f472818c8cd34216a3070d7b"
       url: "https://pub.dev"
     source: hosted
-    version: "4.0.6"
+    version: "5.0.2"
   external_path:
     dependency: "direct main"
     description:
@@ -190,30 +174,30 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.0.0"
-  flutter_native_timezone:
-    dependency: transitive
-    description:
-      name: flutter_native_timezone
-      sha256: ed7bfb982f036243de1c068e269182a877100c994f05143c8b26a325e28c1b02
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.0.0"
   flutter_osm_interface:
     dependency: transitive
     description:
       name: flutter_osm_interface
-      sha256: "9248c2e45f22155c22d19ee8f7bb7018e61fe252cc9ea4c0e773240cd8f7dd4d"
+      sha256: db4856b371ced268091d0f4a82cd78f30e5abe8c294b81f1493725c3a8f740d5
       url: "https://pub.dev"
     source: hosted
-    version: "0.1.31"
+    version: "0.3.2"
   flutter_osm_plugin:
     dependency: "direct main"
     description:
       name: flutter_osm_plugin
-      sha256: a5c9c72e83143134c6411ca75fbc49d1ba1082b92f03a707be06e23753829f61
+      sha256: "738495b9b3b0359c543055fb1aca1803c839ee1ce53a14bbfc2bfbec7017a997"
       url: "https://pub.dev"
     source: hosted
-    version: "0.42.0"
+    version: "0.51.0"
+  flutter_osm_web:
+    dependency: transitive
+    description:
+      name: flutter_osm_web
+      sha256: "364e76a2157bf39c56b3a9fde4b34c151b8fe5628d0e2429a433b2242bfd5657"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.2.2"
   flutter_plugin_android_lifecycle:
     dependency: transitive
     description:
@@ -360,14 +344,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.8.0"
-  multi_select_flutter:
-    dependency: "direct main"
-    description:
-      name: multi_select_flutter
-      sha256: "503857b415d390d29159df8a9d92d83c6aac17aaf1c307fb7bcfc77d097d20ed"
-      url: "https://pub.dev"
-    source: hosted
-    version: "4.1.3"
   path:
     dependency: "direct main"
     description:
@@ -496,6 +472,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.2.4"
+  routing_client_dart:
+    dependency: transitive
+    description:
+      name: routing_client_dart
+      sha256: "7e1e54009880d83af2b6868158551a9df550405bd388512e7072a07ef5d414fa"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.2"
   shared_preferences:
     dependency: "direct main"
     description:
