@@ -1,6 +1,6 @@
 # chaostours
 
-Advanced Tracking Tool
+advanced tracking app
 
 ## Getting Started
 
