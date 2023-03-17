@@ -45,6 +45,7 @@ dependencies:
   path: ^1.8.2
   http: ^0.13.5
   sprintf: ^7.0.0
+  vector_math: ^2.1.4
   location: ^4.4.0
   logger: ^1.1.0
   path_provider: ^2.0.11
@@ -54,6 +55,7 @@ dependencies:
   confirm_dialog: ^1.0.1
   app_settings: ^4.2.0
   device_calendar: ^4.3.0
+  # geolocator: ^9.0.2 !!! collision with background_location_tracker!
 
 
   # The following adds the Cupertino Icons font to your application.
