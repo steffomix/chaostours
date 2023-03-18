@@ -236,6 +236,46 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  geolocator:
+    dependency: "direct main"
+    description:
+      name: geolocator
+      sha256: "712f596f5b14a8cb8873963978c0b48ce9abf8228fe6d60f9a837e2e2485fe30"
+      url: "https://pub.dev"
+    source: hosted
+    version: "7.4.0"
+  geolocator_android:
+    dependency: transitive
+    description:
+      name: geolocator_android
+      sha256: dde5cd786a66f29ee74abe60095b4fe99735faa52926dcac1246747a7533cf6b
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.2"
+  geolocator_apple:
+    dependency: transitive
+    description:
+      name: geolocator_apple
+      sha256: "1e8e398cc92151d946a4bbd34e2075885333e42d35ca33e418e7ce7b0a29991e"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.2.2"
+  geolocator_platform_interface:
+    dependency: transitive
+    description:
+      name: geolocator_platform_interface
+      sha256: "9d6f34a8a4b704d504f34acc5e52d880a7d2caedd99739902d6319179b0336d4"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.3.6"
+  geolocator_web:
+    dependency: transitive
+    description:
+      name: geolocator_web
+      sha256: "0b9e0ec13ce2211085cae0055b3516c975bd6cfe2878a20c8f13611f1a259855"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.6"
   google_polyline_algorithm:
     dependency: transitive
     description:
@@ -284,30 +324,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.2.0+4"
-  location:
-    dependency: "direct main"
-    description:
-      name: location
-      sha256: "9051959f6f2ccadd887b28b66e9cbbcc25b6838e37cf9e894c421ccc0ebf80b5"
-      url: "https://pub.dev"
-    source: hosted
-    version: "4.4.0"
-  location_platform_interface:
-    dependency: transitive
-    description:
-      name: location_platform_interface
-      sha256: "62eeaf1658e92e4459b727f55a3c328eccbac8ba043fa6d262ac5286ad48384c"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.3.0"
-  location_web:
-    dependency: transitive
-    description:
-      name: location_web
-      sha256: "6c08c408a040534c0269c4ff9fe17eebb5a36dea16512fbaf116b9c8bc21545b"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.1.1"
   logger:
     dependency: "direct main"
     description:

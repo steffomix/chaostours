@@ -5,7 +5,7 @@ import 'package:chaostours/background_process/trackpoint.dart';
 void backgroundCallback() {
   BackgroundLocationTrackerManager.handleBackgroundUpdated(
       (BackgroundLocationUpdateData data) async {
-    await TrackPoint().startShared();
+    await TrackPoint().startShared(lat: data.lat, lon: data.lon);
   });
 }
 

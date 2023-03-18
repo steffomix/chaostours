@@ -35,9 +35,7 @@ class _WidgetAppStartState extends State<WidgetAppStart> {
       Navigator.pushNamed(context, AppRoutes.permissions.route).then((_) {
         setState(() {});
       });
-    }
-
-    if (Globals.permissionsChecked && Globals.permissionsOk) {
+    } else if (Globals.permissionsChecked && Globals.permissionsOk) {
       AppWidgets.navigate(context, AppRoutes.liveTracking);
     }
 

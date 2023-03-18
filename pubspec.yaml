@@ -38,6 +38,7 @@ dependencies:
   flutter_osm_plugin:
     path: ../git-packages/osm_flutter
 
+
   flutter_local_notifications: ^14.0.0-dev.2
   permission_handler: ^10.0.0
   shared_preferences: ^2.0.15
@@ -46,7 +47,7 @@ dependencies:
   http: ^0.13.5
   sprintf: ^7.0.0
   vector_math: ^2.1.4
-  location: ^4.4.0
+  # location: ^4.4.0
   logger: ^1.1.0
   path_provider: ^2.0.11
   external_path: ^1.0.3
@@ -55,7 +56,7 @@ dependencies:
   confirm_dialog: ^1.0.1
   app_settings: ^4.2.0
   device_calendar: ^4.3.0
-  # geolocator: ^9.0.2 !!! collision with background_location_tracker!
+  geolocator: 7.4.0 # !!! collision with background_location_tracker!
 
 
   # The following adds the Cupertino Icons font to your application.

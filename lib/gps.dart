@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:vector_math/vector_math.dart';
-import 'package:location/location.dart';
+import 'package:geolocator/geolocator.dart' as geo;
 
 //import 'package:geolocator/geolocator.dart' show Position, Geolocator;
 //
@@ -21,43 +21,29 @@ class GPS {
   double lat;
   double lon;
 
-  GPS(this.lat, this.lon);
+  GPS(this.lat, this.lon) {
+    _time = DateTime.now();
+  }
 
   static Future<GPS> gps() async {
-    /// use cache?
-
-    var t = DateTime.now();
-    if (lastGps != null &&
-        lastGps!.time.add(Globals.cacheGpsTime).isBefore(t)) {
-      return lastGps!;
-    }
-
-    try {
-      var gps = await _gps();
-      gps._time = DateTime.now();
-      if (gps.lat == 0 || gps.lon == 0) {
-        throw gps.toSharedString();
+    if (lastGps == null) {
+      /// no cache present yet
+      return await _gps();
+    } else {
+      var t = lastGps!.time;
+      if (t.add(Globals.cacheGpsTime).isAfter(DateTime.now())) {
+        /// cache is outdated
+        return await _gps();
+      } else {
+        /// use cache
+        return lastGps!;
       }
-      logger.verbose('GPS #${gps.id} at $gps');
-      lastGps = gps;
-      return gps;
-    } catch (e, stk) {
-      logger.fatal('GPS lookup failed: $e', stk);
-      logger.log('create spare GPS(0,0)');
     }
-    return GPS(0, 0);
   }
 
   static Future<GPS> _gps() async {
-    Location location = Location();
-    //bool _serviceEnabled;
-    //PermissionStatus _permissionGranted;
-    LocationData data = await location.getLocation();
-    GPS gps = GPS(data.latitude ?? 0, data.longitude ?? 0);
-    if (gps.lat == 0 || gps.lon == 0) {
-      throw gps.toString();
-    }
-    return gps;
+    geo.Position pos = await geo.Geolocator.getCurrentPosition();
+    return lastGps ??= GPS(pos.latitude, pos.longitude);
   }
 
   @override

@@ -115,7 +115,8 @@ class AppWidgets {
       initialRoute: homeRoute,
       routes: {
         // home routes
-        AppRoutes.home.route: (context) => const WidgetAppStart(),
+        AppRoutes.home.route: (context) =>
+            const WidgetPermissionsPage(), //WidgetAppStart(),
 
         /// add/edit items routes
         // trackpoint
@@ -223,7 +224,7 @@ class _WidgetDrawer extends State<WidgetDrawer> {
               ///
               ElevatedButton(
                   onPressed: () {
-                    AppWidgets.navigate(context, AppRoutes.home);
+                    AppWidgets.navigate(context, AppRoutes.liveTracking);
                   },
                   child: const Text('Tracking')),
 

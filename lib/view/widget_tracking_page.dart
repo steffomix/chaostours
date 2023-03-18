@@ -94,8 +94,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
   @override
   Widget build(BuildContext context) {
-    Widget body =
-        AppWidgets.loading('Checking Permission "$currentPermissionCheck".');
+    Widget body = AppWidgets.loading('Waiting for GPS Signal');
     List<Widget> list = [];
     // nothing checked at this point
     if (runningTrackPoints.isEmpty) {
@@ -229,6 +228,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
             runningTrackPoints.addAll((json[JsonKeys.gpsPoints.name] as List)
                 .map((e) => GPS.toSharedObject(e))
                 .toList());
+            // update GPS cache
+            GPS.lastGps = runningTrackPoints.first;
 
             /// update pendingTrackPoint
             if (currentStatus == lastStatus) {
@@ -238,7 +239,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                 ..address = ModelTrackPoint.pendingAddress
                 ..trackPoints = runningTrackPoints
                 ..timeStart = runningTrackPoints.last.time
-                ..timeEnd = runningTrackPoints.first.time
+                ..timeEnd = DateTime.now()
                 ..idAlias = ModelAlias.nextAlias(gps: runningTrackPoints.first)
                     .map((e) => e.id)
                     .toList()

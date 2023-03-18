@@ -20,15 +20,14 @@ class WidgetPermissionsPage extends StatefulWidget {
 }
 
 class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
+  Logger logger = Logger.logger<WidgetPermissionsPage>();
   Widget widgetPermissions = AppWidgets.loading('Checking Permissions');
   bool permissionChecked = false;
   List<Widget> items = [];
 
   @override
   void initState() {
-    _permissionItems().then((_) {
-      renderBody();
-    });
+    permissionItems();
     super.initState();
   }
 
@@ -39,6 +38,9 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
 
   void permissionItems() {
     _permissionItems().then((_) {
+      renderBody();
+    }).onError((error, stackTrace) {
+      logger.error(error.toString(), stackTrace);
       renderBody();
     });
   }
@@ -168,8 +170,6 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
                 });
           },
         )));
-
-    Future.delayed(const Duration(seconds: 1), permissionItems);
   }
 
   void renderBody() {

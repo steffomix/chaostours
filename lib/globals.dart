@@ -1,15 +1,8 @@
 // ignore_for_file: prefer_const_constructors
 
-import 'package:path/path.dart';
-
-///
-import 'package:chaostours/logger.dart';
-
 enum OsmLookup { never, onStatus, always }
 
 class Globals {
-  static Logger logger = Logger.logger<Globals>();
-
   static String version = '1.0';
 
   /// german default short week names

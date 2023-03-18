@@ -56,7 +56,9 @@ class TrackPoint {
     shared.saveList([]);
   }
 
-  Future<void> startShared() async {
+  Future<void> startShared({required double lat, required double lon}) async {
+    GPS.lastGps = GPS(lat, lon);
+
     /// load last session from file
     await FileHandler().getStorage();
     String storage = FileHandler.combinePath(
