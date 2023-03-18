@@ -15,6 +15,11 @@ class Globals {
   /// german default short week names
   static List<String> weekDays = ['', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
 
+  /// dynamic settings checked only once on every app start.
+  /// Does not affect background tasks
+  static bool permissionsChecked = false;
+  static bool permissionsOk = true;
+
   /// user edit settings
   ///
   /// If true, status standing is triggered only if location has an alias.

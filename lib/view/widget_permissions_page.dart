@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:app_settings/app_settings.dart';
 import 'package:chaostours/notifications.dart';
 //
 import 'package:chaostours/globals.dart';
@@ -19,11 +20,15 @@ class WidgetPermissionsPage extends StatefulWidget {
 }
 
 class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
+  Widget widgetPermissions = AppWidgets.loading('Checking Permissions');
   bool permissionChecked = false;
+  List<Widget> items = [];
 
   @override
   void initState() {
-    permissionItems();
+    _permissionItems().then((_) {
+      renderBody();
+    });
     super.initState();
   }
 
@@ -32,83 +37,147 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
     super.dispose();
   }
 
-  Widget widgetPermissions = AppWidgets.loading('Checking Permissions');
+  void permissionItems() {
+    _permissionItems().then((_) {
+      renderBody();
+    });
+  }
 
-  Future<void> permissionItems() async {
-    List<Widget> items = [];
+  Future<void> _permissionItems() async {
+    items.clear();
     if (!(await Permission.location.isGranted)) {
       items.add(ListTile(
-          leading:
-              const Text('Einfache (Vordergrund) GPS Ortung nicht erlaubt'),
+          leading: (await Permission.location.isGranted)
+              ? const Icon(Icons.done)
+              : const Icon(Icons.error_outline, color: Colors.red),
+          title: const Text('Einfache (Vordergrund) GPS Ortung nicht erlaubt'),
           subtitle: const Text(''),
           trailing: IconButton(
             icon: const Icon(Icons.settings),
-            onPressed: () {},
+            onPressed: () {
+              AppSettings.openLocationSettings(
+                  asAnotherTask: false,
+                  callback: () {
+                    permissionItems();
+                  });
+            },
           )));
     }
     if (!(await Permission.locationAlways.isGranted)) {
       items.add(ListTile(
-          leading: const Text('Hintergrund GPS Ortung nicht erlaubt'),
+          leading: (await Permission.locationAlways.isGranted)
+              ? const Icon(Icons.done)
+              : const Icon(Icons.error_outline, color: Colors.red),
+          title: const Text('Hintergrund GPS Ortung nicht erlaubt'),
           subtitle: const Text(''),
           trailing: IconButton(
             icon: const Icon(Icons.settings),
-            onPressed: () {},
+            onPressed: () {
+              AppSettings.openLocationSettings(
+                  asAnotherTask: false,
+                  callback: () {
+                    permissionItems();
+                  });
+            },
           )));
     }
     if (!(await Permission.ignoreBatteryOptimizations.isGranted)) {
       items.add(ListTile(
-          leading:
-              const Text('Ignorieren der Batterieoptimierung nicht erlaubt'),
+          leading: (await Permission.ignoreBatteryOptimizations.isGranted)
+              ? const Icon(Icons.done)
+              : const Icon(Icons.error_outline, color: Colors.red),
+          title: const Text('Ignorieren der Batterieoptimierung nicht erlaubt'),
           subtitle: const Text(''),
           trailing: IconButton(
             icon: const Icon(Icons.settings),
-            onPressed: () {},
+            onPressed: () {
+              AppSettings.openBatteryOptimizationSettings(
+                  asAnotherTask: false,
+                  callback: () {
+                    permissionItems();
+                  });
+            },
           )));
     }
     if (!(await Permission.storage.isGranted)) {
       items.add(ListTile(
-          leading:
+          leading: (await Permission.storage.isGranted)
+              ? const Icon(Icons.done)
+              : const Icon(Icons.error_outline, color: Colors.red),
+          title:
               const Text('Zugriff auf App-Internes Dateisystem nicht erlaubt'),
           subtitle: const Text(''),
           trailing: IconButton(
             icon: const Icon(Icons.settings),
-            onPressed: () {},
+            onPressed: () {
+              AppSettings.openInternalStorageSettings(
+                  asAnotherTask: false,
+                  callback: () {
+                    permissionItems();
+                  });
+            },
           )));
     }
     if (!(await Permission.manageExternalStorage.isGranted)) {
       items.add(ListTile(
-          leading:
+          leading: (await Permission.manageExternalStorage.isGranted)
+              ? const Icon(Icons.done)
+              : const Icon(Icons.error_outline, color: Colors.red),
+          title:
               const Text('Zugriff auf App-Externes Dateisystem nicht erlaubt'),
           subtitle: const Text(''),
           trailing: IconButton(
             icon: const Icon(Icons.settings),
-            onPressed: () {},
+            onPressed: () {
+              AppSettings.openAppSettings(
+                  asAnotherTask: false,
+                  callback: () {
+                    permissionItems();
+                  });
+            },
           )));
     }
     if (!(await Permission.notification.isGranted)) {
       items.add(ListTile(
-          leading: const Text('Anzeige von App-Meldungen nicht erlaubt'),
+          leading: (await Permission.notification.isGranted)
+              ? const Icon(Icons.done)
+              : const Icon(Icons.error_outline, color: Colors.red),
+          title: const Text('Anzeige von App-Meldungen nicht erlaubt'),
           subtitle: const Text(''),
           trailing: IconButton(
             icon: const Icon(Icons.settings),
-            onPressed: () {},
+            onPressed: () {
+              AppSettings.openNotificationSettings(
+                  asAnotherTask: false,
+                  callback: () {
+                    permissionItems();
+                  });
+            },
           )));
     }
     if (!(await Permission.calendar.isGranted)) {
       items.add(ListTile(
-          leading: const Text('Zugriff auf Geräte-Kalender nicht erlaubt'),
+          leading: (await Permission.calendar.isGranted)
+              ? const Icon(Icons.done)
+              : const Icon(Icons.error_outline, color: Colors.red),
+          title: const Text('Zugriff auf Geräte-Kalender nicht erlaubt'),
           subtitle: const Text(''),
           trailing: IconButton(
             icon: const Icon(Icons.settings),
-            onPressed: () {},
+            onPressed: () {
+              AppSettings.openAppSettings(
+                  asAnotherTask: false,
+                  callback: () {
+                    permissionItems();
+                  });
+            },
           )));
     }
-    renderBody(items);
     Future.delayed(const Duration(seconds: 1), permissionItems);
   }
 
-  void renderBody(List<Widget> items) {
-    widgetPermissions = ListView(children: items);
+  void renderBody() {
+    widgetPermissions = ListView(children: [...items]);
     setState(() {});
   }
 

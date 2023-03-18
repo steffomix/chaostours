@@ -54,6 +54,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       TrackingPageDisplayMode.recentTrackPoints;
   static int _bottomBarIndex = 0;
 
+  String currentPermissionCheck = '';
+
   ///
   /// active trackpoint data
   static TrackingStatus lastStatus = TrackingStatus.none;
@@ -65,38 +67,14 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   static List<GPS> runningTrackPoints = [];
 
   /// both must be true
-  static bool permissionsChecked = false;
-  static bool permissionsOk = true;
+  ///
 
   @override
   void initState() {
+    checkPermissions(context);
     EventManager.listen<EventOnAppTick>(onTick);
     EventManager.listen<EventOnAddressLookup>(onAddressLookup);
     super.initState();
-  }
-
-  void checkPermissions(BuildContext context) async {
-    List<Permission> pm = [
-      Permission.location,
-      Permission.locationAlways,
-
-      /// disabled due to always false and no way to grand this permission
-      //Permission.storage,
-      Permission.manageExternalStorage,
-      Permission.notification,
-      Permission.calendar
-
-      /// user also need to disable not-used app reset
-    ];
-    for (var p in pm) {
-      if (await p.isDenied || await p.isPermanentlyDenied) {
-        permissionsOk = false;
-        permissionsChecked = true;
-        return;
-      }
-    }
-    permissionsOk = true;
-    permissionsChecked = true;
   }
 
   @override
@@ -104,6 +82,34 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     EventManager.remove<EventOnAppTick>(onTick);
     EventManager.remove<EventOnAddressLookup>(onAddressLookup);
     super.dispose();
+  }
+
+  void checkPermissions(BuildContext context) async {
+    Map<String, Permission> pm = {
+      'Foreground GPS': Permission.location,
+      'Background GPS': Permission.locationAlways,
+      //'Ignore Battery Optimizations': Permission.ignoreBatteryOptimizations,
+
+      /// disabled due to always false and no way to grand this permission
+      //Permission.storage,
+      'External Storage and SDCard': Permission.manageExternalStorage,
+      'Notification': Permission.notification,
+      'Calendar': Permission.calendar,
+
+      /// user also need to disable not-used app reset
+    };
+    for (var k in pm.keys) {
+      currentPermissionCheck = k;
+      setState(() {});
+      if ((await pm[k]?.isDenied ?? false) ||
+          (await pm[k]?.isPermanentlyDenied ?? false)) {
+        Globals.permissionsOk = false;
+        Globals.permissionsChecked = true;
+        return;
+      }
+    }
+    Globals.permissionsOk = true;
+    Globals.permissionsChecked = true;
   }
 
   Widget renderListViewBody(BuildContext context, List<Widget> list) {
@@ -117,26 +123,25 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
   @override
   Widget build(BuildContext context) {
-    Screen screen = Screen(context);
-    Widget body = const Center(child: Text('No Body'));
+    Widget body =
+        AppWidgets.loading('Checking Permission "$currentPermissionCheck".');
     List<Widget> list = [];
-    checkPermissions(context);
-    if (permissionsChecked && !permissionsOk) {
-      // remove eventListener
-      Navigator.pop(context);
+    // nothing checked at this point
+    if (Globals.permissionsChecked && !Globals.permissionsOk) {
       // navigate
-      Navigator.pushNamed(context, AppRoutes.permissions.route);
-    } else if (!permissionsChecked) {
+      Navigator.pushNamed(context, AppRoutes.permissions.route).then((_) {
+        setState(() {});
+      });
+    } else if (!Globals.permissionsChecked) {
       displayMode = TrackingPageDisplayMode.checkPermissions;
     } else if (runningTrackPoints.isEmpty) {
       displayMode = TrackingPageDisplayMode.waitingForGPS;
-    } else if (permissionsChecked &&
-        permissionsOk &&
+    } else if (Globals.permissionsChecked &&
+        Globals.permissionsOk &&
         (displayMode == TrackingPageDisplayMode.checkPermissions ||
             displayMode == TrackingPageDisplayMode.waitingForGPS)) {
       displayMode = TrackingPageDisplayMode.recentTrackPoints;
     }
-    //displayMode = TrackingPageDisplayMode.recentTrackPoints;
 
     switch (displayMode) {
       case TrackingPageDisplayMode.checkPermissions:
@@ -232,11 +237,17 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   }
 
   Future<void> onAddressLookup(EventOnAddressLookup event) async {
+    if (!mounted) {
+      return;
+    }
     ModelTrackPoint.pendingAddress =
         (await Address(runningTrackPoints.first).lookupAddress()).toString();
   }
 
   Future<void> onTick(EventOnAppTick tick) async {
+    if (!mounted) {
+      return;
+    }
     String storage = FileHandler.combinePath(
         FileHandler.storages[Storages.appInternal]!, FileHandler.sharedFile);
     String jsonString = await FileHandler.read(storage);

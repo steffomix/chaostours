@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:vector_math/vector_math.dart';
+import 'package:location/location.dart';
 
 //import 'package:geolocator/geolocator.dart' show Position, Geolocator;
 //
@@ -32,9 +33,9 @@ class GPS {
     }
 
     try {
-      var gps = await AppLoader.gps(); 
+      var gps = await _gps();
       gps._time = DateTime.now();
-      if(gps.lat == 0 || gps.lon == 0){
+      if (gps.lat == 0 || gps.lon == 0) {
         throw gps.toSharedString();
       }
       logger.verbose('GPS #${gps.id} at $gps');
@@ -45,6 +46,18 @@ class GPS {
       logger.log('create spare GPS(0,0)');
     }
     return GPS(0, 0);
+  }
+
+  static Future<GPS> _gps() async {
+    Location location = Location();
+    //bool _serviceEnabled;
+    //PermissionStatus _permissionGranted;
+    LocationData data = await location.getLocation();
+    GPS gps = GPS(data.latitude ?? 0, data.longitude ?? 0);
+    if (gps.lat == 0 || gps.lon == 0) {
+      throw gps.toString();
+    }
+    return gps;
   }
 
   @override
@@ -75,7 +88,8 @@ class GPS {
     return gps;
   }
 
-  static double distance(GPS g1, GPS g2) => distanceBetween(g1.lat, g1.lon, g2.lat, g2.lon);
+  static double distance(GPS g1, GPS g2) =>
+      distanceBetween(g1.lat, g1.lon, g2.lat, g2.lon);
 
   // calc distance over multiple trackpoints in meters
   static double distanceoverTrackList(List<GPS> tracklist) {
@@ -89,7 +103,6 @@ class GPS {
     return dist;
   }
 
-  
   /// Calculates the distance between the supplied coordinates in meters.
   ///
   /// The distance between the coordinates is calculated using the Haversine

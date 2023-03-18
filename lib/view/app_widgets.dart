@@ -7,7 +7,7 @@ import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/globals.dart';
-import 'package:chaostours/background_process/tracking.dart';
+import 'package:chaostours/view/app_colors.dart';
 import 'package:chaostours/view/widget_tracking_page.dart';
 import 'package:chaostours/view/widget_logger_page.dart';
 import 'package:chaostours/view/widget_permissions_page.dart';
@@ -22,6 +22,15 @@ import 'package:chaostours/view/widget_alias_trackpoint_list.dart';
 import 'package:chaostours/view/widget_osm.dart';
 import 'package:chaostours/view/widget_storage_settings.dart';
 import 'package:chaostours/view/widget_app_settings.dart';
+
+enum AppColorScheme {
+  bright(mangoMojitoLight),
+  dark(mangoMojitoLight);
+
+  final ColorScheme scheme;
+
+  const AppColorScheme(this.scheme);
+}
 
 enum AppColors {
   /// theme colors
@@ -130,11 +139,7 @@ class AppWidgets {
         // osm
         AppRoutes.osm.route: (context) => const WidgetOsm(),
       },
-      theme: ThemeData(
-        primarySwatch: Colors.amber,
-        primaryColor: const Color(0xFF4b830d),
-        canvasColor: const Color(0xFFDDDDDD),
-      ),
+      theme: ThemeData(colorScheme: AppColorScheme.bright.scheme),
       //home: const WidgetTrackingPage(),
     );
   }

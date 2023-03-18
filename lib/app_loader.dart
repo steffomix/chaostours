@@ -1,7 +1,6 @@
 import 'package:http/http.dart' as http;
 import 'package:flutter/services.dart';
 import 'dart:io' as io;
-import 'package:location/location.dart' as loc;
 import 'package:permission_handler/permission_handler.dart';
 
 ///
@@ -22,6 +21,7 @@ import 'package:chaostours/logger.dart';
 //import 'package:chaostours/background_process/workmanager.dart';
 import 'package:chaostours/globals.dart';
 import 'package:chaostours/app_settings.dart';
+import 'background_process/tracking.dart';
 
 class AppLoader {
   static Logger logger = Logger.logger<AppLoader>();
@@ -117,7 +117,7 @@ class AppLoader {
     /// debug only
     //logger.important('start workmanager trackpoint simulation Tick');
     //Future.microtask(workmanagerTick);
-/*
+
     logger.important('initialize background tracker');
     await BackgroundTracking.initialize();
     logger.important('background tracker initialized');
@@ -134,7 +134,6 @@ class AppLoader {
         logger.fatal(e.toString(), stk);
       }
     }
-    */
   }
 
   /// debug only
@@ -217,13 +216,13 @@ class AppLoader {
     logger.log('Calendar ID loaded');
     return calendarId;
   }
-*/
+
   static Future<GPS> gps() async {
     loc.Location location = new loc.Location();
     //bool _serviceEnabled;
     //PermissionStatus _permissionGranted;
     loc.LocationData locationData;
-/*
+
     _serviceEnabled = await location.serviceEnabled();
     if (!_serviceEnabled) {
       _serviceEnabled = await location.requestService();
@@ -240,8 +239,8 @@ class AppLoader {
         return;
       }
     }
-*/
     locationData = await location.getLocation();
     return GPS(locationData.latitude ?? 0, locationData.longitude ?? 0);
   }
+*/
 }

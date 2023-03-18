@@ -1,4 +1,3 @@
-/*
 import 'package:background_location_tracker/background_location_tracker.dart';
 import 'package:chaostours/background_process/trackpoint.dart';
 
@@ -63,4 +62,3 @@ class BackgroundTracking {
     );
   }
 }
-*/
