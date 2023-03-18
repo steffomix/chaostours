@@ -20,7 +20,11 @@ class Globals {
   static bool permissionsChecked = false;
   static bool permissionsOk = true;
 
-  /// user edit settings
+  /// user edit settings.
+  /// All setting names must match enum AppSettings values in app_settings.dart
+  /// if backgroundTracking is enabled and starts automatic
+  static bool backgroundTrackingEnabled = true;
+
   ///
   /// If true, status standing is triggered only if location has an alias.
   static bool statusStandingRequireAlias = true;

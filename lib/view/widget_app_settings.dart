@@ -29,6 +29,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
   static final Logger logger = Logger.logger<WidgetAppSettings>();
 
   bool? statusStandingRequireAlias = Globals.statusStandingRequireAlias;
+  bool? backgroundTrackingEnabled = Globals.backgroundTrackingEnabled;
 
   TextEditingController? txTrackPointInterval;
   TextEditingController? txAddressLookupInterval;
@@ -161,6 +162,24 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
               subtitle: const Text(
                   'Ein Haltepunkt wird nur gespeichert wenn sie in einem Alias stehen. '
                   'Dies verhindert das speichern von Haltepunkten wenn sie im Stau oder lange an einer Ampel stehen.'),
+            )),
+
+        AppWidgets.divider(),
+
+        ///
+        Container(
+            padding: const EdgeInsets.all(5),
+            child: ListTile(
+              leading: Checkbox(
+                  value: backgroundTrackingEnabled,
+                  onChanged: (bool? b) {
+                    backgroundTrackingEnabled = b;
+                    modify();
+                  }),
+              title: const Text('Hintergrund GPS aktivieren'),
+              subtitle: const Text(
+                  'Ob der Hintergrund GPS automatisch starten soll wenn sie die App starten. '
+                  'Sollten sie ihn versehentlich abgeschaltet haben, wird er beim nächsten start der app automatisch neu gestartet.'),
             )),
 
         AppWidgets.divider(),

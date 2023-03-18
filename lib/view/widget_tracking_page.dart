@@ -71,7 +71,6 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
   @override
   void initState() {
-    checkPermissions(context);
     EventManager.listen<EventOnAppTick>(onTick);
     EventManager.listen<EventOnAddressLookup>(onAddressLookup);
     super.initState();
@@ -82,34 +81,6 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     EventManager.remove<EventOnAppTick>(onTick);
     EventManager.remove<EventOnAddressLookup>(onAddressLookup);
     super.dispose();
-  }
-
-  void checkPermissions(BuildContext context) async {
-    Map<String, Permission> pm = {
-      'Foreground GPS': Permission.location,
-      'Background GPS': Permission.locationAlways,
-      //'Ignore Battery Optimizations': Permission.ignoreBatteryOptimizations,
-
-      /// disabled due to always false and no way to grand this permission
-      //Permission.storage,
-      'External Storage and SDCard': Permission.manageExternalStorage,
-      'Notification': Permission.notification,
-      'Calendar': Permission.calendar,
-
-      /// user also need to disable not-used app reset
-    };
-    for (var k in pm.keys) {
-      currentPermissionCheck = k;
-      setState(() {});
-      if ((await pm[k]?.isDenied ?? false) ||
-          (await pm[k]?.isPermanentlyDenied ?? false)) {
-        Globals.permissionsOk = false;
-        Globals.permissionsChecked = true;
-        return;
-      }
-    }
-    Globals.permissionsOk = true;
-    Globals.permissionsChecked = true;
   }
 
   Widget renderListViewBody(BuildContext context, List<Widget> list) {
@@ -127,76 +98,58 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         AppWidgets.loading('Checking Permission "$currentPermissionCheck".');
     List<Widget> list = [];
     // nothing checked at this point
-    if (Globals.permissionsChecked && !Globals.permissionsOk) {
-      // navigate
-      Navigator.pushNamed(context, AppRoutes.permissions.route).then((_) {
-        setState(() {});
-      });
-    } else if (!Globals.permissionsChecked) {
-      displayMode = TrackingPageDisplayMode.checkPermissions;
-    } else if (runningTrackPoints.isEmpty) {
-      displayMode = TrackingPageDisplayMode.waitingForGPS;
-    } else if (Globals.permissionsChecked &&
-        Globals.permissionsOk &&
-        (displayMode == TrackingPageDisplayMode.checkPermissions ||
-            displayMode == TrackingPageDisplayMode.waitingForGPS)) {
-      displayMode = TrackingPageDisplayMode.recentTrackPoints;
-    }
+    if (runningTrackPoints.isEmpty) {
+      body = AppWidgets.loading('Waiting for GPS Signal');
+    } else {
+      switch (displayMode) {
+        case TrackingPageDisplayMode.recentTrackPoints:
+          list = renderRecentTrackPointList(
+              context, ModelTrackPoint.recentTrackPoints());
 
-    switch (displayMode) {
-      case TrackingPageDisplayMode.checkPermissions:
-        body = AppWidgets.loading('Checking Permissions');
-        break;
+          body = renderListViewBody(context, list);
+          break;
 
-      case TrackingPageDisplayMode.waitingForGPS:
-        body = AppWidgets.loading('Waiting for next GPS Signal');
-        break;
+        /// tasks mode
+        case TrackingPageDisplayMode.editTasks:
+          list = renderTasks(context);
 
-      case TrackingPageDisplayMode.recentTrackPoints:
-        list = renderRecentTrackPointList(
-            context, ModelTrackPoint.recentTrackPoints());
+          body = renderListViewBody(context, list);
+          break;
 
-        body = renderListViewBody(context, list);
-        break;
+        /// last visited mode
+        case TrackingPageDisplayMode.lastVisited:
+          GPS gps = runningTrackPoints.first;
+          list = renderRecentTrackPointList(
+              context, ModelTrackPoint.lastVisited(gps));
 
-      /// tasks mode
-      case TrackingPageDisplayMode.editTasks:
-        list = renderTasks(context);
+          body = renderListViewBody(context, list);
+          break;
 
-        body = renderListViewBody(context, list);
-        break;
+        /// recent mode
+        default:
+          GPS lastPoint = runningTrackPoints.first;
+          list = runningTrackPoints.map((gps) {
+            int h = gps.time.hour;
+            int m = gps.time.minute;
+            int s = gps.time.second;
+            double lat = gps.lat;
+            double lon = gps.lon;
+            double dist = (GPS.distance(lastPoint, gps) / 10).round() / 100;
+            lastPoint = gps;
+            return ListTile(
+              title: Text('$h:$m:$s - $dist km'),
+              subtitle: Text('$lat,$lon'),
+              leading: const Icon(Icons.map),
+            );
+          }).toList();
+          double allDist =
+              (GPS.distanceoverTrackList(runningTrackPoints) / 10).round() /
+                  100;
+          list.insert(
+              0, ListTile(leading: Text('Gesamt Distanz: $allDist km')));
 
-      /// last visited mode
-      case TrackingPageDisplayMode.lastVisited:
-        GPS gps = runningTrackPoints.first;
-        list = renderRecentTrackPointList(
-            context, ModelTrackPoint.lastVisited(gps));
-
-        body = renderListViewBody(context, list);
-        break;
-
-      /// recent mode
-      default:
-        GPS lastPoint = runningTrackPoints.first;
-        list = runningTrackPoints.map((gps) {
-          int h = gps.time.hour;
-          int m = gps.time.minute;
-          int s = gps.time.second;
-          double lat = gps.lat;
-          double lon = gps.lon;
-          double dist = (GPS.distance(lastPoint, gps) / 10).round() / 100;
-          lastPoint = gps;
-          return ListTile(
-            title: Text('$h:$m:$s - $dist km'),
-            subtitle: Text('$lat,$lon'),
-            leading: const Icon(Icons.map),
-          );
-        }).toList();
-        double allDist =
-            (GPS.distanceoverTrackList(runningTrackPoints) / 10).round() / 100;
-        list.insert(0, ListTile(leading: Text('Gesamt Distanz: $allDist km')));
-
-        body = renderListViewBody(context, list);
+          body = renderListViewBody(context, list);
+      }
     }
 
     return AppWidgets.scaffold(context,

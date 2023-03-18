@@ -77,7 +77,7 @@ class Address {
 
   Future<Address> lookupAddress() async {
     try {
-      http.Response response = await AppLoader.osmReverseLookup(_gps);
+      http.Response response = await osmReverseLookup(_gps);
       if (response.statusCode == 200) {
         String body = response.body;
         logger.log(body);
@@ -122,5 +122,13 @@ class Address {
     _loaded = true;
     //logInfo('Address parsed OSM reverse lookup result on GPS #${_gps.id}:\n$asString');
     return this;
+  }
+
+  static Future<http.Response> osmReverseLookup(GPS gps) async {
+    var url = Uri.https('nominatim.openstreetmap.org', '/reverse',
+        {'lat': gps.lat.toString(), 'lon': gps.lon.toString()});
+    http.Response response = await http.get(url);
+    logger.log('OpenStreetMap reverse lookup for gps #${gps.id} at $gps');
+    return response;
   }
 }

@@ -1,4 +1,3 @@
-import 'package:http/http.dart' as http;
 import 'package:flutter/services.dart';
 import 'dart:io' as io;
 import 'package:permission_handler/permission_handler.dart';
@@ -8,157 +7,42 @@ import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_user.dart';
-import 'package:chaostours/shared.dart';
 import 'package:chaostours/file_handler.dart';
 import 'package:chaostours/background_process/tracking.dart';
-import 'package:chaostours/background_process/trackpoint.dart';
-import 'package:chaostours/gps.dart';
-import 'package:chaostours/background_process/tracking_calendar.dart';
-import 'package:chaostours/notifications.dart';
-import 'package:chaostours/permissions.dart';
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/logger.dart';
 //import 'package:chaostours/background_process/workmanager.dart';
 import 'package:chaostours/globals.dart';
 import 'package:chaostours/app_settings.dart';
-import 'background_process/tracking.dart';
 
 class AppLoader {
   static Logger logger = Logger.logger<AppLoader>();
+
+  static bool appLoaderPreloadSequenceFinished = false;
+  static bool appLoaderWebKeyLoaded = false;
+  static bool appLoaderSharedSettingsLoaded = false;
+  static bool appLoaderStorageInitialized = false;
+  static bool appLoaderDatabseLoaded = false;
+  static bool appLoaderAssetDatabaseLoaded = false;
+  static bool appLoaderPermissionsRequested = false;
+  static bool appLoaderTicksStarted = false;
 
   ///
   /// preload recources
   static Future<void> preload() async {
     logger.important('start Preload sequence...');
-
     try {
-      logger.important('initialize permissions');
-      await Permission.location.request();
-      await Permission.locationAlways.request();
-      await Permission.storage.request();
-      await Permission.manageExternalStorage.request();
-      await Permission.notification.request();
-      await Permission.calendar.request();
-    } catch (e, stk) {
-      logger.fatal(
-          'app start permissions failure, wait 5 sec. \n${e.toString()}', stk);
-      await Future.delayed(const Duration(seconds: 5));
-    }
-    //logger.important('start background gps tracking');
-    //logger.important('initialize workmanager');
-    //WorkManager();
-
-    try {
-      await AppSettings.loadFromShared();
-      await FileHandler().getStorage();
-
-      // load database
-      logger.important('load Database Table ModelUser');
-      await ModelUser.open();
-      logger.important('load Database Table ModelTask');
-      await ModelTask.open();
-      logger.important('load Database Table ModelAlias');
-      await ModelAlias.open();
-      logger.important('load Database Table ModelTrackPoint');
-      await ModelTrackPoint.open();
-
-      ///
-      if (ModelAlias.length < 1) {
-        await ModelAlias.openFromAsset();
-        await ModelAlias.write();
-      }
-      if (ModelUser.length < 1) {
-        await ModelUser.openFromAsset();
-        await ModelUser.write();
-      }
-      if (ModelTask.length < 1) {
-        await ModelTask.openFromAsset();
-        await ModelTask.write();
-      }
-    } catch (e, stk) {
-      logger.fatal(
-          'app start database failure, wait 5 sec. \n${e.toString()}', stk);
-      await Future.delayed(const Duration(seconds: 5));
-    }
-
-    try {
-      Shared shared = Shared(SharedKeys.trackPointUp);
-      await shared.saveList(<String>[]);
-      shared = Shared(SharedKeys.trackPointDown);
-      await shared.saveString('');
-    } catch (e, stk) {
-      logger.error('reset shared data ${e.toString()}', stk);
-    }
-
-    try {
-      logger.important('preparing HTTP SSL Key');
+      await requestPermissions();
       await webKey();
-      //logger.important('initialize Tracking Calendar');
-      //TrackingCalendar();
-    } catch (e, stk) {
-      logger.fatal(
-          'app start calendar failure, wait 5 sec. \n${e.toString()}', stk);
-      await Future.delayed(const Duration(seconds: 5));
-    }
-    /*
-      logger.log('load default Calendar ID from assets');
-      await defaultCalendarId();
-      logger.log('load calendar credentials from assets');
-      await calendarApiFromCredentials();
-*/
-
-    logger.important('preload finished successful');
-
-    logger.important(
-        'start App Tick with ${Globals.appTickDuration}sec. interval');
-    Future.microtask(appTick);
-    Logger.listenOnTick();
-
-    /// debug only
-    //logger.important('start workmanager trackpoint simulation Tick');
-    //Future.microtask(workmanagerTick);
-
-    logger.important('initialize background tracker');
-    await BackgroundTracking.initialize();
-    logger.important('background tracker initialized');
-    logger.important('Start background tracker');
-    await BackgroundTracking.startTracking();
-
-    bool started = await BackgroundTracking.isTracking();
-    if (started) {
-      logger.important('Background tracker started');
-    } else {
-      try {
-        throw 'Background tracker failed starting';
-      } catch (e, stk) {
-        logger.fatal(e.toString(), stk);
-      }
-    }
-  }
-
-  /// debug only
-  static Future<void> workmanagerTick() async {
-    while (true) {
-      try {
-        TrackPoint().startShared();
-      } catch (e, stk) {
-        logger.fatal(e.toString(), stk);
-      }
-      await Future.delayed(Globals.trackPointInterval);
-    }
-  }
-
-  static int tick = 0;
-  static Future<void> appTick() async {
-    while (true) {
-      tick++;
-      try {
-        EventManager.fire<EventOnAppTick>(EventOnAppTick(tick));
-      } catch (e, stk) {
-        logger.error(e.toString(), stk);
-        Logger.print('###### AppTick broke ######');
-      }
-      await Future.delayed(Globals.appTickDuration);
+      await loadSharedSettings();
+      await initializeStorages();
+      await loadDatabase();
+      await loadAssetDatabase();
+      await ticks();
+      await backgroundGps();
+      appLoaderPreloadSequenceFinished = true;
+    } catch (e, std) {
+      logger.fatal('Startup sequence failed: ${e.toString()}', std);
     }
   }
 
@@ -170,16 +54,107 @@ class AppLoader {
     io.SecurityContext.defaultContext
         .setTrustedCertificatesBytes(data.buffer.asUint8List());
     logger.log('SSL Key loaded');
+    appLoaderWebKeyLoaded = true;
   }
 
-  ///
-  /// openStreetMap reverse lookup
-  static Future<http.Response> osmReverseLookup(GPS gps) async {
-    var url = Uri.https('nominatim.openstreetmap.org', '/reverse',
-        {'lat': gps.lat.toString(), 'lon': gps.lon.toString()});
-    http.Response response = await http.get(url);
-    logger.log('OpenStreetMap reverse lookup for gps #${gps.id} at $gps');
-    return response;
+  static Future<void> loadSharedSettings() async {
+    await AppSettings.loadFromShared();
+    appLoaderSharedSettingsLoaded = true;
+  }
+
+  static Future<void> initializeStorages() async {
+    logger.important('initialize storages');
+    await FileHandler().getStorage();
+    appLoaderStorageInitialized = true;
+  }
+
+  static Future<void> loadDatabase() async {
+    // load database
+    logger.important('load Database Table ModelUser');
+    await ModelUser.open();
+    logger.important('load Database Table ModelTask');
+    await ModelTask.open();
+    logger.important('load Database Table ModelAlias');
+    await ModelAlias.open();
+    logger.important('load Database Table ModelTrackPoint');
+    await ModelTrackPoint.open();
+    appLoaderDatabseLoaded = true;
+  }
+
+  static Future<void> loadAssetDatabase() async {
+    logger.important('load databasde from asset');
+
+    ///
+    if (ModelAlias.length < 1) {
+      await ModelAlias.openFromAsset();
+      await ModelAlias.write();
+    }
+    if (ModelUser.length < 1) {
+      await ModelUser.openFromAsset();
+      await ModelUser.write();
+    }
+    if (ModelTask.length < 1) {
+      await ModelTask.openFromAsset();
+      await ModelTask.write();
+    }
+    appLoaderAssetDatabaseLoaded = true;
+  }
+
+  static Future<void> requestPermissions() async {
+    logger.important('request permissions');
+    await Permission.location.request();
+    await Permission.locationAlways.request();
+    await Permission.storage.request();
+    await Permission.manageExternalStorage.request();
+    await Permission.notification.request();
+    await Permission.calendar.request();
+    appLoaderPermissionsRequested = true;
+  }
+
+  static Future<void> ticks() async {
+    logger.important('start app-tick');
+    Future.microtask(_appTick);
+    logger.important('logger listen on app-tick ready');
+    Logger.listenOnTick();
+    appLoaderTicksStarted = true;
+  }
+
+  static Future<void> backgroundGps() async {
+    logger.important('initialize background tracker');
+    await BackgroundTracking.initialize();
+    logger.important('background tracker initialized');
+
+    if (Globals.backgroundTrackingEnabled) {
+      logger.important('Start background tracker');
+      await BackgroundTracking.startTracking();
+
+      bool started = await BackgroundTracking.isTracking();
+      if (started) {
+        logger.important('Background tracker started');
+      } else {
+        try {
+          throw 'Background tracker failed starting';
+        } catch (e, stk) {
+          logger.fatal(e.toString(), stk);
+        }
+      }
+    } else {
+      logger.important('stopping background gps');
+      BackgroundTracking.stopTracking();
+    }
+  }
+
+  static int appTickCount = 0;
+  static Future<void> _appTick() async {
+    while (true) {
+      appTickCount++;
+      try {
+        EventManager.fire<EventOnAppTick>(EventOnAppTick(appTickCount));
+      } catch (e, stk) {
+        logger.error(e.toString(), stk);
+      }
+      await Future.delayed(Globals.appTickDuration);
+    }
   }
 
 /*

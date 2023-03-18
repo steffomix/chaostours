@@ -35,13 +35,15 @@ class BackgroundTracking {
   }
 
   static Future<void> startTracking() async {
-    BackgroundLocationTrackerManager.startTracking(config: config());
-    _isTracking = true;
+    if (!await isTracking()) {
+      BackgroundLocationTrackerManager.startTracking(config: config());
+      _isTracking = true;
+    }
   }
 
   static Future<void> stopTracking() async {
-    if (await isTracking() == false) {
-      BackgroundLocationTrackerManager.stopTracking();
+    if (await isTracking()) {
+      await BackgroundLocationTrackerManager.stopTracking();
       _isTracking = false;
     }
   }

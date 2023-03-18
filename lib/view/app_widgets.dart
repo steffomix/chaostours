@@ -1,4 +1,3 @@
-import 'package:chaostours/model/model_alias.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
@@ -7,6 +6,8 @@ import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/globals.dart';
+import 'package:chaostours/model/model_alias.dart';
+import 'package:chaostours/view/widget_app_start.dart';
 import 'package:chaostours/view/app_colors.dart';
 import 'package:chaostours/view/widget_tracking_page.dart';
 import 'package:chaostours/view/widget_logger_page.dart';
@@ -69,13 +70,10 @@ enum AppColors {
 
 /// use value instead of name to get the right
 enum AppRoutes {
+  /// appStart
   home('/'),
-  // system
-  logger('/logger'),
-  permissions('/permissions'),
-  storageSettings('/storagesettings'),
-  appSettings('/appsettings'),
   // live
+  liveTracking('/liveTracking'),
   editTrackingTasks('/editTrackingTasks'),
   // task
   listTasks('/listTasks'),
@@ -90,7 +88,12 @@ enum AppRoutes {
   editUser('/listUsers/editUser'),
   createUser('/listUsers/editUser/createUser'),
   // osm
-  osm('/osm');
+  osm('/osm'),
+  // system
+  logger('/logger'),
+  permissions('/permissions'),
+  storageSettings('/storagesettings'),
+  appSettings('/appsettings');
 
   final String route;
   const AppRoutes(this.route);
@@ -112,17 +115,11 @@ class AppWidgets {
       initialRoute: homeRoute,
       routes: {
         // home routes
-        AppRoutes.home.route: (context) => const WidgetTrackingPage(),
-
-        /// system config routes
-        AppRoutes.logger.route: (context) => const WidgetLoggerPage(),
-        AppRoutes.permissions.route: (context) => const WidgetPermissionsPage(),
-        AppRoutes.storageSettings.route: (context) =>
-            const WidgetStorageSettings(),
-        AppRoutes.appSettings.route: (context) => const WidgetAppSettings(),
+        AppRoutes.home.route: (context) => const WidgetAppStart(),
 
         /// add/edit items routes
         // trackpoint
+        AppRoutes.liveTracking.route: (context) => const WidgetTrackingPage(),
         AppRoutes.editTrackingTasks.route: (context) =>
             const WidgetEditTrackpointTasks(),
         // user
@@ -138,6 +135,13 @@ class AppWidgets {
             const WidgetAliasTrackpoint(),
         // osm
         AppRoutes.osm.route: (context) => const WidgetOsm(),
+
+        /// system config routes
+        AppRoutes.logger.route: (context) => const WidgetLoggerPage(),
+        AppRoutes.permissions.route: (context) => const WidgetPermissionsPage(),
+        AppRoutes.storageSettings.route: (context) =>
+            const WidgetStorageSettings(),
+        AppRoutes.appSettings.route: (context) => const WidgetAppSettings(),
       },
       theme: ThemeData(colorScheme: AppColorScheme.bright.scheme),
       //home: const WidgetTrackingPage(),

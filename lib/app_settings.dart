@@ -4,6 +4,9 @@ import 'package:chaostours/logger.dart';
 
 /// names for SharedKeys.appSettings key:value pairs
 enum AppSettings {
+  /// if background tracking is enabled and starts automatic
+  backgroundTrackingEnabled,
+
   /// comma separated list of user ids
   preselectedUsers,
 
@@ -42,6 +45,8 @@ enum AppSettings {
 
   /// load app defaults from globals, to be overwritten by loadFromShared
   static Map<AppSettings, String> settings = {
+    AppSettings.backgroundTrackingEnabled:
+        Globals.backgroundTrackingEnabled ? '1' : '0',
     AppSettings.preselectedUsers:
         Globals.preselectedUsers.join(','), // List<int>
     AppSettings.statusStandingRequireAlias:
@@ -83,8 +88,15 @@ enum AppSettings {
     }
 
     try {
-      String? sr = settings[AppSettings.statusStandingRequireAlias];
+      Globals.backgroundTrackingEnabled =
+          (settings[AppSettings.backgroundTrackingEnabled] ?? '0') == '1'
+              ? true
+              : false;
+    } catch (e, stk) {
+      logger.error(e.toString(), stk);
+    }
 
+    try {
       Globals.statusStandingRequireAlias =
           (settings[AppSettings.statusStandingRequireAlias] ?? '0') == '1'
               ? true
@@ -92,6 +104,7 @@ enum AppSettings {
     } catch (e, stk) {
       logger.error(e.toString(), stk);
     }
+
     try {
       ///
       Globals.trackPointInterval = Duration(
@@ -196,6 +209,11 @@ enum AppSettings {
             case AppSettings.preselectedUsers:
               Globals.preselectedUsers =
                   value.split(',').map((e) => int.parse(e)).toSet();
+              break;
+
+            /// defaults to false
+            case AppSettings.backgroundTrackingEnabled:
+              Globals.backgroundTrackingEnabled = value == '1' ? true : false;
               break;
 
             /// defaults to false
