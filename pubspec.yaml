@@ -39,29 +39,31 @@ dependencies:
     path: ../git-packages/osm_flutter
 
 
-  flutter_local_notifications: ^14.0.0-dev.2
-  permission_handler: ^10.0.0
-  shared_preferences: ^2.0.15
 
-  path: ^1.8.2
-  http: ^0.13.5
-  sprintf: ^7.0.0
-  vector_math: ^2.1.4
-  # location: ^4.4.0
-  logger: ^1.1.0
-  path_provider: ^2.0.11
-  external_path: ^1.0.3
-  android_intent_plus: ^3.1.6
-  loading_animation_widget: ^1.2.0+4
-  confirm_dialog: ^1.0.1
-  app_settings: ^4.2.0
-  device_calendar: ^4.3.0
-  geolocator: 7.4.0 # !!! collision with background_location_tracker!
-
-
+  flutter_local_notifications: 13.0.0
+  permission_handler: 10.2.0
+  shared_preferences: 2.0.15
+  path: 1.8.2
+  http: 0.13.5
+  sprintf: 7.0.0
+  vector_math: 2.1.4
+  logger: 1.1.0
+  path_provider: 2.0.13
+  external_path: 1.0.3
+  android_intent_plus: 3.1.6
+  loading_animation_widget: 1.2.0
+  confirm_dialog: 1.0.1
+  app_settings: 4.2.0
+  device_calendar: ^4.3.1-4217521123 # prerelease due to source null-savety errors
+  #geolocator: 7.4.0 # version 9.x collides with background_location_tracker
+  geolocator: 9.0.2
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
-  cupertino_icons: ^1.0.2
+  cupertino_icons: 1.0.5
+
+dependency_overrides:
+  geolocator_android: 4.1.4
+
 
 dev_dependencies:
   flutter_test:

@@ -1,6 +1,38 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/event_manager.dart';
+import 'package:chaostours/globals.dart';
+import 'package:chaostours/gps.dart';
+import 'package:chaostours/background_process/trackpoint.dart';
+
+class SharedLoader {
+  static Logger logger = Logger.logger<SharedLoader>();
+  factory SharedLoader() => _instance ??= SharedLoader._();
+  static SharedLoader? _instance;
+  static SharedLoader get instance => _instance ??= SharedLoader._();
+  SharedLoader._() {
+    Future.microtask(() async {
+      while (true) {
+        try {
+          _observe();
+        } catch (e, stk) {
+          logger.error(e.toString(), stk);
+        }
+        await Future.delayed(Globals.appTickDuration);
+      }
+    });
+  }
+
+  final List<GPS> gpsPoints = [];
+  // ignore: prefer_final_fields
+  TrackingStatus _status = TrackingStatus.none;
+  TrackingStatus get status => _status;
+
+  ///
+  Future<void> _observe() async {
+    EventManager.fire<SharedLoader>(instance);
+  }
+}
 
 enum SharedKeys {
   /// List<String> of key:value pairs
@@ -16,15 +48,21 @@ enum SharedKeys {
   /// List<String>
   /// [0] status
   /// [1-...] GPS trackPoints as sharedString
+  /// rracking result send from background to foreground
   trackPointUp,
 
   /// String ModelTrackPoint as sharedString
+  /// send from forground to background on status changed
+  /// contains userdata to get added to a new trackpoint
   trackPointDown,
 
   /// String address lookup when detected status standing
+  /// send from foreground to background
+  /// used in Trackpoint::createTrackpoint
   addressStanding,
 
-  /// List<String> of trackpoints to update
+  /// List<String> of trackpoints to update from foreground to background
+  /// updates modified trackpoints from foreground task
   updateTrackPointQueue,
 
   /// List<String> contains background Logger logs

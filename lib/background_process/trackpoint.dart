@@ -42,6 +42,7 @@ class TrackPoint {
   TrackingStatus _oldStatus = TrackingStatus.none;
   List<String> _sharedData = [];
 
+  /// updates modified trackpoints from foreground task
   Future<void> updateTrackPointQueue() async {
     Shared shared = Shared(SharedKeys.updateTrackPointQueue);
     try {

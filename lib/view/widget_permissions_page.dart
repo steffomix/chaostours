@@ -1,16 +1,14 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:app_settings/app_settings.dart';
-import 'package:chaostours/notifications.dart';
+import 'package:chaostours/file_handler.dart';
 //
-import 'package:chaostours/globals.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/view/app_widgets.dart';
+import 'package:chaostours/permission_checker.dart';
 
 //
-import 'package:chaostours/view/app_widgets.dart';
 
 @override
 class WidgetPermissionsPage extends StatefulWidget {
@@ -21,12 +19,13 @@ class WidgetPermissionsPage extends StatefulWidget {
 
 class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
   Logger logger = Logger.logger<WidgetPermissionsPage>();
-  Widget widgetPermissions = AppWidgets.loading('Checking Permissions');
-  bool permissionChecked = false;
+  Widget widgetPermissions = AppWidgets.loading('');
+  BuildContext? _context;
   List<Widget> items = [];
 
   @override
   void initState() {
+    updatePermissionsInfo('Checking Permissions');
     permissionItems();
     super.initState();
   }
@@ -34,6 +33,10 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
   @override
   void dispose() {
     super.dispose();
+  }
+
+  void updatePermissionsInfo(String info) {
+    widgetPermissions = AppWidgets.loading(info);
   }
 
   void permissionItems() {
@@ -46,9 +49,50 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
   }
 
   Future<void> _permissionItems() async {
+    int wait = 150;
     items.clear();
+
+    Future.microtask(() => setState(() {
+          updatePermissionsInfo('Check Permission GPS Loation');
+        }));
+    await Future.delayed(Duration(milliseconds: wait));
+    bool permLocation = await PermissionChecker.checkLocation();
+
+    Future.microtask(() => setState(() {
+          updatePermissionsInfo('Check Permission GPS Loation Always');
+        }));
+    await Future.delayed(Duration(milliseconds: wait));
+    bool permLocationAlways = await PermissionChecker.checkLocationAlways();
+
+    Future.microtask(() => setState(() {
+          updatePermissionsInfo(
+              'Check Permission Ignore Battery Optimizations');
+        }));
+    await Future.delayed(Duration(milliseconds: wait));
+    bool permIgnoreBattery =
+        await PermissionChecker.checkIgnoreBatteryOptimizations();
+
+    Future.microtask(() => setState(() {
+          updatePermissionsInfo('Check Permission Manage External Storage');
+        }));
+    await Future.delayed(Duration(milliseconds: wait));
+    bool permManageExternalStorage =
+        await PermissionChecker.checkManageExternalStorage();
+
+    Future.microtask(() => setState(() {
+          updatePermissionsInfo('Check Permission Notification');
+        }));
+    await Future.delayed(Duration(milliseconds: wait));
+    bool permNotification = await PermissionChecker.checkNotification();
+
+    Future.microtask(() => setState(() {
+          updatePermissionsInfo('Check Permission Manage Calendar');
+        }));
+    await Future.delayed(Duration(milliseconds: wait));
+    bool permCalendar = await PermissionChecker.checkCalendar();
+
     items.add(ListTile(
-        leading: (await Permission.location.isGranted)
+        leading: permLocation
             ? const Icon(Icons.done, color: Colors.green)
             : const Icon(Icons.error_outline, color: Colors.red),
         title: const Text('Einfache (Vordergrund) GPS Ortung.'),
@@ -57,16 +101,12 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
         trailing: IconButton(
           icon: const Icon(Icons.settings),
           onPressed: () {
-            AppSettings.openLocationSettings(
-                asAnotherTask: false,
-                callback: () {
-                  permissionItems();
-                });
+            AppSettings.openLocationSettings(asAnotherTask: false);
           },
         )));
 
     items.add(ListTile(
-        leading: (await Permission.locationAlways.isGranted)
+        leading: permLocationAlways
             ? const Icon(Icons.done, color: Colors.green)
             : const Icon(Icons.error_outline, color: Colors.red),
         title: const Text('Hintergrund GPS Ortung.'),
@@ -75,15 +115,11 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
         trailing: IconButton(
           icon: const Icon(Icons.settings),
           onPressed: () {
-            AppSettings.openLocationSettings(
-                asAnotherTask: false,
-                callback: () {
-                  permissionItems();
-                });
+            AppSettings.openLocationSettings(asAnotherTask: false);
           },
         )));
     items.add(ListTile(
-        leading: (await Permission.ignoreBatteryOptimizations.isGranted)
+        leading: permIgnoreBattery
             ? const Icon(Icons.done, color: Colors.green)
             : const Icon(Icons.error_outline, color: Colors.red),
         title: const Text('Ignorieren der Batterieoptimierung.'),
@@ -92,34 +128,11 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
         trailing: IconButton(
           icon: const Icon(Icons.settings),
           onPressed: () {
-            AppSettings.openBatteryOptimizationSettings(
-                asAnotherTask: false,
-                callback: () {
-                  permissionItems();
-                });
+            AppSettings.openBatteryOptimizationSettings(asAnotherTask: false);
           },
         )));
-    /*
     items.add(ListTile(
-        leading: (await Permission.storage.isGranted)
-            ? const Icon(Icons.done, color: Colors.green)
-            : const Icon(Icons.error_outline, color: Colors.red),
-        title: const Text('Zugriff auf App-Internes Dateisystem.'),
-        subtitle: const Text('Normalerweise überflüssig weil immer erlaubt. '
-            'Sollten hier Probleme angezeigt werden, kann es sein dass die Funktion zu Abfrage entfernt wurde.'),
-        trailing: IconButton(
-          icon: const Icon(Icons.settings),
-          onPressed: () {
-            AppSettings.openInternalStorageSettings(
-                asAnotherTask: false,
-                callback: () {
-                  permissionItems();
-                });
-          },
-        )));
-        */
-    items.add(ListTile(
-        leading: (await Permission.manageExternalStorage.isGranted)
+        leading: permManageExternalStorage
             ? const Icon(Icons.done, color: Colors.green)
             : const Icon(Icons.error_outline, color: Colors.red),
         title: const Text('Zugriff auf App-Externes Dateisystem.'),
@@ -129,15 +142,12 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
         trailing: IconButton(
           icon: const Icon(Icons.settings),
           onPressed: () {
-            AppSettings.openAppSettings(
-                asAnotherTask: false,
-                callback: () {
-                  permissionItems();
-                });
+            AppSettings.openAppSettings(asAnotherTask: false);
           },
         )));
+
     items.add(ListTile(
-        leading: (await Permission.notification.isGranted)
+        leading: permNotification
             ? const Icon(Icons.done, color: Colors.green)
             : const Icon(Icons.error_outline, color: Colors.red),
         title: const Text('Anzeige von App-Meldungen.'),
@@ -146,15 +156,12 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
         trailing: IconButton(
           icon: const Icon(Icons.settings),
           onPressed: () {
-            AppSettings.openNotificationSettings(
-                asAnotherTask: false,
-                callback: () {
-                  permissionItems();
-                });
+            AppSettings.openNotificationSettings(asAnotherTask: false);
           },
         )));
+
     items.add(ListTile(
-        leading: (await Permission.calendar.isGranted)
+        leading: permCalendar
             ? const Icon(Icons.done, color: Colors.green)
             : const Icon(Icons.error_outline, color: Colors.red),
         title: const Text('Zugriff auf Geräte-Kalender.'),
@@ -163,13 +170,70 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
         trailing: IconButton(
           icon: const Icon(Icons.settings),
           onPressed: () {
-            AppSettings.openAppSettings(
-                asAnotherTask: false,
-                callback: () {
-                  permissionItems();
-                });
+            AppSettings.openAppSettings(asAnotherTask: false);
           },
         )));
+
+    ///
+    ///
+    if (FileHandler.storagePath == null) {
+      items.add(ListTile(
+          leading: const Icon(Icons.error_outline, color: Colors.red),
+          title: const Text('Kein Speicherort gesetzt'),
+          subtitle: const Text('Wird benötigt, um Daten zu speichern.'),
+          trailing: IconButton(
+              icon: const Icon(Icons.settings),
+              onPressed: () {
+                if (_context != null) {
+                  Navigator.pushNamed(
+                          _context!, AppRoutes.storageSettings.route)
+                      .then((_) {
+                    _permissionItems().then((_) {
+                      renderBody();
+                    });
+                  });
+                }
+              })));
+    } else {
+      items.add(ListTile(
+          leading: const Icon(Icons.done, color: Colors.green),
+          title: const Text('Speicherort gesetzt'),
+          subtitle: Text('${FileHandler.storagePath}'),
+          trailing: IconButton(
+              icon: const Icon(Icons.settings),
+              onPressed: () {
+                if (_context != null) {
+                  Navigator.pushNamed(
+                          _context!, AppRoutes.storageSettings.route)
+                      .then((_) {
+                    _permissionItems().then((_) {
+                      renderBody();
+                    });
+                  });
+                }
+              })));
+    }
+
+    ///
+    ///
+    items.add(Center(
+        child: ElevatedButton(
+            onPressed: () {
+              _permissionItems().then((_) {
+                renderBody();
+              });
+            },
+            child: const Text('Repeat Check Permissions'))));
+    if (!await PermissionChecker.checkAll()) {
+      items.add(Center(
+          child: ElevatedButton(
+              onPressed: () {
+                PermissionChecker.requestAll().then((_) {
+                  renderBody();
+                });
+              },
+              child: const Text('Request Permissions'))));
+    }
   }
 
   void renderBody() {
@@ -179,6 +243,14 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
 
   @override
   Widget build(BuildContext context) {
+    _context = context;
+    bool id = ((ModalRoute.of(context)?.settings.arguments ?? 0) as int) > 0;
+    if (PermissionChecker.permissionsChecked &&
+        PermissionChecker.permissionsOk &&
+        !id) {
+      Future.delayed(const Duration(milliseconds: 200),
+          () => AppWidgets.navigate(context, AppRoutes.liveTracking));
+    }
     return AppWidgets.scaffold(context, body: widgetPermissions);
   }
 }

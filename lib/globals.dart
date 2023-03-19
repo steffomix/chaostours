@@ -8,11 +8,6 @@ class Globals {
   /// german default short week names
   static List<String> weekDays = ['', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
 
-  /// dynamic settings checked only once on every app start.
-  /// Does not affect background tasks
-  static bool permissionsChecked = false;
-  static bool permissionsOk = true;
-
   /// user edit settings.
   /// All setting names must match enum AppSettings values in app_settings.dart
   /// if backgroundTracking is enabled and starts automatic

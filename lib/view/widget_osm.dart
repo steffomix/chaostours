@@ -537,7 +537,6 @@ class _WidgetOsm extends State<WidgetOsm> {
             }
           });
         });
-
         osm = OSMFlutter(
           mapIsLoading: const WidgetMapIsLoading(),
           androidHotReloadSupport: true,
@@ -557,9 +556,28 @@ class _WidgetOsm extends State<WidgetOsm> {
             });
           });
         });
+      } else {
+        if (GPS.lastGps == null) {
+          _controller = MapController(initMapWithUserPosition: true);
+        } else {
+          _gps = GPS.lastGps!;
+          _controller = MapController(
+              initMapWithUserPosition: false,
+              initPosition:
+                  (GeoPoint(latitude: _gps.lat, longitude: _gps.lon)));
+        }
+        osm = OSMFlutter(
+          mapIsLoading: const WidgetMapIsLoading(),
+          androidHotReloadSupport: true,
+          controller: _controller,
+          isPicker: true,
+          initZoom: 17,
+          minZoomLevel: 8,
+          maxZoomLevel: 19,
+          stepZoom: 1.0,
+        );
       }
-    }
-    if (_initialized) {
+    } else {
       Future.delayed(const Duration(seconds: 2), drawCircles);
     }
     var body = AppWidgets.scaffold(context,

@@ -7,7 +7,6 @@ import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/globals.dart';
 import 'package:chaostours/model/model_alias.dart';
-import 'package:chaostours/view/widget_app_start.dart';
 import 'package:chaostours/view/app_colors.dart';
 import 'package:chaostours/view/widget_tracking_page.dart';
 import 'package:chaostours/view/widget_logger_page.dart';
@@ -115,8 +114,7 @@ class AppWidgets {
       initialRoute: homeRoute,
       routes: {
         // home routes
-        AppRoutes.home.route: (context) =>
-            const WidgetPermissionsPage(), //WidgetAppStart(),
+        AppRoutes.home.route: (context) => const WidgetPermissionsPage(),
 
         /// add/edit items routes
         // trackpoint
@@ -278,7 +276,7 @@ class _WidgetDrawer extends State<WidgetDrawer> {
               ///
               ElevatedButton(
                   onPressed: () {
-                    AppWidgets.navigate(context, AppRoutes.permissions);
+                    AppWidgets.navigate(context, AppRoutes.permissions, 1);
                   },
                   child: const Text('Android Permissions')),
 

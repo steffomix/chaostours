@@ -71,14 +71,14 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
   @override
   void initState() {
-    EventManager.listen<EventOnAppTick>(onTick);
+    EventManager.listen<SharedLoader>(onTick);
     EventManager.listen<EventOnAddressLookup>(onAddressLookup);
     super.initState();
   }
 
   @override
   void dispose() {
-    EventManager.remove<EventOnAppTick>(onTick);
+    EventManager.remove<SharedLoader>(onTick);
     EventManager.remove<EventOnAddressLookup>(onAddressLookup);
     super.dispose();
   }
@@ -196,7 +196,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         (await Address(runningTrackPoints.first).lookupAddress()).toString();
   }
 
-  Future<void> onTick(EventOnAppTick tick) async {
+  Future<void> onTick(SharedLoader tick) async {
     if (!mounted) {
       return;
     }

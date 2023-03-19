@@ -9,9 +9,10 @@ import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/file_handler.dart';
 import 'package:chaostours/background_process/tracking.dart';
+import 'package:chaostours/shared.dart';
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/logger.dart';
-//import 'package:chaostours/background_process/workmanager.dart';
+import 'package:chaostours/permission_checker.dart';
 import 'package:chaostours/globals.dart';
 import 'package:chaostours/app_settings.dart';
 
@@ -32,7 +33,7 @@ class AppLoader {
   static Future<void> preload() async {
     logger.important('start Preload sequence...');
     try {
-      await requestPermissions();
+      await PermissionChecker.requestAll();
       await webKey();
       await loadSharedSettings();
       await initializeStorages();
@@ -69,16 +70,20 @@ class AppLoader {
   }
 
   static Future<void> loadDatabase() async {
-    // load database
-    logger.important('load Database Table ModelUser');
-    await ModelUser.open();
-    logger.important('load Database Table ModelTask');
-    await ModelTask.open();
-    logger.important('load Database Table ModelAlias');
-    await ModelAlias.open();
-    logger.important('load Database Table ModelTrackPoint');
-    await ModelTrackPoint.open();
-    appLoaderDatabseLoaded = true;
+    if (PermissionChecker.permissionsChecked &&
+        PermissionChecker.permissionsOk &&
+        FileHandler.storagePath != null) {
+      // load database
+      logger.important('load Database Table ModelUser');
+      await ModelUser.open();
+      logger.important('load Database Table ModelTask');
+      await ModelTask.open();
+      logger.important('load Database Table ModelAlias');
+      await ModelAlias.open();
+      logger.important('load Database Table ModelTrackPoint');
+      await ModelTrackPoint.open();
+      appLoaderDatabseLoaded = true;
+    }
   }
 
   static Future<void> loadAssetDatabase() async {
@@ -100,20 +105,9 @@ class AppLoader {
     appLoaderAssetDatabaseLoaded = true;
   }
 
-  static Future<void> requestPermissions() async {
-    logger.important('request permissions');
-    await Permission.location.request();
-    await Permission.locationAlways.request();
-    await Permission.storage.request();
-    await Permission.manageExternalStorage.request();
-    await Permission.notification.request();
-    await Permission.calendar.request();
-    appLoaderPermissionsRequested = true;
-  }
-
   static Future<void> ticks() async {
     logger.important('start app-tick');
-    Future.microtask(_appTick);
+    SharedLoader();
     logger.important('logger listen on app-tick ready');
     Logger.listenOnTick();
     appLoaderTicksStarted = true;
