@@ -246,16 +246,10 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                 ..idTask = ModelTrackPoint.pendingTrackPoint.idTask
                 ..notes = ModelTrackPoint.pendingTrackPoint.notes;
             } else {
-              /// update last visited in ModelAlias
-              if (currentStatus == TrackingStatus.standing) {
-                for (var item
-                    in ModelAlias.nextAlias(gps: runningTrackPoints.first)) {
-                  if (!item.deleted) {
-                    item.lastVisited = DateTime.now();
-                  }
-                }
-                ModelAlias.write();
-              }
+              /// status has changed
+              /// we need to reload ModelTrackPoint and ModelAlias
+              ModelTrackPoint.open();
+              ModelAlias.open();
 
               /// notify edit page
               await EventManager.fire<EventOnTrackingStatusChanged>(
@@ -367,47 +361,41 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   }
 
   ///
-  ///
-  ///
+  /// this list is used by modes:
+  /// time based recent and location based lastVisited
   List<Widget> renderRecentTrackPointList(
       BuildContext context, List<ModelTrackPoint> tpList) {
     List<Widget> listItems = [];
     try {
       for (var tp in tpList) {
-        if (tp.status == TrackingStatus.standing) {
-          var alias =
-              tp.idAlias.map((id) => ModelAlias.getAlias(id).alias).toList();
+        // get task and alias models
+        var alias =
+            tp.idAlias.map((id) => ModelAlias.getAlias(id).alias).toList();
 
-          var tasks =
-              tp.idTask.map((id) => ModelTask.getTask(id).task).toList();
+        var tasks = tp.idTask.map((id) => ModelTask.getTask(id).task).toList();
 
-          ///
+        ///
 
-          listItems.add(ListTile(
-            title: ListBody(children: [
-              Center(
-                  heightFactor: 2,
-                  child: alias.isEmpty
-                      ? Text('OSM Addr: ${tp.address}')
-                      : Text('Alias: - ${alias.join('\n- ')}')),
-              Center(
-                  child: Text(AppWidgets.timeInfo(tp.timeStart, tp.timeEnd))),
-              Text(
-                  'Aufgaben:${tasks.isEmpty ? ' -' : '\n   - ${tasks.join('\n   - ')}'}'),
-              Text('Notizen ${tp.notes}')
-            ]),
-            leading: IconButton(
-                icon: const Icon(Icons.edit_location_outlined),
-                onPressed: () {
-                  ModelTrackPoint.editTrackPoint = tp;
-                  Navigator.pushNamed(
-                      context, AppRoutes.editTrackingTasks.route);
-                }),
-          ));
-          listItems.add(AppWidgets.divider(color: Colors.black));
-        } else {
-          //return <Widget>[Container(child: Text('wrong status'))];
-        }
+        listItems.add(ListTile(
+          title: ListBody(children: [
+            Center(
+                heightFactor: 2,
+                child: alias.isEmpty
+                    ? Text('OSM Addr: ${tp.address}')
+                    : Text('Alias: - ${alias.join('\n- ')}')),
+            Center(child: Text(AppWidgets.timeInfo(tp.timeStart, tp.timeEnd))),
+            Text(
+                'Aufgaben:${tasks.isEmpty ? ' -' : '\n   - ${tasks.join('\n   - ')}'}'),
+            Text('Notizen ${tp.notes}')
+          ]),
+          leading: IconButton(
+              icon: const Icon(Icons.edit_location_outlined),
+              onPressed: () {
+                ModelTrackPoint.editTrackPoint = tp;
+                Navigator.pushNamed(context, AppRoutes.editTrackingTasks.route);
+              }),
+        ));
+        listItems.add(AppWidgets.divider(color: Colors.black));
       }
     } catch (e, stk) {
       listItems.add(Text(e.toString()));

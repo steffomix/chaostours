@@ -145,10 +145,19 @@ class TrackPoint {
           /// write new entry only if no restricted alias is present
           var restricted = false;
           await ModelAlias.open();
+
+          /// if this area is not restricted
+          /// we reuse this list to update lastVisited
+          List<ModelAlias> aliasList = [];
           for (int id in newEntry.idAlias) {
-            if (ModelAlias.getAlias(id).status == AliasStatus.restricted) {
+            var alias = ModelAlias.getAlias(id);
+            if (alias.deleted) {
+              // don't process deleted items
+              continue;
+            }
+            aliasList.add(alias);
+            if (alias.status == AliasStatus.restricted) {
               restricted = true;
-              break;
             }
           }
 
@@ -156,7 +165,20 @@ class TrackPoint {
               (!Globals.statusStandingRequireAlias ||
                   (Globals.statusStandingRequireAlias &&
                       newEntry.idAlias.isNotEmpty))) {
+            /// insert new entry
+            /// don't forget to load database first
+            await ModelTrackPoint.open();
             await ModelTrackPoint.insert(newEntry);
+
+            /// update last visited entrys in ModelAlias
+            for (var item in aliasList) {
+              if (!item.deleted) {
+                item.lastVisited = DateTime.now();
+                item.timesVisited++;
+              }
+            }
+            ModelAlias.write();
+
             logger.important(
                 'Save new Trackpoint #${newEntry.id} with data: \n${newEntry.toString()}');
           } else {
