@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:chaostours/globals.dart';
+import 'package:chaostours/app_loader.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/address.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
@@ -32,6 +33,7 @@ class TrackPoint {
   static TrackPoint? _instance;
   TrackPoint._() {
     _oldStatus = _status;
+    Logger.prefix = '~~';
   }
   factory TrackPoint() => _instance ??= TrackPoint._();
 
@@ -58,10 +60,22 @@ class TrackPoint {
   }
 
   Future<void> startShared({required double lat, required double lon}) async {
+    // init app
+    // await AppLoader.webKey(); // not needed
+    await AppLoader.loadSharedSettings();
+    if (FileHandler.storagePath == null) {
+      logger.warn('Storage path not yet set. Skip tracking, do nothing.');
+      return;
+    }
+    logger.log('found storage path: ${FileHandler.storagePath}');
+    await AppLoader.initializeStorages();
+
+    // cache gps
+    // the time can't be too long due to this task gets killed anyway
+    Globals.cacheGpsTime = const Duration(seconds: 30);
     GPS.lastGps = GPS(lat, lon);
 
     /// load last session from file
-    await FileHandler().getStorage();
     String storage = FileHandler.combinePath(
         FileHandler.storages[Storages.appInternal]!, FileHandler.sharedFile);
     String jsonString = await FileHandler.read(storage);
@@ -225,7 +239,8 @@ class TrackPoint {
 
     /// check if we stopped standing
     if (_status == TrackingStatus.standing || _status == TrackingStatus.none) {
-      if (GPS.distanceoverTrackList(gpsList) > Globals.distanceTreshold) {
+      if (GPS.distance(gpsList.first, gpsList.last) >
+          Globals.distanceTreshold) {
         _status = TrackingStatus.moving;
       }
 

@@ -195,6 +195,7 @@ enum AppSettings {
       await saveToShared();
       values = await Shared(SharedKeys.appSettings).loadList() ?? [];
     }
+    logger.log('settings raw data:\n${values.join('\n')}');
     for (var item in values) {
       if (item.isEmpty) {
         continue;

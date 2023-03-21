@@ -144,11 +144,14 @@ class FileHandler {
   Future<String?> getStorage() async {
     Map<Storages, String?> storages = await _getAllStorages();
     String? key = await Shared(SharedKeys.storageKey).loadString();
+    String? path;
     if (key == null) {
-      return _getAutoPath();
+      path = await _getAutoPath();
     } else {
-      return storages[key] ?? await _getAutoPath();
+      path = storages[key] ?? await _getAutoPath();
     }
+    logger.important('!!! Set Storage Path to $path');
+    return path;
   }
 
   /// stores the path to the storage if storage is writeable
