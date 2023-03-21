@@ -107,7 +107,7 @@ class AppLoader {
 
   static Future<void> ticks() async {
     logger.important('start app-tick');
-    SharedLoader();
+    _appTick();
     logger.important('logger listen on app-tick ready');
     Logger.listenOnTick();
     appLoaderTicksStarted = true;
@@ -138,14 +138,13 @@ class AppLoader {
     }
   }
 
-  static int appTickCount = 0;
   static Future<void> _appTick() async {
     while (true) {
-      appTickCount++;
+      var event = EventOnAppTick();
       try {
-        EventManager.fire<EventOnAppTick>(EventOnAppTick(appTickCount));
+        EventManager.fire<EventOnAppTick>(event);
       } catch (e, stk) {
-        logger.error(e.toString(), stk);
+        logger.error('appTick #${event.id} failed: ${e.toString()}', stk);
       }
       await Future.delayed(Globals.appTickDuration);
     }

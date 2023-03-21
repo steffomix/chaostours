@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/event_manager.dart';
@@ -5,13 +7,22 @@ import 'package:chaostours/globals.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/background_process/trackpoint.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
+import 'package:chaostours/file_handler.dart';
+
+enum JsonKeys {
+  status,
+  gps,
+  gpsPoints,
+  address;
+}
 
 class SharedLoader {
   static Logger logger = Logger.logger<SharedLoader>();
   factory SharedLoader() => _instance ??= SharedLoader._();
   static SharedLoader? _instance;
   static SharedLoader get instance => _instance ??= SharedLoader._();
-  SharedLoader._();
+  static int nextId = 0;
+  int id = (nextId++);
 
   // gps list from between trackpoints
   static List<GPS> gpsPoints = [];
@@ -26,9 +37,44 @@ class SharedLoader {
   List<ModelTrackPoint> recentTrackPoints = [];
   List<ModelTrackPoint> localTrackPoints = [];
 
-  ///
-  Future<void> _observe() async {
-    EventManager.fire<SharedLoader>(instance);
+  SharedLoader._() {
+    EventManager.listen<EventOnAppTick>(_onTick);
+  }
+
+  _onTick(EventOnAppTick tick) {
+    _loadFromBackground();
+  }
+
+  Future<void> _loadFromBackground() async {
+    Map<String, dynamic> json = {
+      JsonKeys.status.name: TrackingStatus.none.name,
+      JsonKeys.gpsPoints.name: [],
+      JsonKeys.gps.name: '',
+      JsonKeys.address.name: ''
+    };
+
+    String storage = FileHandler.combinePath(
+        FileHandler.storages[Storages.appInternal]!, FileHandler.sharedFile);
+    String jsonString = await FileHandler.read(storage);
+
+    try {
+      json = jsonDecode(jsonString);
+    } catch (e, stk) {
+      logger.error(e.toString(), stk);
+    }
+
+    try {
+      _status = TrackingStatus.values
+          .byName(json[JsonKeys.status.name] ?? _status.name);
+    } catch (e, stk) {
+      logger.error('read json ${JsonKeys.status}: ${e.toString()}', stk);
+    }
+    try {} catch (e, stk) {
+      logger.error('read json ${JsonKeys.status}: ${e.toString()}', stk);
+    }
+    try {} catch (e, stk) {
+      logger.error('read json ${JsonKeys.status}: ${e.toString()}', stk);
+    }
   }
 }
 

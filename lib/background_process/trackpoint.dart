@@ -34,6 +34,7 @@ class TrackPoint {
   TrackPoint._() {
     _oldStatus = _status;
     Logger.prefix = '~~';
+    Logger.backgroundLogger = true;
   }
   factory TrackPoint() => _instance ??= TrackPoint._();
 
@@ -42,7 +43,6 @@ class TrackPoint {
   final List<GPS> gpsPoints = [];
   TrackingStatus _status = TrackingStatus.none;
   TrackingStatus _oldStatus = TrackingStatus.none;
-  List<String> _sharedData = [];
 
   /// updates modified trackpoints from foreground task
   Future<void> updateTrackPointQueue() async {
@@ -63,12 +63,11 @@ class TrackPoint {
     // init app
     // await AppLoader.webKey(); // not needed
     await AppLoader.loadSharedSettings();
+    await AppLoader.initializeStorages();
     if (FileHandler.storagePath == null) {
-      logger.warn('Storage path not yet set. Skip tracking, do nothing.');
+      logger.warn('No valid storage key, skip trackpoint');
       return;
     }
-    logger.log('found storage path: ${FileHandler.storagePath}');
-    await AppLoader.initializeStorages();
 
     // cache gps
     // the time can't be too long due to this task gets killed anyway

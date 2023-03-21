@@ -41,13 +41,14 @@ class EventOnGPS extends EventOn {
 class EventOnAddressLookup extends EventOn {}
 
 class EventOnAppTick extends EventOn {
-  final int id;
-  EventOnAppTick(this.id);
+  static int _nextId = 0;
+  final int id = (_nextId++);
+  EventOnAppTick();
 }
 
 class EventOn {
-  /// EventManager will print this
-  String msg = '';
+  static int _nextId = 0;
+  int eventId = (_nextId++);
   DateTime t = DateTime.now();
 }
 

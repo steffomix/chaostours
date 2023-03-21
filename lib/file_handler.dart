@@ -13,12 +13,6 @@ import 'package:chaostours/shared.dart';
 var decode = Uri.decodeFull; // util.base64Codec().decode;
 var encode = Uri.encodeFull; //util.base64Codec().encode;
 
-enum JsonKeys {
-  status,
-  gpsPoints,
-  address;
-}
-
 enum Storages {
   /// app installation directory
   /// unreachable
@@ -143,15 +137,21 @@ class FileHandler {
   ///
   Future<String?> getStorage() async {
     Map<Storages, String?> storages = await _getAllStorages();
-    String? key = await Shared(SharedKeys.storageKey).loadString();
-    String? path;
-    if (key == null) {
-      path = await _getAutoPath();
-    } else {
-      path = storages[key] ?? await _getAutoPath();
+    String keyName = await Shared(SharedKeys.storageKey).loadString() ?? '';
+    try {
+      Storages key = Storages.values.byName(keyName);
+      String? path = storages[key];
+      if (path == null) {
+        path ??= await _getAutoPath();
+      }
+      storageKey = key;
+      storagePath = path;
+      logger.important('!!! Set Storage Path to $path');
+      return path;
+    } catch (e) {
+      logger.warn('invalid storages key "$keyName", use autopath');
+      return await _getAutoPath();
     }
-    logger.important('!!! Set Storage Path to $path');
-    return path;
   }
 
   /// stores the path to the storage if storage is writeable
