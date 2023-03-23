@@ -200,87 +200,61 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     if (!mounted) {
       return;
     }
-    String storage = FileHandler.combinePath(
-        FileHandler.storages[Storages.appInternal]!, FileHandler.sharedFile);
-    String jsonString = await FileHandler.read(storage);
-
-    Map<String, dynamic> json = {
-      JsonKeys.status.name: TrackingStatus.none.name,
-      JsonKeys.gpsPoints.name: [],
-      JsonKeys.address.name: ''
-    };
-    try {
-      json = jsonDecode(jsonString);
-    } catch (e, stk) {
-      logger.error(e.toString(), stk);
+    SharedLoader shared = SharedLoader.instance;
+    if (shared.gpsPoints.isEmpty) {
+      return;
     }
 
-    Shared shared = Shared(SharedKeys.trackPointUp);
-    List<String> sharedList = await shared.loadList() ?? [];
-    if (json[JsonKeys.status.name] != TrackingStatus.none.name) {
-      try {
-        /// get status
-        currentStatus =
-            TrackingStatus.values.byName(json[JsonKeys.status.name]);
-        if ((json[JsonKeys.gpsPoints.name] as List).isNotEmpty) {
-          try {
-            runningTrackPoints.clear();
-            runningTrackPoints.addAll((json[JsonKeys.gpsPoints.name] as List)
-                .map((e) => GPS.toSharedObject(e))
-                .toList());
-            // update GPS cache
-            GPS.lastGps = runningTrackPoints.first;
+    if (shared.status != TrackingStatus.none) {
+      /// get status
+      currentStatus = shared.status;
+      runningTrackPoints.clear();
+      runningTrackPoints.addAll(shared.gpsPoints);
+      // update GPS cache
+      GPS.lastGps = runningTrackPoints.first;
 
-            /// update pendingTrackPoint
-            if (currentStatus == lastStatus) {
-              /// update
-              ModelTrackPoint.pendingTrackPoint
-                ..gps = runningTrackPoints.first
-                ..address = ModelTrackPoint.pendingAddress
-                ..trackPoints = runningTrackPoints
-                ..timeStart = runningTrackPoints.last.time
-                ..timeEnd = DateTime.now()
-                ..idAlias = ModelAlias.nextAlias(gps: runningTrackPoints.first)
-                    .map((e) => e.id)
-                    .toList()
-                ..idTask = ModelTrackPoint.pendingTrackPoint.idTask
-                ..notes = ModelTrackPoint.pendingTrackPoint.notes;
-            } else {
-              /// status has changed
-              /// we need to reload ModelTrackPoint and ModelAlias
-              ModelTrackPoint.open();
-              ModelAlias.open();
+      /// update pendingTrackPoint
+      if (currentStatus == lastStatus) {
+        /// update
+        ModelTrackPoint.pendingTrackPoint
+          ..gps = runningTrackPoints.first
+          ..address = ModelTrackPoint.pendingAddress
+          ..trackPoints = runningTrackPoints
+          ..timeStart = runningTrackPoints.last.time
+          ..timeEnd = DateTime.now()
+          ..idAlias = ModelAlias.nextAlias(gps: runningTrackPoints.first)
+              .map((e) => e.id)
+              .toList()
+          ..idTask = ModelTrackPoint.pendingTrackPoint.idTask
+          ..notes = ModelTrackPoint.pendingTrackPoint.notes;
+      } else {
+        /// status has changed
+        /// we need to reload ModelTrackPoint and ModelAlias
+        ModelTrackPoint.open();
+        ModelAlias.open();
 
-              /// notify edit page
-              await EventManager.fire<EventOnTrackingStatusChanged>(
-                  EventOnTrackingStatusChanged(
-                      ModelTrackPoint.pendingTrackPoint));
+        /// notify edit page
+        await EventManager.fire<EventOnTrackingStatusChanged>(
+            EventOnTrackingStatusChanged(ModelTrackPoint.pendingTrackPoint));
 
-              /// create new Trackpoint
-              ModelTrackPoint.pendingTrackPoint = ModelTrackPoint(
-                  gps: runningTrackPoints.last,
-                  trackPoints: runningTrackPoints,
-                  idAlias: <int>[],
-                  timeStart: runningTrackPoints.last.time);
+        /// create new Trackpoint
+        ModelTrackPoint.pendingTrackPoint = ModelTrackPoint(
+            gps: runningTrackPoints.last,
+            trackPoints: runningTrackPoints,
+            idAlias: <int>[],
+            timeStart: runningTrackPoints.last.time);
 
-              /// add preselected users
-              ModelTrackPoint.pendingTrackPoint.idUser
-                  .addAll(Globals.preselectedUsers);
-              lastStatus = currentStatus;
-              _controller = TextEditingController(
-                  text: ModelTrackPoint.pendingTrackPoint.notes);
-            }
-
-            /// write to share user data to background thread
-            await Shared(SharedKeys.trackPointDown)
-                .saveString(ModelTrackPoint.pendingTrackPoint.toSharedString());
-          } catch (e, stk) {
-            logger.error(e.toString(), stk);
-          }
-        }
-      } catch (e, stk) {
-        logger.error(e.toString(), stk);
+        /// add preselected users
+        ModelTrackPoint.pendingTrackPoint.idUser
+            .addAll(Globals.preselectedUsers);
+        lastStatus = currentStatus;
+        _controller = TextEditingController(
+            text: ModelTrackPoint.pendingTrackPoint.notes);
       }
+
+      /// write to share user data to background thread
+      await Shared(SharedKeys.activeTrackPoint)
+          .saveString(ModelTrackPoint.pendingTrackPoint.toSharedString());
     }
 
     setState(() {});

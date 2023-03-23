@@ -11,7 +11,7 @@ import 'package:chaostours/file_handler.dart';
 
 enum JsonKeys {
   status,
-  gps,
+  lastGps,
   gpsPoints,
   address;
 }
@@ -25,10 +25,10 @@ class SharedLoader {
   int id = (nextId++);
 
   // gps list from between trackpoints
-  static List<GPS> gpsPoints = [];
+  List<GPS> gpsPoints = [];
   // list of all TrackPoints since app is running
   // limit to max 10k
-  static List<GPS> gpsHistory = [];
+  List<GPS> gpsHistory = [];
   // ignore: prefer_final_fields
   TrackingStatus _status = TrackingStatus.none;
   TrackingStatus get status => _status;
@@ -42,38 +42,76 @@ class SharedLoader {
   }
 
   _onTick(EventOnAppTick tick) {
-    _loadFromBackground();
+    loadBackground();
   }
 
-  Future<void> _loadFromBackground() async {
-    Map<String, dynamic> json = {
-      JsonKeys.status.name: TrackingStatus.none.name,
-      JsonKeys.gpsPoints.name: [],
-      JsonKeys.gps.name: '',
+  Future<void> saveBackground(
+      {required TrackingStatus status,
+      required List<GPS> gpsPoints,
+      required GPS lastGps,
+      String? address = ''}) async {
+    Map<String, dynamic> jsonObject = {
+      JsonKeys.status.name: status.name,
+      JsonKeys.gpsPoints.name: gpsPoints.map((e) => e.toSharedString()),
+      JsonKeys.lastGps.name: lastGps.toSharedString(),
       JsonKeys.address.name: ''
     };
+    String jsonString = jsonEncode(jsonObject);
+    logger.log('save json:\n$jsonString');
 
     String storage = FileHandler.combinePath(
         FileHandler.storages[Storages.appInternal]!, FileHandler.sharedFile);
-    String jsonString = await FileHandler.read(storage);
+    await FileHandler.write(storage, jsonString);
+  }
+
+  Future<void> loadBackground() async {
+    Map<String, dynamic> json = {
+      JsonKeys.status.name: TrackingStatus.none.name,
+      JsonKeys.gpsPoints.name: [],
+      JsonKeys.lastGps.name: '',
+      JsonKeys.address.name: ''
+    };
 
     try {
+      String storage = FileHandler.combinePath(
+          FileHandler.storages[Storages.appInternal]!, FileHandler.sharedFile);
+      String jsonString = await FileHandler.read(storage);
+      logger.log('load json:\n$jsonString');
       json = jsonDecode(jsonString);
+
+      /// status
+      try {
+        _status = TrackingStatus.values
+            .byName(json[JsonKeys.status.name] ?? _status.name);
+      } catch (e, stk) {
+        logger.error('read json ${JsonKeys.status}: ${e.toString()}', stk);
+      }
+
+      /// gpsPoints
+      try {
+        gpsPoints = (json[JsonKeys.gpsPoints.name] as List<String>)
+            .map((e) => GPS.toSharedObject(e))
+            .toList();
+      } catch (e, stk) {
+        logger.error('read json ${JsonKeys.status}: ${e.toString()}', stk);
+      }
+
+      /// last GPS
+      try {
+        GPS.lastGps = GPS.toSharedObject(json[JsonKeys.lastGps.name]);
+        gpsHistory.add(GPS.lastGps!);
+      } catch (e, stk) {
+        logger.error('read json ${JsonKeys.status}: ${e.toString()}', stk);
+      }
+
+      /// address
+      try {
+        address = json[JsonKeys.address.name] ?? ' --- ';
+      } catch (e, stk) {
+        logger.error('read json ${JsonKeys.status}: ${e.toString()}', stk);
+      }
     } catch (e, stk) {
       logger.error(e.toString(), stk);
-    }
-
-    try {
-      _status = TrackingStatus.values
-          .byName(json[JsonKeys.status.name] ?? _status.name);
-    } catch (e, stk) {
-      logger.error('read json ${JsonKeys.status}: ${e.toString()}', stk);
-    }
-    try {} catch (e, stk) {
-      logger.error('read json ${JsonKeys.status}: ${e.toString()}', stk);
-    }
-    try {} catch (e, stk) {
-      logger.error('read json ${JsonKeys.status}: ${e.toString()}', stk);
     }
   }
 }
@@ -88,17 +126,10 @@ enum SharedKeys {
   /// string path of selected storage
   storagePath,
 
-  ///
-  /// List<String>
-  /// [0] status
-  /// [1-...] GPS trackPoints as sharedString
-  /// rracking result send from background to foreground
-  trackPointUp,
-
   /// String ModelTrackPoint as sharedString
   /// send from forground to background on status changed
   /// contains userdata to get added to a new trackpoint
-  trackPointDown,
+  activeTrackPoint,
 
   /// String address lookup when detected status standing
   /// send from foreground to background

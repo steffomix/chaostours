@@ -60,6 +60,12 @@ class TrackPoint {
   }
 
   Future<void> startShared({required double lat, required double lon}) async {
+    /// only needed if method runs in foreground
+    gpsPoints.clear();
+
+    /// create gpsPoint
+    GPS gps = GPS(lat, lon);
+
     // init app
     // await AppLoader.webKey(); // not needed
     await AppLoader.loadSharedSettings();
@@ -69,83 +75,47 @@ class TrackPoint {
       return;
     }
 
+    await ModelTrackPoint.open();
+    SharedLoader shared = SharedLoader.instance;
+    await shared.loadBackground();
+
     // cache gps
     // the time can't be too long due to this task gets killed anyway
     Globals.cacheGpsTime = const Duration(seconds: 30);
     GPS.lastGps = GPS(lat, lon);
 
-    /// load last session from file
-    String storage = FileHandler.combinePath(
-        FileHandler.storages[Storages.appInternal]!, FileHandler.sharedFile);
-    String jsonString = await FileHandler.read(storage);
-
-    Map<String, dynamic> json = {
-      JsonKeys.status.name: TrackingStatus.none.name,
-      JsonKeys.gpsPoints.name: [],
-      JsonKeys.address.name: ''
-    };
-    try {
-      json = jsonDecode(jsonString);
-    } catch (e, stk) {
-      logger.error(e.toString(), stk);
-    }
-
     /// parse status from json
-    _status = TrackingStatus.values
-        .byName(json[JsonKeys.status.name] ?? TrackingStatus.none.name);
+    _status = shared.status;
 
     /// update trackpoints
     updateTrackPointQueue();
 
-    /// only needed if method runs in foreground
-    gpsPoints.clear();
-
     try {
-      /// create gpsPoint
-      GPS gps = await GPS.gps();
+      gpsPoints.add(gps);
+      gpsPoints.addAll(shared.gpsPoints);
 
-      if (_status == TrackingStatus.none) {
-        ///
+      if (shared.status == TrackingStatus.none) {
+        /// app start, no status yet
         _oldStatus = _status = TrackingStatus.standing;
-        json[JsonKeys.status.name] = TrackingStatus.standing.name;
-        gpsPoints.add(gps);
-      } else {
-        ///
-        for (var p in json[JsonKeys.gpsPoints.name] ?? []) {
-          try {
-            gpsPoints.add(GPS.toSharedObject(p));
-          } catch (e, stk) {
-            logger.error(e.toString(), stk);
-          }
-        }
       }
 
       /// remember old status
       _oldStatus = _status;
 
-      /// add gps to gpsPoints
-      gpsPoints.insert(0, gps);
-      while (gpsPoints.length > 300) {
-        gpsPoints.removeLast();
+      while (gpsPoints.length > 1000) {
+        // don't remove the very last.
+        // it's required to measure durations
+        gpsPoints.removeAt(gpsPoints.length - 2);
       }
 
       ///
       /// process trackpoint
+      /// get status
       ///
       trackPoint();
 
-      /// write possibly new status to json
-      json[JsonKeys.status.name] = _status.name;
-
       /// if nothing changed simply write data back
-      if (_status == _oldStatus) {
-        json[JsonKeys.gpsPoints.name] =
-            gpsPoints.map((e) => e.toSharedString()).toList();
-      } else {
-        /// status changed
-        /// write only last inserted gpsPoint back
-        json[JsonKeys.gpsPoints.name] = [gpsPoints.first.toSharedString()];
-
+      if (_status != _oldStatus) {
         /// status has changed to _status.
         /// if we are now moving, we need to save the gpsPoint where
         /// standing was detected, which is the last one in the list.
@@ -157,7 +127,6 @@ class TrackPoint {
 
           /// write new entry only if no restricted alias is present
           var restricted = false;
-          await ModelAlias.open();
 
           /// if this area is not restricted
           /// we reuse this list to update lastVisited
@@ -180,7 +149,6 @@ class TrackPoint {
                       newEntry.idAlias.isNotEmpty))) {
             /// insert new entry
             /// don't forget to load database first
-            await ModelTrackPoint.open();
             await ModelTrackPoint.insert(newEntry);
 
             /// update last visited entrys in ModelAlias
@@ -190,7 +158,7 @@ class TrackPoint {
                 item.timesVisited++;
               }
             }
-            ModelAlias.write();
+            await ModelAlias.write();
 
             logger.important(
                 'Save new Trackpoint #${newEntry.id} with data: \n${newEntry.toString()}');
@@ -198,40 +166,52 @@ class TrackPoint {
             logger.important(
                 'New trackpoint not saved due to app settings- or alias restrictions');
           }
+
+          /// new status is standing
+          /// remember address from detecting standing
+          /// to be used in createModelTrackPoint on next status change
+          if (Globals.osmLookupCondition != OsmLookup.never) {
+            shared.address = (await Address(gps).lookupAddress()).toString();
+          }
         } else {
           /// new status is standing
           /// remember address from detecting standing
           /// to be used in createModelTrackPoint on next status change
           if (Globals.osmLookupCondition == OsmLookup.always) {
-            json[JsonKeys.address.name] =
-                (await Address(gps).lookupAddress()).toString();
+            shared.address = (await Address(gps).lookupAddress()).toString();
           }
         }
+
+        /// status changed
+        /// write only last inserted gpsPoint back
+        gpsPoints.clear();
+        gpsPoints.add(gps);
       }
 
       /// save status and gpsPoints for next session and foreground live tracking view
-      String jsonString = jsonEncode(json);
-      await FileHandler.write(storage, jsonString);
+      shared.saveBackground(
+          status: _status,
+          gpsPoints: gpsPoints,
+          lastGps: gps,
+          address: shared.address);
     } catch (e, stk) {
       logger.fatal(e.toString(), stk);
     }
   }
 
   void trackPoint() {
-    /*
-    /// debug - chnages status after each given gpsPoints
-    if (gpsPoints.length > 10) {
-      _status =
-          _status == TrackingStatus.standing || _status == TrackingStatus.none
-              ? TrackingStatus.moving
-              : TrackingStatus.standing;
-      //_statusChanged(gps);
-      return;
+    // get gpsPoints of globals time range
+    // to measure movement
+    List<GPS> gpsList = [];
+    DateTime treshold = DateTime.now().subtract(Globals.timeRangeTreshold);
+    for (var gps in gpsPoints) {
+      if (gps.time.isAfter(treshold)) {
+        gpsList.add(gps);
+      } else {
+        break;
+      }
     }
-    */
 
-    /// query gpsPoints from given time frame
-    List<GPS> gpsList = _recentTracks();
     if (gpsPoints.length < 2) {
       return;
     }
@@ -251,11 +231,7 @@ class TrackPoint {
     }
   }
 
-  Future<ModelTrackPoint> createModelTrackPoint([GPS? gps]) async {
-    if (gps == null) {
-      await logger.warn('no gps on trackpoint. lookup foreground gps');
-    }
-    gps ??= await GPS.gps();
+  Future<ModelTrackPoint> createModelTrackPoint(GPS gps) async {
     await logger.log('create new ModelTrackPoint');
     String notes = '';
     List<int> idTask = [];
@@ -263,7 +239,7 @@ class TrackPoint {
 
     try {
       /// load user inputs
-      Shared shared = Shared(SharedKeys.trackPointDown);
+      Shared shared = Shared(SharedKeys.activeTrackPoint);
       String? tpRow = await shared.loadString();
       if (tpRow == null) {
         logger.warn('no trackPoint Data found in SharedKeys.trackPointDown');
@@ -282,27 +258,11 @@ class TrackPoint {
         idAlias: idAlias,
         timeStart: gpsPoints.last.time);
     tp.address =
-        (await Shared(SharedKeys.addressStanding).loadString()) ?? ' - ';
+        SharedLoader.instance.address; // should be loaded at this point
     tp.status = _oldStatus;
     tp.timeEnd = DateTime.now();
     tp.idTask = idTask;
     tp.notes = notes;
     return tp;
-  }
-
-  /// collect recent Trackpoints since last status changed
-  /// and until <timeTreshold>
-  /// so that gpsList[0] is most recent
-  List<GPS> _recentTracks() {
-    List<GPS> gpsList = [];
-    DateTime treshold = DateTime.now().subtract(Globals.timeRangeTreshold);
-    for (var gps in gpsPoints) {
-      if (gps.time.isAfter(treshold)) {
-        gpsList.add(gps);
-      } else {
-        break;
-      }
-    }
-    return gpsList;
   }
 }

@@ -139,15 +139,10 @@ class FileHandler {
     Map<Storages, String?> storages = await _getAllStorages();
     String keyName = await Shared(SharedKeys.storageKey).loadString() ?? '';
     try {
-      Storages key = Storages.values.byName(keyName);
-      String? path = storages[key];
-      if (path == null) {
-        path ??= await _getAutoPath();
-      }
-      storageKey = key;
-      storagePath = path;
-      logger.important('!!! Set Storage Path to $path');
-      return path;
+      storageKey = Storages.values.byName(keyName);
+      storagePath = (storages[storageKey] ?? await _getAutoPath());
+      logger.important('!!! Set Storage Path to $storagePath');
+      return storagePath;
     } catch (e) {
       logger.warn('invalid storages key "$keyName", use autopath');
       return await _getAutoPath();
