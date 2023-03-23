@@ -23,6 +23,7 @@ class SharedLoader {
   static SharedLoader get instance => _instance ??= SharedLoader._();
   static int nextId = 0;
   int id = (nextId++);
+  static bool _listening = false;
 
   // gps list from between trackpoints
   List<GPS> gpsPoints = [];
@@ -37,12 +38,28 @@ class SharedLoader {
   List<ModelTrackPoint> recentTrackPoints = [];
   List<ModelTrackPoint> localTrackPoints = [];
 
-  SharedLoader._() {
-    EventManager.listen<EventOnAppTick>(_onTick);
+  SharedLoader._();
+
+  /// returns if listening
+  bool listen() {
+    if (!_listening) {
+      _listening = true;
+      Future.microtask(() async {
+        while (_listening) {
+          try {
+            await instance.loadBackground();
+            await Future.delayed(Globals.trackPointInterval);
+          } catch (e, stk) {
+            logger.error(e.toString(), stk);
+          }
+        }
+      });
+    }
+    return _listening;
   }
 
-  _onTick(EventOnAppTick tick) {
-    loadBackground();
+  void stopListen() {
+    _listening = false;
   }
 
   Future<void> saveBackground(
@@ -50,18 +67,23 @@ class SharedLoader {
       required List<GPS> gpsPoints,
       required GPS lastGps,
       String? address = ''}) async {
-    Map<String, dynamic> jsonObject = {
-      JsonKeys.status.name: status.name,
-      JsonKeys.gpsPoints.name: gpsPoints.map((e) => e.toSharedString()),
-      JsonKeys.lastGps.name: lastGps.toSharedString(),
-      JsonKeys.address.name: ''
-    };
-    String jsonString = jsonEncode(jsonObject);
-    logger.log('save json:\n$jsonString');
+    try {
+      Map<String, dynamic> jsonObject = {
+        JsonKeys.status.name: status.name,
+        JsonKeys.gpsPoints.name:
+            gpsPoints.map((e) => e.toSharedString()).toList(),
+        JsonKeys.lastGps.name: lastGps.toSharedString(),
+        JsonKeys.address.name: ''
+      };
+      String jsonString = jsonEncode(jsonObject);
+      logger.log('save json:\n$jsonString');
 
-    String storage = FileHandler.combinePath(
-        FileHandler.storages[Storages.appInternal]!, FileHandler.sharedFile);
-    await FileHandler.write(storage, jsonString);
+      String storage = FileHandler.combinePath(
+          FileHandler.storages[Storages.appInternal]!, FileHandler.sharedFile);
+      await FileHandler.write(storage, jsonString);
+    } catch (e, stk) {
+      logger.error(e.toString(), stk);
+    }
   }
 
   Future<void> loadBackground() async {
@@ -81,19 +103,27 @@ class SharedLoader {
 
       /// status
       try {
-        _status = TrackingStatus.values
-            .byName(json[JsonKeys.status.name] ?? _status.name);
+        _status =
+            TrackingStatus.values.byName(json[JsonKeys.status.name] ?? _status);
       } catch (e, stk) {
-        logger.error('read json ${JsonKeys.status}: ${e.toString()}', stk);
+        logger.error(
+            'read json status ${JsonKeys.status}: ${e.toString()}', stk);
       }
 
       /// gpsPoints
       try {
+        List<dynamic> points = (json[JsonKeys.gpsPoints.name] as List<dynamic>);
+        for (var p in points) {
+          gpsPoints.add(GPS.toSharedObject(p.toString()));
+        }
+        /*
         gpsPoints = (json[JsonKeys.gpsPoints.name] as List<String>)
             .map((e) => GPS.toSharedObject(e))
             .toList();
+        */
       } catch (e, stk) {
-        logger.error('read json ${JsonKeys.status}: ${e.toString()}', stk);
+        logger.error(
+            'read json gpsPoints ${JsonKeys.status}: ${e.toString()}', stk);
       }
 
       /// last GPS
@@ -101,14 +131,16 @@ class SharedLoader {
         GPS.lastGps = GPS.toSharedObject(json[JsonKeys.lastGps.name]);
         gpsHistory.add(GPS.lastGps!);
       } catch (e, stk) {
-        logger.error('read json ${JsonKeys.status}: ${e.toString()}', stk);
+        logger.error(
+            'read json lastGps ${JsonKeys.status}: ${e.toString()}', stk);
       }
 
       /// address
       try {
         address = json[JsonKeys.address.name] ?? ' --- ';
       } catch (e, stk) {
-        logger.error('read json ${JsonKeys.status}: ${e.toString()}', stk);
+        logger.error(
+            'read json address ${JsonKeys.status}: ${e.toString()}', stk);
       }
     } catch (e, stk) {
       logger.error(e.toString(), stk);

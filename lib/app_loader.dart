@@ -107,6 +107,7 @@ class AppLoader {
 
   static Future<void> ticks() async {
     logger.important('start app-tick');
+    SharedLoader.instance.listen();
     _appTick();
     logger.important('logger listen on app-tick ready');
     Logger.listenOnTick();

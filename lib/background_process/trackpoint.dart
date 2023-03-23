@@ -177,7 +177,7 @@ class TrackPoint {
           /// new status is standing
           /// remember address from detecting standing
           /// to be used in createModelTrackPoint on next status change
-          if (Globals.osmLookupCondition == OsmLookup.always) {
+          if (Globals.osmLookupCondition == OsmLookup.onStatus) {
             shared.address = (await Address(gps).lookupAddress()).toString();
           }
         }
@@ -187,9 +187,12 @@ class TrackPoint {
         gpsPoints.clear();
         gpsPoints.add(gps);
       }
+      if (Globals.osmLookupCondition == OsmLookup.always) {
+        shared.address = (await Address(gps).lookupAddress()).toString();
+      }
 
       /// save status and gpsPoints for next session and foreground live tracking view
-      shared.saveBackground(
+      await shared.saveBackground(
           status: _status,
           gpsPoints: gpsPoints,
           lastGps: gps,
