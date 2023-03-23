@@ -109,6 +109,7 @@ class AppLoader {
     logger.important('start app-tick');
     SharedLoader.instance.listen();
     _appTick();
+    _addressTick();
     logger.important('logger listen on app-tick ready');
     Logger.listenOnTick();
     appLoaderTicksStarted = true;
@@ -151,6 +152,19 @@ class AppLoader {
     }
   }
 
+  static Future<void> _addressTick() async {
+    while (true) {
+      var event = EventOnAddressLookup();
+      try {
+        if (Globals.osmLookupInterval.inSeconds > 10) {
+          EventManager.fire<EventOnAddressLookup>(event);
+        }
+      } catch (e, stk) {
+        logger.error('appTick #${event.eventId} failed: ${e.toString()}', stk);
+      }
+      await Future.delayed(Globals.osmLookupInterval);
+    }
+  }
 /*
   ///
   /// load calendar api from credentials asset file

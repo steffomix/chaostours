@@ -25,6 +25,8 @@ class SharedLoader {
   int id = (nextId++);
   static bool _listening = false;
 
+  GPS? lastGps;
+
   // gps list from between trackpoints
   List<GPS> gpsPoints = [];
   // list of all TrackPoints since app is running
@@ -73,7 +75,7 @@ class SharedLoader {
         JsonKeys.gpsPoints.name:
             gpsPoints.map((e) => e.toSharedString()).toList(),
         JsonKeys.lastGps.name: lastGps.toSharedString(),
-        JsonKeys.address.name: ''
+        JsonKeys.address.name: address
       };
       String jsonString = jsonEncode(jsonObject);
       logger.log('save json:\n$jsonString');
@@ -128,7 +130,7 @@ class SharedLoader {
 
       /// last GPS
       try {
-        GPS.lastGps = GPS.toSharedObject(json[JsonKeys.lastGps.name]);
+        GPS.lastGps = lastGps = GPS.toSharedObject(json[JsonKeys.lastGps.name]);
         gpsHistory.add(GPS.lastGps!);
       } catch (e, stk) {
         logger.error(

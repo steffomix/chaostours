@@ -205,13 +205,17 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       return;
     }
 
+    if (shared.address.isNotEmpty) {
+      ModelTrackPoint.pendingAddress = shared.address;
+    }
+
     if (shared.status != TrackingStatus.none) {
       /// get status
       currentStatus = shared.status;
       runningTrackPoints.clear();
       runningTrackPoints.addAll(shared.gpsPoints);
       // update GPS cache
-      GPS.lastGps = runningTrackPoints.first;
+      GPS.lastGps = shared.lastGps;
 
       /// update pendingTrackPoint
       if (currentStatus == lastStatus) {

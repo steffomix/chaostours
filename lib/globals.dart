@@ -45,8 +45,8 @@ class Globals {
   static Duration trackPointInterval = Duration(seconds: 15);
 
   ///
-  static OsmLookup osmLookupCondition = OsmLookup.always;
+  static OsmLookup osmLookupCondition = OsmLookup.onStatus;
 
   /// consumes mobile data!
-  static Duration osmLookupInterval = Duration(seconds: 60);
+  static Duration osmLookupInterval = Duration(seconds: 0);
 }

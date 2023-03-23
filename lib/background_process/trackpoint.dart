@@ -189,6 +189,8 @@ class TrackPoint {
       }
       if (Globals.osmLookupCondition == OsmLookup.always) {
         shared.address = (await Address(gps).lookupAddress()).toString();
+      } else if (Globals.osmLookupCondition == OsmLookup.never) {
+        shared.address = '';
       }
 
       /// save status and gpsPoints for next session and foreground live tracking view
