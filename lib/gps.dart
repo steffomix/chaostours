@@ -16,14 +16,11 @@ class GPS {
   static int _nextId = 0;
   final int _id = ++_nextId;
   int get id => _id;
-  DateTime? _time;
-  DateTime get time => _time ??= DateTime.now();
+  DateTime time = DateTime.now();
   double lat;
   double lon;
 
-  GPS(this.lat, this.lon) {
-    _time = DateTime.now();
-  }
+  GPS(this.lat, this.lon);
 
   static Future<GPS> gps() async {
     if (lastGps == null) {
@@ -70,7 +67,7 @@ class GPS {
   static GPS toSharedObject(String row) {
     List<String> p = row.split(';');
     GPS gps = GPS.toObject(p[0]);
-    gps._time = DateTime.parse(p[1]);
+    gps.time = DateTime.parse(p[1]);
     return gps;
   }
 

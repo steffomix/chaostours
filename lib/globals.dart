@@ -42,11 +42,22 @@ class Globals {
 
   /// check status interval.
   /// Should be at least 3 seconds due to GPS lookup needs at least 2 seconds
-  static Duration trackPointInterval = Duration(seconds: 15);
+  static Duration trackPointInterval = Duration(seconds: 5);
 
-  ///
+  /// compensate unprecise gps by using average of given gpsPoints.
+  /// That means that a smooth count of 3 requires at least 4 gpsPoints
+  /// for trackpoint calculation
+  static int gpsPointsSmoothCount = 3;
+
+  /// compensate unprecise impossible to reach gpsPoints
+  /// by ignoring points that can't be reached under a maximum of speed
+  /// in km/h (1 m/s = 3,6km/h = 2,23693629 miles/h)
+  static int gpsMaxSpeed = 150;
+
+  /// when background looks for an address of given gps
   static OsmLookup osmLookupCondition = OsmLookup.onStatus;
 
   /// consumes mobile data!
-  static Duration osmLookupInterval = Duration(seconds: 0);
+  ///
+  static Duration osmLookupInterval = Duration(minutes: 0);
 }

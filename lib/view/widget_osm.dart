@@ -506,6 +506,17 @@ class _WidgetOsm extends State<WidgetOsm> {
           strokeWidth: 10,
         ));
       }
+      for (String s in json[JsonKeys.smoothGps.name]) {
+        GPS gps = GPS.toSharedObject(s);
+
+        _controller.drawCircle(CircleOSM(
+          key: "circle${++circleId}",
+          centerPoint: GeoPoint(latitude: gps.lat, longitude: gps.lon),
+          radius: 5,
+          color: Colors.red,
+          strokeWidth: 10,
+        ));
+      }
     } catch (e, stk) {
       logger.error(e.toString(), stk);
     }

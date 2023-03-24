@@ -195,7 +195,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
             maxValue: 0,
             title: 'Hintergrund GPS Interval',
             description:
-                'In welchen Zeitabständen in Sekunden das Hintergrung GPS abgefragt wird.\n'
+                'In welchen Zeitabständen in SEKUNDEN das Hintergrung GPS abgefragt wird.\n'
                 'Bei Änderungen ist ein Neustart der App Erforderlich.'),
 
         /// addressLookupInterval
@@ -208,7 +208,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
             maxValue: 0,
             title: 'Live Tracking OSM Adress lookup Interval',
             description:
-                'In welchen Zeitabständen in Sekunden beim kostenlosen Service von OpenStreetMap.com '
+                'In welchen Zeitabständen in MINUTEN beim kostenlosen Service von OpenStreetMap.com '
                 'anhand der GPS Daten die Adresse abgefragt werden.\n'
                 'Dieser Wert sollte nicht niedriger als der GPS Hintergrund Interval sein.\n'
                 'Eine einzelne Online Abfrage verbraucht etwa 1kb Mobile Daten.\nDer mindestwert ist zwar 10 Sekunden,'
@@ -291,7 +291,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
             maxValue: 0,
             title: 'GPS Cache - Vorhaltezeit',
             description:
-                'Stellt ein wie viel Zeit in Sekunden vergehen muss bis das '
+                'Stellt ein wie viel Zeit in SEKUNDEN vergehen muss bis das '
                 'vorgehaltene Vordergrund GPS verworfen und erneuert wird.'),
 
         /// distanceTreshold
@@ -304,7 +304,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
             maxValue: 0,
             title: 'Distanzschwellwert',
             description:
-                'Die Distanz in Meter, die sie sich innerhalb von "Zeitschwellwert" (siehe unten) '
+                'Die Distanz in METER, die sie sich innerhalb von "Zeitschwellwert" (siehe unten) '
                 'fortbewegen müssen, um in den Satus Fahren zu wechseln. Oder anders herum '
                 'die Distanz, die sie innerhalb von "Zeitschwellwert" unterschreiten müssen, '
                 'um in den Status Halten zu wechseln'),
@@ -319,7 +319,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
             maxValue: 0,
             title: 'Zeitschwellwert',
             description:
-                'Zur Festellung des Halten/Fahren Status wird für den Zeitraum von "Zeitschwellwert" in Sekunden '
+                'Zur Festellung des Halten/Fahren Status wird für den Zeitraum von "Zeitschwellwert" in SEKUNDEN '
                 'die Weg der bis dahin gesammelten GPS Punkte berechnet. Um in den Status Fahren zu wechseln, '
                 'müssen sie sich also mit einer gewissen Mindestgeschwindigkeit fortbewegen, die durch die durch die '
                 '"Distanzschwellwert" / "Zeitschwellwert" eingestellt werden kann'),
@@ -334,7 +334,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
             minValue: 0,
             maxValue: 0,
             title: 'Wartezeit nach Statuswechsel',
-            description: 'Die Zeit in Sekunden, in der nach einem Statuswechsel'
+            description: 'Die Zeit in SEKUNDEN, in der nach einem Statuswechsel'
                 ' die GPS Hintergrund Berechnungen pausieren.'),
 
         /// appTickDuration

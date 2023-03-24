@@ -41,6 +41,7 @@ class TrackPoint {
   /// int _nextId = 0;
   /// contains all trackpoints from current state start or stop
   final List<GPS> gpsPoints = [];
+  final List<GPS> smoothGps = [];
   TrackingStatus _status = TrackingStatus.none;
   TrackingStatus _oldStatus = TrackingStatus.none;
 
@@ -57,6 +58,38 @@ class TrackPoint {
       logger.error(e.toString(), stk);
     }
     shared.saveList([]);
+  }
+
+  void calculateSmoothGps() {
+    int smooth = Globals.gpsPointsSmoothCount;
+    if (gpsPoints.length <= smooth) {
+      return;
+    }
+    int index = 0;
+    while (index <= gpsPoints.length - 1 - smooth) {
+      double smoothLat = 0;
+      double smoothLon = 0;
+      for (var i = 1; i <= smooth; i++) {
+        smoothLat += gpsPoints[index + i - 1].lat;
+        smoothLon += gpsPoints[index + i - 1].lon;
+      }
+      smoothLat /= smooth;
+      smoothLon /= smooth;
+      GPS gps = GPS(smoothLat, smoothLon);
+      if (smoothGps.isNotEmpty) {
+        int m = GPS.distance(gps, smoothGps.last).round();
+        int s = Globals.trackPointInterval.inSeconds;
+        double ms = m / s;
+        double kmh = ms * 3.6;
+        if (kmh > Globals.gpsMaxSpeed) {
+          continue;
+        }
+      }
+
+      gps.time = gpsPoints[index + (smooth / 2).round()].time;
+      smoothGps.add(gps);
+      index++;
+    }
   }
 
   Future<void> startShared({required double lat, required double lon}) async {
@@ -93,6 +126,8 @@ class TrackPoint {
     try {
       gpsPoints.add(gps);
       gpsPoints.addAll(shared.gpsPoints);
+
+      calculateSmoothGps();
 
       if (shared.status == TrackingStatus.none) {
         /// app start, no status yet
@@ -197,6 +232,7 @@ class TrackPoint {
       await shared.saveBackground(
           status: _status,
           gpsPoints: gpsPoints,
+          smoothGps: smoothGps,
           lastGps: gps,
           address: shared.address);
     } catch (e, stk) {
@@ -209,15 +245,20 @@ class TrackPoint {
     // to measure movement
     List<GPS> gpsList = [];
     DateTime treshold = DateTime.now().subtract(Globals.timeRangeTreshold);
-    for (var gps in gpsPoints) {
+    for (var gps in smoothGps) {
       if (gps.time.isAfter(treshold)) {
         gpsList.add(gps);
       } else {
         break;
       }
     }
+    // gps points min count
+    if (gpsList.length < 2) {
+      return;
+    }
 
-    if (gpsPoints.length < 2) {
+    // require full time range
+    if (gpsList.last.time.isAfter(treshold)) {
       return;
     }
 

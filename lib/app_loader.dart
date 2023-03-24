@@ -156,7 +156,7 @@ class AppLoader {
     while (true) {
       var event = EventOnAddressLookup();
       try {
-        if (Globals.osmLookupInterval.inSeconds > 10) {
+        if (Globals.osmLookupInterval.inMinutes > 0) {
           EventManager.fire<EventOnAddressLookup>(event);
         }
       } catch (e, stk) {

@@ -13,6 +13,7 @@ enum JsonKeys {
   status,
   lastGps,
   gpsPoints,
+  smoothGps,
   address;
 }
 
@@ -29,6 +30,7 @@ class SharedLoader {
 
   // gps list from between trackpoints
   List<GPS> gpsPoints = [];
+  List<GPS> smoothGps = [];
   // list of all TrackPoints since app is running
   // limit to max 10k
   List<GPS> gpsHistory = [];
@@ -67,6 +69,7 @@ class SharedLoader {
   Future<void> saveBackground(
       {required TrackingStatus status,
       required List<GPS> gpsPoints,
+      required List<GPS> smoothGps,
       required GPS lastGps,
       String? address = ''}) async {
     try {
@@ -74,6 +77,8 @@ class SharedLoader {
         JsonKeys.status.name: status.name,
         JsonKeys.gpsPoints.name:
             gpsPoints.map((e) => e.toSharedString()).toList(),
+        JsonKeys.smoothGps.name:
+            smoothGps.map((e) => e.toSharedString()).toList(),
         JsonKeys.lastGps.name: lastGps.toSharedString(),
         JsonKeys.address.name: address
       };
@@ -92,6 +97,7 @@ class SharedLoader {
     Map<String, dynamic> json = {
       JsonKeys.status.name: TrackingStatus.none.name,
       JsonKeys.gpsPoints.name: [],
+      JsonKeys.smoothGps.name: [],
       JsonKeys.lastGps.name: '',
       JsonKeys.address.name: ''
     };
@@ -126,6 +132,22 @@ class SharedLoader {
       } catch (e, stk) {
         logger.error(
             'read json gpsPoints ${JsonKeys.status}: ${e.toString()}', stk);
+      }
+
+      /// smoothGps
+      try {
+        List<dynamic> points = (json[JsonKeys.smoothGps.name] as List<dynamic>);
+        for (var p in points) {
+          smoothGps.add(GPS.toSharedObject(p.toString()));
+        }
+        /*
+        gpsPoints = (json[JsonKeys.gpsPoints.name] as List<String>)
+            .map((e) => GPS.toSharedObject(e))
+            .toList();
+        */
+      } catch (e, stk) {
+        logger.error(
+            'read json smoothGps ${JsonKeys.status}: ${e.toString()}', stk);
       }
 
       /// last GPS

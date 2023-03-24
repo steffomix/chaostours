@@ -121,7 +121,7 @@ enum AppSettings {
       if (iv > 0 && iv < 10) {
         iv = 10;
       }
-      Globals.osmLookupInterval = Duration(seconds: iv);
+      Globals.osmLookupInterval = Duration(minutes: iv);
     } catch (e) {
       logger.warn(
           'addressLookupInterval has invalid value: ${settings[AppSettings.addressLookupInterval]}');
@@ -229,7 +229,7 @@ enum AppSettings {
 
             /// defaults to Globals.addressLookupInterval
             case AppSettings.addressLookupInterval:
-              Globals.osmLookupInterval = Duration(seconds: int.parse(value));
+              Globals.osmLookupInterval = Duration(minutes: int.parse(value));
               break;
 
             /// defaults to Globals.osmLookupCondition
