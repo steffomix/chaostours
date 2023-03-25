@@ -137,7 +137,12 @@ class TrackPoint {
       /// remember old status
       _oldStatus = _status;
 
-      while (gpsPoints.length > 1000) {
+      /// save 10 times of gpsPoints needed for one time range
+      while (gpsPoints.length >
+          (Globals.timeRangeTreshold.inSeconds /
+                  Globals.trackPointInterval.inSeconds *
+                  10)
+              .round()) {
         // don't remove the very last.
         // it's required to measure durations
         gpsPoints.removeAt(gpsPoints.length - 2);
@@ -243,26 +248,25 @@ class TrackPoint {
   void trackPoint() {
     // get gpsPoints of globals time range
     // to measure movement
+    SharedLoader.instance.calcGpsPoints.clear();
     List<GPS> gpsList = [];
     DateTime treshold = DateTime.now().subtract(Globals.timeRangeTreshold);
+    bool fullTresholdRange = false;
     for (var gps in smoothGps) {
       if (gps.time.isAfter(treshold)) {
         gpsList.add(gps);
       } else {
+        fullTresholdRange = true;
         break;
       }
     }
     // gps points min count
-    if (gpsList.length < 2) {
+    if (!fullTresholdRange || gpsList.length < 3) {
       return;
     }
+    SharedLoader.instance.calcGpsPoints.addAll(gpsList);
 
-    // require full time range
-    if (gpsList.last.time.isAfter(treshold)) {
-      return;
-    }
-
-    /// check if we stopped standing
+    /// check if we started moving
     if (_status == TrackingStatus.standing || _status == TrackingStatus.none) {
       if (GPS.distance(gpsList.first, gpsList.last) >
           Globals.distanceTreshold) {

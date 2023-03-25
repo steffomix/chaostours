@@ -10,11 +10,16 @@ import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/file_handler.dart';
 
 enum JsonKeys {
-  status,
-  lastGps,
-  gpsPoints,
-  smoothGps,
-  address;
+  // background status and messages
+  bgStatus,
+  bgLastGps,
+  bgGpsPoints,
+  bgSmoothGpsPoints,
+  bgCalcGpsPoints,
+  bgAddress,
+  // forground messages for background
+  fgTriggerStatus,
+  fgTrackPointUpdates;
 }
 
 class SharedLoader {
@@ -26,14 +31,18 @@ class SharedLoader {
   int id = (nextId++);
   static bool _listening = false;
 
-  GPS? lastGps;
+  /// foreground values
+  bool _triggerStatus = false;
+  bool get statusTriggered => _triggerStatus;
+  void triggerStatus() {
+    _triggerStatus = true;
+  }
 
+  GPS? lastGps;
   // gps list from between trackpoints
   List<GPS> gpsPoints = [];
-  List<GPS> smoothGps = [];
-  // list of all TrackPoints since app is running
-  // limit to max 10k
-  List<GPS> gpsHistory = [];
+  List<GPS> smoothGpsPoints = [];
+  List<GPS> calcGpsPoints = [];
   // ignore: prefer_final_fields
   TrackingStatus _status = TrackingStatus.none;
   TrackingStatus get status => _status;
@@ -66,6 +75,8 @@ class SharedLoader {
     _listening = false;
   }
 
+  Future<void> saveForeGround() async {}
+
   Future<void> saveBackground(
       {required TrackingStatus status,
       required List<GPS> gpsPoints,
@@ -74,13 +85,16 @@ class SharedLoader {
       String? address = ''}) async {
     try {
       Map<String, dynamic> jsonObject = {
-        JsonKeys.status.name: status.name,
-        JsonKeys.gpsPoints.name:
+        JsonKeys.bgStatus.name: status.name,
+        JsonKeys.fgTriggerStatus.name: _triggerStatus ? '1' : '0',
+        JsonKeys.bgGpsPoints.name:
             gpsPoints.map((e) => e.toSharedString()).toList(),
-        JsonKeys.smoothGps.name:
+        JsonKeys.bgCalcGpsPoints.name:
+            calcGpsPoints.map((e) => e.toSharedString()).toList(),
+        JsonKeys.bgSmoothGpsPoints.name:
             smoothGps.map((e) => e.toSharedString()).toList(),
-        JsonKeys.lastGps.name: lastGps.toSharedString(),
-        JsonKeys.address.name: address
+        JsonKeys.bgLastGps.name: lastGps.toSharedString(),
+        JsonKeys.bgAddress.name: address
       };
       String jsonString = jsonEncode(jsonObject);
       logger.log('save json:\n$jsonString');
@@ -95,11 +109,13 @@ class SharedLoader {
 
   Future<void> loadBackground() async {
     Map<String, dynamic> json = {
-      JsonKeys.status.name: TrackingStatus.none.name,
-      JsonKeys.gpsPoints.name: [],
-      JsonKeys.smoothGps.name: [],
-      JsonKeys.lastGps.name: '',
-      JsonKeys.address.name: ''
+      JsonKeys.bgStatus.name: TrackingStatus.none.name,
+      JsonKeys.fgTriggerStatus.name: '0',
+      JsonKeys.bgGpsPoints.name: [],
+      JsonKeys.bgCalcGpsPoints.name: [],
+      JsonKeys.bgSmoothGpsPoints.name: [],
+      JsonKeys.bgLastGps.name: '',
+      JsonKeys.bgAddress.name: ''
     };
 
     try {
@@ -111,60 +127,80 @@ class SharedLoader {
 
       /// status
       try {
-        _status =
-            TrackingStatus.values.byName(json[JsonKeys.status.name] ?? _status);
+        _status = TrackingStatus.values
+            .byName(json[JsonKeys.bgStatus.name] ?? _status);
       } catch (e, stk) {
         logger.error(
-            'read json status ${JsonKeys.status}: ${e.toString()}', stk);
+            'read json status ${json[JsonKeys.bgStatus.name]}: ${e.toString()}',
+            stk);
+      }
+
+      /// triggerStatus
+      try {
+        _triggerStatus =
+            (json[JsonKeys.fgTriggerStatus.name] ?? '0') == '0' ? false : true;
+      } catch (e, stk) {
+        logger.error(
+            'read json triggerStatus ${json[JsonKeys.fgTriggerStatus.name]}: ${e.toString()}',
+            stk);
       }
 
       /// gpsPoints
       try {
-        List<dynamic> points = (json[JsonKeys.gpsPoints.name] as List<dynamic>);
+        List<dynamic> points =
+            (json[JsonKeys.bgGpsPoints.name] as List<dynamic>);
         for (var p in points) {
           gpsPoints.add(GPS.toSharedObject(p.toString()));
         }
-        /*
-        gpsPoints = (json[JsonKeys.gpsPoints.name] as List<String>)
-            .map((e) => GPS.toSharedObject(e))
-            .toList();
-        */
       } catch (e, stk) {
         logger.error(
-            'read json gpsPoints ${JsonKeys.status}: ${e.toString()}', stk);
+            'read json gpsPoints ${json[JsonKeys.bgGpsPoints.name]}: ${e.toString()}',
+            stk);
       }
 
-      /// smoothGps
+      /// smoothGpsPoints
       try {
-        List<dynamic> points = (json[JsonKeys.smoothGps.name] as List<dynamic>);
+        List<dynamic> points =
+            (json[JsonKeys.bgSmoothGpsPoints.name] as List<dynamic>);
         for (var p in points) {
-          smoothGps.add(GPS.toSharedObject(p.toString()));
+          smoothGpsPoints.add(GPS.toSharedObject(p.toString()));
         }
-        /*
-        gpsPoints = (json[JsonKeys.gpsPoints.name] as List<String>)
-            .map((e) => GPS.toSharedObject(e))
-            .toList();
-        */
       } catch (e, stk) {
         logger.error(
-            'read json smoothGps ${JsonKeys.status}: ${e.toString()}', stk);
+            'read json smoothGps ${json[JsonKeys.bgSmoothGpsPoints.name]}: ${e.toString()}',
+            stk);
+      }
+
+      /// calcGpsPoints
+      try {
+        List<dynamic> points =
+            (json[JsonKeys.bgCalcGpsPoints.name] as List<dynamic>);
+        for (var p in points) {
+          calcGpsPoints.add(GPS.toSharedObject(p.toString()));
+        }
+      } catch (e, stk) {
+        logger.error(
+            'read json calcGpsPoints ${json[JsonKeys.bgCalcGpsPoints.name]}: ${e.toString()}',
+            stk);
       }
 
       /// last GPS
       try {
-        GPS.lastGps = lastGps = GPS.toSharedObject(json[JsonKeys.lastGps.name]);
-        gpsHistory.add(GPS.lastGps!);
+        GPS.lastGps =
+            lastGps = GPS.toSharedObject(json[JsonKeys.bgLastGps.name]);
       } catch (e, stk) {
         logger.error(
-            'read json lastGps ${JsonKeys.status}: ${e.toString()}', stk);
+            'read json lastGps ${json[JsonKeys.bgLastGps.name]}: ${e.toString()}',
+            stk);
       }
 
       /// address
       try {
-        address = json[JsonKeys.address.name] ?? ' --- ';
+        address = json[JsonKeys.bgAddress.name] ?? ' --- ';
       } catch (e, stk) {
         logger.error(
-            'read json address ${JsonKeys.status}: ${e.toString()}', stk);
+            'read json address ${json[JsonKeys.bgAddress.name]}: ${e.toString()}',
+            stk);
       }
     } catch (e, stk) {
       logger.error(e.toString(), stk);

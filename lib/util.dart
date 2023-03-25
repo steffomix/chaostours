@@ -40,11 +40,13 @@ String timeElapsed(DateTime t1, DateTime t2, [bool short = true]) {
       s += '$hours Stunden, ';
     }
     if (minutes > 0) {
-      s += '$minutes Minuten, ';
+      s += '$minutes Minuten';
     }
+    /*
     if (seconds > 0) {
       s += '$seconds Sekunden';
     }
+    */
   }
 
   return s;

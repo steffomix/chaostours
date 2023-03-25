@@ -47,7 +47,7 @@ class Globals {
   /// compensate unprecise gps by using average of given gpsPoints.
   /// That means that a smooth count of 3 requires at least 4 gpsPoints
   /// for trackpoint calculation
-  static int gpsPointsSmoothCount = 3;
+  static int gpsPointsSmoothCount = 5;
 
   /// compensate unprecise impossible to reach gpsPoints
   /// by ignoring points that can't be reached under a maximum of speed

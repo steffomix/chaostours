@@ -202,14 +202,15 @@ enum AppSettings {
       }
       try {
         List<String> parts = item.split(':');
-        String value = parts[1];
+        String value = parts[1].trim();
         try {
-          AppSettings key = AppSettings.values.byName(parts[0]);
+          AppSettings key = AppSettings.values.byName(parts[0].trim());
           switch (key) {
             /// defaults to Globals.preselectedUsers
             case AppSettings.preselectedUsers:
-              Globals.preselectedUsers =
-                  value.split(',').map((e) => int.parse(e)).toSet();
+              Globals.preselectedUsers = value.isEmpty
+                  ? {}
+                  : value.split(',').map((e) => int.parse(e)).toSet();
               break;
 
             /// defaults to false

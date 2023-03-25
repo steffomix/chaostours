@@ -488,14 +488,25 @@ class _WidgetOsm extends State<WidgetOsm> {
           FileHandler.storages[Storages.appInternal]!, FileHandler.sharedFile);
       String jsonString = await FileHandler.read(storage);
 
-      Map<String, dynamic> json = {JsonKeys.gpsPoints.name: []};
+      Map<String, dynamic> json = {JsonKeys.bgGpsPoints.name: []};
       try {
         json = jsonDecode(jsonString);
       } catch (e, stk) {
         logger.error(e.toString(), stk);
       }
 
-      for (String s in json[JsonKeys.gpsPoints.name]) {
+      for (String s in json[JsonKeys.bgGpsPoints.name] ?? []) {
+        GPS gps = GPS.toSharedObject(s);
+
+        _controller.drawCircle(CircleOSM(
+          key: "circle${++circleId}",
+          centerPoint: GeoPoint(latitude: gps.lat, longitude: gps.lon),
+          radius: 2,
+          color: Colors.grey,
+          strokeWidth: 10,
+        ));
+      }
+      for (String s in json[JsonKeys.bgSmoothGpsPoints.name] ?? []) {
         GPS gps = GPS.toSharedObject(s);
 
         _controller.drawCircle(CircleOSM(
@@ -506,13 +517,13 @@ class _WidgetOsm extends State<WidgetOsm> {
           strokeWidth: 10,
         ));
       }
-      for (String s in json[JsonKeys.smoothGps.name]) {
+      for (String s in json[JsonKeys.bgCalcGpsPoints.name] ?? []) {
         GPS gps = GPS.toSharedObject(s);
 
         _controller.drawCircle(CircleOSM(
           key: "circle${++circleId}",
           centerPoint: GeoPoint(latitude: gps.lat, longitude: gps.lon),
-          radius: 5,
+          radius: 4,
           color: Colors.red,
           strokeWidth: 10,
         ));

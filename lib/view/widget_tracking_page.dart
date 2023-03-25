@@ -11,6 +11,7 @@ import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/shared.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_task.dart';
+import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/checkbox_controller.dart';
 //
@@ -279,59 +280,108 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   }
 
   Widget renderActiveTrackPoint(BuildContext context) {
+    Screen screen = Screen(context);
     try {
-      var tp = ModelTrackPoint.pendingTrackPoint;
-      var duration = util.timeElapsed(tp.timeStart, tp.timeEnd, false);
-      var alias = ModelAlias.nextAlias(
+      ModelTrackPoint tp = ModelTrackPoint.pendingTrackPoint;
+      String duration = util.timeElapsed(tp.timeStart, tp.timeEnd, false);
+      List<String> alias = ModelAlias.nextAlias(
               gps: currentStatus == TrackingStatus.moving
                   ? runningTrackPoints.first
                   : runningTrackPoints.last)
           .map((e) {
         return '- ${e.alias}';
       }).toList();
+      List<String> users = tp.idUser.map((id) {
+        return '- ${ModelUser.getUser(id).user}';
+      }).toList();
 
-      var task =
+      List<String> task =
           tp.idTask.map((e) => '- ${ModelTask.getTask(e).task}').toList();
-      var notes = tp.notes;
+      String notes = tp.notes;
 
-      var sAlias = alias.isEmpty ? ' -' : '\n  -${alias.join('\n  -')}';
-      var sTasks = task.isEmpty ? ' -' : '\n  -${task.join('\n  -')}';
-      var listBody = ListBody(
-        children: [
-          Center(
-              heightFactor: 2,
-              child: Text(
-                  currentStatus == TrackingStatus.standing
-                      ? '$duration Halten'
-                      : '~${(GPS.distanceoverTrackList(runningTrackPoints) / 10).round() / 100}km Fahren',
-                  style: const TextStyle(letterSpacing: 2, fontSize: 20))),
-          Center(
-            heightFactor: 1,
-            child: Text(AppWidgets.timeInfo(tp.timeStart, tp.timeEnd)),
-          ),
-          AppWidgets.divider(),
-          Text('OSM: "${ModelTrackPoint.pendingAddress}"', softWrap: true),
-          Text('Alias: $sAlias', softWrap: true),
-          AppWidgets.divider(),
-          Text('Aufgaben: $sTasks', softWrap: true),
-          AppWidgets.divider(),
-          Text('Notizen: $notes')
-        ],
-      );
+      String sAlias = alias.isEmpty ? ' ---' : '\n  ${alias.join('\n')}';
+      String sTasks = task.isEmpty ? ' ---' : '\n  ${task.join('\n')}';
+      String sUsers = users.isEmpty ? ' ---' : '\n  ${users.join('\n')}';
+      Widget listBody = SizedBox(
+          width: screen.width - 50,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                  child: Text('\n${Globals.weekDays[tp.timeStart.weekday]}. den'
+                      ' ${tp.timeStart.day}.${tp.timeStart.month}.${tp.timeStart.year}')),
+              Center(
+                  heightFactor: 2,
+                  child: Text(
+                      currentStatus == TrackingStatus.standing
+                          ? 'Halten'
+                          : 'Fahren',
+                      style: const TextStyle(letterSpacing: 2, fontSize: 20))),
+              Center(
+                  heightFactor: 1.5,
+                  child: Text(
+                      currentStatus == TrackingStatus.standing
+                          ? duration
+                          : '~${(GPS.distanceoverTrackList(runningTrackPoints) / 10).round() / 100}km',
+                      style: const TextStyle(letterSpacing: 2, fontSize: 15))),
+              Center(
+                  child: Text(
+                      '${tp.timeStart.hour}:${tp.timeStart.minute} - ${tp.timeEnd.hour}:${tp.timeEnd.minute}')),
+              AppWidgets.divider(),
+              Text('Alias: $sAlias', softWrap: true),
+              Text(
+                  '\nOSM: "${ModelTrackPoint.pendingAddress.trim().isEmpty ? '---' : ModelTrackPoint.pendingAddress}"',
+                  softWrap: true),
+              AppWidgets.divider(),
+              Text('Personal: $sUsers'),
+              Text('\nAufgaben: $sTasks', softWrap: true),
+              AppWidgets.divider(),
+              Text('Notizen: $notes')
+            ],
+          ));
+
+      var iconEdit = IconButton(
+          icon: const Icon(size: 30, Icons.edit_location),
+          onPressed: () {
+            ModelTrackPoint.editTrackPoint = ModelTrackPoint.pendingTrackPoint;
+            Navigator.pushNamed(context, AppRoutes.editTrackingTasks.route);
+          });
+
+      var iconTrigger = IconButton(
+          icon: Icon(
+              size: 30,
+              SharedLoader.instance.statusTriggered
+                  ? Icons.drive_eta
+                  : Icons.drive_eta_outlined),
+          onPressed: () {
+            SharedLoader.instance.triggerStatus();
+            setState(() {});
+          });
+
+      var action = currentStatus == TrackingStatus.standing
+          ? Column(children: [
+              const Text('\n'),
+              iconEdit,
+              const Text('\n'),
+              AppWidgets.divider(),
+              const Text('\n'),
+              iconTrigger
+            ])
+          : Column(children: [iconEdit]);
 
       ///
       /// create widget
       ///
       ///
+      return SizedBox(
+          height: screen.height,
+          width: screen.width,
+          child: Row(children: [SizedBox(width: 50, child: action), listBody]));
+      /*
       return ListTile(
-          leading: IconButton(
-              icon: const Icon(size: 40, Icons.edit_location),
-              onPressed: () {
-                ModelTrackPoint.editTrackPoint =
-                    ModelTrackPoint.pendingTrackPoint;
-                Navigator.pushNamed(context, AppRoutes.editTrackingTasks.route);
-              }),
+          leading: SizedBox(width: 55, height: 150, child: action),
           title: listBody);
+          */
     } catch (e, stk) {
       logger.warn(e.toString());
       return Text('$e \n$stk');
