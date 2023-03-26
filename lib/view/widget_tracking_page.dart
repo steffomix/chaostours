@@ -356,14 +356,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
           onPressed: () {
             Cache cache = Cache.instance;
             cache.triggerStatus();
-            cache
-                .saveForeGround(
-                    trigger: cache.statusTriggered,
-                    trackPoints: cache.trackPointData,
-                    activeTp: cache.activeTrackPoint)
-                .then((_) {
-              setState(() {});
-            });
+            setState(() {});
           });
 
       var action = currentStatus == TrackingStatus.standing

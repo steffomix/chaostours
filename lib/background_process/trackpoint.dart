@@ -103,6 +103,11 @@ class TrackPoint {
     // load foreground data
     await cache.loadForeGround();
 
+    var t = cache.statusTriggered;
+    // reset forground data as soon as possible
+    // to reduce critical window
+    await cache.saveForeGround(trigger: false, trackPoints: [], activeTp: '');
+
     /// parse status from json
     _status = cache.status;
 
@@ -168,6 +173,7 @@ class TrackPoint {
           /// if this area is not restricted
           /// we reuse this list to update lastVisited
           List<ModelAlias> aliasList = [];
+          await ModelAlias.open();
           for (int id in newEntry.idAlias) {
             var alias = ModelAlias.getAlias(id);
             if (alias.deleted) {
@@ -229,7 +235,10 @@ class TrackPoint {
       } else if (Globals.osmLookupCondition == OsmLookup.never) {
         cache.address = '';
       }
-
+    } catch (e, stk) {
+      logger.error(e.toString(), stk);
+    }
+    try {
       /// save status and gpsPoints for next session and foreground live tracking view
       await cache.saveBackground(
           status: _status,
@@ -237,13 +246,8 @@ class TrackPoint {
           smoothGps: smoothGps,
           lastGps: gps,
           address: cache.address);
-
-      await cache.saveForeGround(
-          trigger: cache.statusTriggered,
-          trackPoints: cache.trackPointData,
-          activeTp: cache.activeTrackPoint);
     } catch (e, stk) {
-      logger.fatal(e.toString(), stk);
+      logger.error(e.toString(), stk);
     }
   }
 
@@ -263,7 +267,6 @@ class TrackPoint {
       }
     }
     Cache.instance.calcGpsPoints.addAll(gpsList);
-    var trigger = Cache.instance.statusTriggered;
 
     /// status change triggered by user
     if ((_status == TrackingStatus.standing ||

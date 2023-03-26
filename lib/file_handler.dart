@@ -57,7 +57,7 @@ class FileHandler {
         ? filename.toLowerCase()
         : '${filename.toLowerCase()}.tsv';
     f = join((await appDir).path, f);
-    logger.log('request access to File $f');
+    //logger.log('request access to File $f');
     File file = File(f);
     try {
       var s = await file.readAsString();

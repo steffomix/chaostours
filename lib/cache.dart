@@ -26,8 +26,8 @@ enum JsonKeys {
 class Cache {
   static Logger logger = Logger.logger<Cache>();
   Cache._();
-  factory Cache() => _instance ??= Cache._();
   static Cache? _instance;
+  //factory Cache() => _instance ??= Cache._();
   static Cache get instance => _instance ??= Cache._();
 
   ///
@@ -35,7 +35,7 @@ class Cache {
   ///
   List<String> trackPointData = [];
   String activeTrackPoint = '';
-  bool _triggerStatus = true;
+  bool _triggerStatus = false;
   bool get statusTriggered => _triggerStatus;
   void triggerStatus() => _triggerStatus = true;
   void triggerStatusExecuted() => _triggerStatus = false;
@@ -67,16 +67,19 @@ class Cache {
         while (_listening) {
           try {
             logger.log('load background cache');
-            await instance.loadBackground();
+            await loadBackground();
           } catch (e, stk) {
             logger.error('load background cache: ${e.toString()}', stk);
           }
           try {
             logger.log('save foreground cache');
-            await instance.saveForeGround(
-                trigger: statusTriggered,
+            var i = Cache.instance;
+            var i2 = instance;
+            await saveForeGround(
+                trigger: _triggerStatus,
                 trackPoints: trackPointData,
                 activeTp: activeTrackPoint);
+            _triggerStatus = false;
           } catch (e, stk) {
             logger.error('load foreground cache: ${e.toString()}', stk);
           }
@@ -103,11 +106,8 @@ class Cache {
       {required bool trigger,
       required List<String> trackPoints,
       required String activeTp}) async {
-    if (trigger == true) {
-      logger.log('trigger');
-    }
     Map<String, dynamic> jsonObject = {
-      JsonKeys.fgTriggerStatus.name: '1', //trigger ? '1' : '0',
+      JsonKeys.fgTriggerStatus.name: trigger ? '1' : '0',
       JsonKeys.fgTrackPointUpdates.name: trackPoints,
       JsonKeys.fgActiveTrackPoint.name: activeTp
     };
@@ -128,7 +128,6 @@ class Cache {
 
       /// trigger status
       try {
-        var test = json[JsonKeys.fgTriggerStatus.name];
         _triggerStatus =
             (json[JsonKeys.fgTriggerStatus.name] ?? '0') == '1' ? true : false;
       } catch (e, stk) {
@@ -165,7 +164,6 @@ class Cache {
     try {
       Map<String, dynamic> jsonObject = {
         JsonKeys.bgStatus.name: status.name,
-        JsonKeys.fgTriggerStatus.name: statusTriggered ? '1' : '0',
         JsonKeys.bgGpsPoints.name:
             gpsPoints.map((e) => e.toSharedString()).toList(),
         JsonKeys.bgCalcGpsPoints.name:
@@ -187,7 +185,6 @@ class Cache {
   Future<void> loadBackground() async {
     Map<String, dynamic> json = {
       JsonKeys.bgStatus.name: TrackingStatus.none.name,
-      JsonKeys.fgTriggerStatus.name: '0',
       JsonKeys.bgGpsPoints.name: [],
       JsonKeys.bgCalcGpsPoints.name: [],
       JsonKeys.bgSmoothGpsPoints.name: [],
@@ -207,16 +204,6 @@ class Cache {
       } catch (e, stk) {
         logger.error(
             'read json status ${json[JsonKeys.bgStatus.name]}: ${e.toString()}',
-            stk);
-      }
-
-      /// triggerStatus
-      try {
-        _triggerStatus =
-            (json[JsonKeys.fgTriggerStatus.name] ?? '0') == '1' ? true : false;
-      } catch (e, stk) {
-        logger.error(
-            'read json triggerStatus ${json[JsonKeys.fgTriggerStatus.name]}: ${e.toString()}',
             stk);
       }
 
