@@ -73,13 +73,10 @@ class Cache {
           }
           try {
             logger.log('save foreground cache');
-            var i = Cache.instance;
-            var i2 = instance;
             await saveForeGround(
                 trigger: _triggerStatus,
                 trackPoints: trackPointData,
                 activeTp: activeTrackPoint);
-            _triggerStatus = false;
           } catch (e, stk) {
             logger.error('load foreground cache: ${e.toString()}', stk);
           }

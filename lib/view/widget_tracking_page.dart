@@ -2,8 +2,10 @@ import 'package:chaostours/main.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter_osm_plugin/flutter_osm_plugin.dart' as osm;
 //
 import 'package:chaostours/logger.dart';
+import 'package:chaostours/view/widget_disposed.dart';
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/file_handler.dart';
 import 'package:chaostours/background_process/trackpoint.dart';
@@ -22,14 +24,8 @@ import 'package:chaostours/globals.dart';
 import 'package:chaostours/screen.dart';
 
 enum TrackingPageDisplayMode {
-  /// checkPermissions
-  checkPermissions,
-
-  /// no gps signals yet
-  waitingForGPS,
-
   /// shows gps list
-  gpsList,
+  live,
 
   /// trackpoints from current location
   lastVisited,
@@ -38,7 +34,7 @@ enum TrackingPageDisplayMode {
   recentTrackPoints,
 
   /// display task checkboxes and notes input;
-  editTasks;
+  gps;
 }
 
 class WidgetTrackingPage extends StatefulWidget {
@@ -64,6 +60,11 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   static TextEditingController _controller =
       TextEditingController(text: ModelTrackPoint.pendingTrackPoint.notes);
 
+  /// osm
+  int circleId = 0;
+  bool _widgetActive = false;
+  osm.MapController mapController = osm.MapController();
+
   /// recent or saved trackponts
   static List<GPS> runningTrackPoints = [];
 
@@ -72,15 +73,19 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
   @override
   void initState() {
+    _widgetActive = true;
     EventManager.listen<EventOnAppTick>(onTick);
     EventManager.listen<EventOnAddressLookup>(onAddressLookup);
+    EventManager.listen<EventOnWidgetDisposed>(osmGpsPoints);
     super.initState();
   }
 
   @override
   void dispose() {
+    _widgetActive = false;
     EventManager.remove<EventOnAppTick>(onTick);
     EventManager.remove<EventOnAddressLookup>(onAddressLookup);
+    EventManager.remove<EventOnWidgetDisposed>(osmGpsPoints);
     super.dispose();
   }
 
@@ -103,30 +108,28 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     } else {
       switch (displayMode) {
         case TrackingPageDisplayMode.recentTrackPoints:
-          list = renderRecentTrackPointList(
-              context, ModelTrackPoint.recentTrackPoints());
-
-          body = renderListViewBody(context, list);
+          body = ListView(
+              children: renderRecentTrackPointList(
+                  context, ModelTrackPoint.recentTrackPoints()));
           break;
 
         /// tasks mode
-        case TrackingPageDisplayMode.editTasks:
-          list = renderTasks(context);
-
-          body = renderListViewBody(context, list);
+        case TrackingPageDisplayMode.gps:
+          body = renderOSM(context);
           break;
 
         /// last visited mode
         case TrackingPageDisplayMode.lastVisited:
           GPS gps = runningTrackPoints.first;
-          list = renderRecentTrackPointList(
-              context, ModelTrackPoint.lastVisited(gps));
-
-          body = renderListViewBody(context, list);
+          body = ListView(
+              children: renderRecentTrackPointList(
+                  context, ModelTrackPoint.lastVisited(gps)));
           break;
 
         /// recent mode
         default:
+          body = renderActiveTrackPoint(context);
+        /*
           GPS lastPoint = runningTrackPoints.first;
           list = runningTrackPoints.map((gps) {
             int h = gps.time.hour;
@@ -149,11 +152,104 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
               0, ListTile(leading: Text('Gesamt Distanz: $allDist km')));
 
           body = renderListViewBody(context, list);
+          */
       }
     }
 
     return AppWidgets.scaffold(context,
         body: body, navBar: bottomNavBar(context));
+  }
+
+  Widget renderOSM(BuildContext context) {
+    return osm.OSMFlutter(
+      mapIsLoading: const WidgetDisposed(),
+      androidHotReloadSupport: true,
+      controller: mapController,
+      isPicker: false,
+      initZoom: 17,
+      minZoomLevel: 8,
+      maxZoomLevel: 19,
+      stepZoom: 1.0,
+    );
+  }
+
+  Future<void> osmGpsPoints(EventOnWidgetDisposed e) async {
+    await mapController.removeAllCircle();
+
+    for (var alias in ModelAlias.getAll()) {
+      try {
+        Color color;
+        if (alias.status == AliasStatus.public) {
+          color = AppColors.aliasPubplic.color;
+        } else if (alias.status == AliasStatus.privat) {
+          color = AppColors.aliasPrivate.color;
+        } else {
+          color = AppColors.aliasRestricted.color;
+        }
+
+        mapController.drawCircle(osm.CircleOSM(
+          key: "circle${++circleId}",
+          centerPoint: osm.GeoPoint(latitude: alias.lat, longitude: alias.lon),
+          radius: alias.radius.toDouble(),
+          color: color,
+          strokeWidth: 10,
+        ));
+      } catch (e, stk) {
+        logger.error(e.toString(), stk);
+        await Future.delayed(const Duration(seconds: 1));
+      }
+    }
+
+    /// draw gps points
+    try {
+      String storage = FileHandler.combinePath(
+          FileHandler.storages[Storages.appInternal]!,
+          FileHandler.backgroundCacheFile);
+      String jsonString = await FileHandler.read(storage);
+
+      Map<String, dynamic> json = {JsonKeys.bgGpsPoints.name: []};
+      try {
+        json = jsonDecode(jsonString);
+      } catch (e, stk) {
+        logger.error(e.toString(), stk);
+      }
+
+      for (String s in json[JsonKeys.bgGpsPoints.name] ?? []) {
+        GPS gps = GPS.toSharedObject(s);
+
+        mapController.drawCircle(osm.CircleOSM(
+          key: "circle${++circleId}",
+          centerPoint: osm.GeoPoint(latitude: gps.lat, longitude: gps.lon),
+          radius: 2,
+          color: Colors.grey,
+          strokeWidth: 10,
+        ));
+      }
+      for (String s in json[JsonKeys.bgSmoothGpsPoints.name] ?? []) {
+        GPS gps = GPS.toSharedObject(s);
+
+        mapController.drawCircle(osm.CircleOSM(
+          key: "circle${++circleId}",
+          centerPoint: osm.GeoPoint(latitude: gps.lat, longitude: gps.lon),
+          radius: 3,
+          color: Colors.black,
+          strokeWidth: 10,
+        ));
+      }
+      for (String s in json[JsonKeys.bgCalcGpsPoints.name] ?? []) {
+        GPS gps = GPS.toSharedObject(s);
+
+        mapController.drawCircle(osm.CircleOSM(
+          key: "circle${++circleId}",
+          centerPoint: osm.GeoPoint(latitude: gps.lat, longitude: gps.lon),
+          radius: 4,
+          color: Colors.red,
+          strokeWidth: 10,
+        ));
+      }
+    } catch (e, stk) {
+      logger.error(e.toString(), stk);
+    }
   }
 
   BottomNavigationBar bottomNavBar(BuildContext context) {
@@ -163,25 +259,25 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         backgroundColor: AppColors.yellow.color,
         fixedColor: AppColors.black.color,
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.map), label: 'GPS'),
+          BottomNavigationBarItem(icon: Icon(Icons.near_me), label: 'Live'),
           BottomNavigationBarItem(
-              icon: Icon(Icons.recent_actors), label: 'Zul. besucht'),
-          BottomNavigationBarItem(icon: Icon(Icons.task), label: 'Aufgaben'),
-          BottomNavigationBarItem(icon: Icon(Icons.timer), label: 'Chronol.'),
+              icon: Icon(Icons.recent_actors), label: 'Lokal'),
+          BottomNavigationBarItem(icon: Icon(Icons.timer), label: 'Zeit'),
+          BottomNavigationBarItem(icon: Icon(Icons.map), label: 'GPS'),
         ],
         onTap: (int id) {
           switch (id) {
-            case 1:
-              displayMode = TrackingPageDisplayMode.recentTrackPoints;
-              break;
-            case 2:
-              displayMode = TrackingPageDisplayMode.editTasks;
-              break;
-            case 3:
+            case 1: // 2.
               displayMode = TrackingPageDisplayMode.lastVisited;
               break;
-            default:
-              displayMode = TrackingPageDisplayMode.gpsList;
+            case 2: // 3.
+              displayMode = TrackingPageDisplayMode.recentTrackPoints;
+              break;
+            case 3: // 4.
+              displayMode = TrackingPageDisplayMode.gps;
+              break;
+            default: // 5.
+              displayMode = TrackingPageDisplayMode.live;
           }
           _bottomBarIndex = id;
           setState(() {});
@@ -432,34 +528,6 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     }
 
     return listItems.reversed.toList();
-  }
-
-  List<Widget> renderTasks(BuildContext context) {
-    List<int> referenceList = ModelTrackPoint.pendingTrackPoint.idTask;
-    List<Widget> list = [
-      Container(
-          padding: const EdgeInsets.all(10),
-          child: TextField(
-              decoration: const InputDecoration(
-                  label: Text('Notizen'), contentPadding: EdgeInsets.all(2)),
-              //expands: true,
-              maxLines: null,
-              minLines: 5,
-              controller: _controller,
-              onChanged: (String? s) =>
-                  ModelTrackPoint.pendingTrackPoint.notes = s ?? '')),
-      AppWidgets.divider(),
-      ...ModelTask.getAll().map((ModelTask task) {
-        return editTasks(
-            context,
-            CheckboxController(
-                idReference: task.id,
-                referenceList: referenceList,
-                title: task.task,
-                subtitle: task.notes));
-      }).toList()
-    ];
-    return list;
   }
 
   Widget editTasks(BuildContext context, CheckboxController model) {

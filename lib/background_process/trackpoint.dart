@@ -100,12 +100,12 @@ class TrackPoint {
 
     Cache cache = Cache.instance;
     await cache.loadBackground();
-    // load foreground data
+
+    /// load foreground data
     await cache.loadForeGround();
 
-    var t = cache.statusTriggered;
-    // reset forground data as soon as possible
-    // to reduce critical window
+    /// reset forground data as soon as possible
+    /// to reduce critical window
     await cache.saveForeGround(trigger: false, trackPoints: [], activeTp: '');
 
     /// parse status from json
@@ -273,7 +273,6 @@ class TrackPoint {
             _status == TrackingStatus.none) &&
         Cache.instance.statusTriggered) {
       _status = TrackingStatus.moving;
-      Cache.instance.triggerStatusExecuted();
       return;
     }
 
