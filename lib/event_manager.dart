@@ -33,6 +33,8 @@ class EventOnTrackPoint extends EventOn {
   EventOnTrackPoint(this.tp);
 }
 
+class EventOnCacheLoaded extends EventOn {}
+
 class EventOnGPS extends EventOn {
   final GPS gps;
   EventOnGPS(this.gps);

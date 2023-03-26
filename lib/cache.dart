@@ -80,6 +80,7 @@ class Cache {
           } catch (e, stk) {
             logger.error('load foreground cache: ${e.toString()}', stk);
           }
+          EventManager.fire<EventOnCacheLoaded>(EventOnCacheLoaded());
           await Future.delayed(Globals.trackPointInterval);
         }
       });

@@ -47,8 +47,7 @@ class WidgetTrackingPage extends StatefulWidget {
 class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   static Logger logger = Logger.logger<WidgetTrackingPage>();
 
-  static TrackingPageDisplayMode displayMode =
-      TrackingPageDisplayMode.recentTrackPoints;
+  TrackingPageDisplayMode displayMode = TrackingPageDisplayMode.live;
   static int _bottomBarIndex = 0;
 
   String currentPermissionCheck = '';
@@ -77,6 +76,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     EventManager.listen<EventOnAppTick>(onTick);
     EventManager.listen<EventOnAddressLookup>(onAddressLookup);
     EventManager.listen<EventOnWidgetDisposed>(osmGpsPoints);
+    EventManager.listen<EventOnCacheLoaded>(onCacheLoaded);
     super.initState();
   }
 
@@ -86,7 +86,14 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     EventManager.remove<EventOnAppTick>(onTick);
     EventManager.remove<EventOnAddressLookup>(onAddressLookup);
     EventManager.remove<EventOnWidgetDisposed>(osmGpsPoints);
+    EventManager.remove<EventOnCacheLoaded>(onCacheLoaded);
     super.dispose();
+  }
+
+  void onCacheLoaded(EventOnCacheLoaded e) {
+    if (displayMode == TrackingPageDisplayMode.gps) {
+      osmGpsPoints(EventOnWidgetDisposed());
+    }
   }
 
   Widget renderListViewBody(BuildContext context, List<Widget> list) {
@@ -294,7 +301,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   }
 
   Future<void> onTick(EventOnAppTick tick) async {
-    if (!mounted) {
+    if (!mounted || displayMode == TrackingPageDisplayMode.gps) {
       return;
     }
     Cache shared = Cache.instance;
