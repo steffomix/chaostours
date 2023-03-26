@@ -8,9 +8,9 @@ import 'package:path_provider/path_provider.dart' as pp;
 import 'package:chaostours/file_handler.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/globals.dart';
-import 'package:chaostours/shared.dart';
+import 'package:chaostours/cache.dart';
 import 'package:chaostours/view/app_widgets.dart';
-import 'package:chaostours/shared.dart';
+import 'package:chaostours/cache.dart';
 import 'package:confirm_dialog/confirm_dialog.dart';
 
 class WidgetStorageSettings extends StatefulWidget {

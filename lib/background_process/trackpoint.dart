@@ -8,7 +8,7 @@ import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_alias.dart'; // for read only
 import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/logger.dart';
-import 'package:chaostours/shared.dart';
+import 'package:chaostours/cache.dart';
 import 'package:chaostours/app_settings.dart';
 import 'package:chaostours/file_handler.dart';
 
@@ -45,23 +45,12 @@ class TrackPoint {
   TrackingStatus _status = TrackingStatus.none;
   TrackingStatus _oldStatus = TrackingStatus.none;
 
-  /// updates modified trackpoints from foreground task
-  Future<void> updateTrackPointQueue() async {
-    Shared shared = Shared(SharedKeys.updateTrackPointQueue);
-    try {
-      List<String> queue = await shared.loadList() ?? [];
-      for (var row in queue) {
-        ModelTrackPoint tp = ModelTrackPoint.toModel(row);
-        await ModelTrackPoint.update(tp);
-      }
-    } catch (e, stk) {
-      logger.error(e.toString(), stk);
-    }
-    shared.saveList([]);
-  }
-
   void calculateSmoothGps() {
     int smooth = Globals.gpsPointsSmoothCount;
+    if (smooth < 2) {
+      smoothGps.addAll(gpsPoints);
+      return;
+    }
     if (gpsPoints.length <= smooth) {
       return;
     }
@@ -93,11 +82,12 @@ class TrackPoint {
   }
 
   Future<void> startShared({required double lat, required double lon}) async {
-    /// only needed if method runs in foreground
-    gpsPoints.clear();
+    // cache gps
+    // the time can't be too long due to this task gets killed anyway
+    Globals.cacheGpsTime = const Duration(seconds: 30);
 
     /// create gpsPoint
-    GPS gps = GPS(lat, lon);
+    GPS gps = GPS.lastGps = GPS(lat, lon);
 
     // init app
     // await AppLoader.webKey(); // not needed
@@ -108,28 +98,35 @@ class TrackPoint {
       return;
     }
 
-    await ModelTrackPoint.open();
-    SharedLoader shared = SharedLoader.instance;
-    await shared.loadBackground();
-
-    // cache gps
-    // the time can't be too long due to this task gets killed anyway
-    Globals.cacheGpsTime = const Duration(seconds: 30);
-    GPS.lastGps = GPS(lat, lon);
+    Cache cache = Cache.instance;
+    await cache.loadBackground();
+    // load foreground data
+    await cache.loadForeGround();
 
     /// parse status from json
-    _status = shared.status;
+    _status = cache.status;
+
+    await ModelTrackPoint.open();
 
     /// update trackpoints
-    updateTrackPointQueue();
+    try {
+      for (var row in Cache.instance.trackPointData) {
+        await ModelTrackPoint.update(ModelTrackPoint.toModel(row));
+      }
+      Cache.instance.trackPointData.clear();
+    } catch (e, stk) {
+      logger.error('update trackpoints: ${e.toString()}', stk);
+    }
 
+    /// only needed if method runs in foreground
+    gpsPoints.clear();
     try {
       gpsPoints.add(gps);
-      gpsPoints.addAll(shared.gpsPoints);
+      gpsPoints.addAll(cache.gpsPoints);
 
       calculateSmoothGps();
 
-      if (shared.status == TrackingStatus.none) {
+      if (cache.status == TrackingStatus.none) {
         /// app start, no status yet
         _oldStatus = _status = TrackingStatus.standing;
       }
@@ -211,14 +208,14 @@ class TrackPoint {
           /// remember address from detecting standing
           /// to be used in createModelTrackPoint on next status change
           if (Globals.osmLookupCondition != OsmLookup.never) {
-            shared.address = (await Address(gps).lookupAddress()).toString();
+            cache.address = (await Address(gps).lookupAddress()).toString();
           }
         } else {
           /// new status is standing
           /// remember address from detecting standing
           /// to be used in createModelTrackPoint on next status change
           if (Globals.osmLookupCondition == OsmLookup.onStatus) {
-            shared.address = (await Address(gps).lookupAddress()).toString();
+            cache.address = (await Address(gps).lookupAddress()).toString();
           }
         }
 
@@ -228,18 +225,23 @@ class TrackPoint {
         gpsPoints.add(gps);
       }
       if (Globals.osmLookupCondition == OsmLookup.always) {
-        shared.address = (await Address(gps).lookupAddress()).toString();
+        cache.address = (await Address(gps).lookupAddress()).toString();
       } else if (Globals.osmLookupCondition == OsmLookup.never) {
-        shared.address = '';
+        cache.address = '';
       }
 
       /// save status and gpsPoints for next session and foreground live tracking view
-      await shared.saveBackground(
+      await cache.saveBackground(
           status: _status,
           gpsPoints: gpsPoints,
           smoothGps: smoothGps,
           lastGps: gps,
-          address: shared.address);
+          address: cache.address);
+
+      await cache.saveForeGround(
+          trigger: cache.statusTriggered,
+          trackPoints: cache.trackPointData,
+          activeTp: cache.activeTrackPoint);
     } catch (e, stk) {
       logger.fatal(e.toString(), stk);
     }
@@ -248,7 +250,7 @@ class TrackPoint {
   void trackPoint() {
     // get gpsPoints of globals time range
     // to measure movement
-    SharedLoader.instance.calcGpsPoints.clear();
+    Cache.instance.calcGpsPoints.clear();
     List<GPS> gpsList = [];
     DateTime treshold = DateTime.now().subtract(Globals.timeRangeTreshold);
     bool fullTresholdRange = false;
@@ -260,11 +262,22 @@ class TrackPoint {
         break;
       }
     }
-    // gps points min count
+    Cache.instance.calcGpsPoints.addAll(gpsList);
+    var trigger = Cache.instance.statusTriggered;
+
+    /// status change triggered by user
+    if ((_status == TrackingStatus.standing ||
+            _status == TrackingStatus.none) &&
+        Cache.instance.statusTriggered) {
+      _status = TrackingStatus.moving;
+      Cache.instance.triggerStatusExecuted();
+      return;
+    }
+
+    /// gps points min count
     if (!fullTresholdRange || gpsList.length < 3) {
       return;
     }
-    SharedLoader.instance.calcGpsPoints.addAll(gpsList);
 
     /// check if we started moving
     if (_status == TrackingStatus.standing || _status == TrackingStatus.none) {
@@ -288,27 +301,25 @@ class TrackPoint {
     List<int> idAlias = [];
 
     try {
-      /// load user inputs
-      Shared shared = Shared(SharedKeys.activeTrackPoint);
-      String? tpRow = await shared.loadString();
-      if (tpRow == null) {
-        logger.warn('no trackPoint Data found in SharedKeys.trackPointDown');
+      if (Cache.instance.activeTrackPoint.isEmpty) {
+        logger.warn('no cached trackPoint Data found');
       } else {
-        ModelTrackPoint tps = ModelTrackPoint.toSharedModel(tpRow);
+        ModelTrackPoint tps =
+            ModelTrackPoint.toSharedModel(Cache.instance.activeTrackPoint);
         notes = tps.notes;
         idTask = tps.idTask;
         idAlias = tps.idAlias;
+        Cache.instance.activeTrackPoint = '';
       }
     } catch (e, stk) {
-      logger.error('load shared data for trackPoint: ${e.toString()}', stk);
+      logger.error('load activetrackPoint cache: ${e.toString()}', stk);
     }
     ModelTrackPoint tp = ModelTrackPoint(
         gps: gps,
         trackPoints: gpsPoints.map((e) => e).toList(),
         idAlias: idAlias,
         timeStart: gpsPoints.last.time);
-    tp.address =
-        SharedLoader.instance.address; // should be loaded at this point
+    tp.address = Cache.instance.address; // should be loaded at this point
     tp.status = _oldStatus;
     tp.timeEnd = DateTime.now();
     tp.idTask = idTask;

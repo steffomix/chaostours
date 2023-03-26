@@ -9,7 +9,7 @@ import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/file_handler.dart';
 import 'package:chaostours/background_process/tracking.dart';
-import 'package:chaostours/shared.dart';
+import 'package:chaostours/cache.dart';
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/permission_checker.dart';
@@ -107,7 +107,7 @@ class AppLoader {
 
   static Future<void> ticks() async {
     logger.important('start app-tick');
-    SharedLoader.instance.listen();
+    Cache.instance.listen();
     _appTick();
     _addressTick();
     logger.important('logger listen on app-tick ready');

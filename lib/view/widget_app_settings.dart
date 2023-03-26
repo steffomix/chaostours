@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 
 import 'package:chaostours/globals.dart';
 import 'package:chaostours/view/app_widgets.dart';
-import 'package:chaostours/shared.dart';
+import 'package:chaostours/cache.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/checkbox_controller.dart';
@@ -38,6 +38,8 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
   TextEditingController? txTimeRangeTreshold;
   TextEditingController? txWaitTimeAfterStatusChanged;
   TextEditingController? txAppTickDuration;
+  TextEditingController? txGpsSmoothCount;
+  TextEditingController? txGpsMaxSpeed;
 
   @override
   void dispose() {
@@ -324,19 +326,6 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                 'müssen sie sich also mit einer gewissen Mindestgeschwindigkeit fortbewegen, die durch die durch die '
                 '"Distanzschwellwert" / "Zeitschwellwert" eingestellt werden kann'),
 
-        /// waitTimeAfterStatusChanged
-        numberField(
-            context: context,
-            controller: txWaitTimeAfterStatusChanged ??= TextEditingController(
-                text: AppSettings
-                    .settings[AppSettings.waitTimeAfterStatusChanged]),
-            sharedKey: AppSettings.waitTimeAfterStatusChanged,
-            minValue: 0,
-            maxValue: 0,
-            title: 'Wartezeit nach Statuswechsel',
-            description: 'Die Zeit in SEKUNDEN, in der nach einem Statuswechsel'
-                ' die GPS Hintergrund Berechnungen pausieren.'),
-
         /// appTickDuration
         numberField(
             context: context,
@@ -351,6 +340,33 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                 'ob der GPS Hintergrundprozess ein neues GPS Signal erstellt '
                 'oder einen Statuswechsel festgestellt hat und die Live Tracking Seite '
                 'aktualisiert'),
+
+        /// gpsMaxSpeed
+        numberField(
+            context: context,
+            controller: txGpsMaxSpeed ??= TextEditingController(
+                text: AppSettings.settings[AppSettings.gpsMaxSpeed]),
+            sharedKey: AppSettings.gpsMaxSpeed,
+            minValue: 5,
+            maxValue: 0,
+            title: 'Grobe GPS ausrutscher ignorieren',
+            description:
+                'Bei der GPS Messung kann es zu groben ausrutschern kommen. '
+                'Diese Funktion ingnoriert GPS Punkte, die unmöglich in der gegebenen maximimalen '
+                'GESCHWINDIGKEIT IN KM/H erreicht werden können.'),
+
+        /// gpsPointsSmoothCount
+        numberField(
+            context: context,
+            controller: txGpsSmoothCount ??= TextEditingController(
+                text: AppSettings.settings[AppSettings.gpsPointsSmoothCount]),
+            sharedKey: AppSettings.gpsPointsSmoothCount,
+            minValue: 0,
+            maxValue: 0,
+            title: 'GPS feine ungenauigkeit kompensieren',
+            description:
+                'Bei der GPS Messung kann es zu kleinen Ungenauigkeiten kommen. '
+                'Diese Funktion berechnet aus der ANZAHL der gegebenen GPS Punkte den Durchschnittswert.'),
 
         ///
       ]),

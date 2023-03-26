@@ -19,25 +19,30 @@ enum JsonKeys {
   bgAddress,
   // forground messages for background
   fgTriggerStatus,
-  fgTrackPointUpdates;
+  fgTrackPointUpdates,
+  fgActiveTrackPoint;
 }
 
-class SharedLoader {
-  static Logger logger = Logger.logger<SharedLoader>();
-  factory SharedLoader() => _instance ??= SharedLoader._();
-  static SharedLoader? _instance;
-  static SharedLoader get instance => _instance ??= SharedLoader._();
-  static int nextId = 0;
-  int id = (nextId++);
-  static bool _listening = false;
+class Cache {
+  static Logger logger = Logger.logger<Cache>();
+  Cache._();
+  factory Cache() => _instance ??= Cache._();
+  static Cache? _instance;
+  static Cache get instance => _instance ??= Cache._();
 
+  ///
   /// foreground values
-  bool _triggerStatus = false;
+  ///
+  List<String> trackPointData = [];
+  String activeTrackPoint = '';
+  bool _triggerStatus = true;
   bool get statusTriggered => _triggerStatus;
-  void triggerStatus() {
-    _triggerStatus = true;
-  }
+  void triggerStatus() => _triggerStatus = true;
+  void triggerStatusExecuted() => _triggerStatus = false;
 
+  ///
+  /// backround values
+  ///
   GPS? lastGps;
   // gps list from between trackpoints
   List<GPS> gpsPoints = [];
@@ -51,31 +56,105 @@ class SharedLoader {
   List<ModelTrackPoint> recentTrackPoints = [];
   List<ModelTrackPoint> localTrackPoints = [];
 
-  SharedLoader._();
-
-  /// returns if listening
+  /// forground interval
+  /// runs together with background trackPointInterval
+  static bool _listening = false;
+  void stopListen() => _listening = false;
   bool listen() {
     if (!_listening) {
       _listening = true;
       Future.microtask(() async {
         while (_listening) {
           try {
+            logger.log('load background cache');
             await instance.loadBackground();
-            await Future.delayed(Globals.trackPointInterval);
           } catch (e, stk) {
-            logger.error(e.toString(), stk);
+            logger.error('load background cache: ${e.toString()}', stk);
           }
+          try {
+            logger.log('save foreground cache');
+            await instance.saveForeGround(
+                trigger: statusTriggered,
+                trackPoints: trackPointData,
+                activeTp: activeTrackPoint);
+          } catch (e, stk) {
+            logger.error('load foreground cache: ${e.toString()}', stk);
+          }
+          await Future.delayed(Globals.trackPointInterval);
         }
       });
     }
     return _listening;
   }
 
-  void stopListen() {
-    _listening = false;
+  Future<void> _save({required String file, required String data}) async {
+    String storage = FileHandler.combinePath(
+        FileHandler.storages[Storages.appInternal]!, file);
+    await FileHandler.write(storage, data);
   }
 
-  Future<void> saveForeGround() async {}
+  Future<String> _load({required String file}) async {
+    String storage = FileHandler.combinePath(
+        FileHandler.storages[Storages.appInternal]!, file);
+    return await FileHandler.read(storage);
+  }
+
+  Future<void> saveForeGround(
+      {required bool trigger,
+      required List<String> trackPoints,
+      required String activeTp}) async {
+    if (trigger == true) {
+      logger.log('trigger');
+    }
+    Map<String, dynamic> jsonObject = {
+      JsonKeys.fgTriggerStatus.name: '1', //trigger ? '1' : '0',
+      JsonKeys.fgTrackPointUpdates.name: trackPoints,
+      JsonKeys.fgActiveTrackPoint.name: activeTp
+    };
+    String jsonString = jsonEncode(jsonObject);
+    logger.log('save forground json: $jsonString');
+    await _save(file: FileHandler.foregroundCacheFile, data: jsonString);
+  }
+
+  Future<void> loadForeGround() async {
+    Map<String, dynamic> json = {
+      JsonKeys.fgTriggerStatus.name: false,
+      JsonKeys.fgTrackPointUpdates.name: <String>[],
+      JsonKeys.fgActiveTrackPoint.name: ''
+    };
+    try {
+      String data = await _load(file: FileHandler.foregroundCacheFile);
+      json = jsonDecode(data);
+
+      /// trigger status
+      try {
+        var test = json[JsonKeys.fgTriggerStatus.name];
+        _triggerStatus =
+            (json[JsonKeys.fgTriggerStatus.name] ?? '0') == '1' ? true : false;
+      } catch (e, stk) {
+        logger.error('load trigger status: ${e.toString()}', stk);
+      }
+
+      /// update trackPoints
+      try {
+        trackPointData =
+            (json[JsonKeys.fgTrackPointUpdates.name] as List<dynamic>)
+                .map((e) => e.toString())
+                .toList();
+      } catch (e, stk) {
+        logger.error('load update trackpoints: ${e.toString()}', stk);
+      }
+
+      /// active trackpoint
+      try {
+        activeTrackPoint = json[JsonKeys.fgActiveTrackPoint.name] ?? '';
+      } catch (e, stk) {
+        logger.error('load update trackpoints: ${e.toString()}', stk);
+      }
+    } catch (e, stk) {
+      logger.error('loadForeground: ${e.toString()}', stk);
+    }
+  }
 
   Future<void> saveBackground(
       {required TrackingStatus status,
@@ -86,7 +165,7 @@ class SharedLoader {
     try {
       Map<String, dynamic> jsonObject = {
         JsonKeys.bgStatus.name: status.name,
-        JsonKeys.fgTriggerStatus.name: _triggerStatus ? '1' : '0',
+        JsonKeys.fgTriggerStatus.name: statusTriggered ? '1' : '0',
         JsonKeys.bgGpsPoints.name:
             gpsPoints.map((e) => e.toSharedString()).toList(),
         JsonKeys.bgCalcGpsPoints.name:
@@ -99,9 +178,7 @@ class SharedLoader {
       String jsonString = jsonEncode(jsonObject);
       logger.log('save json:\n$jsonString');
 
-      String storage = FileHandler.combinePath(
-          FileHandler.storages[Storages.appInternal]!, FileHandler.sharedFile);
-      await FileHandler.write(storage, jsonString);
+      await _save(file: FileHandler.backgroundCacheFile, data: jsonString);
     } catch (e, stk) {
       logger.error(e.toString(), stk);
     }
@@ -119,9 +196,7 @@ class SharedLoader {
     };
 
     try {
-      String storage = FileHandler.combinePath(
-          FileHandler.storages[Storages.appInternal]!, FileHandler.sharedFile);
-      String jsonString = await FileHandler.read(storage);
+      String jsonString = await _load(file: FileHandler.backgroundCacheFile);
       logger.log('load json:\n$jsonString');
       json = jsonDecode(jsonString);
 
@@ -138,7 +213,7 @@ class SharedLoader {
       /// triggerStatus
       try {
         _triggerStatus =
-            (json[JsonKeys.fgTriggerStatus.name] ?? '0') == '0' ? false : true;
+            (json[JsonKeys.fgTriggerStatus.name] ?? '0') == '1' ? true : false;
       } catch (e, stk) {
         logger.error(
             'read json triggerStatus ${json[JsonKeys.fgTriggerStatus.name]}: ${e.toString()}',

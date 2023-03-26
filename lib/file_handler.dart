@@ -6,7 +6,7 @@ import 'package:external_path/external_path.dart';
 
 ///
 import 'package:chaostours/logger.dart';
-import 'package:chaostours/shared.dart';
+import 'package:chaostours/cache.dart';
 
 ////
 
@@ -38,7 +38,8 @@ class FileHandler {
   static Storages storageKey = Storages.appInternal;
   static String? storagePath;
 
-  static String sharedFile = 'chaos.json';
+  static String backgroundCacheFile = 'background_cache.json';
+  static String foregroundCacheFile = 'foreground_cache.json';
 
   static Logger logger = Logger.logger<FileHandler>();
   static const lineSep = '\n';
@@ -52,7 +53,9 @@ class FileHandler {
   }
 
   static Future<File> getFile(String filename) async {
-    String f = '${filename.toLowerCase()}.tsv';
+    String f = filename.contains('.')
+        ? filename.toLowerCase()
+        : '${filename.toLowerCase()}.tsv';
     f = join((await appDir).path, f);
     logger.log('request access to File $f');
     File file = File(f);

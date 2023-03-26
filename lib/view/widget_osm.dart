@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
 import 'package:http/http.dart' as http;
-import 'package:chaostours/shared.dart';
+import 'package:chaostours/cache.dart';
 import 'dart:convert';
 import 'package:android_intent_plus/android_intent.dart';
 // import 'package:android_intent_plus/flag.dart';
@@ -485,7 +485,8 @@ class _WidgetOsm extends State<WidgetOsm> {
     /// draw gps points
     try {
       String storage = FileHandler.combinePath(
-          FileHandler.storages[Storages.appInternal]!, FileHandler.sharedFile);
+          FileHandler.storages[Storages.appInternal]!,
+          FileHandler.backgroundCacheFile);
       String jsonString = await FileHandler.read(storage);
 
       Map<String, dynamic> json = {JsonKeys.bgGpsPoints.name: []};

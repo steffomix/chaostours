@@ -1,6 +1,6 @@
 //
 import 'package:chaostours/event_manager.dart';
-import 'package:chaostours/shared.dart';
+import 'package:chaostours/cache.dart';
 
 enum LogLevel {
   verbose(1),

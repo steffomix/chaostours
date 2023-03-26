@@ -8,7 +8,7 @@ import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/file_handler.dart';
 import 'package:chaostours/background_process/trackpoint.dart';
 import 'package:chaostours/util.dart' as util;
-import 'package:chaostours/shared.dart';
+import 'package:chaostours/cache.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_user.dart';
@@ -201,7 +201,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     if (!mounted) {
       return;
     }
-    SharedLoader shared = SharedLoader.instance;
+    Cache shared = Cache.instance;
     if (shared.gpsPoints.isEmpty) {
       return;
     }
@@ -257,9 +257,9 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
             text: ModelTrackPoint.pendingTrackPoint.notes);
       }
 
-      /// write to share user data to background thread
-      await Shared(SharedKeys.activeTrackPoint)
-          .saveString(ModelTrackPoint.pendingTrackPoint.toSharedString());
+      /// write to cache user data for background thread
+      Cache.instance.activeTrackPoint =
+          ModelTrackPoint.pendingTrackPoint.toSharedString();
     }
 
     setState(() {});
@@ -350,12 +350,20 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       var iconTrigger = IconButton(
           icon: Icon(
               size: 30,
-              SharedLoader.instance.statusTriggered
+              Cache.instance.statusTriggered
                   ? Icons.drive_eta
                   : Icons.drive_eta_outlined),
           onPressed: () {
-            SharedLoader.instance.triggerStatus();
-            setState(() {});
+            Cache cache = Cache.instance;
+            cache.triggerStatus();
+            cache
+                .saveForeGround(
+                    trigger: cache.statusTriggered,
+                    trackPoints: cache.trackPointData,
+                    activeTp: cache.activeTrackPoint)
+                .then((_) {
+              setState(() {});
+            });
           });
 
       var action = currentStatus == TrackingStatus.standing

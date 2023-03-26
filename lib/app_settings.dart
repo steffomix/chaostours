@@ -1,4 +1,4 @@
-import 'package:chaostours/shared.dart';
+import 'package:chaostours/cache.dart';
 import 'package:chaostours/globals.dart';
 import 'package:chaostours/logger.dart';
 
@@ -31,11 +31,12 @@ enum AppSettings {
   /// in seconds
   timeRangeTreshold,
 
-  /// in seconds
-  waitTimeAfterStatusChanged,
-
   /// general Tick in seconds
-  appTickDuration;
+  appTickDuration,
+
+  gpsMaxSpeed,
+
+  gpsPointsSmoothCount;
 
   const AppSettings();
 
@@ -61,10 +62,11 @@ enum AppSettings {
     AppSettings.distanceTreshold: Globals.distanceTreshold.toString(), // int
     AppSettings.timeRangeTreshold:
         Globals.timeRangeTreshold.inSeconds.toString(), // int
-    AppSettings.waitTimeAfterStatusChanged:
-        Globals.waitTimeAfterStatusChanged.inSeconds.toString(), // int
     AppSettings.appTickDuration:
-        Globals.appTickDuration.inSeconds.toString() // bool 1|0
+        Globals.appTickDuration.inSeconds.toString(), // bool 1|0
+    AppSettings.gpsMaxSpeed: Globals.gpsMaxSpeed.toString(), // int
+    AppSettings.gpsPointsSmoothCount:
+        Globals.gpsPointsSmoothCount.toString() // int
   };
 
   /// update called in WidgetAppSettings
@@ -161,13 +163,24 @@ enum AppSettings {
 
     try {
       ///
-      Globals.waitTimeAfterStatusChanged = Duration(
-          seconds: int.parse(
-              settings[AppSettings.waitTimeAfterStatusChanged] ?? '300'));
-
-      ///
       Globals.appTickDuration = Duration(
           seconds: int.parse(settings[AppSettings.appTickDuration] ?? '1'));
+    } catch (e, stk) {
+      logger.error(e.toString(), stk);
+    }
+
+    try {
+      ///
+      Globals.gpsMaxSpeed =
+          int.parse(settings[AppSettings.gpsMaxSpeed] ?? '150');
+    } catch (e, stk) {
+      logger.error(e.toString(), stk);
+    }
+
+    try {
+      ///
+      Globals.gpsPointsSmoothCount =
+          int.parse(settings[AppSettings.gpsPointsSmoothCount] ?? '5');
     } catch (e, stk) {
       logger.error(e.toString(), stk);
     }
@@ -252,16 +265,22 @@ enum AppSettings {
               Globals.timeRangeTreshold = Duration(seconds: int.parse(value));
               break;
 
-            /// defaults to Globals.waitTimeAfterStatusChanged
-            case AppSettings.waitTimeAfterStatusChanged:
-              Globals.waitTimeAfterStatusChanged =
-                  Duration(seconds: int.parse(value));
-              break;
-
             /// defaults to Globals.appTickDuration
             case AppSettings.appTickDuration:
               Globals.appTickDuration = Duration(seconds: int.parse(value));
               break;
+
+            /// defaults to Globals.distanceTreshold
+            case AppSettings.gpsMaxSpeed:
+              Globals.gpsMaxSpeed = int.parse(value);
+              break;
+
+            /// defaults to Globals.distanceTreshold
+            case AppSettings.gpsPointsSmoothCount:
+              Globals.gpsPointsSmoothCount = int.parse(value);
+              break;
+
+            ///
             default:
             // do nothing
           }
