@@ -154,12 +154,11 @@ class _WidgetAliasList extends State<WidgetAliasList> {
         items: const [
           // new on osm
           BottomNavigationBarItem(icon: Icon(Icons.add), label: '*Neu*'),
-
+          // 2 nearest
+          BottomNavigationBarItem(icon: Icon(Icons.near_me), label: 'In Nähe'),
           // 1 alphabethic
           BottomNavigationBarItem(
               icon: Icon(Icons.timer), label: 'Zuletzt besucht'),
-          // 2 nearest
-          BottomNavigationBarItem(icon: Icon(Icons.near_me), label: 'In Nähe'),
         ],
         onTap: (int id) {
           selectedNavBarItem = id;

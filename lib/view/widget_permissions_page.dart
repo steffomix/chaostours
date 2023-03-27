@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:chaostours/background_process/tracking.dart';
 import 'package:flutter/material.dart';
 import 'package:app_settings/app_settings.dart';
 import 'package:chaostours/file_handler.dart';
@@ -23,6 +24,13 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
   BuildContext? _context;
   List<Widget> items = [];
 
+  bool permLocation = false;
+  bool permLocationAlways = false;
+  bool permIgnoreBattery = false;
+  bool permManageExternalStorage = false;
+  bool permNotification = false;
+  bool permCalendar = false;
+
   @override
   void initState() {
     updatePermissionsInfo('Checking Permissions');
@@ -40,7 +48,7 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
   }
 
   void permissionItems() {
-    _permissionItems().then((_) {
+    _permissionItems(checkPermissions: true).then((_) {
       renderBody();
     }).onError((error, stackTrace) {
       logger.error(error.toString(), stackTrace);
@@ -48,49 +56,100 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
     });
   }
 
-  Future<void> _permissionItems() async {
-    int wait = 150;
+  Future<void> _permissionItems({bool checkPermissions = false}) async {
     items.clear();
 
-    Future.microtask(() => setState(() {
-          updatePermissionsInfo('Check Permission GPS Loation');
-        }));
-    await Future.delayed(Duration(milliseconds: wait));
-    bool permLocation = await PermissionChecker.checkLocation();
+    if (checkPermissions) {
+      await showAwesomePermissionCheck();
+    }
 
-    Future.microtask(() => setState(() {
-          updatePermissionsInfo('Check Permission GPS Loation Always');
-        }));
-    await Future.delayed(Duration(milliseconds: wait));
-    bool permLocationAlways = await PermissionChecker.checkLocationAlways();
+    bool isTracking = await BackgroundTracking.isTracking();
+    items.add(ListTile(
+        leading: isTracking
+            ? const Icon(Icons.done, color: Colors.green)
+            : const Icon(Icons.error_outline, color: Colors.red),
+        title: const Text('Status Hintergrund GPS'),
+        subtitle: const Text('Hintergrund GPS starten/stoppen'),
+        trailing: IconButton(
+          icon: isTracking
+              ? const Icon(Icons.stop)
+              : const Icon(Icons.play_arrow),
+          onPressed: () async {
+            if (isTracking) {
+              await BackgroundTracking.stopTracking();
+            } else {
+              await BackgroundTracking.initialize();
+              await BackgroundTracking.startTracking();
+            }
+            await _permissionItems();
+            Future.delayed(const Duration(milliseconds: 100), () {
+              renderBody();
+            });
+          },
+        )));
 
-    Future.microtask(() => setState(() {
-          updatePermissionsInfo(
-              'Check Permission Ignore Battery Optimizations');
-        }));
-    await Future.delayed(Duration(milliseconds: wait));
-    bool permIgnoreBattery =
-        await PermissionChecker.checkIgnoreBatteryOptimizations();
+    items.add(AppWidgets.divider());
 
-    Future.microtask(() => setState(() {
-          updatePermissionsInfo('Check Permission Manage External Storage');
-        }));
-    await Future.delayed(Duration(milliseconds: wait));
-    bool permManageExternalStorage =
-        await PermissionChecker.checkManageExternalStorage();
+    ///
+    ///
+    if (FileHandler.storagePath == null) {
+      items.add(ListTile(
+          leading: const Icon(Icons.error_outline, color: Colors.red),
+          title: const Text('Kein Speicherort gesetzt'),
+          subtitle: const Text('Wird benötigt, um Daten zu speichern.'),
+          trailing: IconButton(
+              icon: const Icon(Icons.settings),
+              onPressed: () {
+                if (_context != null) {
+                  Navigator.pushNamed(
+                          _context!, AppRoutes.storageSettings.route)
+                      .then((_) {
+                    _permissionItems().then((_) {
+                      renderBody();
+                    });
+                  });
+                }
+              })));
+    } else {
+      items.add(ListTile(
+          leading: const Icon(Icons.done, color: Colors.green),
+          title: const Text('Speicherort gesetzt'),
+          subtitle: Text('${FileHandler.storagePath}'),
+          trailing: IconButton(
+              icon: const Icon(Icons.settings),
+              onPressed: () {
+                if (_context != null) {
+                  Navigator.pushNamed(
+                          _context!, AppRoutes.storageSettings.route)
+                      .then((_) {
+                    _permissionItems().then((_) {
+                      renderBody();
+                    });
+                  });
+                }
+              })));
+    }
 
-    Future.microtask(() => setState(() {
-          updatePermissionsInfo('Check Permission Notification');
-        }));
-    await Future.delayed(Duration(milliseconds: wait));
-    bool permNotification = await PermissionChecker.checkNotification();
+    items.add(AppWidgets.divider());
 
-    Future.microtask(() => setState(() {
-          updatePermissionsInfo('Check Permission Manage Calendar');
-        }));
-    await Future.delayed(Duration(milliseconds: wait));
-    bool permCalendar = await PermissionChecker.checkCalendar();
-
+    ///
+    ///
+    items.add(Center(
+        child: ElevatedButton(
+            onPressed: () {
+              _permissionItems(checkPermissions: true).then((_) {
+                renderBody();
+              });
+            },
+            child: const Text('Repeat Check Permissions'))));
+    if (!await PermissionChecker.checkAll()) {
+      items.add(Center(
+          child: ElevatedButton(
+              onPressed: () {
+                PermissionChecker.requestAll(renderBody);
+              },
+              child: const Text('Request Permissions'))));
+    }
     items.add(ListTile(
         leading: permLocation
             ? const Icon(Icons.done, color: Colors.green)
@@ -173,72 +232,55 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
             AppSettings.openAppSettings(asAnotherTask: false);
           },
         )));
-
-    ///
-    ///
-    if (FileHandler.storagePath == null) {
-      items.add(ListTile(
-          leading: const Icon(Icons.error_outline, color: Colors.red),
-          title: const Text('Kein Speicherort gesetzt'),
-          subtitle: const Text('Wird benötigt, um Daten zu speichern.'),
-          trailing: IconButton(
-              icon: const Icon(Icons.settings),
-              onPressed: () {
-                if (_context != null) {
-                  Navigator.pushNamed(
-                          _context!, AppRoutes.storageSettings.route)
-                      .then((_) {
-                    _permissionItems().then((_) {
-                      renderBody();
-                    });
-                  });
-                }
-              })));
-    } else {
-      items.add(ListTile(
-          leading: const Icon(Icons.done, color: Colors.green),
-          title: const Text('Speicherort gesetzt'),
-          subtitle: Text('${FileHandler.storagePath}'),
-          trailing: IconButton(
-              icon: const Icon(Icons.settings),
-              onPressed: () {
-                if (_context != null) {
-                  Navigator.pushNamed(
-                          _context!, AppRoutes.storageSettings.route)
-                      .then((_) {
-                    _permissionItems().then((_) {
-                      renderBody();
-                    });
-                  });
-                }
-              })));
-    }
-
-    ///
-    ///
-    items.add(Center(
-        child: ElevatedButton(
-            onPressed: () {
-              _permissionItems().then((_) {
-                renderBody();
-              });
-            },
-            child: const Text('Repeat Check Permissions'))));
-    if (!await PermissionChecker.checkAll()) {
-      items.add(Center(
-          child: ElevatedButton(
-              onPressed: () {
-                PermissionChecker.requestAll().then((_) {
-                  renderBody();
-                });
-              },
-              child: const Text('Request Permissions'))));
-    }
   }
 
   void renderBody() {
     widgetPermissions = ListView(children: [...items]);
     setState(() {});
+  }
+
+  Future<void> showAwesomePermissionCheck() async {
+    Duration wait = const Duration(milliseconds: 150);
+    Future.microtask(() => setState(() {
+          updatePermissionsInfo('Check Permission GPS Loation');
+        }));
+    await Future.delayed(wait);
+    permLocation = await PermissionChecker.checkLocation();
+
+    Future.microtask(() => setState(() {
+          updatePermissionsInfo('Check Permission GPS Loation Always');
+        }));
+    await Future.delayed(wait);
+    permLocationAlways = await PermissionChecker.checkLocationAlways();
+
+    Future.microtask(() => setState(() {
+          updatePermissionsInfo(
+              'Check Permission Ignore Battery Optimizations');
+        }));
+    await Future.delayed(wait);
+    permIgnoreBattery =
+        await PermissionChecker.checkIgnoreBatteryOptimizations();
+
+    Future.microtask(() => setState(() {
+          updatePermissionsInfo('Check Permission Manage External Storage');
+        }));
+    await Future.delayed(wait);
+    permManageExternalStorage =
+        await PermissionChecker.checkManageExternalStorage();
+
+    Future.microtask(() => setState(() {
+          updatePermissionsInfo('Check Permission Notification');
+        }));
+    await Future.delayed(wait);
+    permNotification = await PermissionChecker.checkNotification();
+
+    Future.microtask(() => setState(() {
+          updatePermissionsInfo('Check Permission Manage Calendar');
+        }));
+    await Future.delayed(wait);
+    permCalendar = await PermissionChecker.checkCalendar();
+    await _permissionItems();
+    renderBody();
   }
 
   @override

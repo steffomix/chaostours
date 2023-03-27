@@ -45,42 +45,6 @@ class TrackPoint {
   TrackingStatus _status = TrackingStatus.none;
   TrackingStatus _oldStatus = TrackingStatus.none;
 
-  void calculateSmoothGps() {
-    int smooth = Globals.gpsPointsSmoothCount;
-    if (smooth < 2) {
-      smoothGps.addAll(gpsPoints);
-      return;
-    }
-    if (gpsPoints.length <= smooth) {
-      return;
-    }
-    int index = 0;
-    while (index <= gpsPoints.length - 1 - smooth) {
-      double smoothLat = 0;
-      double smoothLon = 0;
-      for (var i = 1; i <= smooth; i++) {
-        smoothLat += gpsPoints[index + i - 1].lat;
-        smoothLon += gpsPoints[index + i - 1].lon;
-      }
-      smoothLat /= smooth;
-      smoothLon /= smooth;
-      GPS gps = GPS(smoothLat, smoothLon);
-      if (smoothGps.isNotEmpty) {
-        int m = GPS.distance(gps, smoothGps.last).round();
-        int s = Globals.trackPointInterval.inSeconds;
-        double ms = m / s;
-        double kmh = ms * 3.6;
-        if (kmh > Globals.gpsMaxSpeed) {
-          continue;
-        }
-      }
-
-      gps.time = gpsPoints[index + (smooth / 2).round()].time;
-      smoothGps.add(gps);
-      index++;
-    }
-  }
-
   Future<void> startShared({required double lat, required double lon}) async {
     // cache gps
     // the time can't be too long due to this task gets killed anyway
@@ -123,8 +87,8 @@ class TrackPoint {
       logger.error('update trackpoints: ${e.toString()}', stk);
     }
 
-    /// only needed if method runs in foreground
-    gpsPoints.clear();
+    /// clear only needed if method runs in foreground
+    /// gpsPoints.clear();
     try {
       gpsPoints.add(gps);
       gpsPoints.addAll(cache.gpsPoints);
@@ -227,8 +191,9 @@ class TrackPoint {
 
         /// status changed
         /// write only last inserted gpsPoint back
-        gpsPoints.clear();
-        gpsPoints.add(gps);
+        // disabled due to causes too much pause
+        //gpsPoints.clear();
+        //gpsPoints.add(gps);
       }
       if (Globals.osmLookupCondition == OsmLookup.always) {
         cache.address = (await Address(gps).lookupAddress()).toString();
@@ -248,6 +213,42 @@ class TrackPoint {
           address: cache.address);
     } catch (e, stk) {
       logger.error(e.toString(), stk);
+    }
+  }
+
+  void calculateSmoothGps() {
+    int smooth = Globals.gpsPointsSmoothCount;
+    if (smooth < 2) {
+      smoothGps.addAll(gpsPoints);
+      return;
+    }
+    if (gpsPoints.length <= smooth) {
+      return;
+    }
+    int index = 0;
+    while (index <= gpsPoints.length - 1 - smooth) {
+      double smoothLat = 0;
+      double smoothLon = 0;
+      for (var i = 1; i <= smooth; i++) {
+        smoothLat += gpsPoints[index + i - 1].lat;
+        smoothLon += gpsPoints[index + i - 1].lon;
+      }
+      smoothLat /= smooth;
+      smoothLon /= smooth;
+      GPS gps = GPS(smoothLat, smoothLon);
+      if (smoothGps.isNotEmpty) {
+        int m = GPS.distance(gps, smoothGps.last).round();
+        int s = Globals.trackPointInterval.inSeconds;
+        double ms = m / s;
+        double kmh = ms * 3.6;
+        if (kmh > Globals.gpsMaxSpeed) {
+          continue;
+        }
+      }
+
+      gps.time = gpsPoints[index].time;
+      smoothGps.add(gps);
+      index++;
     }
   }
 

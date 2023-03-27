@@ -39,12 +39,18 @@ class PermissionChecker {
   static Future<bool> checkCalendar() async =>
       await Permission.calendar.isGranted;
 
-  static Future<void> requestAll() async {
+  static Future<void> requestAll(Function callback) async {
     await Permission.location.request();
+    callback();
     await Permission.locationAlways.request();
+    callback();
     await Permission.storage.request();
+    callback();
     await Permission.manageExternalStorage.request();
+    callback();
     await Permission.notification.request();
+    callback();
     await Permission.calendar.request();
+    callback();
   }
 }

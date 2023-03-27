@@ -33,7 +33,7 @@ class AppLoader {
   static Future<void> preload() async {
     logger.important('start Preload sequence...');
     try {
-      await PermissionChecker.requestAll();
+      await PermissionChecker.checkAll();
       await webKey();
       await loadSharedSettings();
       await initializeStorages();
@@ -116,27 +116,8 @@ class AppLoader {
   }
 
   static Future<void> backgroundGps() async {
-    logger.important('initialize background tracker');
-    await BackgroundTracking.initialize();
-    logger.important('background tracker initialized');
-
     if (Globals.backgroundTrackingEnabled) {
-      logger.important('Start background tracker');
-      await BackgroundTracking.startTracking();
-
-      bool started = await BackgroundTracking.isTracking();
-      if (started) {
-        logger.important('Background tracker started');
-      } else {
-        try {
-          throw 'Background tracker failed starting';
-        } catch (e, stk) {
-          logger.fatal(e.toString(), stk);
-        }
-      }
-    } else {
-      logger.important('stopping background gps');
-      BackgroundTracking.stopTracking();
+      BackgroundTracking.startTracking();
     }
   }
 

@@ -42,7 +42,7 @@ class Globals {
 
   /// check status interval.
   /// Should be at least 3 seconds due to GPS lookup needs at least 2 seconds
-  static Duration trackPointInterval = Duration(seconds: 5);
+  static Duration trackPointInterval = Duration(seconds: 30);
 
   /// compensate unprecise gps by using average of given gpsPoints.
   /// That means that a smooth count of 3 requires at least 4 gpsPoints
