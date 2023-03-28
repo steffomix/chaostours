@@ -64,6 +64,8 @@ class TrackPoint {
 
     Cache cache = Cache.instance;
     await cache.loadBackground();
+    // if not yet set, do it right now
+    cache.lastStatusChange ??= gps;
 
     /// load foreground data
     await cache.loadForeGround();
@@ -122,6 +124,9 @@ class TrackPoint {
 
       /// if nothing changed simply write data back
       if (_status != _oldStatus) {
+        /// update last status change
+        cache.lastStatusChange = gps;
+
         /// status has changed to _status.
         /// if we are now moving, we need to save the gpsPoint where
         /// standing was detected, which is the last one in the list.
@@ -207,6 +212,7 @@ class TrackPoint {
       /// save status and gpsPoints for next session and foreground live tracking view
       await cache.saveBackground(
           status: _status,
+          lastStatus: cache.lastStatusChange ??= gps,
           gpsPoints: gpsPoints,
           smoothGps: smoothGps,
           lastGps: gps,
@@ -321,7 +327,7 @@ class TrackPoint {
         gps: gps,
         trackPoints: gpsPoints.map((e) => e).toList(),
         idAlias: idAlias,
-        timeStart: gpsPoints.last.time);
+        timeStart: Cache.instance.lastStatusChange?.time ?? gps.time);
     tp.address = Cache.instance.address; // should be loaded at this point
     tp.status = _oldStatus;
     tp.timeEnd = DateTime.now();

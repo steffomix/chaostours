@@ -12,6 +12,7 @@ import 'package:chaostours/file_handler.dart';
 enum JsonKeys {
   // background status and messages
   bgStatus,
+  bgLastStatusChange,
   bgLastGps,
   bgGpsPoints,
   bgSmoothGpsPoints,
@@ -45,6 +46,7 @@ class Cache {
   ///
   GPS? lastGps;
   // gps list from between trackpoints
+  GPS? lastStatusChange;
   List<GPS> gpsPoints = [];
   List<GPS> smoothGpsPoints = [];
   List<GPS> calcGpsPoints = [];
@@ -155,6 +157,7 @@ class Cache {
 
   Future<void> saveBackground(
       {required TrackingStatus status,
+      required GPS lastStatus,
       required List<GPS> gpsPoints,
       required List<GPS> smoothGps,
       required GPS lastGps,
@@ -162,6 +165,7 @@ class Cache {
     try {
       Map<String, dynamic> jsonObject = {
         JsonKeys.bgStatus.name: status.name,
+        JsonKeys.bgLastStatusChange.name: lastStatus.toSharedString(),
         JsonKeys.bgGpsPoints.name:
             gpsPoints.map((e) => e.toSharedString()).toList(),
         JsonKeys.bgCalcGpsPoints.name:
@@ -183,6 +187,7 @@ class Cache {
   Future<void> loadBackground() async {
     Map<String, dynamic> json = {
       JsonKeys.bgStatus.name: TrackingStatus.none.name,
+      JsonKeys.bgLastStatusChange.name: null,
       JsonKeys.bgGpsPoints.name: [],
       JsonKeys.bgCalcGpsPoints.name: [],
       JsonKeys.bgSmoothGpsPoints.name: [],
@@ -202,6 +207,18 @@ class Cache {
       } catch (e, stk) {
         logger.error(
             'read json status ${json[JsonKeys.bgStatus.name]}: ${e.toString()}',
+            stk);
+      }
+
+      /// lastStatusChange
+      try {
+        String lastStatus = json[JsonKeys.bgLastStatusChange.name] ?? '';
+        if (lastStatus.isNotEmpty) {
+          lastStatusChange = GPS.toSharedObject(lastStatus);
+        }
+      } catch (e, stk) {
+        logger.error(
+            'read json lastStatusChange ${json[JsonKeys.bgLastStatusChange.name]}: ${e.toString()}',
             stk);
       }
 
@@ -268,6 +285,13 @@ class Cache {
   }
 }
 
+///
+///
+///
+///
+///
+///
+///
 enum SharedKeys {
   /// List<String> of key:value pairs
   appSettings,

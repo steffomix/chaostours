@@ -109,7 +109,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   Widget build(BuildContext context) {
     Widget body = AppWidgets.loading('Waiting for GPS Signal');
     List<Widget> list = [];
-    // nothing checked at this point
+
+    /// nothing checked at this point
     if (runningTrackPoints.isEmpty) {
       body = AppWidgets.loading('Waiting for GPS Signal');
     } else {
@@ -207,34 +208,20 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       }
     }
 
+    Cache cache = Cache.instance;
+
     /// draw gps points
     try {
-      String storage = FileHandler.combinePath(
-          FileHandler.storages[Storages.appInternal]!,
-          FileHandler.backgroundCacheFile);
-      String jsonString = await FileHandler.read(storage);
-
-      Map<String, dynamic> json = {JsonKeys.bgGpsPoints.name: []};
-      try {
-        json = jsonDecode(jsonString);
-      } catch (e, stk) {
-        logger.error(e.toString(), stk);
-      }
-
-      for (String s in json[JsonKeys.bgGpsPoints.name] ?? []) {
-        GPS gps = GPS.toSharedObject(s);
-
+      for (var gps in cache.gpsPoints) {
         mapController.drawCircle(osm.CircleOSM(
           key: "circle${++circleId}",
           centerPoint: osm.GeoPoint(latitude: gps.lat, longitude: gps.lon),
           radius: 2,
-          color: Colors.grey,
+          color: const Color.fromARGB(255, 80, 80, 80),
           strokeWidth: 10,
         ));
       }
-      for (String s in json[JsonKeys.bgSmoothGpsPoints.name] ?? []) {
-        GPS gps = GPS.toSharedObject(s);
-
+      for (var gps in cache.smoothGpsPoints) {
         mapController.drawCircle(osm.CircleOSM(
           key: "circle${++circleId}",
           centerPoint: osm.GeoPoint(latitude: gps.lat, longitude: gps.lon),
@@ -243,20 +230,26 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
           strokeWidth: 10,
         ));
       }
-      for (String s in json[JsonKeys.bgCalcGpsPoints.name] ?? []) {
-        GPS gps = GPS.toSharedObject(s);
-
+      for (var gps in cache.calcGpsPoints) {
         mapController.drawCircle(osm.CircleOSM(
           key: "circle${++circleId}",
           centerPoint: osm.GeoPoint(latitude: gps.lat, longitude: gps.lon),
           radius: 4,
-          color: Colors.red,
+          color: Colors.blue,
           strokeWidth: 10,
         ));
       }
     } catch (e, stk) {
       logger.error(e.toString(), stk);
     }
+    GPS gps = cache.lastStatusChange ?? cache.gpsPoints.last;
+    mapController.drawCircle(osm.CircleOSM(
+      key: "circle${++circleId}",
+      centerPoint: osm.GeoPoint(latitude: gps.lat, longitude: gps.lon),
+      radius: 5,
+      color: Colors.red,
+      strokeWidth: 10,
+    ));
   }
 
   BottomNavigationBar bottomNavBar(BuildContext context) {
@@ -304,22 +297,22 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     if (!mounted || displayMode == TrackingPageDisplayMode.gps) {
       return;
     }
-    Cache shared = Cache.instance;
-    if (shared.gpsPoints.isEmpty) {
+    Cache cache = Cache.instance;
+    if (cache.gpsPoints.isEmpty) {
       return;
     }
 
-    if (shared.address.isNotEmpty) {
-      ModelTrackPoint.pendingAddress = shared.address;
+    if (cache.address.isNotEmpty) {
+      ModelTrackPoint.pendingAddress = cache.address;
     }
 
-    if (shared.status != TrackingStatus.none) {
+    if (cache.status != TrackingStatus.none) {
       /// get status
-      currentStatus = shared.status;
+      currentStatus = cache.status;
       runningTrackPoints.clear();
-      runningTrackPoints.addAll(shared.gpsPoints);
+      runningTrackPoints.addAll(cache.gpsPoints);
       // update GPS cache
-      GPS.lastGps = shared.lastGps;
+      GPS.lastGps = cache.lastGps;
 
       /// update pendingTrackPoint
       if (currentStatus == lastStatus) {
@@ -328,7 +321,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
           ..gps = runningTrackPoints.first
           ..address = ModelTrackPoint.pendingAddress
           ..trackPoints = runningTrackPoints
-          ..timeStart = runningTrackPoints.last.time
+          ..timeStart =
+              cache.lastStatusChange?.time ?? runningTrackPoints.last.time
           ..timeEnd = DateTime.now()
           ..idAlias = ModelAlias.nextAlias(gps: runningTrackPoints.first)
               .map((e) => e.id)
@@ -350,7 +344,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
             gps: runningTrackPoints.last,
             trackPoints: runningTrackPoints,
             idAlias: <int>[],
-            timeStart: runningTrackPoints.last.time);
+            timeStart:
+                cache.lastStatusChange?.time ?? runningTrackPoints.last.time);
 
         /// add preselected users
         ModelTrackPoint.pendingTrackPoint.idUser
@@ -374,7 +369,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         gps: gps,
         trackPoints: runningTrackPoints,
         idAlias: ModelAlias.nextAlias(gps: gps).map((e) => e.id).toList(),
-        timeStart: gps.time);
+        timeStart: Cache.instance.lastStatusChange?.time ??
+            runningTrackPoints.last.time);
     tp.status = status;
     tp.timeEnd = runningTrackPoints.last.time;
     tp.idTask = ModelTrackPoint.pendingTrackPoint.idTask;
@@ -390,7 +386,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       List<String> alias = ModelAlias.nextAlias(
               gps: currentStatus == TrackingStatus.moving
                   ? runningTrackPoints.first
-                  : runningTrackPoints.last)
+                  : Cache.instance.lastStatusChange ?? runningTrackPoints.last)
           .map((e) {
         return '- ${e.alias}';
       }).toList();
