@@ -146,7 +146,7 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
       items.add(Center(
           child: ElevatedButton(
               onPressed: () {
-                PermissionChecker.requestAll(renderBody);
+                PermissionChecker.requestAll();
               },
               child: const Text('Request Permissions'))));
     }

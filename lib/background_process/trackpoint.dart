@@ -42,6 +42,8 @@ class TrackPoint {
   /// contains all trackpoints from current state start or stop
   final List<GPS> gpsPoints = [];
   final List<GPS> smoothGps = [];
+  final List<GPS> calcGpsPoints = [];
+
   TrackingStatus _status = TrackingStatus.none;
   TrackingStatus _oldStatus = TrackingStatus.none;
 
@@ -68,11 +70,11 @@ class TrackPoint {
     cache.lastStatusChange ??= gps;
 
     /// load foreground data
-    await cache.loadForeGround();
+    await cache.loadForeground();
 
     /// reset forground data as soon as possible
     /// to reduce critical window
-    await cache.saveForeGround(trigger: false, trackPoints: [], activeTp: '');
+    await cache.saveForeground(trigger: false, trackPoints: [], activeTp: '');
 
     /// parse status from json
     _status = cache.status;
@@ -215,6 +217,7 @@ class TrackPoint {
           lastStatus: cache.lastStatusChange ??= gps,
           gpsPoints: gpsPoints,
           smoothGps: smoothGps,
+          calcPoints: calcGpsPoints,
           lastGps: gps,
           address: cache.address);
     } catch (e, stk) {
@@ -261,7 +264,6 @@ class TrackPoint {
   void trackPoint() {
     // get gpsPoints of globals time range
     // to measure movement
-    Cache.instance.calcGpsPoints.clear();
     List<GPS> gpsList = [];
     DateTime treshold = DateTime.now().subtract(Globals.timeRangeTreshold);
     bool fullTresholdRange = false;
@@ -273,7 +275,7 @@ class TrackPoint {
         break;
       }
     }
-    Cache.instance.calcGpsPoints.addAll(gpsList);
+    calcGpsPoints.addAll(gpsList);
 
     /// status change triggered by user
     if ((_status == TrackingStatus.standing ||

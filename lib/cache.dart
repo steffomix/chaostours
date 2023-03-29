@@ -75,12 +75,12 @@ class Cache {
           }
           try {
             logger.log('save foreground cache');
-            await saveForeGround(
+            await saveForeground(
                 trigger: _triggerStatus,
                 trackPoints: trackPointData,
                 activeTp: activeTrackPoint);
           } catch (e, stk) {
-            logger.error('load foreground cache: ${e.toString()}', stk);
+            logger.error('save foreground cache: ${e.toString()}', stk);
           }
           EventManager.fire<EventOnCacheLoaded>(EventOnCacheLoaded());
           await Future.delayed(Globals.trackPointInterval);
@@ -102,7 +102,7 @@ class Cache {
     return await FileHandler.read(storage);
   }
 
-  Future<void> saveForeGround(
+  Future<void> saveForeground(
       {required bool trigger,
       required List<String> trackPoints,
       required String activeTp}) async {
@@ -112,11 +112,11 @@ class Cache {
       JsonKeys.fgActiveTrackPoint.name: activeTp
     };
     String jsonString = jsonEncode(jsonObject);
-    logger.log('save forground json: $jsonString');
+    logger.log('save foreground json: $jsonString');
     await _save(file: FileHandler.foregroundCacheFile, data: jsonString);
   }
 
-  Future<void> loadForeGround() async {
+  Future<void> loadForeground() async {
     Map<String, dynamic> json = {
       JsonKeys.fgTriggerStatus.name: false,
       JsonKeys.fgTrackPointUpdates.name: <String>[],
@@ -160,6 +160,7 @@ class Cache {
       required GPS lastStatus,
       required List<GPS> gpsPoints,
       required List<GPS> smoothGps,
+      required List<GPS> calcPoints,
       required GPS lastGps,
       String? address = ''}) async {
     try {
@@ -169,7 +170,7 @@ class Cache {
         JsonKeys.bgGpsPoints.name:
             gpsPoints.map((e) => e.toSharedString()).toList(),
         JsonKeys.bgCalcGpsPoints.name:
-            calcGpsPoints.map((e) => e.toSharedString()).toList(),
+            calcPoints.map((e) => e.toSharedString()).toList(),
         JsonKeys.bgSmoothGpsPoints.name:
             smoothGps.map((e) => e.toSharedString()).toList(),
         JsonKeys.bgLastGps.name: lastGps.toSharedString(),
@@ -187,7 +188,7 @@ class Cache {
   Future<void> loadBackground() async {
     Map<String, dynamic> json = {
       JsonKeys.bgStatus.name: TrackingStatus.none.name,
-      JsonKeys.bgLastStatusChange.name: null,
+      JsonKeys.bgLastStatusChange.name: '',
       JsonKeys.bgGpsPoints.name: [],
       JsonKeys.bgCalcGpsPoints.name: [],
       JsonKeys.bgSmoothGpsPoints.name: [],
@@ -226,6 +227,7 @@ class Cache {
       try {
         List<dynamic> points =
             (json[JsonKeys.bgGpsPoints.name] as List<dynamic>);
+        gpsPoints.clear();
         for (var p in points) {
           gpsPoints.add(GPS.toSharedObject(p.toString()));
         }
@@ -239,6 +241,7 @@ class Cache {
       try {
         List<dynamic> points =
             (json[JsonKeys.bgSmoothGpsPoints.name] as List<dynamic>);
+        smoothGpsPoints.clear();
         for (var p in points) {
           smoothGpsPoints.add(GPS.toSharedObject(p.toString()));
         }
@@ -252,6 +255,7 @@ class Cache {
       try {
         List<dynamic> points =
             (json[JsonKeys.bgCalcGpsPoints.name] as List<dynamic>);
+        calcGpsPoints.clear();
         for (var p in points) {
           calcGpsPoints.add(GPS.toSharedObject(p.toString()));
         }

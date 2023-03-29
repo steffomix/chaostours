@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:loading_animation_widget/loading_animation_widget.dart';
 
 ///
 import 'package:chaostours/util.dart' as util;
@@ -22,6 +21,8 @@ import 'package:chaostours/view/widget_alias_trackpoint_list.dart';
 import 'package:chaostours/view/widget_osm.dart';
 import 'package:chaostours/view/widget_storage_settings.dart';
 import 'package:chaostours/view/widget_app_settings.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
+import 'package:chaostours/view/widget_manage_background_gps.dart';
 
 enum AppColorScheme {
   bright(mangoMojitoLight),
@@ -92,7 +93,8 @@ enum AppRoutes {
   logger('/logger'),
   permissions('/permissions'),
   storageSettings('/storagesettings'),
-  appSettings('/appsettings');
+  appSettings('/appsettings'),
+  backgroundGps('/manageBackgroundGps');
 
   final String route;
   const AppRoutes(this.route);
@@ -141,6 +143,8 @@ class AppWidgets {
         AppRoutes.storageSettings.route: (context) =>
             const WidgetStorageSettings(),
         AppRoutes.appSettings.route: (context) => const WidgetAppSettings(),
+        AppRoutes.backgroundGps.route: (context) =>
+            const WidgetManageBackgroundGps()
       },
       theme: ThemeData(colorScheme: AppColorScheme.bright.scheme),
       //home: const WidgetTrackingPage(),
@@ -225,6 +229,16 @@ class _WidgetDrawer extends State<WidgetDrawer> {
                     AppWidgets.navigate(context, AppRoutes.liveTracking);
                   },
                   child: const Text('Tracking')),
+              SizedBox(
+                  height: boxHeight,
+                  child: const Center(child: Text('\nManage Hintergrund GPS'))),
+
+              ///
+              ElevatedButton(
+                  onPressed: () {
+                    AppWidgets.navigate(context, AppRoutes.backgroundGps);
+                  },
+                  child: const Text('Background GPS')),
 
               SizedBox(
                   height: boxHeight,
