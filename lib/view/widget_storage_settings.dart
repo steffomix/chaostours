@@ -81,7 +81,7 @@ class _WidgetStorageSettings extends State<WidgetStorageSettings> {
     List<Widget> bodyStack = [];
     List<Widget> options = [];
 
-    if (FileHandler.storageKey == Storages.notSet) {
+    if ((FileHandler.storagePath ?? '').isEmpty) {
       List<String> pathes = [];
       for (var k in FileHandler.potentialStorages.keys) {
         pathes.add(FileHandler.combinePath(
@@ -98,12 +98,8 @@ class _WidgetStorageSettings extends State<WidgetStorageSettings> {
                 '\n\n- ${pathes.join('\n- ')}'),
             ElevatedButton(
                 onPressed: () {
-                  FileHandler().lookupStorages().then((_) {
-                    Navigator.pushNamed(
-                            context, AppRoutes.storageSettings.route)
-                        .then((_) {
-                      setState(() {});
-                    });
+                  FileHandler().getStorage().then((_) {
+                    setState(() {});
                   });
                 },
                 child: const Text('Potenzielle Speicherorte initialisieren'))

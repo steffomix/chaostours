@@ -140,14 +140,15 @@ class FileHandler {
   ///
   ///
   ///
-  /*
   Future<String?> getStorage() async {
     Map<Storages, String?> storages = await _getAllStorages();
     String keyName = AppSettings.settings[AppSettings.storageKey] ?? '';
     try {
       storageKey = Storages.values.byName(keyName);
       storagePath =
-          AppSettings.settings[AppSettings.storagePath] ?? await _getAutoPath();
+          (AppSettings.settings[AppSettings.storagePath] ?? '').isNotEmpty
+              ? AppSettings.settings[AppSettings.storagePath]
+              : await _getAutoPath();
       logger.important('!!! Set Storage Path to $storagePath');
       return storagePath;
     } catch (e) {
@@ -155,7 +156,6 @@ class FileHandler {
       return await _getAutoPath();
     }
   }
-  */
 
   /// stores the path to the storage if storage is writeable
   static final Map<Storages, String?> storages = {
