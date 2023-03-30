@@ -34,6 +34,7 @@ class BackgroundTracking {
       await initialize();
     }
     if (!await isTracking()) {
+      await initialize();
       BackgroundLocationTrackerManager.startTracking(config: _androidConfig());
     }
   }
@@ -46,7 +47,9 @@ class BackgroundTracking {
 
   ///
   static Future<void> initialize() async {
-    await BackgroundLocationTrackerManager.initialize(backgroundCallback);
+    await BackgroundLocationTrackerManager.initialize(backgroundCallback,
+        config:
+            BackgroundLocationTrackerConfig(androidConfig: _androidConfig()));
     _initialized = true;
   }
 }

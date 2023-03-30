@@ -181,7 +181,7 @@ class Cache {
 
       await _save(file: FileHandler.backgroundCacheFile, data: jsonString);
     } catch (e, stk) {
-      logger.error(e.toString(), stk);
+      logger.error('save background: ${e.toString()}', stk);
     }
   }
 
@@ -284,7 +284,7 @@ class Cache {
             stk);
       }
     } catch (e, stk) {
-      logger.error(e.toString(), stk);
+      logger.error('load background: ${e.toString()}', stk);
     }
   }
 }

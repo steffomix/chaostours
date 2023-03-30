@@ -63,6 +63,9 @@ class AppLoader {
 
   static Future<void> loadSharedSettings() async {
     await AppSettings.loadFromShared();
+    if ((FileHandler.storagePath ?? '').isNotEmpty) {
+      FileHandler().lookupStorages();
+    }
     appLoaderSharedSettingsLoaded = true;
   }
 

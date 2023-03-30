@@ -58,10 +58,12 @@ class TrackPoint {
     // init app
     // await AppLoader.webKey(); // not needed
     await AppLoader.loadSharedSettings();
-    if (FileHandler.storagePath == null) {
+    await AppSettings.loadFromShared();
+    if ((FileHandler.storagePath ?? '').isEmpty) {
       logger.warn('No valid storage key, skip trackpoint');
       return;
     }
+    await FileHandler().lookupStorages();
 
     Cache cache = Cache.instance;
     await cache.loadBackground();

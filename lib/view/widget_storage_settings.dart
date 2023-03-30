@@ -11,6 +11,7 @@ import 'package:chaostours/globals.dart';
 import 'package:chaostours/cache.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/cache.dart';
+import 'package:chaostours/app_settings.dart';
 import 'package:confirm_dialog/confirm_dialog.dart';
 
 class WidgetStorageSettings extends StatefulWidget {
@@ -300,6 +301,12 @@ class _WidgetStorageSettings extends State<WidgetStorageSettings> {
                 }
                 FileHandler.storageKey = selectedStorage;
                 FileHandler.storagePath = storages[selectedStorage];
+                AppSettings.settings[AppSettings.storageKey] =
+                    selectedStorage.name;
+
+                AppSettings.settings[AppSettings.storagePath] =
+                    storages[selectedStorage] ?? '';
+                AppSettings.saveToShared();
               } else {
                 Navigator.pop(context);
               }

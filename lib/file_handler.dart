@@ -178,7 +178,7 @@ class FileHandler {
       Storages.appInternal,
     ];
     Map<Storages, String?> storages = await _getAllStorages();
-    for (var key in storageLookupOrder) {
+    for (var key in storageLookupOrder.reversed) {
       if (storages[key] != null) {
         _setStorage(key, storages[key]!);
       }

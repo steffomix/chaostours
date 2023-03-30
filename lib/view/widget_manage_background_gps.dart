@@ -88,6 +88,8 @@ class _WidgetManageBackgroundGpsState extends State<WidgetManageBackgroundGps> {
       AppWidgets.divider(),
       const Text('Background Cache Data',
           style: TextStyle(fontWeight: FontWeight.bold)),
+      Text('Status change triggered (${cache.statusTriggered ? 'Yes' : 'No'}'),
+      AppWidgets.divider(),
       Text(
           'Last Status Change GPS Position:\n ${cache.lastStatusChange?.toSharedString()}'),
       AppWidgets.divider(),
@@ -95,7 +97,7 @@ class _WidgetManageBackgroundGpsState extends State<WidgetManageBackgroundGps> {
           'Status calculation GPS Positions (${cache.calcGpsPoints.length}):\n ${cache.calcGpsPoints.map((e) => e.toSharedString()).join('\n')}'),
       AppWidgets.divider(),
       Text(
-          'Status calculation GPS Positions (${cache.smoothGpsPoints.length}):\n ${cache.smoothGpsPoints.map((e) => e.toSharedString()).join('\n')}'),
+          'Smoothed GPS Positions (${cache.smoothGpsPoints.length}):\n ${cache.smoothGpsPoints.map((e) => e.toSharedString()).join('\n')}'),
       AppWidgets.divider(),
       Text(
           'All GPS Points (${cache.gpsPoints.length}):\n${cache.gpsPoints.map((e) => e.toSharedString()).join('\n')}')
