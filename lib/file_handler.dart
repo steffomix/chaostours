@@ -1,12 +1,13 @@
 import 'dart:io';
 import 'package:path/path.dart';
-import 'package:chaostours/globals.dart';
 import 'package:path_provider/path_provider.dart' as pp;
 import 'package:external_path/external_path.dart';
 
 ///
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/cache.dart';
+import 'package:chaostours/globals.dart';
+import 'package:chaostours/app_settings.dart';
 
 ////
 
@@ -14,6 +15,9 @@ var decode = Uri.decodeFull; // util.base64Codec().decode;
 var encode = Uri.encodeFull; //util.base64Codec().encode;
 
 enum Storages {
+  /// storage is not yet set by user
+  notSet,
+
   /// app installation directory
   /// unreachable
   appInternal,
@@ -35,8 +39,9 @@ enum Storages {
 
 class FileHandler {
   /// storage
-  static Storages storageKey = Storages.appInternal;
+  static Storages storageKey = Storages.notSet;
   static String? storagePath;
+  static Map<Storages, String> potentialStorages = {};
 
   static String backgroundCacheFile = 'background_cache.json';
   static String foregroundCacheFile = 'foreground_cache.json';
@@ -46,9 +51,6 @@ class FileHandler {
   static Future<Directory> get appDir async {
     Directory dir = Directory(FileHandler.storagePath ??
         (await pp.getApplicationDocumentsDirectory()).path);
-    for (var f in dir.listSync()) {
-      print(f.uri);
-    }
     return dir;
   }
 
@@ -138,12 +140,14 @@ class FileHandler {
   ///
   ///
   ///
+  /*
   Future<String?> getStorage() async {
     Map<Storages, String?> storages = await _getAllStorages();
-    String keyName = await Shared(SharedKeys.storageKey).loadString() ?? '';
+    String keyName = AppSettings.settings[AppSettings.storageKey] ?? '';
     try {
       storageKey = Storages.values.byName(keyName);
-      storagePath = (storages[storageKey] ?? await _getAutoPath());
+      storagePath =
+          AppSettings.settings[AppSettings.storagePath] ?? await _getAutoPath();
       logger.important('!!! Set Storage Path to $storagePath');
       return storagePath;
     } catch (e) {
@@ -151,6 +155,7 @@ class FileHandler {
       return await _getAutoPath();
     }
   }
+  */
 
   /// stores the path to the storage if storage is writeable
   static final Map<Storages, String?> storages = {
@@ -203,6 +208,28 @@ class FileHandler {
       storages[target] = dir.path;
       logger.log(dir.path);
     }
+  }
+
+  static Future<Map<Storages, String>> getPotentialStorages() async {
+    List<String> extPathes = await ExternalPath.getExternalStorageDirectories();
+    potentialStorages.clear();
+    potentialStorages.addAll(<Storages, String>{
+      Storages.appInternal: join(
+          (await pp.getApplicationDocumentsDirectory()).path,
+          'version_${Globals.version}'),
+      Storages.appLocalStorageData: join(
+          (await pp.getExternalStorageDirectory())?.path ?? '',
+          'version_${Globals.version}'),
+      Storages.appLocalStorageDocuments: extPathes.isNotEmpty
+          ? join(extPathes[0], ExternalPath.DIRECTORY_DOCUMENTS,
+              'version_${Globals.version}')
+          : '',
+      Storages.appSdCardDocuments: extPathes.length > 1
+          ? join(extPathes[1], ExternalPath.DIRECTORY_DOCUMENTS,
+              'version_${Globals.version}')
+          : ''
+    });
+    return potentialStorages;
   }
 
   Future<void> lookupStorages() async {

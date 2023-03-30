@@ -58,7 +58,6 @@ class TrackPoint {
     // init app
     // await AppLoader.webKey(); // not needed
     await AppLoader.loadSharedSettings();
-    await AppLoader.initializeStorages();
     if (FileHandler.storagePath == null) {
       logger.warn('No valid storage key, skip trackpoint');
       return;
@@ -126,17 +125,11 @@ class TrackPoint {
 
       /// if nothing changed simply write data back
       if (_status != _oldStatus) {
-        /// update last status change
-        cache.lastStatusChange = gps;
-
         /// status has changed to _status.
         /// if we are now moving, we need to save the gpsPoint where
         /// standing was detected, which is the last one in the list.
         if (_status == TrackingStatus.moving) {
-          /// create Model from where we detected status standing
-          /// which is the last gpsPoints entry
-          ModelTrackPoint newEntry =
-              await createModelTrackPoint(gpsPoints.last);
+          await ModelAlias.open();
 
           /// write new entry only if no restricted alias is present
           var restricted = false;
@@ -144,9 +137,8 @@ class TrackPoint {
           /// if this area is not restricted
           /// we reuse this list to update lastVisited
           List<ModelAlias> aliasList = [];
-          await ModelAlias.open();
-          for (int id in newEntry.idAlias) {
-            var alias = ModelAlias.getAlias(id);
+          for (ModelAlias alias
+              in ModelAlias.nextAlias(gps: calcGpsPoints.first)) {
             if (alias.deleted) {
               // don't process deleted items
               continue;
@@ -160,9 +152,13 @@ class TrackPoint {
           if (!restricted &&
               (!Globals.statusStandingRequireAlias ||
                   (Globals.statusStandingRequireAlias &&
-                      newEntry.idAlias.isNotEmpty))) {
+                      aliasList.isNotEmpty))) {
             /// insert new entry
             /// don't forget to load database first
+            /// create Model from where we detected status standing
+            /// which is the last gpsPoints entry
+            ModelTrackPoint newEntry = await createModelTrackPoint(
+                gps: calcGpsPoints.first, aliasList: aliasList);
             await ModelTrackPoint.insert(newEntry);
 
             /// update last visited entrys in ModelAlias
@@ -201,6 +197,9 @@ class TrackPoint {
         // disabled due to causes too much pause
         //gpsPoints.clear();
         //gpsPoints.add(gps);
+
+        /// update last status change for next sessions
+        cache.lastStatusChange = gps;
       }
       if (Globals.osmLookupCondition == OsmLookup.always) {
         cache.address = (await Address(gps).lookupAddress()).toString();
@@ -305,11 +304,13 @@ class TrackPoint {
     }
   }
 
-  Future<ModelTrackPoint> createModelTrackPoint(GPS gps) async {
+  Future<ModelTrackPoint> createModelTrackPoint(
+      {required GPS gps, required List<ModelAlias> aliasList}) async {
     await logger.log('create new ModelTrackPoint');
     String notes = '';
     List<int> idTask = [];
-    List<int> idAlias = [];
+    List<int> idUser = [];
+    List<int> idAlias = aliasList.map((e) => e.id).toList();
 
     try {
       if (Cache.instance.activeTrackPoint.isEmpty) {
@@ -317,10 +318,9 @@ class TrackPoint {
       } else {
         ModelTrackPoint tps =
             ModelTrackPoint.toSharedModel(Cache.instance.activeTrackPoint);
-        notes = tps.notes;
-        idTask = tps.idTask;
-        idAlias = tps.idAlias;
-        Cache.instance.activeTrackPoint = '';
+        notes = tps.notes; // user input
+        idTask = tps.idTask; // user input
+        idUser = tps.idUser; // user input
       }
     } catch (e, stk) {
       logger.error('load activetrackPoint cache: ${e.toString()}', stk);
@@ -332,8 +332,9 @@ class TrackPoint {
         timeStart: Cache.instance.lastStatusChange?.time ?? gps.time);
     tp.address = Cache.instance.address; // should be loaded at this point
     tp.status = _oldStatus;
-    tp.timeEnd = DateTime.now();
+    tp.timeEnd = calcGpsPoints.first.time;
     tp.idTask = idTask;
+    tp.idUser = idUser;
     tp.notes = notes;
     return tp;
   }

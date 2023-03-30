@@ -36,9 +36,12 @@ class AppLoader {
       await PermissionChecker.checkAll();
       await webKey();
       await loadSharedSettings();
-      await initializeStorages();
+      await FileHandler.getPotentialStorages();
+      //await initializeStorages();
       await loadDatabase();
-      await loadAssetDatabase();
+
+      /// disabled
+      // await loadAssetDatabase();
       await ticks();
       await backgroundGps();
       appLoaderPreloadSequenceFinished = true;
@@ -63,12 +66,13 @@ class AppLoader {
     appLoaderSharedSettingsLoaded = true;
   }
 
+/*
   static Future<void> initializeStorages() async {
     logger.important('initialize storages');
     await FileHandler().getStorage();
     appLoaderStorageInitialized = true;
   }
-
+*/
   static Future<void> loadDatabase() async {
     if (PermissionChecker.permissionsChecked &&
         PermissionChecker.permissionsOk &&

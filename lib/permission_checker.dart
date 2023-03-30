@@ -1,4 +1,5 @@
 import 'package:permission_handler/permission_handler.dart';
+import 'package:chaostours/file_handler.dart';
 
 class PermissionChecker {
   static bool permissionsChecked = false;
@@ -19,7 +20,8 @@ class PermissionChecker {
         permIgnoreBattery &&
         permManageExternalStorage &&
         permNotification &&
-        permCalendar) {
+        permCalendar &&
+        FileHandler.storageKey != Storages.notSet) {
       permissionsOk = true;
       return true;
     }

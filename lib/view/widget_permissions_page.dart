@@ -27,6 +27,7 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
   bool permLocation = false;
   bool permLocationAlways = false;
   bool permIgnoreBattery = false;
+  bool permStorage = FileHandler.storageKey != Storages.notSet;
   bool permManageExternalStorage = false;
   bool permNotification = false;
   bool permCalendar = false;
@@ -92,7 +93,7 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
 
     ///
     ///
-    if (FileHandler.storagePath == null) {
+    if (FileHandler.storageKey == Storages.notSet) {
       items.add(ListTile(
           leading: const Icon(Icons.error_outline, color: Colors.red),
           title: const Text('Kein Speicherort gesetzt'),

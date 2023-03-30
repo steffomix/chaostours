@@ -1,9 +1,14 @@
 import 'package:chaostours/cache.dart';
 import 'package:chaostours/globals.dart';
+import 'package:chaostours/file_handler.dart';
 import 'package:chaostours/logger.dart';
 
 /// names for SharedKeys.appSettings key:value pairs
 enum AppSettings {
+  /// storage
+  storageKey,
+  storagePath,
+
   /// if background tracking is enabled and starts automatic
   backgroundTrackingEnabled,
 
@@ -46,6 +51,8 @@ enum AppSettings {
 
   /// load app defaults from globals, to be overwritten by loadFromShared
   static Map<AppSettings, String> settings = {
+    AppSettings.storageKey: FileHandler.storageKey.name,
+    AppSettings.storagePath: FileHandler.storagePath ?? '',
     AppSettings.backgroundTrackingEnabled:
         Globals.backgroundTrackingEnabled ? '1' : '0',
     AppSettings.preselectedUsers:
@@ -196,6 +203,9 @@ enum AppSettings {
     await Shared(SharedKeys.appSettings).saveList(values);
   }
 
+  /// load key:value pairs from shared into AppSettings.settings
+  /// and set values to FileHandler and Globals
+  ///
   static Future<void> loadFromShared() async {
     /// set it at the beginning to prevent a loop if something fails
     _settingsLoaded = true;
@@ -218,11 +228,24 @@ enum AppSettings {
         String value = parts[1].trim();
         try {
           AppSettings key = AppSettings.values.byName(parts[0].trim());
+          settings[key] = value;
           switch (key) {
             /// defaults to Globals.preselectedUsers
+            case AppSettings.storageKey:
+              FileHandler.storageKey = value.isEmpty
+                  ? Storages.notSet
+                  : Storages.values.byName(value);
+              break;
+
+            case AppSettings.storagePath:
+              FileHandler.storagePath = value;
+              break;
+
+            /// defaults to Globals.preselectedUsers
             case AppSettings.preselectedUsers:
+              Set<int> noUsers = {};
               Globals.preselectedUsers = value.isEmpty
-                  ? {}
+                  ? noUsers
                   : value.split(',').map((e) => int.parse(e)).toSet();
               break;
 

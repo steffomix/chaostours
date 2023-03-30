@@ -106,6 +106,9 @@ class _WidgetOsm extends State<WidgetOsm> {
   @override
   void initState() {
     EventManager.listen<EventOnOsmIsLoading>(onOsmLoad);
+    Cache.instance.loadBackground().then((_) {
+      setState(() {});
+    });
     _id = 0;
     _initialized = false;
     super.initState();

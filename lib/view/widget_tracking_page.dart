@@ -56,12 +56,13 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   /// active trackpoint data
   static TrackingStatus lastStatus = TrackingStatus.none;
   static TrackingStatus currentStatus = TrackingStatus.none;
+
+  /// edit trackpoint notes controller
   static TextEditingController _controller =
       TextEditingController(text: ModelTrackPoint.pendingTrackPoint.notes);
 
   /// osm
   int circleId = 0;
-  bool _widgetActive = false;
   osm.MapController mapController = osm.MapController();
 
   /// recent or saved trackponts
@@ -72,17 +73,20 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
   @override
   void initState() {
-    _widgetActive = true;
     EventManager.listen<EventOnAppTick>(onTick);
     EventManager.listen<EventOnAddressLookup>(onAddressLookup);
     EventManager.listen<EventOnWidgetDisposed>(osmGpsPoints);
     EventManager.listen<EventOnCacheLoaded>(onCacheLoaded);
     super.initState();
+
+    /// force loading background data
+    Cache.instance.loadBackground().then((_) {
+      setState(() {});
+    });
   }
 
   @override
   void dispose() {
-    _widgetActive = false;
     EventManager.remove<EventOnAppTick>(onTick);
     EventManager.remove<EventOnAddressLookup>(onAddressLookup);
     EventManager.remove<EventOnWidgetDisposed>(osmGpsPoints);
@@ -351,8 +355,12 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         ModelTrackPoint.pendingTrackPoint.idUser
             .addAll(Globals.preselectedUsers);
         lastStatus = currentStatus;
+        /*
         _controller = TextEditingController(
             text: ModelTrackPoint.pendingTrackPoint.notes);
+        */
+        _controller.value =
+            TextEditingValue(text: ModelTrackPoint.pendingTrackPoint.notes);
       }
 
       /// write to cache user data for background thread
