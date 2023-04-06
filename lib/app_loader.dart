@@ -1,6 +1,8 @@
 import 'package:flutter/services.dart';
 import 'dart:io' as io;
 import 'package:permission_handler/permission_handler.dart';
+import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 ///
 import 'package:chaostours/model/model_alias.dart';
@@ -15,6 +17,7 @@ import 'package:chaostours/logger.dart';
 import 'package:chaostours/permission_checker.dart';
 import 'package:chaostours/globals.dart';
 import 'package:chaostours/app_settings.dart';
+import 'package:chaostours/app_hive.dart';
 
 class AppLoader {
   static Logger logger = Logger.logger<AppLoader>();
@@ -33,6 +36,8 @@ class AppLoader {
   static Future<void> preload() async {
     logger.important('start Preload sequence...');
     try {
+      await Hive.initFlutter('hive');
+
       await PermissionChecker.checkAll();
       await webKey();
       await loadSharedSettings();
