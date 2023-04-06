@@ -1,8 +1,105 @@
 // ignore_for_file: prefer_const_constructors
+import 'package:chaostours/app_hive.dart';
 
 enum OsmLookup { never, onStatus, always }
 
 class Globals {
+  static Future<void> loadSettings() async {
+    await AppHive.accessBox(
+        boxName: AppHiveNames.globalsAppSettings,
+        access: (AppHive box) async {
+          //
+          statusStandingRequireAlias = box.read<bool>(
+              hiveKey: AppHiveKeys.globalsBackgroundTrackingEnabled,
+              value: false);
+          //
+          appTickDuration = box.read<Duration>(
+              hiveKey: AppHiveKeys.globalsAppTickDuration,
+              value: Duration(seconds: 3));
+          //
+          preselectedUsers = box.read<Set<int>>(
+              hiveKey: AppHiveKeys.globalsPreselectedUsers, value: <int>{});
+          //
+          cacheGpsTime = box.read<Duration>(
+              hiveKey: AppHiveKeys.globalsCacheGpsTime,
+              value: Duration(seconds: 10));
+          //
+          distanceTreshold = box.read<int>(
+              hiveKey: AppHiveKeys.globalsDistanceTreshold, value: 100);
+          //
+          timeRangeTreshold = box.read<Duration>(
+              hiveKey: AppHiveKeys.globalsTimeRangeTreshold,
+              value: Duration(seconds: 120));
+          //
+          trackPointInterval = box.read<Duration>(
+              hiveKey: AppHiveKeys.globalsTrackPointInterval,
+              value: Duration(seconds: 30));
+          //
+          gpsPointsSmoothCount = box.read<int>(
+              hiveKey: AppHiveKeys.globalsGpsPointsSmoothCount, value: 5);
+          //
+          gpsMaxSpeed = box.read<int>(
+              hiveKey: AppHiveKeys.globalsGpsMaxSpeed, value: 150);
+          //
+          osmLookupCondition = box.read<OsmLookup>(
+              hiveKey: AppHiveKeys.globalsOsmLookupCondition,
+              value: OsmLookup.onStatus);
+          //
+          osmLookupInterval = box.read<Duration>(
+              hiveKey: AppHiveKeys.globalsGsmLookupInterval,
+              value: Duration(minutes: 0));
+        });
+  }
+
+  static Future<void> saveSettings() async {
+    await AppHive.accessBox(
+        boxName: AppHiveNames.globalsAppSettings,
+        access: (AppHive box) async {
+          //
+          box.write<bool>(
+              hiveKey: AppHiveKeys.globalsBackgroundTrackingEnabled,
+              value: backgroundTrackingEnabled);
+          //
+          box.write<Duration>(
+              hiveKey: AppHiveKeys.globalsAppTickDuration,
+              value: appTickDuration);
+          //
+          box.write<Set<int>>(
+              hiveKey: AppHiveKeys.globalsPreselectedUsers,
+              value: preselectedUsers);
+          //
+          box.write<Duration>(
+              hiveKey: AppHiveKeys.globalsCacheGpsTime, value: cacheGpsTime);
+          //
+          box.write<int>(
+              hiveKey: AppHiveKeys.globalsDistanceTreshold,
+              value: distanceTreshold);
+          //
+          box.write<Duration>(
+              hiveKey: AppHiveKeys.globalsTimeRangeTreshold,
+              value: timeRangeTreshold);
+          //
+          box.write<Duration>(
+              hiveKey: AppHiveKeys.globalsTrackPointInterval,
+              value: trackPointInterval);
+          //
+          box.write<int>(
+              hiveKey: AppHiveKeys.globalsGpsPointsSmoothCount,
+              value: gpsPointsSmoothCount);
+          //
+          box.write<int>(
+              hiveKey: AppHiveKeys.globalsGpsMaxSpeed, value: gpsMaxSpeed);
+          //
+          box.write<OsmLookup>(
+              hiveKey: AppHiveKeys.globalsOsmLookupCondition,
+              value: OsmLookup.onStatus);
+          //
+          box.write<Duration>(
+              hiveKey: AppHiveKeys.globalsGsmLookupInterval,
+              value: osmLookupInterval);
+        });
+  }
+
   static String version = '1.0';
 
   /// german default short week names
@@ -27,10 +124,6 @@ class Globals {
   /// User interactions can cause massive foreground gps lookups.
   /// to prevent application lags, gps is chached for some seconds
   static Duration cacheGpsTime = Duration(seconds: 5);
-
-  // durations and distances
-  // skip status check for given time to prevent mass actions
-  static Duration waitTimeAfterStatusChanged = Duration(seconds: 15);
 
   /// the distance to travel within <timeRangeTreshold> to trigger a status change.
   /// Above to trigger moving, below to trigger standing
@@ -59,5 +152,5 @@ class Globals {
 
   /// consumes mobile data!
   ///
-  static Duration osmLookupInterval = Duration(minutes: 0);
+  static Duration osmLookupInterval = Duration(seconds: 0);
 }

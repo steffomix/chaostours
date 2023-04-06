@@ -96,23 +96,23 @@ class Logger {
   /// ```
   Logger();
 
-  Future<void> verbose(String msg) =>
-      Future.microtask(() => _log(LogLevel.verbose, msg));
+  Future<void> verbose(Object msg) =>
+      Future.microtask(() => _log(LogLevel.verbose, msg.toString()));
   //
-  Future<void> log(String msg) =>
-      Future.microtask(() => _log(LogLevel.log, msg));
+  Future<void> log(Object msg) =>
+      Future.microtask(() => _log(LogLevel.log, msg.toString()));
   //
-  Future<void> important(String msg) =>
-      Future.microtask(() => _log(LogLevel.important, msg));
+  Future<void> important(Object msg) =>
+      Future.microtask(() => _log(LogLevel.important, msg.toString()));
   //
-  Future<void> warn(String msg) =>
-      Future.microtask(() => _log(LogLevel.warn, msg));
+  Future<void> warn(Object msg) =>
+      Future.microtask(() => _log(LogLevel.warn, msg.toString()));
   //
-  Future<void> error(String msg, StackTrace? stackTrace) =>
-      Future.microtask(() => _log(LogLevel.error, msg, stackTrace.toString()));
+  Future<void> error(Object msg, StackTrace? stackTrace) => Future.microtask(
+      () => _log(LogLevel.error, msg.toString(), stackTrace.toString()));
   //
-  Future<void> fatal(String msg, StackTrace? stackTrace) =>
-      Future.microtask(() => _log(LogLevel.fatal, msg, stackTrace.toString()));
+  Future<void> fatal(Object msg, StackTrace? stackTrace) => Future.microtask(
+      () => _log(LogLevel.fatal, msg.toString(), stackTrace.toString()));
 
   /// main log method
   _log(LogLevel level, String msg, [String? stackTrace]) {

@@ -36,7 +36,6 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
   TextEditingController? txCacheGpsTime;
   TextEditingController? txDistanceTrehold;
   TextEditingController? txTimeRangeTreshold;
-  TextEditingController? txWaitTimeAfterStatusChanged;
   TextEditingController? txAppTickDuration;
   TextEditingController? txGpsSmoothCount;
   TextEditingController? txGpsMaxSpeed;

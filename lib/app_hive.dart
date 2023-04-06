@@ -1,20 +1,50 @@
+import 'package:chaostours/globals.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:chaostours/logger.dart';
 
 enum AppHiveNames {
-  forground,
-  background,
-  storage,
-  appsettings;
+  cacheForground,
+  cacheBackground,
+  fileHandler,
+  globalsAppSettings;
 }
 
 enum AppHiveKeys {
-  id(int);
+  /// cache forground to background
+  cacheForegroundTriggerStatus,
+  cacheForegroundTrackPointUpdates,
+  cacheForegroundActiveTrackPoint,
 
-  final Type type;
-  const AppHiveKeys(this.type);
+  /// cache background to forground
+  cacheForegroundStatus,
+  cacheForegroundLastStatusChange,
+  cacheForegroundLastGps,
+  cacheForegroundGpsPoints,
+  cacheForegroundSmoothGpsPoints,
+  cacheForegroundCalcGpsPoints,
+  cacheForegroundAddress,
+
+  /// fileHandler
+  fileHandlerStoragePath,
+
+  /// globals
+  globalsWeekDays,
+  globalsBackgroundTrackingEnabled,
+  globalsPreselectedUsers,
+  globalsStatusStandingRequireAlias,
+  globalsTrackPointInterval,
+  globalsGsmLookupInterval,
+  globalsOsmLookupCondition,
+  globalsCacheGpsTime,
+  globalsDistanceTreshold,
+  globalsTimeRangeTreshold,
+  globalsAppTickDuration,
+  globalsGpsMaxSpeed,
+  globalsGpsPointsSmoothCount;
 }
 
 class AppHive {
+  static final Logger logger = Logger.logger<AppHive>();
   static const List<Type> hiveTypes = [
     int,
     double,
@@ -39,14 +69,17 @@ class AppHive {
     box.close();
   }
 
-  read<T>({required AppHiveKeys hiveKey, required T defaultValue}) {
-    var v = _box.get(hiveKey.name);
-    T value = castRead<T>(v, defaultValue);
-    return value;
+  ///
+  /// value is default value
+  read<T>({required AppHiveKeys hiveKey, required T value}) {
+    logger.log('read appHive ${_box.name}:${hiveKey.name} ');
+    var vg = _box.get(hiveKey.name);
+    return vg == null ? value : castRead<T>(vg);
   }
 
   write<T>(
       {required AppHiveKeys hiveKey, required dynamic value, Type? castAs}) {
+    logger.log('write appHive ${_box.name}:${hiveKey.name}');
     dynamic v = castWrite(value, castAs);
     _box.put(hiveKey.name, v);
   }
@@ -55,29 +88,34 @@ class AppHive {
     await Hive.initFlutter();
   }
 
-  static T castRead<T>(dynamic value, T def) {
+  static T castRead<T>(dynamic value) {
     Type t = value.runtimeType;
     if (t == T) {
       return value as T;
-    } else if (t == String) {
-      switch (T) {
-        case int:
-          return int.parse(value) as T;
-        case double:
-          return double.parse(value) as T;
-        case bool:
-          return (value == '1' ? true : false) as T;
-        case String:
-          return value.toString() as T;
-        case List<int>:
-          return value.split(',').map((e) => int.parse(e)).toList() as T;
-        case DateTime:
-          return DateTime.parse(value) as T;
-        default:
-          throw "Type T: $T not implemented";
-      }
-    } else {
-      return def;
+    }
+    if (hiveTypes.contains(T)) {
+      throw 'Unsupported Hive Type cast from $t to $T\n'
+          'Solution: Add cast for Type $T in AppHive::castRead and castWrite Type as String';
+    }
+    if (t != String) {
+      throw 'cast type must be string';
+    }
+    var s = T.toString();
+    switch (s) {
+      case 'DateTime':
+        return DateTime.parse(value) as T;
+      case 'Duration':
+        return Duration(seconds: int.parse(value)) as T;
+      case 'OsmLookup':
+        return OsmLookup.values.byName(value) as T;
+      case '_Set<int>':
+        var sx = <int>{};
+        for (var i in value.split(',')) {
+          sx.add(int.parse(i));
+        }
+        return sx as T;
+      default:
+        throw "Type T: $T not implemented";
     }
   }
 
@@ -87,12 +125,16 @@ class AppHive {
       return value;
     }
     Type t = tf ?? tv;
-    if (tv == tf) {
-      return value;
-    }
-    switch (t) {
-      case DateTime:
+    var s = t.toString();
+    switch (s) {
+      case 'DateTime':
         return (value as DateTime).toIso8601String();
+      case 'Duration':
+        return (value as Duration).inSeconds.toString();
+      case 'OsmLookup':
+        return (value as OsmLookup).name;
+      case '_Set<int>':
+        return (value as Set<int>).join(',');
       default:
         throw "Type T: $t not implemented";
     }
@@ -103,8 +145,8 @@ class AppHive {
       required AppHiveKeys hiveKey,
       required T defaultValue}) async {
     Box box = await _openBox(hiveName);
-    var v = box.get(AppHiveKeys.id.name);
-    T value = castRead<T>(v, defaultValue);
+    var v = box.get(hiveKey.name);
+    T value = castRead<T>(v ?? defaultValue);
     box.close();
     return value;
   }
@@ -116,18 +158,12 @@ class AppHive {
       Type? castAs}) async {
     dynamic v = castWrite(value, castAs);
     Box box = await _openBox(hiveName);
-    box.put(hiveKey, v);
+    box.put(hiveKey.name, v);
     box.close();
   }
 
-  static void log(Object msg) {
-    String t = DateTime.now().millisecond.toString();
-    // ignore: avoid_print
-    print('$t::$msg');
-  }
-
   static Future<Box> _openBox(AppHiveNames boxName) async {
-    String n = boxName.toString();
+    String n = boxName.name;
     try {
       if (Hive.isBoxOpen(n)) {
         return Hive.box(n);
@@ -137,7 +173,7 @@ class AppHive {
         return Hive.box(n);
       }
     } catch (e) {
-      log(e);
+      logger.log(e);
     }
 
     Box b;
@@ -145,14 +181,13 @@ class AppHive {
     try {
       b = Hive.box(n);
     } catch (e) {
-      log(e);
+      logger.log(e);
       while (true) {
         try {
           b = await Hive.openBox(n);
-          log('box opened');
           break;
         } catch (e) {
-          log(e);
+          logger.log(e);
           // take a breath and try again
           await Future.delayed(const Duration(milliseconds: 200));
         }

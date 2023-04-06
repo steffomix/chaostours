@@ -36,8 +36,9 @@ class AppLoader {
   static Future<void> preload() async {
     logger.important('start Preload sequence...');
     try {
-      await Hive.initFlutter('hive');
-
+      await Hive.initFlutter();
+      await Globals.loadSettings();
+      await Globals.saveSettings();
       await PermissionChecker.checkAll();
       await webKey();
       await loadSharedSettings();
