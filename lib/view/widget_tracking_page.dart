@@ -364,8 +364,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       }
 
       /// write to cache user data for background thread
-      Cache.instance.activeTrackPoint =
-          ModelTrackPoint.pendingTrackPoint.toSharedString();
+      Cache.instance.pendingTrackPoint = ModelTrackPoint.pendingTrackPoint;
     }
 
     setState(() {});

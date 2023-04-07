@@ -76,7 +76,7 @@ class TrackPoint {
 
     /// reset forground data as soon as possible
     /// to reduce critical window
-    await cache.saveForeground(trigger: false, trackPoints: [], activeTp: '');
+    await cache.saveForeground();
 
     /// parse status from json
     _status = cache.status;
@@ -85,10 +85,10 @@ class TrackPoint {
 
     /// update trackpoints
     try {
-      for (var row in Cache.instance.trackPointData) {
-        await ModelTrackPoint.update(ModelTrackPoint.toModel(row));
+      for (var row in Cache.instance.trackPointUpdates) {
+        await ModelTrackPoint.update(row);
       }
-      Cache.instance.trackPointData.clear();
+      Cache.instance.trackPointUpdates.clear();
     } catch (e, stk) {
       logger.error('update trackpoints: ${e.toString()}', stk);
     }
@@ -214,14 +214,7 @@ class TrackPoint {
     }
     try {
       /// save status and gpsPoints for next session and foreground live tracking view
-      await cache.saveBackground(
-          status: _status,
-          lastStatus: cache.lastStatusChange ??= gps,
-          gpsPoints: gpsPoints,
-          smoothGps: smoothGps,
-          calcPoints: calcGpsPoints,
-          lastGps: gps,
-          address: cache.address);
+      await cache.saveBackground();
     } catch (e, stk) {
       logger.error(e.toString(), stk);
     }
@@ -316,15 +309,10 @@ class TrackPoint {
     List<int> idAlias = aliasList.map((e) => e.id).toList();
 
     try {
-      if (Cache.instance.activeTrackPoint.isEmpty) {
-        logger.warn('no cached trackPoint Data found');
-      } else {
-        ModelTrackPoint tps =
-            ModelTrackPoint.toSharedModel(Cache.instance.activeTrackPoint);
-        notes = tps.notes; // user input
-        idTask = tps.idTask; // user input
-        idUser = tps.idUser; // user input
-      }
+      ModelTrackPoint tps = Cache.instance.pendingTrackPoint;
+      notes = tps.notes; // user input
+      idTask = tps.idTask; // user input
+      idUser = tps.idUser; // user input
     } catch (e, stk) {
       logger.error('load activetrackPoint cache: ${e.toString()}', stk);
     }

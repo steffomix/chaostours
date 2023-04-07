@@ -39,6 +39,10 @@ class AppLoader {
       await Hive.initFlutter();
       await Globals.loadSettings();
       await Globals.saveSettings();
+      await Cache.instance.loadBackground();
+      await Cache.instance.loadForeground();
+      await Cache.instance.saveBackground();
+      await Cache.instance.saveForeground();
       await PermissionChecker.checkAll();
       await webKey();
       await loadSharedSettings();
@@ -49,7 +53,7 @@ class AppLoader {
       /// disabled
       // await loadAssetDatabase();
       await ticks();
-      await backgroundGps();
+      //await backgroundGps();
       appLoaderPreloadSequenceFinished = true;
     } catch (e, std) {
       logger.fatal('Startup sequence failed: ${e.toString()}', std);

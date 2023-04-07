@@ -6,7 +6,8 @@ import 'package:chaostours/globals.dart';
 void backgroundCallback() {
   BackgroundLocationTrackerManager.handleBackgroundUpdated(
       (BackgroundLocationUpdateData data) async {
-    await TrackPoint().startShared(lat: data.lat, lon: data.lon);
+    print('~~ skip trackpoint in tracking.dart');
+    //await TrackPoint().startShared(lat: data.lat, lon: data.lon);
   });
 }
 

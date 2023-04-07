@@ -6,7 +6,8 @@ enum AppHiveNames {
   cacheForground,
   cacheBackground,
   fileHandler,
-  globalsAppSettings;
+  globalsAppSettings,
+  eventManager;
 }
 
 enum AppHiveKeys {
@@ -16,13 +17,15 @@ enum AppHiveKeys {
   cacheForegroundActiveTrackPoint,
 
   /// cache background to forground
-  cacheForegroundStatus,
-  cacheForegroundLastStatusChange,
-  cacheForegroundLastGps,
-  cacheForegroundGpsPoints,
-  cacheForegroundSmoothGpsPoints,
-  cacheForegroundCalcGpsPoints,
-  cacheForegroundAddress,
+  cacheBackgroundStatus,
+  cacheBackgroundLastStatusChange,
+  cacheBackgroundLastGps,
+  cacheBackgroundGpsPoints,
+  cacheBackgroundSmoothGpsPoints,
+  cacheBackgroundCalcGpsPoints,
+  cacheBackgroundAddress,
+  cacheBackgroundRecentTrackpoints,
+  cacheBackgroundRecentLocalTrackpoints,
 
   /// fileHandler
   fileHandlerStoragePath,

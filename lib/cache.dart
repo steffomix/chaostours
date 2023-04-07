@@ -8,6 +8,7 @@ import 'package:chaostours/gps.dart';
 import 'package:chaostours/background_process/trackpoint.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/file_handler.dart';
+import 'package:chaostours/app_hive.dart';
 
 enum JsonKeys {
   // background status and messages
@@ -34,8 +35,8 @@ class Cache {
   ///
   /// foreground values
   ///
-  List<String> trackPointData = [];
-  String activeTrackPoint = '';
+  List<ModelTrackPoint> trackPointUpdates = [];
+  ModelTrackPoint pendingTrackPoint = ModelTrackPoint.pendingTrackPoint;
   bool _triggerStatus = false;
   bool get statusTriggered => _triggerStatus;
   void triggerStatus() => _triggerStatus = true;
@@ -59,10 +60,149 @@ class Cache {
   List<ModelTrackPoint> localTrackPoints = [];
 
   /// forground interval
-  /// runs together with background trackPointInterval
+  /// save foreground, load background and fire event
   static bool _listening = false;
   void stopListen() => _listening = false;
-  bool listen() {
+  listen() {
+    if (!_listening) {
+      _listening = true;
+      Future.microtask(() async {
+        while (_listening) {
+          try {
+            loadBackground();
+          } catch (e, stk) {
+            logger.error('load background cache failed: $e', stk);
+          }
+          try {
+            /// save foreground
+            saveForeground();
+          } catch (e, stk) {
+            logger.error('save foreground failed: $e', stk);
+          }
+        }
+      });
+    }
+  }
+
+  /// save foreground
+  Future<void> saveForeground() async {
+    await AppHive.accessBox(
+        boxName: AppHiveNames.cacheForground,
+        access: (AppHive box) async {
+          box.write<String>(
+              hiveKey: AppHiveKeys.cacheForegroundActiveTrackPoint,
+              value: pendingTrackPoint.toSharedString());
+          box.write<List<String>>(
+              hiveKey: AppHiveKeys.cacheForegroundTrackPointUpdates,
+              value: trackPointUpdates.map((e) => e.toSharedString()).toList());
+          box.write<bool>(
+              hiveKey: AppHiveKeys.cacheForegroundTriggerStatus,
+              value: _triggerStatus);
+          _triggerStatus = false;
+        });
+  }
+
+  /// save foreground
+  Future<void> loadForeground() async {
+    await AppHive.accessBox(
+        boxName: AppHiveNames.cacheForground,
+        access: (AppHive box) async {
+          pendingTrackPoint = ModelTrackPoint.toSharedModel(box.read<String>(
+              hiveKey: AppHiveKeys.cacheForegroundActiveTrackPoint,
+              value: ModelTrackPoint.pendingTrackPoint.toSharedString()));
+          trackPointUpdates = (box.read<List<String>>(
+                  hiveKey: AppHiveKeys.cacheForegroundTrackPointUpdates,
+                  value: []) as List<String>)
+              .map((e) => ModelTrackPoint.toSharedModel(e))
+              .toList();
+          _triggerStatus = box.read<bool>(
+              hiveKey: AppHiveKeys.cacheForegroundTriggerStatus, value: false);
+        });
+  }
+
+  /// load background
+  Future<void> loadBackground() async {
+    await AppHive.accessBox(
+        boxName: AppHiveNames.cacheBackground,
+        access: (AppHive box) async {
+          List<ModelTrackPoint> mapTp(List<String> s) {
+            return s.map((e) => ModelTrackPoint.toSharedModel(e)).toList();
+          }
+
+          List<GPS> mapGps(List<String> s) {
+            return s.map((e) => GPS.toSharedObject(e)).toList();
+          }
+
+          recentTrackPoints = mapTp(box.read<List<String>>(
+              hiveKey: AppHiveKeys.cacheBackgroundRecentTrackpoints,
+              value: []));
+          localTrackPoints = mapTp(box.read<List<String>>(
+              hiveKey: AppHiveKeys.cacheBackgroundRecentLocalTrackpoints,
+              value: []));
+          address = box.read<String>(
+              hiveKey: AppHiveKeys.cacheBackgroundAddress, value: '');
+          calcGpsPoints.addAll(mapGps(box.read<List<String>>(
+              hiveKey: AppHiveKeys.cacheBackgroundCalcGpsPoints, value: [])));
+          gpsPoints.addAll(mapGps(box.read<List<String>>(
+              hiveKey: AppHiveKeys.cacheBackgroundGpsPoints, value: [])));
+          lastGps = GPS.toSharedObject(box.read<String>(
+              hiveKey: AppHiveKeys.cacheBackgroundLastGps,
+              value: GPS(0, 0).toSharedString()));
+          lastStatusChange = GPS.toSharedObject(box.read<String>(
+              hiveKey: AppHiveKeys.cacheBackgroundLastStatusChange,
+              value: GPS(0, 0).toSharedString()));
+          smoothGpsPoints = mapGps(box.read<List<String>>(
+              hiveKey: AppHiveKeys.cacheBackgroundSmoothGpsPoints, value: []));
+          _status = TrackingStatus.values.byName(box.read<String>(
+              hiveKey: AppHiveKeys.cacheBackgroundStatus,
+              value: TrackingStatus.standing.name));
+        });
+  }
+
+  /// load background
+  Future<void> saveBackground() async {
+    await AppHive.accessBox(
+        boxName: AppHiveNames.cacheBackground,
+        access: (AppHive box) async {
+          List<String> mapTp(List<ModelTrackPoint> s) {
+            return s.map((e) => e.toSharedString()).toList();
+          }
+
+          List<String> mapGps(List<GPS> s) {
+            return s.map((e) => e.toSharedString()).toList();
+          }
+
+          box.write<List<String>>(
+              hiveKey: AppHiveKeys.cacheBackgroundRecentTrackpoints,
+              value: mapTp(recentTrackPoints));
+          box.write<List<String>>(
+              hiveKey: AppHiveKeys.cacheBackgroundRecentLocalTrackpoints,
+              value: mapTp(localTrackPoints));
+          box.read<String>(
+              hiveKey: AppHiveKeys.cacheBackgroundAddress, value: address);
+          box.write<List<String>>(
+              hiveKey: AppHiveKeys.cacheBackgroundCalcGpsPoints,
+              value: mapGps(calcGpsPoints));
+          box.write<List<String>>(
+              hiveKey: AppHiveKeys.cacheBackgroundGpsPoints,
+              value: mapGps(gpsPoints));
+          box.write<String>(
+              hiveKey: AppHiveKeys.cacheBackgroundLastGps,
+              value: (lastGps ?? GPS(0, 0)).toSharedString());
+          box.write<String>(
+              hiveKey: AppHiveKeys.cacheBackgroundLastStatusChange,
+              value: (lastStatusChange ?? GPS(0, 0)).toSharedString());
+          box.write<List<String>>(
+              hiveKey: AppHiveKeys.cacheBackgroundSmoothGpsPoints,
+              value: mapGps(smoothGpsPoints));
+          box.write<String>(
+              hiveKey: AppHiveKeys.cacheBackgroundStatus, value: _status.name);
+        });
+  }
+}
+
+/*
+  bool listenOld() {
     if (!_listening) {
       _listening = true;
       Future.microtask(() async {
@@ -89,6 +229,14 @@ class Cache {
     }
     return _listening;
   }
+
+  ///
+  ///
+  ///
+  ///
+  ///
+  ///
+  ///
 
   Future<void> _save({required String file, required String data}) async {
     String storage = FileHandler.combinePath(
@@ -289,6 +437,7 @@ class Cache {
   }
 }
 
+  */
 ///
 ///
 ///
