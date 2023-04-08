@@ -29,6 +29,7 @@ enum AppHiveKeys {
 
   /// fileHandler
   fileHandlerStoragePath,
+  fileHandlerStorageKey,
 
   /// globals
   globalsWeekDays,
@@ -69,7 +70,7 @@ class AppHive {
       required Future<void> Function(AppHive box) access}) async {
     Box box = await _openBox(boxName);
     await access(AppHive._handler(box));
-    box.close();
+    //box.close();
   }
 
   ///
@@ -77,7 +78,7 @@ class AppHive {
   read<T>({required AppHiveKeys hiveKey, required T value}) {
     logger.log('read appHive ${_box.name}:${hiveKey.name} ');
     var vg = _box.get(hiveKey.name);
-    return vg == null ? value : castRead<T>(vg);
+    return vg == null || T.toString() == 'Null' ? value : castRead<T>(vg);
   }
 
   write<T>(
@@ -111,12 +112,6 @@ class AppHive {
         return Duration(seconds: int.parse(value)) as T;
       case 'OsmLookup':
         return OsmLookup.values.byName(value) as T;
-      case '_Set<int>':
-        var sx = <int>{};
-        for (var i in value.split(',')) {
-          sx.add(int.parse(i));
-        }
-        return sx as T;
       default:
         throw "Type T: $T not implemented";
     }
@@ -136,8 +131,6 @@ class AppHive {
         return (value as Duration).inSeconds.toString();
       case 'OsmLookup':
         return (value as OsmLookup).name;
-      case '_Set<int>':
-        return (value as Set<int>).join(',');
       default:
         throw "Type T: $t not implemented";
     }
@@ -175,8 +168,8 @@ class AppHive {
         await Hive.openBox(n);
         return Hive.box(n);
       }
-    } catch (e) {
-      logger.log(e);
+    } catch (e, stk) {
+      logger.error(e, stk);
     }
 
     Box b;

@@ -51,7 +51,8 @@ enum AppSettings {
 
   /// load app defaults from globals, to be overwritten by loadFromShared
   static Map<AppSettings, String> settings = {
-    AppSettings.storageKey: FileHandler.storageKey.name,
+    AppSettings.storageKey:
+        FileHandler.storageKey?.name ?? Storages.appInternal.name,
     AppSettings.storagePath: FileHandler.storagePath ?? '',
     AppSettings.backgroundTrackingEnabled:
         Globals.backgroundTrackingEnabled ? '1' : '0',

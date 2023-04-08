@@ -6,6 +6,7 @@ import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/globals.dart';
 import 'package:chaostours/model/model_alias.dart';
+import 'package:chaostours/view/app_init.dart';
 import 'package:chaostours/view/app_colors.dart';
 import 'package:chaostours/view/widget_tracking_page.dart';
 import 'package:chaostours/view/widget_logger_page.dart';
@@ -90,6 +91,7 @@ enum AppRoutes {
   // osm
   osm('/osm'),
   // system
+  appInit('/appInit'),
   logger('/logger'),
   permissions('/permissions'),
   storageSettings('/storagesettings'),
@@ -110,7 +112,7 @@ class AppWidgets {
   static final Logger logger = Logger.logger<AppWidgets>();
 
   static Widget materialApp(BuildContext context) {
-    String homeRoute = AppRoutes.home.route;
+    String homeRoute = AppRoutes.appInit.route;
     return MaterialApp(
       title: 'Chaos Tours',
       initialRoute: homeRoute,
@@ -138,6 +140,7 @@ class AppWidgets {
         AppRoutes.osm.route: (context) => const WidgetOsm(),
 
         /// system config routes
+        AppRoutes.appInit.route: (context) => const AppInit(),
         AppRoutes.logger.route: (context) => const WidgetLoggerPage(),
         AppRoutes.permissions.route: (context) => const WidgetPermissionsPage(),
         AppRoutes.storageSettings.route: (context) =>

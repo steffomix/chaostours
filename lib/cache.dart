@@ -68,33 +68,39 @@ class Cache {
       _listening = true;
       Future.microtask(() async {
         while (_listening) {
-          try {
-            loadBackground();
-          } catch (e, stk) {
-            logger.error('load background cache failed: $e', stk);
-          }
-          try {
-            /// save foreground
-            saveForeground();
-          } catch (e, stk) {
-            logger.error('save foreground failed: $e', stk);
-          }
+          GPS.gps().then((GPS gps) {
+            try {
+              loadBackground(gps);
+            } catch (e, stk) {
+              logger.error('load background cache failed: $e', stk);
+            }
+            try {
+              /// save foreground
+              saveForeground(gps);
+            } catch (e, stk) {
+              logger.error('save foreground failed: $e', stk);
+            }
+          }).onError((error, stackTrace) {
+            logger.error('cache listen $error', stackTrace);
+          });
         }
       });
     }
   }
 
   /// save foreground
-  Future<void> saveForeground() async {
+  Future<void> saveForeground(GPS gps) async {
     await AppHive.accessBox(
         boxName: AppHiveNames.cacheForground,
         access: (AppHive box) async {
           box.write<String>(
               hiveKey: AppHiveKeys.cacheForegroundActiveTrackPoint,
               value: pendingTrackPoint.toSharedString());
+
           box.write<List<String>>(
               hiveKey: AppHiveKeys.cacheForegroundTrackPointUpdates,
               value: trackPointUpdates.map((e) => e.toSharedString()).toList());
+
           box.write<bool>(
               hiveKey: AppHiveKeys.cacheForegroundTriggerStatus,
               value: _triggerStatus);
@@ -103,25 +109,27 @@ class Cache {
   }
 
   /// save foreground
-  Future<void> loadForeground() async {
+  Future<void> loadForeground(GPS gps) async {
     await AppHive.accessBox(
         boxName: AppHiveNames.cacheForground,
         access: (AppHive box) async {
           pendingTrackPoint = ModelTrackPoint.toSharedModel(box.read<String>(
               hiveKey: AppHiveKeys.cacheForegroundActiveTrackPoint,
               value: ModelTrackPoint.pendingTrackPoint.toSharedString()));
+
           trackPointUpdates = (box.read<List<String>>(
                   hiveKey: AppHiveKeys.cacheForegroundTrackPointUpdates,
                   value: []) as List<String>)
               .map((e) => ModelTrackPoint.toSharedModel(e))
               .toList();
+
           _triggerStatus = box.read<bool>(
               hiveKey: AppHiveKeys.cacheForegroundTriggerStatus, value: false);
         });
   }
 
   /// load background
-  Future<void> loadBackground() async {
+  Future<void> loadBackground(GPS gps) async {
     await AppHive.accessBox(
         boxName: AppHiveNames.cacheBackground,
         access: (AppHive box) async {
@@ -136,23 +144,31 @@ class Cache {
           recentTrackPoints = mapTp(box.read<List<String>>(
               hiveKey: AppHiveKeys.cacheBackgroundRecentTrackpoints,
               value: []));
+
           localTrackPoints = mapTp(box.read<List<String>>(
               hiveKey: AppHiveKeys.cacheBackgroundRecentLocalTrackpoints,
               value: []));
+
           address = box.read<String>(
               hiveKey: AppHiveKeys.cacheBackgroundAddress, value: '');
+
           calcGpsPoints.addAll(mapGps(box.read<List<String>>(
               hiveKey: AppHiveKeys.cacheBackgroundCalcGpsPoints, value: [])));
+
           gpsPoints.addAll(mapGps(box.read<List<String>>(
               hiveKey: AppHiveKeys.cacheBackgroundGpsPoints, value: [])));
+
           lastGps = GPS.toSharedObject(box.read<String>(
               hiveKey: AppHiveKeys.cacheBackgroundLastGps,
-              value: GPS(0, 0).toSharedString()));
+              value: gps.toSharedString()));
+
           lastStatusChange = GPS.toSharedObject(box.read<String>(
               hiveKey: AppHiveKeys.cacheBackgroundLastStatusChange,
-              value: GPS(0, 0).toSharedString()));
+              value: gps.toSharedString()));
+
           smoothGpsPoints = mapGps(box.read<List<String>>(
               hiveKey: AppHiveKeys.cacheBackgroundSmoothGpsPoints, value: []));
+
           _status = TrackingStatus.values.byName(box.read<String>(
               hiveKey: AppHiveKeys.cacheBackgroundStatus,
               value: TrackingStatus.standing.name));
@@ -160,7 +176,7 @@ class Cache {
   }
 
   /// load background
-  Future<void> saveBackground() async {
+  Future<void> saveBackground(GPS gps) async {
     await AppHive.accessBox(
         boxName: AppHiveNames.cacheBackground,
         access: (AppHive box) async {
@@ -175,269 +191,40 @@ class Cache {
           box.write<List<String>>(
               hiveKey: AppHiveKeys.cacheBackgroundRecentTrackpoints,
               value: mapTp(recentTrackPoints));
+
           box.write<List<String>>(
               hiveKey: AppHiveKeys.cacheBackgroundRecentLocalTrackpoints,
               value: mapTp(localTrackPoints));
+
           box.read<String>(
               hiveKey: AppHiveKeys.cacheBackgroundAddress, value: address);
+
           box.write<List<String>>(
               hiveKey: AppHiveKeys.cacheBackgroundCalcGpsPoints,
               value: mapGps(calcGpsPoints));
+
           box.write<List<String>>(
               hiveKey: AppHiveKeys.cacheBackgroundGpsPoints,
               value: mapGps(gpsPoints));
+
           box.write<String>(
               hiveKey: AppHiveKeys.cacheBackgroundLastGps,
-              value: (lastGps ?? GPS(0, 0)).toSharedString());
+              value: lastGps ?? gps.toSharedString());
+
           box.write<String>(
               hiveKey: AppHiveKeys.cacheBackgroundLastStatusChange,
-              value: (lastStatusChange ?? GPS(0, 0)).toSharedString());
+              value: lastStatusChange ?? gps.toSharedString());
+
           box.write<List<String>>(
               hiveKey: AppHiveKeys.cacheBackgroundSmoothGpsPoints,
               value: mapGps(smoothGpsPoints));
+
           box.write<String>(
               hiveKey: AppHiveKeys.cacheBackgroundStatus, value: _status.name);
         });
   }
 }
 
-/*
-  bool listenOld() {
-    if (!_listening) {
-      _listening = true;
-      Future.microtask(() async {
-        while (_listening) {
-          try {
-            logger.log('load background cache');
-            await loadBackground();
-          } catch (e, stk) {
-            logger.error('load background cache: ${e.toString()}', stk);
-          }
-          try {
-            logger.log('save foreground cache');
-            await saveForeground(
-                trigger: _triggerStatus,
-                trackPoints: trackPointData,
-                activeTp: activeTrackPoint);
-          } catch (e, stk) {
-            logger.error('save foreground cache: ${e.toString()}', stk);
-          }
-          EventManager.fire<EventOnCacheLoaded>(EventOnCacheLoaded());
-          await Future.delayed(Globals.trackPointInterval);
-        }
-      });
-    }
-    return _listening;
-  }
-
-  ///
-  ///
-  ///
-  ///
-  ///
-  ///
-  ///
-
-  Future<void> _save({required String file, required String data}) async {
-    String storage = FileHandler.combinePath(
-        FileHandler.storages[Storages.appInternal]!, file);
-    await FileHandler.write(storage, data);
-  }
-
-  Future<String> _load({required String file}) async {
-    String storage = FileHandler.combinePath(
-        FileHandler.storages[Storages.appInternal]!, file);
-    return await FileHandler.read(storage);
-  }
-
-  Future<void> saveForeground(
-      {required bool trigger,
-      required List<String> trackPoints,
-      required String activeTp}) async {
-    Map<String, dynamic> jsonObject = {
-      JsonKeys.fgTriggerStatus.name: trigger ? '1' : '0',
-      JsonKeys.fgTrackPointUpdates.name: trackPoints,
-      JsonKeys.fgActiveTrackPoint.name: activeTp
-    };
-    String jsonString = jsonEncode(jsonObject);
-    logger.log('save foreground json: $jsonString');
-    await _save(file: FileHandler.foregroundCacheFile, data: jsonString);
-  }
-
-  Future<void> loadForeground() async {
-    Map<String, dynamic> json = {
-      JsonKeys.fgTriggerStatus.name: false,
-      JsonKeys.fgTrackPointUpdates.name: <String>[],
-      JsonKeys.fgActiveTrackPoint.name: ''
-    };
-    try {
-      String data = await _load(file: FileHandler.foregroundCacheFile);
-      json = jsonDecode(data);
-
-      /// trigger status
-      try {
-        _triggerStatus =
-            (json[JsonKeys.fgTriggerStatus.name] ?? '0') == '1' ? true : false;
-      } catch (e, stk) {
-        logger.error('load trigger status: ${e.toString()}', stk);
-      }
-
-      /// update trackPoints
-      try {
-        trackPointData =
-            (json[JsonKeys.fgTrackPointUpdates.name] as List<dynamic>)
-                .map((e) => e.toString())
-                .toList();
-      } catch (e, stk) {
-        logger.error('load update trackpoints: ${e.toString()}', stk);
-      }
-
-      /// active trackpoint
-      try {
-        activeTrackPoint = json[JsonKeys.fgActiveTrackPoint.name] ?? '';
-      } catch (e, stk) {
-        logger.error('load update trackpoints: ${e.toString()}', stk);
-      }
-    } catch (e, stk) {
-      logger.error('loadForeground: ${e.toString()}', stk);
-    }
-  }
-
-  Future<void> saveBackground(
-      {required TrackingStatus status,
-      required GPS lastStatus,
-      required List<GPS> gpsPoints,
-      required List<GPS> smoothGps,
-      required List<GPS> calcPoints,
-      required GPS lastGps,
-      String? address = ''}) async {
-    try {
-      Map<String, dynamic> jsonObject = {
-        JsonKeys.bgStatus.name: status.name,
-        JsonKeys.bgLastStatusChange.name: lastStatus.toSharedString(),
-        JsonKeys.bgGpsPoints.name:
-            gpsPoints.map((e) => e.toSharedString()).toList(),
-        JsonKeys.bgCalcGpsPoints.name:
-            calcPoints.map((e) => e.toSharedString()).toList(),
-        JsonKeys.bgSmoothGpsPoints.name:
-            smoothGps.map((e) => e.toSharedString()).toList(),
-        JsonKeys.bgLastGps.name: lastGps.toSharedString(),
-        JsonKeys.bgAddress.name: address
-      };
-      String jsonString = jsonEncode(jsonObject);
-      logger.log('save json:\n$jsonString');
-
-      await _save(file: FileHandler.backgroundCacheFile, data: jsonString);
-    } catch (e, stk) {
-      logger.error('save background: ${e.toString()}', stk);
-    }
-  }
-
-  Future<void> loadBackground() async {
-    Map<String, dynamic> json = {
-      JsonKeys.bgStatus.name: TrackingStatus.none.name,
-      JsonKeys.bgLastStatusChange.name: '',
-      JsonKeys.bgGpsPoints.name: [],
-      JsonKeys.bgCalcGpsPoints.name: [],
-      JsonKeys.bgSmoothGpsPoints.name: [],
-      JsonKeys.bgLastGps.name: '',
-      JsonKeys.bgAddress.name: ''
-    };
-
-    try {
-      String jsonString = await _load(file: FileHandler.backgroundCacheFile);
-      logger.log('load json:\n$jsonString');
-      json = jsonDecode(jsonString);
-
-      /// status
-      try {
-        _status = TrackingStatus.values
-            .byName(json[JsonKeys.bgStatus.name] ?? _status);
-      } catch (e, stk) {
-        logger.error(
-            'read json status ${json[JsonKeys.bgStatus.name]}: ${e.toString()}',
-            stk);
-      }
-
-      /// lastStatusChange
-      try {
-        String lastStatus = json[JsonKeys.bgLastStatusChange.name] ?? '';
-        if (lastStatus.isNotEmpty) {
-          lastStatusChange = GPS.toSharedObject(lastStatus);
-        }
-      } catch (e, stk) {
-        logger.error(
-            'read json lastStatusChange ${json[JsonKeys.bgLastStatusChange.name]}: ${e.toString()}',
-            stk);
-      }
-
-      /// gpsPoints
-      try {
-        List<dynamic> points =
-            (json[JsonKeys.bgGpsPoints.name] as List<dynamic>);
-        gpsPoints.clear();
-        for (var p in points) {
-          gpsPoints.add(GPS.toSharedObject(p.toString()));
-        }
-      } catch (e, stk) {
-        logger.error(
-            'read json gpsPoints ${json[JsonKeys.bgGpsPoints.name]}: ${e.toString()}',
-            stk);
-      }
-
-      /// smoothGpsPoints
-      try {
-        List<dynamic> points =
-            (json[JsonKeys.bgSmoothGpsPoints.name] as List<dynamic>);
-        smoothGpsPoints.clear();
-        for (var p in points) {
-          smoothGpsPoints.add(GPS.toSharedObject(p.toString()));
-        }
-      } catch (e, stk) {
-        logger.error(
-            'read json smoothGps ${json[JsonKeys.bgSmoothGpsPoints.name]}: ${e.toString()}',
-            stk);
-      }
-
-      /// calcGpsPoints
-      try {
-        List<dynamic> points =
-            (json[JsonKeys.bgCalcGpsPoints.name] as List<dynamic>);
-        calcGpsPoints.clear();
-        for (var p in points) {
-          calcGpsPoints.add(GPS.toSharedObject(p.toString()));
-        }
-      } catch (e, stk) {
-        logger.error(
-            'read json calcGpsPoints ${json[JsonKeys.bgCalcGpsPoints.name]}: ${e.toString()}',
-            stk);
-      }
-
-      /// last GPS
-      try {
-        GPS.lastGps =
-            lastGps = GPS.toSharedObject(json[JsonKeys.bgLastGps.name]);
-      } catch (e, stk) {
-        logger.error(
-            'read json lastGps ${json[JsonKeys.bgLastGps.name]}: ${e.toString()}',
-            stk);
-      }
-
-      /// address
-      try {
-        address = json[JsonKeys.bgAddress.name] ?? ' --- ';
-      } catch (e, stk) {
-        logger.error(
-            'read json address ${json[JsonKeys.bgAddress.name]}: ${e.toString()}',
-            stk);
-      }
-    } catch (e, stk) {
-      logger.error('load background: ${e.toString()}', stk);
-    }
-  }
-}
-
-  */
 ///
 ///
 ///

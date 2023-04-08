@@ -3,9 +3,12 @@ import 'dart:io' as io;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:flutter/material.dart';
 
 ///
+import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/model/model_alias.dart';
+import 'package:chaostours/gps.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_user.dart';
@@ -22,42 +25,55 @@ import 'package:chaostours/app_hive.dart';
 class AppLoader {
   static Logger logger = Logger.logger<AppLoader>();
 
-  static bool appLoaderPreloadSequenceFinished = false;
-  static bool appLoaderWebKeyLoaded = false;
-  static bool appLoaderSharedSettingsLoaded = false;
-  static bool appLoaderStorageInitialized = false;
-  static bool appLoaderDatabseLoaded = false;
-  static bool appLoaderAssetDatabaseLoaded = false;
-  static bool appLoaderPermissionsRequested = false;
-  static bool appLoaderTicksStarted = false;
-
   ///
   /// preload recources
   static Future<void> preload() async {
     logger.important('start Preload sequence...');
+    await webKey();
+    await globalSettings();
+    await loadDatabase();
     try {
-      await Hive.initFlutter();
-      await Globals.loadSettings();
-      await Globals.saveSettings();
-      await Cache.instance.loadBackground();
-      await Cache.instance.loadForeground();
-      await Cache.instance.saveBackground();
-      await Cache.instance.saveForeground();
+      if (FileHandler.storagePath != null) {
+        await loadDatabase();
+      } else {}
       await PermissionChecker.checkAll();
-      await webKey();
-      await loadSharedSettings();
-      await FileHandler.getPotentialStorages();
-      //await initializeStorages();
-      await loadDatabase();
-
-      /// disabled
-      // await loadAssetDatabase();
-      await ticks();
-      //await backgroundGps();
-      appLoaderPreloadSequenceFinished = true;
+      if (PermissionChecker.permissionsOk) {
+        try {
+          GPS gps = await GPS.gps();
+          await Cache.instance.loadBackground(gps);
+          await Cache.instance.loadForeground(gps);
+          await Cache.instance.saveBackground(gps);
+          await Cache.instance.saveForeground(gps);
+        } catch (e) {
+          logger.warn('preload gps not available');
+        }
+        await loadSharedSettings();
+        await FileHandler.getPotentialStorages();
+        //await initializeStorages();
+        await ticks();
+      }
     } catch (e, std) {
       logger.fatal('Startup sequence failed: ${e.toString()}', std);
     }
+  }
+
+  static Future<void> loadCache() async {
+    GPS gps = await GPS.gps();
+    await Cache.instance.loadBackground(gps);
+    await Cache.instance.loadForeground(gps);
+    await Cache.instance.saveBackground(gps);
+    await Cache.instance.saveForeground(gps);
+  }
+
+  static Future<void> storageSettings() async {
+    await FileHandler.getPotentialStorages();
+    await FileHandler.loadSettings();
+    await FileHandler.saveSettings();
+  }
+
+  static Future<void> globalSettings() async {
+    await Globals.loadSettings();
+    await Globals.saveSettings();
   }
 
   ///
@@ -68,7 +84,6 @@ class AppLoader {
     io.SecurityContext.defaultContext
         .setTrustedCertificatesBytes(data.buffer.asUint8List());
     logger.log('SSL Key loaded');
-    appLoaderWebKeyLoaded = true;
   }
 
   static Future<void> loadSharedSettings() async {
@@ -76,19 +91,10 @@ class AppLoader {
     if ((FileHandler.storagePath ?? '').isNotEmpty) {
       FileHandler().lookupStorages();
     }
-    appLoaderSharedSettingsLoaded = true;
   }
 
-/*
-  static Future<void> initializeStorages() async {
-    logger.important('initialize storages');
-    await FileHandler().getStorage();
-    appLoaderStorageInitialized = true;
-  }
-*/
-  static Future<void> loadDatabase() async {
-    if (PermissionChecker.permissionsChecked &&
-        PermissionChecker.permissionsOk &&
+  static Future<bool> loadDatabase() async {
+    if (await PermissionChecker.checkManageExternalStorage() &&
         FileHandler.storagePath != null) {
       // load database
       logger.important('load Database Table ModelUser');
@@ -99,8 +105,9 @@ class AppLoader {
       await ModelAlias.open();
       logger.important('load Database Table ModelTrackPoint');
       await ModelTrackPoint.open();
-      appLoaderDatabseLoaded = true;
+      return true;
     }
+    return false;
   }
 
   static Future<void> loadAssetDatabase() async {
@@ -119,7 +126,6 @@ class AppLoader {
       await ModelTask.openFromAsset();
       await ModelTask.write();
     }
-    appLoaderAssetDatabaseLoaded = true;
   }
 
   static Future<void> ticks() async {
@@ -129,7 +135,6 @@ class AppLoader {
     _addressTick();
     logger.important('logger listen on app-tick ready');
     Logger.listenOnTick();
-    appLoaderTicksStarted = true;
   }
 
   static Future<void> backgroundGps() async {

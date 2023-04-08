@@ -105,13 +105,19 @@ class _WidgetOsm extends State<WidgetOsm> {
 
   @override
   void initState() {
-    EventManager.listen<EventOnOsmIsLoading>(onOsmLoad);
-    Cache.instance.loadBackground().then((_) {
-      setState(() {});
-    });
     _id = 0;
     _initialized = false;
     super.initState();
+    EventManager.listen<EventOnOsmIsLoading>(onOsmLoad);
+    try {
+      GPS.gps().then((GPS gps) {
+        Cache.instance.loadBackground(gps).then((_) {
+          setState(() {});
+        });
+      });
+    } catch (e) {
+      logger.warn('osm init no gps: $e');
+    }
   }
 
   void onOsmLoad(EventOnOsmIsLoading e) {

@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 //
-import 'package:chaostours/app_loader.dart';
 import 'package:chaostours/logger.dart';
-import 'view/app_widgets.dart';
+import 'package:chaostours/view/app_widgets.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   Logger.logLevel = LogLevel.verbose;
+  await Hive.initFlutter();
   runApp(const MyApp());
-  AppLoader.preload();
 }
 
 class MyApp extends StatelessWidget {

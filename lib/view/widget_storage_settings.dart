@@ -24,9 +24,9 @@ class WidgetStorageSettings extends StatefulWidget {
 class _WidgetStorageSettings extends State<WidgetStorageSettings> {
   static final Logger logger = Logger.logger<WidgetStorageSettings>();
 
-  final Map<Storages, String?> storages = FileHandler.storages;
+  final Map<Storages, Directory?> storages = FileHandler.potentialStorages;
 
-  Storages selectedStorage = FileHandler.storageKey;
+  Storages selectedStorage = FileHandler.storageKey ?? Storages.appInternal;
 
   bool loading = true;
 
@@ -47,24 +47,11 @@ class _WidgetStorageSettings extends State<WidgetStorageSettings> {
   @override
   void initState() {
     /// basic and fallback setting
-    selectedStorage = FileHandler.storageKey;
+    selectedStorage = FileHandler.storageKey ?? Storages.appInternal;
 
     loading = false;
     setState(() {});
     super.initState();
-  }
-
-  Future<void> createDir(String path, Storages target) async {
-    Directory dir = Directory(path);
-    if (!dir.existsSync()) {
-      // thows exception
-      dir = await dir.create(recursive: true);
-      storages[target] = dir.path;
-      logger.log(dir.path);
-    } else {
-      storages[target] = dir.path;
-      logger.log(dir.path);
-    }
   }
 
   void setStorage(BuildContext context, Storages storage) {
@@ -82,183 +69,155 @@ class _WidgetStorageSettings extends State<WidgetStorageSettings> {
     List<Widget> bodyStack = [];
     List<Widget> options = [];
 
-    if ((FileHandler.storagePath ?? '').isEmpty) {
-      List<String> pathes = [];
-      for (var k in FileHandler.potentialStorages.keys) {
-        pathes.add(FileHandler.combinePath(
-            FileHandler.potentialStorages[k] ?? '', 'readme.txt'));
-      }
-
-      bodyStack.add(Container(
-          padding: const EdgeInsets.all(15),
-          child: Column(children: [
-            const Text('Speicherort nicht gesetzt.'),
-            Text(
-                'Durch klicken des Buttons wird ChaosTours App versuchen eine einfache Textdatei "readme.txt" '
-                'in folgende Speicherorte zu schreiben. Danach werden können sie einen der Orte beschreibbaren Orte auswählen'
-                '\n\n- ${pathes.join('\n- ')}'),
-            ElevatedButton(
-                onPressed: () {
-                  FileHandler().getStorage().then((_) {
-                    setState(() {});
-                  });
-                },
-                child: const Text('Potenzielle Speicherorte initialisieren'))
-          ])));
-      modified.value = true;
-    } else {
-      if (storages[Storages.appSdCardDocuments] != null) {
-        options.add(ListTile(
-            title: const Text('SdCard Documents',
-                style: TextStyle(
-                  backgroundColor: Colors.green,
-                )),
-            subtitle: Text(
-              '"${storages[Storages.appSdCardDocuments]}"\n\n'
-              'Externer Ordner. '
-              'Versuchen Sie auf keinen Fall den Inhalt dieses Ordners zu bearbeiten solange die App Läuft.\n'
-              'Sondern beenden sie zunächt das "Background Tracking", \n'
-              'warten sie mindesten den eingestellten Tracking-Interval ab,\n'
-              'schließen sie die App und beenden sie sie vollständig über die App Einstellungen ihres Gerätes.',
-              softWrap: true,
-            ),
-            leading: Radio<Storages>(
-                value: Storages.appSdCardDocuments,
-                groupValue: selectedStorage,
-                onChanged: (Storages? val) =>
-                    setStorage(context, val ?? Storages.appInternal))));
-
-        options.add(AppWidgets.divider());
-      }
-
-      ///
-      if (storages[Storages.appLocalStorageDocuments] != null) {
-        options.add(ListTile(
-            title: const Text('Local Storage Documents',
-                style: TextStyle(
-                  backgroundColor: Colors.green,
-                )),
-            subtitle: Text(
-              '"Android${storages[Storages.appLocalStorageDocuments]}"\n\n'
-              'Externer Ordner!\n'
-              'Versuchen Sie auf keinen Fall den Inhalt dieses Ordners zu bearbeiten solange die App Läuft,\n'
-              'Beenden sie zunächt das "Background Tracking", \n'
-              'warten sie mindesten den eingestellten "Tracking-Interval" ab,\n'
-              'schließen sie die App und beenden sie sie vollständig über die App Einstellungen ihres Gerätes.',
-              softWrap: true,
-            ),
-            leading: Radio<Storages>(
-                value: Storages.appLocalStorageDocuments,
-                groupValue: selectedStorage,
-                onChanged: (Storages? val) => setStorage(
-                    context, val ?? Storages.appLocalStorageDocuments))));
-      }
-
-      ///
-      if (storages[Storages.appLocalStorageData] != null) {
-        options.add(ListTile(
-            title: const Text('Local Storage Data',
-                style: TextStyle(
-                  backgroundColor: Colors.orange,
-                )),
-            subtitle: Text(
-              '"Android${storages[Storages.appInternal]}"\n\n'
-              'Externer Ordner. Wird bei der Deinstallation gelöscht!\n'
-              'Auf neuen Geräten kann dieser Ordner nur mithilfe eines Computers erreicht werden.\n'
-              'Versuchen Sie auf keinen Fall den Inhalt dieses Ordners zu bearbeiten solange die App Läuft.\n'
-              'Sondern beenden sie zunächt das "Background Tracking", \n'
-              'warten sie mindesten den eingestellten "Tracking-Interval" ab,\n'
-              'schließen sie die App und beenden sie sie vollständig über die App Einstellungen ihres Gerätes.',
-              softWrap: true,
-            ),
-            leading: Radio<Storages>(
-                value: Storages.appLocalStorageData,
-                groupValue: selectedStorage,
-                onChanged: (Storages? val) =>
-                    setStorage(context, val ?? Storages.appInternal))));
-      }
-
-      /// Fallback folder
-      options.add(AppWidgets.divider());
+    if (storages[Storages.appSdCardDocuments] != null) {
       options.add(ListTile(
-          title: const Text('Phone Internal',
+          title: const Text('SdCard Documents',
               style: TextStyle(
-                backgroundColor: Colors.red,
+                backgroundColor: Colors.green,
               )),
           subtitle: Text(
-            '"${storages[Storages.appInternal]}"\n\n'
-            'Interner, geschützter, von außen nicht erreichbarer Ordner.\n'
-            'Wird bei der deinstallation gelöscht!\n'
-            'Wird beim zurücksetzen der App Daten gelöscht!\n'
-            'Kann beim Update der App u.U. gelöscht werden!\n'
-            'Verwenden sie dieses Verzeichnis wenn sie großen Wert auf Datenschutz legen '
-            'und ihnen der erhalt der Daten nicht wichtig ist.',
+            '"${storages[Storages.appSdCardDocuments]}"\n\n'
+            'Externer Ordner. '
+            'Versuchen Sie auf keinen Fall den Inhalt dieses Ordners zu bearbeiten solange die App Läuft.\n'
+            'Sondern beenden sie zunächt das "Background Tracking", \n'
+            'warten sie mindesten den eingestellten Tracking-Interval ab,\n'
+            'schließen sie die App und beenden sie sie vollständig über die App Einstellungen ihres Gerätes.',
             softWrap: true,
           ),
           leading: Radio<Storages>(
-              value: Storages.appInternal,
+              value: Storages.appSdCardDocuments,
               groupValue: selectedStorage,
               onChanged: (Storages? val) =>
                   setStorage(context, val ?? Storages.appInternal))));
 
       options.add(AppWidgets.divider());
-      options.add(Container(
-          padding: const EdgeInsets.all(10),
-          child: const Text(
-              'Alle Daten werden als TSV (Tabulator-Separated-Values)'
-              ' gespeichert und können leicht in eine Excel Tabelle kopiert werden.'
-              ' Benutzerangaben sind systembedingt UrlCodiert, können aber z.B. über '
-              'www.urldecoder.io oder mit einem Excel Add-On direkt in Excel dekodiert werden.',
-              softWrap: true)));
-
-      ///
-      bodyStack.add(ListView(children: [
-        const ListTile(
-          title: SizedBox(
-              height: 40,
-              child: Text('Speicherorte', style: TextStyle(fontSize: 20))),
-          subtitle: Text(
-              'Bitte lesen sie die Beschreibung der Speicherorte sorgfältig, '
-              'bevor sie eine Entscheidung treffen!'),
-        ),
-        const SizedBox(height: 3),
-        ...options
-      ]));
-
-      ///
-      if (confirmRequired) {
-        bodyStack.add(Dialog(
-            child: SizedBox(
-                height: 190,
-                child: Container(
-                    padding: const EdgeInsets.all(15),
-                    child: Column(children: [
-                      const Text(
-                        'App Neustart erforderlich',
-                        softWrap: true,
-                      ),
-                      const SizedBox(height: 10),
-                      const Text(
-                        'Änderungen gespeichert.\nDamit sie wirksam werden '
-                        'muss ChaosTours neu gestartet werden.',
-                        softWrap: true,
-                        style: TextStyle(fontSize: 12),
-                      ),
-                      const SizedBox(height: 20),
-                      Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            TextButton(
-                                child: const Text('OK'),
-                                onPressed: () {
-                                  confirmRequired = false;
-                                  setState(() {});
-                                }),
-                          ])
-                    ])))));
-      }
-      confirmRequired = false;
     }
+
+    ///
+    if (storages[Storages.appLocalStorageDocuments] != null) {
+      options.add(ListTile(
+          title: const Text('Local Storage Documents',
+              style: TextStyle(
+                backgroundColor: Colors.green,
+              )),
+          subtitle: Text(
+            '"Android${storages[Storages.appLocalStorageDocuments]}"\n\n'
+            'Externer Ordner!\n'
+            'Versuchen Sie auf keinen Fall den Inhalt dieses Ordners zu bearbeiten solange die App Läuft,\n'
+            'Beenden sie zunächt das "Background Tracking", \n'
+            'warten sie mindesten den eingestellten "Tracking-Interval" ab,\n'
+            'schließen sie die App und beenden sie sie vollständig über die App Einstellungen ihres Gerätes.',
+            softWrap: true,
+          ),
+          leading: Radio<Storages>(
+              value: Storages.appLocalStorageDocuments,
+              groupValue: selectedStorage,
+              onChanged: (Storages? val) => setStorage(
+                  context, val ?? Storages.appLocalStorageDocuments))));
+    }
+
+    ///
+    if (storages[Storages.appLocalStorageData] != null) {
+      options.add(ListTile(
+          title: const Text('Local Storage Data',
+              style: TextStyle(
+                backgroundColor: Colors.orange,
+              )),
+          subtitle: Text(
+            '"Android${storages[Storages.appInternal]}"\n\n'
+            'Externer Ordner. Wird bei der Deinstallation gelöscht!\n'
+            'Auf neuen Geräten kann dieser Ordner nur mithilfe eines Computers erreicht werden.\n'
+            'Versuchen Sie auf keinen Fall den Inhalt dieses Ordners zu bearbeiten solange die App Läuft.\n'
+            'Sondern beenden sie zunächt das "Background Tracking", \n'
+            'warten sie mindesten den eingestellten "Tracking-Interval" ab,\n'
+            'schließen sie die App und beenden sie sie vollständig über die App Einstellungen ihres Gerätes.',
+            softWrap: true,
+          ),
+          leading: Radio<Storages>(
+              value: Storages.appLocalStorageData,
+              groupValue: selectedStorage,
+              onChanged: (Storages? val) =>
+                  setStorage(context, val ?? Storages.appInternal))));
+    }
+
+    /// Fallback folder
+    options.add(AppWidgets.divider());
+    options.add(ListTile(
+        title: const Text('Phone Internal',
+            style: TextStyle(
+              backgroundColor: Colors.red,
+            )),
+        subtitle: Text(
+          '"${storages[Storages.appInternal]}"\n\n'
+          'Interner, geschützter, von außen nicht erreichbarer Ordner.\n'
+          'Wird bei der deinstallation gelöscht!\n'
+          'Wird beim zurücksetzen der App Daten gelöscht!\n'
+          'Kann beim Update der App u.U. gelöscht werden!\n'
+          'Verwenden sie dieses Verzeichnis wenn sie großen Wert auf Datenschutz legen '
+          'und ihnen der erhalt der Daten nicht wichtig ist.',
+          softWrap: true,
+        ),
+        leading: Radio<Storages>(
+            value: Storages.appInternal,
+            groupValue: selectedStorage,
+            onChanged: (Storages? val) =>
+                setStorage(context, val ?? Storages.appInternal))));
+
+    options.add(AppWidgets.divider());
+    options.add(Container(
+        padding: const EdgeInsets.all(10),
+        child: const Text(
+            'Alle Daten werden als TSV (Tabulator-Separated-Values)'
+            ' gespeichert und können leicht in eine Excel Tabelle kopiert werden.'
+            ' Benutzerangaben sind systembedingt UrlCodiert, können aber z.B. über '
+            'www.urldecoder.io oder mit einem Excel Add-On direkt in Excel dekodiert werden.',
+            softWrap: true)));
+
+    ///
+    bodyStack.add(ListView(children: [
+      const ListTile(
+        title: SizedBox(
+            height: 40,
+            child: Text('Speicherorte', style: TextStyle(fontSize: 20))),
+        subtitle: Text(
+            'Bitte lesen sie die Beschreibung der Speicherorte sorgfältig, '
+            'bevor sie eine Entscheidung treffen!'),
+      ),
+      const SizedBox(height: 3),
+      ...options
+    ]));
+
+    ///
+    if (confirmRequired) {
+      bodyStack.add(Dialog(
+          child: SizedBox(
+              height: 190,
+              child: Container(
+                  padding: const EdgeInsets.all(15),
+                  child: Column(children: [
+                    const Text(
+                      'App Neustart erforderlich',
+                      softWrap: true,
+                    ),
+                    const SizedBox(height: 10),
+                    const Text(
+                      'Änderungen gespeichert.\nDamit sie wirksam werden '
+                      'muss ChaosTours neu gestartet werden.',
+                      softWrap: true,
+                      style: TextStyle(fontSize: 12),
+                    ),
+                    const SizedBox(height: 20),
+                    Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                      TextButton(
+                          child: const Text('OK'),
+                          onPressed: () {
+                            confirmRequired = false;
+                            setState(() {});
+                          }),
+                    ])
+                  ])))));
+    }
+    confirmRequired = false;
 
     ///
     return AppWidgets.scaffold(context,
@@ -286,27 +245,11 @@ class _WidgetStorageSettings extends State<WidgetStorageSettings> {
             ],
             onTap: (int id) {
               if (id == 0) {
-                if (!corruptedSettings && !modified.value) {
-                  return;
-                } else {
-                  Shared(SharedKeys.storageKey)
-                      .saveString(selectedStorage.name)
-                      .then((_) {
-                    Shared(SharedKeys.storagePath)
-                        .saveString(storages[selectedStorage]!);
-                  }).then((_) {
-                    confirmRequired = true;
-                    setState(() {});
-                  });
-                }
                 FileHandler.storageKey = selectedStorage;
-                FileHandler.storagePath = storages[selectedStorage];
-                AppSettings.settings[AppSettings.storageKey] =
-                    selectedStorage.name;
-
-                AppSettings.settings[AppSettings.storagePath] =
-                    storages[selectedStorage] ?? '';
-                AppSettings.saveToShared();
+                FileHandler.storagePath = storages[selectedStorage]!.path;
+                FileHandler.saveSettings().then((_) {
+                  Navigator.pop(context);
+                });
               } else {
                 Navigator.pop(context);
               }

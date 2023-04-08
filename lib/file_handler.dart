@@ -8,6 +8,7 @@ import 'package:chaostours/logger.dart';
 import 'package:chaostours/cache.dart';
 import 'package:chaostours/globals.dart';
 import 'package:chaostours/app_settings.dart';
+import 'package:chaostours/app_hive.dart';
 
 ////
 
@@ -39,12 +40,49 @@ enum Storages {
 
 class FileHandler {
   /// storage
-  static Storages storageKey = Storages.notSet;
+  static Storages? storageKey = Storages.notSet;
   static String? storagePath;
-  static Map<Storages, String> potentialStorages = {};
+  static String subDirectory = join('chaostours', 'version_1.0');
+  static Map<Storages, Directory?> potentialStorages = {};
 
   static String backgroundCacheFile = 'background_cache.json';
   static String foregroundCacheFile = 'foreground_cache.json';
+
+  static Future<void> loadSettings() async {
+    await AppHive.accessBox(
+        boxName: AppHiveNames.fileHandler,
+        access: (AppHive box) async {
+          try {
+            storagePath = box.read(
+                hiveKey: AppHiveKeys.fileHandlerStoragePath, value: null);
+            storageKey = Storages.values.byName(box.read<String>(
+                hiveKey: AppHiveKeys.fileHandlerStorageKey,
+                value: Storages.appInternal.name));
+          } catch (e, stk) {
+            logger.error('loadSettings $e', stk);
+          }
+        });
+/*
+    Map<Storages, String> storages = await getPotentialStorages();
+    storagePath = combinePath(storages[Storages.appSdCardDocuments]!,
+        ExternalPath.DIRECTORY_DOCUMENTS);
+        */
+  }
+
+  static Future<void> saveSettings() async {
+    if (storagePath != null) {
+      await AppHive.accessBox(
+          boxName: AppHiveNames.fileHandler,
+          access: (AppHive box) async {
+            box.write<String>(
+                hiveKey: AppHiveKeys.fileHandlerStoragePath,
+                value: storagePath);
+            box.write<String>(
+                hiveKey: AppHiveKeys.fileHandlerStorageKey,
+                value: storageKey?.name ?? Storages.appInternal.name);
+          });
+    }
+  }
 
   static Logger logger = Logger.logger<FileHandler>();
   static const lineSep = '\n';
@@ -71,29 +109,6 @@ class FileHandler {
       file = await file.create(recursive: true);
     }
     return file;
-  }
-
-  /// A File deleted from user keeps existing as a ghost.
-  /// Even empty bin or phone restart doesn't help.
-  /// These ghostfiles refuse to get checked properly
-  /// with the File::exists() method
-  Future<void> fileCreateBug(String path) async {
-    File file = File(path);
-    if (!(await file.exists())) {
-      file = await file.create(recursive: true);
-    }
-  }
-
-  /// However, a simple attempt to read this file
-  /// what most likely fails, updates the file cache
-  /// and the file can get recreated
-  Future<void> fileCreateBugWorkaround(String path) async {
-    File file = File(path);
-    try {
-      await file.readAsString();
-    } catch (e) {
-      file = await file.create();
-    }
   }
 
   static Future<int> write(String filename, String content) async {
@@ -210,25 +225,36 @@ class FileHandler {
     }
   }
 
-  static Future<Map<Storages, String>> getPotentialStorages() async {
+  static Future<Map<Storages, Directory?>> getPotentialStorages() async {
     List<String> extPathes = await ExternalPath.getExternalStorageDirectories();
     potentialStorages.clear();
-    potentialStorages.addAll(<Storages, String>{
-      Storages.appInternal: join(
-          (await pp.getApplicationDocumentsDirectory()).path,
-          'version_${Globals.version}'),
-      Storages.appLocalStorageData: join(
-          (await pp.getExternalStorageDirectory())?.path ?? '',
-          'version_${Globals.version}'),
-      Storages.appLocalStorageDocuments: extPathes.isNotEmpty
-          ? join(extPathes[0], ExternalPath.DIRECTORY_DOCUMENTS,
-              'version_${Globals.version}')
-          : '',
-      Storages.appSdCardDocuments: extPathes.length > 1
-          ? join(extPathes[1], ExternalPath.DIRECTORY_DOCUMENTS,
-              'version_${Globals.version}')
-          : ''
-    });
+    //
+    potentialStorages[Storages.appInternal] =
+        await pp.getApplicationDocumentsDirectory();
+    //
+    potentialStorages[Storages.appLocalStorageData] =
+        await pp.getExternalStorageDirectory();
+
+    if (extPathes.isNotEmpty) {
+      String path = join(extPathes[0], ExternalPath.DIRECTORY_DOCUMENTS);
+      Directory dir = Directory(path);
+      if (await dir.exists()) {
+        potentialStorages[Storages.appLocalStorageDocuments] = dir;
+      } else {
+        potentialStorages[Storages.appLocalStorageDocuments] = null;
+      }
+    }
+
+    if (extPathes.length > 1) {
+      String path = join(extPathes[1], ExternalPath.DIRECTORY_DOCUMENTS);
+      Directory dir = Directory(path);
+      if (await dir.exists()) {
+        potentialStorages[Storages.appSdCardDocuments] = dir;
+      } else {
+        potentialStorages[Storages.appSdCardDocuments] = null;
+      }
+    }
+
     return potentialStorages;
   }
 

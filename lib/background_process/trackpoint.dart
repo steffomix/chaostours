@@ -67,16 +67,16 @@ class TrackPoint {
     await FileHandler().lookupStorages();
 
     Cache cache = Cache.instance;
-    await cache.loadBackground();
+    await cache.loadBackground(gps);
     // if not yet set, do it right now
     cache.lastStatusChange ??= gps;
 
     /// load foreground data
-    await cache.loadForeground();
+    await cache.loadForeground(gps);
 
     /// reset forground data as soon as possible
     /// to reduce critical window
-    await cache.saveForeground();
+    await cache.saveForeground(gps);
 
     /// parse status from json
     _status = cache.status;
@@ -214,7 +214,7 @@ class TrackPoint {
     }
     try {
       /// save status and gpsPoints for next session and foreground live tracking view
-      await cache.saveBackground();
+      await cache.saveBackground(gps);
     } catch (e, stk) {
       logger.error(e.toString(), stk);
     }

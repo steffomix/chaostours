@@ -80,9 +80,15 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     super.initState();
 
     /// force loading background data
-    Cache.instance.loadBackground().then((_) {
-      setState(() {});
-    });
+    try {
+      GPS.gps().then((GPS gps) {
+        Cache.instance.loadBackground(gps).then((_) {
+          setState(() {});
+        });
+      });
+    } catch (e) {
+      logger.warn('osm init no gps: $e');
+    }
   }
 
   @override

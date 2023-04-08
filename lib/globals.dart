@@ -17,8 +17,14 @@ class Globals {
               hiveKey: AppHiveKeys.globalsAppTickDuration,
               value: Duration(seconds: 3));
           //
-          preselectedUsers = box.read<Set<int>>(
-              hiveKey: AppHiveKeys.globalsPreselectedUsers, value: <int>{});
+          String us = box.read<String>(
+              hiveKey: AppHiveKeys.globalsPreselectedUsers, value: '');
+          preselectedUsers.clear();
+          if (us.isNotEmpty) {
+            for (var i in us.split(',')) {
+              preselectedUsers.add(int.parse(i));
+            }
+          }
           //
           cacheGpsTime = box.read<Duration>(
               hiveKey: AppHiveKeys.globalsCacheGpsTime,
@@ -64,9 +70,9 @@ class Globals {
               hiveKey: AppHiveKeys.globalsAppTickDuration,
               value: appTickDuration);
           //
-          box.write<Set<int>>(
+          box.write<String>(
               hiveKey: AppHiveKeys.globalsPreselectedUsers,
-              value: preselectedUsers);
+              value: preselectedUsers.join(','));
           //
           box.write<Duration>(
               hiveKey: AppHiveKeys.globalsCacheGpsTime, value: cacheGpsTime);
