@@ -55,6 +55,7 @@ class FileHandler {
           try {
             storagePath = box.read(
                 hiveKey: AppHiveKeys.fileHandlerStoragePath, value: null);
+
             storageKey = Storages.values.byName(box.read<String>(
                 hiveKey: AppHiveKeys.fileHandlerStorageKey,
                 value: Storages.appInternal.name));

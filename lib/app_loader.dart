@@ -139,7 +139,7 @@ class AppLoader {
 
   static Future<void> backgroundGps() async {
     if (Globals.backgroundTrackingEnabled) {
-      BackgroundTracking.startTracking();
+      await BackgroundTracking.startTracking();
     }
   }
 

@@ -78,7 +78,10 @@ class AppHive {
   read<T>({required AppHiveKeys hiveKey, required T value}) {
     logger.log('read appHive ${_box.name}:${hiveKey.name} ');
     var vg = _box.get(hiveKey.name);
-    return vg == null || T.toString() == 'Null' ? value : castRead<T>(vg);
+    if (T.toString() == 'Null') {
+      return vg;
+    }
+    return vg == null ? value : castRead<T>(vg);
   }
 
   write<T>(

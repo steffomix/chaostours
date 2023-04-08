@@ -8,6 +8,7 @@ import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/app_loader.dart';
 import 'package:chaostours/file_handler.dart';
+import 'package:chaostours/cache.dart';
 
 class AppInit extends StatefulWidget {
   const AppInit({super.key});
@@ -80,6 +81,18 @@ class _AppInitState extends State<AppInit> {
         AppLoader.loadDatabase();
       } catch (e) {
         msg = 'Load database failed: $e';
+        return;
+      }
+      try {
+        AppLoader.ticks();
+      } catch (e) {
+        msg = 'start app ticks failed: $e';
+        return;
+      }
+      try {
+        AppLoader.backgroundGps();
+      } catch (e) {
+        msg = 'start background gps failed: $e';
       }
     } catch (e) {
       route = AppRoutes.permissions;
