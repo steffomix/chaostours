@@ -57,7 +57,7 @@ class Cache {
 
   String address = '';
   List<ModelTrackPoint> recentTrackPoints = [];
-  List<ModelTrackPoint> localTrackPoints = [];
+  List<ModelTrackPoint> lastVisitedTrackPoints = [];
 
   /// forground interval
   /// save foreground, load background and fire event
@@ -97,9 +97,10 @@ class Cache {
               hiveKey: AppHiveKeys.cacheForegroundActiveTrackPoint,
               value: pendingTrackPoint.toSharedString());
 
+          // caches real trackpoints with id
           box.write<List<String>>(
               hiveKey: AppHiveKeys.cacheForegroundTrackPointUpdates,
-              value: trackPointUpdates.map((e) => e.toSharedString()).toList());
+              value: trackPointUpdates.map((e) => e.toString()).toList());
 
           box.write<bool>(
               hiveKey: AppHiveKeys.cacheForegroundTriggerStatus,
@@ -117,10 +118,11 @@ class Cache {
               hiveKey: AppHiveKeys.cacheForegroundActiveTrackPoint,
               value: ModelTrackPoint.pendingTrackPoint.toSharedString()));
 
+          // loads real trackpoints with id
           trackPointUpdates = (box.read<List<String>>(
                   hiveKey: AppHiveKeys.cacheForegroundTrackPointUpdates,
                   value: []) as List<String>)
-              .map((e) => ModelTrackPoint.toSharedModel(e))
+              .map((e) => ModelTrackPoint.toModel(e))
               .toList();
 
           _triggerStatus = box.read<bool>(
@@ -132,9 +134,10 @@ class Cache {
   Future<void> loadBackground(GPS gps) async {
     await AppHive.accessBox(
         boxName: AppHiveNames.cacheBackground,
+        // read real tp with id
         access: (AppHive box) async {
           List<ModelTrackPoint> mapTp(List<String> s) {
-            return s.map((e) => ModelTrackPoint.toSharedModel(e)).toList();
+            return s.map((e) => ModelTrackPoint.toModel(e)).toList();
           }
 
           List<GPS> mapGps(List<String> s) {
@@ -145,8 +148,8 @@ class Cache {
               hiveKey: AppHiveKeys.cacheBackgroundRecentTrackpoints,
               value: []));
 
-          localTrackPoints = mapTp(box.read<List<String>>(
-              hiveKey: AppHiveKeys.cacheBackgroundRecentLocalTrackpoints,
+          lastVisitedTrackPoints = mapTp(box.read<List<String>>(
+              hiveKey: AppHiveKeys.cacheBackgroundLastVisitedTrackpoints,
               value: []));
 
           address = box.read<String>(
@@ -181,7 +184,7 @@ class Cache {
         boxName: AppHiveNames.cacheBackground,
         access: (AppHive box) async {
           List<String> mapTp(List<ModelTrackPoint> s) {
-            return s.map((e) => e.toSharedString()).toList();
+            return s.map((e) => e.toString()).toList();
           }
 
           List<String> mapGps(List<GPS> s) {
@@ -193,8 +196,8 @@ class Cache {
               value: mapTp(recentTrackPoints));
 
           box.write<List<String>>(
-              hiveKey: AppHiveKeys.cacheBackgroundRecentLocalTrackpoints,
-              value: mapTp(localTrackPoints));
+              hiveKey: AppHiveKeys.cacheBackgroundLastVisitedTrackpoints,
+              value: mapTp(lastVisitedTrackPoints));
 
           box.read<String>(
               hiveKey: AppHiveKeys.cacheBackgroundAddress, value: address);

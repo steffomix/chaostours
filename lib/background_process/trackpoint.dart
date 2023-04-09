@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:hive_flutter/hive_flutter.dart';
 
 import 'package:chaostours/globals.dart';
 import 'package:chaostours/app_loader.dart';
@@ -48,23 +49,25 @@ class TrackPoint {
   TrackingStatus _oldStatus = TrackingStatus.none;
 
   Future<void> startShared({required double lat, required double lon}) async {
-    // cache gps
-    // the time can't be too long due to this task gets killed anyway
-    Globals.cacheGpsTime = const Duration(seconds: 30);
+    await Hive.initFlutter();
 
     /// create gpsPoint
     GPS gps = GPS.lastGps = GPS(lat, lon);
 
-    // init app
-    // await AppLoader.webKey(); // not needed
-    //await AppLoader.loadSharedSettings();
-    await Globals.loadSettings();
-    //await AppSettings.loadFromShared();
-    if ((FileHandler.storagePath ?? '').isEmpty) {
-      logger.warn('No valid storage key, skip trackpoint');
+    await FileHandler.loadSettings();
+
+    if (!(await FileHandler.dirExists(FileHandler.storagePath ?? ''))) {
+      logger
+          .warn('No valid storage ${FileHandler.storagePath}, skip trackpoint');
       return;
     }
-    await FileHandler().lookupStorages();
+
+    // load trackpoints
+    await ModelTrackPoint.open();
+
+    await Globals.loadSettings();
+    // overwrite gps cache settings
+    Globals.cacheGpsTime = const Duration(seconds: 30);
 
     Cache cache = Cache.instance;
     await cache.loadBackground(gps);
@@ -73,15 +76,6 @@ class TrackPoint {
 
     /// load foreground data
     await cache.loadForeground(gps);
-
-    /// reset forground data as soon as possible
-    /// to reduce critical window
-    await cache.saveForeground(gps);
-
-    /// parse status from json
-    _status = cache.status;
-
-    await ModelTrackPoint.open();
 
     /// update trackpoints
     try {
@@ -92,6 +86,13 @@ class TrackPoint {
     } catch (e, stk) {
       logger.error('update trackpoints: ${e.toString()}', stk);
     }
+
+    /// reset forground data as soon as possible
+    /// to reduce critical window
+    await cache.saveForeground(gps);
+
+    /// parse status from json
+    _status = cache.status;
 
     /// clear only needed if method runs in foreground
     /// gpsPoints.clear();
@@ -213,10 +214,17 @@ class TrackPoint {
       logger.error(e.toString(), stk);
     }
     try {
+      cache.recentTrackPoints = ModelTrackPoint.recentTrackPoints();
+      cache.lastVisitedTrackPoints = ModelTrackPoint.lastVisited(gps);
+    } catch (e, stk) {
+      logger.error('load recent trackpoints: $e', stk);
+    }
+
+    try {
       /// save status and gpsPoints for next session and foreground live tracking view
       await cache.saveBackground(gps);
     } catch (e, stk) {
-      logger.error(e.toString(), stk);
+      logger.error('save backround finaly; $e', stk);
     }
   }
 

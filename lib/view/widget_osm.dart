@@ -493,48 +493,42 @@ class _WidgetOsm extends State<WidgetOsm> {
 
     /// draw gps points
     try {
-      String storage = FileHandler.combinePath(
-          FileHandler.storages[Storages.appInternal]!,
-          FileHandler.backgroundCacheFile);
-      String jsonString = await FileHandler.read(storage);
+      Cache cache = Cache.instance;
 
-      Map<String, dynamic> json = {JsonKeys.bgGpsPoints.name: []};
-      try {
-        json = jsonDecode(jsonString);
-      } catch (e, stk) {
-        logger.error(e.toString(), stk);
+      for (GPS gps in cache.gpsPoints) {
+        _controller.drawCircle(CircleOSM(
+          key: "circle${++circleId}",
+          centerPoint: GeoPoint(latitude: gps.lat, longitude: gps.lon),
+          radius: 1,
+          color: Color.fromARGB(255, 98, 98, 98),
+          strokeWidth: 10,
+        ));
       }
-
-      for (String s in json[JsonKeys.bgGpsPoints.name] ?? []) {
-        GPS gps = GPS.toSharedObject(s);
-
+      for (GPS gps in cache.smoothGpsPoints) {
         _controller.drawCircle(CircleOSM(
           key: "circle${++circleId}",
           centerPoint: GeoPoint(latitude: gps.lat, longitude: gps.lon),
           radius: 2,
-          color: Colors.grey,
+          color: Color.fromARGB(255, 0, 0, 0),
           strokeWidth: 10,
         ));
       }
-      for (String s in json[JsonKeys.bgSmoothGpsPoints.name] ?? []) {
-        GPS gps = GPS.toSharedObject(s);
-
+      for (GPS gps in cache.calcGpsPoints) {
         _controller.drawCircle(CircleOSM(
           key: "circle${++circleId}",
           centerPoint: GeoPoint(latitude: gps.lat, longitude: gps.lon),
           radius: 3,
-          color: Colors.black,
+          color: Color.fromARGB(255, 0, 0, 255),
           strokeWidth: 10,
         ));
       }
-      for (String s in json[JsonKeys.bgCalcGpsPoints.name] ?? []) {
-        GPS gps = GPS.toSharedObject(s);
-
+      if (cache.lastStatusChange != null) {
+        GPS gps = cache.lastStatusChange!;
         _controller.drawCircle(CircleOSM(
           key: "circle${++circleId}",
           centerPoint: GeoPoint(latitude: gps.lat, longitude: gps.lon),
           radius: 4,
-          color: Colors.red,
+          color: Color.fromARGB(255, 255, 0, 0),
           strokeWidth: 10,
         ));
       }

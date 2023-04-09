@@ -25,7 +25,7 @@ enum AppHiveKeys {
   cacheBackgroundCalcGpsPoints,
   cacheBackgroundAddress,
   cacheBackgroundRecentTrackpoints,
-  cacheBackgroundRecentLocalTrackpoints,
+  cacheBackgroundLastVisitedTrackpoints,
 
   /// fileHandler
   fileHandlerStoragePath,

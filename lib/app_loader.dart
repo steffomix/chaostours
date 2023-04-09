@@ -47,7 +47,6 @@ class AppLoader {
         } catch (e) {
           logger.warn('preload gps not available');
         }
-        await loadSharedSettings();
         await FileHandler.getPotentialStorages();
         //await initializeStorages();
         await ticks();
@@ -84,13 +83,6 @@ class AppLoader {
     io.SecurityContext.defaultContext
         .setTrustedCertificatesBytes(data.buffer.asUint8List());
     logger.log('SSL Key loaded');
-  }
-
-  static Future<void> loadSharedSettings() async {
-    await AppSettings.loadFromShared();
-    if ((FileHandler.storagePath ?? '').isNotEmpty) {
-      FileHandler().lookupStorages();
-    }
   }
 
   static Future<bool> loadDatabase() async {

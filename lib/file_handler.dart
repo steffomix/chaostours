@@ -43,6 +43,13 @@ class FileHandler {
   static Storages? storageKey = Storages.notSet;
   static String? storagePath;
   static String subDirectory = join('chaostours', 'version_1.0');
+  static String? get storageFullPath {
+    if (storagePath == null) {
+      return null;
+    }
+    return join(storagePath!, subDirectory);
+  }
+
   static Map<Storages, Directory?> potentialStorages = {};
 
   static String backgroundCacheFile = 'background_cache.json';
@@ -145,6 +152,44 @@ class FileHandler {
 
   static const combinePath = join;
 
+  static Future<Map<Storages, Directory?>> getPotentialStorages() async {
+    List<String> extPathes = await ExternalPath.getExternalStorageDirectories();
+    potentialStorages.clear();
+    //
+    potentialStorages[Storages.appInternal] =
+        await pp.getApplicationDocumentsDirectory();
+    //
+    potentialStorages[Storages.appLocalStorageData] =
+        await pp.getExternalStorageDirectory();
+
+    if (extPathes.isNotEmpty) {
+      String path = join(extPathes[0], ExternalPath.DIRECTORY_DOCUMENTS);
+      Directory dir = Directory(path);
+      if (await dir.exists()) {
+        potentialStorages[Storages.appLocalStorageDocuments] = dir;
+      } else {
+        potentialStorages[Storages.appLocalStorageDocuments] = null;
+      }
+    }
+
+    if (extPathes.length > 1) {
+      String path = join(extPathes[1], ExternalPath.DIRECTORY_DOCUMENTS);
+      Directory dir = Directory(path);
+      if (await dir.exists()) {
+        potentialStorages[Storages.appSdCardDocuments] = dir;
+      } else {
+        potentialStorages[Storages.appSdCardDocuments] = null;
+      }
+    }
+
+    return potentialStorages;
+  }
+
+  static Future<bool> dirExists(String path) async {
+    var dir = Directory(path);
+    return await dir.exists();
+  }
+
   ///
   ///
   ///
@@ -156,6 +201,7 @@ class FileHandler {
   ///
   ///
   ///
+  /*
   Future<String?> getStorage() async {
     Map<Storages, String?> storages = await _getAllStorages();
     String keyName = AppSettings.settings[AppSettings.storageKey] ?? '';
@@ -226,39 +272,6 @@ class FileHandler {
     }
   }
 
-  static Future<Map<Storages, Directory?>> getPotentialStorages() async {
-    List<String> extPathes = await ExternalPath.getExternalStorageDirectories();
-    potentialStorages.clear();
-    //
-    potentialStorages[Storages.appInternal] =
-        await pp.getApplicationDocumentsDirectory();
-    //
-    potentialStorages[Storages.appLocalStorageData] =
-        await pp.getExternalStorageDirectory();
-
-    if (extPathes.isNotEmpty) {
-      String path = join(extPathes[0], ExternalPath.DIRECTORY_DOCUMENTS);
-      Directory dir = Directory(path);
-      if (await dir.exists()) {
-        potentialStorages[Storages.appLocalStorageDocuments] = dir;
-      } else {
-        potentialStorages[Storages.appLocalStorageDocuments] = null;
-      }
-    }
-
-    if (extPathes.length > 1) {
-      String path = join(extPathes[1], ExternalPath.DIRECTORY_DOCUMENTS);
-      Directory dir = Directory(path);
-      if (await dir.exists()) {
-        potentialStorages[Storages.appSdCardDocuments] = dir;
-      } else {
-        potentialStorages[Storages.appSdCardDocuments] = null;
-      }
-    }
-
-    return potentialStorages;
-  }
-
   Future<void> lookupStorages() async {
     logger.log('lookup pathes');
 
@@ -302,4 +315,5 @@ class FileHandler {
       logger.error(e.toString(), stk);
     }
   }
+  */
 }
