@@ -24,7 +24,7 @@ class WidgetStorageSettings extends StatefulWidget {
 class _WidgetStorageSettings extends State<WidgetStorageSettings> {
   static final Logger logger = Logger.logger<WidgetStorageSettings>();
 
-  final Map<Storages, Directory?> storages = FileHandler.potentialStorages;
+  Map<Storages, Directory?> storages = FileHandler.potentialStorages;
 
   Storages selectedStorage = FileHandler.storageKey ?? Storages.appInternal;
 
@@ -48,9 +48,11 @@ class _WidgetStorageSettings extends State<WidgetStorageSettings> {
   void initState() {
     /// basic and fallback setting
     selectedStorage = FileHandler.storageKey ?? Storages.appInternal;
-
-    loading = false;
-    setState(() {});
+    FileHandler.getPotentialStorages().then((Map<Storages, Directory?> st) {
+      storages = st;
+      loading = false;
+      setState(() {});
+    });
     super.initState();
   }
 
@@ -101,7 +103,7 @@ class _WidgetStorageSettings extends State<WidgetStorageSettings> {
                 backgroundColor: Colors.green,
               )),
           subtitle: Text(
-            '"Android${storages[Storages.appLocalStorageDocuments]}"\n\n'
+            '"Android${storages[Storages.appLocalStorageDocuments]!.path}"\n\n'
             'Externer Ordner!\n'
             'Versuchen Sie auf keinen Fall den Inhalt dieses Ordners zu bearbeiten solange die App Läuft,\n'
             'Beenden sie zunächt das "Background Tracking", \n'
@@ -124,7 +126,7 @@ class _WidgetStorageSettings extends State<WidgetStorageSettings> {
                 backgroundColor: Colors.orange,
               )),
           subtitle: Text(
-            '"Android${storages[Storages.appInternal]}"\n\n'
+            '"Android${storages[Storages.appInternal]!.path}"\n\n'
             'Externer Ordner. Wird bei der Deinstallation gelöscht!\n'
             'Auf neuen Geräten kann dieser Ordner nur mithilfe eines Computers erreicht werden.\n'
             'Versuchen Sie auf keinen Fall den Inhalt dieses Ordners zu bearbeiten solange die App Läuft.\n'
@@ -148,7 +150,7 @@ class _WidgetStorageSettings extends State<WidgetStorageSettings> {
               backgroundColor: Colors.red,
             )),
         subtitle: Text(
-          '"${storages[Storages.appInternal]}"\n\n'
+          '"${storages[Storages.appInternal]!.path}"\n\n'
           'Interner, geschützter, von außen nicht erreichbarer Ordner.\n'
           'Wird bei der deinstallation gelöscht!\n'
           'Wird beim zurücksetzen der App Daten gelöscht!\n'

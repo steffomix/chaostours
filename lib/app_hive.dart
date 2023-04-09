@@ -70,7 +70,7 @@ class AppHive {
       required Future<void> Function(AppHive box) access}) async {
     Box box = await _openBox(boxName);
     await access(AppHive._handler(box));
-    //box.close();
+    await box.close();
   }
 
   ///

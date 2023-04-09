@@ -52,8 +52,7 @@ class Cache {
   List<GPS> smoothGpsPoints = [];
   List<GPS> calcGpsPoints = [];
   // ignore: prefer_final_fields
-  TrackingStatus _status = TrackingStatus.none;
-  TrackingStatus get status => _status;
+  TrackingStatus trackingStatus = TrackingStatus.none;
 
   String address = '';
   List<ModelTrackPoint> recentTrackPoints = [];
@@ -63,26 +62,33 @@ class Cache {
   /// save foreground, load background and fire event
   static bool _listening = false;
   void stopListen() => _listening = false;
-  listen() {
+  autoUpdateForeground() {
     if (!_listening) {
       _listening = true;
       Future.microtask(() async {
         while (_listening) {
-          GPS.gps().then((GPS gps) {
-            try {
-              loadBackground(gps);
-            } catch (e, stk) {
-              logger.error('load background cache failed: $e', stk);
-            }
-            try {
-              /// save foreground
-              saveForeground(gps);
-            } catch (e, stk) {
-              logger.error('save foreground failed: $e', stk);
-            }
-          }).onError((error, stackTrace) {
-            logger.error('cache listen $error', stackTrace);
-          });
+          try {
+            GPS.gps().then((GPS gps) async {
+              try {
+                await loadBackground(gps);
+              } catch (e, stk) {
+                logger.error('load background cache failed: $e', stk);
+              }
+              try {
+                /// save foreground
+                await saveForeground(gps);
+              } catch (e, stk) {
+                logger.error('save foreground failed: $e', stk);
+              }
+              await EventManager.fire<EventOnCacheLoaded>(EventOnCacheLoaded());
+            }).onError((error, stackTrace) {
+              logger.error('cache listen $error', stackTrace);
+            });
+          } catch (e, stk) {
+            logger.error('gps $e', stk);
+          }
+
+          await Future.delayed(Globals.trackPointInterval);
         }
       });
     }
@@ -155,11 +161,11 @@ class Cache {
           address = box.read<String>(
               hiveKey: AppHiveKeys.cacheBackgroundAddress, value: '');
 
-          calcGpsPoints.addAll(mapGps(box.read<List<String>>(
-              hiveKey: AppHiveKeys.cacheBackgroundCalcGpsPoints, value: [])));
+          calcGpsPoints = mapGps(box.read<List<String>>(
+              hiveKey: AppHiveKeys.cacheBackgroundCalcGpsPoints, value: []));
 
-          gpsPoints.addAll(mapGps(box.read<List<String>>(
-              hiveKey: AppHiveKeys.cacheBackgroundGpsPoints, value: [])));
+          gpsPoints = mapGps(box.read<List<String>>(
+              hiveKey: AppHiveKeys.cacheBackgroundGpsPoints, value: []));
 
           lastGps = GPS.toSharedObject(box.read<String>(
               hiveKey: AppHiveKeys.cacheBackgroundLastGps,
@@ -172,7 +178,7 @@ class Cache {
           smoothGpsPoints = mapGps(box.read<List<String>>(
               hiveKey: AppHiveKeys.cacheBackgroundSmoothGpsPoints, value: []));
 
-          _status = TrackingStatus.values.byName(box.read<String>(
+          trackingStatus = TrackingStatus.values.byName(box.read<String>(
               hiveKey: AppHiveKeys.cacheBackgroundStatus,
               value: TrackingStatus.standing.name));
         });
@@ -199,7 +205,7 @@ class Cache {
               hiveKey: AppHiveKeys.cacheBackgroundLastVisitedTrackpoints,
               value: mapTp(lastVisitedTrackPoints));
 
-          box.read<String>(
+          box.write<String>(
               hiveKey: AppHiveKeys.cacheBackgroundAddress, value: address);
 
           box.write<List<String>>(
@@ -212,18 +218,20 @@ class Cache {
 
           box.write<String>(
               hiveKey: AppHiveKeys.cacheBackgroundLastGps,
-              value: lastGps ?? gps.toSharedString());
+              value: lastGps?.toSharedString() ?? gps.toSharedString());
 
           box.write<String>(
               hiveKey: AppHiveKeys.cacheBackgroundLastStatusChange,
-              value: lastStatusChange ?? gps.toSharedString());
+              value:
+                  lastStatusChange?.toSharedString() ?? gps.toSharedString());
 
           box.write<List<String>>(
               hiveKey: AppHiveKeys.cacheBackgroundSmoothGpsPoints,
               value: mapGps(smoothGpsPoints));
 
           box.write<String>(
-              hiveKey: AppHiveKeys.cacheBackgroundStatus, value: _status.name);
+              hiveKey: AppHiveKeys.cacheBackgroundStatus,
+              value: trackingStatus.name);
         });
   }
 }

@@ -42,7 +42,7 @@ class TrackPoint {
   /// int _nextId = 0;
   /// contains all trackpoints from current state start or stop
   final List<GPS> gpsPoints = [];
-  final List<GPS> smoothGps = [];
+  final List<GPS> smoothGpsPoints = [];
   final List<GPS> calcGpsPoints = [];
 
   TrackingStatus _status = TrackingStatus.none;
@@ -92,7 +92,7 @@ class TrackPoint {
     await cache.saveForeground(gps);
 
     /// parse status from json
-    _status = cache.status;
+    _status = cache.trackingStatus;
 
     /// clear only needed if method runs in foreground
     /// gpsPoints.clear();
@@ -100,9 +100,10 @@ class TrackPoint {
       gpsPoints.add(gps);
       gpsPoints.addAll(cache.gpsPoints);
 
-      calculateSmoothGps();
+      calculateSmoothPoints();
+      calculateCalcPoints();
 
-      if (cache.status == TrackingStatus.none) {
+      if (cache.trackingStatus == TrackingStatus.none) {
         /// app start, no status yet
         _oldStatus = _status = TrackingStatus.standing;
       }
@@ -164,6 +165,7 @@ class TrackPoint {
             ModelTrackPoint newEntry = await createModelTrackPoint(
                 gps: calcGpsPoints.first, aliasList: aliasList);
             await ModelTrackPoint.insert(newEntry);
+            cache.lastStatusChange = gps;
 
             /// update last visited entrys in ModelAlias
             for (var item in aliasList) {
@@ -195,15 +197,6 @@ class TrackPoint {
             cache.address = (await Address(gps).lookupAddress()).toString();
           }
         }
-
-        /// status changed
-        /// write only last inserted gpsPoint back
-        // disabled due to causes too much pause
-        //gpsPoints.clear();
-        //gpsPoints.add(gps);
-
-        /// update last status change for next sessions
-        cache.lastStatusChange = gps;
       }
       if (Globals.osmLookupCondition == OsmLookup.always) {
         cache.address = (await Address(gps).lookupAddress()).toString();
@@ -214,6 +207,11 @@ class TrackPoint {
       logger.error(e.toString(), stk);
     }
     try {
+      cache.gpsPoints = gpsPoints;
+      cache.calcGpsPoints = calcGpsPoints;
+      cache.smoothGpsPoints = smoothGpsPoints;
+      cache.lastGps = gps;
+      cache.trackingStatus = _status;
       cache.recentTrackPoints = ModelTrackPoint.recentTrackPoints();
       cache.lastVisitedTrackPoints = ModelTrackPoint.lastVisited(gps);
     } catch (e, stk) {
@@ -223,15 +221,16 @@ class TrackPoint {
     try {
       /// save status and gpsPoints for next session and foreground live tracking view
       await cache.saveBackground(gps);
+      await Hive.close();
     } catch (e, stk) {
       logger.error('save backround finaly; $e', stk);
     }
   }
 
-  void calculateSmoothGps() {
+  void calculateSmoothPoints() {
     int smooth = Globals.gpsPointsSmoothCount;
     if (smooth < 2) {
-      smoothGps.addAll(gpsPoints);
+      smoothGpsPoints.addAll(gpsPoints);
       return;
     }
     if (gpsPoints.length <= smooth) {
@@ -248,38 +247,49 @@ class TrackPoint {
       smoothLat /= smooth;
       smoothLon /= smooth;
       GPS gps = GPS(smoothLat, smoothLon);
-      if (smoothGps.isNotEmpty) {
-        int m = GPS.distance(gps, smoothGps.last).round();
+      if (smoothGpsPoints.isNotEmpty) {
+        int m = GPS.distance(gps, smoothGpsPoints.last).round();
         int s = Globals.trackPointInterval.inSeconds;
         double ms = m / s;
         double kmh = ms * 3.6;
         if (kmh > Globals.gpsMaxSpeed) {
-          continue;
+          logger.warn('calculate smooth gps with $kmh speed');
         }
       }
 
       gps.time = gpsPoints[index].time;
-      smoothGps.add(gps);
+      smoothGpsPoints.add(gps);
       index++;
     }
   }
 
-  void trackPoint() {
+  void calculateCalcPoints() {
     // get gpsPoints of globals time range
     // to measure movement
-    List<GPS> gpsList = [];
-    DateTime treshold = DateTime.now().subtract(Globals.timeRangeTreshold);
-    bool fullTresholdRange = false;
-    for (var gps in smoothGps) {
-      if (gps.time.isAfter(treshold)) {
-        gpsList.add(gps);
-      } else {
-        fullTresholdRange = true;
-        break;
+    calcGpsPoints.clear();
+    if (smoothGpsPoints.length > 2) {
+      List<GPS> gpsList = [];
+      int tRef = smoothGpsPoints.first.time.millisecondsSinceEpoch;
+      int dur = Globals.timeRangeTreshold.inMilliseconds;
+      int dur2 = Globals.trackPointInterval.inMilliseconds;
+      int tUntil = tRef - dur - dur2;
+
+      bool fullTresholdRange = false;
+      for (var gps in smoothGpsPoints) {
+        if (gps.time.millisecondsSinceEpoch >= tUntil) {
+          gpsList.add(gps);
+        } else {
+          fullTresholdRange = true;
+          break;
+        }
+      }
+      if (fullTresholdRange) {
+        calcGpsPoints.addAll(gpsList);
       }
     }
-    calcGpsPoints.addAll(gpsList);
+  }
 
+  void trackPoint() {
     /// status change triggered by user
     if ((_status == TrackingStatus.standing ||
             _status == TrackingStatus.none) &&
@@ -288,21 +298,21 @@ class TrackPoint {
       return;
     }
 
-    /// gps points min count
-    if (!fullTresholdRange || gpsList.length < 3) {
+    /// gps calc points min count
+    if (calcGpsPoints.length < 3) {
       return;
     }
 
     /// check if we started moving
     if (_status == TrackingStatus.standing || _status == TrackingStatus.none) {
-      if (GPS.distance(gpsList.first, gpsList.last) >
+      if (GPS.distance(calcGpsPoints.first, calcGpsPoints.last) >
           Globals.distanceTreshold) {
         _status = TrackingStatus.moving;
       }
 
       /// check if we stopped moving
     } else if (_status == TrackingStatus.moving) {
-      if (GPS.distanceoverTrackList(gpsList) < Globals.distanceTreshold) {
+      if (GPS.distanceoverTrackList(calcGpsPoints) < Globals.distanceTreshold) {
         _status = TrackingStatus.standing;
       }
     }

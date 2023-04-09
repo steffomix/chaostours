@@ -93,6 +93,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
   @override
   void dispose() {
+    // make sure cache updater is running
+    Cache.instance.autoUpdateForeground();
     EventManager.remove<EventOnAppTick>(onTick);
     EventManager.remove<EventOnAddressLookup>(onAddressLookup);
     EventManager.remove<EventOnWidgetDisposed>(osmGpsPoints);
@@ -316,9 +318,9 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       ModelTrackPoint.pendingAddress = cache.address;
     }
 
-    if (cache.status != TrackingStatus.none) {
+    if (cache.trackingStatus != TrackingStatus.none) {
       /// get status
-      currentStatus = cache.status;
+      currentStatus = cache.trackingStatus;
       runningTrackPoints.clear();
       runningTrackPoints.addAll(cache.gpsPoints);
       // update GPS cache

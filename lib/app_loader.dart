@@ -122,7 +122,7 @@ class AppLoader {
 
   static Future<void> ticks() async {
     logger.important('start app-tick');
-    Cache.instance.listen();
+    Cache.instance.autoUpdateForeground();
     _appTick();
     _addressTick();
     logger.important('logger listen on app-tick ready');

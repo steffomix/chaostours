@@ -2,6 +2,7 @@ import 'package:chaostours/permission_checker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/src/widgets/framework.dart';
 import 'package:flutter/src/widgets/placeholder.dart';
+import 'package:sqflite/sqflite.dart';
 
 ///
 import 'package:chaostours/view/app_widgets.dart';
@@ -9,6 +10,7 @@ import 'package:chaostours/gps.dart';
 import 'package:chaostours/app_loader.dart';
 import 'package:chaostours/file_handler.dart';
 import 'package:chaostours/cache.dart';
+import 'package:chaostours/logger.dart';
 
 class AppInit extends StatefulWidget {
   const AppInit({super.key});
@@ -18,6 +20,7 @@ class AppInit extends StatefulWidget {
 }
 
 class _AppInitState extends State<AppInit> {
+  static final Logger logger = Logger.logger<AppInit>();
   List<String> _msg = [];
   AppRoutes? route;
 
@@ -55,13 +58,28 @@ class _AppInitState extends State<AppInit> {
         if (FileHandler.storagePath == null) {
           throw 'No storage path set';
         }
+        if (FileHandler.storageKey == Storages.notSet) {
+          throw 'No storage key set';
+        }
       } catch (e) {
         route = AppRoutes.storageSettings;
         msg = 'FileHandler::storagePath error: $e';
         return;
       }
       try {
-        PermissionChecker.checkAll();
+        await openDatabase(
+            FileHandler.combinePath(
+                FileHandler.storagePath!, 'chaostours.sqlite'),
+            version: 2, onCreate: (Database db, int version) async {
+          await db.execute(
+              'CREATE TABLE Test (id INTEGER PRIMARY KEY, name TEXT, value INTEGER, num REAL)');
+        });
+      } catch (e, stk) {
+        logger.error('open database $e', stk);
+      }
+
+      try {
+        await PermissionChecker.checkAll();
         if (!PermissionChecker.permissionsOk) {
           route = AppRoutes.permissions;
           msg = 'Permissions incomplete';
@@ -72,25 +90,22 @@ class _AppInitState extends State<AppInit> {
         return;
       }
       try {
-        AppLoader.loadCache();
+        await AppLoader.loadCache();
       } catch (e) {
         msg = 'Load cache failed: $e';
-        return;
       }
       try {
-        AppLoader.loadDatabase();
+        await AppLoader.loadDatabase();
       } catch (e) {
         msg = 'Load database failed: $e';
-        return;
       }
       try {
-        AppLoader.ticks();
+        await AppLoader.ticks();
       } catch (e) {
         msg = 'start app ticks failed: $e';
-        return;
       }
       try {
-        AppLoader.backgroundGps();
+        await AppLoader.backgroundGps();
       } catch (e) {
         msg = 'start background gps failed: $e';
       }
@@ -104,7 +119,7 @@ class _AppInitState extends State<AppInit> {
   @override
   Widget build(BuildContext context) {
     if (route != null) {
-      Future.delayed(const Duration(milliseconds: 300),
+      Future.delayed(const Duration(seconds: 2),
           () => Navigator.pushNamed(context, route!.route));
     }
 

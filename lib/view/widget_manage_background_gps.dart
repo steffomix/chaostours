@@ -21,6 +21,7 @@ class _WidgetManageBackgroundGpsState extends State<WidgetManageBackgroundGps> {
   Widget? trackingSwitch;
   @override
   void initState() {
+    Cache.instance.autoUpdateForeground();
     EventManager.listen<EventOnCacheLoaded>(onCacheLoaded);
     checkTracking();
     super.initState();
