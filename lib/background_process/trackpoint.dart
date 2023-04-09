@@ -12,6 +12,7 @@ import 'package:chaostours/logger.dart';
 import 'package:chaostours/cache.dart';
 import 'package:chaostours/app_settings.dart';
 import 'package:chaostours/file_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 enum TrackingStatus {
   none(0),
@@ -49,8 +50,6 @@ class TrackPoint {
   TrackingStatus _oldStatus = TrackingStatus.none;
 
   Future<void> startShared({required double lat, required double lon}) async {
-    await Hive.initFlutter();
-
     /// create gpsPoint
     GPS gps = GPS.lastGps = GPS(lat, lon);
 
@@ -221,10 +220,14 @@ class TrackPoint {
     try {
       /// save status and gpsPoints for next session and foreground live tracking view
       await cache.saveBackground(gps);
-      await Hive.close();
     } catch (e, stk) {
       logger.error('save backround finaly; $e', stk);
     }
+    var inst = await SharedPreferences.getInstance();
+    // make sure everything is saved
+    await inst.reload();
+    // wait before shutdown task
+    await Future.delayed(const Duration(seconds: 1));
   }
 
   void calculateSmoothPoints() {

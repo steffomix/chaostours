@@ -99,17 +99,17 @@ class Cache {
     await AppHive.accessBox(
         boxName: AppHiveNames.cacheForground,
         access: (AppHive box) async {
-          box.write<String>(
-              hiveKey: AppHiveKeys.cacheForegroundActiveTrackPoint,
+          await box.write<String>(
+              key: AppHiveKeys.cacheForegroundActiveTrackPoint,
               value: pendingTrackPoint.toSharedString());
 
           // caches real trackpoints with id
-          box.write<List<String>>(
-              hiveKey: AppHiveKeys.cacheForegroundTrackPointUpdates,
+          await box.write<List<String>>(
+              key: AppHiveKeys.cacheForegroundTrackPointUpdates,
               value: trackPointUpdates.map((e) => e.toString()).toList());
 
-          box.write<bool>(
-              hiveKey: AppHiveKeys.cacheForegroundTriggerStatus,
+          await box.write<bool>(
+              key: AppHiveKeys.cacheForegroundTriggerStatus,
               value: _triggerStatus);
           _triggerStatus = false;
         });
@@ -121,18 +121,18 @@ class Cache {
         boxName: AppHiveNames.cacheForground,
         access: (AppHive box) async {
           pendingTrackPoint = ModelTrackPoint.toSharedModel(box.read<String>(
-              hiveKey: AppHiveKeys.cacheForegroundActiveTrackPoint,
+              key: AppHiveKeys.cacheForegroundActiveTrackPoint,
               value: ModelTrackPoint.pendingTrackPoint.toSharedString()));
 
           // loads real trackpoints with id
           trackPointUpdates = (box.read<List<String>>(
-                  hiveKey: AppHiveKeys.cacheForegroundTrackPointUpdates,
+                  key: AppHiveKeys.cacheForegroundTrackPointUpdates,
                   value: []) as List<String>)
               .map((e) => ModelTrackPoint.toModel(e))
               .toList();
 
           _triggerStatus = box.read<bool>(
-              hiveKey: AppHiveKeys.cacheForegroundTriggerStatus, value: false);
+              key: AppHiveKeys.cacheForegroundTriggerStatus, value: false);
         });
   }
 
@@ -151,35 +151,34 @@ class Cache {
           }
 
           recentTrackPoints = mapTp(box.read<List<String>>(
-              hiveKey: AppHiveKeys.cacheBackgroundRecentTrackpoints,
-              value: []));
+              key: AppHiveKeys.cacheBackgroundRecentTrackpoints, value: []));
 
           lastVisitedTrackPoints = mapTp(box.read<List<String>>(
-              hiveKey: AppHiveKeys.cacheBackgroundLastVisitedTrackpoints,
+              key: AppHiveKeys.cacheBackgroundLastVisitedTrackpoints,
               value: []));
 
           address = box.read<String>(
-              hiveKey: AppHiveKeys.cacheBackgroundAddress, value: '');
+              key: AppHiveKeys.cacheBackgroundAddress, value: '');
 
           calcGpsPoints = mapGps(box.read<List<String>>(
-              hiveKey: AppHiveKeys.cacheBackgroundCalcGpsPoints, value: []));
+              key: AppHiveKeys.cacheBackgroundCalcGpsPoints, value: []));
 
           gpsPoints = mapGps(box.read<List<String>>(
-              hiveKey: AppHiveKeys.cacheBackgroundGpsPoints, value: []));
+              key: AppHiveKeys.cacheBackgroundGpsPoints, value: []));
 
           lastGps = GPS.toSharedObject(box.read<String>(
-              hiveKey: AppHiveKeys.cacheBackgroundLastGps,
+              key: AppHiveKeys.cacheBackgroundLastGps,
               value: gps.toSharedString()));
 
           lastStatusChange = GPS.toSharedObject(box.read<String>(
-              hiveKey: AppHiveKeys.cacheBackgroundLastStatusChange,
+              key: AppHiveKeys.cacheBackgroundLastStatusChange,
               value: gps.toSharedString()));
 
           smoothGpsPoints = mapGps(box.read<List<String>>(
-              hiveKey: AppHiveKeys.cacheBackgroundSmoothGpsPoints, value: []));
+              key: AppHiveKeys.cacheBackgroundSmoothGpsPoints, value: []));
 
           trackingStatus = TrackingStatus.values.byName(box.read<String>(
-              hiveKey: AppHiveKeys.cacheBackgroundStatus,
+              key: AppHiveKeys.cacheBackgroundStatus,
               value: TrackingStatus.standing.name));
         });
   }
@@ -197,40 +196,40 @@ class Cache {
             return s.map((e) => e.toSharedString()).toList();
           }
 
-          box.write<List<String>>(
-              hiveKey: AppHiveKeys.cacheBackgroundRecentTrackpoints,
+          await box.write<List<String>>(
+              key: AppHiveKeys.cacheBackgroundRecentTrackpoints,
               value: mapTp(recentTrackPoints));
 
-          box.write<List<String>>(
-              hiveKey: AppHiveKeys.cacheBackgroundLastVisitedTrackpoints,
+          await box.write<List<String>>(
+              key: AppHiveKeys.cacheBackgroundLastVisitedTrackpoints,
               value: mapTp(lastVisitedTrackPoints));
 
-          box.write<String>(
-              hiveKey: AppHiveKeys.cacheBackgroundAddress, value: address);
+          await box.write<String>(
+              key: AppHiveKeys.cacheBackgroundAddress, value: address);
 
-          box.write<List<String>>(
-              hiveKey: AppHiveKeys.cacheBackgroundCalcGpsPoints,
+          await box.write<List<String>>(
+              key: AppHiveKeys.cacheBackgroundCalcGpsPoints,
               value: mapGps(calcGpsPoints));
 
-          box.write<List<String>>(
-              hiveKey: AppHiveKeys.cacheBackgroundGpsPoints,
+          await box.write<List<String>>(
+              key: AppHiveKeys.cacheBackgroundGpsPoints,
               value: mapGps(gpsPoints));
 
-          box.write<String>(
-              hiveKey: AppHiveKeys.cacheBackgroundLastGps,
+          await box.write<String>(
+              key: AppHiveKeys.cacheBackgroundLastGps,
               value: lastGps?.toSharedString() ?? gps.toSharedString());
 
-          box.write<String>(
-              hiveKey: AppHiveKeys.cacheBackgroundLastStatusChange,
+          await box.write<String>(
+              key: AppHiveKeys.cacheBackgroundLastStatusChange,
               value:
                   lastStatusChange?.toSharedString() ?? gps.toSharedString());
 
-          box.write<List<String>>(
-              hiveKey: AppHiveKeys.cacheBackgroundSmoothGpsPoints,
+          await box.write<List<String>>(
+              key: AppHiveKeys.cacheBackgroundSmoothGpsPoints,
               value: mapGps(smoothGpsPoints));
 
-          box.write<String>(
-              hiveKey: AppHiveKeys.cacheBackgroundStatus,
+          await box.write<String>(
+              key: AppHiveKeys.cacheBackgroundStatus,
               value: trackingStatus.name);
         });
   }

@@ -10,15 +10,14 @@ class Globals {
         access: (AppHive box) async {
           //
           statusStandingRequireAlias = box.read<bool>(
-              hiveKey: AppHiveKeys.globalsBackgroundTrackingEnabled,
-              value: false);
+              key: AppHiveKeys.globalsBackgroundTrackingEnabled, value: false);
           //
           appTickDuration = box.read<Duration>(
-              hiveKey: AppHiveKeys.globalsAppTickDuration,
+              key: AppHiveKeys.globalsAppTickDuration,
               value: Duration(seconds: 3));
           //
           String us = box.read<String>(
-              hiveKey: AppHiveKeys.globalsPreselectedUsers, value: '');
+              key: AppHiveKeys.globalsPreselectedUsers, value: '');
           preselectedUsers.clear();
           if (us.isNotEmpty) {
             for (var i in us.split(',')) {
@@ -27,32 +26,32 @@ class Globals {
           }
           //
           cacheGpsTime = box.read<Duration>(
-              hiveKey: AppHiveKeys.globalsCacheGpsTime,
+              key: AppHiveKeys.globalsCacheGpsTime,
               value: Duration(seconds: 10));
           //
           distanceTreshold = box.read<int>(
-              hiveKey: AppHiveKeys.globalsDistanceTreshold, value: 100);
+              key: AppHiveKeys.globalsDistanceTreshold, value: 100);
           //
           timeRangeTreshold = box.read<Duration>(
-              hiveKey: AppHiveKeys.globalsTimeRangeTreshold,
+              key: AppHiveKeys.globalsTimeRangeTreshold,
               value: Duration(seconds: 120));
           //
           trackPointInterval = box.read<Duration>(
-              hiveKey: AppHiveKeys.globalsTrackPointInterval,
+              key: AppHiveKeys.globalsTrackPointInterval,
               value: Duration(seconds: 30));
           //
           gpsPointsSmoothCount = box.read<int>(
-              hiveKey: AppHiveKeys.globalsGpsPointsSmoothCount, value: 5);
+              key: AppHiveKeys.globalsGpsPointsSmoothCount, value: 5);
           //
-          gpsMaxSpeed = box.read<int>(
-              hiveKey: AppHiveKeys.globalsGpsMaxSpeed, value: 150);
+          gpsMaxSpeed =
+              box.read<int>(key: AppHiveKeys.globalsGpsMaxSpeed, value: 150);
           //
           osmLookupCondition = box.read<OsmLookup>(
-              hiveKey: AppHiveKeys.globalsOsmLookupCondition,
+              key: AppHiveKeys.globalsOsmLookupCondition,
               value: OsmLookup.onStatus);
           //
           osmLookupInterval = box.read<Duration>(
-              hiveKey: AppHiveKeys.globalsGsmLookupInterval,
+              key: AppHiveKeys.globalsGsmLookupInterval,
               value: Duration(minutes: 0));
         });
   }
@@ -63,45 +62,44 @@ class Globals {
         access: (AppHive box) async {
           //
           box.write<bool>(
-              hiveKey: AppHiveKeys.globalsBackgroundTrackingEnabled,
+              key: AppHiveKeys.globalsBackgroundTrackingEnabled,
               value: backgroundTrackingEnabled);
           //
           box.write<Duration>(
-              hiveKey: AppHiveKeys.globalsAppTickDuration,
-              value: appTickDuration);
+              key: AppHiveKeys.globalsAppTickDuration, value: appTickDuration);
           //
           box.write<String>(
-              hiveKey: AppHiveKeys.globalsPreselectedUsers,
+              key: AppHiveKeys.globalsPreselectedUsers,
               value: preselectedUsers.join(','));
           //
           box.write<Duration>(
-              hiveKey: AppHiveKeys.globalsCacheGpsTime, value: cacheGpsTime);
+              key: AppHiveKeys.globalsCacheGpsTime, value: cacheGpsTime);
           //
           box.write<int>(
-              hiveKey: AppHiveKeys.globalsDistanceTreshold,
+              key: AppHiveKeys.globalsDistanceTreshold,
               value: distanceTreshold);
           //
           box.write<Duration>(
-              hiveKey: AppHiveKeys.globalsTimeRangeTreshold,
+              key: AppHiveKeys.globalsTimeRangeTreshold,
               value: timeRangeTreshold);
           //
           box.write<Duration>(
-              hiveKey: AppHiveKeys.globalsTrackPointInterval,
+              key: AppHiveKeys.globalsTrackPointInterval,
               value: trackPointInterval);
           //
           box.write<int>(
-              hiveKey: AppHiveKeys.globalsGpsPointsSmoothCount,
+              key: AppHiveKeys.globalsGpsPointsSmoothCount,
               value: gpsPointsSmoothCount);
           //
           box.write<int>(
-              hiveKey: AppHiveKeys.globalsGpsMaxSpeed, value: gpsMaxSpeed);
+              key: AppHiveKeys.globalsGpsMaxSpeed, value: gpsMaxSpeed);
           //
           box.write<OsmLookup>(
-              hiveKey: AppHiveKeys.globalsOsmLookupCondition,
+              key: AppHiveKeys.globalsOsmLookupCondition,
               value: OsmLookup.onStatus);
           //
           box.write<Duration>(
-              hiveKey: AppHiveKeys.globalsGsmLookupInterval,
+              key: AppHiveKeys.globalsGsmLookupInterval,
               value: osmLookupInterval);
         });
   }

@@ -60,11 +60,11 @@ class FileHandler {
         boxName: AppHiveNames.fileHandler,
         access: (AppHive box) async {
           try {
-            storagePath = box.read(
-                hiveKey: AppHiveKeys.fileHandlerStoragePath, value: null);
+            storagePath =
+                box.read(key: AppHiveKeys.fileHandlerStoragePath, value: null);
 
             storageKey = Storages.values.byName(box.read<String>(
-                hiveKey: AppHiveKeys.fileHandlerStorageKey,
+                key: AppHiveKeys.fileHandlerStorageKey,
                 value: Storages.appInternal.name));
           } catch (e, stk) {
             logger.error('loadSettings $e', stk);
@@ -83,10 +83,9 @@ class FileHandler {
           boxName: AppHiveNames.fileHandler,
           access: (AppHive box) async {
             box.write<String>(
-                hiveKey: AppHiveKeys.fileHandlerStoragePath,
-                value: storagePath);
+                key: AppHiveKeys.fileHandlerStoragePath, value: storagePath);
             box.write<String>(
-                hiveKey: AppHiveKeys.fileHandlerStorageKey,
+                key: AppHiveKeys.fileHandlerStorageKey,
                 value: storageKey?.name ?? Storages.appInternal.name);
           });
     }

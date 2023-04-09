@@ -1,6 +1,7 @@
 import 'package:chaostours/globals.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:chaostours/logger.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 enum AppHiveNames {
   cacheForground,
@@ -62,33 +63,73 @@ class AppHive {
     Map<int, String>,
     Map<double, String>
   ];
-  final Box _box;
+  final SharedPreferences _box;
   AppHive._handler(this._box);
 
   static Future<void> accessBox(
+      {required AppHiveNames boxName,
+      required Future<void> Function(AppHive box) access}) async {
+    var box = await SharedPreferences.getInstance();
+    await box.reload();
+    await access(AppHive._handler(box));
+  }
+
+/*
+  static Future<void> _accessBox(
       {required AppHiveNames boxName,
       required Future<void> Function(AppHive box) access}) async {
     Box box = await _openBox(boxName);
     await access(AppHive._handler(box));
     await box.close();
   }
-
+*/
   ///
   /// value is default value
-  read<T>({required AppHiveKeys hiveKey, required T value}) {
-    logger.log('read appHive ${_box.name}:${hiveKey.name} ');
-    var vg = _box.get(hiveKey.name);
+  read<T>({required AppHiveKeys key, required T value}) {
+    var k = key.name;
+    String? vg;
+    logger.log('read shared $k');
+
+    switch (T) {
+      case bool:
+        return (_box.getBool(k) ?? value) as T;
+      case int:
+        return (_box.getInt(k) ?? value) as T;
+      case double:
+        return (_box.getDouble(k) ?? value) as T;
+      case List<String>:
+        return (_box.getStringList(k) ?? value) as T;
+      default:
+        vg = _box.getString(k);
+    }
     if (T.toString() == 'Null') {
       return vg;
     }
     return vg == null ? value : castRead<T>(vg);
   }
 
-  write<T>(
-      {required AppHiveKeys hiveKey, required dynamic value, Type? castAs}) {
-    logger.log('write appHive ${_box.name}:${hiveKey.name}');
-    dynamic v = castWrite(value, castAs);
-    _box.put(hiveKey.name, v);
+  Future<dynamic> write<T>(
+      {required AppHiveKeys key, required dynamic value, Type? castAs}) async {
+    var k = key.name;
+    logger.log('write shared $k');
+    if (value == null) {
+      throw 'write not null to sharedPreferences';
+    }
+    switch (T) {
+      case bool:
+        return await _box.setBool(k, value);
+      case int:
+        return await _box.setInt(k, value);
+      case double:
+        return await _box.setDouble(k, value);
+      case String:
+        return await _box.setString(k, value);
+      case List<String>:
+        return await _box.setStringList(k, value);
+      default:
+        value = castWrite(value, castAs);
+        return await _box.setString(k, value);
+    }
   }
 
   static Future<void> init(String prefix) async {
@@ -99,13 +140,6 @@ class AppHive {
     Type t = value.runtimeType;
     if (t == T) {
       return value as T;
-    }
-    if (hiveTypes.contains(T)) {
-      throw 'Unsupported Hive Type cast from $t to $T\n'
-          'Solution: Add cast for Type $T in AppHive::castRead and castWrite Type as String';
-    }
-    if (t != String) {
-      throw 'cast type must be string';
     }
     var s = T.toString();
     switch (s) {
@@ -120,11 +154,8 @@ class AppHive {
     }
   }
 
-  static dynamic castWrite(dynamic value, [Type? tf]) {
+  static String castWrite(dynamic value, [Type? tf]) {
     Type tv = value.runtimeType;
-    if (hiveTypes.contains(tv)) {
-      return value;
-    }
     Type t = tf ?? tv;
     var s = t.toString();
     switch (s) {
