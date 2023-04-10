@@ -2,7 +2,7 @@ import 'package:chaostours/cache.dart';
 import 'package:chaostours/globals.dart';
 import 'package:chaostours/file_handler.dart';
 import 'package:chaostours/logger.dart';
-
+/*
 /// names for SharedKeys.appSettings key:value pairs
 enum AppSettings {
   /// storage
@@ -201,7 +201,7 @@ enum AppSettings {
       values.add('${key.name}:$value');
     });
 
-    await Shared(SharedKeys.appSettings).saveList(values);
+    //await Shared(SharedKeys.appSettings).saveList(values);
   }
 
   /// load key:value pairs from shared into AppSettings.settings
@@ -212,12 +212,13 @@ enum AppSettings {
     _settingsLoaded = true;
 
     /// load shared data
-    List<String> values = await Shared(SharedKeys.appSettings).loadList() ?? [];
+    List<String> values =
+        []; //await Shared(SharedKeys.appSettings).loadList() ?? [];
     if (values.isEmpty) {
       /// app is running first time
       /// store hard coded default values and reload again
       await saveToShared();
-      values = await Shared(SharedKeys.appSettings).loadList() ?? [];
+      //values = await Shared(SharedKeys.appSettings).loadList() ?? [];
     }
     logger.log('settings raw data:\n${values.join('\n')}');
     for (var item in values) {
@@ -319,3 +320,4 @@ enum AppSettings {
     }
   }
 }
+*/

@@ -33,7 +33,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackpointTasks> {
 
   /// edit notes
   static TextEditingController textController =
-      TextEditingController(text: ModelTrackPoint.editTrackPoint.notes);
+      TextEditingController(text: PendingModelTrackPoint.editTrackPoint.notes);
 
   /// modify
   bool modified = false;
@@ -56,7 +56,8 @@ class _WidgetAddTasksState extends State<WidgetEditTrackpointTasks> {
   /// pop edit window if current Trackpoint
   /// is active (not yet saved) and status changes
   void onTrackingStatusChanged(EventOnTrackingStatusChanged e) {
-    if (ModelTrackPoint.pendingTrackPoint == ModelTrackPoint.editTrackPoint) {
+    if (PendingModelTrackPoint.pendingTrackPoint ==
+        PendingModelTrackPoint.editTrackPoint) {
       if (_context != null) {
         Navigator.pop(_context!);
       }
@@ -100,7 +101,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackpointTasks> {
 
   /// current trackpoint
   Widget trackPointInfo(BuildContext context) {
-    var tp = ModelTrackPoint.editTrackPoint;
+    var tp = PendingModelTrackPoint.editTrackPoint;
     var alias = tp.idAlias.map((id) => ModelAlias.getAlias(id).alias).toList();
     var tasks = tp.idTask.map((id) => ModelTask.getTask(id).task).toList();
 
@@ -119,7 +120,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackpointTasks> {
   }
 
   List<Widget> taskCheckboxes(context) {
-    var referenceList = ModelTrackPoint.editTrackPoint.idTask;
+    var referenceList = PendingModelTrackPoint.editTrackPoint.idTask;
     var checkBoxes = <Widget>[];
     for (var tp in ModelTask.getAll()) {
       if (!tp.deleted) {
@@ -135,7 +136,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackpointTasks> {
   }
 
   List<Widget> userCheckboxes(context) {
-    var referenceList = ModelTrackPoint.editTrackPoint.idUser;
+    var referenceList = PendingModelTrackPoint.editTrackPoint.idUser;
     var checkBoxes = <Widget>[];
     for (var tp in ModelUser.getAll()) {
       if (!tp.deleted) {
@@ -155,7 +156,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackpointTasks> {
     /// render selected users
     List<String> userList = [];
     for (var item in ModelUser.getAll()) {
-      if (ModelTrackPoint.editTrackPoint.idUser.contains(item.id)) {
+      if (PendingModelTrackPoint.editTrackPoint.idUser.contains(item.id)) {
         userList.add(item.user);
       }
     }
@@ -184,7 +185,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackpointTasks> {
     /// render selected tasks
     List<String> taskList = [];
     for (var item in ModelTask.getAll()) {
-      if (ModelTrackPoint.editTrackPoint.idTask.contains(item.id)) {
+      if (PendingModelTrackPoint.editTrackPoint.idTask.contains(item.id)) {
         taskList.add(item.task);
       }
     }
@@ -225,14 +226,15 @@ class _WidgetAddTasksState extends State<WidgetEditTrackpointTasks> {
             minLines: 2,
             controller: textController,
             onChanged: (String? s) {
-              ModelTrackPoint.pendingTrackPoint.notes = s ?? '';
+              PendingModelTrackPoint.pendingTrackPoint.notes = s ?? '';
               textModified.value = true;
               logger.log('$s');
             }));
   }
 
   Widget warning(BuildContext context) {
-    if (ModelTrackPoint.pendingTrackPoint == ModelTrackPoint.editTrackPoint) {
+    if (PendingModelTrackPoint.pendingTrackPoint ==
+        PendingModelTrackPoint.editTrackPoint) {
       return Container(
           padding: const EdgeInsets.all(10),
           child: const Text(
@@ -246,6 +248,16 @@ class _WidgetAddTasksState extends State<WidgetEditTrackpointTasks> {
   ///
   @override
   Widget build(BuildContext context) {
+    final tpId = (ModalRoute.of(context)?.settings.arguments ?? 0) as int;
+    if (tpId != 0) {
+      try {
+        /// @Todo
+        /// implement differ between PendingModelTrackpoint and ModelTrackPpoint
+      } catch (e, stk) {
+        logger.error('invalid trackpoint id: $e', stk);
+      }
+    }
+
     /// required for EventListener
     _context = context;
 

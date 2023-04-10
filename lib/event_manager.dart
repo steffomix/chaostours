@@ -7,7 +7,7 @@ import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/cache.dart';
 
 class EventOnSharedKeyChanged extends EventOn {
-  SharedKeys key;
+  CacheKeys key;
   String oldData;
   String newData;
 

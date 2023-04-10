@@ -58,8 +58,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   static TrackingStatus currentStatus = TrackingStatus.none;
 
   /// edit trackpoint notes controller
-  static TextEditingController _controller =
-      TextEditingController(text: ModelTrackPoint.pendingTrackPoint.notes);
+  static TextEditingController _controller = TextEditingController(
+      text: PendingModelTrackPoint.pendingTrackPoint.notes);
 
   /// osm
   int circleId = 0;
@@ -301,7 +301,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     if (!mounted) {
       return;
     }
-    ModelTrackPoint.pendingAddress =
+    PendingModelTrackPoint.pendingAddress =
         (await Address(runningTrackPoints.first).lookupAddress()).toString();
   }
 
@@ -315,7 +315,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     }
 
     if (cache.address.isNotEmpty) {
-      ModelTrackPoint.pendingAddress = cache.address;
+      PendingModelTrackPoint.pendingAddress = cache.address;
     }
 
     if (cache.trackingStatus != TrackingStatus.none) {
@@ -329,9 +329,9 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       /// update pendingTrackPoint
       if (currentStatus == lastStatus) {
         /// update
-        ModelTrackPoint.pendingTrackPoint
+        PendingModelTrackPoint.pendingTrackPoint
           ..gps = runningTrackPoints.first
-          ..address = ModelTrackPoint.pendingAddress
+          ..address = PendingModelTrackPoint.pendingAddress
           ..trackPoints = runningTrackPoints
           ..timeStart =
               cache.lastStatusChange?.time ?? runningTrackPoints.last.time
@@ -339,8 +339,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
           ..idAlias = ModelAlias.nextAlias(gps: runningTrackPoints.first)
               .map((e) => e.id)
               .toList()
-          ..idTask = ModelTrackPoint.pendingTrackPoint.idTask
-          ..notes = ModelTrackPoint.pendingTrackPoint.notes;
+          ..idTask = PendingModelTrackPoint.pendingTrackPoint.idTask
+          ..notes = PendingModelTrackPoint.pendingTrackPoint.notes;
       } else {
         /// status has changed
         /// we need to reload ModelTrackPoint and ModelAlias
@@ -349,10 +349,11 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
         /// notify edit page
         await EventManager.fire<EventOnTrackingStatusChanged>(
-            EventOnTrackingStatusChanged(ModelTrackPoint.pendingTrackPoint));
+            EventOnTrackingStatusChanged(
+                PendingModelTrackPoint.pendingTrackPoint));
 
         /// create new Trackpoint
-        ModelTrackPoint.pendingTrackPoint = ModelTrackPoint(
+        PendingModelTrackPoint.pendingTrackPoint = PendingModelTrackPoint(
             gps: runningTrackPoints.last,
             trackPoints: runningTrackPoints,
             idAlias: <int>[],
@@ -360,27 +361,28 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                 cache.lastStatusChange?.time ?? runningTrackPoints.last.time);
 
         /// add preselected users
-        ModelTrackPoint.pendingTrackPoint.idUser
+        PendingModelTrackPoint.pendingTrackPoint.idUser
             .addAll(Globals.preselectedUsers);
         lastStatus = currentStatus;
         /*
         _controller = TextEditingController(
             text: ModelTrackPoint.pendingTrackPoint.notes);
         */
-        _controller.value =
-            TextEditingValue(text: ModelTrackPoint.pendingTrackPoint.notes);
+        _controller.value = TextEditingValue(
+            text: PendingModelTrackPoint.pendingTrackPoint.notes);
       }
 
       /// write to cache user data for background thread
-      Cache.instance.pendingTrackPoint = ModelTrackPoint.pendingTrackPoint;
+      Cache.instance.pendingTrackPoint =
+          PendingModelTrackPoint.pendingTrackPoint;
     }
 
     setState(() {});
   }
 
-  ModelTrackPoint createTrackPoint(TrackingStatus status) {
+  PendingModelTrackPoint createTrackPoint(TrackingStatus status) {
     GPS gps = runningTrackPoints.first;
-    ModelTrackPoint tp = ModelTrackPoint(
+    PendingModelTrackPoint tp = PendingModelTrackPoint(
         gps: gps,
         trackPoints: runningTrackPoints,
         idAlias: ModelAlias.nextAlias(gps: gps).map((e) => e.id).toList(),
@@ -388,15 +390,15 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
             runningTrackPoints.last.time);
     tp.status = status;
     tp.timeEnd = runningTrackPoints.last.time;
-    tp.idTask = ModelTrackPoint.pendingTrackPoint.idTask;
-    tp.notes = ModelTrackPoint.pendingTrackPoint.notes;
+    tp.idTask = PendingModelTrackPoint.pendingTrackPoint.idTask;
+    tp.notes = PendingModelTrackPoint.pendingTrackPoint.notes;
     return tp;
   }
 
   Widget renderActiveTrackPoint(BuildContext context) {
     Screen screen = Screen(context);
     try {
-      ModelTrackPoint tp = ModelTrackPoint.pendingTrackPoint;
+      PendingModelTrackPoint tp = PendingModelTrackPoint.pendingTrackPoint;
       String duration = util.timeElapsed(tp.timeStart, tp.timeEnd, false);
       List<String> alias = ModelAlias.nextAlias(
               gps: currentStatus == TrackingStatus.moving
@@ -444,7 +446,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
               AppWidgets.divider(),
               Text('Alias: $sAlias', softWrap: true),
               Text(
-                  '\nOSM: "${ModelTrackPoint.pendingAddress.trim().isEmpty ? '---' : ModelTrackPoint.pendingAddress}"',
+                  '\nOSM: "${PendingModelTrackPoint.pendingAddress.trim().isEmpty ? '---' : PendingModelTrackPoint.pendingAddress}"',
                   softWrap: true),
               AppWidgets.divider(),
               Text('Personal: $sUsers'),
@@ -457,7 +459,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       var iconEdit = IconButton(
           icon: const Icon(size: 30, Icons.edit_location),
           onPressed: () {
-            ModelTrackPoint.editTrackPoint = ModelTrackPoint.pendingTrackPoint;
+            PendingModelTrackPoint.editTrackPoint =
+                PendingModelTrackPoint.pendingTrackPoint;
             Navigator.pushNamed(context, AppRoutes.editTrackingTasks.route);
           });
 
@@ -534,8 +537,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
           leading: IconButton(
               icon: const Icon(Icons.edit_location_outlined),
               onPressed: () {
-                ModelTrackPoint.editTrackPoint = tp;
-                Navigator.pushNamed(context, AppRoutes.editTrackingTasks.route);
+                Navigator.pushNamed(context, AppRoutes.editTrackingTasks.route,
+                    arguments: tp.id);
               }),
         ));
         listItems.add(AppWidgets.divider(color: Colors.black));

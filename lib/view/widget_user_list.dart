@@ -6,7 +6,8 @@ import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/checkbox_controller.dart';
-import 'package:chaostours/app_settings.dart';
+import 'package:chaostours/cache.dart';
+//import 'package:chaostours/app_settings.dart';
 
 class WidgetUserList extends StatefulWidget {
   const WidgetUserList({super.key});
@@ -30,7 +31,7 @@ class _WidgetUserList extends State<WidgetUserList> {
     setState(() {});
   }
 
-  Set<int> preselectedUsers = Globals.preselectedUsers.toSet();
+  Set<int> preselectedUsers = Globals.preselectedUsers;
 
   @override
   void dispose() {
@@ -223,10 +224,7 @@ class _WidgetUserList extends State<WidgetUserList> {
             ],
             onTap: (int id) {
               if (id == 0) {
-                AppSettings.settings[AppSettings.preselectedUsers] =
-                    preselectedUsers.join(',');
-                AppSettings.updateGlobals();
-                AppSettings.saveToShared().then((_) {
+                Globals.savePreselectedUsers().then((_) {
                   modified.value = false;
                   dropdownUserIsOpen = false;
                   setState(() {});

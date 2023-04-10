@@ -9,12 +9,9 @@ import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/logger.dart';
 import 'package:flutter/material.dart';
 
-class ModelTrackPoint {
-  static Logger logger = Logger.logger<ModelTrackPoint>();
-  static final List<ModelTrackPoint> _table = [];
-
+class PendingModelTrackPoint extends ModelTrackPoint {
   /// not yet saved active running trackpoint
-  static ModelTrackPoint pendingTrackPoint = ModelTrackPoint(
+  static PendingModelTrackPoint pendingTrackPoint = PendingModelTrackPoint(
       gps: GPS(0, 0),
       timeStart: DateTime.now(),
       trackPoints: <GPS>[],
@@ -26,7 +23,80 @@ class ModelTrackPoint {
   static String pendingAddress = '';
 
   /// trackPoint stored for widgets to edit parts of it
-  static ModelTrackPoint editTrackPoint = pendingTrackPoint;
+  static PendingModelTrackPoint editTrackPoint = pendingTrackPoint;
+
+  PendingModelTrackPoint(
+      {required super.gps,
+      required super.trackPoints,
+      required super.idAlias,
+      required super.timeStart,
+      super.deleted,
+      super.notes});
+
+  /// <p><b>TSV columns: </b></p>
+  /// 0 TrackingStatus index<br>
+  /// 1 gps.lat<br>
+  /// 2 gps.lon<br>
+  /// 3 timeStart as toIso8601String<br>
+  /// 4 timeEnd as above<br>
+  /// 5 idAlias separated by ,<br>
+  /// 6 idTask separated by ,<br>
+  /// 7 lat, lon TrackPoints separated by ; and reduced to four digits<br>
+  /// 8 notes
+  /// 9 | as line end
+  String toSharedString() {
+    List<String> cols = [
+      status.index.toString(), // 0
+      gps.lat.toString(), // 1
+      gps.lon.toString(), // 2
+      timeStart.toIso8601String(), // 3
+      timeEnd.toIso8601String(), // 4
+      idAlias.join(','), // 5
+      idTask.join(','), // 6
+      status == TrackingStatus.moving
+          ? trackPoints
+              .map((gps) => '${(gps.lat * 10000).round() / 10000},'
+                  '${(gps.lon * 10000).round() / 10000}')
+              .toList()
+              .join(';')
+          : '', // 7
+      encode(notes),
+      '|' // 8 (secure line end)
+    ];
+    return cols.join('\t');
+  }
+
+  /// <p><b>TSV columns: </b></p>
+  /// 0 TrackingStatus index<br>
+  /// 1 gps.lat <br>
+  /// 2 gps.lon<br>
+  /// 3 timeStart as toIso8601String<br>
+  /// 4 timeEnd as above<br>
+  /// 5 idAlias separated by ,<br>
+  /// 6 idTask separated by ,<br>
+  /// 7 lat, lon TrackPoints separated by ; and reduced to four digits<br>
+  /// 8 notes
+  /// 9 | as line end
+  static PendingModelTrackPoint toSharedModel(String row) {
+    List<String> p = row.split('\t');
+    GPS gps = GPS(double.parse(p[1]), double.parse(p[2]));
+    PendingModelTrackPoint model = PendingModelTrackPoint(
+        gps: gps,
+        timeStart: DateTime.parse(p[3]),
+        idAlias: ModelTrackPoint.parseIdList(p[5]),
+        trackPoints: ModelTrackPoint.parseGpsList(p[7]),
+        deleted: 0);
+    model.status = TrackingStatus.byValue(int.parse(p[0]));
+    model.timeEnd = DateTime.parse(p[4]);
+    model.idTask = ModelTrackPoint.parseIdList(p[6]);
+    model.notes = decode(p[8]);
+    return model;
+  }
+}
+
+class ModelTrackPoint {
+  static Logger logger = Logger.logger<ModelTrackPoint>();
+  static final List<ModelTrackPoint> _table = [];
 
   ///
   /// TrackPoint owners
@@ -200,6 +270,10 @@ class ModelTrackPoint {
     return list.reversed.toList();
   }
 
+  static ModelTrackPoint byId(int id) {
+    return _table[id - 1];
+  }
+
   static List<ModelTrackPoint> byAlias(int id) {
     var list = <ModelTrackPoint>[];
     for (var item in _table.reversed) {
@@ -282,66 +356,6 @@ class ModelTrackPoint {
       '|'
     ];
     return cols.join('\t');
-  }
-
-  /// <p><b>TSV columns: </b></p>
-  /// 0 TrackingStatus index<br>
-  /// 1 gps.lat<br>
-  /// 2 gps.lon<br>
-  /// 3 timeStart as toIso8601String<br>
-  /// 4 timeEnd as above<br>
-  /// 5 idAlias separated by ,<br>
-  /// 6 idTask separated by ,<br>
-  /// 7 lat, lon TrackPoints separated by ; and reduced to four digits<br>
-  /// 8 notes
-  /// 9 | as line end
-  String toSharedString() {
-    List<String> cols = [
-      status.index.toString(), // 0
-      gps.lat.toString(), // 1
-      gps.lon.toString(), // 2
-      timeStart.toIso8601String(), // 3
-      timeEnd.toIso8601String(), // 4
-      idAlias.join(','), // 5
-      idTask.join(','), // 6
-      status == TrackingStatus.moving
-          ? trackPoints
-              .map((gps) => '${(gps.lat * 10000).round() / 10000},'
-                  '${(gps.lon * 10000).round() / 10000}')
-              .toList()
-              .join(';')
-          : '', // 7
-      encode(notes),
-      '|' // 8 (secure line end)
-    ];
-    return cols.join('\t');
-  }
-
-  /// <p><b>TSV columns: </b></p>
-  /// 0 TrackingStatus index<br>
-  /// 1 gps.lat <br>
-  /// 2 gps.lon<br>
-  /// 3 timeStart as toIso8601String<br>
-  /// 4 timeEnd as above<br>
-  /// 5 idAlias separated by ,<br>
-  /// 6 idTask separated by ,<br>
-  /// 7 lat, lon TrackPoints separated by ; and reduced to four digits<br>
-  /// 8 notes
-  /// 9 | as line end
-  static ModelTrackPoint toSharedModel(String row) {
-    List<String> p = row.split('\t');
-    GPS gps = GPS(double.parse(p[1]), double.parse(p[2]));
-    ModelTrackPoint model = ModelTrackPoint(
-        gps: gps,
-        timeStart: DateTime.parse(p[3]),
-        idAlias: parseIdList(p[5]),
-        trackPoints: parseGpsList(p[7]),
-        deleted: 0);
-    model.status = TrackingStatus.byValue(int.parse(p[0]));
-    model.timeEnd = DateTime.parse(p[4]);
-    model.idTask = parseIdList(p[6]);
-    model.notes = decode(p[8]);
-    return model;
   }
 
   //

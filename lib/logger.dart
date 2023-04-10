@@ -157,19 +157,21 @@ class Logger {
       Uri.encodeFull('$stackTrace'),
       '|'
     ];
-    Shared shared = Shared(SharedKeys.workmanagerLogger);
-    List<String> list = (await shared.loadList()) ?? [];
+
+    List<String> list =
+        await Cache.getValue<List<String>>(CacheKeys.backgroundLogger, []);
     while (list.length >= maxSharedCount) {
       list.removeLast();
     }
     list.add(parts.join('\t'));
-    await shared.saveList(list);
+    await Cache.setValue<List<String>>(CacheKeys.backgroundLogger, list);
   }
 
   static Future<void> _renderSharedLogs() async {
-    Shared shared = Shared(SharedKeys.workmanagerLogger);
-    List<String> list = (await shared.loadList()) ?? [];
-    await shared.saveList(<String>[]);
+    List<String> list =
+        await Cache.getValue<List<String>>(CacheKeys.backgroundLogger, []);
+    // reset list
+    await Cache.setValue<List<String>>(CacheKeys.backgroundLogger, []);
     for (var item in list) {
       try {
         List<String> p = item.split('\t');

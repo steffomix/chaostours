@@ -1,107 +1,84 @@
 // ignore_for_file: prefer_const_constructors
 import 'package:chaostours/app_hive.dart';
+import 'package:chaostours/cache.dart';
 
 enum OsmLookup { never, onStatus, always }
 
 class Globals {
+  static Future<void> savePreselectedUsers() async {
+    Cache.setValue<List<int>>(
+        CacheKeys.globalsPreselectedUsers, preselectedUsers.toList());
+  }
+
+  static Future<Set<int>> loadPreselectedUsers() async {
+    preselectedUsers =
+        (await Cache.getValue<List<int>>(CacheKeys.globalsPreselectedUsers, []))
+            .toSet();
+    return preselectedUsers;
+  }
+
   static Future<void> loadSettings() async {
-    await AppHive.accessBox(
-        boxName: AppHiveNames.globalsAppSettings,
-        access: (AppHive box) async {
-          //
-          statusStandingRequireAlias = box.read<bool>(
-              key: AppHiveKeys.globalsBackgroundTrackingEnabled, value: false);
-          //
-          appTickDuration = box.read<Duration>(
-              key: AppHiveKeys.globalsAppTickDuration,
-              value: Duration(seconds: 3));
-          //
-          String us = box.read<String>(
-              key: AppHiveKeys.globalsPreselectedUsers, value: '');
-          preselectedUsers.clear();
-          if (us.isNotEmpty) {
-            for (var i in us.split(',')) {
-              preselectedUsers.add(int.parse(i));
-            }
-          }
-          //
-          cacheGpsTime = box.read<Duration>(
-              key: AppHiveKeys.globalsCacheGpsTime,
-              value: Duration(seconds: 10));
-          //
-          distanceTreshold = box.read<int>(
-              key: AppHiveKeys.globalsDistanceTreshold, value: 100);
-          //
-          timeRangeTreshold = box.read<Duration>(
-              key: AppHiveKeys.globalsTimeRangeTreshold,
-              value: Duration(seconds: 120));
-          //
-          trackPointInterval = box.read<Duration>(
-              key: AppHiveKeys.globalsTrackPointInterval,
-              value: Duration(seconds: 30));
-          //
-          gpsPointsSmoothCount = box.read<int>(
-              key: AppHiveKeys.globalsGpsPointsSmoothCount, value: 5);
-          //
-          gpsMaxSpeed =
-              box.read<int>(key: AppHiveKeys.globalsGpsMaxSpeed, value: 150);
-          //
-          osmLookupCondition = box.read<OsmLookup>(
-              key: AppHiveKeys.globalsOsmLookupCondition,
-              value: OsmLookup.onStatus);
-          //
-          osmLookupInterval = box.read<Duration>(
-              key: AppHiveKeys.globalsGsmLookupInterval,
-              value: Duration(minutes: 0));
-        });
+    statusStandingRequireAlias = await Cache.getValue<bool>(
+        CacheKeys.globalsBackgroundTrackingEnabled, false);
+    appTickDuration = await Cache.getValue<Duration>(
+        CacheKeys.globalsAppTickDuration, Duration(seconds: 1));
+
+    await loadPreselectedUsers();
+
+    cacheGpsTime = await Cache.getValue<Duration>(
+        CacheKeys.globalsCacheGpsTime, Duration(seconds: 10));
+
+    distanceTreshold =
+        await Cache.getValue<int>(CacheKeys.globalsDistanceTreshold, 100);
+
+    timeRangeTreshold = await Cache.getValue<Duration>(
+        CacheKeys.globalsTimeRangeTreshold, Duration(seconds: 20));
+
+    trackPointInterval = await Cache.getValue<Duration>(
+        CacheKeys.globalsTrackPointInterval, Duration(seconds: 30));
+
+    gpsPointsSmoothCount =
+        await Cache.getValue<int>(CacheKeys.globalsGpsPointsSmoothCount, 5);
+
+    gpsMaxSpeed = await Cache.getValue<int>(CacheKeys.globalsGpsMaxSpeed, 150);
+
+    osmLookupCondition = await Cache.getValue<OsmLookup>(
+        CacheKeys.globalsOsmLookupCondition, OsmLookup.onStatus);
+
+    osmLookupInterval = await Cache.getValue<Duration>(
+        CacheKeys.globalsOsmLookupInterval, Duration(seconds: 3600));
   }
 
   static Future<void> saveSettings() async {
-    await AppHive.accessBox(
-        boxName: AppHiveNames.globalsAppSettings,
-        access: (AppHive box) async {
-          //
-          box.write<bool>(
-              key: AppHiveKeys.globalsBackgroundTrackingEnabled,
-              value: backgroundTrackingEnabled);
-          //
-          box.write<Duration>(
-              key: AppHiveKeys.globalsAppTickDuration, value: appTickDuration);
-          //
-          box.write<String>(
-              key: AppHiveKeys.globalsPreselectedUsers,
-              value: preselectedUsers.join(','));
-          //
-          box.write<Duration>(
-              key: AppHiveKeys.globalsCacheGpsTime, value: cacheGpsTime);
-          //
-          box.write<int>(
-              key: AppHiveKeys.globalsDistanceTreshold,
-              value: distanceTreshold);
-          //
-          box.write<Duration>(
-              key: AppHiveKeys.globalsTimeRangeTreshold,
-              value: timeRangeTreshold);
-          //
-          box.write<Duration>(
-              key: AppHiveKeys.globalsTrackPointInterval,
-              value: trackPointInterval);
-          //
-          box.write<int>(
-              key: AppHiveKeys.globalsGpsPointsSmoothCount,
-              value: gpsPointsSmoothCount);
-          //
-          box.write<int>(
-              key: AppHiveKeys.globalsGpsMaxSpeed, value: gpsMaxSpeed);
-          //
-          box.write<OsmLookup>(
-              key: AppHiveKeys.globalsOsmLookupCondition,
-              value: OsmLookup.onStatus);
-          //
-          box.write<Duration>(
-              key: AppHiveKeys.globalsGsmLookupInterval,
-              value: osmLookupInterval);
-        });
+    await Cache.setValue<bool>(
+        CacheKeys.globalsBackgroundTrackingEnabled, backgroundTrackingEnabled);
+
+    await Cache.setValue<Duration>(
+        CacheKeys.globalsAppTickDuration, appTickDuration);
+
+    savePreselectedUsers();
+
+    await Cache.setValue<Duration>(CacheKeys.globalsCacheGpsTime, cacheGpsTime);
+
+    await Cache.setValue<int>(
+        CacheKeys.globalsDistanceTreshold, distanceTreshold);
+
+    await Cache.setValue<Duration>(
+        CacheKeys.globalsTimeRangeTreshold, timeRangeTreshold);
+
+    await Cache.setValue<Duration>(
+        CacheKeys.globalsTrackPointInterval, trackPointInterval);
+
+    await Cache.setValue<int>(
+        CacheKeys.globalsGpsPointsSmoothCount, gpsPointsSmoothCount);
+
+    await Cache.setValue<int>(CacheKeys.globalsGpsMaxSpeed, gpsMaxSpeed);
+
+    await Cache.setValue<OsmLookup>(
+        CacheKeys.globalsOsmLookupCondition, osmLookupCondition);
+
+    await Cache.setValue<Duration>(
+        CacheKeys.globalsOsmLookupInterval, osmLookupInterval);
   }
 
   static String version = '1.0';

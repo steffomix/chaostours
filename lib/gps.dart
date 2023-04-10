@@ -9,6 +9,31 @@ import 'package:chaostours/app_loader.dart';
 import 'package:chaostours/globals.dart';
 import 'package:chaostours/logger.dart';
 
+class PendingGps extends GPS {
+  PendingGps(super.lat, super.lon);
+
+  /// creates gps trackPoint with timestamp
+  String toSharedString() {
+    return <String>[super.toString(), time.toIso8601String()].join(';');
+  }
+
+  /// inverse of GPS.toSharedString()
+  ///
+  /// "lat,lon;time.toIso8601String()"
+  static PendingGps toSharedObject(String row) {
+    List<String> parts = row.split(';');
+
+    List<String> p = parts[0].split(',');
+
+    double lat = double.parse(p[0]);
+    double lon = double.parse(p[1]);
+
+    PendingGps gps = PendingGps(lat, lon);
+    gps.time = DateTime.parse(parts[1]);
+    return gps;
+  }
+}
+
 class GPS {
   static Logger logger = Logger.logger<GPS>();
 
@@ -54,21 +79,6 @@ class GPS {
     double lat = double.parse(p[0]);
     double lon = double.parse(p[1]);
     return GPS(lat, lon);
-  }
-
-  /// creates gps trackPoint with timestamp
-  String toSharedString() {
-    return <String>[toString(), time.toIso8601String()].join(';');
-  }
-
-  /// inverse of GPS.toSharedString()
-  ///
-  /// "time.toIso8601String();lat,lon"
-  static GPS toSharedObject(String row) {
-    List<String> p = row.split(';');
-    GPS gps = GPS.toObject(p[0]);
-    gps.time = DateTime.parse(p[1]);
-    return gps;
   }
 
   static double distance(GPS g1, GPS g2) =>

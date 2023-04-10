@@ -42,17 +42,17 @@ class TrackPoint {
 
   /// int _nextId = 0;
   /// contains all trackpoints from current state start or stop
-  final List<GPS> gpsPoints = [];
-  final List<GPS> smoothGpsPoints = [];
-  final List<GPS> calcGpsPoints = [];
+  final List<PendingGps> gpsPoints = [];
+  final List<PendingGps> smoothGpsPoints = [];
+  final List<PendingGps> calcGpsPoints = [];
 
   TrackingStatus _status = TrackingStatus.none;
   TrackingStatus _oldStatus = TrackingStatus.none;
 
   Future<void> startShared({required double lat, required double lon}) async {
     /// create gpsPoint
-    GPS gps = GPS.lastGps = GPS(lat, lon);
-
+    PendingGps gps = PendingGps(lat, lon);
+    GPS.lastGps = gps;
     await FileHandler.loadSettings();
 
     if (!(await FileHandler.dirExists(FileHandler.storagePath ?? ''))) {
@@ -249,7 +249,7 @@ class TrackPoint {
       }
       smoothLat /= smooth;
       smoothLon /= smooth;
-      GPS gps = GPS(smoothLat, smoothLon);
+      PendingGps gps = PendingGps(smoothLat, smoothLon);
       if (smoothGpsPoints.isNotEmpty) {
         int m = GPS.distance(gps, smoothGpsPoints.last).round();
         int s = Globals.trackPointInterval.inSeconds;
@@ -271,7 +271,7 @@ class TrackPoint {
     // to measure movement
     calcGpsPoints.clear();
     if (smoothGpsPoints.length > 2) {
-      List<GPS> gpsList = [];
+      List<PendingGps> gpsList = [];
       int tRef = smoothGpsPoints.first.time.millisecondsSinceEpoch;
       int dur = Globals.timeRangeTreshold.inMilliseconds;
       int dur2 = Globals.trackPointInterval.inMilliseconds;

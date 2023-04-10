@@ -7,9 +7,9 @@ import 'package:chaostours/globals.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/background_process/trackpoint.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
-import 'package:chaostours/file_handler.dart';
 import 'package:chaostours/app_hive.dart';
 
+/*
 enum JsonKeys {
   // background status and messages
   bgStatus,
@@ -24,8 +24,274 @@ enum JsonKeys {
   fgTrackPointUpdates,
   fgActiveTrackPoint;
 }
+*/
+enum CacheKeys {
+  cacheForegroundTriggerStatus,
+  cacheForegroundTrackPointUpdates,
+  cacheForegroundActiveTrackPoint,
+
+  /// cache background to forground
+  cacheBackgroundTrackingStatus,
+  cacheBackgroundLastStatusChange,
+  cacheBackgroundLastGps,
+  cacheBackgroundGpsPoints,
+  cacheBackgroundSmoothGpsPoints,
+  cacheBackgroundCalcGpsPoints,
+  cacheBackgroundAddress,
+  cacheBackgroundRecentTrackpoints,
+  cacheBackgroundLastVisitedTrackpoints,
+
+  /// fileHandler
+  fileHandlerStoragePath,
+  fileHandlerStorageKey,
+
+  /// globals
+  globalsWeekDays,
+  globalsBackgroundTrackingEnabled,
+  globalsPreselectedUsers,
+  globalsStatusStandingRequireAlias,
+  globalsTrackPointInterval,
+  globalsOsmLookupInterval,
+  globalsOsmLookupCondition,
+  globalsCacheGpsTime,
+  globalsDistanceTreshold,
+  globalsTimeRangeTreshold,
+  globalsAppTickDuration,
+  globalsGpsMaxSpeed,
+  globalsGpsPointsSmoothCount,
+
+  /// logger
+  backgroundLogger;
+}
 
 class Cache {
+  /// DateTime
+  static String serializeDateTime(DateTime dateTime) =>
+      dateTime.toIso8601String();
+  static DateTime? deserializeDateTime(String? time) =>
+      time == null ? null : DateTime.parse(time);
+
+  /// Duration
+  static int serializeDuration(Duration duration) => duration.inSeconds;
+  static Duration? deserializeDuration(int? seconds) =>
+      seconds == null ? null : Duration(seconds: seconds);
+
+  /// pending gps list
+  static List<String> serializePendingGpsList(List<PendingGps> gpsList) {
+    return gpsList.map((e) => e.toSharedString()).toList();
+  }
+
+  static List<PendingGps>? deserializePendingGpsList(List<String>? list) {
+    return list == null
+        ? []
+        : list.map((e) => PendingGps.toSharedObject(e)).toList();
+  }
+
+  /// gps list
+  static List<String> serializeGpsList(List<GPS> gpsList) {
+    return gpsList.map((e) => e.toString()).toList();
+  }
+
+  static List<GPS>? deserializeGpsList(List<String>? list) {
+    return list == null ? [] : list.map((e) => GPS.toObject(e)).toList();
+  }
+
+  /// pending GPS
+  static String serializePendingGPS(PendingGps gps) => gps.toSharedString();
+  static GPS? deserializePendingGps(String? gps) =>
+      gps == null ? null : PendingGps.toSharedObject(gps);
+
+  /// GPS
+  static String serializeGps(GPS gps) => gps.toString();
+  static GPS? deserializeGps(String? gps) =>
+      gps == null ? null : GPS.toObject(gps);
+
+  /// trackingstatus
+  static String serializeTrackingStatus(TrackingStatus t) {
+    return t.name;
+  }
+
+  static TrackingStatus? deserializeTrackingStatus(String? s) {
+    return s == null ? null : TrackingStatus.values.byName(s);
+  }
+
+  /// PendingModelTrackPoint
+  static String serializePendingModelTrackPoint(PendingModelTrackPoint tp) =>
+      tp.toSharedString();
+  static PendingModelTrackPoint? deserializePendingModelTrackPoint(
+          String? tp) =>
+      tp == null ? null : PendingModelTrackPoint.toSharedModel(tp);
+
+  // ModelTrackPoint
+  static String serializeModelTrackPoint(ModelTrackPoint tp) => tp.toString();
+  static ModelTrackPoint? deserializeModelTrackPoint(String? tp) =>
+      tp == null ? null : ModelTrackPoint.toModel(tp);
+
+  /// List ModelTrackPoint
+  static List<String> serializeModelTrackPointList(
+          List<ModelTrackPoint> tpList) =>
+      tpList.map((e) => e.toString()).toList();
+  static List<ModelTrackPoint>? deserializeModelTrackPointList(
+          List<String>? list) =>
+      list == null ? [] : list.map((e) => ModelTrackPoint.toModel(e)).toList();
+
+  /// List PendingModelTrackPoint
+  static List<String> serializePendingModelTrackPointList(
+          List<PendingModelTrackPoint> tpList) =>
+      tpList.map((e) => e.toSharedString()).toList();
+  static List<PendingModelTrackPoint>? desrializePendingModelTrackPointList(
+          List<String>? list) =>
+      list == null
+          ? []
+          : list.map((e) => PendingModelTrackPoint.toSharedModel(e)).toList();
+
+  /// OSMLookup
+  static String serializeOsmLookup(OsmLookup lo) => lo.name;
+  static OsmLookup? deserializeOsmLookup(String? osm) =>
+      osm == null ? OsmLookup.never : OsmLookup.values.byName(osm);
+
+  /// IntMap
+  static const intSeparator = ',';
+  static String serializeIntSet(Set<int> se) => se.join(intSeparator);
+  static Set<int> deserializeIntSet(String se) {
+    Set<int> set = {};
+    if (se.trim().isEmpty) {
+      return set;
+    }
+    for (var i in se.split(intSeparator)) {
+      set.add(int.parse(i));
+    }
+    return set;
+  }
+
+  static Future<void> setValue<T>(CacheKeys cacheKey, T value,
+      [String Function(T)? serialize]) async {
+    final prefs = await SharedPreferences.getInstance();
+    String key = cacheKey.toString();
+    if (serialize != null) {
+      await prefs.setString(key, serialize(value));
+      return;
+    }
+    switch (T) {
+      case String:
+        await prefs.setString(key, value as String);
+        break;
+      case List<String>:
+        await prefs.setStringList(key.toString(), value as List<String>);
+        break;
+      case int:
+        await prefs.setInt(key, value as int);
+        break;
+      case bool:
+        await prefs.setBool(key, value as bool);
+        break;
+      case double:
+        await prefs.setDouble(key, value as double);
+        break;
+      case Duration:
+        await prefs.setInt(key, serializeDuration(value as Duration));
+        break;
+      case DateTime:
+        await prefs.setString(key, serializeDateTime(value as DateTime));
+        break;
+      case GPS:
+        await prefs.setString(key, serializeGps(value as GPS));
+        break;
+      case List<GPS>:
+        await prefs.setStringList(key, serializeGpsList(value as List<GPS>));
+        break;
+      case PendingGps:
+        await prefs.setString(key, serializePendingGPS(value as PendingGps));
+        break;
+      case List<PendingGps>:
+        await prefs.setStringList(
+            key, serializePendingGpsList(value as List<PendingGps>));
+        break;
+      case TrackingStatus:
+        await prefs.setString(
+            key, serializeTrackingStatus(value as TrackingStatus));
+        break;
+      case ModelTrackPoint:
+        await prefs.setString(
+            key, serializeModelTrackPoint(value as ModelTrackPoint));
+        break;
+      case List<ModelTrackPoint>:
+        await prefs.setStringList(
+            key, serializeModelTrackPointList(value as List<ModelTrackPoint>));
+        break;
+      case PendingModelTrackPoint:
+        await prefs.setString(key,
+            serializePendingModelTrackPoint(value as PendingModelTrackPoint));
+        break;
+      case List<PendingModelTrackPoint>:
+        await prefs.setStringList(
+            key,
+            serializePendingModelTrackPointList(
+                value as List<PendingModelTrackPoint>));
+        break;
+      default:
+        throw Exception("Unsupported data type $T");
+    }
+  }
+
+  static Future<T> getValue<T>(
+    CacheKeys cacheKey,
+    T defaultValue, [
+    T Function(String)? deserialize,
+  ]) async {
+    final prefs = await SharedPreferences.getInstance();
+    String key = cacheKey.toString();
+    if (deserialize != null) {
+      final stringValue = prefs.getString(key.toString());
+      return stringValue != null ? deserialize(stringValue) : defaultValue;
+    }
+    switch (T) {
+      case String:
+        return prefs.getString(key) as T? ?? defaultValue;
+
+      case List<String>:
+        return prefs.getStringList(key) as T? ?? defaultValue;
+      case int:
+        return prefs.getInt(key) as T? ?? defaultValue;
+      case bool:
+        return prefs.getBool(key) as T? ?? defaultValue;
+      case double:
+        return prefs.getDouble(key) as T? ?? defaultValue;
+      case Duration:
+        return deserializeDuration(prefs.getInt(key)) as T? ?? defaultValue;
+      case DateTime:
+        return deserializeDateTime(prefs.getString(key)) as T ?? defaultValue;
+      case GPS:
+        return deserializeGps(prefs.getString(key)) as T ?? defaultValue;
+      case List<GPS>:
+        return deserializeGpsList(prefs.getStringList(key)) as T ??
+            defaultValue;
+      case PendingGps:
+        return deserializePendingGps(prefs.getString(key)) as T ?? defaultValue;
+      case List<PendingGps>:
+        return deserializePendingGpsList(prefs.getStringList(key)) as T ??
+            defaultValue;
+      case TrackingStatus:
+        return deserializeTrackingStatus(prefs.getString(key)) as T ??
+            defaultValue;
+      case ModelTrackPoint:
+        return deserializeModelTrackPoint(prefs.getString(key)) as T ??
+            defaultValue;
+      case List<ModelTrackPoint>:
+        return deserializeModelTrackPointList(prefs.getStringList(key)) as T ??
+            defaultValue;
+      case PendingModelTrackPoint:
+        return deserializePendingModelTrackPoint(prefs.getString(key)) as T ??
+            defaultValue;
+      case List<PendingModelTrackPoint>:
+        return desrializePendingModelTrackPointList(prefs.getStringList(key))
+                as T ??
+            defaultValue;
+      default:
+        throw Exception("Unsupported data type $T");
+    }
+  }
+
   static Logger logger = Logger.logger<Cache>();
   Cache._();
   static Cache? _instance;
@@ -36,7 +302,8 @@ class Cache {
   /// foreground values
   ///
   List<ModelTrackPoint> trackPointUpdates = [];
-  ModelTrackPoint pendingTrackPoint = ModelTrackPoint.pendingTrackPoint;
+  PendingModelTrackPoint pendingTrackPoint =
+      PendingModelTrackPoint.pendingTrackPoint;
   bool _triggerStatus = false;
   bool get statusTriggered => _triggerStatus;
   void triggerStatus() => _triggerStatus = true;
@@ -45,12 +312,12 @@ class Cache {
   ///
   /// backround values
   ///
-  GPS? lastGps;
+  PendingGps? lastGps;
   // gps list from between trackpoints
-  GPS? lastStatusChange;
-  List<GPS> gpsPoints = [];
-  List<GPS> smoothGpsPoints = [];
-  List<GPS> calcGpsPoints = [];
+  PendingGps? lastStatusChange;
+  List<PendingGps> gpsPoints = [];
+  List<PendingGps> smoothGpsPoints = [];
+  List<PendingGps> calcGpsPoints = [];
   // ignore: prefer_final_fields
   TrackingStatus trackingStatus = TrackingStatus.none;
 
@@ -96,285 +363,88 @@ class Cache {
 
   /// save foreground
   Future<void> saveForeground(GPS gps) async {
-    await AppHive.accessBox(
-        boxName: AppHiveNames.cacheForground,
-        access: (AppHive box) async {
-          await box.write<String>(
-              key: AppHiveKeys.cacheForegroundActiveTrackPoint,
-              value: pendingTrackPoint.toSharedString());
+    await setValue<PendingModelTrackPoint>(
+        CacheKeys.cacheForegroundActiveTrackPoint, pendingTrackPoint);
 
-          // caches real trackpoints with id
-          await box.write<List<String>>(
-              key: AppHiveKeys.cacheForegroundTrackPointUpdates,
-              value: trackPointUpdates.map((e) => e.toString()).toList());
+    await setValue<List<ModelTrackPoint>>(
+        CacheKeys.cacheForegroundTrackPointUpdates, trackPointUpdates);
 
-          await box.write<bool>(
-              key: AppHiveKeys.cacheForegroundTriggerStatus,
-              value: _triggerStatus);
-          _triggerStatus = false;
-        });
+    await setValue<bool>(
+        CacheKeys.cacheForegroundTriggerStatus, _triggerStatus);
   }
 
   /// save foreground
   Future<void> loadForeground(GPS gps) async {
-    await AppHive.accessBox(
-        boxName: AppHiveNames.cacheForground,
-        access: (AppHive box) async {
-          pendingTrackPoint = ModelTrackPoint.toSharedModel(box.read<String>(
-              key: AppHiveKeys.cacheForegroundActiveTrackPoint,
-              value: ModelTrackPoint.pendingTrackPoint.toSharedString()));
+    pendingTrackPoint = await getValue<PendingModelTrackPoint>(
+      CacheKeys.cacheForegroundActiveTrackPoint,
+      PendingModelTrackPoint.pendingTrackPoint,
+    );
 
-          // loads real trackpoints with id
-          trackPointUpdates = (box.read<List<String>>(
-                  key: AppHiveKeys.cacheForegroundTrackPointUpdates,
-                  value: []) as List<String>)
-              .map((e) => ModelTrackPoint.toModel(e))
-              .toList();
+    trackPointUpdates = await getValue<List<ModelTrackPoint>>(
+        CacheKeys.cacheForegroundTrackPointUpdates, []);
 
-          _triggerStatus = box.read<bool>(
-              key: AppHiveKeys.cacheForegroundTriggerStatus, value: false);
-        });
+    _triggerStatus =
+        await getValue<bool>(CacheKeys.cacheForegroundTriggerStatus, false);
   }
 
   /// load background
   Future<void> loadBackground(GPS gps) async {
-    await AppHive.accessBox(
-        boxName: AppHiveNames.cacheBackground,
-        // read real tp with id
-        access: (AppHive box) async {
-          List<ModelTrackPoint> mapTp(List<String> s) {
-            return s.map((e) => ModelTrackPoint.toModel(e)).toList();
-          }
+    recentTrackPoints = await getValue<List<ModelTrackPoint>>(
+        CacheKeys.cacheBackgroundRecentTrackpoints, []);
 
-          List<GPS> mapGps(List<String> s) {
-            return s.map((e) => GPS.toSharedObject(e)).toList();
-          }
+    lastVisitedTrackPoints = await getValue<List<ModelTrackPoint>>(
+        CacheKeys.cacheBackgroundLastVisitedTrackpoints, []);
 
-          recentTrackPoints = mapTp(box.read<List<String>>(
-              key: AppHiveKeys.cacheBackgroundRecentTrackpoints, value: []));
+    address = await getValue<String>(CacheKeys.cacheBackgroundAddress, '');
 
-          lastVisitedTrackPoints = mapTp(box.read<List<String>>(
-              key: AppHiveKeys.cacheBackgroundLastVisitedTrackpoints,
-              value: []));
+    calcGpsPoints = await getValue<List<PendingGps>>(
+        CacheKeys.cacheBackgroundCalcGpsPoints, []);
 
-          address = box.read<String>(
-              key: AppHiveKeys.cacheBackgroundAddress, value: '');
+    gpsPoints = await getValue<List<PendingGps>>(
+        CacheKeys.cacheBackgroundGpsPoints, []);
 
-          calcGpsPoints = mapGps(box.read<List<String>>(
-              key: AppHiveKeys.cacheBackgroundCalcGpsPoints, value: []));
+    lastGps = await getValue<PendingGps>(
+        CacheKeys.cacheBackgroundLastGps, PendingGps(gps.lat, gps.lon));
 
-          gpsPoints = mapGps(box.read<List<String>>(
-              key: AppHiveKeys.cacheBackgroundGpsPoints, value: []));
+    lastStatusChange = await getValue<PendingGps>(
+        CacheKeys.cacheBackgroundLastStatusChange,
+        PendingGps(gps.lat, gps.lon));
 
-          lastGps = GPS.toSharedObject(box.read<String>(
-              key: AppHiveKeys.cacheBackgroundLastGps,
-              value: gps.toSharedString()));
+    smoothGpsPoints = await getValue<List<PendingGps>>(
+        CacheKeys.cacheBackgroundSmoothGpsPoints, []);
 
-          lastStatusChange = GPS.toSharedObject(box.read<String>(
-              key: AppHiveKeys.cacheBackgroundLastStatusChange,
-              value: gps.toSharedString()));
-
-          smoothGpsPoints = mapGps(box.read<List<String>>(
-              key: AppHiveKeys.cacheBackgroundSmoothGpsPoints, value: []));
-
-          trackingStatus = TrackingStatus.values.byName(box.read<String>(
-              key: AppHiveKeys.cacheBackgroundStatus,
-              value: TrackingStatus.standing.name));
-        });
+    trackingStatus = await getValue<TrackingStatus>(
+        CacheKeys.cacheBackgroundTrackingStatus, TrackingStatus.none);
   }
 
   /// load background
   Future<void> saveBackground(GPS gps) async {
-    await AppHive.accessBox(
-        boxName: AppHiveNames.cacheBackground,
-        access: (AppHive box) async {
-          List<String> mapTp(List<ModelTrackPoint> s) {
-            return s.map((e) => e.toString()).toList();
-          }
+    //
+    await setValue<TrackingStatus>(
+        CacheKeys.cacheBackgroundTrackingStatus, TrackingStatus.none);
 
-          List<String> mapGps(List<GPS> s) {
-            return s.map((e) => e.toSharedString()).toList();
-          }
+    await setValue<List<ModelTrackPoint>>(
+        CacheKeys.cacheBackgroundRecentTrackpoints, recentTrackPoints);
 
-          await box.write<List<String>>(
-              key: AppHiveKeys.cacheBackgroundRecentTrackpoints,
-              value: mapTp(recentTrackPoints));
+    await setValue<List<ModelTrackPoint>>(
+        CacheKeys.cacheBackgroundLastVisitedTrackpoints,
+        lastVisitedTrackPoints);
 
-          await box.write<List<String>>(
-              key: AppHiveKeys.cacheBackgroundLastVisitedTrackpoints,
-              value: mapTp(lastVisitedTrackPoints));
+    await setValue<String>(CacheKeys.cacheBackgroundAddress, address);
 
-          await box.write<String>(
-              key: AppHiveKeys.cacheBackgroundAddress, value: address);
+    await setValue<List<PendingGps>>(
+        CacheKeys.cacheBackgroundGpsPoints, gpsPoints);
 
-          await box.write<List<String>>(
-              key: AppHiveKeys.cacheBackgroundCalcGpsPoints,
-              value: mapGps(calcGpsPoints));
+    await setValue<List<PendingGps>>(
+        CacheKeys.cacheBackgroundSmoothGpsPoints, smoothGpsPoints);
 
-          await box.write<List<String>>(
-              key: AppHiveKeys.cacheBackgroundGpsPoints,
-              value: mapGps(gpsPoints));
+    await setValue<List<PendingGps>>(
+        CacheKeys.cacheBackgroundCalcGpsPoints, calcGpsPoints);
 
-          await box.write<String>(
-              key: AppHiveKeys.cacheBackgroundLastGps,
-              value: lastGps?.toSharedString() ?? gps.toSharedString());
+    await setValue<PendingGps>(CacheKeys.cacheBackgroundLastGps,
+        lastGps ?? PendingGps(gps.lat, gps.lon));
 
-          await box.write<String>(
-              key: AppHiveKeys.cacheBackgroundLastStatusChange,
-              value:
-                  lastStatusChange?.toSharedString() ?? gps.toSharedString());
-
-          await box.write<List<String>>(
-              key: AppHiveKeys.cacheBackgroundSmoothGpsPoints,
-              value: mapGps(smoothGpsPoints));
-
-          await box.write<String>(
-              key: AppHiveKeys.cacheBackgroundStatus,
-              value: trackingStatus.name);
-        });
-  }
-}
-
-///
-///
-///
-///
-///
-///
-///
-enum SharedKeys {
-  /// List<String> of key:value pairs
-  appSettings,
-
-  /// enum Storages key
-  storageKey,
-
-  /// string path of selected storage
-  storagePath,
-
-  /// String ModelTrackPoint as sharedString
-  /// send from forground to background on status changed
-  /// contains userdata to get added to a new trackpoint
-  activeTrackPoint,
-
-  /// String address lookup when detected status standing
-  /// send from foreground to background
-  /// used in Trackpoint::createTrackpoint
-  addressStanding,
-
-  /// List<String> of trackpoints to update from foreground to background
-  /// updates modified trackpoints from foreground task
-  updateTrackPointQueue,
-
-  /// List<String> contains background Logger logs
-  workmanagerLogger;
-}
-
-enum SharedTypes {
-  string,
-  list,
-  int;
-}
-
-class Shared {
-  static Logger logger = Logger.logger<Shared>();
-  String _observed = '';
-  bool _observing = false;
-  int _id = 0;
-  int get id => ++_id;
-  //
-  SharedKeys key;
-  Shared(this.key);
-
-  String _typeName(SharedTypes type) {
-    return '${key.name}_${type.name}';
-  }
-
-  static void clear() async {
-    (await shared).clear();
-  }
-
-  /// prepare module
-  static SharedPreferences? _shared;
-  static Future<SharedPreferences> get shared async {
-    SharedPreferences s = (_shared ?? await SharedPreferences.getInstance());
-    _shared = s;
-    await s.reload();
-    return s;
-  }
-
-  Future<List<String>?> loadList() async {
-    SharedPreferences sh = await shared;
-    List<String> value =
-        sh.getStringList(_typeName(SharedTypes.list)) ?? <String>[];
-    return value;
-  }
-
-  Future<void> saveList(List<String> list) async {
-    await (await shared).setStringList(_typeName(SharedTypes.list), list);
-  }
-
-  Future<int?> loadInt() async {
-    SharedPreferences sh = await shared;
-    int? value = sh.getInt(_typeName(SharedTypes.int));
-    return value;
-  }
-
-  Future<void> saveInt(int i) async {
-    await (await shared).setInt(_typeName(SharedTypes.int), i);
-  }
-
-  Future<String?> loadString() async {
-    SharedPreferences sh = await shared;
-    String value = sh.getString(_typeName(SharedTypes.string)) ?? '0\t';
-    return value;
-  }
-
-  Future<void> saveString(String data) async {
-    await (await shared).setString(_typeName(SharedTypes.string), data);
-  }
-
-  /// set key to Null
-  Future<void> remove() async {
-    await (await shared).remove(_typeName(SharedTypes.string));
-  }
-
-  /// observes only string types
-  void observe(
-      {required Duration duration, required Function(String data) fn}) async {
-    if (_observing) return;
-    _observed = (await loadString()) ?? '';
-    Future.delayed(duration, () {
-      _observe(duration: duration, fn: fn);
-    });
-    _observing = true;
-  }
-
-  Future<void> _observe(
-      {required Duration duration, required Function(String data) fn}) async {
-    String obs;
-    while (true) {
-      if (!_observing) break;
-      try {
-        obs = (await loadString()) ?? '';
-      } catch (e, stk) {
-        logger.error('observing failed with $e', stk);
-        obs = '';
-      }
-      if (obs != _observed) {
-        _observed = obs;
-        try {
-          fn(obs);
-        } catch (e, stk) {
-          logger.error('observing failed with $e', stk);
-        }
-      }
-      await Future.delayed(duration);
-    }
-  }
-
-  void cancel() {
-    logger.log('cancel observing on key ${key.name}');
-    _observing = false;
+    await setValue<PendingGps>(CacheKeys.cacheBackgroundLastStatusChange,
+        lastStatusChange ?? PendingGps(gps.lat, gps.lon));
   }
 }

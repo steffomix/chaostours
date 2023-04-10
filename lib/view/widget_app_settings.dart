@@ -8,6 +8,8 @@ import 'package:chaostours/logger.dart';
 import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/checkbox_controller.dart';
 import 'package:chaostours/app_settings.dart';
+import 'package:chaostours/cache.dart';
+import 'package:chaostours/file_handler.dart';
 
 enum AliasRequired {
   yes(true),
@@ -40,6 +42,39 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
   TextEditingController? txGpsSmoothCount;
   TextEditingController? txGpsMaxSpeed;
 
+  static Map<CacheKeys, String> settings = {
+    CacheKeys.fileHandlerStorageKey:
+        FileHandler.storageKey?.name ?? Storages.notSet.name,
+    CacheKeys.fileHandlerStoragePath: FileHandler.storagePath ?? '',
+    CacheKeys.globalsBackgroundTrackingEnabled:
+        Globals.backgroundTrackingEnabled ? '1' : '0',
+    CacheKeys.globalsPreselectedUsers:
+        Globals.preselectedUsers.join(','), // List<int>
+    CacheKeys.globalsStatusStandingRequireAlias:
+        Globals.statusStandingRequireAlias ? '1' : '0', // bool
+    CacheKeys.globalsTrackPointInterval:
+        Globals.trackPointInterval.inSeconds.toString(), // int
+    CacheKeys.globalsOsmLookupInterval:
+        Globals.osmLookupInterval.inSeconds.toString(), // int
+    CacheKeys.globalsOsmLookupCondition:
+        Globals.osmLookupCondition.name, // String enum name
+    CacheKeys.globalsCacheGpsTime:
+        Globals.cacheGpsTime.inSeconds.toString(), // int
+    CacheKeys.globalsDistanceTreshold:
+        Globals.distanceTreshold.toString(), // int
+    CacheKeys.globalsTimeRangeTreshold:
+        Globals.timeRangeTreshold.inSeconds.toString(), // int
+    CacheKeys.globalsAppTickDuration:
+        Globals.appTickDuration.inSeconds.toString(), // bool 1|0
+    CacheKeys.globalsGpsMaxSpeed: Globals.gpsMaxSpeed.toString(), // int
+    CacheKeys.globalsGpsPointsSmoothCount:
+        Globals.gpsPointsSmoothCount.toString() // int
+  };
+
+  Future<void> saveSettings() async {
+    ///
+    ///
+  }
   @override
   void dispose() {
     super.dispose();
@@ -62,7 +97,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
   Widget numberField({
     required BuildContext context,
     required TextEditingController controller,
-    required AppSettings sharedKey,
+    required CacheKeys cacheKey,
     required int minValue,
     required int maxValue,
     String title = '',
@@ -94,7 +129,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                 if (maxValue > 0 && i > maxValue) {
                   i = maxValue;
                 }
-                AppSettings.settings[sharedKey] = i.toString();
+                settings[cacheKey] = i.toString();
                 modify();
               } catch (e) {
                 //
@@ -190,8 +225,8 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
         numberField(
             context: context,
             controller: txTrackPointInterval ??= TextEditingController(
-                text: AppSettings.settings[AppSettings.trackPointInterval]),
-            sharedKey: AppSettings.trackPointInterval,
+                text: settings[CacheKeys.globalsTrackPointInterval]),
+            cacheKey: CacheKeys.globalsTrackPointInterval,
             minValue: 20,
             maxValue: 0,
             title: 'Hintergrund GPS Interval',
@@ -203,8 +238,8 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
         numberField(
             context: context,
             controller: txAddressLookupInterval ??= TextEditingController(
-                text: AppSettings.settings[AppSettings.addressLookupInterval]),
-            sharedKey: AppSettings.addressLookupInterval,
+                text: settings[CacheKeys.globalsOsmLookupInterval]),
+            cacheKey: CacheKeys.globalsOsmLookupInterval,
             minValue: 10,
             maxValue: 0,
             title: 'Live Tracking OSM Adress lookup Interval',
@@ -241,7 +276,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                       value: OsmLookup.never,
                       groupValue: Globals.osmLookupCondition,
                       onChanged: (OsmLookup? val) {
-                        AppSettings.settings[AppSettings.osmLookupCondition] =
+                        settings[CacheKeys.globalsOsmLookupCondition] =
                             val?.name ?? OsmLookup.never.name;
                         setStatus(context, val);
                       })),
@@ -258,7 +293,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                       value: OsmLookup.onStatus,
                       groupValue: Globals.osmLookupCondition,
                       onChanged: (OsmLookup? val) {
-                        AppSettings.settings[AppSettings.osmLookupCondition] =
+                        settings[CacheKeys.globalsOsmLookupCondition] =
                             val?.name ?? OsmLookup.never.name;
                         setStatus(context, val);
                       })),
@@ -276,7 +311,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                       value: OsmLookup.always,
                       groupValue: Globals.osmLookupCondition,
                       onChanged: (OsmLookup? val) {
-                        AppSettings.settings[AppSettings.osmLookupCondition] =
+                        settings[CacheKeys.globalsOsmLookupCondition] =
                             val?.name ?? OsmLookup.never.name;
                         setStatus(context, val);
                       }))
@@ -286,8 +321,8 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
         numberField(
             context: context,
             controller: txCacheGpsTime ??= TextEditingController(
-                text: AppSettings.settings[AppSettings.cacheGpsTime]),
-            sharedKey: AppSettings.cacheGpsTime,
+                text: settings[CacheKeys.globalsCacheGpsTime]),
+            cacheKey: CacheKeys.globalsCacheGpsTime,
             minValue: 0,
             maxValue: 0,
             title: 'GPS Cache - Vorhaltezeit',
@@ -299,8 +334,8 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
         numberField(
             context: context,
             controller: txDistanceTrehold ??= TextEditingController(
-                text: AppSettings.settings[AppSettings.distanceTreshold]),
-            sharedKey: AppSettings.distanceTreshold,
+                text: settings[CacheKeys.globalsDistanceTreshold]),
+            cacheKey: CacheKeys.globalsDistanceTreshold,
             minValue: 20,
             maxValue: 0,
             title: 'Distanzschwellwert',
@@ -314,8 +349,8 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
         numberField(
             context: context,
             controller: txTimeRangeTreshold ??= TextEditingController(
-                text: AppSettings.settings[AppSettings.timeRangeTreshold]),
-            sharedKey: AppSettings.timeRangeTreshold,
+                text: settings[CacheKeys.globalsTimeRangeTreshold]),
+            cacheKey: CacheKeys.globalsTimeRangeTreshold,
             minValue: 20,
             maxValue: 0,
             title: 'Zeitschwellwert',
@@ -329,8 +364,8 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
         numberField(
             context: context,
             controller: txAppTickDuration ??= TextEditingController(
-                text: AppSettings.settings[AppSettings.appTickDuration]),
-            sharedKey: AppSettings.appTickDuration,
+                text: settings[CacheKeys.globalsAppTickDuration]),
+            cacheKey: CacheKeys.globalsAppTickDuration,
             minValue: 5,
             maxValue: 0,
             title: 'Live Tracking Aktualisierungsinterval',
@@ -344,8 +379,8 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
         numberField(
             context: context,
             controller: txGpsMaxSpeed ??= TextEditingController(
-                text: AppSettings.settings[AppSettings.gpsMaxSpeed]),
-            sharedKey: AppSettings.gpsMaxSpeed,
+                text: settings[CacheKeys.globalsGpsMaxSpeed]),
+            cacheKey: CacheKeys.globalsGpsMaxSpeed,
             minValue: 5,
             maxValue: 0,
             title: 'Grobe GPS ausrutscher ignorieren',
@@ -358,8 +393,8 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
         numberField(
             context: context,
             controller: txGpsSmoothCount ??= TextEditingController(
-                text: AppSettings.settings[AppSettings.gpsPointsSmoothCount]),
-            sharedKey: AppSettings.gpsPointsSmoothCount,
+                text: settings[CacheKeys.globalsGpsPointsSmoothCount]),
+            cacheKey: CacheKeys.globalsGpsPointsSmoothCount,
             minValue: 0,
             maxValue: 0,
             title: 'GPS feine ungenauigkeit kompensieren',
@@ -393,10 +428,9 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
           onTap: (int id) {
             if (id == 0) {
               bool b = statusStandingRequireAlias ?? false;
-              AppSettings.settings[AppSettings.statusStandingRequireAlias] =
+              settings[CacheKeys.globalsStatusStandingRequireAlias] =
                   b ? '1' : '0';
-              AppSettings.updateGlobals();
-              AppSettings.saveToShared().then((_) {
+              saveSettings().then((_) {
                 Navigator.pop(context);
               });
             } else {
