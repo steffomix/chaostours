@@ -1,10 +1,12 @@
 // ignore_for_file: prefer_const_constructors
-import 'package:chaostours/app_hive.dart';
+import 'package:chaostours/logger.dart';
 import 'package:chaostours/cache.dart';
 
 enum OsmLookup { never, onStatus, always }
 
 class Globals {
+  static final Logger logger = Logger.logger<Globals>();
+
   static Future<void> savePreselectedUsers() async {
     Cache.setValue<List<int>>(
         CacheKeys.globalsPreselectedUsers, preselectedUsers.toList());
@@ -18,35 +20,40 @@ class Globals {
   }
 
   static Future<void> loadSettings() async {
-    statusStandingRequireAlias = await Cache.getValue<bool>(
-        CacheKeys.globalsBackgroundTrackingEnabled, false);
-    appTickDuration = await Cache.getValue<Duration>(
-        CacheKeys.globalsAppTickDuration, Duration(seconds: 1));
+    try {
+      statusStandingRequireAlias = await Cache.getValue<bool>(
+          CacheKeys.globalsBackgroundTrackingEnabled, false);
+      appTickDuration = await Cache.getValue<Duration>(
+          CacheKeys.globalsAppTickDuration, Duration(seconds: 1));
 
-    await loadPreselectedUsers();
+      await loadPreselectedUsers();
 
-    cacheGpsTime = await Cache.getValue<Duration>(
-        CacheKeys.globalsCacheGpsTime, Duration(seconds: 10));
+      cacheGpsTime = await Cache.getValue<Duration>(
+          CacheKeys.globalsCacheGpsTime, Duration(seconds: 10));
 
-    distanceTreshold =
-        await Cache.getValue<int>(CacheKeys.globalsDistanceTreshold, 100);
+      distanceTreshold =
+          await Cache.getValue<int>(CacheKeys.globalsDistanceTreshold, 100);
 
-    timeRangeTreshold = await Cache.getValue<Duration>(
-        CacheKeys.globalsTimeRangeTreshold, Duration(seconds: 20));
+      timeRangeTreshold = await Cache.getValue<Duration>(
+          CacheKeys.globalsTimeRangeTreshold, Duration(seconds: 20));
 
-    trackPointInterval = await Cache.getValue<Duration>(
-        CacheKeys.globalsTrackPointInterval, Duration(seconds: 30));
+      trackPointInterval = await Cache.getValue<Duration>(
+          CacheKeys.globalsTrackPointInterval, Duration(seconds: 30));
 
-    gpsPointsSmoothCount =
-        await Cache.getValue<int>(CacheKeys.globalsGpsPointsSmoothCount, 5);
+      gpsPointsSmoothCount =
+          await Cache.getValue<int>(CacheKeys.globalsGpsPointsSmoothCount, 5);
 
-    gpsMaxSpeed = await Cache.getValue<int>(CacheKeys.globalsGpsMaxSpeed, 150);
+      gpsMaxSpeed =
+          await Cache.getValue<int>(CacheKeys.globalsGpsMaxSpeed, 150);
 
-    osmLookupCondition = await Cache.getValue<OsmLookup>(
-        CacheKeys.globalsOsmLookupCondition, OsmLookup.onStatus);
+      osmLookupCondition = await Cache.getValue<OsmLookup>(
+          CacheKeys.globalsOsmLookupCondition, OsmLookup.onStatus);
 
-    osmLookupInterval = await Cache.getValue<Duration>(
-        CacheKeys.globalsOsmLookupInterval, Duration(seconds: 3600));
+      osmLookupInterval = await Cache.getValue<Duration>(
+          CacheKeys.globalsOsmLookupInterval, Duration(seconds: 3600));
+    } catch (e, stk) {
+      logger.error('load settings: $e', stk);
+    }
   }
 
   static Future<void> saveSettings() async {

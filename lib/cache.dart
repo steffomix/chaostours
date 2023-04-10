@@ -65,6 +65,17 @@ enum CacheKeys {
 }
 
 class Cache {
+  static final Logger logger = Logger.logger<Cache>();
+
+  /// intList
+  static List<String> serializeIntList(List<int> list) {
+    return list.map((e) => e.toString()).toList();
+  }
+
+  static List<int> deserializeIntList(List<String>? s) {
+    return s == null ? [] : s.map((e) => int.parse(e)).toList();
+  }
+
   /// DateTime
   static String serializeDateTime(DateTime dateTime) =>
       dateTime.toIso8601String();
@@ -167,70 +178,81 @@ class Cache {
   static Future<void> setValue<T>(CacheKeys cacheKey, T value,
       [String Function(T)? serialize]) async {
     final prefs = await SharedPreferences.getInstance();
-    String key = cacheKey.toString();
+    String key = cacheKey.name;
+    logger.log('setValue $key');
     if (serialize != null) {
       await prefs.setString(key, serialize(value));
       return;
     }
-    switch (T) {
-      case String:
-        await prefs.setString(key, value as String);
-        break;
-      case List<String>:
-        await prefs.setStringList(key.toString(), value as List<String>);
-        break;
-      case int:
-        await prefs.setInt(key, value as int);
-        break;
-      case bool:
-        await prefs.setBool(key, value as bool);
-        break;
-      case double:
-        await prefs.setDouble(key, value as double);
-        break;
-      case Duration:
-        await prefs.setInt(key, serializeDuration(value as Duration));
-        break;
-      case DateTime:
-        await prefs.setString(key, serializeDateTime(value as DateTime));
-        break;
-      case GPS:
-        await prefs.setString(key, serializeGps(value as GPS));
-        break;
-      case List<GPS>:
-        await prefs.setStringList(key, serializeGpsList(value as List<GPS>));
-        break;
-      case PendingGps:
-        await prefs.setString(key, serializePendingGPS(value as PendingGps));
-        break;
-      case List<PendingGps>:
-        await prefs.setStringList(
-            key, serializePendingGpsList(value as List<PendingGps>));
-        break;
-      case TrackingStatus:
-        await prefs.setString(
-            key, serializeTrackingStatus(value as TrackingStatus));
-        break;
-      case ModelTrackPoint:
-        await prefs.setString(
-            key, serializeModelTrackPoint(value as ModelTrackPoint));
-        break;
-      case List<ModelTrackPoint>:
-        await prefs.setStringList(
-            key, serializeModelTrackPointList(value as List<ModelTrackPoint>));
-        break;
-      case PendingModelTrackPoint:
-        await prefs.setString(key,
-            serializePendingModelTrackPoint(value as PendingModelTrackPoint));
-        break;
-      case List<PendingModelTrackPoint>:
-        await prefs.setStringList(
-            key,
-            serializePendingModelTrackPointList(
-                value as List<PendingModelTrackPoint>));
-        break;
-      default:
-        throw Exception("Unsupported data type $T");
+    try {
+      switch (T) {
+        case String:
+          await prefs.setString(key, value as String);
+          break;
+        case List<String>:
+          await prefs.setStringList(key.toString(), value as List<String>);
+          break;
+        case int:
+          await prefs.setInt(key, value as int);
+          break;
+        case List<int>:
+          await prefs.setStringList(key, serializeIntList(value as List<int>));
+          break;
+        case bool:
+          await prefs.setBool(key, value as bool);
+          break;
+        case double:
+          await prefs.setDouble(key, value as double);
+          break;
+        case Duration:
+          await prefs.setInt(key, serializeDuration(value as Duration));
+          break;
+        case DateTime:
+          await prefs.setString(key, serializeDateTime(value as DateTime));
+          break;
+        case GPS:
+          await prefs.setString(key, serializeGps(value as GPS));
+          break;
+        case List<GPS>:
+          await prefs.setStringList(key, serializeGpsList(value as List<GPS>));
+          break;
+        case PendingGps:
+          await prefs.setString(key, serializePendingGPS(value as PendingGps));
+          break;
+        case List<PendingGps>:
+          await prefs.setStringList(
+              key, serializePendingGpsList(value as List<PendingGps>));
+          break;
+        case TrackingStatus:
+          await prefs.setString(
+              key, serializeTrackingStatus(value as TrackingStatus));
+          break;
+        case ModelTrackPoint:
+          await prefs.setString(
+              key, serializeModelTrackPoint(value as ModelTrackPoint));
+          break;
+        case List<ModelTrackPoint>:
+          await prefs.setStringList(key,
+              serializeModelTrackPointList(value as List<ModelTrackPoint>));
+          break;
+        case PendingModelTrackPoint:
+          await prefs.setString(key,
+              serializePendingModelTrackPoint(value as PendingModelTrackPoint));
+          break;
+        case List<PendingModelTrackPoint>:
+          await prefs.setStringList(
+              key,
+              serializePendingModelTrackPointList(
+                  value as List<PendingModelTrackPoint>));
+          break;
+        case OsmLookup:
+          await prefs.setString(key, serializeOsmLookup(value as OsmLookup));
+          break;
+        default:
+          throw Exception("Unsupported data type $T");
+      }
+    } catch (e, stk) {
+      logger.error('setValue for $key failed: $e', stk);
     }
   }
 
@@ -240,59 +262,74 @@ class Cache {
     T Function(String)? deserialize,
   ]) async {
     final prefs = await SharedPreferences.getInstance();
-    String key = cacheKey.toString();
+    String key = cacheKey.name;
+    logger.log('getValue $key');
     if (deserialize != null) {
       final stringValue = prefs.getString(key.toString());
       return stringValue != null ? deserialize(stringValue) : defaultValue;
     }
-    switch (T) {
-      case String:
-        return prefs.getString(key) as T? ?? defaultValue;
+    try {
+      switch (T) {
+        case String:
+          return prefs.getString(key) as T? ?? defaultValue;
 
-      case List<String>:
-        return prefs.getStringList(key) as T? ?? defaultValue;
-      case int:
-        return prefs.getInt(key) as T? ?? defaultValue;
-      case bool:
-        return prefs.getBool(key) as T? ?? defaultValue;
-      case double:
-        return prefs.getDouble(key) as T? ?? defaultValue;
-      case Duration:
-        return deserializeDuration(prefs.getInt(key)) as T? ?? defaultValue;
-      case DateTime:
-        return deserializeDateTime(prefs.getString(key)) as T ?? defaultValue;
-      case GPS:
-        return deserializeGps(prefs.getString(key)) as T ?? defaultValue;
-      case List<GPS>:
-        return deserializeGpsList(prefs.getStringList(key)) as T ??
-            defaultValue;
-      case PendingGps:
-        return deserializePendingGps(prefs.getString(key)) as T ?? defaultValue;
-      case List<PendingGps>:
-        return deserializePendingGpsList(prefs.getStringList(key)) as T ??
-            defaultValue;
-      case TrackingStatus:
-        return deserializeTrackingStatus(prefs.getString(key)) as T ??
-            defaultValue;
-      case ModelTrackPoint:
-        return deserializeModelTrackPoint(prefs.getString(key)) as T ??
-            defaultValue;
-      case List<ModelTrackPoint>:
-        return deserializeModelTrackPointList(prefs.getStringList(key)) as T ??
-            defaultValue;
-      case PendingModelTrackPoint:
-        return deserializePendingModelTrackPoint(prefs.getString(key)) as T ??
-            defaultValue;
-      case List<PendingModelTrackPoint>:
-        return desrializePendingModelTrackPointList(prefs.getStringList(key))
-                as T ??
-            defaultValue;
-      default:
-        throw Exception("Unsupported data type $T");
+        case List<String>:
+          return prefs.getStringList(key) as T? ?? defaultValue;
+        case int:
+          return prefs.getInt(key) as T? ?? defaultValue;
+        case List<int>:
+          return deserializeIntList(prefs.getStringList(key)) as T? ??
+              defaultValue;
+        case bool:
+          return prefs.getBool(key) as T? ?? defaultValue;
+        case double:
+          return prefs.getDouble(key) as T? ?? defaultValue;
+        case Duration:
+          return deserializeDuration(prefs.getInt(key)) as T? ?? defaultValue;
+        case DateTime:
+          return deserializeDateTime(prefs.getString(key)) as T? ??
+              defaultValue;
+        case GPS:
+          return deserializeGps(prefs.getString(key)) as T? ?? defaultValue;
+        case List<GPS>:
+          return deserializeGpsList(prefs.getStringList(key)) as T? ??
+              defaultValue;
+        case PendingGps:
+          return deserializePendingGps(prefs.getString(key)) as T? ??
+              defaultValue;
+        case List<PendingGps>:
+          return deserializePendingGpsList(prefs.getStringList(key)) as T? ??
+              defaultValue;
+        case TrackingStatus:
+          return deserializeTrackingStatus(prefs.getString(key)) as T? ??
+              defaultValue;
+        case ModelTrackPoint:
+          return deserializeModelTrackPoint(prefs.getString(key)) as T? ??
+              defaultValue;
+        case List<ModelTrackPoint>:
+          return deserializeModelTrackPointList(prefs.getStringList(key))
+                  as T? ??
+              defaultValue;
+        case PendingModelTrackPoint:
+          return deserializePendingModelTrackPoint(prefs.getString(key))
+                  as T? ??
+              defaultValue;
+        case List<PendingModelTrackPoint>:
+          return desrializePendingModelTrackPointList(prefs.getStringList(key))
+                  as T? ??
+              defaultValue;
+        case OsmLookup:
+          return deserializeOsmLookup(prefs.getString(key)) as T? ??
+              defaultValue;
+        default:
+          throw Exception("Unsupported data type $T");
+      }
+    } catch (e, stk) {
+      logger.error('getValue for $key failed - return defaultValue: $e', stk);
+      return defaultValue;
     }
   }
 
-  static Logger logger = Logger.logger<Cache>();
   Cache._();
   static Cache? _instance;
   //factory Cache() => _instance ??= Cache._();

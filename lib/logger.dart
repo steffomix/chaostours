@@ -149,6 +149,7 @@ class Logger {
   }
 
   _addSharedLog(LogLevel level, String msg, String? stackTrace) async {
+    print('## _addSharedLog');
     List<String> parts = [
       Uri.encodeFull(prefix),
       Uri.encodeFull(_name),
@@ -157,7 +158,7 @@ class Logger {
       Uri.encodeFull('$stackTrace'),
       '|'
     ];
-
+/*
     List<String> list =
         await Cache.getValue<List<String>>(CacheKeys.backgroundLogger, []);
     while (list.length >= maxSharedCount) {
@@ -165,9 +166,12 @@ class Logger {
     }
     list.add(parts.join('\t'));
     await Cache.setValue<List<String>>(CacheKeys.backgroundLogger, list);
+    */
   }
 
   static Future<void> _renderSharedLogs() async {
+    print('## renderSharedLog');
+    return;
     List<String> list =
         await Cache.getValue<List<String>>(CacheKeys.backgroundLogger, []);
     // reset list
