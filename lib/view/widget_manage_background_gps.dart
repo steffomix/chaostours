@@ -1,10 +1,10 @@
-import 'package:chaostours/cache.dart';
 import 'package:flutter/material.dart';
 
 ///
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/background_process/tracking.dart';
 import 'package:chaostours/event_manager.dart';
+import 'package:chaostours/data_bridge.dart';
 
 class WidgetManageBackgroundGps extends StatefulWidget {
   const WidgetManageBackgroundGps({Key? key}) : super(key: key);
@@ -21,7 +21,7 @@ class _WidgetManageBackgroundGpsState extends State<WidgetManageBackgroundGps> {
   Widget? trackingSwitch;
   @override
   void initState() {
-    Cache.instance.autoUpdateForeground();
+    DataBridge.instance.autoUpdateForeground();
     EventManager.listen<EventOnCacheLoaded>(onCacheLoaded);
     checkTracking();
     super.initState();
@@ -68,7 +68,7 @@ class _WidgetManageBackgroundGpsState extends State<WidgetManageBackgroundGps> {
     if (trackingSwitch == null) {
       return;
     }
-    Cache cache = Cache.instance;
+    DataBridge bridge = DataBridge.instance;
     items = [
       const Text(
           'Wenn das Hintergrund GPS nicht wie erwartet funktioniert, versuchen sie ihn neu zu startetn.'),
@@ -89,19 +89,19 @@ class _WidgetManageBackgroundGpsState extends State<WidgetManageBackgroundGps> {
       AppWidgets.divider(),
       const Text('Background Cache Data',
           style: TextStyle(fontWeight: FontWeight.bold)),
-      Text('Status change triggered (${cache.statusTriggered ? 'Yes' : 'No'}'),
+      Text('Status change triggered (${bridge.statusTriggered ? 'Yes' : 'No'}'),
       AppWidgets.divider(),
       Text(
-          'Last Status Change GPS Position:\n ${cache.lastStatusChange?.toSharedString()}'),
+          'Last Status Change GPS Position:\n ${bridge.lastStatusChange?.toSharedString()}'),
       AppWidgets.divider(),
       Text(
-          'Status calculation GPS Positions (${cache.calcGpsPoints.length}):\n ${cache.calcGpsPoints.map((e) => e.toSharedString()).join('\n')}'),
+          'Status calculation GPS Positions (${bridge.calcGpsPoints.length}):\n ${bridge.calcGpsPoints.map((e) => e.toSharedString()).join('\n')}'),
       AppWidgets.divider(),
       Text(
-          'Smoothed GPS Positions (${cache.smoothGpsPoints.length}):\n ${cache.smoothGpsPoints.map((e) => e.toSharedString()).join('\n')}'),
+          'Smoothed GPS Positions (${bridge.smoothGpsPoints.length}):\n ${bridge.smoothGpsPoints.map((e) => e.toSharedString()).join('\n')}'),
       AppWidgets.divider(),
       Text(
-          'All GPS Points (${cache.gpsPoints.length}):\n${cache.gpsPoints.map((e) => e.toSharedString()).join('\n')}')
+          'All GPS Points (${bridge.gpsPoints.length}):\n${bridge.gpsPoints.map((e) => e.toSharedString()).join('\n')}')
     ];
     setState(() {});
   }

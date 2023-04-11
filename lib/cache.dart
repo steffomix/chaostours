@@ -7,7 +7,7 @@ import 'package:chaostours/globals.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/background_process/trackpoint.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
-import 'package:chaostours/app_hive.dart';
+import 'package:chaostours/file_handler.dart';
 
 /*
 enum JsonKeys {
@@ -26,55 +26,65 @@ enum JsonKeys {
 }
 */
 enum CacheKeys {
-  cacheForegroundTriggerStatus,
-  cacheForegroundTrackPointUpdates,
-  cacheForegroundActiveTrackPoint,
+  cacheForegroundTriggerStatus(bool),
+  cacheForegroundTrackPointUpdates(List<ModelTrackPoint>),
+  cacheForegroundActiveTrackPoint(PendingModelTrackPoint),
 
   /// cache background to forground
-  cacheBackgroundTrackingStatus,
-  cacheBackgroundLastStatusChange,
-  cacheBackgroundLastGps,
-  cacheBackgroundGpsPoints,
-  cacheBackgroundSmoothGpsPoints,
-  cacheBackgroundCalcGpsPoints,
-  cacheBackgroundAddress,
-  cacheBackgroundRecentTrackpoints,
-  cacheBackgroundLastVisitedTrackpoints,
+  cacheBackgroundTrackingStatus(TrackingStatus),
+  cacheBackgroundLastStatusChange(PendingGps),
+  cacheBackgroundLastGps(PendingGps),
+  cacheBackgroundGpsPoints(List<PendingGps>),
+  cacheBackgroundSmoothGpsPoints(List<PendingGps>),
+  cacheBackgroundCalcGpsPoints(List<PendingGps>),
+  cacheBackgroundAddress(String),
+  cacheBackgroundRecentTrackpoints(List<ModelTrackPoint>),
+  cacheBackgroundLastVisitedTrackpoints(List<ModelTrackPoint>),
 
   /// fileHandler
-  fileHandlerStoragePath,
-  fileHandlerStorageKey,
+  fileHandlerStoragePath(String),
+  fileHandlerStoragePathDelete(Null),
+  fileHandlerStorageKey(Storages),
 
   /// globals
-  globalsWeekDays,
-  globalsBackgroundTrackingEnabled,
-  globalsPreselectedUsers,
-  globalsStatusStandingRequireAlias,
-  globalsTrackPointInterval,
-  globalsOsmLookupInterval,
-  globalsOsmLookupCondition,
-  globalsCacheGpsTime,
-  globalsDistanceTreshold,
-  globalsTimeRangeTreshold,
-  globalsAppTickDuration,
-  globalsGpsMaxSpeed,
-  globalsGpsPointsSmoothCount,
+  globalsWeekDays(List<String>),
+  globalsBackgroundTrackingEnabled(bool),
+  globalsPreselectedUsers(List<int>),
+  globalsStatusStandingRequireAlias(bool),
+  globalsTrackPointInterval(Duration),
+  globalsOsmLookupInterval(Duration),
+  globalsOsmLookupCondition(OsmLookup),
+  globalsCacheGpsTime(Duration),
+  globalsDistanceTreshold(int),
+  globalsTimeRangeTreshold(Duration),
+  globalsAppTickDuration(Duration),
+  globalsGpsMaxSpeed(int),
+  globalsGpsPointsSmoothCount(int),
 
   /// logger
-  backgroundLogger;
+  backgroundLogger(List<String>);
+
+  final Type cacheType;
+  const CacheKeys(this.cacheType);
 }
 
 class Cache {
   static final Logger logger = Logger.logger<Cache>();
 
-  /// intList
-  static List<String> serializeIntList(List<int> list) {
-    return list.map((e) => e.toString()).toList();
+  Cache._();
+  static Cache? _instance;
+  factory Cache() => _instance ??= Cache._();
+  static Cache get instance => _instance ??= Cache._();
+
+  static Future<void> reload() async {
+    await (await SharedPreferences.getInstance()).reload();
   }
 
-  static List<int> deserializeIntList(List<String>? s) {
-    return s == null ? [] : s.map((e) => int.parse(e)).toList();
-  }
+  /// intList
+  static List<String> serializeIntList(List<int> list) =>
+      list.map((e) => e.toString()).toList();
+  static List<int> deserializeIntList(List<String>? s) =>
+      s == null ? [] : s.map((e) => int.parse(e)).toList();
 
   /// DateTime
   static String serializeDateTime(DateTime dateTime) =>
@@ -161,6 +171,11 @@ class Cache {
   static OsmLookup? deserializeOsmLookup(String? osm) =>
       osm == null ? OsmLookup.never : OsmLookup.values.byName(osm);
 
+  /// Storages
+  static String serializeStorages(Storages lo) => lo.name;
+  static Storages? deserializeStorages(String? osm) =>
+      osm == null ? Storages.notSet : Storages.values.byName(osm);
+
   /// IntMap
   static const intSeparator = ',';
   static String serializeIntSet(Set<int> se) => se.join(intSeparator);
@@ -175,16 +190,23 @@ class Cache {
     return set;
   }
 
-  static Future<void> setValue<T>(CacheKeys cacheKey, T value,
-      [String Function(T)? serialize]) async {
+  static String? serializeNullStorages(Storages? s) {
+    return s?.name;
+  }
+
+  static Storages? deserializeNullStorages(String? s) {
+    return s == null ? null : Storages.values.byName(s);
+  }
+
+  static Future<void> setValue<T>(CacheKeys cacheKey, T value) async {
     final prefs = await SharedPreferences.getInstance();
     String key = cacheKey.name;
     logger.log('setValue $key');
-    if (serialize != null) {
-      await prefs.setString(key, serialize(value));
-      return;
-    }
     try {
+      if (T != cacheKey.cacheType) {
+        throw Exception(
+            'setValue::value with type $T on key $key doesn\'t match required type ${cacheKey.cacheType}');
+      }
       switch (T) {
         case String:
           await prefs.setString(key, value as String);
@@ -248,6 +270,12 @@ class Cache {
         case OsmLookup:
           await prefs.setString(key, serializeOsmLookup(value as OsmLookup));
           break;
+        case Storages:
+          await prefs.setString(key, serializeStorages(value as Storages));
+          break;
+        case Null:
+          await prefs.remove(key);
+          break;
         default:
           throw Exception("Unsupported data type $T");
       }
@@ -256,19 +284,15 @@ class Cache {
     }
   }
 
-  static Future<T> getValue<T>(
-    CacheKeys cacheKey,
-    T defaultValue, [
-    T Function(String)? deserialize,
-  ]) async {
+  static Future<T> getValue<T>(CacheKeys cacheKey, T defaultValue) async {
     final prefs = await SharedPreferences.getInstance();
     String key = cacheKey.name;
     logger.log('getValue $key');
-    if (deserialize != null) {
-      final stringValue = prefs.getString(key.toString());
-      return stringValue != null ? deserialize(stringValue) : defaultValue;
-    }
     try {
+      if (T != cacheKey.cacheType) {
+        throw Exception(
+            'getValue::value with type $T on key $key doesn\'t match required type ${cacheKey.cacheType}');
+      }
       switch (T) {
         case String:
           return prefs.getString(key) as T? ?? defaultValue;
@@ -321,6 +345,9 @@ class Cache {
         case OsmLookup:
           return deserializeOsmLookup(prefs.getString(key)) as T? ??
               defaultValue;
+        case Storages:
+          return deserializeStorages(prefs.getString(key)) as T? ??
+              defaultValue;
         default:
           throw Exception("Unsupported data type $T");
       }
@@ -328,160 +355,5 @@ class Cache {
       logger.error('getValue for $key failed - return defaultValue: $e', stk);
       return defaultValue;
     }
-  }
-
-  Cache._();
-  static Cache? _instance;
-  //factory Cache() => _instance ??= Cache._();
-  static Cache get instance => _instance ??= Cache._();
-
-  ///
-  /// foreground values
-  ///
-  List<ModelTrackPoint> trackPointUpdates = [];
-  PendingModelTrackPoint pendingTrackPoint =
-      PendingModelTrackPoint.pendingTrackPoint;
-  bool _triggerStatus = false;
-  bool get statusTriggered => _triggerStatus;
-  void triggerStatus() => _triggerStatus = true;
-  void triggerStatusExecuted() => _triggerStatus = false;
-
-  ///
-  /// backround values
-  ///
-  PendingGps? lastGps;
-  // gps list from between trackpoints
-  PendingGps? lastStatusChange;
-  List<PendingGps> gpsPoints = [];
-  List<PendingGps> smoothGpsPoints = [];
-  List<PendingGps> calcGpsPoints = [];
-  // ignore: prefer_final_fields
-  TrackingStatus trackingStatus = TrackingStatus.none;
-
-  String address = '';
-  List<ModelTrackPoint> recentTrackPoints = [];
-  List<ModelTrackPoint> lastVisitedTrackPoints = [];
-
-  /// forground interval
-  /// save foreground, load background and fire event
-  static bool _listening = false;
-  void stopListen() => _listening = false;
-  autoUpdateForeground() {
-    if (!_listening) {
-      _listening = true;
-      Future.microtask(() async {
-        while (_listening) {
-          try {
-            GPS.gps().then((GPS gps) async {
-              try {
-                await loadBackground(gps);
-              } catch (e, stk) {
-                logger.error('load background cache failed: $e', stk);
-              }
-              try {
-                /// save foreground
-                await saveForeground(gps);
-              } catch (e, stk) {
-                logger.error('save foreground failed: $e', stk);
-              }
-              await EventManager.fire<EventOnCacheLoaded>(EventOnCacheLoaded());
-            }).onError((error, stackTrace) {
-              logger.error('cache listen $error', stackTrace);
-            });
-          } catch (e, stk) {
-            logger.error('gps $e', stk);
-          }
-
-          await Future.delayed(Globals.trackPointInterval);
-        }
-      });
-    }
-  }
-
-  /// save foreground
-  Future<void> saveForeground(GPS gps) async {
-    await setValue<PendingModelTrackPoint>(
-        CacheKeys.cacheForegroundActiveTrackPoint, pendingTrackPoint);
-
-    await setValue<List<ModelTrackPoint>>(
-        CacheKeys.cacheForegroundTrackPointUpdates, trackPointUpdates);
-
-    await setValue<bool>(
-        CacheKeys.cacheForegroundTriggerStatus, _triggerStatus);
-  }
-
-  /// save foreground
-  Future<void> loadForeground(GPS gps) async {
-    pendingTrackPoint = await getValue<PendingModelTrackPoint>(
-      CacheKeys.cacheForegroundActiveTrackPoint,
-      PendingModelTrackPoint.pendingTrackPoint,
-    );
-
-    trackPointUpdates = await getValue<List<ModelTrackPoint>>(
-        CacheKeys.cacheForegroundTrackPointUpdates, []);
-
-    _triggerStatus =
-        await getValue<bool>(CacheKeys.cacheForegroundTriggerStatus, false);
-  }
-
-  /// load background
-  Future<void> loadBackground(GPS gps) async {
-    recentTrackPoints = await getValue<List<ModelTrackPoint>>(
-        CacheKeys.cacheBackgroundRecentTrackpoints, []);
-
-    lastVisitedTrackPoints = await getValue<List<ModelTrackPoint>>(
-        CacheKeys.cacheBackgroundLastVisitedTrackpoints, []);
-
-    address = await getValue<String>(CacheKeys.cacheBackgroundAddress, '');
-
-    calcGpsPoints = await getValue<List<PendingGps>>(
-        CacheKeys.cacheBackgroundCalcGpsPoints, []);
-
-    gpsPoints = await getValue<List<PendingGps>>(
-        CacheKeys.cacheBackgroundGpsPoints, []);
-
-    lastGps = await getValue<PendingGps>(
-        CacheKeys.cacheBackgroundLastGps, PendingGps(gps.lat, gps.lon));
-
-    lastStatusChange = await getValue<PendingGps>(
-        CacheKeys.cacheBackgroundLastStatusChange,
-        PendingGps(gps.lat, gps.lon));
-
-    smoothGpsPoints = await getValue<List<PendingGps>>(
-        CacheKeys.cacheBackgroundSmoothGpsPoints, []);
-
-    trackingStatus = await getValue<TrackingStatus>(
-        CacheKeys.cacheBackgroundTrackingStatus, TrackingStatus.none);
-  }
-
-  /// load background
-  Future<void> saveBackground(GPS gps) async {
-    //
-    await setValue<TrackingStatus>(
-        CacheKeys.cacheBackgroundTrackingStatus, TrackingStatus.none);
-
-    await setValue<List<ModelTrackPoint>>(
-        CacheKeys.cacheBackgroundRecentTrackpoints, recentTrackPoints);
-
-    await setValue<List<ModelTrackPoint>>(
-        CacheKeys.cacheBackgroundLastVisitedTrackpoints,
-        lastVisitedTrackPoints);
-
-    await setValue<String>(CacheKeys.cacheBackgroundAddress, address);
-
-    await setValue<List<PendingGps>>(
-        CacheKeys.cacheBackgroundGpsPoints, gpsPoints);
-
-    await setValue<List<PendingGps>>(
-        CacheKeys.cacheBackgroundSmoothGpsPoints, smoothGpsPoints);
-
-    await setValue<List<PendingGps>>(
-        CacheKeys.cacheBackgroundCalcGpsPoints, calcGpsPoints);
-
-    await setValue<PendingGps>(CacheKeys.cacheBackgroundLastGps,
-        lastGps ?? PendingGps(gps.lat, gps.lon));
-
-    await setValue<PendingGps>(CacheKeys.cacheBackgroundLastStatusChange,
-        lastStatusChange ?? PendingGps(gps.lat, gps.lon));
   }
 }

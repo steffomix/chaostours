@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
 import 'package:http/http.dart' as http;
-import 'package:chaostours/cache.dart';
+import 'package:chaostours/data_bridge.dart';
 import 'dart:convert';
 import 'package:android_intent_plus/android_intent.dart';
 // import 'package:android_intent_plus/flag.dart';
@@ -111,7 +111,7 @@ class _WidgetOsm extends State<WidgetOsm> {
     EventManager.listen<EventOnOsmIsLoading>(onOsmLoad);
     try {
       GPS.gps().then((GPS gps) {
-        Cache.instance.loadBackground(gps).then((_) {
+        DataBridge.instance.loadBackground(gps).then((_) {
           setState(() {});
         });
       });
@@ -493,9 +493,9 @@ class _WidgetOsm extends State<WidgetOsm> {
 
     /// draw gps points
     try {
-      Cache cache = Cache.instance;
+      DataBridge bridge = DataBridge.instance;
 
-      for (GPS gps in cache.gpsPoints) {
+      for (GPS gps in bridge.gpsPoints) {
         _controller.drawCircle(CircleOSM(
           key: "circle${++circleId}",
           centerPoint: GeoPoint(latitude: gps.lat, longitude: gps.lon),
@@ -504,7 +504,7 @@ class _WidgetOsm extends State<WidgetOsm> {
           strokeWidth: 10,
         ));
       }
-      for (GPS gps in cache.smoothGpsPoints) {
+      for (GPS gps in bridge.smoothGpsPoints) {
         _controller.drawCircle(CircleOSM(
           key: "circle${++circleId}",
           centerPoint: GeoPoint(latitude: gps.lat, longitude: gps.lon),
@@ -513,7 +513,7 @@ class _WidgetOsm extends State<WidgetOsm> {
           strokeWidth: 10,
         ));
       }
-      for (GPS gps in cache.calcGpsPoints) {
+      for (GPS gps in bridge.calcGpsPoints) {
         _controller.drawCircle(CircleOSM(
           key: "circle${++circleId}",
           centerPoint: GeoPoint(latitude: gps.lat, longitude: gps.lon),
@@ -522,8 +522,8 @@ class _WidgetOsm extends State<WidgetOsm> {
           strokeWidth: 10,
         ));
       }
-      if (cache.lastStatusChange != null) {
-        GPS gps = cache.lastStatusChange!;
+      if (bridge.lastStatusChange != null) {
+        GPS gps = bridge.lastStatusChange!;
         _controller.drawCircle(CircleOSM(
           key: "circle${++circleId}",
           centerPoint: GeoPoint(latitude: gps.lat, longitude: gps.lon),

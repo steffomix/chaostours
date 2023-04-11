@@ -22,7 +22,11 @@ class Globals {
   static Future<void> loadSettings() async {
     try {
       statusStandingRequireAlias = await Cache.getValue<bool>(
+          CacheKeys.globalsStatusStandingRequireAlias, false);
+
+      backgroundTrackingEnabled = await Cache.getValue<bool>(
           CacheKeys.globalsBackgroundTrackingEnabled, false);
+
       appTickDuration = await Cache.getValue<Duration>(
           CacheKeys.globalsAppTickDuration, Duration(seconds: 1));
 
@@ -59,6 +63,9 @@ class Globals {
   static Future<void> saveSettings() async {
     await Cache.setValue<bool>(
         CacheKeys.globalsBackgroundTrackingEnabled, backgroundTrackingEnabled);
+
+    await Cache.setValue<bool>(CacheKeys.globalsStatusStandingRequireAlias,
+        statusStandingRequireAlias);
 
     await Cache.setValue<Duration>(
         CacheKeys.globalsAppTickDuration, appTickDuration);

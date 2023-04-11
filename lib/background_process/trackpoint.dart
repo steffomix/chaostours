@@ -1,16 +1,10 @@
-import 'dart:convert';
-import 'package:hive_flutter/hive_flutter.dart';
-
 import 'package:chaostours/globals.dart';
-import 'package:chaostours/app_loader.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/address.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_alias.dart'; // for read only
-import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/logger.dart';
-import 'package:chaostours/cache.dart';
-import 'package:chaostours/app_settings.dart';
+import 'package:chaostours/data_bridge.dart';
 import 'package:chaostours/file_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -50,6 +44,8 @@ class TrackPoint {
   TrackingStatus _oldStatus = TrackingStatus.none;
 
   Future<void> startShared({required double lat, required double lon}) async {
+    await DataBridge.reload();
+
     /// create gpsPoint
     PendingGps gps = PendingGps(lat, lon);
     GPS.lastGps = gps;
@@ -65,46 +61,46 @@ class TrackPoint {
     await ModelTrackPoint.open();
 
     await Globals.loadSettings();
-    // overwrite gps cache settings
+    // overwrite gps bridge settings
     Globals.cacheGpsTime = const Duration(seconds: 30);
 
-    Cache cache = Cache.instance;
-    await cache.loadBackground(gps);
+    DataBridge bridge = DataBridge.instance;
+    await bridge.loadBackground(gps);
     // if not yet set, do it right now
-    cache.lastStatusChange ??= gps;
+    bridge.lastStatusChange ??= gps;
 
     /// load foreground data
-    await cache.loadForeground(gps);
+    await bridge.loadForeground(gps);
 
     /// update trackpoints
     try {
-      for (var row in Cache.instance.trackPointUpdates) {
+      for (var row in DataBridge.instance.trackPointUpdates) {
         await ModelTrackPoint.update(row);
       }
-      Cache.instance.trackPointUpdates.clear();
+      DataBridge.instance.trackPointUpdates.clear();
     } catch (e, stk) {
       logger.error('update trackpoints: ${e.toString()}', stk);
     }
 
     /// reset forground data as soon as possible
     /// to reduce critical window
-    await cache.saveForeground(gps);
+    await bridge.saveForeground(gps);
 
     /// parse status from json
-    _status = cache.trackingStatus;
+    _status = bridge.trackingStatus;
 
     /// clear only needed if method runs in foreground
     /// gpsPoints.clear();
     try {
       gpsPoints.add(gps);
-      gpsPoints.addAll(cache.gpsPoints);
+      gpsPoints.addAll(bridge.gpsPoints);
 
       calculateSmoothPoints();
       calculateCalcPoints();
 
-      if (cache.trackingStatus == TrackingStatus.none) {
+      if (bridge.trackingStatus == TrackingStatus.none) {
         /// app start, no status yet
-        _oldStatus = _status = TrackingStatus.standing;
+        bridge.trackingStatus = _oldStatus = _status = TrackingStatus.standing;
       }
 
       /// remember old status
@@ -164,7 +160,7 @@ class TrackPoint {
             ModelTrackPoint newEntry = await createModelTrackPoint(
                 gps: calcGpsPoints.first, aliasList: aliasList);
             await ModelTrackPoint.insert(newEntry);
-            cache.lastStatusChange = gps;
+            bridge.lastStatusChange = gps;
 
             /// update last visited entrys in ModelAlias
             for (var item in aliasList) {
@@ -186,40 +182,46 @@ class TrackPoint {
           /// remember address from detecting standing
           /// to be used in createModelTrackPoint on next status change
           if (Globals.osmLookupCondition != OsmLookup.never) {
-            cache.address = (await Address(gps).lookupAddress()).toString();
+            lookupAddress(gps);
           }
         } else {
           /// new status is standing
           /// remember address from detecting standing
           /// to be used in createModelTrackPoint on next status change
           if (Globals.osmLookupCondition == OsmLookup.onStatus) {
-            cache.address = (await Address(gps).lookupAddress()).toString();
+            lookupAddress(gps);
           }
         }
+
+        /// reset gpspoints
+        gpsPoints.clear();
+        gpsPoints.add(gps);
+      } else {
+        /// status has not changed
+        /// do nothing else
       }
       if (Globals.osmLookupCondition == OsmLookup.always) {
-        cache.address = (await Address(gps).lookupAddress()).toString();
-      } else if (Globals.osmLookupCondition == OsmLookup.never) {
-        cache.address = '';
+        lookupAddress(gps);
       }
     } catch (e, stk) {
       logger.error(e.toString(), stk);
     }
     try {
-      cache.gpsPoints = gpsPoints;
-      cache.calcGpsPoints = calcGpsPoints;
-      cache.smoothGpsPoints = smoothGpsPoints;
-      cache.lastGps = gps;
-      cache.trackingStatus = _status;
-      cache.recentTrackPoints = ModelTrackPoint.recentTrackPoints();
-      cache.lastVisitedTrackPoints = ModelTrackPoint.lastVisited(gps);
+      bridge.gpsPoints = gpsPoints;
+      bridge.calcGpsPoints = calcGpsPoints;
+      bridge.smoothGpsPoints = smoothGpsPoints;
+      bridge.lastGps = gps;
+      bridge.trackingStatus = _status;
+      bridge.recentTrackPoints = ModelTrackPoint.recentTrackPoints();
+      bridge.lastVisitedTrackPoints = ModelTrackPoint.lastVisited(gps);
+      bridge.triggerStatusExecuted();
     } catch (e, stk) {
       logger.error('load recent trackpoints: $e', stk);
     }
 
     try {
       /// save status and gpsPoints for next session and foreground live tracking view
-      await cache.saveBackground(gps);
+      await bridge.saveBackground(gps);
     } catch (e, stk) {
       logger.error('save backround finaly; $e', stk);
     }
@@ -228,6 +230,16 @@ class TrackPoint {
     await inst.reload();
     // wait before shutdown task
     await Future.delayed(const Duration(seconds: 1));
+  }
+
+  Future<void> lookupAddress(PendingGps gps) async {
+    try {
+      DataBridge.instance.address =
+          (await Address(gps).lookupAddress()).toString();
+    } catch (e, stk) {
+      DataBridge.instance.address = '';
+      logger.error('lookup address: $e', stk);
+    }
   }
 
   void calculateSmoothPoints() {
@@ -296,7 +308,7 @@ class TrackPoint {
     /// status change triggered by user
     if ((_status == TrackingStatus.standing ||
             _status == TrackingStatus.none) &&
-        Cache.instance.statusTriggered) {
+        DataBridge.instance.statusTriggered) {
       _status = TrackingStatus.moving;
       return;
     }
@@ -330,19 +342,19 @@ class TrackPoint {
     List<int> idAlias = aliasList.map((e) => e.id).toList();
 
     try {
-      ModelTrackPoint tps = Cache.instance.pendingTrackPoint;
+      ModelTrackPoint tps = DataBridge.instance.pendingTrackPoint;
       notes = tps.notes; // user input
       idTask = tps.idTask; // user input
       idUser = tps.idUser; // user input
     } catch (e, stk) {
-      logger.error('load activetrackPoint cache: ${e.toString()}', stk);
+      logger.error('load activetrackPoint bridge: ${e.toString()}', stk);
     }
     ModelTrackPoint tp = ModelTrackPoint(
         gps: gps,
         trackPoints: gpsPoints.map((e) => e).toList(),
         idAlias: idAlias,
-        timeStart: Cache.instance.lastStatusChange?.time ?? gps.time);
-    tp.address = Cache.instance.address; // should be loaded at this point
+        timeStart: DataBridge.instance.lastStatusChange?.time ?? gps.time);
+    tp.address = DataBridge.instance.address; // should be loaded at this point
     tp.status = _oldStatus;
     tp.timeEnd = calcGpsPoints.first.time;
     tp.idTask = idTask;

@@ -90,14 +90,10 @@ class EventManager {
 
     String prefix = Logger.prefix;
     Map<dynamic Function(T), dynamic> results = {};
-    var list = _get<T>();
+
+    /// copy list to prevent modification during iteration
+    var list = [..._get<T>()];
     for (var fn in list) {
-      /*
-      if (Globals.debugMode) {
-        Logger.print(
-            '$prefix $m:$s.$ms EventManager.fire<${T.toString()}>() ${list.length} times $debugMessage');
-      }
-      */
       try {
         if (dispatchAsync) {
           results[fn] = await Future.microtask(() => fn(instance));

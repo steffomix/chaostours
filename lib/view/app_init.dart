@@ -33,8 +33,11 @@ class _AppInitState extends State<AppInit> {
   }
 
   set msg(String msg) {
+    logger.error(msg, StackTrace.current);
     _msg.add(msg);
-    setState(() {});
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   Future<void> appStart() async {
@@ -43,7 +46,7 @@ class _AppInitState extends State<AppInit> {
       GPS gps = await GPS.gps();
       try {
         await AppLoader.webKey();
-      } catch (e, stk) {
+      } catch (e) {
         msg = e.toString();
         return;
       }
@@ -66,6 +69,7 @@ class _AppInitState extends State<AppInit> {
         msg = 'FileHandler::storagePath error: $e';
         return;
       }
+      /*
       try {
         await openDatabase(
             FileHandler.combinePath(
@@ -77,7 +81,7 @@ class _AppInitState extends State<AppInit> {
       } catch (e, stk) {
         logger.error('open database $e', stk);
       }
-
+*/
       try {
         await PermissionChecker.checkAll();
         if (!PermissionChecker.permissionsOk) {
@@ -98,6 +102,11 @@ class _AppInitState extends State<AppInit> {
         await AppLoader.loadDatabase();
       } catch (e) {
         msg = 'Load database failed: $e';
+      }
+      try {
+        await AppLoader.loadAssetDatabase();
+      } catch (e) {
+        msg = 'Load asset database failed: $e';
       }
       try {
         await AppLoader.ticks();

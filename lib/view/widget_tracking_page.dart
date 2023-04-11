@@ -7,7 +7,7 @@ import 'package:flutter_osm_plugin/flutter_osm_plugin.dart' as osm;
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/view/widget_disposed.dart';
 import 'package:chaostours/event_manager.dart';
-import 'package:chaostours/file_handler.dart';
+import 'package:chaostours/data_bridge.dart';
 import 'package:chaostours/background_process/trackpoint.dart';
 import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/cache.dart';
@@ -82,7 +82,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     /// force loading background data
     try {
       GPS.gps().then((GPS gps) {
-        Cache.instance.loadBackground(gps).then((_) {
+        DataBridge.instance.loadBackground(gps).then((_) {
           setState(() {});
         });
       });
@@ -93,8 +93,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
   @override
   void dispose() {
-    // make sure cache updater is running
-    Cache.instance.autoUpdateForeground();
+    // make sure bridge updater is running
+    DataBridge.instance.autoUpdateForeground();
     EventManager.remove<EventOnAppTick>(onTick);
     EventManager.remove<EventOnAddressLookup>(onAddressLookup);
     EventManager.remove<EventOnWidgetDisposed>(osmGpsPoints);
@@ -220,11 +220,11 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       }
     }
 
-    Cache cache = Cache.instance;
+    DataBridge bridge = DataBridge.instance;
 
     /// draw gps points
     try {
-      for (var gps in cache.gpsPoints) {
+      for (var gps in bridge.gpsPoints) {
         mapController.drawCircle(osm.CircleOSM(
           key: "circle${++circleId}",
           centerPoint: osm.GeoPoint(latitude: gps.lat, longitude: gps.lon),
@@ -233,7 +233,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
           strokeWidth: 10,
         ));
       }
-      for (var gps in cache.smoothGpsPoints) {
+      for (var gps in bridge.smoothGpsPoints) {
         mapController.drawCircle(osm.CircleOSM(
           key: "circle${++circleId}",
           centerPoint: osm.GeoPoint(latitude: gps.lat, longitude: gps.lon),
@@ -242,7 +242,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
           strokeWidth: 10,
         ));
       }
-      for (var gps in cache.calcGpsPoints) {
+      for (var gps in bridge.calcGpsPoints) {
         mapController.drawCircle(osm.CircleOSM(
           key: "circle${++circleId}",
           centerPoint: osm.GeoPoint(latitude: gps.lat, longitude: gps.lon),
@@ -254,7 +254,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     } catch (e, stk) {
       logger.error(e.toString(), stk);
     }
-    GPS gps = cache.lastStatusChange ?? cache.gpsPoints.last;
+    GPS gps = bridge.lastStatusChange ?? bridge.gpsPoints.last;
     mapController.drawCircle(osm.CircleOSM(
       key: "circle${++circleId}",
       centerPoint: osm.GeoPoint(latitude: gps.lat, longitude: gps.lon),
@@ -309,22 +309,22 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     if (!mounted || displayMode == TrackingPageDisplayMode.gps) {
       return;
     }
-    Cache cache = Cache.instance;
-    if (cache.gpsPoints.isEmpty) {
+    DataBridge bridge = DataBridge.instance;
+    if (bridge.gpsPoints.isEmpty) {
       return;
     }
 
-    if (cache.address.isNotEmpty) {
-      PendingModelTrackPoint.pendingAddress = cache.address;
+    if (bridge.address.isNotEmpty) {
+      PendingModelTrackPoint.pendingAddress = bridge.address;
     }
 
-    if (cache.trackingStatus != TrackingStatus.none) {
+    if (bridge.trackingStatus != TrackingStatus.none) {
       /// get status
-      currentStatus = cache.trackingStatus;
+      currentStatus = bridge.trackingStatus;
       runningTrackPoints.clear();
-      runningTrackPoints.addAll(cache.gpsPoints);
-      // update GPS cache
-      GPS.lastGps = cache.lastGps;
+      runningTrackPoints.addAll(bridge.gpsPoints);
+      // update GPS bridge
+      GPS.lastGps = bridge.lastGps;
 
       /// update pendingTrackPoint
       if (currentStatus == lastStatus) {
@@ -334,7 +334,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
           ..address = PendingModelTrackPoint.pendingAddress
           ..trackPoints = runningTrackPoints
           ..timeStart =
-              cache.lastStatusChange?.time ?? runningTrackPoints.last.time
+              bridge.lastStatusChange?.time ?? runningTrackPoints.last.time
           ..timeEnd = DateTime.now()
           ..idAlias = ModelAlias.nextAlias(gps: runningTrackPoints.first)
               .map((e) => e.id)
@@ -358,7 +358,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
             trackPoints: runningTrackPoints,
             idAlias: <int>[],
             timeStart:
-                cache.lastStatusChange?.time ?? runningTrackPoints.last.time);
+                bridge.lastStatusChange?.time ?? runningTrackPoints.last.time);
 
         /// add preselected users
         PendingModelTrackPoint.pendingTrackPoint.idUser
@@ -372,8 +372,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
             text: PendingModelTrackPoint.pendingTrackPoint.notes);
       }
 
-      /// write to cache user data for background thread
-      Cache.instance.pendingTrackPoint =
+      /// write to bridge user data for background thread
+      DataBridge.instance.pendingTrackPoint =
           PendingModelTrackPoint.pendingTrackPoint;
     }
 
@@ -386,7 +386,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         gps: gps,
         trackPoints: runningTrackPoints,
         idAlias: ModelAlias.nextAlias(gps: gps).map((e) => e.id).toList(),
-        timeStart: Cache.instance.lastStatusChange?.time ??
+        timeStart: DataBridge.instance.lastStatusChange?.time ??
             runningTrackPoints.last.time);
     tp.status = status;
     tp.timeEnd = runningTrackPoints.last.time;
@@ -403,7 +403,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       List<String> alias = ModelAlias.nextAlias(
               gps: currentStatus == TrackingStatus.moving
                   ? runningTrackPoints.first
-                  : Cache.instance.lastStatusChange ?? runningTrackPoints.last)
+                  : DataBridge.instance.lastStatusChange ??
+                      runningTrackPoints.last)
           .map((e) {
         return '- ${e.alias}';
       }).toList();
@@ -467,12 +468,12 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       var iconTrigger = IconButton(
           icon: Icon(
               size: 30,
-              Cache.instance.statusTriggered
+              DataBridge.instance.statusTriggered
                   ? Icons.drive_eta
                   : Icons.drive_eta_outlined),
           onPressed: () {
-            Cache cache = Cache.instance;
-            cache.triggerStatus();
+            DataBridge bridge = DataBridge.instance;
+            bridge.triggerStatus();
             setState(() {});
           });
 

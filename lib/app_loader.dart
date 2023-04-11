@@ -20,7 +20,7 @@ import 'package:chaostours/logger.dart';
 import 'package:chaostours/permission_checker.dart';
 import 'package:chaostours/globals.dart';
 import 'package:chaostours/app_settings.dart';
-import 'package:chaostours/app_hive.dart';
+import 'package:chaostours/data_bridge.dart';
 
 class AppLoader {
   static Logger logger = Logger.logger<AppLoader>();
@@ -40,10 +40,10 @@ class AppLoader {
       if (PermissionChecker.permissionsOk) {
         try {
           GPS gps = await GPS.gps();
-          await Cache.instance.loadBackground(gps);
-          await Cache.instance.loadForeground(gps);
-          await Cache.instance.saveBackground(gps);
-          await Cache.instance.saveForeground(gps);
+          await DataBridge.instance.loadBackground(gps);
+          await DataBridge.instance.loadForeground(gps);
+          await DataBridge.instance.saveBackground(gps);
+          await DataBridge.instance.saveForeground(gps);
         } catch (e) {
           logger.warn('preload gps not available');
         }
@@ -58,10 +58,10 @@ class AppLoader {
 
   static Future<void> loadCache() async {
     GPS gps = await GPS.gps();
-    await Cache.instance.loadBackground(gps);
-    await Cache.instance.loadForeground(gps);
-    await Cache.instance.saveBackground(gps);
-    await Cache.instance.saveForeground(gps);
+    await DataBridge.instance.loadBackground(gps);
+    await DataBridge.instance.loadForeground(gps);
+    await DataBridge.instance.saveBackground(gps);
+    await DataBridge.instance.saveForeground(gps);
   }
 
   static Future<void> storageSettings() async {
@@ -122,7 +122,7 @@ class AppLoader {
 
   static Future<void> ticks() async {
     logger.important('start app-tick');
-    Cache.instance.autoUpdateForeground();
+    DataBridge.instance.autoUpdateForeground();
     _appTick();
     _addressTick();
     logger.important('logger listen on app-tick ready');

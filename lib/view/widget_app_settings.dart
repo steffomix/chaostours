@@ -43,9 +43,6 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
   TextEditingController? txGpsMaxSpeed;
 
   static Map<CacheKeys, String> settings = {
-    CacheKeys.fileHandlerStorageKey:
-        FileHandler.storageKey?.name ?? Storages.notSet.name,
-    CacheKeys.fileHandlerStoragePath: FileHandler.storagePath ?? '',
     CacheKeys.globalsBackgroundTrackingEnabled:
         Globals.backgroundTrackingEnabled ? '1' : '0',
     CacheKeys.globalsPreselectedUsers:
@@ -72,9 +69,76 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
   };
 
   Future<void> saveSettings() async {
-    ///
-    ///
+    try {
+      CacheKeys key;
+      key = CacheKeys.globalsBackgroundTrackingEnabled;
+      await Cache.setValue<bool>(key, backgroundTrackingEnabled ?? false);
+
+      key = CacheKeys.globalsPreselectedUsers;
+      var s = settings[key] ?? '';
+      List<int> idList = s.isEmpty
+          ? []
+          : s
+              .split(',')
+              .map(
+                (e) => int.parse(e),
+              )
+              .toList();
+      await Cache.setValue<List<int>>(key, idList);
+      key = CacheKeys.globalsStatusStandingRequireAlias;
+      await Cache.setValue<bool>(key, statusStandingRequireAlias ?? false);
+
+      Duration dur(String? value, Duration defaultValue) {
+        if (value == null) {
+          return defaultValue;
+        }
+        return Duration(seconds: int.parse(value));
+      }
+
+      key = CacheKeys.globalsTrackPointInterval;
+      await Cache.setValue<Duration>(
+          key, dur(settings[key], Globals.trackPointInterval));
+
+      key = CacheKeys.globalsOsmLookupInterval;
+      await Cache.setValue<Duration>(
+          key, dur(settings[key], Globals.osmLookupInterval));
+
+      key = CacheKeys.globalsOsmLookupCondition;
+      await Cache.setValue<OsmLookup>(
+          key,
+          OsmLookup.values
+              .byName(settings[key] ?? Globals.osmLookupCondition.name));
+
+      key = CacheKeys.globalsCacheGpsTime;
+      await Cache.setValue<Duration>(
+          key, dur(settings[key], Globals.trackPointInterval));
+
+      key = CacheKeys.globalsDistanceTreshold;
+      await Cache.setValue<int>(
+          key, int.parse(settings[key] ?? Globals.distanceTreshold.toString()));
+
+      key = CacheKeys.globalsTimeRangeTreshold;
+      await Cache.setValue<Duration>(
+          key, dur(settings[key], Globals.timeRangeTreshold));
+
+      key = CacheKeys.globalsAppTickDuration;
+      await Cache.setValue<Duration>(
+          key, dur(settings[key], Globals.appTickDuration));
+
+      key = CacheKeys.globalsGpsMaxSpeed;
+      await Cache.setValue<int>(
+          key, int.parse(settings[key] ?? Globals.gpsMaxSpeed.toString()));
+
+      key = CacheKeys.globalsGpsPointsSmoothCount;
+      await Cache.setValue<int>(key,
+          int.parse(settings[key] ?? Globals.gpsPointsSmoothCount.toString()));
+      await Cache.reload();
+      await Globals.loadSettings();
+    } catch (e, stk) {
+      logger.error('save app settings: $e', stk);
+    }
   }
+
   @override
   void dispose() {
     super.dispose();

@@ -6,9 +6,6 @@ import 'package:external_path/external_path.dart';
 ///
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/cache.dart';
-import 'package:chaostours/globals.dart';
-import 'package:chaostours/app_settings.dart';
-import 'package:chaostours/app_hive.dart';
 
 ////
 
@@ -40,7 +37,7 @@ enum Storages {
 
 class FileHandler {
   /// storage
-  static Storages? storageKey = Storages.notSet;
+  static Storages? storageKey;
   static String? storagePath;
   static String subDirectory = join('chaostours', 'version_1.0');
   static String? get storageFullPath {
@@ -50,46 +47,24 @@ class FileHandler {
     return join(storagePath!, subDirectory);
   }
 
-  static Map<Storages, Directory?> potentialStorages = {};
-
-  static String backgroundCacheFile = 'background_cache.json';
-  static String foregroundCacheFile = 'foreground_cache.json';
+  static Future<void> saveSettings() async {
+    await Cache.setValue<Storages>(
+        CacheKeys.fileHandlerStorageKey, storageKey ?? Storages.notSet);
+    storagePath == null
+        ? await Cache.setValue(CacheKeys.fileHandlerStoragePathDelete, null)
+        : await Cache.setValue<String>(
+            CacheKeys.fileHandlerStoragePath, storagePath!);
+  }
 
   static Future<void> loadSettings() async {
-    await AppHive.accessBox(
-        boxName: AppHiveNames.fileHandler,
-        access: (AppHive box) async {
-          try {
-            storagePath =
-                box.read(key: AppHiveKeys.fileHandlerStoragePath, value: null);
-
-            storageKey = Storages.values.byName(box.read<String>(
-                key: AppHiveKeys.fileHandlerStorageKey,
-                value: Storages.appInternal.name));
-          } catch (e, stk) {
-            logger.error('loadSettings $e', stk);
-          }
-        });
-/*
-    Map<Storages, String> storages = await getPotentialStorages();
-    storagePath = combinePath(storages[Storages.appSdCardDocuments]!,
-        ExternalPath.DIRECTORY_DOCUMENTS);
-        */
+    storageKey = await Cache.getValue<Storages>(
+        CacheKeys.fileHandlerStorageKey, Storages.notSet);
+    String path =
+        await Cache.getValue<String>(CacheKeys.fileHandlerStoragePath, '');
+    storagePath = path == '' ? null : path;
   }
 
-  static Future<void> saveSettings() async {
-    if (storagePath != null) {
-      await AppHive.accessBox(
-          boxName: AppHiveNames.fileHandler,
-          access: (AppHive box) async {
-            box.write<String>(
-                key: AppHiveKeys.fileHandlerStoragePath, value: storagePath);
-            box.write<String>(
-                key: AppHiveKeys.fileHandlerStorageKey,
-                value: storageKey?.name ?? Storages.appInternal.name);
-          });
-    }
-  }
+  static Map<Storages, Directory?> potentialStorages = {};
 
   static Logger logger = Logger.logger<FileHandler>();
   static const lineSep = '\n';
@@ -188,131 +163,4 @@ class FileHandler {
     var dir = Directory(path);
     return await dir.exists();
   }
-
-  ///
-  ///
-  ///
-  /// ################# Instance #############
-  ///
-  ///   Detect and set storage to Shared data and Globals
-  ///
-  ///
-  ///
-  ///
-  ///
-  /*
-  Future<String?> getStorage() async {
-    Map<Storages, String?> storages = await _getAllStorages();
-    String keyName = AppSettings.settings[AppSettings.storageKey] ?? '';
-    try {
-      storageKey = Storages.values.byName(keyName);
-      storagePath =
-          (AppSettings.settings[AppSettings.storagePath] ?? '').isNotEmpty
-              ? AppSettings.settings[AppSettings.storagePath]
-              : await _getAutoPath();
-      logger.important('!!! Set Storage Path to $storagePath');
-      return storagePath;
-    } catch (e) {
-      logger.warn('invalid storages key "$keyName", use autopath');
-      return await _getAutoPath();
-    }
-  }
-
-  /// stores the path to the storage if storage is writeable
-  static final Map<Storages, String?> storages = {
-    Storages.appInternal: null,
-    Storages.appLocalStorageData: null,
-    Storages.appLocalStorageDocuments: null,
-    Storages.appSdCardDocuments: null
-  };
-
-  Future<Map<Storages, String?>> _getAllStorages() async {
-    await lookupStorages();
-    return storages;
-  }
-
-  Future<String?> _getAutoPath() async {
-    List<Storages> storageLookupOrder = [
-      Storages.appSdCardDocuments,
-      Storages.appLocalStorageDocuments,
-      Storages.appLocalStorageData,
-      Storages.appInternal,
-    ];
-    Map<Storages, String?> storages = await _getAllStorages();
-    for (var key in storageLookupOrder.reversed) {
-      if (storages[key] != null) {
-        _setStorage(key, storages[key]!);
-      }
-      return storages[key]!;
-    }
-    return null;
-  }
-
-  Future<void> _setStorage(Storages key, String path) async {
-    FileHandler.storageKey = key;
-    FileHandler.storagePath = path;
-    Shared(SharedKeys.storageKey).saveString(key.name);
-    Shared(SharedKeys.storagePath).saveString(path);
-  }
-
-  Future<void> _createBaseDir(String path, Storages target) async {
-    Directory dir = Directory(path);
-    if (!await dir.exists()) {
-      // thows exception
-
-      dir = await dir.create(recursive: true);
-      File file = File(join(dir.path, 'readme.txt'));
-      file.writeAsString('App Database Info');
-      storages[target] = dir.path;
-      logger.log(dir.path);
-    } else {
-      storages[target] = dir.path;
-      logger.log(dir.path);
-    }
-  }
-
-  Future<void> lookupStorages() async {
-    logger.log('lookup pathes');
-
-    /// internal storages
-    try {
-      Directory appDir = await pp.getApplicationDocumentsDirectory();
-      String path = join(appDir.path, 'version_${Globals.version}');
-      _createBaseDir(path, Storages.appInternal);
-    } catch (e, stk) {
-      logger.error(e.toString(), stk);
-    }
-
-    /// external storage
-    try {
-      var appDir = await pp.getExternalStorageDirectory();
-      if (appDir?.path != null) {
-        String path = join(appDir!.path, 'version_${Globals.version}');
-        _createBaseDir(path, Storages.appLocalStorageData);
-      }
-    } catch (e, stk) {
-      logger.error(e.toString(), stk);
-    }
-
-    /// Phone Documents
-    try {
-      List<String> pathes = await ExternalPath.getExternalStorageDirectories();
-      String path = join(pathes[0], ExternalPath.DIRECTORY_DOCUMENTS,
-          'ChaosTours', 'version_${Globals.version}');
-      _createBaseDir(path, Storages.appLocalStorageDocuments);
-    } catch (e, stk) {
-      logger.error(e.toString(), stk);
-    }
-
-    /// sdCard documents
-    try {
-      List<String> pathes = await ExternalPath.getExternalStorageDirectories();
-      String path = join(pathes[1], ExternalPath.DIRECTORY_DOCUMENTS,
-          'ChaosTours', 'version_${Globals.version}');
-      _createBaseDir(path, Storages.appSdCardDocuments);
-    } catch (e, stk) {
-      logger.error(e.toString(), stk);
-    }
-  }
-  */
 }
