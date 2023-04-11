@@ -22,9 +22,16 @@ class DataBridge {
   List<ModelTrackPoint> trackPointUpdates = [];
   PendingModelTrackPoint pendingTrackPoint =
       PendingModelTrackPoint.pendingTrackPoint;
+
+  /// trigger status
   bool _triggerStatus = false;
   bool get statusTriggered => _triggerStatus;
-  void triggerStatus() => _triggerStatus = true;
+  Future<void> triggerStatus() async {
+    _triggerStatus = true;
+    await Cache.setValue(
+        CacheKeys.cacheForegroundTriggerStatus, _triggerStatus);
+  }
+
   void triggerStatusExecuted() => _triggerStatus = false;
 
   ///
@@ -87,12 +94,9 @@ class DataBridge {
 
     await Cache.setValue<List<ModelTrackPoint>>(
         CacheKeys.cacheForegroundTrackPointUpdates, trackPointUpdates);
-
-    await Cache.setValue<bool>(
-        CacheKeys.cacheForegroundTriggerStatus, _triggerStatus);
   }
 
-  /// save foreground
+  /// load foreground
   Future<void> loadForeground(GPS gps) async {
     pendingTrackPoint = await Cache.getValue<PendingModelTrackPoint>(
       CacheKeys.cacheForegroundActiveTrackPoint,
@@ -108,6 +112,9 @@ class DataBridge {
 
   /// load background
   Future<void> loadBackground(GPS gps) async {
+    _triggerStatus = await Cache.getValue<bool>(
+        CacheKeys.cacheForegroundTriggerStatus, false);
+
     recentTrackPoints = await Cache.getValue<List<ModelTrackPoint>>(
         CacheKeys.cacheBackgroundRecentTrackpoints, []);
 
@@ -139,6 +146,8 @@ class DataBridge {
 
   /// load background
   Future<void> saveBackground(GPS gps) async {
+    await Cache.setValue<bool>(
+        CacheKeys.cacheForegroundTriggerStatus, _triggerStatus);
     //
     await Cache.setValue<TrackingStatus>(
         CacheKeys.cacheBackgroundTrackingStatus, trackingStatus);

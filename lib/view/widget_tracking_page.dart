@@ -473,8 +473,9 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                   : Icons.drive_eta_outlined),
           onPressed: () {
             DataBridge bridge = DataBridge.instance;
-            bridge.triggerStatus();
-            setState(() {});
+            bridge.triggerStatus().then((_) {
+              setState(() {});
+            });
           });
 
       var action = currentStatus == TrackingStatus.standing

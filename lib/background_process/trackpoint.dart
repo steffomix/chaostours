@@ -95,9 +95,6 @@ class TrackPoint {
       gpsPoints.add(gps);
       gpsPoints.addAll(bridge.gpsPoints);
 
-      calculateSmoothPoints();
-      calculateCalcPoints();
-
       if (bridge.trackingStatus == TrackingStatus.none) {
         /// app start, no status yet
         bridge.trackingStatus = _oldStatus = _status = TrackingStatus.standing;
@@ -121,10 +118,13 @@ class TrackPoint {
       /// process trackpoint
       /// get status
       ///
+      calculateSmoothPoints();
+      calculateCalcPoints();
       trackPoint();
 
-      /// if nothing changed simply write data back
-      if (_status != _oldStatus) {
+      if (_status == _oldStatus) {
+        /// if nothing changed simply write data back
+      } else {
         /// status has changed to _status.
         /// if we are now moving, we need to save the gpsPoint where
         /// standing was detected, which is the last one in the list.
@@ -196,9 +196,6 @@ class TrackPoint {
         /// reset gpspoints
         gpsPoints.clear();
         gpsPoints.add(gps);
-      } else {
-        /// status has not changed
-        /// do nothing else
       }
       if (Globals.osmLookupCondition == OsmLookup.always) {
         lookupAddress(gps);
@@ -278,16 +275,16 @@ class TrackPoint {
     }
   }
 
+  /// calc points are not added until time range is fulfilled
   void calculateCalcPoints() {
     // get gpsPoints of globals time range
     // to measure movement
     calcGpsPoints.clear();
-    if (smoothGpsPoints.length > 2) {
+    if (smoothGpsPoints.length > 1) {
       List<PendingGps> gpsList = [];
       int tRef = smoothGpsPoints.first.time.millisecondsSinceEpoch;
       int dur = Globals.timeRangeTreshold.inMilliseconds;
-      int dur2 = Globals.trackPointInterval.inMilliseconds;
-      int tUntil = tRef - dur - dur2;
+      int tUntil = tRef - dur;
 
       bool fullTresholdRange = false;
       for (var gps in smoothGpsPoints) {
@@ -305,27 +302,32 @@ class TrackPoint {
   }
 
   void trackPoint() {
+    DataBridge bridge = DataBridge.instance;
+
     /// status change triggered by user
     if ((_status == TrackingStatus.standing ||
             _status == TrackingStatus.none) &&
-        DataBridge.instance.statusTriggered) {
+        bridge.statusTriggered) {
       _status = TrackingStatus.moving;
       return;
     }
 
     /// gps calc points min count
-    if (calcGpsPoints.length < 3) {
+    if (calcGpsPoints.length < 2) {
       return;
     }
 
     /// check if we started moving
+    /// try to calculate how far away we are from last standing point
     if (_status == TrackingStatus.standing || _status == TrackingStatus.none) {
-      if (GPS.distance(calcGpsPoints.first, calcGpsPoints.last) >
+      if (GPS.distance(calcGpsPoints.first,
+              bridge.lastStatusChange ?? calcGpsPoints.last) >
           Globals.distanceTreshold) {
         _status = TrackingStatus.moving;
       }
 
       /// check if we stopped moving
+      /// using smoothGpsPoints because calcGpsPoints are way too few for calculation
     } else if (_status == TrackingStatus.moving) {
       if (GPS.distanceoverTrackList(calcGpsPoints) < Globals.distanceTreshold) {
         _status = TrackingStatus.standing;

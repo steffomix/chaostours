@@ -89,7 +89,7 @@ class _WidgetManageBackgroundGpsState extends State<WidgetManageBackgroundGps> {
       AppWidgets.divider(),
       const Text('Background Cache Data',
           style: TextStyle(fontWeight: FontWeight.bold)),
-      Text('Status change triggered (${bridge.statusTriggered ? 'Yes' : 'No'}'),
+      Text('Status change triggered: ${bridge.statusTriggered ? 'Yes' : 'No'}'),
       AppWidgets.divider(),
       Text(
           'Last Status Change GPS Position:\n ${bridge.lastStatusChange?.toSharedString()}'),
