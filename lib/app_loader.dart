@@ -102,6 +102,7 @@ class AppLoader {
     return false;
   }
 
+  //
   static Future<void> loadAssetDatabase() async {
     logger.important('load databasde from asset');
 
