@@ -2,6 +2,7 @@ import 'package:flutter/services.dart';
 //
 import 'package:chaostours/file_handler.dart';
 import 'package:chaostours/logger.dart';
+import 'package:chaostours/cache.dart';
 
 class ModelTask {
   static Logger logger = Logger.logger<ModelTask>();
@@ -49,12 +50,10 @@ class ModelTask {
   }
 
   static Future<int> open() async {
-    List<String> lines = await FileHandler.readTable<ModelTask>();
+    await Cache.reload();
     _table.clear();
-    for (var row in lines) {
-      _table.add(toModel(row));
-    }
-    logger.log('Table Tasks loaded with ${_table.length} rows');
+    _table.addAll(
+        await Cache.getValue<List<ModelTask>>(CacheKeys.tableModelTask, []));
     return _table.length;
   }
 
@@ -86,9 +85,7 @@ class ModelTask {
 
   // writes the entire table back to disc
   static Future<void> write() async {
-    logger.verbose('Write Table');
-    await FileHandler.writeTable<ModelTask>(
-        _table.map((e) => e.toString()).toList());
+    await Cache.setValue<List<ModelTask>>(CacheKeys.tableModelTask, _table);
   }
 
   static String dump() {
@@ -107,6 +104,7 @@ class ModelTask {
     for (var row in lines) {
       _table.add(toModel(row));
     }
+    await write();
     return _table.length;
   }
 }

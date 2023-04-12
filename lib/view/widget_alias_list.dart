@@ -38,7 +38,7 @@ class _WidgetAliasList extends State<WidgetAliasList> {
     var lines =
         (alias.alias.length / 50).round() + (alias.alias.split('\n').length);
     int dur = DateTime.now().difference(alias.lastVisited).inDays;
-    int count = ModelTrackPoint.countTask(alias.id);
+    int count = ModelTrackPoint.countAlias(alias.id);
     return ListTile(
         subtitle:
             Text('${count}x, ${count == 0 ? 'noch nie' : 'vor $dur Tage'}'),

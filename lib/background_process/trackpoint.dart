@@ -48,6 +48,12 @@ class TrackPoint {
 
     /// create gpsPoint
     PendingGps gps = PendingGps(lat, lon);
+    try {
+      var g = await GPS.gps();
+      gps = PendingGps(g.lat, g.lon);
+    } catch (e) {
+      logger.warn('forground gps failed, using background gps');
+    }
     GPS.lastGps = gps;
     await FileHandler.loadSettings();
 
@@ -137,8 +143,18 @@ class TrackPoint {
           /// if this area is not restricted
           /// we reuse this list to update lastVisited
           List<ModelAlias> aliasList = [];
-          for (ModelAlias alias
-              in ModelAlias.nextAlias(gps: calcGpsPoints.first)) {
+
+          List<GPS>? points;
+
+          if (calcGpsPoints.isNotEmpty) {
+            points = calcGpsPoints;
+          } else if (smoothGpsPoints.isNotEmpty) {
+            points = smoothGpsPoints;
+          } else {
+            points = gpsPoints;
+          }
+
+          for (ModelAlias alias in ModelAlias.nextAlias(gps: points.first)) {
             if (alias.deleted) {
               // don't process deleted items
               continue;
@@ -158,7 +174,7 @@ class TrackPoint {
             /// create Model from where we detected status standing
             /// which is the last gpsPoints entry
             ModelTrackPoint newEntry = await createModelTrackPoint(
-                gps: calcGpsPoints.first, aliasList: aliasList);
+                gps: points.first, aliasList: aliasList);
             await ModelTrackPoint.insert(newEntry);
             bridge.lastStatusChange = gps;
 

@@ -80,7 +80,7 @@ class DataBridge {
           } catch (e, stk) {
             logger.error('gps $e', stk);
           }
-
+          await Globals.loadSettings();
           await Future.delayed(Globals.trackPointInterval);
         }
       });

@@ -7,6 +7,9 @@ import 'package:chaostours/globals.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/background_process/trackpoint.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
+import 'package:chaostours/model/model_alias.dart';
+import 'package:chaostours/model/model_task.dart';
+import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/file_handler.dart';
 
 /*
@@ -45,6 +48,12 @@ enum CacheKeys {
   fileHandlerStoragePath(String),
   fileHandlerStoragePathDelete(Null),
   fileHandlerStorageKey(Storages),
+
+  /// cache database
+  tableModelTrackpoint(List<ModelTrackPoint>),
+  tableModelAlias(List<ModelAlias>),
+  tableModelUser(List<ModelUser>),
+  tableModelTask(List<ModelTask>),
 
   /// globals
   globalsWeekDays(List<String>),
@@ -147,6 +156,24 @@ class Cache {
   static String serializeModelTrackPoint(ModelTrackPoint tp) => tp.toString();
   static ModelTrackPoint? deserializeModelTrackPoint(String? tp) =>
       tp == null ? null : ModelTrackPoint.toModel(tp);
+
+  /// List ModelAlias
+  static List<String> serializeModelAliasList(List<ModelAlias> tpList) =>
+      tpList.map((e) => e.toString()).toList();
+  static List<ModelAlias>? deserializeModelAliasList(List<String>? list) =>
+      list == null ? [] : list.map((e) => ModelAlias.toModel(e)).toList();
+
+  /// List ModelUser
+  static List<String> serializeModelUserList(List<ModelUser> tpList) =>
+      tpList.map((e) => e.toString()).toList();
+  static List<ModelUser>? deserializeModelUserList(List<String>? list) =>
+      list == null ? [] : list.map((e) => ModelUser.toModel(e)).toList();
+
+  /// List ModelTask
+  static List<String> serializeModelTaskList(List<ModelTask> tpList) =>
+      tpList.map((e) => e.toString()).toList();
+  static List<ModelTask>? deserializeModelTaskList(List<String>? list) =>
+      list == null ? [] : list.map((e) => ModelTask.toModel(e)).toList();
 
   /// List ModelTrackPoint
   static List<String> serializeModelTrackPointList(
@@ -257,6 +284,18 @@ class Cache {
           await prefs.setStringList(key,
               serializeModelTrackPointList(value as List<ModelTrackPoint>));
           break;
+        case List<ModelAlias>:
+          await prefs.setStringList(
+              key, serializeModelAliasList(value as List<ModelAlias>));
+          break;
+        case List<ModelTask>:
+          await prefs.setStringList(
+              key, serializeModelTaskList(value as List<ModelTask>));
+          break;
+        case List<ModelUser>:
+          await prefs.setStringList(
+              key, serializeModelUserList(value as List<ModelUser>));
+          break;
         case PendingModelTrackPoint:
           await prefs.setString(key,
               serializePendingModelTrackPoint(value as PendingModelTrackPoint));
@@ -333,6 +372,15 @@ class Cache {
         case List<ModelTrackPoint>:
           return deserializeModelTrackPointList(prefs.getStringList(key))
                   as T? ??
+              defaultValue;
+        case List<ModelAlias>:
+          return deserializeModelAliasList(prefs.getStringList(key)) as T? ??
+              defaultValue;
+        case List<ModelTask>:
+          return deserializeModelTaskList(prefs.getStringList(key)) as T? ??
+              defaultValue;
+        case List<ModelUser>:
+          return deserializeModelUserList(prefs.getStringList(key)) as T? ??
               defaultValue;
         case PendingModelTrackPoint:
           return deserializePendingModelTrackPoint(prefs.getString(key))

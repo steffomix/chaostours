@@ -1,4 +1,3 @@
-
 import 'dart:math';
 import 'package:flutter/services.dart';
 
@@ -6,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:chaostours/file_handler.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/logger.dart';
+import 'package:chaostours/cache.dart';
 
 enum AliasStatus {
   restricted(0),
@@ -123,21 +123,16 @@ class ModelAlias {
 
   // opens, read and parse database
   static Future<int> open() async {
-    List<String> lines = await FileHandler.readTable<ModelAlias>();
+    Cache.reload();
     _table.clear();
-    for (var row in lines) {
-      _table.add(toModel(row));
-    }
-    logger.log('Table Alias loaded with ${_table.length} rows');
+    _table.addAll(
+        await Cache.getValue<List<ModelAlias>>(CacheKeys.tableModelAlias, []));
     return _table.length;
   }
 
   // writes the entire table back to disc
-  static Future<bool> write() async {
-    logger.verbose('Write Table');
-    await FileHandler.writeTable<ModelAlias>(
-        _table.map((e) => e.toString()).toList());
-    return true;
+  static Future<void> write() async {
+    await Cache.setValue<List<ModelAlias>>(CacheKeys.tableModelAlias, _table);
   }
 
   static String dump() {
@@ -171,7 +166,8 @@ class ModelAlias {
       if (excludeDeleted && m.deleted) {
         continue;
       }
-      m.sortDistance = GPS.distanceBetween(m.lat, m.lon, gps.lat, gps.lon).round();
+      m.sortDistance =
+          GPS.distanceBetween(m.lat, m.lon, gps.lat, gps.lon).round();
 
       if (all) {
         list.add(m);
@@ -197,6 +193,7 @@ class ModelAlias {
     for (var row in lines) {
       _table.add(toModel(row));
     }
+    await write();
     return _table.length;
   }
 }

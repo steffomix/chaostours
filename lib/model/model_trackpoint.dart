@@ -7,7 +7,7 @@ import 'package:chaostours/gps.dart';
 import 'package:chaostours/address.dart';
 import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/logger.dart';
-import 'package:flutter/material.dart';
+import 'package:chaostours/cache.dart';
 
 class PendingModelTrackPoint extends ModelTrackPoint {
   /// not yet saved active running trackpoint
@@ -155,10 +155,10 @@ class ModelTrackPoint {
     return dump.join(FileHandler.lineSep);
   }
 
-  static countTask(int id) {
+  static countAlias(int id) {
     int count = 0;
     for (var item in _table) {
-      if (item.idTask.contains(id)) {
+      if (item.idAlias.contains(id)) {
         count++;
       }
     }
@@ -230,18 +230,16 @@ class ModelTrackPoint {
   }
 
   static Future<void> write() async {
-    logger.verbose('Write');
-    await FileHandler.writeTable<ModelTrackPoint>(
-        _table.map((e) => e.toString()).toList());
+    await Cache.setValue<List<ModelTrackPoint>>(
+        CacheKeys.tableModelTrackpoint, _table);
   }
 
-  static Future<void> open() async {
-    List<String> lines = await FileHandler.readTable<ModelTrackPoint>();
+  static Future<int> open() async {
+    await Cache.reload();
     _table.clear();
-    for (var row in lines) {
-      _table.add(toModel(row));
-    }
-    logger.log('Trackpoints loaded with ${_table.length} rows');
+    _table.addAll((await Cache.getValue<List<ModelTrackPoint>>(
+        CacheKeys.tableModelTrackpoint, [])));
+    return _table.length;
   }
 
   void addAlias(ModelAlias m) => idAlias.add(m.id);
