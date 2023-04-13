@@ -123,7 +123,7 @@ class AppLoader {
 
   static Future<void> ticks() async {
     logger.important('start app-tick');
-    DataBridge.instance.autoUpdateForeground();
+    DataBridge.instance.startService();
     _appTick();
     _addressTick();
     logger.important('logger listen on app-tick ready');

@@ -16,12 +16,12 @@ class PermissionChecker {
     bool permCalendar = await Permission.calendar.isGranted;
     permissionsChecked = true;
     if (permLocation &&
-        permLocationAlways &&
+            permLocationAlways /*  &&
         permIgnoreBattery &&
         permManageExternalStorage &&
         permNotification &&
-        permCalendar &&
-        FileHandler.storageKey != Storages.notSet) {
+        permCalendar*/
+        ) {
       permissionsOk = true;
       return true;
     }

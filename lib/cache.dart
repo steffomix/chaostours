@@ -35,7 +35,12 @@ enum CacheKeys {
 
   /// cache background to forground
   cacheBackgroundTrackingStatus(TrackingStatus),
-  cacheBackgroundLastStatusChange(PendingGps),
+  cacheBackgroundGpsStartMoving(PendingGps),
+  cacheBackgroundGpsStartStanding(PendingGps),
+  cacheBackgroundAliasIdList(List<int>),
+  cacheBackgroundUserIdList(List<int>),
+  cacheBackgroundTaskIdList(List<int>),
+  cacheBackgroundTrackPointUserNotes(String),
   cacheBackgroundLastGps(PendingGps),
   cacheBackgroundGpsPoints(List<PendingGps>),
   cacheBackgroundSmoothGpsPoints(List<PendingGps>),

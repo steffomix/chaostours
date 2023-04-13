@@ -94,7 +94,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   @override
   void dispose() {
     // make sure bridge updater is running
-    DataBridge.instance.autoUpdateForeground();
+    DataBridge.instance.startService();
     EventManager.remove<EventOnAppTick>(onTick);
     EventManager.remove<EventOnAddressLookup>(onAddressLookup);
     EventManager.remove<EventOnWidgetDisposed>(osmGpsPoints);
@@ -254,7 +254,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     } catch (e, stk) {
       logger.error(e.toString(), stk);
     }
-    GPS gps = bridge.lastStatusChange ?? bridge.gpsPoints.last;
+    GPS gps = bridge.gpsStartMoving ?? bridge.gpsPoints.last;
     mapController.drawCircle(osm.CircleOSM(
       key: "circle${++circleId}",
       centerPoint: osm.GeoPoint(latitude: gps.lat, longitude: gps.lon),
@@ -334,7 +334,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
           ..address = PendingModelTrackPoint.pendingAddress
           ..trackPoints = runningTrackPoints
           ..timeStart =
-              bridge.lastStatusChange?.time ?? runningTrackPoints.last.time
+              bridge.gpsStartMoving?.time ?? runningTrackPoints.last.time
           ..timeEnd = DateTime.now()
           ..idAlias = ModelAlias.nextAlias(gps: runningTrackPoints.first)
               .map((e) => e.id)
@@ -358,7 +358,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
             trackPoints: runningTrackPoints,
             idAlias: <int>[],
             timeStart:
-                bridge.lastStatusChange?.time ?? runningTrackPoints.last.time);
+                bridge.gpsStartMoving?.time ?? runningTrackPoints.last.time);
 
         /// add preselected users
         PendingModelTrackPoint.pendingTrackPoint.idUser
@@ -386,7 +386,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         gps: gps,
         trackPoints: runningTrackPoints,
         idAlias: ModelAlias.nextAlias(gps: gps).map((e) => e.id).toList(),
-        timeStart: DataBridge.instance.lastStatusChange?.time ??
+        timeStart: DataBridge.instance.gpsStartMoving?.time ??
             runningTrackPoints.last.time);
     tp.status = status;
     tp.timeEnd = runningTrackPoints.last.time;
@@ -403,7 +403,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       List<String> alias = ModelAlias.nextAlias(
               gps: currentStatus == TrackingStatus.moving
                   ? runningTrackPoints.first
-                  : DataBridge.instance.lastStatusChange ??
+                  : DataBridge.instance.gpsStartMoving ??
                       runningTrackPoints.last)
           .map((e) {
         return '- ${e.alias}';

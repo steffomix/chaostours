@@ -1,6 +1,7 @@
 import 'package:chaostours/cache.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
+import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/background_process/trackpoint.dart';
 import 'package:chaostours/event_manager.dart';
@@ -39,7 +40,8 @@ class DataBridge {
   ///
   PendingGps? lastGps;
   // gps list from between trackpoints
-  PendingGps? lastStatusChange;
+  PendingGps? gpsStartMoving;
+  PendingGps? gpsStartStanding;
   List<PendingGps> gpsPoints = [];
   List<PendingGps> smoothGpsPoints = [];
   List<PendingGps> calcGpsPoints = [];
@@ -49,12 +51,53 @@ class DataBridge {
   String address = '';
   List<ModelTrackPoint> recentTrackPoints = [];
   List<ModelTrackPoint> lastVisitedTrackPoints = [];
+  List<int> aliasIdList = [];
+  List<int> userIdList = [];
+  List<int> taskIdList = [];
+  String trackPointUserNotes = '';
+
+  /// make sure ModelAlias is opened and Cache is reloaded
+  Future<void> updateAliasIdList(GPS gps) async {
+    /// write new entry only if no restricted alias is present
+    var restricted = false;
+
+    /// if this area is not restricted
+    /// we reuse this list to update lastVisited
+    List<ModelAlias> aliasList = [];
+
+    for (ModelAlias alias in ModelAlias.nextAlias(gps: gps)) {
+      if (alias.deleted) {
+        // don't add deleted items
+        continue;
+      }
+
+      /// if there is only one restricted alias
+      /// skip the whole thing and save nothing
+      if (alias.status == AliasStatus.restricted) {
+        restricted = true;
+        aliasList.clear();
+        break;
+      }
+
+      /// add alias
+      aliasList.add(alias);
+    }
+
+    if (!restricted &&
+        (!Globals.statusStandingRequireAlias ||
+            (Globals.statusStandingRequireAlias && aliasList.isNotEmpty))) {
+      aliasIdList = aliasList.map((e) => e.id).toList();
+    } else {
+      logger.log(
+          'New trackpoint not saved due to app settings- or alias restrictions');
+    }
+  }
 
   /// forground interval
   /// save foreground, load background and fire event
   static bool _listening = false;
-  void stopListen() => _listening = false;
-  autoUpdateForeground() {
+  void stopService() => _listening = false;
+  startService() {
     if (!_listening) {
       _listening = true;
       Future.microtask(() async {
@@ -133,8 +176,10 @@ class DataBridge {
     lastGps = await Cache.getValue<PendingGps>(
         CacheKeys.cacheBackgroundLastGps, PendingGps(gps.lat, gps.lon));
 
-    lastStatusChange = await Cache.getValue<PendingGps>(
-        CacheKeys.cacheBackgroundLastStatusChange,
+    gpsStartMoving = await Cache.getValue<PendingGps>(
+        CacheKeys.cacheBackgroundGpsStartMoving, PendingGps(gps.lat, gps.lon));
+    gpsStartStanding = await Cache.getValue<PendingGps>(
+        CacheKeys.cacheBackgroundGpsStartStanding,
         PendingGps(gps.lat, gps.lon));
 
     smoothGpsPoints = await Cache.getValue<List<PendingGps>>(
@@ -142,6 +187,16 @@ class DataBridge {
 
     trackingStatus = await Cache.getValue<TrackingStatus>(
         CacheKeys.cacheBackgroundTrackingStatus, TrackingStatus.none);
+
+    trackPointUserNotes = await Cache.getValue<String>(
+        CacheKeys.cacheBackgroundTrackPointUserNotes, '');
+
+    aliasIdList = await Cache.getValue<List<int>>(
+        CacheKeys.cacheBackgroundAliasIdList, []);
+    taskIdList = await Cache.getValue<List<int>>(
+        CacheKeys.cacheBackgroundTaskIdList, []);
+    userIdList = await Cache.getValue<List<int>>(
+        CacheKeys.cacheBackgroundUserIdList, []);
   }
 
   /// load background
@@ -173,7 +228,18 @@ class DataBridge {
     await Cache.setValue<PendingGps>(CacheKeys.cacheBackgroundLastGps,
         lastGps ?? PendingGps(gps.lat, gps.lon));
 
-    await Cache.setValue<PendingGps>(CacheKeys.cacheBackgroundLastStatusChange,
-        lastStatusChange ?? PendingGps(gps.lat, gps.lon));
+    await Cache.setValue<PendingGps>(CacheKeys.cacheBackgroundGpsStartMoving,
+        gpsStartMoving ?? PendingGps(gps.lat, gps.lon));
+    await Cache.setValue<PendingGps>(CacheKeys.cacheBackgroundGpsStartStanding,
+        gpsStartStanding ?? PendingGps(gps.lat, gps.lon));
+
+    await Cache.setValue<String>(
+        CacheKeys.cacheBackgroundTrackPointUserNotes, trackPointUserNotes);
+    await Cache.setValue<List<int>>(
+        CacheKeys.cacheBackgroundAliasIdList, aliasIdList);
+    await Cache.setValue<List<int>>(
+        CacheKeys.cacheBackgroundTaskIdList, taskIdList);
+    await Cache.setValue<List<int>>(
+        CacheKeys.cacheBackgroundUserIdList, userIdList);
   }
 }
