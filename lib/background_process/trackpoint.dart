@@ -106,6 +106,7 @@ class TrackPoint {
       }
 
       /// filter points for trackpoint calculation
+      ///
       calculateSmoothPoints();
       calculateCalcPoints();
 
@@ -161,7 +162,7 @@ class TrackPoint {
           /// remember address from detecting standing
           /// to be used in createModelTrackPoint on next status change
           if (Globals.osmLookupCondition != OsmLookup.never) {
-            lookupAddress(gps);
+            await lookupAddress(gps);
           }
         } else {
           /// new status is standing
@@ -170,7 +171,7 @@ class TrackPoint {
           /// - cache gps point "gpsStartStanding" and time standing started
           /// - cache alias ids
           if (Globals.osmLookupCondition == OsmLookup.onStatus) {
-            lookupAddress(gps);
+            await lookupAddress(gps);
           }
           bridge.gpsStartStanding = gps;
           await bridge.updateAliasIdList(secureCalcPoint);
@@ -181,7 +182,7 @@ class TrackPoint {
         gpsPoints.add(gps);
       }
       if (Globals.osmLookupCondition == OsmLookup.always) {
-        lookupAddress(gps);
+        await lookupAddress(gps);
       }
     } catch (e, stk) {
       logger.error(e.toString(), stk);
@@ -262,15 +263,16 @@ class TrackPoint {
   void calculateCalcPoints() {
     // get gpsPoints of globals time range
     // to measure movement
+    var points = smoothGpsPoints;
     calcGpsPoints.clear();
     if (smoothGpsPoints.length > 1) {
       List<PendingGps> gpsList = [];
-      int tRef = smoothGpsPoints.first.time.millisecondsSinceEpoch;
+      int tRef = points.first.time.millisecondsSinceEpoch;
       int dur = Globals.timeRangeTreshold.inMilliseconds;
       int tUntil = tRef - dur;
 
       bool fullTresholdRange = false;
-      for (var gps in smoothGpsPoints) {
+      for (var gps in points) {
         if (gps.time.millisecondsSinceEpoch >= tUntil) {
           gpsList.add(gps);
         } else {

@@ -198,10 +198,10 @@ class ModelTrackPoint {
     if (m.id <= 0) {
       _table.add(m);
       m._id = _table.length;
-      logger.log('Insert TrackPoint ${m.gps} which has now ID ${m._id}');
+      logger.log('Insert TrackPoint #${m._id} "${m.toString()}"');
     } else {
       logger.warn(
-          'Insert Trackpoint skipped. TrackPoint already inserted with ID ${m._id}');
+          'Insert Trackpoint skipped. TrackPoint with ID ${m._id} already exists');
     }
     await write();
   }

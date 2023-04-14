@@ -233,7 +233,6 @@ class Cache {
   static Future<void> setValue<T>(CacheKeys cacheKey, T value) async {
     final prefs = await SharedPreferences.getInstance();
     String key = cacheKey.name;
-    logger.log('setValue $key');
     try {
       if (T != cacheKey.cacheType) {
         throw Exception(
@@ -331,7 +330,6 @@ class Cache {
   static Future<T> getValue<T>(CacheKeys cacheKey, T defaultValue) async {
     final prefs = await SharedPreferences.getInstance();
     String key = cacheKey.name;
-    logger.log('getValue $key');
     try {
       if (T != cacheKey.cacheType) {
         throw Exception(

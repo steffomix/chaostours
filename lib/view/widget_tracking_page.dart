@@ -73,6 +73,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
   @override
   void initState() {
+    DataBridge.instance.startService();
     EventManager.listen<EventOnAppTick>(onTick);
     EventManager.listen<EventOnAddressLookup>(onAddressLookup);
     EventManager.listen<EventOnWidgetDisposed>(osmGpsPoints);

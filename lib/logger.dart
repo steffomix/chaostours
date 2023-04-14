@@ -85,7 +85,7 @@ class Logger {
     String n = T.toString();
     l._name = n;
     _register[n] = l;
-    l.log('Logger for class $n created');
+    //l.log('Logger for class $n created');
     return l;
   }
 

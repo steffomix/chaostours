@@ -95,13 +95,13 @@ class DataBridge {
 
   /// forground interval
   /// save foreground, load background and fire event
-  static bool _listening = false;
-  void stopService() => _listening = false;
+  static bool _serviceRunning = false;
+  void stopService() => _serviceRunning = false;
   startService() {
-    if (!_listening) {
-      _listening = true;
+    if (!_serviceRunning) {
+      _serviceRunning = true;
       Future.microtask(() async {
-        while (_listening) {
+        while (_serviceRunning) {
           try {
             GPS.gps().then((GPS gps) async {
               await Cache.reload();
@@ -120,10 +120,10 @@ class DataBridge {
             }).onError((error, stackTrace) {
               logger.error('cache listen $error', stackTrace);
             });
+            await Globals.loadSettings();
           } catch (e, stk) {
             logger.error('gps $e', stk);
           }
-          await Globals.loadSettings();
           await Future.delayed(Globals.trackPointInterval);
         }
       });
