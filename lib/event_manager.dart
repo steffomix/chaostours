@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 //
 import 'package:chaostours/logger.dart';
-import 'package:chaostours/globals.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/cache.dart';

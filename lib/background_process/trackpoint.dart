@@ -5,7 +5,6 @@ import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_alias.dart'; // for read only
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/data_bridge.dart';
-import 'package:chaostours/file_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 enum TrackingStatus {

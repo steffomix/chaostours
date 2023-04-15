@@ -4,11 +4,8 @@ import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
-import 'package:chaostours/globals.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/checkbox_controller.dart';
-import 'package:chaostours/util.dart' as util;
-import 'package:chaostours/cache.dart';
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/logger.dart';
 

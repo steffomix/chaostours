@@ -150,6 +150,7 @@ class Logger {
 
   _addSharedLog(LogLevel level, String msg, String? stackTrace) async {
     print('## _addSharedLog');
+    // ignore: unused_local_variable
     List<String> parts = [
       Uri.encodeFull(prefix),
       Uri.encodeFull(_name),
@@ -194,7 +195,7 @@ class Logger {
             stackTrace: stackTrace));
         //_addLogWidget(renderLog(prefix, level, msg));
       } catch (e, stk) {
-        _logger.error('render shared log: $item', null);
+        _logger.error('render shared log: $item', stk);
       }
     }
   }

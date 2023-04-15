@@ -59,6 +59,7 @@ class _GlobalDefaults {
   ///
   static Duration osmLookupInterval = Duration(seconds: 0);
 
+  // ignore: unused_element
   static Future<void> restoreDefaults() async {
     Globals.version = version;
     Globals.weekDays = weekDays;

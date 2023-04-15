@@ -1,17 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:external_path/external_path.dart';
 import 'dart:io';
-import 'package:path/path.dart';
-import 'package:path_provider/path_provider.dart' as pp;
 
 ///
 import 'package:chaostours/file_handler.dart';
 import 'package:chaostours/logger.dart';
-import 'package:chaostours/globals.dart';
-import 'package:chaostours/cache.dart';
 import 'package:chaostours/view/app_widgets.dart';
-import 'package:chaostours/cache.dart';
-import 'package:chaostours/app_settings.dart';
 import 'package:confirm_dialog/confirm_dialog.dart';
 
 class WidgetStorageSettings extends StatefulWidget {
@@ -22,6 +15,7 @@ class WidgetStorageSettings extends StatefulWidget {
 }
 
 class _WidgetStorageSettings extends State<WidgetStorageSettings> {
+  // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetStorageSettings>();
 
   Map<Storages, Directory?> storages = FileHandler.potentialStorages;
@@ -267,6 +261,7 @@ class WidgetConfirm extends StatefulWidget {
 }
 
 class _WidgetConfirm extends State<WidgetConfirm> {
+  // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetConfirm>();
 
   @override

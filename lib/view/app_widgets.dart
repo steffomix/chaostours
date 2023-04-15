@@ -216,7 +216,6 @@ class WidgetDrawer extends StatefulWidget {
 class _WidgetDrawer extends State<WidgetDrawer> {
   @override
   Widget build(BuildContext context) {
-    var divider = AppWidgets.divider();
     double boxHeight = 45;
     return Drawer(
         child: Container(

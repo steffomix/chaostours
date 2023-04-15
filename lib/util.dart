@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 //
-import 'package:chaostours/globals.dart';
 
 Codec<String, String> base64Codec() => utf8.fuse(base64);
 

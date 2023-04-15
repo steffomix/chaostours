@@ -17,6 +17,7 @@ class WidgetAliasEdit extends StatefulWidget {
 }
 
 class _WidgetAliasEdit extends State<WidgetAliasEdit> {
+  // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetAliasEdit>();
 
   ValueNotifier<bool> modified = ValueNotifier<bool>(false);

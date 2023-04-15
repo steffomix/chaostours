@@ -82,8 +82,8 @@ class FileHandler {
     //logger.log('request access to File $f');
     File file = File(f);
     try {
-      var s = await file.readAsString();
-    } catch (e, stk) {
+      await file.readAsString();
+    } catch (e) {
       file = await file.create();
     }
     if (!(await file.exists())) {

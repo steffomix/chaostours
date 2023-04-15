@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:chaostours/model/model_trackpoint.dart';
 
 ///
 /// Model for multiple checkboxes embedded in a ListTile

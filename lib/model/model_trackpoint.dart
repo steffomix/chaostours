@@ -4,7 +4,6 @@ import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/background_process/trackpoint.dart';
 import 'package:chaostours/gps.dart';
-import 'package:chaostours/address.dart';
 import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/cache.dart';
@@ -163,31 +162,6 @@ class ModelTrackPoint {
       }
     }
     return count;
-  }
-
-  /// calculates route or distance, depending on TrackingStatus status
-  /// route on moving and distance on standing
-  double distance() {
-    if (trackPoints.isEmpty) return 0.0;
-    double dist;
-    if (status == TrackingStatus.standing) {
-      dist = GPS.distance(trackPoints.first, trackPoints.last);
-    } else {
-      dist = _distanceRoute();
-    }
-    return (dist).round() / 1000;
-  }
-
-  // calc distance over multiple trackpoints in meters
-  double _distanceRoute() {
-    if (trackPoints.length < 2) return 0;
-    double dist = 0;
-    GPS gps = trackPoints[0];
-    for (var i = 1; i < trackPoints.length; i++) {
-      dist += GPS.distance(gps, trackPoints[i]);
-      gps = trackPoints[i];
-    }
-    return dist;
   }
 
   ///

@@ -17,7 +17,6 @@ import 'package:chaostours/gps.dart';
 import 'package:chaostours/address.dart' as addr;
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/screen.dart';
-import 'package:chaostours/file_handler.dart';
 
 class OsmSearchResult {
   final double lat;
@@ -500,7 +499,7 @@ class _WidgetOsm extends State<WidgetOsm> {
           key: "circle${++circleId}",
           centerPoint: GeoPoint(latitude: gps.lat, longitude: gps.lon),
           radius: 1,
-          color: Color.fromARGB(255, 98, 98, 98),
+          color: const Color.fromARGB(255, 98, 98, 98),
           strokeWidth: 10,
         ));
       }
@@ -509,7 +508,7 @@ class _WidgetOsm extends State<WidgetOsm> {
           key: "circle${++circleId}",
           centerPoint: GeoPoint(latitude: gps.lat, longitude: gps.lon),
           radius: 2,
-          color: Color.fromARGB(255, 0, 0, 0),
+          color: const Color.fromARGB(255, 0, 0, 0),
           strokeWidth: 10,
         ));
       }
@@ -518,7 +517,7 @@ class _WidgetOsm extends State<WidgetOsm> {
           key: "circle${++circleId}",
           centerPoint: GeoPoint(latitude: gps.lat, longitude: gps.lon),
           radius: 3,
-          color: Color.fromARGB(255, 0, 0, 255),
+          color: const Color.fromARGB(255, 0, 0, 255),
           strokeWidth: 10,
         ));
       }
@@ -528,7 +527,7 @@ class _WidgetOsm extends State<WidgetOsm> {
           key: "circle${++circleId}",
           centerPoint: GeoPoint(latitude: gps.lat, longitude: gps.lon),
           radius: 4,
-          color: Color.fromARGB(255, 255, 0, 0),
+          color: const Color.fromARGB(255, 255, 0, 0),
           strokeWidth: 10,
         ));
       }
@@ -556,13 +555,7 @@ class _WidgetOsm extends State<WidgetOsm> {
             initPosition: (GeoPoint(latitude: _gps.lat, longitude: _gps.lon)));
 
         _controller.listenerMapLongTapping.addListener(() {
-          _controller.selectAdvancedPositionPicker().then((GeoPoint pos) {
-            List<ModelAlias> list =
-                ModelAlias.nextAlias(gps: GPS(pos.latitude, pos.longitude));
-            if (list.isNotEmpty) {
-              ModelAlias alias = list[0];
-            }
-          });
+          _controller.selectAdvancedPositionPicker().then((GeoPoint pos) {});
         });
         osm = OSMFlutter(
           mapIsLoading: const WidgetMapIsLoading(),

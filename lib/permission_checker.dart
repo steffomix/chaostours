@@ -1,5 +1,4 @@
 import 'package:permission_handler/permission_handler.dart';
-import 'package:chaostours/file_handler.dart';
 
 class PermissionChecker {
   static bool permissionsChecked = false;

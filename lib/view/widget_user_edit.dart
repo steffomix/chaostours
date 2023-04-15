@@ -13,6 +13,7 @@ class WidgetUserEdit extends StatefulWidget {
 }
 
 class _WidgetUserEdit extends State<WidgetUserEdit> {
+  // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetUserEdit>();
 
   int userId = 0;
@@ -20,9 +21,9 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
   // checkbox
   bool? _deleted;
   ValueNotifier<bool> modified = ValueNotifier<bool>(false);
-  @override
   bool initialized = false;
 
+  @override
   void dispose() {
     super.dispose();
   }

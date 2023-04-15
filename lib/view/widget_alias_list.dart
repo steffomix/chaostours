@@ -6,7 +6,6 @@ import 'package:chaostours/logger.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/gps.dart';
-import 'package:chaostours/screen.dart';
 
 class WidgetAliasList extends StatefulWidget {
   const WidgetAliasList({super.key});
@@ -16,9 +15,9 @@ class WidgetAliasList extends StatefulWidget {
 }
 
 class _WidgetAliasList extends State<WidgetAliasList> {
+  // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetAliasList>();
 
-  int _id = 0;
   int _listMode = 0;
   GPS _gps = GPS(0, 0);
   String search = '';
@@ -101,7 +100,6 @@ class _WidgetAliasList extends State<WidgetAliasList> {
   }
 
   Widget body(BuildContext context) {
-    _id = ModalRoute.of(context)?.settings.arguments as int? ?? 0;
     var list = <ModelAlias>[];
     var select = _listMode == 1
         ? ModelAlias.nextAlias(gps: _gps, all: true)

@@ -6,8 +6,6 @@ import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/checkbox_controller.dart';
-import 'package:chaostours/cache.dart';
-//import 'package:chaostours/app_settings.dart';
 
 class WidgetUserList extends StatefulWidget {
   const WidgetUserList({super.key});
@@ -17,6 +15,7 @@ class WidgetUserList extends StatefulWidget {
 }
 
 class _WidgetUserList extends State<WidgetUserList> {
+  // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetUserList>();
 
   TextEditingController controller = TextEditingController();

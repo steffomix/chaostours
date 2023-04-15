@@ -5,11 +5,6 @@ import 'package:chaostours/globals.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/cache.dart';
 import 'package:chaostours/logger.dart';
-import 'package:chaostours/model/model_user.dart';
-import 'package:chaostours/checkbox_controller.dart';
-import 'package:chaostours/app_settings.dart';
-import 'package:chaostours/cache.dart';
-import 'package:chaostours/file_handler.dart';
 
 enum AliasRequired {
   yes(true),

@@ -1,15 +1,11 @@
 import 'package:chaostours/permission_checker.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/src/widgets/framework.dart';
-import 'package:flutter/src/widgets/placeholder.dart';
-import 'package:sqflite/sqflite.dart';
 
 ///
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/app_loader.dart';
 import 'package:chaostours/file_handler.dart';
-import 'package:chaostours/cache.dart';
 import 'package:chaostours/logger.dart';
 
 class AppInit extends StatefulWidget {
@@ -43,7 +39,7 @@ class _AppInitState extends State<AppInit> {
   Future<void> appStart() async {
     await Future.delayed(const Duration(milliseconds: 200));
     try {
-      GPS gps = await GPS.gps();
+      await GPS.gps();
       try {
         await AppLoader.webKey();
       } catch (e) {

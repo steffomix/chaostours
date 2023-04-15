@@ -13,6 +13,7 @@ class WidgetTaskList extends StatefulWidget {
 }
 
 class _WidgetTaskList extends State<WidgetTaskList> {
+  // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetTaskList>();
 
   bool showDeleted = false;

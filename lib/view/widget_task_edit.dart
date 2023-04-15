@@ -13,6 +13,7 @@ class WidgetTaskEdit extends StatefulWidget {
 }
 
 class _WidgetTaskEdit extends State<WidgetTaskEdit> {
+  // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetTaskEdit>();
 
   ValueNotifier<bool> modified = ValueNotifier<bool>(false);

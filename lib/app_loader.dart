@@ -1,12 +1,7 @@
 import 'package:flutter/services.dart';
 import 'dart:io' as io;
-import 'package:permission_handler/permission_handler.dart';
-import 'package:hive/hive.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import 'package:flutter/material.dart';
 
 ///
-import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
@@ -14,12 +9,10 @@ import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/file_handler.dart';
 import 'package:chaostours/background_process/tracking.dart';
-import 'package:chaostours/cache.dart';
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/permission_checker.dart';
 import 'package:chaostours/globals.dart';
-import 'package:chaostours/app_settings.dart';
 import 'package:chaostours/data_bridge.dart';
 
 class AppLoader {

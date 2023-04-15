@@ -1,7 +1,4 @@
-import 'package:chaostours/main.dart';
 import 'package:flutter/material.dart';
-import 'dart:convert';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_osm_plugin/flutter_osm_plugin.dart' as osm;
 //
 import 'package:chaostours/logger.dart';
@@ -10,7 +7,6 @@ import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/data_bridge.dart';
 import 'package:chaostours/background_process/trackpoint.dart';
 import 'package:chaostours/util.dart' as util;
-import 'package:chaostours/cache.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_user.dart';
@@ -58,7 +54,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   static TrackingStatus currentStatus = TrackingStatus.none;
 
   /// edit trackpoint notes controller
-  static TextEditingController _controller = TextEditingController(
+  static final TextEditingController _controller = TextEditingController(
       text: PendingModelTrackPoint.pendingTrackPoint.notes);
 
   /// osm
@@ -121,7 +117,6 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   @override
   Widget build(BuildContext context) {
     Widget body = AppWidgets.loading('Waiting for GPS Signal');
-    List<Widget> list = [];
 
     /// nothing checked at this point
     if (runningTrackPoints.isEmpty) {
@@ -150,30 +145,6 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         /// recent mode
         default:
           body = renderActiveTrackPoint(context);
-        /*
-          GPS lastPoint = runningTrackPoints.first;
-          list = runningTrackPoints.map((gps) {
-            int h = gps.time.hour;
-            int m = gps.time.minute;
-            int s = gps.time.second;
-            double lat = gps.lat;
-            double lon = gps.lon;
-            double dist = (GPS.distance(lastPoint, gps) / 10).round() / 100;
-            lastPoint = gps;
-            return ListTile(
-              title: Text('$h:$m:$s - $dist km'),
-              subtitle: Text('$lat,$lon'),
-              leading: const Icon(Icons.map),
-            );
-          }).toList();
-          double allDist =
-              (GPS.distanceoverTrackList(runningTrackPoints) / 10).round() /
-                  100;
-          list.insert(
-              0, ListTile(leading: Text('Gesamt Distanz: $allDist km')));
-
-          body = renderListViewBody(context, list);
-          */
       }
     }
 

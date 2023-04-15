@@ -5,7 +5,6 @@ import 'package:geolocator/geolocator.dart' as geo;
 
 //import 'package:geolocator/geolocator.dart' show Position, Geolocator;
 //
-import 'package:chaostours/app_loader.dart';
 import 'package:chaostours/globals.dart';
 import 'package:chaostours/logger.dart';
 

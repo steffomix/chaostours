@@ -1,5 +1,4 @@
 import 'package:chaostours/event_manager.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:android_intent_plus/android_intent.dart';
 import 'package:chaostours/gps.dart';
@@ -24,8 +23,8 @@ class WidgetAliasTrackpoint extends StatefulWidget {
 }
 
 class _WidgetAliasTrackpoint extends State<WidgetAliasTrackpoint> {
+  // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetAliasTrackpoint>();
-  static int mode = 0;
   int _id = 0;
   List _tpList = <ModelTrackPoint>[];
   String _search = '';
@@ -62,7 +61,7 @@ class _WidgetAliasTrackpoint extends State<WidgetAliasTrackpoint> {
         width: screen.width,
         height: 25,
         child: IconButton(
-            icon: Icon(Icons.map),
+            icon: const Icon(Icons.map),
             onPressed: () {
               var gps = GPS.lastGps!;
               var lat = gps.lat;
@@ -96,7 +95,6 @@ class _WidgetAliasTrackpoint extends State<WidgetAliasTrackpoint> {
 
   Widget alias(BuildContext context) {
     var alias = ModelAlias.getAlias(_id);
-    var type = alias.status;
     return ListTile(
         title: Text(alias.alias),
         subtitle: Text(alias.notes),
