@@ -84,7 +84,7 @@ class GPS {
       distanceBetween(g1.lat, g1.lon, g2.lat, g2.lon);
 
   // calc distance over multiple trackpoints in meters
-  static double distanceoverTrackList(List<GPS> tracklist) {
+  static double distanceOverTrackList(List<GPS> tracklist) {
     if (tracklist.length < 2) return 0;
     double dist = 0;
     GPS gps = tracklist[0];

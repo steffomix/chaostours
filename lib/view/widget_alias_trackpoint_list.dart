@@ -128,7 +128,7 @@ class _WidgetAliasTrackpoint extends State<WidgetAliasTrackpoint> {
           trailing: IconButton(
             icon: const Icon(Icons.edit, size: 30),
             onPressed: () {
-              Navigator.pushNamed(context, AppRoutes.editTrackingTasks.route,
+              Navigator.pushNamed(context, AppRoutes.editTrackPoint.route,
                       arguments: tp.id)
                   .then((_) {
                 setState(() {});

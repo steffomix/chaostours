@@ -6,101 +6,51 @@ import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/checkbox_controller.dart';
-import 'package:chaostours/event_manager.dart';
+import 'package:chaostours/util.dart';
 import 'package:chaostours/logger.dart';
 
 ///
 /// CheckBox list
 ///
-class WidgetEditTrackpointTasks extends StatefulWidget {
-  const WidgetEditTrackpointTasks({super.key});
+class WidgetEditTrackPoint extends StatefulWidget {
+  const WidgetEditTrackPoint({super.key});
 
   @override
   State<StatefulWidget> createState() => _WidgetAddTasksState();
 }
 
-class _WidgetAddTasksState extends State<WidgetEditTrackpointTasks> {
-  Logger logger = Logger.logger<WidgetEditTrackpointTasks>();
+class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
+  Logger logger = Logger.logger<WidgetEditTrackPoint>();
 
-  /// EventListener
-  BuildContext? _context;
+  /// editable fields
+  List<int> tpTasks = [];
+  List<int> tpUsers = [];
+  TextEditingController tpNotes = TextEditingController();
 
-  /// notes
-  ValueNotifier<bool> textModified = ValueNotifier<bool>(false);
-
-  /// edit notes
-  static TextEditingController textController =
-      TextEditingController(text: PendingModelTrackPoint.editTrackPoint.notes);
+  late ModelTrackPoint trackPoint;
 
   /// modify
-  bool modified = false;
+  ValueNotifier<bool> modified = ValueNotifier<bool>(false);
   void modify() {
-    modified = true;
+    modified.value = true;
   }
 
   @override
   void initState() {
-    EventManager.listen<EventOnTrackingStatusChanged>(onTrackingStatusChanged);
     super.initState();
   }
 
   @override
   void dispose() {
-    EventManager.remove<EventOnTrackingStatusChanged>(onTrackingStatusChanged);
     super.dispose();
-  }
-
-  /// pop edit window if current Trackpoint
-  /// is active (not yet saved) and status changes
-  void onTrackingStatusChanged(EventOnTrackingStatusChanged e) {
-    if (PendingModelTrackPoint.pendingTrackPoint ==
-        PendingModelTrackPoint.editTrackPoint) {
-      if (_context != null) {
-        Navigator.pop(_context!);
-      }
-    }
-  }
-
-  /// render multiple checkboxes
-  Widget createCheckbox(CheckboxController model) {
-    TextStyle style = TextStyle(
-        color: model.enabled ? Colors.black : Colors.grey,
-        decoration:
-            model.deleted ? TextDecoration.lineThrough : TextDecoration.none);
-
-    return ListTile(
-      subtitle: model.subtitle.trim().isEmpty
-          ? null
-          : Text(model.subtitle, style: const TextStyle(color: Colors.grey)),
-      title: Text(
-        model.title,
-        style: style,
-      ),
-      leading: Checkbox(
-        value: model.checked,
-        onChanged: (_) {
-          setState(
-            () {
-              model.handler()?.call();
-            },
-          );
-        },
-      ),
-      onTap: () {
-        setState(
-          () {
-            model.handler()?.call();
-          },
-        );
-      },
-    );
   }
 
   /// current trackpoint
   Widget trackPointInfo(BuildContext context) {
-    var tp = PendingModelTrackPoint.editTrackPoint;
-    var alias = tp.idAlias.map((id) => ModelAlias.getAlias(id).alias).toList();
-    var tasks = tp.idTask.map((id) => ModelTask.getTask(id).task).toList();
+    var alias =
+        trackPoint.idAlias.map((id) => ModelAlias.getAlias(id).alias).toList();
+    var tasks =
+        trackPoint.idTask.map((id) => ModelTask.getTask(id).task).toList();
 
     return Container(
         padding: const EdgeInsets.all(10),
@@ -108,41 +58,45 @@ class _WidgetAddTasksState extends State<WidgetEditTrackpointTasks> {
           Center(
               heightFactor: 2,
               child: alias.isEmpty
-                  ? Text('OSM: ${tp.address}')
+                  ? Text('OSM: ${trackPoint.address}')
                   : Text('Alias: ${alias.join('\n- ')}')),
-          Text(AppWidgets.timeInfo(tp.timeStart, tp.timeEnd)),
+          Text(AppWidgets.timeInfo(trackPoint.timeStart, trackPoint.timeEnd)),
           Text(
               'Aufgaben:${tasks.isEmpty ? ' -' : '\n   - ${tasks.join('\n   - ')}'}')
         ]));
   }
 
   List<Widget> taskCheckboxes(context) {
-    var referenceList = PendingModelTrackPoint.editTrackPoint.idTask;
+    var referenceList = trackPoint.idTask;
     var checkBoxes = <Widget>[];
     for (var tp in ModelTask.getAll()) {
       if (!tp.deleted) {
-        checkBoxes.add(createCheckbox(CheckboxController(
-            idReference: tp.id,
-            referenceList: referenceList,
-            deleted: tp.deleted,
-            title: tp.task,
-            subtitle: tp.notes)));
+        checkBoxes.add(createCheckbox(
+            this,
+            CheckboxController(
+                idReference: tp.id,
+                referenceList: referenceList,
+                deleted: tp.deleted,
+                title: tp.task,
+                subtitle: tp.notes)));
       }
     }
     return checkBoxes;
   }
 
   List<Widget> userCheckboxes(context) {
-    var referenceList = PendingModelTrackPoint.editTrackPoint.idUser;
+    var referenceList = trackPoint.idUser;
     var checkBoxes = <Widget>[];
     for (var tp in ModelUser.getAll()) {
       if (!tp.deleted) {
-        checkBoxes.add(createCheckbox(CheckboxController(
-            idReference: tp.id,
-            referenceList: referenceList,
-            deleted: tp.deleted,
-            title: tp.user,
-            subtitle: tp.notes)));
+        checkBoxes.add(createCheckbox(
+            this,
+            CheckboxController(
+                idReference: tp.id,
+                referenceList: referenceList,
+                deleted: tp.deleted,
+                title: tp.user,
+                subtitle: tp.notes)));
       }
     }
     return checkBoxes;
@@ -153,7 +107,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackpointTasks> {
     /// render selected users
     List<String> userList = [];
     for (var item in ModelUser.getAll()) {
-      if (PendingModelTrackPoint.editTrackPoint.idUser.contains(item.id)) {
+      if (trackPoint.idUser.contains(item.id)) {
         userList.add(item.user);
       }
     }
@@ -182,7 +136,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackpointTasks> {
     /// render selected tasks
     List<String> taskList = [];
     for (var item in ModelTask.getAll()) {
-      if (PendingModelTrackPoint.editTrackPoint.idTask.contains(item.id)) {
+      if (trackPoint.idTask.contains(item.id)) {
         taskList.add(item.task);
       }
     }
@@ -221,55 +175,37 @@ class _WidgetAddTasksState extends State<WidgetEditTrackpointTasks> {
             //expands: true,
             maxLines: null,
             minLines: 2,
-            controller: textController,
+            controller: tpNotes,
             onChanged: (String? s) {
-              PendingModelTrackPoint.pendingTrackPoint.notes = s ?? '';
-              textModified.value = true;
+              modify();
               logger.log('$s');
             }));
-  }
-
-  Widget warning(BuildContext context) {
-    if (PendingModelTrackPoint.pendingTrackPoint ==
-        PendingModelTrackPoint.editTrackPoint) {
-      return Container(
-          padding: const EdgeInsets.all(10),
-          child: const Text(
-              'Achtung! Sie bearbeiten einen aktiven Haltepunkt.\n'
-              'Panel schließt sobald sich der Fahren/Halten Status ändert.',
-              style: TextStyle(color: Colors.red)));
-    }
-    return const SizedBox.shrink();
   }
 
   ///
   @override
   Widget build(BuildContext context) {
-    final tpId = (ModalRoute.of(context)?.settings.arguments ?? 0) as int;
-    if (tpId != 0) {
-      try {
-        /// @Todo
-        /// implement differ between PendingModelTrackpoint and ModelTrackPpoint
-      } catch (e, stk) {
-        logger.error('invalid trackpoint id: $e', stk);
-      }
+    Widget body;
+    try {
+      final id = (ModalRoute.of(context)?.settings.arguments ?? 0) as int;
+      trackPoint = ModelTrackPoint.byId(id);
+      body = ListView(children: [
+        /// current Trackpoint time info
+        trackPointInfo(context),
+        AppWidgets.divider(),
+        notes(context),
+        AppWidgets.divider(),
+        dropdownUser(context),
+        AppWidgets.divider(),
+        dropdownTasks(context)
+      ]);
+    } catch (e, stk) {
+      body = AppWidgets.loading('No valid ID found');
+      Future.delayed(const Duration(milliseconds: 500), () {
+        Navigator.pop(context);
+      });
     }
 
-    /// required for EventListener
-    _context = context;
-
-    var body = ListView(children: [
-      warning(context),
-
-      /// current Trackpoint time info
-      trackPointInfo(context),
-      AppWidgets.divider(),
-      notes(context),
-      AppWidgets.divider(),
-      dropdownUser(context),
-      AppWidgets.divider(),
-      dropdownTasks(context)
-    ]);
     return AppWidgets.scaffold(
       context,
       body: body,
@@ -281,11 +217,11 @@ class _WidgetAddTasksState extends State<WidgetEditTrackpointTasks> {
             // 0 alphabethic
             BottomNavigationBarItem(
                 icon: ValueListenableBuilder(
-                    valueListenable: textModified,
+                    valueListenable: modified,
                     builder: ((context, value, child) {
                       return Icon(Icons.done,
                           size: 30,
-                          color: textModified.value == true
+                          color: modified.value == true
                               ? AppColors.green.color
                               : AppColors.white54.color);
                     })),
@@ -295,9 +231,12 @@ class _WidgetAddTasksState extends State<WidgetEditTrackpointTasks> {
                 icon: Icon(Icons.cancel), label: 'Abbrechen'),
           ],
           onTap: (int id) {
-            if (id == 0) {
-              ModelAlias.update().then(
-                  (_) => AppWidgets.navigate(context, AppRoutes.listAlias));
+            if (id == 0 && modified.value) {
+              trackPoint.idTask = tpTasks;
+              trackPoint.idUser = tpUsers;
+              trackPoint.notes = tpNotes.text;
+              ModelTrackPoint.update(trackPoint)
+                  .then((_) => Navigator.pop(context));
             } else {
               Navigator.pop(context);
             }

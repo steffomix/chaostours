@@ -1,3 +1,4 @@
+import 'package:chaostours/data_bridge.dart';
 import 'package:flutter/material.dart';
 
 ///
@@ -5,7 +6,8 @@ import 'package:chaostours/globals.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/model/model_user.dart';
-import 'package:chaostours/checkbox_controller.dart';
+import 'package:chaostours/util.dart';
+import 'package:chaostours/cache.dart';
 
 class WidgetUserList extends StatefulWidget {
   const WidgetUserList({super.key});
@@ -30,7 +32,8 @@ class _WidgetUserList extends State<WidgetUserList> {
     setState(() {});
   }
 
-  Set<int> preselectedUsers = Globals.preselectedUsers;
+  List<int> preselectedUsers =
+      DataBridge.instance.trackPointPreselectedUserIdList;
 
   @override
   void dispose() {
@@ -222,8 +225,10 @@ class _WidgetUserList extends State<WidgetUserList> {
                       : 'Gelöschte anzeigen'),
             ],
             onTap: (int id) {
-              if (id == 0) {
-                Globals.savePreselectedUsers().then((_) {
+              if (id == 0 && modified.value) {
+                Cache.setValue(CacheKeys.cacheBackgroundPreselectedUsers,
+                        preselectedUsers)
+                    .then((_) {
                   modified.value = false;
                   dropdownUserIsOpen = false;
                   setState(() {});

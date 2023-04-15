@@ -41,28 +41,16 @@ class WidgetTrackingPage extends StatefulWidget {
 }
 
 class _WidgetTrackingPage extends State<WidgetTrackingPage> {
-  static Logger logger = Logger.logger<WidgetTrackingPage>();
+  static final Logger logger = Logger.logger<WidgetTrackingPage>();
 
   TrackingPageDisplayMode displayMode = TrackingPageDisplayMode.live;
   static int _bottomBarIndex = 0;
 
-  String currentPermissionCheck = '';
-
-  ///
-  /// active trackpoint data
-  static TrackingStatus lastStatus = TrackingStatus.none;
-  static TrackingStatus currentStatus = TrackingStatus.none;
-
-  /// edit trackpoint notes controller
-  static final TextEditingController _controller = TextEditingController(
-      text: PendingModelTrackPoint.pendingTrackPoint.notes);
+  final DataBridge bridge = DataBridge.instance;
 
   /// osm
   int circleId = 0;
-  osm.MapController mapController = osm.MapController();
-
-  /// recent or saved trackponts
-  static List<GPS> runningTrackPoints = [];
+  final osm.MapController mapController = osm.MapController();
 
   /// both must be true
   ///
@@ -91,7 +79,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   @override
   void dispose() {
     // make sure bridge updater is running
-    DataBridge.instance.startService();
+    bridge.startService();
     EventManager.remove<EventOnAppTick>(onTick);
     EventManager.remove<EventOnAddressLookup>(onAddressLookup);
     EventManager.remove<EventOnWidgetDisposed>(osmGpsPoints);
@@ -107,7 +95,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
   Widget renderListViewBody(BuildContext context, List<Widget> list) {
     return ListView(children: [
-      renderActiveTrackPoint(context),
+      renderTrackPoint(context),
       const Divider(
           thickness: 2, indent: 10, endIndent: 10, color: Colors.black),
       ...list
@@ -119,7 +107,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     Widget body = AppWidgets.loading('Waiting for GPS Signal');
 
     /// nothing checked at this point
-    if (runningTrackPoints.isEmpty) {
+    if (bridge.gpsPoints.isEmpty) {
       body = AppWidgets.loading('Waiting for GPS Signal');
     } else {
       switch (displayMode) {
@@ -136,7 +124,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
         /// last visited mode
         case TrackingPageDisplayMode.lastVisited:
-          GPS gps = runningTrackPoints.first;
+          GPS gps = bridge.gpsPoints.first;
           body = ListView(
               children: renderRecentTrackPointList(
                   context, ModelTrackPoint.lastVisited(gps)));
@@ -144,7 +132,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
         /// recent mode
         default:
-          body = renderActiveTrackPoint(context);
+          body = renderTrackPoint(context);
       }
     }
 
@@ -192,8 +180,6 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       }
     }
 
-    DataBridge bridge = DataBridge.instance;
-
     /// draw gps points
     try {
       for (var gps in bridge.gpsPoints) {
@@ -223,17 +209,19 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
           strokeWidth: 10,
         ));
       }
+      if (bridge.gpsPoints.isNotEmpty) {
+        GPS gps = bridge.trackPointGpsStartStanding ?? bridge.gpsPoints.last;
+        mapController.drawCircle(osm.CircleOSM(
+          key: "circle${++circleId}",
+          centerPoint: osm.GeoPoint(latitude: gps.lat, longitude: gps.lon),
+          radius: 5,
+          color: Colors.red,
+          strokeWidth: 10,
+        ));
+      }
     } catch (e, stk) {
       logger.error(e.toString(), stk);
     }
-    GPS gps = bridge.gpsStartMoving ?? bridge.gpsPoints.last;
-    mapController.drawCircle(osm.CircleOSM(
-      key: "circle${++circleId}",
-      centerPoint: osm.GeoPoint(latitude: gps.lat, longitude: gps.lon),
-      radius: 5,
-      color: Colors.red,
-      strokeWidth: 10,
-    ));
   }
 
   BottomNavigationBar bottomNavBar(BuildContext context) {
@@ -270,123 +258,42 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   }
 
   Future<void> onAddressLookup(EventOnAddressLookup event) async {
-    if (!mounted) {
+    if (!mounted || bridge.gpsPoints.isEmpty) {
       return;
     }
-    PendingModelTrackPoint.pendingAddress =
-        (await Address(runningTrackPoints.first).lookupAddress()).toString();
+    bridge.setAddress(bridge.gpsPoints.first);
   }
 
   Future<void> onTick(EventOnAppTick tick) async {
-    if (!mounted || displayMode == TrackingPageDisplayMode.gps) {
-      return;
-    }
-    DataBridge bridge = DataBridge.instance;
-    if (bridge.gpsPoints.isEmpty) {
-      return;
-    }
-
-    if (bridge.address.isNotEmpty) {
-      PendingModelTrackPoint.pendingAddress = bridge.address;
-    }
-
-    if (bridge.trackingStatus != TrackingStatus.none) {
-      /// get status
-      currentStatus = bridge.trackingStatus;
-      runningTrackPoints.clear();
-      runningTrackPoints.addAll(bridge.gpsPoints);
-      // update GPS bridge
-      GPS.lastGps = bridge.lastGps;
-
-      /// update pendingTrackPoint
-      if (currentStatus == lastStatus) {
-        /// update
-        PendingModelTrackPoint.pendingTrackPoint
-          ..gps = runningTrackPoints.first
-          ..address = PendingModelTrackPoint.pendingAddress
-          ..trackPoints = runningTrackPoints
-          ..timeStart =
-              bridge.gpsStartMoving?.time ?? runningTrackPoints.last.time
-          ..timeEnd = DateTime.now()
-          ..idAlias = ModelAlias.nextAlias(gps: runningTrackPoints.first)
-              .map((e) => e.id)
-              .toList()
-          ..idTask = PendingModelTrackPoint.pendingTrackPoint.idTask
-          ..notes = PendingModelTrackPoint.pendingTrackPoint.notes;
-      } else {
-        /// status has changed
-        /// we need to reload ModelTrackPoint and ModelAlias
-        ModelTrackPoint.open();
-        ModelAlias.open();
-
-        /// notify edit page
-        await EventManager.fire<EventOnTrackingStatusChanged>(
-            EventOnTrackingStatusChanged(
-                PendingModelTrackPoint.pendingTrackPoint));
-
-        /// create new Trackpoint
-        PendingModelTrackPoint.pendingTrackPoint = PendingModelTrackPoint(
-            gps: runningTrackPoints.last,
-            trackPoints: runningTrackPoints,
-            idAlias: <int>[],
-            timeStart:
-                bridge.gpsStartMoving?.time ?? runningTrackPoints.last.time);
-
-        /// add preselected users
-        PendingModelTrackPoint.pendingTrackPoint.idUser
-            .addAll(Globals.preselectedUsers);
-        lastStatus = currentStatus;
-        /*
-        _controller = TextEditingController(
-            text: ModelTrackPoint.pendingTrackPoint.notes);
-        */
-        _controller.value = TextEditingValue(
-            text: PendingModelTrackPoint.pendingTrackPoint.notes);
-      }
-
-      /// write to bridge user data for background thread
-      DataBridge.instance.pendingTrackPoint =
-          PendingModelTrackPoint.pendingTrackPoint;
-    }
-
     setState(() {});
   }
 
-  PendingModelTrackPoint createTrackPoint(TrackingStatus status) {
-    GPS gps = runningTrackPoints.first;
-    PendingModelTrackPoint tp = PendingModelTrackPoint(
-        gps: gps,
-        trackPoints: runningTrackPoints,
-        idAlias: ModelAlias.nextAlias(gps: gps).map((e) => e.id).toList(),
-        timeStart: DataBridge.instance.gpsStartMoving?.time ??
-            runningTrackPoints.last.time);
-    tp.status = status;
-    tp.timeEnd = runningTrackPoints.last.time;
-    tp.idTask = PendingModelTrackPoint.pendingTrackPoint.idTask;
-    tp.notes = PendingModelTrackPoint.pendingTrackPoint.notes;
-    return tp;
-  }
-
-  Widget renderActiveTrackPoint(BuildContext context) {
+  Widget renderTrackPoint(BuildContext context) {
+    if (bridge.gpsPoints.isEmpty) {
+      return AppWidgets.loading('Waiting for GPS from Background...');
+    }
     Screen screen = Screen(context);
+    DateTime tStart = bridge.trackPointGpslastStatusChange?.time ??
+        bridge.gpsPoints.last.time;
+    DateTime tEnd = DateTime.now();
+    PendingGps gpslastStatusChange =
+        bridge.trackPointGpslastStatusChange ?? bridge.gpsPoints.last;
     try {
-      PendingModelTrackPoint tp = PendingModelTrackPoint.pendingTrackPoint;
-      String duration = util.timeElapsed(tp.timeStart, tp.timeEnd, false);
-      List<String> alias = ModelAlias.nextAlias(
-              gps: currentStatus == TrackingStatus.moving
-                  ? runningTrackPoints.first
-                  : DataBridge.instance.gpsStartMoving ??
-                      runningTrackPoints.last)
-          .map((e) {
+      var ls = bridge.trackPointGpslastStatusChange;
+      String duration =
+          ls == null ? '-' : util.timeElapsed(ls.time, tEnd, false);
+      List<String> alias =
+          ModelAlias.nextAlias(gps: gpslastStatusChange).map((e) {
         return '- ${e.alias}';
       }).toList();
-      List<String> users = tp.idUser.map((id) {
+      List<String> users = bridge.trackPointUserIdList.map((id) {
         return '- ${ModelUser.getUser(id).user}';
       }).toList();
 
-      List<String> task =
-          tp.idTask.map((e) => '- ${ModelTask.getTask(e).task}').toList();
-      String notes = tp.notes;
+      List<String> task = bridge.trackPointTaskIdList
+          .map((e) => '- ${ModelTask.getTask(e).task}')
+          .toList();
+      String notes = bridge.trackPointUserNotes;
 
       String sAlias = alias.isEmpty ? ' ---' : '\n  ${alias.join('\n')}';
       String sTasks = task.isEmpty ? ' ---' : '\n  ${task.join('\n')}';
@@ -397,29 +304,29 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Center(
-                  child: Text('\n${Globals.weekDays[tp.timeStart.weekday]}. den'
-                      ' ${tp.timeStart.day}.${tp.timeStart.month}.${tp.timeStart.year}')),
+                  child: Text('\n${Globals.weekDays[tStart.weekday]}. den'
+                      ' ${tStart.day}.${tStart.month}.${tStart.year}')),
               Center(
                   heightFactor: 2,
                   child: Text(
-                      currentStatus == TrackingStatus.standing
+                      bridge.trackingStatus == TrackingStatus.standing
                           ? 'Halten'
                           : 'Fahren',
                       style: const TextStyle(letterSpacing: 2, fontSize: 20))),
               Center(
                   heightFactor: 1.5,
                   child: Text(
-                      currentStatus == TrackingStatus.standing
+                      bridge.trackingStatus == TrackingStatus.standing
                           ? duration
-                          : '~${(GPS.distanceoverTrackList(runningTrackPoints) / 10).round() / 100}km',
+                          : '~${(GPS.distanceOverTrackList(bridge.gpsPoints) / 10).round() / 100}km',
                       style: const TextStyle(letterSpacing: 2, fontSize: 15))),
               Center(
                   child: Text(
-                      '${tp.timeStart.hour}:${tp.timeStart.minute} - ${tp.timeEnd.hour}:${tp.timeEnd.minute}')),
+                      '${tStart.hour}:${tStart.minute} - ${tEnd.hour}:${tEnd.minute}')),
               AppWidgets.divider(),
               Text('Alias: $sAlias', softWrap: true),
               Text(
-                  '\nOSM: "${PendingModelTrackPoint.pendingAddress.trim().isEmpty ? '---' : PendingModelTrackPoint.pendingAddress}"',
+                  '\nOSM: "${bridge.currentAddress.isEmpty ? '---' : bridge.currentAddress}"',
                   softWrap: true),
               AppWidgets.divider(),
               Text('Personal: $sUsers'),
@@ -432,25 +339,22 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       var iconEdit = IconButton(
           icon: const Icon(size: 30, Icons.edit_location),
           onPressed: () {
-            PendingModelTrackPoint.editTrackPoint =
-                PendingModelTrackPoint.pendingTrackPoint;
-            Navigator.pushNamed(context, AppRoutes.editTrackingTasks.route);
+            Navigator.pushNamed(context, AppRoutes.editPendingTrackPoint.route);
           });
 
       var iconTrigger = IconButton(
           icon: Icon(
               size: 30,
-              DataBridge.instance.statusTriggered
+              bridge.statusTriggered
                   ? Icons.drive_eta
                   : Icons.drive_eta_outlined),
           onPressed: () {
-            DataBridge bridge = DataBridge.instance;
             bridge.triggerStatus().then((_) {
               setState(() {});
             });
           });
 
-      var action = currentStatus == TrackingStatus.standing
+      var action = bridge.trackingStatus == TrackingStatus.standing
           ? Column(children: [
               const Text('\n'),
               iconEdit,
@@ -511,7 +415,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
           leading: IconButton(
               icon: const Icon(Icons.edit_location_outlined),
               onPressed: () {
-                Navigator.pushNamed(context, AppRoutes.editTrackingTasks.route,
+                Navigator.pushNamed(context, AppRoutes.editTrackPoint.route,
                     arguments: tp.id);
               }),
         ));
@@ -523,36 +427,5 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     }
 
     return listItems.reversed.toList();
-  }
-
-  Widget editTasks(BuildContext context, CheckboxController model) {
-    TextStyle style = model.enabled
-        ? const TextStyle(color: Colors.black)
-        : const TextStyle(color: Colors.grey);
-    return ListTile(
-      subtitle:
-          Text(model.subtitle, style: const TextStyle(color: Colors.grey)),
-      title: Text(
-        model.title,
-        style: style,
-      ),
-      leading: Checkbox(
-        value: model.checked,
-        onChanged: (_) {
-          setState(
-            () {
-              model.handler()?.call();
-            },
-          );
-        },
-      ),
-      onTap: () {
-        setState(
-          () {
-            model.handler()?.call();
-          },
-        );
-      },
-    );
   }
 }

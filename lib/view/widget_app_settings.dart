@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'package:chaostours/globals.dart';
+import 'package:chaostours/data_bridge.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/cache.dart';
 import 'package:chaostours/logger.dart';
@@ -40,8 +41,9 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
   static Map<CacheKeys, String> settings = {
     CacheKeys.globalsBackgroundTrackingEnabled:
         Globals.backgroundTrackingEnabled ? '1' : '0',
-    CacheKeys.globalsPreselectedUsers:
-        Globals.preselectedUsers.join(','), // List<int>
+    CacheKeys.cacheBackgroundPreselectedUsers: DataBridge
+        .instance.trackPointPreselectedUserIdList
+        .join(','), // List<int>
     CacheKeys.globalsStatusStandingRequireAlias:
         Globals.statusStandingRequireAlias ? '1' : '0', // bool
     CacheKeys.globalsTrackPointInterval:
@@ -69,7 +71,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
       key = CacheKeys.globalsBackgroundTrackingEnabled;
       await Cache.setValue<bool>(key, backgroundTrackingEnabled ?? false);
 
-      key = CacheKeys.globalsPreselectedUsers;
+      key = CacheKeys.cacheBackgroundPreselectedUsers;
       var s = settings[key] ?? '';
       List<int> idList = s.isEmpty
           ? []

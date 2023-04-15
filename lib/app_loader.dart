@@ -36,7 +36,6 @@ class AppLoader {
           await DataBridge.instance.loadBackground(gps);
           await DataBridge.instance.loadForeground(gps);
           await DataBridge.instance.saveBackground(gps);
-          await DataBridge.instance.saveForeground(gps);
         } catch (e) {
           logger.warn('preload gps not available');
         }
@@ -54,7 +53,6 @@ class AppLoader {
     await DataBridge.instance.loadBackground(gps);
     await DataBridge.instance.loadForeground(gps);
     await DataBridge.instance.saveBackground(gps);
-    await DataBridge.instance.saveForeground(gps);
   }
 
   static Future<void> storageSettings() async {

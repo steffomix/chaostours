@@ -3,6 +3,7 @@ import 'package:chaostours/logger.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/gps.dart';
+import 'package:chaostours/address.dart';
 import 'package:chaostours/background_process/trackpoint.dart';
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/globals.dart';
@@ -16,13 +17,6 @@ class DataBridge {
   static DataBridge get instance => _instance ??= DataBridge._();
 
   static Future<void> reload() async => await Cache.reload();
-
-  ///
-  /// foreground values
-  ///
-  List<ModelTrackPoint> trackPointUpdates = [];
-  PendingModelTrackPoint pendingTrackPoint =
-      PendingModelTrackPoint.pendingTrackPoint;
 
   /// trigger status
   bool _triggerStatus = false;
@@ -40,26 +34,36 @@ class DataBridge {
   ///
   PendingGps? lastGps;
   // gps list from between trackpoints
-  PendingGps? gpsStartMoving;
-  PendingGps? gpsStartStanding;
+  PendingGps? trackPointGpsStartMoving;
+  PendingGps? trackPointGpsStartStanding;
+  PendingGps? trackPointGpslastStatusChange;
   List<PendingGps> gpsPoints = [];
   List<PendingGps> smoothGpsPoints = [];
   List<PendingGps> calcGpsPoints = [];
   // ignore: prefer_final_fields
   TrackingStatus trackingStatus = TrackingStatus.none;
 
-  String address = '';
-  List<ModelTrackPoint> recentTrackPoints = [];
-  List<ModelTrackPoint> lastVisitedTrackPoints = [];
-  List<int> aliasIdList = [];
-  List<int> userIdList = [];
-  List<int> taskIdList = [];
+  String currentAddress = '';
+  Future<void> setAddress(GPS gps) async {
+    try {
+      currentAddress = (await Address(gps).lookupAddress()).toString();
+    } catch (e, stk) {
+      currentAddress = e.toString();
+      logger.error('set address: $e', stk);
+    }
+  }
+
+  List<int> trackPointAliasIdList = [];
+  List<int> trackPointUserIdList = [];
+  List<int> trackPointTaskIdList = [];
   String trackPointUserNotes = '';
+  // foreground only
+  List<int> trackPointPreselectedUserIdList = [];
 
   /// make sure ModelAlias is opened and Cache is reloaded
   Future<void> updateAliasIdList(GPS gps) async {
     /// write new entry only if no restricted alias is present
-    var restricted = false;
+    var restrictedAlias = false;
 
     /// if this area is not restricted
     /// we reuse this list to update lastVisited
@@ -74,7 +78,7 @@ class DataBridge {
       /// if there is only one restricted alias
       /// skip the whole thing and save nothing
       if (alias.status == AliasStatus.restricted) {
-        restricted = true;
+        restrictedAlias = true;
         aliasList.clear();
         break;
       }
@@ -83,10 +87,10 @@ class DataBridge {
       aliasList.add(alias);
     }
 
-    if (!restricted &&
+    if (!restrictedAlias &&
         (!Globals.statusStandingRequireAlias ||
             (Globals.statusStandingRequireAlias && aliasList.isNotEmpty))) {
-      aliasIdList = aliasList.map((e) => e.id).toList();
+      trackPointAliasIdList = aliasList.map((e) => e.id).toList();
     } else {
       logger.log(
           'New trackpoint not saved due to app settings- or alias restrictions');
@@ -104,23 +108,22 @@ class DataBridge {
         while (_serviceRunning) {
           try {
             GPS.gps().then((GPS gps) async {
-              await Cache.reload();
               try {
+                await Cache.reload();
+                var status = trackingStatus.name;
                 await loadBackground(gps);
+                if (status != trackingStatus.name) {
+                  EventManager.fire<EventOnTrackingStatusChanged>(
+                      EventOnTrackingStatusChanged());
+                }
+                await EventManager.fire<EventOnCacheLoaded>(
+                    EventOnCacheLoaded());
               } catch (e, stk) {
                 logger.error('load background cache failed: $e', stk);
               }
-              try {
-                /// save foreground
-                await saveForeground(gps);
-              } catch (e, stk) {
-                logger.error('save foreground failed: $e', stk);
-              }
-              await EventManager.fire<EventOnCacheLoaded>(EventOnCacheLoaded());
-            }).onError((error, stackTrace) {
-              logger.error('cache listen $error', stackTrace);
+            }).onError((e, stackTrace) {
+              logger.error('Service $e', stackTrace);
             });
-            await Globals.loadSettings();
           } catch (e, stk) {
             logger.error('gps $e', stk);
           }
@@ -130,41 +133,18 @@ class DataBridge {
     }
   }
 
-  /// save foreground
-  Future<void> saveForeground(GPS gps) async {
-    await Cache.setValue<PendingModelTrackPoint>(
-        CacheKeys.cacheForegroundActiveTrackPoint, pendingTrackPoint);
-
-    await Cache.setValue<List<ModelTrackPoint>>(
-        CacheKeys.cacheForegroundTrackPointUpdates, trackPointUpdates);
-  }
-
-  /// load foreground
+  /// load foreground by background
   Future<void> loadForeground(GPS gps) async {
-    pendingTrackPoint = await Cache.getValue<PendingModelTrackPoint>(
-      CacheKeys.cacheForegroundActiveTrackPoint,
-      PendingModelTrackPoint.pendingTrackPoint,
-    );
-
-    trackPointUpdates = await Cache.getValue<List<ModelTrackPoint>>(
-        CacheKeys.cacheForegroundTrackPointUpdates, []);
-
     _triggerStatus = await Cache.getValue<bool>(
         CacheKeys.cacheForegroundTriggerStatus, false);
   }
 
-  /// load background
+  /// load background by foreground
   Future<void> loadBackground(GPS gps) async {
     _triggerStatus = await Cache.getValue<bool>(
         CacheKeys.cacheForegroundTriggerStatus, false);
 
-    recentTrackPoints = await Cache.getValue<List<ModelTrackPoint>>(
-        CacheKeys.cacheBackgroundRecentTrackpoints, []);
-
-    lastVisitedTrackPoints = await Cache.getValue<List<ModelTrackPoint>>(
-        CacheKeys.cacheBackgroundLastVisitedTrackpoints, []);
-
-    address =
+    currentAddress =
         await Cache.getValue<String>(CacheKeys.cacheBackgroundAddress, '');
 
     calcGpsPoints = await Cache.getValue<List<PendingGps>>(
@@ -176,10 +156,13 @@ class DataBridge {
     lastGps = await Cache.getValue<PendingGps>(
         CacheKeys.cacheBackgroundLastGps, PendingGps(gps.lat, gps.lon));
 
-    gpsStartMoving = await Cache.getValue<PendingGps>(
+    trackPointGpsStartMoving = await Cache.getValue<PendingGps>(
         CacheKeys.cacheBackgroundGpsStartMoving, PendingGps(gps.lat, gps.lon));
-    gpsStartStanding = await Cache.getValue<PendingGps>(
+    trackPointGpsStartStanding = await Cache.getValue<PendingGps>(
         CacheKeys.cacheBackgroundGpsStartStanding,
+        PendingGps(gps.lat, gps.lon));
+    trackPointGpslastStatusChange = await Cache.getValue<PendingGps>(
+        CacheKeys.cacheBackgroundGpsLastStatusChange,
         PendingGps(gps.lat, gps.lon));
 
     smoothGpsPoints = await Cache.getValue<List<PendingGps>>(
@@ -191,11 +174,11 @@ class DataBridge {
     trackPointUserNotes = await Cache.getValue<String>(
         CacheKeys.cacheBackgroundTrackPointUserNotes, '');
 
-    aliasIdList = await Cache.getValue<List<int>>(
+    trackPointAliasIdList = await Cache.getValue<List<int>>(
         CacheKeys.cacheBackgroundAliasIdList, []);
-    taskIdList = await Cache.getValue<List<int>>(
+    trackPointTaskIdList = await Cache.getValue<List<int>>(
         CacheKeys.cacheBackgroundTaskIdList, []);
-    userIdList = await Cache.getValue<List<int>>(
+    trackPointUserIdList = await Cache.getValue<List<int>>(
         CacheKeys.cacheBackgroundUserIdList, []);
   }
 
@@ -207,14 +190,8 @@ class DataBridge {
     await Cache.setValue<TrackingStatus>(
         CacheKeys.cacheBackgroundTrackingStatus, trackingStatus);
 
-    await Cache.setValue<List<ModelTrackPoint>>(
-        CacheKeys.cacheBackgroundRecentTrackpoints, recentTrackPoints);
-
-    await Cache.setValue<List<ModelTrackPoint>>(
-        CacheKeys.cacheBackgroundLastVisitedTrackpoints,
-        lastVisitedTrackPoints);
-
-    await Cache.setValue<String>(CacheKeys.cacheBackgroundAddress, address);
+    await Cache.setValue<String>(
+        CacheKeys.cacheBackgroundAddress, currentAddress);
 
     await Cache.setValue<List<PendingGps>>(
         CacheKeys.cacheBackgroundGpsPoints, gpsPoints);
@@ -229,17 +206,17 @@ class DataBridge {
         lastGps ?? PendingGps(gps.lat, gps.lon));
 
     await Cache.setValue<PendingGps>(CacheKeys.cacheBackgroundGpsStartMoving,
-        gpsStartMoving ?? PendingGps(gps.lat, gps.lon));
+        trackPointGpsStartMoving ?? PendingGps(gps.lat, gps.lon));
     await Cache.setValue<PendingGps>(CacheKeys.cacheBackgroundGpsStartStanding,
-        gpsStartStanding ?? PendingGps(gps.lat, gps.lon));
+        trackPointGpsStartStanding ?? PendingGps(gps.lat, gps.lon));
 
     await Cache.setValue<String>(
         CacheKeys.cacheBackgroundTrackPointUserNotes, trackPointUserNotes);
     await Cache.setValue<List<int>>(
-        CacheKeys.cacheBackgroundAliasIdList, aliasIdList);
+        CacheKeys.cacheBackgroundAliasIdList, trackPointAliasIdList);
     await Cache.setValue<List<int>>(
-        CacheKeys.cacheBackgroundTaskIdList, taskIdList);
+        CacheKeys.cacheBackgroundTaskIdList, trackPointTaskIdList);
     await Cache.setValue<List<int>>(
-        CacheKeys.cacheBackgroundUserIdList, userIdList);
+        CacheKeys.cacheBackgroundUserIdList, trackPointUserIdList);
   }
 }

@@ -8,10 +8,11 @@ import 'package:chaostours/globals.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/view/app_init.dart';
 import 'package:chaostours/view/app_colors.dart';
-import 'package:chaostours/view/widget_tracking_page.dart';
+import 'package:chaostours/view/widget_live_tracking.dart';
 import 'package:chaostours/view/widget_logger_page.dart';
 import 'package:chaostours/view/widget_permissions_page.dart';
-import 'package:chaostours/view/widget_edit_trackpoint_tasks_page.dart';
+import 'package:chaostours/view/widget_edit_trackpoint.dart';
+import 'package:chaostours/view/widget_edit_pending_trackpoint.dart';
 import 'package:chaostours/view/widget_user_list.dart';
 import 'package:chaostours/view/widget_task_list.dart';
 import 'package:chaostours/view/widget_alias_list.dart';
@@ -75,7 +76,8 @@ enum AppRoutes {
   home('/'),
   // live
   liveTracking('/liveTracking'),
-  editTrackingTasks('/editTrackingTasks'),
+  editTrackPoint('/editTrackPoint'),
+  editPendingTrackPoint('/editPendingTrackPoint'),
   // task
   listTasks('/listTasks'),
   editTasks('/listTasks/editTasks'),
@@ -123,8 +125,10 @@ class AppWidgets {
         /// add/edit items routes
         // trackpoint
         AppRoutes.liveTracking.route: (context) => const WidgetTrackingPage(),
-        AppRoutes.editTrackingTasks.route: (context) =>
-            const WidgetEditTrackpointTasks(),
+        AppRoutes.editTrackPoint.route: (context) =>
+            const WidgetEditTrackPoint(),
+        AppRoutes.editPendingTrackPoint.route: (context) =>
+            const WidgetEditPendingTrackPoint(),
         // user
         AppRoutes.listUsers.route: (context) => const WidgetUserList(),
         AppRoutes.editUser.route: (context) => const WidgetUserEdit(),

@@ -521,8 +521,8 @@ class _WidgetOsm extends State<WidgetOsm> {
           strokeWidth: 10,
         ));
       }
-      if (bridge.gpsStartMoving != null) {
-        GPS gps = bridge.gpsStartMoving!;
+      if (bridge.trackPointGpsStartMoving != null) {
+        GPS gps = bridge.trackPointGpsStartMoving!;
         _controller.drawCircle(CircleOSM(
           key: "circle${++circleId}",
           centerPoint: GeoPoint(latitude: gps.lat, longitude: gps.lon),

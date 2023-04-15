@@ -19,10 +19,7 @@ class EventOnMainPaneChanged extends EventOn {
   EventOnMainPaneChanged(this.pane);
 }
 
-class EventOnTrackingStatusChanged extends EventOn {
-  final ModelTrackPoint tp;
-  EventOnTrackingStatusChanged(this.tp);
-}
+class EventOnTrackingStatusChanged extends EventOn {}
 
 /// <p><b>Deprecated!</b></p>
 /// moved to background tracking<br>

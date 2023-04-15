@@ -8,6 +8,8 @@ import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/cache.dart';
 
+/// required for serialization
+/// Todo: move data to Cache and make this class obsolete
 class PendingModelTrackPoint extends ModelTrackPoint {
   /// not yet saved active running trackpoint
   static PendingModelTrackPoint pendingTrackPoint = PendingModelTrackPoint(
@@ -17,12 +19,6 @@ class PendingModelTrackPoint extends ModelTrackPoint {
       idAlias: <int>[],
       deleted: 0,
       notes: '');
-
-  /// interval updated address of not yet saved trackPoint
-  static String pendingAddress = '';
-
-  /// trackPoint stored for widgets to edit parts of it
-  static PendingModelTrackPoint editTrackPoint = pendingTrackPoint;
 
   PendingModelTrackPoint(
       {required super.gps,

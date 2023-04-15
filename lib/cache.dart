@@ -26,25 +26,24 @@ enum JsonKeys {
 }
 */
 enum CacheKeys {
+  /// cache foreground to background
   cacheForegroundTriggerStatus(bool),
-  cacheForegroundTrackPointUpdates(List<ModelTrackPoint>),
-  cacheForegroundActiveTrackPoint(PendingModelTrackPoint),
 
   /// cache background to forground
   cacheBackgroundTrackingStatus(TrackingStatus),
   cacheBackgroundGpsStartMoving(PendingGps),
   cacheBackgroundGpsStartStanding(PendingGps),
+  cacheBackgroundGpsLastStatusChange(PendingGps),
   cacheBackgroundAliasIdList(List<int>),
   cacheBackgroundUserIdList(List<int>),
   cacheBackgroundTaskIdList(List<int>),
+  cacheBackgroundPreselectedUsers(List<int>),
   cacheBackgroundTrackPointUserNotes(String),
   cacheBackgroundLastGps(PendingGps),
   cacheBackgroundGpsPoints(List<PendingGps>),
   cacheBackgroundSmoothGpsPoints(List<PendingGps>),
   cacheBackgroundCalcGpsPoints(List<PendingGps>),
   cacheBackgroundAddress(String),
-  cacheBackgroundRecentTrackpoints(List<ModelTrackPoint>),
-  cacheBackgroundLastVisitedTrackpoints(List<ModelTrackPoint>),
 
   /// fileHandler
   fileHandlerStoragePath(String),
@@ -60,7 +59,6 @@ enum CacheKeys {
   /// globals
   globalsWeekDays(List<String>),
   globalsBackgroundTrackingEnabled(bool),
-  globalsPreselectedUsers(List<int>),
   globalsStatusStandingRequireAlias(bool),
   globalsTrackPointInterval(Duration),
   globalsOsmLookupInterval(Duration),

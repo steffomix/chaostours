@@ -23,9 +23,6 @@ class _GlobalDefaults {
   /// Looks for new background data.
   static Duration appTickDuration = Duration(seconds: 3);
 
-  /// Users who are on preselected for chaostours
-  static Set<int> preselectedUsers = {};
-
   /// User interactions can cause massive foreground gps lookups.
   /// to prevent application lags, gps is chached for some seconds
   static Duration cacheGpsTime = Duration(seconds: 10);
@@ -66,7 +63,6 @@ class _GlobalDefaults {
     Globals.backgroundTrackingEnabled = backgroundTrackingEnabled;
     Globals.statusStandingRequireAlias = statusStandingRequireAlias;
     Globals.appTickDuration = appTickDuration;
-    Globals.preselectedUsers = preselectedUsers;
     Globals.cacheGpsTime = cacheGpsTime;
     Globals.distanceTreshold = distanceTreshold;
     Globals.timeRangeTreshold = timeRangeTreshold;
@@ -88,7 +84,6 @@ class Globals {
   static bool statusStandingRequireAlias =
       _GlobalDefaults.statusStandingRequireAlias;
   static Duration appTickDuration = _GlobalDefaults.appTickDuration;
-  static Set<int> preselectedUsers = _GlobalDefaults.preselectedUsers;
   static Duration cacheGpsTime = _GlobalDefaults.cacheGpsTime;
   static int distanceTreshold = _GlobalDefaults.distanceTreshold;
   static Duration timeRangeTreshold = _GlobalDefaults.timeRangeTreshold;
@@ -97,17 +92,6 @@ class Globals {
   static int gpsMaxSpeed = _GlobalDefaults.gpsMaxSpeed;
   static OsmLookup osmLookupCondition = _GlobalDefaults.osmLookupCondition;
   static Duration osmLookupInterval = _GlobalDefaults.osmLookupInterval;
-  static Future<void> savePreselectedUsers() async {
-    Cache.setValue<List<int>>(
-        CacheKeys.globalsPreselectedUsers, preselectedUsers.toList());
-  }
-
-  static Future<Set<int>> loadPreselectedUsers() async {
-    preselectedUsers =
-        (await Cache.getValue<List<int>>(CacheKeys.globalsPreselectedUsers, []))
-            .toSet();
-    return preselectedUsers;
-  }
 
   static Future<void> loadSettings() async {
     try {
@@ -119,8 +103,6 @@ class Globals {
 
       appTickDuration = await Cache.getValue<Duration>(
           CacheKeys.globalsAppTickDuration, Duration(seconds: 1));
-
-      await loadPreselectedUsers();
 
       cacheGpsTime = await Cache.getValue<Duration>(
           CacheKeys.globalsCacheGpsTime, Duration(seconds: 10));
@@ -159,8 +141,6 @@ class Globals {
 
     await Cache.setValue<Duration>(
         CacheKeys.globalsAppTickDuration, appTickDuration);
-
-    savePreselectedUsers();
 
     await Cache.setValue<Duration>(CacheKeys.globalsCacheGpsTime, cacheGpsTime);
 
