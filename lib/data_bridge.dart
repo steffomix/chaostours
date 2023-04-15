@@ -21,13 +21,13 @@ class DataBridge {
   /// trigger status
   bool _triggerStatus = false;
   bool get statusTriggered => _triggerStatus;
-  Future<void> triggerStatus() async {
-    _triggerStatus = true;
+  Future<void> triggerStatus() async => await _saveTriggerStatus(true);
+  Future<void> triggerStatusExecuted() async => await _saveTriggerStatus(false);
+  Future<void> _saveTriggerStatus(bool status) async {
+    _triggerStatus = status;
     await Cache.setValue(
-        CacheKeys.cacheForegroundTriggerStatus, _triggerStatus);
+        CacheKeys.cacheEventForegroundTriggerStatus, _triggerStatus);
   }
-
-  void triggerStatusExecuted() => _triggerStatus = false;
 
   ///
   /// backround values
@@ -113,6 +113,8 @@ class DataBridge {
                 var status = trackingStatus.name;
                 await loadBackground(gps);
                 if (status != trackingStatus.name) {
+                  // reload modelTrackpoint
+                  ModelTrackPoint.open();
                   EventManager.fire<EventOnTrackingStatusChanged>(
                       EventOnTrackingStatusChanged());
                 }
@@ -133,16 +135,35 @@ class DataBridge {
     }
   }
 
+  Future<void> resetUserInput() async {
+    /// reset userdata
+    await Cache.setValue<List<int>>(CacheKeys.cacheBackgroundTaskIdList, []);
+    await Cache.setValue<List<int>>(
+        CacheKeys.cacheBackgroundUserIdList, trackPointPreselectedUserIdList);
+    await Cache.setValue<String>(
+        CacheKeys.cacheBackgroundTrackPointUserNotes, '');
+  }
+
+  Future<void> saveUserInput() async {
+    /// reset userdata
+    await Cache.setValue<List<int>>(
+        CacheKeys.cacheBackgroundTaskIdList, trackPointTaskIdList);
+    await Cache.setValue<List<int>>(
+        CacheKeys.cacheBackgroundUserIdList, trackPointUserIdList);
+    await Cache.setValue<String>(
+        CacheKeys.cacheBackgroundTrackPointUserNotes, trackPointUserNotes);
+  }
+
   /// load foreground by background
   Future<void> loadForeground(GPS gps) async {
     _triggerStatus = await Cache.getValue<bool>(
-        CacheKeys.cacheForegroundTriggerStatus, false);
+        CacheKeys.cacheEventForegroundTriggerStatus, false);
   }
 
   /// load background by foreground
   Future<void> loadBackground(GPS gps) async {
     _triggerStatus = await Cache.getValue<bool>(
-        CacheKeys.cacheForegroundTriggerStatus, false);
+        CacheKeys.cacheEventForegroundTriggerStatus, false);
 
     currentAddress =
         await Cache.getValue<String>(CacheKeys.cacheBackgroundAddress, '');
@@ -157,12 +178,13 @@ class DataBridge {
         CacheKeys.cacheBackgroundLastGps, PendingGps(gps.lat, gps.lon));
 
     trackPointGpsStartMoving = await Cache.getValue<PendingGps>(
-        CacheKeys.cacheBackgroundGpsStartMoving, PendingGps(gps.lat, gps.lon));
+        CacheKeys.cacheEventBackgroundGpsStartMoving,
+        PendingGps(gps.lat, gps.lon));
     trackPointGpsStartStanding = await Cache.getValue<PendingGps>(
-        CacheKeys.cacheBackgroundGpsStartStanding,
+        CacheKeys.cacheEventBackgroundGpsStartStanding,
         PendingGps(gps.lat, gps.lon));
     trackPointGpslastStatusChange = await Cache.getValue<PendingGps>(
-        CacheKeys.cacheBackgroundGpsLastStatusChange,
+        CacheKeys.cacheEventBackgroundGpsLastStatusChange,
         PendingGps(gps.lat, gps.lon));
 
     smoothGpsPoints = await Cache.getValue<List<PendingGps>>(
@@ -184,8 +206,6 @@ class DataBridge {
 
   /// load background
   Future<void> saveBackground(GPS gps) async {
-    await Cache.setValue<bool>(
-        CacheKeys.cacheForegroundTriggerStatus, _triggerStatus);
     //
     await Cache.setValue<TrackingStatus>(
         CacheKeys.cacheBackgroundTrackingStatus, trackingStatus);
@@ -205,18 +225,7 @@ class DataBridge {
     await Cache.setValue<PendingGps>(CacheKeys.cacheBackgroundLastGps,
         lastGps ?? PendingGps(gps.lat, gps.lon));
 
-    await Cache.setValue<PendingGps>(CacheKeys.cacheBackgroundGpsStartMoving,
-        trackPointGpsStartMoving ?? PendingGps(gps.lat, gps.lon));
-    await Cache.setValue<PendingGps>(CacheKeys.cacheBackgroundGpsStartStanding,
-        trackPointGpsStartStanding ?? PendingGps(gps.lat, gps.lon));
-
-    await Cache.setValue<String>(
-        CacheKeys.cacheBackgroundTrackPointUserNotes, trackPointUserNotes);
     await Cache.setValue<List<int>>(
         CacheKeys.cacheBackgroundAliasIdList, trackPointAliasIdList);
-    await Cache.setValue<List<int>>(
-        CacheKeys.cacheBackgroundTaskIdList, trackPointTaskIdList);
-    await Cache.setValue<List<int>>(
-        CacheKeys.cacheBackgroundUserIdList, trackPointUserIdList);
   }
 }

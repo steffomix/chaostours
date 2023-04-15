@@ -1,6 +1,7 @@
 import 'package:chaostours/globals.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/logger.dart';
+import 'package:chaostours/cache.dart';
 import 'package:chaostours/data_bridge.dart';
 import 'package:chaostours/address.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
@@ -42,10 +43,10 @@ class TrackPoint {
   TrackingStatus oldTrackingStatus = TrackingStatus.none;
 
   Future<void> startShared({required double lat, required double lon}) async {
-    // init dataBridge
-    DataBridge bridge = DataBridge.instance;
     // reload shared preferences
     await DataBridge.reload();
+    // init dataBridge
+    DataBridge bridge = DataBridge.instance;
     // load global settings
     await Globals.loadSettings();
 
@@ -118,15 +119,26 @@ class TrackPoint {
       if (currentTrackingStatus == oldTrackingStatus) {
         /// if nothing changed simply write data back
       } else {
-        /// else if status has changed we will need ModelAlias
-        await ModelAlias.open();
-
         /// status has changed to _status.
         /// if we are now moving, we need to save the gpsPoint where
         /// standing was detected, which is the last one in the list.
         if (currentTrackingStatus == TrackingStatus.moving) {
+          /// read trackpoints into database
+          await ModelTrackPoint.open();
+
+          /// else if status has changed we will need ModelAlias
+          await ModelAlias.open();
           bridge.trackPointGpsStartMoving = gps;
           bridge.trackPointGpslastStatusChange = gps;
+
+          await Cache.setValue<PendingGps>(
+              CacheKeys.cacheEventBackgroundGpsStartMoving,
+              bridge.trackPointGpsStartMoving!);
+
+          await Cache.setValue<PendingGps>(
+              CacheKeys.cacheEventBackgroundGpsLastStatusChange,
+              bridge.trackPointGpsStartMoving!);
+
           ModelTrackPoint newEntry = await createModelTrackPoint();
           await ModelTrackPoint.insert(newEntry);
 
@@ -140,11 +152,9 @@ class TrackPoint {
           }
           await ModelAlias.write();
 
-          /// reset data
+          /// reset processed data
           bridge.trackPointAliasIdList = [];
-          bridge.trackPointTaskIdList = [];
-          bridge.trackPointUserIdList = [];
-          bridge.trackPointUserNotes = '';
+          await bridge.resetUserInput();
 
           /// new status is standing
           /// remember address from detecting standing
@@ -163,6 +173,16 @@ class TrackPoint {
           }
           bridge.trackPointGpsStartStanding = gps;
           bridge.trackPointGpslastStatusChange = gps;
+
+          /// save special events
+          await Cache.setValue<PendingGps>(
+              CacheKeys.cacheEventBackgroundGpsStartStanding,
+              bridge.trackPointGpsStartStanding!);
+
+          await Cache.setValue<PendingGps>(
+              CacheKeys.cacheEventBackgroundGpsLastStatusChange,
+              bridge.trackPointGpsStartStanding!);
+
           await bridge.updateAliasIdList(secureCalcPoint);
         }
 
@@ -303,7 +323,6 @@ class TrackPoint {
     await logger.log('create new ModelTrackPoint');
     ModelTrackPoint tp = ModelTrackPoint(
         gps: gps,
-        trackPoints: gpsPoints.map((e) => e).toList(),
         idAlias: bridge.trackPointAliasIdList,
         timeStart: bridge.trackPointGpsStartMoving?.time ?? gps.time);
     tp.address = bridge.currentAddress; // should be loaded at this point

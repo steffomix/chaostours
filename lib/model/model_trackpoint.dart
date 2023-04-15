@@ -15,14 +15,12 @@ class PendingModelTrackPoint extends ModelTrackPoint {
   static PendingModelTrackPoint pendingTrackPoint = PendingModelTrackPoint(
       gps: GPS(0, 0),
       timeStart: DateTime.now(),
-      trackPoints: <GPS>[],
       idAlias: <int>[],
       deleted: 0,
       notes: '');
 
   PendingModelTrackPoint(
       {required super.gps,
-      required super.trackPoints,
       required super.idAlias,
       required super.timeStart,
       super.deleted,
@@ -48,15 +46,9 @@ class PendingModelTrackPoint extends ModelTrackPoint {
       timeEnd.toIso8601String(), // 4
       idAlias.join(','), // 5
       idTask.join(','), // 6
-      status == TrackingStatus.moving
-          ? trackPoints
-              .map((gps) => '${(gps.lat * 10000).round() / 10000},'
-                  '${(gps.lon * 10000).round() / 10000}')
-              .toList()
-              .join(';')
-          : '', // 7
-      encode(notes),
-      '|' // 8 (secure line end)
+      idUser.join(','), // 7
+      encode(notes), // 8
+      '|' // 9 (secure line end)
     ];
     return cols.join('\t');
   }
@@ -69,7 +61,7 @@ class PendingModelTrackPoint extends ModelTrackPoint {
   /// 4 timeEnd as above<br>
   /// 5 idAlias separated by ,<br>
   /// 6 idTask separated by ,<br>
-  /// 7 lat, lon TrackPoints separated by ; and reduced to four digits<br>
+  /// 7 idUser separated by ,<br>
   /// 8 notes
   /// 9 | as line end
   static PendingModelTrackPoint toSharedModel(String row) {
@@ -79,11 +71,11 @@ class PendingModelTrackPoint extends ModelTrackPoint {
         gps: gps,
         timeStart: DateTime.parse(p[3]),
         idAlias: ModelTrackPoint.parseIdList(p[5]),
-        trackPoints: ModelTrackPoint.parseGpsList(p[7]),
         deleted: 0);
     model.status = TrackingStatus.byValue(int.parse(p[0]));
     model.timeEnd = DateTime.parse(p[4]);
     model.idTask = ModelTrackPoint.parseIdList(p[6]);
+    model.idUser = ModelTrackPoint.parseIdList(p[7]);
     model.notes = decode(p[8]);
     return model;
   }
@@ -105,7 +97,6 @@ class ModelTrackPoint {
   GPS gps;
 
   /// "lat,lon;lat,lon;..."
-  List<GPS> trackPoints;
   DateTime timeStart;
   DateTime timeEnd = DateTime.now();
 
@@ -130,7 +121,6 @@ class ModelTrackPoint {
 
   ModelTrackPoint(
       {required this.gps,
-      required this.trackPoints,
       required this.idAlias,
       required this.timeStart,
       this.deleted = 0,
@@ -288,14 +278,14 @@ class ModelTrackPoint {
         deleted: int.parse(p[1]),
         gps: gps,
         timeStart: DateTime.parse(p[5]),
-        trackPoints: parseGpsList(p[7]),
-        idAlias: parseIdList(p[8]),
+        idAlias: parseIdList(p[7]),
         notes: decode(p[11]));
 
     tp._id = int.parse(p[0]);
     tp.status = TrackingStatus.byValue(int.parse(p[2]));
     tp.timeEnd = DateTime.parse(p[6]);
-    tp.idTask = parseIdList(p[9]);
+    tp.idTask = parseIdList(p[8]);
+    tp.idUser = parseIdList(p[9]);
     tp.address = decode(p[10]);
     return tp;
   }
@@ -310,15 +300,9 @@ class ModelTrackPoint {
       gps.lon.toString(), // 4
       timeStart.toIso8601String(), // 5
       timeEnd.toIso8601String(), // 6
-      status == TrackingStatus.moving
-          ? trackPoints
-              .map((gps) => '${(gps.lat * 10000).round() / 10000},'
-                  '${(gps.lon * 10000).round() / 10000}')
-              .toList()
-              .join(';')
-          : '', //list.join(';'), // 7
-      idAlias.join(','), // 8
-      idTask.join(','), // 9
+      idAlias.join(','), // 7
+      idTask.join(','), // 8
+      idUser.join(','), // 9
       encode(address), // 10
       encode(notes), // 11
       '|'

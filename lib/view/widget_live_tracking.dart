@@ -19,7 +19,7 @@ import 'package:chaostours/gps.dart';
 import 'package:chaostours/globals.dart';
 import 'package:chaostours/screen.dart';
 
-enum TrackingPageDisplayMode {
+enum _DisplayMode {
   /// shows gps list
   live,
 
@@ -43,7 +43,7 @@ class WidgetTrackingPage extends StatefulWidget {
 class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   static final Logger logger = Logger.logger<WidgetTrackingPage>();
 
-  TrackingPageDisplayMode displayMode = TrackingPageDisplayMode.live;
+  _DisplayMode displayMode = _DisplayMode.live;
   static int _bottomBarIndex = 0;
 
   final DataBridge bridge = DataBridge.instance;
@@ -88,7 +88,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   }
 
   void onCacheLoaded(EventOnCacheLoaded e) {
-    if (displayMode == TrackingPageDisplayMode.gps) {
+    if (displayMode == _DisplayMode.gps) {
       osmGpsPoints(EventOnWidgetDisposed());
     }
   }
@@ -111,19 +111,19 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       body = AppWidgets.loading('Waiting for GPS Signal');
     } else {
       switch (displayMode) {
-        case TrackingPageDisplayMode.recentTrackPoints:
+        case _DisplayMode.recentTrackPoints:
           body = ListView(
               children: renderRecentTrackPointList(
                   context, ModelTrackPoint.recentTrackPoints()));
           break;
 
         /// tasks mode
-        case TrackingPageDisplayMode.gps:
+        case _DisplayMode.gps:
           body = renderOSM(context);
           break;
 
         /// last visited mode
-        case TrackingPageDisplayMode.lastVisited:
+        case _DisplayMode.lastVisited:
           GPS gps = bridge.gpsPoints.first;
           body = ListView(
               children: renderRecentTrackPointList(
@@ -187,7 +187,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
           key: "circle${++circleId}",
           centerPoint: osm.GeoPoint(latitude: gps.lat, longitude: gps.lon),
           radius: 2,
-          color: const Color.fromARGB(255, 80, 80, 80),
+          color: const Color.fromARGB(255, 111, 111, 111),
           strokeWidth: 10,
         ));
       }
@@ -240,16 +240,16 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         onTap: (int id) {
           switch (id) {
             case 1: // 2.
-              displayMode = TrackingPageDisplayMode.lastVisited;
+              displayMode = _DisplayMode.lastVisited;
               break;
             case 2: // 3.
-              displayMode = TrackingPageDisplayMode.recentTrackPoints;
+              displayMode = _DisplayMode.recentTrackPoints;
               break;
             case 3: // 4.
-              displayMode = TrackingPageDisplayMode.gps;
+              displayMode = _DisplayMode.gps;
               break;
             default: // 5.
-              displayMode = TrackingPageDisplayMode.live;
+              displayMode = _DisplayMode.live;
           }
           _bottomBarIndex = id;
           setState(() {});
@@ -265,13 +265,16 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   }
 
   Future<void> onTick(EventOnAppTick tick) async {
-    setState(() {});
+    if (displayMode != _DisplayMode.gps) {
+      setState(() {});
+    }
   }
 
   Widget renderTrackPoint(BuildContext context) {
     if (bridge.gpsPoints.isEmpty) {
       return AppWidgets.loading('Waiting for GPS from Background...');
     }
+    Widget divider = AppWidgets.divider();
     Screen screen = Screen(context);
     DateTime tStart = bridge.trackPointGpslastStatusChange?.time ??
         bridge.gpsPoints.last.time;
@@ -295,9 +298,9 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
           .toList();
       String notes = bridge.trackPointUserNotes;
 
-      String sAlias = alias.isEmpty ? ' ---' : '\n  ${alias.join('\n')}';
-      String sTasks = task.isEmpty ? ' ---' : '\n  ${task.join('\n')}';
-      String sUsers = users.isEmpty ? ' ---' : '\n  ${users.join('\n')}';
+      String sAlias = alias.isEmpty ? ' ---' : alias.join('\n');
+      String sTasks = task.isEmpty ? ' ---' : task.join('\n');
+      String sUsers = users.isEmpty ? ' ---' : users.join('\n');
       Widget listBody = SizedBox(
           width: screen.width - 50,
           child: Column(
@@ -323,16 +326,20 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
               Center(
                   child: Text(
                       '${tStart.hour}:${tStart.minute} - ${tEnd.hour}:${tEnd.minute}')),
-              AppWidgets.divider(),
+              divider,
               Text('Alias: $sAlias', softWrap: true),
               Text(
                   '\nOSM: "${bridge.currentAddress.isEmpty ? '---' : bridge.currentAddress}"',
                   softWrap: true),
-              AppWidgets.divider(),
-              Text('Personal: $sUsers'),
-              Text('\nAufgaben: $sTasks', softWrap: true),
-              AppWidgets.divider(),
-              Text('Notizen: $notes')
+              divider,
+              const Text('Personal:'),
+              Text(sUsers),
+              divider,
+              const Text('Aufgaben:'),
+              Text(sTasks),
+              divider,
+              const Text('Notizen:'),
+              Text(notes)
             ],
           ));
 
@@ -357,11 +364,12 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       var action = bridge.trackingStatus == TrackingStatus.standing
           ? Column(children: [
               const Text('\n'),
-              iconEdit,
+              iconTrigger,
               const Text('\n'),
-              AppWidgets.divider(),
               const Text('\n'),
-              iconTrigger
+              const Text('\n'),
+              const Text('\n'),
+              iconEdit
             ])
           : Column(children: [iconEdit]);
 
@@ -390,6 +398,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   List<Widget> renderRecentTrackPointList(
       BuildContext context, List<ModelTrackPoint> tpList) {
     List<Widget> listItems = [];
+    Widget divider = AppWidgets.divider();
     try {
       for (var tp in tpList) {
         // get task and alias models
@@ -397,6 +406,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
             tp.idAlias.map((id) => ModelAlias.getAlias(id).alias).toList();
 
         var tasks = tp.idTask.map((id) => ModelTask.getTask(id).task).toList();
+        var users = tp.idUser.map((id) => ModelUser.getUser(id).user).toList();
 
         ///
 
@@ -408,9 +418,15 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                     ? Text('OSM Addr: ${tp.address}')
                     : Text('Alias: - ${alias.join('\n- ')}')),
             Center(child: Text(AppWidgets.timeInfo(tp.timeStart, tp.timeEnd))),
+            divider,
+            Text(
+                'Personal:${tasks.isEmpty ? ' -' : '\n   - ${users.join('\n   - ')}'}'),
+            divider,
             Text(
                 'Aufgaben:${tasks.isEmpty ? ' -' : '\n   - ${tasks.join('\n   - ')}'}'),
-            Text('Notizen ${tp.notes}')
+            divider,
+            const Text('Notizen:'),
+            Text(tp.notes),
           ]),
           leading: IconButton(
               icon: const Icon(Icons.edit_location_outlined),

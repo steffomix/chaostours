@@ -27,7 +27,7 @@ class _WidgetAddTasksState extends State<WidgetEditPendingTrackPoint> {
   /// EventListener
   BuildContext? _context;
 
-  late DataBridge bridge = DataBridge.instance;
+  DataBridge bridge = DataBridge.instance;
 
   /// editable fields
   List<int> tpTasks = [];
@@ -42,6 +42,9 @@ class _WidgetAddTasksState extends State<WidgetEditPendingTrackPoint> {
 
   @override
   void initState() {
+    tpTasks = bridge.trackPointTaskIdList;
+    tpUsers = bridge.trackPointUserIdList;
+    tpNotes.text = bridge.trackPointUserNotes;
     EventManager.listen<EventOnTrackingStatusChanged>(onTrackingStatusChanged);
     super.initState();
   }
@@ -63,9 +66,8 @@ class _WidgetAddTasksState extends State<WidgetEditPendingTrackPoint> {
     List<String> alias = bridge.trackPointAliasIdList
         .map((id) => ModelAlias.getAlias(id).alias)
         .toList();
-    List<String> tasks = bridge.trackPointTaskIdList
-        .map((id) => ModelTask.getTask(id).task)
-        .toList();
+    List<String> tasks =
+        tpTasks.map((id) => ModelTask.getTask(id).task).toList();
     DateTime tStart = bridge.trackPointGpsStartStanding?.time ?? DateTime.now();
     DateTime tEnd = DateTime.now();
     return Container(
@@ -83,7 +85,7 @@ class _WidgetAddTasksState extends State<WidgetEditPendingTrackPoint> {
   }
 
   List<Widget> taskCheckboxes(context) {
-    var referenceList = bridge.trackPointTaskIdList;
+    var referenceList = tpTasks;
     var checkBoxes = <Widget>[];
     for (var model in ModelTask.getAll()) {
       if (!model.deleted) {
@@ -101,7 +103,7 @@ class _WidgetAddTasksState extends State<WidgetEditPendingTrackPoint> {
   }
 
   List<Widget> userCheckboxes(context) {
-    var referenceList = bridge.trackPointUserIdList;
+    var referenceList = tpUsers;
     var checkBoxes = <Widget>[];
     for (var model in ModelUser.getAll()) {
       if (!model.deleted) {
@@ -123,7 +125,7 @@ class _WidgetAddTasksState extends State<WidgetEditPendingTrackPoint> {
     /// render selected users
     List<String> userList = [];
     for (var model in ModelUser.getAll()) {
-      if (bridge.trackPointUserIdList.contains(model.id)) {
+      if (tpUsers.contains(model.id)) {
         userList.add(model.user);
       }
     }
@@ -152,7 +154,7 @@ class _WidgetAddTasksState extends State<WidgetEditPendingTrackPoint> {
     /// render selected tasks
     List<String> taskList = [];
     for (var item in ModelTask.getAll()) {
-      if (bridge.trackPointTaskIdList.contains(item.id)) {
+      if (tpTasks.contains(item.id)) {
         taskList.add(item.task);
       }
     }
@@ -250,9 +252,14 @@ class _WidgetAddTasksState extends State<WidgetEditPendingTrackPoint> {
                 icon: Icon(Icons.cancel), label: 'Abbrechen'),
           ],
           onTap: (int id) {
-            if (id == 0) {
-              ModelAlias.update().then(
-                  (_) => AppWidgets.navigate(context, AppRoutes.listAlias));
+            if (id == 0 && modified.value) {
+              bridge.trackPointTaskIdList = tpTasks;
+              bridge.trackPointUserIdList = tpUsers;
+              bridge.trackPointUserNotes = tpNotes.text;
+              bridge.saveUserInput().then((_) {
+                modified.value = false;
+                setState(() {});
+              });
             } else {
               Navigator.pop(context);
             }

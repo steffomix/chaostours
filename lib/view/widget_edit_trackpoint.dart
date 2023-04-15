@@ -29,6 +29,8 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
 
   late ModelTrackPoint trackPoint;
 
+  bool initialized = false;
+
   /// modify
   ValueNotifier<bool> modified = ValueNotifier<bool>(false);
   void modify() {
@@ -49,8 +51,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
   Widget trackPointInfo(BuildContext context) {
     var alias =
         trackPoint.idAlias.map((id) => ModelAlias.getAlias(id).alias).toList();
-    var tasks =
-        trackPoint.idTask.map((id) => ModelTask.getTask(id).task).toList();
+    var tasks = tpTasks.map((id) => ModelTask.getTask(id).task).toList();
 
     return Container(
         padding: const EdgeInsets.all(10),
@@ -67,7 +68,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
   }
 
   List<Widget> taskCheckboxes(context) {
-    var referenceList = trackPoint.idTask;
+    var referenceList = tpTasks;
     var checkBoxes = <Widget>[];
     for (var tp in ModelTask.getAll()) {
       if (!tp.deleted) {
@@ -85,7 +86,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
   }
 
   List<Widget> userCheckboxes(context) {
-    var referenceList = trackPoint.idUser;
+    var referenceList = tpUsers;
     var checkBoxes = <Widget>[];
     for (var tp in ModelUser.getAll()) {
       if (!tp.deleted) {
@@ -107,7 +108,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
     /// render selected users
     List<String> userList = [];
     for (var item in ModelUser.getAll()) {
-      if (trackPoint.idUser.contains(item.id)) {
+      if (tpUsers.contains(item.id)) {
         userList.add(item.user);
       }
     }
@@ -136,7 +137,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
     /// render selected tasks
     List<String> taskList = [];
     for (var item in ModelTask.getAll()) {
-      if (trackPoint.idTask.contains(item.id)) {
+      if (tpTasks.contains(item.id)) {
         taskList.add(item.task);
       }
     }
@@ -187,8 +188,14 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
   Widget build(BuildContext context) {
     Widget body;
     try {
-      final id = (ModalRoute.of(context)?.settings.arguments ?? 0) as int;
-      trackPoint = ModelTrackPoint.byId(id);
+      if (!initialized) {
+        final id = (ModalRoute.of(context)?.settings.arguments ?? 0) as int;
+        trackPoint = ModelTrackPoint.byId(id);
+        tpTasks = trackPoint.idTask;
+        tpUsers = trackPoint.idUser;
+        tpNotes.text = trackPoint.notes;
+        initialized = true;
+      }
       body = ListView(children: [
         /// current Trackpoint time info
         trackPointInfo(context),
@@ -232,8 +239,6 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
           ],
           onTap: (int id) {
             if (id == 0 && modified.value) {
-              trackPoint.idTask = tpTasks;
-              trackPoint.idUser = tpUsers;
               trackPoint.notes = tpNotes.text;
               ModelTrackPoint.update(trackPoint)
                   .then((_) => Navigator.pop(context));
