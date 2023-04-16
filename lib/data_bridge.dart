@@ -60,43 +60,6 @@ class DataBridge {
   // foreground only
   List<int> trackPointPreselectedUserIdList = [];
 
-  /// make sure ModelAlias is opened and Cache is reloaded
-  Future<void> updateAliasIdList(GPS gps) async {
-    /// write new entry only if no restricted alias is present
-    var restrictedAlias = false;
-
-    /// if this area is not restricted
-    /// we reuse this list to update lastVisited
-    List<ModelAlias> aliasList = [];
-
-    for (ModelAlias alias in ModelAlias.nextAlias(gps: gps)) {
-      if (alias.deleted) {
-        // don't add deleted items
-        continue;
-      }
-
-      /// if there is only one restricted alias
-      /// skip the whole thing and save nothing
-      if (alias.status == AliasStatus.restricted) {
-        restrictedAlias = true;
-        aliasList.clear();
-        break;
-      }
-
-      /// add alias
-      aliasList.add(alias);
-    }
-
-    if (!restrictedAlias &&
-        (!Globals.statusStandingRequireAlias ||
-            (Globals.statusStandingRequireAlias && aliasList.isNotEmpty))) {
-      trackPointAliasIdList = aliasList.map((e) => e.id).toList();
-    } else {
-      logger.log(
-          'New trackpoint not saved due to app settings- or alias restrictions');
-    }
-  }
-
   /// forground interval
   /// save foreground, load background and fire event
   static bool _serviceRunning = false;
@@ -133,15 +96,6 @@ class DataBridge {
         }
       });
     }
-  }
-
-  Future<void> resetUserInput() async {
-    /// reset userdata
-    await Cache.setValue<List<int>>(CacheKeys.cacheBackgroundTaskIdList, []);
-    await Cache.setValue<List<int>>(
-        CacheKeys.cacheBackgroundUserIdList, trackPointPreselectedUserIdList);
-    await Cache.setValue<String>(
-        CacheKeys.cacheBackgroundTrackPointUserNotes, '');
   }
 
   Future<void> saveUserInput() async {

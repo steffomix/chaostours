@@ -4,6 +4,7 @@ import 'package:flutter_osm_plugin/flutter_osm_plugin.dart' as osm;
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/view/widget_disposed.dart';
 import 'package:chaostours/event_manager.dart';
+import 'package:chaostours/cache.dart';
 import 'package:chaostours/data_bridge.dart';
 import 'package:chaostours/background_process/trackpoint.dart';
 import 'package:chaostours/util.dart' as util;
@@ -58,6 +59,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   @override
   void initState() {
     DataBridge.instance.startService();
+    updateAliasList();
     EventManager.listen<EventOnAppTick>(onTick);
     EventManager.listen<EventOnAddressLookup>(onAddressLookup);
     EventManager.listen<EventOnWidgetDisposed>(osmGpsPoints);
@@ -68,11 +70,13 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     try {
       GPS.gps().then((GPS gps) {
         DataBridge.instance.loadBackground(gps).then((_) {
-          setState(() {});
+          if (mounted && displayMode == _DisplayMode.live) {
+            setState(() {});
+          }
         });
       });
     } catch (e) {
-      logger.warn('osm init no gps: $e');
+      logger.warn('init state, force loadBackground: $e');
     }
   }
 
@@ -87,10 +91,26 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     super.dispose();
   }
 
+  void updateAliasList() {
+    try {
+      if (displayMode == _DisplayMode.live && bridge.calcGpsPoints.isNotEmpty) {
+        bridge.trackPointAliasIdList =
+            ModelAlias.nextAlias(gps: bridge.calcGpsPoints.first)
+                .map((e) => e.id)
+                .toList();
+        Cache.setValue<List<int>>(
+            CacheKeys.cacheBackgroundAliasIdList, bridge.trackPointAliasIdList);
+      }
+    } catch (e, stk) {
+      logger.error('update alias idList: $e', stk);
+    }
+  }
+
   void onCacheLoaded(EventOnCacheLoaded e) {
     if (displayMode == _DisplayMode.gps) {
       osmGpsPoints(EventOnWidgetDisposed());
     }
+    updateAliasList();
   }
 
   Widget renderListViewBody(BuildContext context, List<Widget> list) {

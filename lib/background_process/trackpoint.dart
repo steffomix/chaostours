@@ -3,9 +3,8 @@ import 'package:chaostours/gps.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/cache.dart';
 import 'package:chaostours/data_bridge.dart';
-import 'package:chaostours/address.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
-import 'package:chaostours/model/model_alias.dart'; // for read only
+import 'package:chaostours/model/model_alias.dart';
 
 enum TrackingStatus {
   none(0),
@@ -123,54 +122,109 @@ class TrackPoint {
         /// if we are now moving, we need to save the gpsPoint where
         /// standing was detected, which is the last one in the list.
         if (currentTrackingStatus == TrackingStatus.moving) {
-          /// read trackpoints into database
-          await ModelTrackPoint.open();
+          /// update osm address
+          if (Globals.osmLookupCondition == OsmLookup.onStatus) {
+            await bridge.setAddress(gps);
+          }
 
-          /// else if status has changed we will need ModelAlias
-          await ModelAlias.open();
+          ///
+          ///     ---- save event data ---
+          ///
           bridge.trackPointGpsStartMoving = gps;
           bridge.trackPointGpslastStatusChange = gps;
 
+          /// save new start moving event
           await Cache.setValue<PendingGps>(
               CacheKeys.cacheEventBackgroundGpsStartMoving,
               bridge.trackPointGpsStartMoving!);
 
+          /// save general status changed event
           await Cache.setValue<PendingGps>(
               CacheKeys.cacheEventBackgroundGpsLastStatusChange,
               bridge.trackPointGpsStartMoving!);
 
-          ModelTrackPoint newEntry = await createModelTrackPoint();
-          await ModelTrackPoint.insert(newEntry);
+          ///
+          ///   --- update alias models from cached list ---
+          ///
+          await ModelAlias.open();
+          List<ModelAlias> aliasList = [];
 
-          /// write alias info into cached found alias
-          for (var item in bridge.trackPointAliasIdList
-              .map((id) => ModelAlias.getAlias(id))) {
-            if (!item.deleted) {
-              item.lastVisited = bridge.trackPointGpsStartStanding!.time;
-              item.timesVisited++;
+          /// update aliaslist if possible
+          try {
+            bridge.trackPointGpsStartStanding ??
+                (bridge.trackPointAliasIdList = ModelAlias.nextAlias(
+                        gps: bridge.trackPointGpsStartStanding!)
+                    .map((e) => e.id)
+                    .toList());
+          } catch (e, stk) {
+            logger.error('update cached alias idList: $e', stk);
+          }
+
+          /// filter alias list
+          for (var id in bridge.trackPointAliasIdList) {
+            try {
+              ModelAlias model = ModelAlias.getAlias(id);
+              if (!model.deleted && model.status != AliasStatus.restricted) {
+                aliasList.add(model);
+              }
+            } catch (e, stk) {
+              logger.error('select alias from cached idList: $e', stk);
             }
           }
-          await ModelAlias.write();
 
-          /// reset processed data
+          ///
+          ///     --- insert and update database entrys ---
+          ///
+          if ((!Globals.statusStandingRequireAlias ||
+              (Globals.statusStandingRequireAlias && aliasList.isNotEmpty))) {
+            /// create and insert new trackpoint
+            ModelTrackPoint newTrackPoint = ModelTrackPoint(
+                gps: gps,
+                idAlias: bridge.trackPointAliasIdList,
+                timeStart: bridge.trackPointGpsStartStanding?.time ?? gps.time);
+            newTrackPoint.address = bridge.currentAddress;
+            newTrackPoint.status = oldTrackingStatus;
+            newTrackPoint.timeEnd = gpsPoints.first.time;
+            newTrackPoint.idTask = bridge.trackPointTaskIdList;
+            newTrackPoint.idUser = bridge.trackPointUserIdList;
+            newTrackPoint.notes = bridge.trackPointUserNotes;
+
+            /// insert trackpoint
+            await ModelTrackPoint.open();
+            await ModelTrackPoint.insert(newTrackPoint);
+
+            /// update alias
+            if (aliasList.isNotEmpty) {
+              for (var model in aliasList) {
+                model.lastVisited = bridge.trackPointGpsStartStanding!.time;
+                model.timesVisited++;
+              }
+              await ModelAlias.write();
+            }
+          } else {
+            logger.log(
+                'New trackpoint not saved due to app settings- or alias restrictions');
+          }
+
+          ///
+          ///     ---- cleanup ----
+          ///
+          /// reset alias list
           bridge.trackPointAliasIdList = [];
-          await bridge.resetUserInput();
+          await Cache.setValue<List<int>>(CacheKeys.cacheBackgroundAliasIdList,
+              bridge.trackPointAliasIdList);
 
+          /// reset user inputs
+          await Cache.setValue<List<int>>(
+              CacheKeys.cacheBackgroundTaskIdList, []);
+          await Cache.setValue<List<int>>(CacheKeys.cacheBackgroundUserIdList,
+              bridge.trackPointPreselectedUserIdList);
+          await Cache.setValue<String>(
+              CacheKeys.cacheBackgroundTrackPointUserNotes, '');
+
+          ///
+        } else if (currentTrackingStatus == TrackingStatus.standing) {
           /// new status is standing
-          /// remember address from detecting standing
-          /// to be used in createModelTrackPoint on next status change
-          if (Globals.osmLookupCondition != OsmLookup.never) {
-            await bridge.setAddress(gps);
-          }
-        } else {
-          /// new status is standing
-          /// Tasks for this event:
-          /// - cache address if allowed
-          /// - cache gps point "gpsStartStanding" and time standing started
-          /// - cache alias ids
-          if (Globals.osmLookupCondition == OsmLookup.onStatus) {
-            await bridge.setAddress(gps);
-          }
           bridge.trackPointGpsStartStanding = gps;
           bridge.trackPointGpslastStatusChange = gps;
 
@@ -183,13 +237,43 @@ class TrackPoint {
               CacheKeys.cacheEventBackgroundGpsLastStatusChange,
               bridge.trackPointGpsStartStanding!);
 
-          await bridge.updateAliasIdList(secureCalcPoint);
+          ModelAlias.open();
+          List<ModelAlias> aliasList = [];
+
+          /// select alias list
+          for (ModelAlias model in ModelAlias.nextAlias(gps: gps)) {
+            if (model.deleted || model.status == AliasStatus.restricted) {
+              // don't add deleted or restricted items
+              continue;
+            }
+            aliasList.add(model);
+          }
+
+          /// cache alias id list if wanted
+          if (aliasList.isNotEmpty &&
+              (!Globals.statusStandingRequireAlias ||
+                  (Globals.statusStandingRequireAlias &&
+                      aliasList.isNotEmpty))) {
+            bridge.trackPointAliasIdList = aliasList.map((e) => e.id).toList();
+          } else {
+            logger.log(
+                'New trackpoint not saved due to app settings- or alias restrictions');
+          }
+          Cache.setValue<List<int>>(CacheKeys.cacheBackgroundAliasIdList,
+              bridge.trackPointAliasIdList);
+
+          /// lookup address
+          if (Globals.osmLookupCondition == OsmLookup.onStatus) {
+            await bridge.setAddress(gps);
+          }
         }
 
-        /// reset gpspoints
+        /// general cleanup on status change
         gpsPoints.clear();
         gpsPoints.add(gps);
       }
+
+      /// lookup address on every interval
       if (Globals.osmLookupCondition == OsmLookup.always) {
         await bridge.setAddress(gps);
       }
@@ -315,22 +399,5 @@ class TrackPoint {
         currentTrackingStatus = TrackingStatus.standing;
       }
     }
-  }
-
-  Future<ModelTrackPoint> createModelTrackPoint() async {
-    DataBridge bridge = DataBridge.instance;
-    GPS gps = bridge.trackPointGpsStartStanding!;
-    await logger.log('create new ModelTrackPoint');
-    ModelTrackPoint tp = ModelTrackPoint(
-        gps: gps,
-        idAlias: bridge.trackPointAliasIdList,
-        timeStart: bridge.trackPointGpsStartMoving?.time ?? gps.time);
-    tp.address = bridge.currentAddress; // should be loaded at this point
-    tp.status = oldTrackingStatus;
-    tp.timeEnd = gpsPoints.first.time;
-    tp.idTask = bridge.trackPointTaskIdList;
-    tp.idUser = bridge.trackPointUserIdList;
-    tp.notes = bridge.trackPointUserNotes;
-    return tp;
   }
 }
