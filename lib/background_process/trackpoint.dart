@@ -58,7 +58,7 @@ class TrackPoint {
     bridge.trackPointGpslastStatusChange ??= gps;
 
     // load last session data
-    await bridge.loadBackground(gps);
+    await bridge.loadSession(gps);
 
     /// load if user triggered status change to moving
     await bridge.loadForeground(gps);
@@ -81,15 +81,18 @@ class TrackPoint {
       /// remember old status
       oldTrackingStatus = currentTrackingStatus;
 
-      /// save 10 times of gpsPoints needed for one time range calculation
-      while (gpsPoints.length >
-          (Globals.timeRangeTreshold.inSeconds /
-                  Globals.trackPointInterval.inSeconds *
-                  10)
-              .round()) {
-        // don't remove the very last.
-        // it's required to measure durations
-        gpsPoints.removeAt(gpsPoints.length - 2);
+      /// prune down to 10 times of gpsPoints needed for one time range calculation
+      /// except we are moving
+      if (currentTrackingStatus != TrackingStatus.moving) {
+        while (gpsPoints.length >
+            (Globals.timeRangeTreshold.inSeconds /
+                    Globals.trackPointInterval.inSeconds *
+                    10)
+                .round()) {
+          // don't remove the very last.
+          // it's required to measure durations
+          gpsPoints.removeAt(gpsPoints.length - 2);
+        }
       }
 
       /// filter points for trackpoint calculation
@@ -97,30 +100,25 @@ class TrackPoint {
       calculateSmoothPoints();
       calculateCalcPoints();
 
-      /// secureCalcPoint may be needed if user triggers status moving
-      /// and no calc points are yet available
-      PendingGps secureCalcPoint;
-      if (calcGpsPoints.isNotEmpty) {
-        secureCalcPoint = calcGpsPoints.first;
-      } else if (smoothGpsPoints.isNotEmpty) {
-        secureCalcPoint = smoothGpsPoints.first;
-      } else {
-        secureCalcPoint = gps;
-      }
-
       ///
       /// heart of this whole app:
       /// process trackpoint for new status
       ///
       trackPoint();
 
+      /// get a secure calc point if user has triggered status change
+      if (calcGpsPoints.isNotEmpty) {
+        gps = calcGpsPoints.first;
+      } else if (smoothGpsPoints.isNotEmpty) {
+        gps = smoothGpsPoints.first;
+      } else {
+        gps = gps;
+      }
+
       /// if nothing has changed, nothing to do
       if (currentTrackingStatus == oldTrackingStatus) {
         /// if nothing changed simply write data back
       } else {
-        /// status has changed to _status.
-        /// if we are now moving, we need to save the gpsPoint where
-        /// standing was detected, which is the last one in the list.
         if (currentTrackingStatus == TrackingStatus.moving) {
           /// update osm address
           if (Globals.osmLookupCondition == OsmLookup.onStatus) {
@@ -181,10 +179,12 @@ class TrackPoint {
             ModelTrackPoint newTrackPoint = ModelTrackPoint(
                 gps: gps,
                 idAlias: bridge.trackPointAliasIdList,
-                timeStart: bridge.trackPointGpsStartStanding?.time ?? gps.time);
+                timeStart: bridge.trackPointGpsStartStanding?.time ??
+                    gps.time.subtract(Globals.timeRangeTreshold));
             newTrackPoint.address = bridge.currentAddress;
             newTrackPoint.status = oldTrackingStatus;
-            newTrackPoint.timeEnd = gpsPoints.first.time;
+            newTrackPoint.timeEnd =
+                gpsPoints.first.time.subtract(Globals.trackPointInterval);
             newTrackPoint.idTask = bridge.trackPointTaskIdList;
             newTrackPoint.idUser = bridge.trackPointUserIdList;
             newTrackPoint.notes = bridge.trackPointUserNotes;
@@ -207,23 +207,12 @@ class TrackPoint {
           }
 
           ///
-          ///     ---- cleanup ----
-          ///
-          /// reset alias list
-          bridge.trackPointAliasIdList = [];
-          await Cache.setValue<List<int>>(CacheKeys.cacheBackgroundAliasIdList,
-              bridge.trackPointAliasIdList);
-
-          /// reset user inputs
-          await Cache.setValue<List<int>>(
-              CacheKeys.cacheBackgroundTaskIdList, []);
-          await Cache.setValue<List<int>>(CacheKeys.cacheBackgroundUserIdList,
-              bridge.trackPointPreselectedUserIdList);
-          await Cache.setValue<String>(
-              CacheKeys.cacheBackgroundTrackPointUserNotes, '');
-
-          ///
         } else if (currentTrackingStatus == TrackingStatus.standing) {
+          /// lookup address if wanted
+          if (Globals.osmLookupCondition == OsmLookup.onStatus) {
+            await bridge.setAddress(gps);
+          }
+
           /// new status is standing
           bridge.trackPointGpsStartStanding = gps;
           bridge.trackPointGpslastStatusChange = gps;
@@ -255,17 +244,17 @@ class TrackPoint {
                   (Globals.statusStandingRequireAlias &&
                       aliasList.isNotEmpty))) {
             bridge.trackPointAliasIdList = aliasList.map((e) => e.id).toList();
-          } else {
-            logger.log(
-                'New trackpoint not saved due to app settings- or alias restrictions');
           }
-          Cache.setValue<List<int>>(CacheKeys.cacheBackgroundAliasIdList,
+          await Cache.setValue<List<int>>(CacheKeys.cacheBackgroundAliasIdList,
               bridge.trackPointAliasIdList);
 
-          /// lookup address
-          if (Globals.osmLookupCondition == OsmLookup.onStatus) {
-            await bridge.setAddress(gps);
-          }
+          /// reset user inputs
+          await Cache.setValue<List<int>>(
+              CacheKeys.cacheBackgroundTaskIdList, []);
+          await Cache.setValue<List<int>>(CacheKeys.cacheBackgroundUserIdList,
+              bridge.trackPointPreselectedUserIdList);
+          await Cache.setValue<String>(
+              CacheKeys.cacheBackgroundTrackPointUserNotes, '');
         }
 
         /// general cleanup on status change
@@ -292,7 +281,7 @@ class TrackPoint {
 
     try {
       /// save status and gpsPoints for next session and foreground live tracking view
-      await bridge.saveBackground(gps);
+      await bridge.saveSession(gps);
     } catch (e, stk) {
       logger.error('save backround finaly; $e', stk);
     }

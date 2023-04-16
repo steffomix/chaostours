@@ -102,7 +102,7 @@ class _WidgetUserList extends State<WidgetUserList> {
       if (!m.deleted) {
         checkBoxes.add(createCheckbox(CheckboxController(
             idReference: m.id,
-            referenceList: preselectedUsers.toList(),
+            referenceList: preselectedUsers,
             deleted: m.deleted,
             title: m.user,
             subtitle: m.notes)));
@@ -226,12 +226,15 @@ class _WidgetUserList extends State<WidgetUserList> {
             ],
             onTap: (int id) {
               if (id == 0 && modified.value) {
-                Cache.setValue(CacheKeys.cacheBackgroundPreselectedUsers,
+                Cache.setValue<List<int>>(
+                        CacheKeys.cacheBackgroundPreselectedUsers,
                         preselectedUsers)
                     .then((_) {
                   modified.value = false;
                   dropdownUserIsOpen = false;
                   setState(() {});
+                }).onError((e, stk) {
+                  logger.error('save preselected users: $e', stk);
                 });
               }
               if (id == 1) {

@@ -60,6 +60,14 @@ class DataBridge {
   // foreground only
   List<int> trackPointPreselectedUserIdList = [];
 
+  Future<void> loadSettings() async {
+    trackPointPreselectedUserIdList = await Cache.getValue<List<int>>(
+        CacheKeys.cacheBackgroundPreselectedUsers, []);
+    await GPS.gps().then((gps) {
+      loadSession(gps);
+    });
+  }
+
   /// forground interval
   /// save foreground, load background and fire event
   static bool _serviceRunning = false;
@@ -74,7 +82,7 @@ class DataBridge {
               try {
                 await Cache.reload();
                 var status = trackingStatus.name;
-                await loadBackground(gps);
+                await loadSession(gps);
                 if (status != trackingStatus.name) {
                   // reload modelTrackpoint
                   ModelTrackPoint.open();
@@ -114,8 +122,8 @@ class DataBridge {
         CacheKeys.cacheEventForegroundTriggerStatus, false);
   }
 
-  /// load background by foreground
-  Future<void> loadBackground(GPS gps) async {
+  /// load by foreground and background
+  Future<void> loadSession(GPS gps) async {
     _triggerStatus = await Cache.getValue<bool>(
         CacheKeys.cacheEventForegroundTriggerStatus, false);
 
@@ -158,8 +166,9 @@ class DataBridge {
         CacheKeys.cacheBackgroundUserIdList, []);
   }
 
-  /// load background
-  Future<void> saveBackground(GPS gps) async {
+  /// save session
+  /// some values are saved directly or on events
+  Future<void> saveSession(GPS gps) async {
     //
     await Cache.setValue<TrackingStatus>(
         CacheKeys.cacheBackgroundTrackingStatus, trackingStatus);
@@ -178,8 +187,5 @@ class DataBridge {
 
     await Cache.setValue<PendingGps>(CacheKeys.cacheBackgroundLastGps,
         lastGps ?? PendingGps(gps.lat, gps.lon));
-
-    await Cache.setValue<List<int>>(
-        CacheKeys.cacheBackgroundAliasIdList, trackPointAliasIdList);
   }
 }

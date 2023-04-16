@@ -69,7 +69,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     /// force loading background data
     try {
       GPS.gps().then((GPS gps) {
-        DataBridge.instance.loadBackground(gps).then((_) {
+        DataBridge.instance.loadSession(gps).then((_) {
           if (mounted && displayMode == _DisplayMode.live) {
             setState(() {});
           }
@@ -296,15 +296,14 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     }
     Widget divider = AppWidgets.divider();
     Screen screen = Screen(context);
-    DateTime tStart = bridge.trackPointGpslastStatusChange?.time ??
-        bridge.gpsPoints.last.time;
+    DateTime tStart = (bridge.trackPointGpslastStatusChange?.time ??
+            bridge.gpsPoints.last.time)
+        .subtract(Globals.timeRangeTreshold);
     DateTime tEnd = DateTime.now();
     PendingGps gpslastStatusChange =
         bridge.trackPointGpslastStatusChange ?? bridge.gpsPoints.last;
     try {
-      var ls = bridge.trackPointGpslastStatusChange;
-      String duration =
-          ls == null ? '-' : util.timeElapsed(ls.time, tEnd, false);
+      String duration = util.timeElapsed(tStart, tEnd, false);
       List<String> alias =
           ModelAlias.nextAlias(gps: gpslastStatusChange).map((e) {
         return '- ${e.alias}';
@@ -321,6 +320,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       String sAlias = alias.isEmpty ? ' ---' : alias.join('\n');
       String sTasks = task.isEmpty ? ' ---' : task.join('\n');
       String sUsers = users.isEmpty ? ' ---' : users.join('\n');
+
       Widget listBody = SizedBox(
           width: screen.width - 50,
           child: Column(

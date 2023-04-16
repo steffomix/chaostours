@@ -33,9 +33,9 @@ class AppLoader {
       if (PermissionChecker.permissionsOk) {
         try {
           GPS gps = await GPS.gps();
-          await DataBridge.instance.loadBackground(gps);
+          await DataBridge.instance.loadSession(gps);
           await DataBridge.instance.loadForeground(gps);
-          await DataBridge.instance.saveBackground(gps);
+          await DataBridge.instance.saveSession(gps);
         } catch (e) {
           logger.warn('preload gps not available');
         }
@@ -50,9 +50,9 @@ class AppLoader {
 
   static Future<void> loadCache() async {
     GPS gps = await GPS.gps();
-    await DataBridge.instance.loadBackground(gps);
+    await DataBridge.instance.loadSession(gps);
     await DataBridge.instance.loadForeground(gps);
-    await DataBridge.instance.saveBackground(gps);
+    await DataBridge.instance.saveSession(gps);
   }
 
   static Future<void> storageSettings() async {

@@ -109,6 +109,9 @@ class _WidgetManageBackgroundGpsState extends State<WidgetManageBackgroundGps> {
           'User IDs found on standing gps: ${bridge.trackPointUserIdList.join(',')}'),
       AppWidgets.divider(),
       Text(
+          'Preselected User IDs: ${bridge.trackPointPreselectedUserIdList.join(',')}'),
+      AppWidgets.divider(),
+      Text(
           'Last Status Change GPS Position:\n ${bridge.trackPointGpsStartMoving?.toSharedString()}'),
       AppWidgets.divider(),
       Text(

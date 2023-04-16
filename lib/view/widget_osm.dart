@@ -110,7 +110,7 @@ class _WidgetOsm extends State<WidgetOsm> {
     EventManager.listen<EventOnOsmIsLoading>(onOsmLoad);
     try {
       GPS.gps().then((GPS gps) {
-        DataBridge.instance.loadBackground(gps).then((_) {
+        DataBridge.instance.loadSession(gps).then((_) {
           setState(() {});
         });
       });

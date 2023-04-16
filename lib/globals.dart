@@ -1,6 +1,7 @@
 // ignore_for_file: prefer_const_constructors
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/cache.dart';
+import 'package:chaostours/data_bridge.dart';
 
 enum OsmLookup { never, onStatus, always }
 
@@ -94,6 +95,12 @@ class Globals {
   static Duration osmLookupInterval = _GlobalDefaults.osmLookupInterval;
 
   static Future<void> loadSettings() async {
+    try {
+      await DataBridge.instance.loadSettings();
+    } catch (e, stk) {
+      logger.error('databridge load settings: $e', stk);
+    }
+
     try {
       statusStandingRequireAlias = await Cache.getValue<bool>(
           CacheKeys.globalsStatusStandingRequireAlias, false);
