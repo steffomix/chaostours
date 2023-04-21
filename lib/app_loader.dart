@@ -11,7 +11,9 @@ import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/permission_checker.dart';
 import 'package:chaostours/globals.dart';
+import 'package:chaostours/cache.dart';
 import 'package:chaostours/data_bridge.dart';
+import 'package:chaostours/gps.dart';
 
 class AppLoader {
   static Logger logger = Logger.logger<AppLoader>();
@@ -27,10 +29,24 @@ class AppLoader {
     await DataBridge.instance.loadBackgroundSession();
     await DataBridge.instance.loadTriggerStatus();
 
+    await ModelTrackPoint.open();
     await ModelUser.open();
     await ModelTask.open();
     await ModelAlias.open();
-    await ModelTrackPoint.open();
+
+    /// check if alias is available
+    if (await PermissionChecker.checkLocation()) {
+      try {
+        DataBridge.instance.trackPointAliasIdList =
+            await Cache.setValue<List<int>>(
+                CacheKeys.cacheBackgroundAliasIdList,
+                ModelAlias.nextAlias(gps: await GPS.gps())
+                    .map((e) => e.id)
+                    .toList());
+      } catch (e, stk) {
+        logger.error('preload alias: $e', stk);
+      }
+    }
     await PermissionChecker.checkAll();
     //
     await BackgroundTracking.initialize();

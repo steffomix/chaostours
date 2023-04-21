@@ -95,9 +95,11 @@ class DataBridge {
         CacheKeys.cacheEventForegroundTriggerStatus, false);
   }
 
-  /// load by foreground only
-  Future<void> loadBackgroundSession() async {
-    GPS.gps().then((GPS gps) async {
+  /// loaded by foreground and background
+  Future<void> loadBackgroundSession([GPS? gps]) async {
+    try {
+      gps ??= await GPS.gps();
+
       /// address update
       currentAddress =
           await Cache.getValue<String>(CacheKeys.cacheBackgroundAddress, '');
@@ -128,42 +130,8 @@ class DataBridge {
       trackPointGpslastStatusChange = await Cache.getValue<PendingGps>(
           CacheKeys.cacheEventBackgroundGpsLastStatusChange,
           PendingGps(gps.lat, gps.lon));
-
-      /*
-      trackPointAliasIdList = await Cache.getValue<List<int>>(
-          CacheKeys.cacheBackgroundAliasIdList, []);
-      trackPointTaskIdList = await Cache.getValue<List<int>>(
-          CacheKeys.cacheBackgroundTaskIdList, []);
-      trackPointUserIdList = await Cache.getValue<List<int>>(
-          CacheKeys.cacheBackgroundUserIdList, []);
-      trackPointUserNotes = await Cache.getValue<String>(
-          CacheKeys.cacheBackgroundTrackPointUserNotes, '');
-          */
-    }).onError((e, stackTrace) {
-      logger.error('get gps for loadbackgroundSession: $e', stackTrace);
-    });
-  }
-
-  /// save session
-  /// some values are saved directly or on events
-  Future<void> saveSession(GPS gps) async {
-    //
-    await Cache.setValue<TrackingStatus>(
-        CacheKeys.cacheBackgroundTrackingStatus, trackingStatus);
-
-    await Cache.setValue<String>(
-        CacheKeys.cacheBackgroundAddress, currentAddress);
-
-    await Cache.setValue<List<PendingGps>>(
-        CacheKeys.cacheBackgroundGpsPoints, gpsPoints);
-
-    await Cache.setValue<List<PendingGps>>(
-        CacheKeys.cacheBackgroundSmoothGpsPoints, smoothGpsPoints);
-
-    await Cache.setValue<List<PendingGps>>(
-        CacheKeys.cacheBackgroundCalcGpsPoints, calcGpsPoints);
-
-    await Cache.setValue<PendingGps>(CacheKeys.cacheBackgroundLastGps,
-        lastGps ?? PendingGps(gps.lat, gps.lon));
+    } catch (e, stk) {
+      logger.error('loadbackgroundSession: $e', stk);
+    }
   }
 }
