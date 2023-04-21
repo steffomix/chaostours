@@ -32,8 +32,7 @@ class _WidgetUserList extends State<WidgetUserList> {
     setState(() {});
   }
 
-  List<int> preselectedUsers =
-      DataBridge.instance.trackPointPreselectedUserIdList;
+  List<int> userIdList = DataBridge.instance.trackPointUserIdList;
 
   @override
   void dispose() {
@@ -64,7 +63,7 @@ class _WidgetUserList extends State<WidgetUserList> {
   Widget dropdownUser(context) {
     /// render selected users
     List<String> userList = [];
-    for (var id in preselectedUsers) {
+    for (var id in userIdList) {
       var user = ModelUser.getUser(id);
       if (!user.deleted) {
         userList.add(ModelUser.getUser(id).user);
@@ -102,7 +101,7 @@ class _WidgetUserList extends State<WidgetUserList> {
       if (!m.deleted) {
         checkBoxes.add(createCheckbox(CheckboxController(
             idReference: m.id,
-            referenceList: preselectedUsers,
+            referenceList: userIdList,
             deleted: m.deleted,
             title: m.user,
             subtitle: m.notes)));
@@ -130,9 +129,9 @@ class _WidgetUserList extends State<WidgetUserList> {
         value: model.checked,
         onChanged: (bool? checked) {
           if (checked ?? false) {
-            preselectedUsers.add(model.idReference);
+            userIdList.add(model.idReference);
           } else {
-            preselectedUsers.remove(model.idReference);
+            userIdList.remove(model.idReference);
           }
           modify();
           setState(
@@ -227,12 +226,13 @@ class _WidgetUserList extends State<WidgetUserList> {
             onTap: (int id) {
               if (id == 0 && modified.value) {
                 Cache.setValue<List<int>>(
-                        CacheKeys.cacheBackgroundPreselectedUsers,
-                        preselectedUsers)
+                        CacheKeys.cacheBackgroundUserIdList, userIdList)
                     .then((_) {
                   modified.value = false;
                   dropdownUserIsOpen = false;
-                  setState(() {});
+                  if (mounted) {
+                    setState(() {});
+                  }
                 }).onError((e, stk) {
                   logger.error('save preselected users: $e', stk);
                 });

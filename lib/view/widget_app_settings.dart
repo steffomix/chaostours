@@ -41,9 +41,6 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
   static Map<CacheKeys, String> settings = {
     CacheKeys.globalsBackgroundTrackingEnabled:
         Globals.backgroundTrackingEnabled ? '1' : '0',
-    CacheKeys.cacheBackgroundPreselectedUsers: DataBridge
-        .instance.trackPointPreselectedUserIdList
-        .join(','), // List<int>
     CacheKeys.globalsStatusStandingRequireAlias:
         Globals.statusStandingRequireAlias ? '1' : '0', // bool
     CacheKeys.globalsTrackPointInterval:
@@ -71,17 +68,6 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
       key = CacheKeys.globalsBackgroundTrackingEnabled;
       await Cache.setValue<bool>(key, backgroundTrackingEnabled ?? false);
 
-      key = CacheKeys.cacheBackgroundPreselectedUsers;
-      var s = settings[key] ?? '';
-      List<int> idList = s.isEmpty
-          ? []
-          : s
-              .split(',')
-              .map(
-                (e) => int.parse(e),
-              )
-              .toList();
-      await Cache.setValue<List<int>>(key, idList);
       key = CacheKeys.globalsStatusStandingRequireAlias;
       await Cache.setValue<bool>(key, statusStandingRequireAlias ?? false);
 

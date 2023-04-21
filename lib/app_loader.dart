@@ -3,11 +3,9 @@ import 'dart:io' as io;
 
 ///
 import 'package:chaostours/model/model_alias.dart';
-import 'package:chaostours/gps.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_user.dart';
-import 'package:chaostours/file_handler.dart';
 import 'package:chaostours/background_process/tracking.dart';
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/logger.dart';
@@ -23,47 +21,24 @@ class AppLoader {
   static Future<void> preload() async {
     logger.important('start Preload sequence...');
     await webKey();
-    await globalSettings();
-    await loadDatabase();
-    try {
-      if (FileHandler.storagePath != null) {
-        await loadDatabase();
-      } else {}
-      await PermissionChecker.checkAll();
-      if (PermissionChecker.permissionsOk) {
-        try {
-          GPS gps = await GPS.gps();
-          await DataBridge.instance.loadSession(gps);
-          await DataBridge.instance.loadForeground(gps);
-          await DataBridge.instance.saveSession(gps);
-        } catch (e) {
-          logger.warn('preload gps not available');
-        }
-        await FileHandler.getPotentialStorages();
-        //await initializeStorages();
-        await ticks();
-      }
-    } catch (e, std) {
-      logger.fatal('Startup sequence failed: ${e.toString()}', std);
-    }
-  }
-
-  static Future<void> loadCache() async {
-    GPS gps = await GPS.gps();
-    await DataBridge.instance.loadSession(gps);
-    await DataBridge.instance.loadForeground(gps);
-    await DataBridge.instance.saveSession(gps);
-  }
-
-  static Future<void> storageSettings() async {
-    await FileHandler.getPotentialStorages();
-    await FileHandler.loadSettings();
-    await FileHandler.saveSettings();
-  }
-
-  static Future<void> globalSettings() async {
+    await DataBridge.reload();
     await Globals.loadSettings();
     await Globals.saveSettings();
+    await DataBridge.instance.loadBackgroundSession();
+    await DataBridge.instance.loadTriggerStatus();
+
+    await ModelUser.open();
+    await ModelTask.open();
+    await ModelAlias.open();
+    await ModelTrackPoint.open();
+    await PermissionChecker.checkAll();
+    //
+    await BackgroundTracking.initialize();
+    if (await PermissionChecker.checkLocation() &&
+        Globals.backgroundTrackingEnabled) {
+      await BackgroundTracking.startTracking();
+    }
+    ticks();
   }
 
   ///
@@ -74,23 +49,6 @@ class AppLoader {
     io.SecurityContext.defaultContext
         .setTrustedCertificatesBytes(data.buffer.asUint8List());
     logger.log('SSL Key loaded');
-  }
-
-  static Future<bool> loadDatabase() async {
-    if (await PermissionChecker.checkManageExternalStorage() &&
-        FileHandler.storagePath != null) {
-      // load database
-      logger.important('load Database Table ModelUser');
-      await ModelUser.open();
-      logger.important('load Database Table ModelTask');
-      await ModelTask.open();
-      logger.important('load Database Table ModelAlias');
-      await ModelAlias.open();
-      logger.important('load Database Table ModelTrackPoint');
-      await ModelTrackPoint.open();
-      return true;
-    }
-    return false;
   }
 
   //
@@ -113,18 +71,10 @@ class AppLoader {
   }
 
   static Future<void> ticks() async {
-    logger.important('start app-tick');
     DataBridge.instance.startService();
     _appTick();
     _addressTick();
-    logger.important('logger listen on app-tick ready');
     Logger.listenOnTick();
-  }
-
-  static Future<void> backgroundGps() async {
-    if (Globals.backgroundTrackingEnabled) {
-      await BackgroundTracking.startTracking();
-    }
   }
 
   static Future<void> _appTick() async {
@@ -133,7 +83,7 @@ class AppLoader {
       try {
         EventManager.fire<EventOnAppTick>(event);
       } catch (e, stk) {
-        logger.error('appTick #${event.id} failed: ${e.toString()}', stk);
+        logger.error('appTick #${event.id} failed: $e', stk);
       }
       await Future.delayed(Globals.appTickDuration);
     }
@@ -147,7 +97,7 @@ class AppLoader {
           EventManager.fire<EventOnAddressLookup>(event);
         }
       } catch (e, stk) {
-        logger.error('appTick #${event.eventId} failed: ${e.toString()}', stk);
+        logger.error('appTick #${event.eventId} failed: $e', stk);
       }
       await Future.delayed(Globals.osmLookupInterval);
     }

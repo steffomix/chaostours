@@ -4,12 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/util.dart';
 import 'package:chaostours/data_bridge.dart';
+import 'package:chaostours/cache.dart';
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_alias.dart';
-import 'package:chaostours/model/model_trackpoint.dart';
 
 ///
 /// CheckBox list
@@ -253,12 +253,18 @@ class _WidgetAddTasksState extends State<WidgetEditPendingTrackPoint> {
           ],
           onTap: (int id) {
             if (id == 0 && modified.value) {
-              bridge.trackPointTaskIdList = tpTasks;
-              bridge.trackPointUserIdList = tpUsers;
-              bridge.trackPointUserNotes = tpNotes.text;
-              bridge.saveUserInput().then((_) {
-                modified.value = false;
-                setState(() {});
+              Future.microtask(() async {
+                bridge.trackPointTaskIdList = await Cache.setValue<List<int>>(
+                    CacheKeys.cacheBackgroundTaskIdList, tpTasks);
+                bridge.trackPointUserIdList = await Cache.setValue<List<int>>(
+                    CacheKeys.cacheBackgroundUserIdList, tpUsers);
+                bridge.trackPointUserNotes = await Cache.setValue<String>(
+                    CacheKeys.cacheBackgroundTrackPointUserNotes, tpNotes.text);
+              }).then((_) {
+                if (mounted) {
+                  modified.value = false;
+                  setState(() {});
+                }
               });
             } else {
               Navigator.pop(context);

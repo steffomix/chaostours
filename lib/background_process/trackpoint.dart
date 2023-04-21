@@ -58,10 +58,10 @@ class TrackPoint {
     bridge.trackPointGpslastStatusChange ??= gps;
 
     // load last session data
-    await bridge.loadSession(gps);
+    await bridge.loadBackgroundSession();
 
     /// load if user triggered status change to moving
-    await bridge.loadForeground(gps);
+    await bridge.loadTriggerStatus();
 
     /// copy a shorthand for processing trackpoint
     currentTrackingStatus = bridge.trackingStatus;
@@ -251,8 +251,6 @@ class TrackPoint {
           /// reset user inputs
           await Cache.setValue<List<int>>(
               CacheKeys.cacheBackgroundTaskIdList, []);
-          await Cache.setValue<List<int>>(CacheKeys.cacheBackgroundUserIdList,
-              bridge.trackPointPreselectedUserIdList);
           await Cache.setValue<String>(
               CacheKeys.cacheBackgroundTrackPointUserNotes, '');
         }

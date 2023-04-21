@@ -108,15 +108,11 @@ class _WidgetOsm extends State<WidgetOsm> {
     _initialized = false;
     super.initState();
     EventManager.listen<EventOnOsmIsLoading>(onOsmLoad);
-    try {
-      GPS.gps().then((GPS gps) {
-        DataBridge.instance.loadSession(gps).then((_) {
-          setState(() {});
-        });
-      });
-    } catch (e) {
-      logger.warn('osm init no gps: $e');
-    }
+    DataBridge.instance.loadBackgroundSession().then((_) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
   }
 
   void onOsmLoad(EventOnOsmIsLoading e) {

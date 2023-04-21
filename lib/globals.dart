@@ -96,7 +96,7 @@ class Globals {
 
   static Future<void> loadSettings() async {
     try {
-      await DataBridge.instance.loadSettings();
+      await DataBridge.instance.loadBackgroundSession();
     } catch (e, stk) {
       logger.error('databridge load settings: $e', stk);
     }

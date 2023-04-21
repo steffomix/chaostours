@@ -69,7 +69,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     /// force loading background data
     try {
       GPS.gps().then((GPS gps) {
-        DataBridge.instance.loadSession(gps).then((_) {
+        DataBridge.instance.loadBackgroundSession().then((_) {
           if (mounted && displayMode == _DisplayMode.live) {
             setState(() {});
           }

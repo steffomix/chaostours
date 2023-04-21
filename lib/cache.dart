@@ -40,7 +40,6 @@ enum CacheKeys {
   cacheBackgroundAliasIdList(List<int>),
   cacheBackgroundUserIdList(List<int>),
   cacheBackgroundTaskIdList(List<int>),
-  cacheBackgroundPreselectedUsers(List<int>),
   cacheBackgroundTrackPointUserNotes(String),
   cacheBackgroundLastGps(PendingGps),
   cacheBackgroundGpsPoints(List<PendingGps>),
@@ -228,7 +227,7 @@ class Cache {
     return s == null ? null : Storages.values.byName(s);
   }
 
-  static Future<void> setValue<T>(CacheKeys cacheKey, T value) async {
+  static Future<T> setValue<T>(CacheKeys cacheKey, T value) async {
     final prefs = await SharedPreferences.getInstance();
     String key = cacheKey.name;
     try {
@@ -323,6 +322,7 @@ class Cache {
     } catch (e, stk) {
       logger.error('setValue for $key failed: $e', stk);
     }
+    return value;
   }
 
   static Future<T> getValue<T>(CacheKeys cacheKey, T defaultValue) async {
