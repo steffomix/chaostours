@@ -30,21 +30,20 @@ class _WidgetAddTasksState extends State<WidgetEditPendingTrackPoint> {
   DataBridge bridge = DataBridge.instance;
 
   /// editable fields
-  List<int> tpTasks = [];
-  List<int> tpUsers = [];
-  TextEditingController tpNotes = TextEditingController();
+  List<int> tpTasks = [...DataBridge.instance.trackPointTaskIdList];
+  List<int> tpUsers = [...DataBridge.instance.trackPointUserIdList];
+  TextEditingController tpNotes =
+      TextEditingController(text: DataBridge.instance.trackPointUserNotes);
 
   /// modify
   ValueNotifier<bool> modified = ValueNotifier<bool>(false);
   void modify() {
     modified.value = true;
+    setState(() {});
   }
 
   @override
   void initState() {
-    tpTasks = bridge.trackPointTaskIdList;
-    tpUsers = bridge.trackPointUserIdList;
-    tpNotes.text = bridge.trackPointUserNotes;
     EventManager.listen<EventOnTrackingStatusChanged>(onTrackingStatusChanged);
     super.initState();
   }
@@ -96,7 +95,10 @@ class _WidgetAddTasksState extends State<WidgetEditPendingTrackPoint> {
                 referenceList: referenceList,
                 deleted: model.deleted,
                 title: model.task,
-                subtitle: model.notes)));
+                subtitle: model.notes,
+                onToggle: () {
+                  modify();
+                })));
       }
     }
     return checkBoxes;
@@ -114,7 +116,10 @@ class _WidgetAddTasksState extends State<WidgetEditPendingTrackPoint> {
                 referenceList: referenceList,
                 deleted: model.deleted,
                 title: model.user,
-                subtitle: model.notes)));
+                subtitle: model.notes,
+                onToggle: () {
+                  modify();
+                })));
       }
     }
     return checkBoxes;
@@ -195,7 +200,7 @@ class _WidgetAddTasksState extends State<WidgetEditPendingTrackPoint> {
             minLines: 2,
             controller: tpNotes,
             onChanged: (String? s) {
-              bridge.trackPointUserNotes = s?.trim() ?? '';
+              //bridge.trackPointUserNotes = s?.trim() ?? '';
               modify();
             }));
   }
@@ -216,16 +221,16 @@ class _WidgetAddTasksState extends State<WidgetEditPendingTrackPoint> {
     _context = context;
 
     var body = ListView(children: [
-      warning(context),
+      //warning(context),
 
       /// current Trackpoint time info
       trackPointInfo(context),
       AppWidgets.divider(),
-      notes(context),
+      dropdownTasks(context),
       AppWidgets.divider(),
       dropdownUser(context),
       AppWidgets.divider(),
-      dropdownTasks(context)
+      notes(context),
     ]);
     return AppWidgets.scaffold(
       context,
@@ -252,20 +257,23 @@ class _WidgetAddTasksState extends State<WidgetEditPendingTrackPoint> {
                 icon: Icon(Icons.cancel), label: 'Abbrechen'),
           ],
           onTap: (int id) {
-            if (id == 0 && modified.value) {
-              Future.microtask(() async {
-                bridge.trackPointTaskIdList = await Cache.setValue<List<int>>(
-                    CacheKeys.cacheBackgroundTaskIdList, tpTasks);
-                bridge.trackPointUserIdList = await Cache.setValue<List<int>>(
-                    CacheKeys.cacheBackgroundUserIdList, tpUsers);
-                bridge.trackPointUserNotes = await Cache.setValue<String>(
-                    CacheKeys.cacheBackgroundTrackPointUserNotes, tpNotes.text);
-              }).then((_) {
-                if (mounted) {
-                  modified.value = false;
-                  setState(() {});
-                }
-              });
+            if (id == 0) {
+              if (modified.value) {
+                Future.microtask(() async {
+                  bridge.trackPointTaskIdList = await Cache.setValue<List<int>>(
+                      CacheKeys.cacheBackgroundTaskIdList, tpTasks);
+                  bridge.trackPointUserIdList = await Cache.setValue<List<int>>(
+                      CacheKeys.cacheBackgroundUserIdList, tpUsers);
+                  bridge.trackPointUserNotes = await Cache.setValue<String>(
+                      CacheKeys.cacheBackgroundTrackPointUserNotes,
+                      tpNotes.text);
+                }).then((_) {
+                  if (mounted) {
+                    modified.value = false;
+                    setState(() {});
+                  }
+                });
+              }
             } else {
               Navigator.pop(context);
             }

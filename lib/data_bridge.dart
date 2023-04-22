@@ -16,7 +16,7 @@ class DataBridge {
   factory DataBridge() => _instance ??= DataBridge._();
   static DataBridge get instance => _instance ??= DataBridge._();
 
-  static Future<void> reload() async => await Cache.reload();
+  Future<void> reload() async => await Cache.reload();
 
   /// trigger status
   bool _triggerStatus = false;
@@ -71,10 +71,11 @@ class DataBridge {
           try {
             await Cache.reload();
             var status = trackingStatus.name;
-            await loadBackgroundSession();
+            await loadCache();
             if (status != trackingStatus.name) {
               // trackingstatus has changed
               // reload data
+              await Cache.reload();
               await ModelTrackPoint.open();
               await ModelAlias.open();
               EventManager.fire<EventOnTrackingStatusChanged>(
@@ -97,9 +98,11 @@ class DataBridge {
   }
 
   /// loaded by foreground and background
-  Future<void> loadBackgroundSession([GPS? gps]) async {
+  Future<void> loadCache([GPS? gps]) async {
     try {
       gps ??= await GPS.gps();
+
+      await Cache.reload();
 
       /// address update
       currentAddress =
@@ -135,6 +138,17 @@ class DataBridge {
       trackPointGpslastStatusChange = await Cache.getValue<PendingGps>(
           CacheKeys.cacheEventBackgroundGpsLastStatusChange,
           PendingGps(gps.lat, gps.lon));
+
+      /// user data
+      ///
+
+      trackPointUserIdList = await Cache.getValue<List<int>>(
+          CacheKeys.cacheBackgroundUserIdList, []);
+      trackPointTaskIdList = await Cache.getValue<List<int>>(
+          CacheKeys.cacheBackgroundTaskIdList, []);
+
+      trackPointUserNotes = await Cache.getValue<String>(
+          CacheKeys.cacheBackgroundTrackPointUserNotes, '');
     } catch (e, stk) {
       logger.error('loadBackgroundSession: $e', stk);
     }

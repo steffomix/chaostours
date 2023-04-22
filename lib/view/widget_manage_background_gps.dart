@@ -94,22 +94,21 @@ class _WidgetManageBackgroundGpsState extends State<WidgetManageBackgroundGps> {
       Text('Status change triggered: ${bridge.statusTriggered ? 'Yes' : 'No'}'),
       AppWidgets.divider(),
       Text(
-          'Gps detected status standing: ${bridge.trackPointGpsStartStanding?.toSharedString()}'),
+          'Gps status standing: ${bridge.trackPointGpsStartStanding?.toSharedString()}'),
       AppWidgets.divider(),
       Text(
-          'Gps detected status moving: ${bridge.trackPointGpsStartMoving?.toSharedString()}'),
+          'Gps status moving: ${bridge.trackPointGpsStartMoving?.toSharedString()}'),
+      AppWidgets.divider(),
+      Text('Alias IDs: ${bridge.trackPointAliasIdList.join(',')}'),
+      AppWidgets.divider(),
+      Text('Task IDs: ${bridge.trackPointTaskIdList.join(',')}'),
+      AppWidgets.divider(),
+      Text('User IDs: ${bridge.trackPointUserIdList.join(',')}'),
+      AppWidgets.divider(),
+      Text('User notes: ${bridge.trackPointUserNotes}'),
       AppWidgets.divider(),
       Text(
-          'Alias IDs found on standing gps: ${bridge.trackPointAliasIdList.join(',')}'),
-      AppWidgets.divider(),
-      Text(
-          'Task IDs found on standing gps: ${bridge.trackPointTaskIdList.join(',')}'),
-      AppWidgets.divider(),
-      Text(
-          'User IDs found on standing gps: ${bridge.trackPointUserIdList.join(',')}'),
-      AppWidgets.divider(),
-      Text(
-          'Last Status Change GPS Position:\n ${bridge.trackPointGpsStartMoving?.toSharedString()}'),
+          'Last Status Change:\n ${bridge.trackPointGpsStartMoving?.toSharedString()}'),
       AppWidgets.divider(),
       Text(
           'Status calculation GPS Positions (${bridge.calcGpsPoints.length}):\n ${bridge.calcGpsPoints.map((e) => e.toSharedString()).join('\n')}'),

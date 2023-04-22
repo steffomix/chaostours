@@ -108,7 +108,7 @@ class _WidgetOsm extends State<WidgetOsm> {
     _initialized = false;
     super.initState();
     EventManager.listen<EventOnOsmIsLoading>(onOsmLoad);
-    DataBridge.instance.loadBackgroundSession().then((_) {
+    DataBridge.instance.loadCache().then((_) {
       if (mounted) {
         setState(() {});
       }

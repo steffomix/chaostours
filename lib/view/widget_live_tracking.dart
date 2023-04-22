@@ -7,7 +7,7 @@ import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/cache.dart';
 import 'package:chaostours/data_bridge.dart';
 import 'package:chaostours/background_process/trackpoint.dart';
-import 'package:chaostours/util.dart' as util;
+import 'package:chaostours/util.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_user.dart';
@@ -53,37 +53,39 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   int circleId = 0;
   final osm.MapController mapController = osm.MapController();
 
-  /// both must be true
-  ///
+  /// editable fields
+  List<int> tpTasks = [...DataBridge.instance.trackPointTaskIdList];
+  List<int> tpUsers = [...DataBridge.instance.trackPointUserIdList];
+  TextEditingController tpNotes =
+      TextEditingController(text: DataBridge.instance.trackPointUserNotes);
+
+  /// modify
+  ValueNotifier<bool> modified = ValueNotifier<bool>(false);
+  void modify() {
+    modified.value = true;
+    setState(() {});
+  }
 
   @override
   void initState() {
-    DataBridge.instance.startService();
+    bridge.startService();
     updateAliasList();
     EventManager.listen<EventOnAppTick>(onTick);
     EventManager.listen<EventOnAddressLookup>(onAddressLookup);
     EventManager.listen<EventOnWidgetDisposed>(osmGpsPoints);
     EventManager.listen<EventOnCacheLoaded>(onCacheLoaded);
     super.initState();
-
-    /// force loading background data
-    try {
-      GPS.gps().then((GPS gps) {
-        DataBridge.instance.loadBackgroundSession().then((_) {
-          if (mounted && displayMode == _DisplayMode.live) {
-            setState(() {});
-          }
-        });
-      });
-    } catch (e) {
-      logger.warn('init state, force loadBackground: $e');
-    }
+    Future.microtask(() async {
+      await bridge.reload();
+      await bridge.loadCache();
+      if (mounted && displayMode == _DisplayMode.live) {
+        setState(() {});
+      }
+    });
   }
 
   @override
   void dispose() {
-    // make sure bridge updater is running
-    bridge.startService();
     EventManager.remove<EventOnAppTick>(onTick);
     EventManager.remove<EventOnAddressLookup>(onAddressLookup);
     EventManager.remove<EventOnWidgetDisposed>(osmGpsPoints);
@@ -303,7 +305,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     PendingGps gpslastStatusChange =
         bridge.trackPointGpslastStatusChange ?? bridge.gpsPoints.last;
     try {
-      String duration = util.timeElapsed(tStart, tEnd, false);
+      String duration = timeElapsed(tStart, tEnd, false);
       List<String> alias =
           ModelAlias.nextAlias(gps: gpslastStatusChange).map((e) {
         return '- ${e.alias}';
@@ -347,10 +349,55 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                   child: Text(
                       '${tStart.hour}:${tStart.minute} - ${tEnd.hour}:${tEnd.minute}')),
               divider,
-              Text('Alias: $sAlias', softWrap: true),
-              Text(
-                  '\nOSM: "${bridge.currentAddress.isEmpty ? '---' : bridge.currentAddress}"',
-                  softWrap: true),
+              TextButton(
+                style: ButtonStyle(
+                    padding: MaterialStateProperty.all<EdgeInsets>(
+                        const EdgeInsets.all(0))),
+                child: Text('ALIAS:\n$sAlias'),
+                onPressed: () async {
+                  if (bridge.gpsPoints.isNotEmpty) {
+                    var gps = bridge.gpsPoints.first;
+                    bridge.trackPointAliasIdList =
+                        await Cache.setValue<List<int>>(
+                            CacheKeys.cacheBackgroundAliasIdList,
+                            ModelAlias.nextAlias(gps: gps)
+                                .map((e) => e.id)
+                                .toList());
+                    await Cache.reload();
+                    if (mounted) {
+                      setState(() {});
+                    }
+                  }
+                },
+              ),
+              TextButton(
+                style: ButtonStyle(
+                    padding: MaterialStateProperty.all<EdgeInsets>(
+                        const EdgeInsets.all(0))),
+                child: Text(
+                    'OSM:\n${bridge.currentAddress.isEmpty ? '---' : bridge.currentAddress}',
+                    softWrap: true),
+                onPressed: () async {
+                  if (bridge.gpsPoints.isNotEmpty) {
+                    var gps = bridge.gpsPoints.first;
+                    var addr = (await Address(gps).lookupAddress()).toString();
+                    bridge.currentAddress = await Cache.setValue<String>(
+                        CacheKeys.cacheBackgroundAddress, addr);
+                    if (mounted) {
+                      setState(() {});
+                    }
+                  }
+                },
+              ),
+              /*
+              divider,
+              dropdownUser(context),
+              divider,
+              dropdownTasks(context),
+              divider,
+              userNotes(context),
+              */
+
               divider,
               const Text('Personal:'),
               Text(sUsers),
@@ -463,5 +510,127 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     }
 
     return listItems.reversed.toList();
+  }
+
+  List<Widget> taskCheckboxes(context) {
+    var referenceList = tpTasks;
+    var checkBoxes = <Widget>[];
+    for (var model in ModelTask.getAll()) {
+      if (!model.deleted) {
+        checkBoxes.add(createCheckbox(
+            this,
+            CheckboxController(
+                idReference: model.id,
+                referenceList: referenceList,
+                deleted: model.deleted,
+                title: model.task,
+                subtitle: model.notes,
+                onToggle: () {
+                  modify();
+                })));
+      }
+    }
+    return checkBoxes;
+  }
+
+  List<Widget> userCheckboxes(context) {
+    var referenceList = tpUsers;
+    var checkBoxes = <Widget>[];
+    for (var model in ModelUser.getAll()) {
+      if (!model.deleted) {
+        checkBoxes.add(createCheckbox(
+            this,
+            CheckboxController(
+                idReference: model.id,
+                referenceList: referenceList,
+                deleted: model.deleted,
+                title: model.user,
+                subtitle: model.notes,
+                onToggle: () {
+                  modify();
+                })));
+      }
+    }
+    return checkBoxes;
+  }
+
+  bool dropdownUserIsOpen = false;
+  Widget dropdownUser(context) {
+    /// render selected users
+    List<String> userList = [];
+    for (var model in ModelUser.getAll()) {
+      if (tpUsers.contains(model.id)) {
+        userList.add(model.user);
+      }
+    }
+    String users = userList.isNotEmpty ? '\n- ${userList.join('\n- ')}' : ' - ';
+
+    /// dropdown menu botten with selected users
+    List<Widget> items = [
+      ElevatedButton(
+        child: ListTile(
+            trailing: const Icon(Icons.menu), title: Text('Personal:$users')),
+        onPressed: () {
+          dropdownUserIsOpen = !dropdownUserIsOpen;
+          setState(() {});
+        },
+      ),
+      !dropdownUserIsOpen
+          ? const SizedBox.shrink()
+          : Column(children: userCheckboxes(context))
+    ];
+
+    return ListBody(children: items);
+  }
+
+  bool dropdownTasksIsOpen = false;
+  Widget dropdownTasks(context) {
+    /// render selected tasks
+    List<String> taskList = [];
+    for (var item in ModelTask.getAll()) {
+      if (tpTasks.contains(item.id)) {
+        taskList.add(item.task);
+      }
+    }
+    String tasks = taskList.isNotEmpty ? '\n- ${taskList.join('\n- ')}' : ' - ';
+
+    /// dropdown menu botten with selected tasks
+    List<Widget> items = [
+      ElevatedButton(
+        child: ListTile(
+            trailing: const Icon(Icons.menu), title: Text('Aufgaben:$tasks')),
+        onPressed: () {
+          dropdownTasksIsOpen = !dropdownTasksIsOpen;
+          setState(() {});
+        },
+      ),
+      !dropdownTasksIsOpen
+          ? const SizedBox.shrink()
+          : Column(children: taskCheckboxes(context))
+    ];
+
+    /// add items
+    if (dropdownTasksIsOpen) {
+      items.addAll(taskCheckboxes(context));
+    }
+    return ListBody(children: items);
+  }
+
+  Widget userNotes(BuildContext context) {
+    return Container(
+        padding: const EdgeInsets.all(10),
+        child: TextField(
+            decoration: const InputDecoration(
+                label: Text('Notizen'),
+                contentPadding: EdgeInsets.all(2),
+                border: InputBorder.none),
+            //expands: true,
+            maxLines: null,
+            minLines: 2,
+            controller: tpNotes,
+            onChanged: (String? s) {
+              //bridge.trackPointUserNotes = s?.trim() ?? '';
+              modify();
+            }));
   }
 }

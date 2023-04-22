@@ -25,10 +25,10 @@ class AppLoader {
       Logger.logLevel = LogLevel.verbose;
       logger.important('start Preload sequence...');
       await webKey();
-      await DataBridge.reload();
+      await DataBridge.instance.reload();
       await Globals.loadSettings();
       await Globals.saveSettings();
-      await DataBridge.instance.loadBackgroundSession();
+      await DataBridge.instance.loadCache();
       await DataBridge.instance.loadTriggerStatus();
 
       await ModelTrackPoint.open();

@@ -114,7 +114,6 @@ class CheckboxController {
     this.onToggle,
     this.enabled = true,
   }) {
-    onToggle = toggle;
     checked = referenceList.contains(idReference);
   }
   void toggle() {
@@ -130,7 +129,8 @@ class CheckboxController {
   bool get isEnabled => enabled;
   VoidCallback? handler() {
     if (enabled) {
-      return onToggle;
+      toggle();
+      onToggle?.call();
     } else {
       return null;
     }

@@ -53,7 +53,7 @@ class TrackPoint {
     await Globals.loadSettings();
 
     /// load last session data
-    await bridge.loadBackgroundSession();
+    await bridge.loadCache(gps);
 
     if (bridge.trackingStatus == TrackingStatus.none) {
       /// initialize basic events if not set
@@ -202,7 +202,12 @@ class TrackPoint {
               }
               await ModelAlias.write();
             }
-            await Cache.reload();
+
+            /// reset user data
+            await Cache.setValue<List<int>>(
+                CacheKeys.cacheBackgroundTaskIdList, []);
+            await Cache.setValue<String>(
+                CacheKeys.cacheBackgroundTrackPointUserNotes, '');
           } else {
             logger.log(
                 'New trackpoint not saved due to app settings- or alias restrictions');
