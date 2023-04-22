@@ -21,40 +21,45 @@ class AppLoader {
   ///
   /// preload recources
   static Future<void> preload() async {
-    logger.important('start Preload sequence...');
-    await webKey();
-    await DataBridge.reload();
-    await Globals.loadSettings();
-    await Globals.saveSettings();
-    await DataBridge.instance.loadBackgroundSession();
-    await DataBridge.instance.loadTriggerStatus();
+    try {
+      Logger.logLevel = LogLevel.verbose;
+      logger.important('start Preload sequence...');
+      await webKey();
+      await DataBridge.reload();
+      await Globals.loadSettings();
+      await Globals.saveSettings();
+      await DataBridge.instance.loadBackgroundSession();
+      await DataBridge.instance.loadTriggerStatus();
 
-    await ModelTrackPoint.open();
-    await ModelUser.open();
-    await ModelTask.open();
-    await ModelAlias.open();
+      await ModelTrackPoint.open();
+      await ModelUser.open();
+      await ModelTask.open();
+      await ModelAlias.open();
 
-    /// check if alias is available
-    if (await PermissionChecker.checkLocation()) {
-      try {
-        DataBridge.instance.trackPointAliasIdList =
-            await Cache.setValue<List<int>>(
-                CacheKeys.cacheBackgroundAliasIdList,
-                ModelAlias.nextAlias(gps: await GPS.gps())
-                    .map((e) => e.id)
-                    .toList());
-      } catch (e, stk) {
-        logger.error('preload alias: $e', stk);
+      /// check if alias is available
+      if (await PermissionChecker.checkLocation()) {
+        try {
+          DataBridge.instance.trackPointAliasIdList =
+              await Cache.setValue<List<int>>(
+                  CacheKeys.cacheBackgroundAliasIdList,
+                  ModelAlias.nextAlias(gps: await GPS.gps())
+                      .map((e) => e.id)
+                      .toList());
+        } catch (e, stk) {
+          logger.error('preload alias: $e', stk);
+        }
       }
+      await PermissionChecker.checkAll();
+      //
+      await BackgroundTracking.initialize();
+      if (await PermissionChecker.checkLocation() &&
+          Globals.backgroundTrackingEnabled) {
+        await BackgroundTracking.startTracking();
+      }
+      ticks();
+    } catch (e, stk) {
+      logger.error('preload $e', stk);
     }
-    await PermissionChecker.checkAll();
-    //
-    await BackgroundTracking.initialize();
-    if (await PermissionChecker.checkLocation() &&
-        Globals.backgroundTrackingEnabled) {
-      await BackgroundTracking.startTracking();
-    }
-    ticks();
   }
 
   ///

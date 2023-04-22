@@ -86,7 +86,7 @@ class ModelUser {
 
   // writes the entire table back to disc
   static Future<void> write() async {
-    await Cache.setValue(CacheKeys.tableModelUser, _table);
+    await Cache.setValue<List<ModelUser>>(CacheKeys.tableModelUser, _table);
   }
 
   static String dump() {

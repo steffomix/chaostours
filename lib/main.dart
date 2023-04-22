@@ -3,6 +3,7 @@ import 'package:chaostours/app_loader.dart';
 import 'package:chaostours/view/app_widgets.dart';
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   await AppLoader.preload();
   runApp(const MyApp());
 }

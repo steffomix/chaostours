@@ -96,12 +96,6 @@ class Globals {
 
   static Future<void> loadSettings() async {
     try {
-      await DataBridge.instance.loadBackgroundSession();
-    } catch (e, stk) {
-      logger.error('databridge load settings: $e', stk);
-    }
-
-    try {
       statusStandingRequireAlias = await Cache.getValue<bool>(
           CacheKeys.globalsStatusStandingRequireAlias, false);
 

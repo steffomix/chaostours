@@ -24,9 +24,8 @@ class DataBridge {
   Future<void> triggerStatus() async => await _saveTriggerStatus(true);
   Future<void> triggerStatusExecuted() async => await _saveTriggerStatus(false);
   Future<void> _saveTriggerStatus(bool status) async {
-    _triggerStatus = status;
-    await Cache.setValue(
-        CacheKeys.cacheEventForegroundTriggerStatus, _triggerStatus);
+    _triggerStatus = await Cache.setValue<bool>(
+        CacheKeys.cacheEventForegroundTriggerStatus, status);
   }
 
   ///
@@ -51,6 +50,8 @@ class DataBridge {
       currentAddress = e.toString();
       logger.error('set address: $e', stk);
     }
+    await Cache.setValue<String>(
+        CacheKeys.cacheBackgroundAddress, currentAddress);
   }
 
   List<int> trackPointAliasIdList = [];
@@ -115,10 +116,14 @@ class DataBridge {
           CacheKeys.cacheBackgroundLastGps, PendingGps(gps.lat, gps.lon));
       gpsPoints = await Cache.getValue<List<PendingGps>>(
           CacheKeys.cacheBackgroundGpsPoints, []);
-      calcGpsPoints = await Cache.getValue<List<PendingGps>>(
-          CacheKeys.cacheBackgroundCalcGpsPoints, []);
       smoothGpsPoints = await Cache.getValue<List<PendingGps>>(
           CacheKeys.cacheBackgroundSmoothGpsPoints, []);
+      calcGpsPoints = await Cache.getValue<List<PendingGps>>(
+          CacheKeys.cacheBackgroundCalcGpsPoints, []);
+
+      /// alias list
+      trackPointAliasIdList = await Cache.getValue<List<int>>(
+          CacheKeys.cacheBackgroundAliasIdList, []);
 
       /// status events
       trackPointGpsStartMoving = await Cache.getValue<PendingGps>(
@@ -131,7 +136,7 @@ class DataBridge {
           CacheKeys.cacheEventBackgroundGpsLastStatusChange,
           PendingGps(gps.lat, gps.lon));
     } catch (e, stk) {
-      logger.error('loadbackgroundSession: $e', stk);
+      logger.error('loadBackgroundSession: $e', stk);
     }
   }
 }

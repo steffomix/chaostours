@@ -3,6 +3,7 @@ import 'package:flutter/rendering.dart';
 
 ///
 import 'package:chaostours/util.dart' as util;
+import 'package:chaostours/app_loader.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/globals.dart';
 import 'package:chaostours/model/model_alias.dart';
@@ -305,7 +306,18 @@ class _WidgetDrawer extends State<WidgetDrawer> {
                   onPressed: () {
                     AppWidgets.navigate(context, AppRoutes.logger);
                   },
-                  child: const Text('App Logger'))
+                  child: const Text('App Logger')),
+
+              SizedBox(
+                  height: boxHeight,
+                  child: const Center(child: Text('\nDatenbank'))),
+
+              ///
+              ElevatedButton(
+                  onPressed: () {
+                    AppLoader.loadAssetDatabase();
+                  },
+                  child: const Text('Lade Built-In Data')),
             ])));
   }
 }
