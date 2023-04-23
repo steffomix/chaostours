@@ -115,10 +115,9 @@ class AppWidgets {
   static final Logger logger = Logger.logger<AppWidgets>();
 
   static Widget materialApp(BuildContext context) {
-    String homeRoute = AppRoutes.appInit.route;
     return MaterialApp(
       title: 'Chaos Tours',
-      initialRoute: homeRoute,
+      initialRoute: AppRoutes.liveTracking.route,
       routes: {
         // home routes
         AppRoutes.home.route: (context) => const WidgetPermissionsPage(),

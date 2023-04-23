@@ -36,8 +36,6 @@ class EventOnGPS extends EventOn {
   EventOnGPS(this.gps);
 }
 
-class EventOnAddressLookup extends EventOn {}
-
 class EventOnAppTick extends EventOn {
   static int _nextId = 0;
   final int id = (_nextId++);

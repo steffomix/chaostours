@@ -94,7 +94,6 @@ class AppLoader {
   static Future<void> ticks() async {
     DataBridge.instance.startService();
     _appTick();
-    _addressTick();
     Logger.listenOnTick();
   }
 
@@ -110,19 +109,6 @@ class AppLoader {
     }
   }
 
-  static Future<void> _addressTick() async {
-    while (true) {
-      var event = EventOnAddressLookup();
-      try {
-        if (Globals.osmLookupInterval.inMinutes > 0) {
-          EventManager.fire<EventOnAddressLookup>(event);
-        }
-      } catch (e, stk) {
-        logger.error('appTick #${event.eventId} failed: $e', stk);
-      }
-      await Future.delayed(Globals.osmLookupInterval);
-    }
-  }
 /*
   ///
   /// load calendar api from credentials asset file

@@ -63,7 +63,6 @@ enum CacheKeys {
   globalsBackgroundTrackingEnabled(bool),
   globalsStatusStandingRequireAlias(bool),
   globalsTrackPointInterval(Duration),
-  globalsOsmLookupInterval(Duration),
   globalsOsmLookupCondition(OsmLookup),
   globalsCacheGpsTime(Duration),
   globalsDistanceTreshold(int),

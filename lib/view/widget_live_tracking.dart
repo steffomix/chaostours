@@ -34,6 +34,101 @@ enum _DisplayMode {
   gps;
 }
 
+class _TrackPointData {
+  late DateTime tStart;
+  late DateTime tEnd;
+  late PendingGps gpslastStatusChange;
+  late double distanceStanding;
+  late double distanceMoving;
+  late List<ModelAlias> aliasList;
+  late List<ModelUser> userList;
+  late List<ModelTask> taskList;
+  late String trackPointNotes;
+  late String durationText;
+  late String aliasText;
+  late String tasksText;
+  late String usersText;
+  late String addressText;
+
+  _TrackPointData() {
+    DataBridge bridge = DataBridge.instance;
+
+    tStart = (bridge.trackPointGpslastStatusChange?.time ??
+            bridge.gpsPoints.last.time)
+        .subtract(Globals.timeRangeTreshold);
+    tEnd = DateTime.now();
+    gpslastStatusChange =
+        bridge.trackPointGpslastStatusChange ?? bridge.gpsPoints.last;
+
+    distanceMoving = bridge.gpsPoints.isEmpty
+        ? 0.0
+        : (GPS.distanceOverTrackList(bridge.gpsPoints) / 10).round() / 100;
+    try {
+      GPS gps;
+      if (bridge.trackPointAliasIdList.isNotEmpty) {
+        var alias = ModelAlias.getAlias(bridge.trackPointAliasIdList.first);
+        gps = GPS(alias.lat, alias.lon);
+        distanceStanding = bridge.gpsPoints.isEmpty
+            ? 0.0
+            : GPS.distance(
+                bridge.calcGpsPoints.isNotEmpty
+                    ? bridge.calcGpsPoints.first
+                    : bridge.gpsPoints.first,
+                gps);
+      } else {
+        gps = bridge.trackPointGpsStartStanding!;
+        distanceStanding = bridge.gpsPoints.isEmpty
+            ? 0.0
+            : GPS.distance(
+                bridge.calcGpsPoints.isNotEmpty
+                    ? bridge.calcGpsPoints.first
+                    : bridge.gpsPoints.first,
+                gps);
+      }
+    } catch (e) {
+      distanceStanding = 0.0;
+    }
+    aliasList = bridge.trackPointAliasIdList
+        .map((id) => ModelAlias.getAlias(id))
+        .toList();
+
+    userList =
+        bridge.trackPointUserIdList.map((id) => ModelUser.getUser(id)).toList();
+
+    taskList =
+        bridge.trackPointTaskIdList.map((id) => ModelTask.getTask(id)).toList();
+    trackPointNotes = bridge.trackPointUserNotes;
+
+    durationText = timeElapsed(tStart, tEnd, false);
+    aliasText = aliasList.isEmpty
+        ? ' ---'
+        : aliasList
+            .map((e) {
+              return '- ${e.alias}';
+            })
+            .toList()
+            .join('\n');
+    tasksText = taskList.isEmpty
+        ? ' ---'
+        : taskList
+            .map((e) {
+              return '- ${e.task}';
+            })
+            .toList()
+            .join('\n');
+    usersText = userList.isEmpty
+        ? ' ---'
+        : userList
+            .map((e) {
+              return '- ${e.user}';
+            })
+            .toList()
+            .join('\n');
+
+    addressText = bridge.currentAddress.isEmpty ? '---' : bridge.currentAddress;
+  }
+}
+
 class WidgetTrackingPage extends StatefulWidget {
   const WidgetTrackingPage({super.key});
 
@@ -66,13 +161,13 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     setState(() {});
   }
 
+  ///
   @override
   void initState() {
     bridge.startService();
     updateAliasList();
     EventManager.listen<EventOnAppTick>(onTick);
-    EventManager.listen<EventOnAddressLookup>(onAddressLookup);
-    EventManager.listen<EventOnWidgetDisposed>(osmGpsPoints);
+    EventManager.listen<EventOnWidgetDisposed>(onOsmGpsPoints);
     EventManager.listen<EventOnCacheLoaded>(onCacheLoaded);
     super.initState();
     Future.microtask(() async {
@@ -84,98 +179,50 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     });
   }
 
+  ///
   @override
   void dispose() {
     EventManager.remove<EventOnAppTick>(onTick);
-    EventManager.remove<EventOnAddressLookup>(onAddressLookup);
-    EventManager.remove<EventOnWidgetDisposed>(osmGpsPoints);
+    EventManager.remove<EventOnWidgetDisposed>(onOsmGpsPoints);
     EventManager.remove<EventOnCacheLoaded>(onCacheLoaded);
     super.dispose();
   }
 
-  void updateAliasList() {
+  ///
+  Future<void> updateAliasList() async {
     try {
-      if (displayMode == _DisplayMode.live && bridge.calcGpsPoints.isNotEmpty) {
-        bridge.trackPointAliasIdList =
+      if (bridge.calcGpsPoints.isNotEmpty) {
+        bridge.trackPointAliasIdList = await Cache.setValue<List<int>>(
+            CacheKeys.cacheBackgroundAliasIdList,
             ModelAlias.nextAlias(gps: bridge.calcGpsPoints.first)
                 .map((e) => e.id)
-                .toList();
-        Cache.setValue<List<int>>(
-            CacheKeys.cacheBackgroundAliasIdList, bridge.trackPointAliasIdList);
+                .toList());
+        if (displayMode == _DisplayMode.live && mounted) {
+          setState(() {});
+        }
       }
     } catch (e, stk) {
       logger.error('update alias idList: $e', stk);
     }
   }
 
+  ///
   void onCacheLoaded(EventOnCacheLoaded e) {
     if (displayMode == _DisplayMode.gps) {
-      osmGpsPoints(EventOnWidgetDisposed());
+      onOsmGpsPoints(EventOnWidgetDisposed());
     }
     updateAliasList();
   }
 
-  Widget renderListViewBody(BuildContext context, List<Widget> list) {
-    return ListView(children: [
-      renderTrackPoint(context),
-      const Divider(
-          thickness: 2, indent: 10, endIndent: 10, color: Colors.black),
-      ...list
-    ]);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    Widget body = AppWidgets.loading('Waiting for GPS Signal');
-
-    /// nothing checked at this point
-    if (bridge.gpsPoints.isEmpty) {
-      body = AppWidgets.loading('Waiting for GPS Signal');
-    } else {
-      switch (displayMode) {
-        case _DisplayMode.recentTrackPoints:
-          body = ListView(
-              children: renderRecentTrackPointList(
-                  context, ModelTrackPoint.recentTrackPoints()));
-          break;
-
-        /// tasks mode
-        case _DisplayMode.gps:
-          body = renderOSM(context);
-          break;
-
-        /// last visited mode
-        case _DisplayMode.lastVisited:
-          GPS gps = bridge.gpsPoints.first;
-          body = ListView(
-              children: renderRecentTrackPointList(
-                  context, ModelTrackPoint.lastVisited(gps)));
-          break;
-
-        /// recent mode
-        default:
-          body = renderTrackPoint(context);
-      }
+  ///
+  Future<void> onTick(EventOnAppTick tick) async {
+    if (displayMode != _DisplayMode.gps) {
+      setState(() {});
     }
-
-    return AppWidgets.scaffold(context,
-        body: body, navBar: bottomNavBar(context));
   }
 
-  Widget renderOSM(BuildContext context) {
-    return osm.OSMFlutter(
-      mapIsLoading: const WidgetDisposed(),
-      androidHotReloadSupport: true,
-      controller: mapController,
-      isPicker: false,
-      initZoom: 17,
-      minZoomLevel: 8,
-      maxZoomLevel: 19,
-      stepZoom: 1.0,
-    );
-  }
-
-  Future<void> osmGpsPoints(EventOnWidgetDisposed e) async {
+  /// render gpsPoints on OSM Map
+  Future<void> onOsmGpsPoints(EventOnWidgetDisposed e) async {
     await mapController.removeAllCircle();
 
     for (var alias in ModelAlias.getAll()) {
@@ -246,6 +293,58 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     }
   }
 
+  ///
+  @override
+  Widget build(BuildContext context) {
+    Widget body = AppWidgets.loading('Waiting for GPS Signal');
+
+    /// nothing checked at this point
+    if (bridge.gpsPoints.isNotEmpty) {
+      switch (displayMode) {
+        case _DisplayMode.recentTrackPoints:
+          body = ListView(
+              children: renderRecentTrackPointList(
+                  context, ModelTrackPoint.recentTrackPoints()));
+          break;
+
+        /// tasks mode
+        case _DisplayMode.gps:
+          body = renderOSM(context);
+          break;
+
+        /// last visited mode
+        case _DisplayMode.lastVisited:
+          GPS gps = bridge.gpsPoints.first;
+          body = ListView(
+              children: renderRecentTrackPointList(
+                  context, ModelTrackPoint.lastVisited(gps)));
+          break;
+
+        /// tasks mode
+        case _DisplayMode.gps:
+          body = renderOSM(context);
+          break;
+
+        /// recent mode
+        default:
+          /*
+          if (bridge.trackingStatus == TrackingStatus.moving) {
+            body = renderTrackPointMoving(context);
+          } else if (bridge.trackingStatus == TrackingStatus.standing) {
+            body = renderTrackPointStanding(context);
+          } else {
+            body = AppWidgets.loading('Waiting for Tracking Status');
+          }
+          */
+          body = renderTrackPointMoving(context);
+      }
+    }
+
+    return AppWidgets.scaffold(context,
+        body: body, navBar: bottomNavBar(context));
+  }
+
+  ///
   BottomNavigationBar bottomNavBar(BuildContext context) {
     return BottomNavigationBar(
         currentIndex: _bottomBarIndex,
@@ -279,20 +378,80 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         });
   }
 
-  Future<void> onAddressLookup(EventOnAddressLookup event) async {
-    if (!mounted || bridge.gpsPoints.isEmpty) {
-      return;
-    }
-    bridge.setAddress(bridge.gpsPoints.first);
+  ///
+  Widget renderTrackPointMoving(BuildContext context) {
+    _TrackPointData tp = _TrackPointData();
+    Widget divider = AppWidgets.divider();
+    Screen screen = Screen(context);
+    Widget body =
+        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Center(
+          child: Text('\n${Globals.weekDays[tp.tStart.weekday]}. den'
+              ' ${tp.tStart.day}.${tp.tStart.month}.${tp.tStart.year}')),
+      Center(
+          heightFactor: 2,
+          child: Text(
+              bridge.trackingStatus == TrackingStatus.standing
+                  ? 'Halten'
+                  : 'Fahren',
+              style: const TextStyle(letterSpacing: 2, fontSize: 20))),
+      Center(
+          heightFactor: 1.5,
+          child: Text('${tp.distanceMoving} km',
+              style: const TextStyle(letterSpacing: 2, fontSize: 15))),
+      Center(
+          child: Text(
+              '${tp.tStart.hour}:${tp.tStart.minute} - ${tp.tEnd.hour}:${tp.tEnd.minute}')),
+      divider,
+      TextButton(
+        style: ButtonStyle(
+            padding:
+                MaterialStateProperty.all<EdgeInsets>(const EdgeInsets.all(0))),
+        child: Text('ALIAS:\n${tp.aliasText}'),
+        onPressed: () async {
+          if (bridge.gpsPoints.isNotEmpty) {
+            var gps = bridge.gpsPoints.first;
+            bridge.trackPointAliasIdList = await Cache.setValue<List<int>>(
+                CacheKeys.cacheBackgroundAliasIdList,
+                ModelAlias.nextAlias(gps: gps).map((e) => e.id).toList());
+            await Cache.reload();
+            if (mounted) {
+              setState(() {});
+            }
+          }
+        },
+      ),
+      TextButton(
+        style: ButtonStyle(
+            padding:
+                MaterialStateProperty.all<EdgeInsets>(const EdgeInsets.all(0))),
+        child: Text('OSM:\n${tp.addressText}', softWrap: true),
+        onPressed: () async {
+          if (bridge.gpsPoints.isNotEmpty) {
+            var gps = bridge.gpsPoints.first;
+            var addr = (await Address(gps).lookupAddress()).toString();
+            bridge.currentAddress = await Cache.setValue<String>(
+                CacheKeys.cacheBackgroundAddress, addr);
+            if (mounted) {
+              setState(() {});
+            }
+          }
+        },
+      ),
+    ]);
+    return ListTile(
+        leading:
+            IconButton(icon: const Icon(Icons.warning_amber), onPressed: () {}),
+        title: body);
   }
 
-  Future<void> onTick(EventOnAppTick tick) async {
-    if (displayMode != _DisplayMode.gps) {
-      setState(() {});
-    }
+  ///
+  Widget renderTrackPointStanding(BuildContext context) {
+    return const Text('');
   }
 
-  Widget renderTrackPoint(BuildContext context) {
+  /// deprecated
+  Widget _renderTrackPoint(BuildContext context) {
     if (bridge.gpsPoints.isEmpty) {
       return AppWidgets.loading('Waiting for GPS from Background...');
     }
@@ -459,8 +618,6 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     }
   }
 
-  ///
-  /// this list is used by modes:
   /// time based recent and location based lastVisited
   List<Widget> renderRecentTrackPointList(
       BuildContext context, List<ModelTrackPoint> tpList) {
@@ -512,6 +669,21 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     return listItems.reversed.toList();
   }
 
+  /// init OSM Map
+  Widget renderOSM(BuildContext context) {
+    return osm.OSMFlutter(
+      mapIsLoading: const WidgetDisposed(),
+      androidHotReloadSupport: true,
+      controller: mapController,
+      isPicker: false,
+      initZoom: 17,
+      minZoomLevel: 8,
+      maxZoomLevel: 19,
+      stepZoom: 1.0,
+    );
+  }
+
+  ///
   List<Widget> taskCheckboxes(context) {
     var referenceList = tpTasks;
     var checkBoxes = <Widget>[];
@@ -533,6 +705,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     return checkBoxes;
   }
 
+  ///
   List<Widget> userCheckboxes(context) {
     var referenceList = tpUsers;
     var checkBoxes = <Widget>[];
@@ -554,6 +727,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     return checkBoxes;
   }
 
+  ///
   bool dropdownUserIsOpen = false;
   Widget dropdownUser(context) {
     /// render selected users
@@ -583,6 +757,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     return ListBody(children: items);
   }
 
+  ///
   bool dropdownTasksIsOpen = false;
   Widget dropdownTasks(context) {
     /// render selected tasks
@@ -616,6 +791,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     return ListBody(children: items);
   }
 
+  ///
   Widget userNotes(BuildContext context) {
     return Container(
         padding: const EdgeInsets.all(10),

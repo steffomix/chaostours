@@ -45,8 +45,6 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
         Globals.statusStandingRequireAlias ? '1' : '0', // bool
     CacheKeys.globalsTrackPointInterval:
         Globals.trackPointInterval.inSeconds.toString(), // int
-    CacheKeys.globalsOsmLookupInterval:
-        Globals.osmLookupInterval.inSeconds.toString(), // int
     CacheKeys.globalsOsmLookupCondition:
         Globals.osmLookupCondition.name, // String enum name
     CacheKeys.globalsCacheGpsTime:
@@ -81,10 +79,6 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
       key = CacheKeys.globalsTrackPointInterval;
       await Cache.setValue<Duration>(
           key, dur(settings[key], Globals.trackPointInterval));
-
-      key = CacheKeys.globalsOsmLookupInterval;
-      await Cache.setValue<Duration>(
-          key, dur(settings[key], Globals.osmLookupInterval));
 
       key = CacheKeys.globalsOsmLookupCondition;
       await Cache.setValue<OsmLookup>(
@@ -280,22 +274,6 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
             description:
                 'In welchen Zeitabständen in SEKUNDEN das Hintergrung GPS abgefragt wird.\n'
                 'Bei Änderungen ist ein Neustart der App Erforderlich.'),
-
-        /// addressLookupInterval
-        numberField(
-            context: context,
-            controller: txAddressLookupInterval ??= TextEditingController(
-                text: settings[CacheKeys.globalsOsmLookupInterval]),
-            cacheKey: CacheKeys.globalsOsmLookupInterval,
-            minValue: 10,
-            maxValue: 0,
-            title: 'Live Tracking OSM Adress lookup Interval',
-            description:
-                'In welchen Zeitabständen in MINUTEN beim kostenlosen Service von OpenStreetMap.com '
-                'anhand der GPS Daten die Adresse abgefragt werden.\n'
-                'Dieser Wert sollte nicht niedriger als der GPS Hintergrund Interval sein.\n'
-                'Eine einzelne Online Abfrage verbraucht etwa 1kb Mobile Daten.\nDer mindestwert ist zwar 10 Sekunden,'
-                ' sie können aber mit 0 Sekunden die Funktion abschalten'),
 
         /// OsmLookup
         Container(

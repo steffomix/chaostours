@@ -53,10 +53,6 @@ class _GlobalDefaults {
   /// when background looks for an address of given gps
   static OsmLookup osmLookupCondition = OsmLookup.onStatus;
 
-  /// consumes mobile data!
-  ///
-  static Duration osmLookupInterval = Duration(seconds: 0);
-
   // ignore: unused_element
   static Future<void> restoreDefaults() async {
     Globals.version = version;
@@ -71,7 +67,6 @@ class _GlobalDefaults {
     Globals.gpsPointsSmoothCount = gpsPointsSmoothCount;
     Globals.gpsMaxSpeed = gpsMaxSpeed;
     Globals.osmLookupCondition = osmLookupCondition;
-    Globals.osmLookupInterval = osmLookupInterval;
   }
 }
 
@@ -92,7 +87,6 @@ class Globals {
   static int gpsPointsSmoothCount = _GlobalDefaults.gpsPointsSmoothCount;
   static int gpsMaxSpeed = _GlobalDefaults.gpsMaxSpeed;
   static OsmLookup osmLookupCondition = _GlobalDefaults.osmLookupCondition;
-  static Duration osmLookupInterval = _GlobalDefaults.osmLookupInterval;
 
   static Future<void> loadSettings() async {
     try {
@@ -125,9 +119,6 @@ class Globals {
 
       osmLookupCondition = await Cache.getValue<OsmLookup>(
           CacheKeys.globalsOsmLookupCondition, OsmLookup.onStatus);
-
-      osmLookupInterval = await Cache.getValue<Duration>(
-          CacheKeys.globalsOsmLookupInterval, Duration(seconds: 3600));
     } catch (e, stk) {
       logger.error('load settings: $e', stk);
     }
@@ -161,8 +152,5 @@ class Globals {
 
     await Cache.setValue<OsmLookup>(
         CacheKeys.globalsOsmLookupCondition, osmLookupCondition);
-
-    await Cache.setValue<Duration>(
-        CacheKeys.globalsOsmLookupInterval, osmLookupInterval);
   }
 }
