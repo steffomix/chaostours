@@ -63,7 +63,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
                   : Text('Alias: ${alias.join('\n- ')}')),
           Text(AppWidgets.timeInfo(trackPoint.timeStart, trackPoint.timeEnd)),
           Text(
-              'Aufgaben:${tasks.isEmpty ? ' -' : '\n   - ${tasks.join('\n   - ')}'}')
+              'Arbeiten:${tasks.isEmpty ? ' -' : '\n   - ${tasks.join('\n   - ')}'}')
         ]));
   }
 
@@ -147,7 +147,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
     List<Widget> items = [
       ElevatedButton(
         child: ListTile(
-            trailing: const Icon(Icons.menu), title: Text('Aufgaben:$tasks')),
+            trailing: const Icon(Icons.menu), title: Text('Arbeiten:$tasks')),
         onPressed: () {
           dropdownTasksIsOpen = !dropdownTasksIsOpen;
           setState(() {});

@@ -154,11 +154,10 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   TextEditingController tpNotes =
       TextEditingController(text: DataBridge.instance.trackPointUserNotes);
 
-  /// modify
-  ValueNotifier<bool> modified = ValueNotifier<bool>(false);
   void modify() {
-    modified.value = true;
-    setState(() {});
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   ///
@@ -169,6 +168,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     EventManager.listen<EventOnAppTick>(onTick);
     EventManager.listen<EventOnWidgetDisposed>(onOsmGpsPoints);
     EventManager.listen<EventOnCacheLoaded>(onCacheLoaded);
+    EventManager.listen<EventOnTrackingStatusChanged>(onTrackingStatusChanged);
     super.initState();
     Future.microtask(() async {
       await bridge.reload();
@@ -185,6 +185,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     EventManager.remove<EventOnAppTick>(onTick);
     EventManager.remove<EventOnWidgetDisposed>(onOsmGpsPoints);
     EventManager.remove<EventOnCacheLoaded>(onCacheLoaded);
+    EventManager.remove<EventOnTrackingStatusChanged>(onTrackingStatusChanged);
     super.dispose();
   }
 
@@ -204,6 +205,12 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     } catch (e, stk) {
       logger.error('update alias idList: $e', stk);
     }
+  }
+
+  void onTrackingStatusChanged(EventOnTrackingStatusChanged e) {
+    tpUsers = [...bridge.trackPointUserIdList];
+    tpTasks = [...bridge.trackPointTaskIdList];
+    tpNotes.text = bridge.trackPointUserNotes;
   }
 
   ///
@@ -476,21 +483,23 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
           heightFactor: 2,
           child:
               Text('Halten', style: TextStyle(letterSpacing: 2, fontSize: 20))),
-      Center(
-          heightFactor: 1.5,
-          child: Text(
-              'Distanz: ${tp.distanceStanding} m / ${tp.standingRadius} radius',
-              style: const TextStyle(letterSpacing: 2, fontSize: 15))),
+      Center(child: Text(tp.durationText)),
       Center(
           child: Text(
               '${tp.tStart.hour}:${tp.tStart.minute} - ${tp.tEnd.hour}:${tp.tEnd.minute}')),
+      Center(
+          heightFactor: 1.5,
+          child: Text(
+              'Distanz: ${tp.distanceStanding} / ${tp.standingRadius} m',
+              style: const TextStyle(letterSpacing: 2, fontSize: 15))),
     ]);
     List<Widget> items = [
       divider,
       TextButton(
         style: ButtonStyle(
-            padding:
-                MaterialStateProperty.all<EdgeInsets>(const EdgeInsets.all(0))),
+            alignment: Alignment.centerLeft,
+            padding: MaterialStateProperty.all<EdgeInsets>(
+                const EdgeInsets.fromLTRB(30, 0, 20, 0))),
         child: Text('ALIAS:\n${tp.aliasText}'),
         onPressed: () async {
           if (bridge.gpsPoints.isNotEmpty) {
@@ -508,9 +517,10 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       divider,
       TextButton(
         style: ButtonStyle(
-            padding:
-                MaterialStateProperty.all<EdgeInsets>(const EdgeInsets.all(0))),
-        child: Text('OSM:\n${tp.addressText}', softWrap: true),
+            alignment: Alignment.centerLeft,
+            padding: MaterialStateProperty.all<EdgeInsets>(
+                const EdgeInsets.fromLTRB(30, 0, 20, 0))),
+        child: Text('OSM:\n${tp.addressText}'),
         onPressed: () async {
           if (bridge.gpsPoints.isNotEmpty) {
             var gps = bridge.gpsPoints.first;
@@ -524,9 +534,9 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         },
       ),
       divider,
-      dropdownUser(context),
-      divider,
       dropdownTasks(context),
+      divider,
+      dropdownUser(context),
       divider,
       userNotes(context),
     ];
@@ -550,8 +560,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                   }
                 }),
             Container(
-                padding: const EdgeInsets.fromLTRB(8, 35, 0, 0),
-                child: const Text('STOP', style: TextStyle(fontSize: 10)))
+                padding: const EdgeInsets.fromLTRB(4, 35, 0, 0),
+                child: const Text('START', style: TextStyle(fontSize: 10)))
           ]),
           title: body),
       ...items
@@ -584,10 +594,10 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
             Center(child: Text(AppWidgets.timeInfo(tp.timeStart, tp.timeEnd))),
             divider,
             Text(
-                'Personal:${tasks.isEmpty ? ' -' : '\n   - ${users.join('\n   - ')}'}'),
+                'Arbeiten:${tasks.isEmpty ? ' -' : '\n   - ${tasks.join('\n   - ')}'}'),
             divider,
             Text(
-                'Aufgaben:${tasks.isEmpty ? ' -' : '\n   - ${tasks.join('\n   - ')}'}'),
+                'Personal:${tasks.isEmpty ? ' -' : '\n   - ${users.join('\n   - ')}'}'),
             divider,
             const Text('Notizen:'),
             Text(tp.notes),
@@ -637,7 +647,9 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                 deleted: model.deleted,
                 title: model.task,
                 subtitle: model.notes,
-                onToggle: () {
+                onToggle: () async {
+                  bridge.trackPointTaskIdList = await Cache.setValue<List<int>>(
+                      CacheKeys.cacheBackgroundTaskIdList, tpTasks);
                   modify();
                 })));
       }
@@ -659,7 +671,9 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                 deleted: model.deleted,
                 title: model.user,
                 subtitle: model.notes,
-                onToggle: () {
+                onToggle: () async {
+                  bridge.trackPointUserIdList = await Cache.setValue<List<int>>(
+                      CacheKeys.cacheBackgroundUserIdList, tpUsers);
                   modify();
                 })));
       }
@@ -713,7 +727,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     List<Widget> items = [
       ElevatedButton(
         child: ListTile(
-            trailing: const Icon(Icons.menu), title: Text('Aufgaben:$tasks')),
+            trailing: const Icon(Icons.menu), title: Text('Arbeiten:$tasks')),
         onPressed: () {
           dropdownTasksIsOpen = !dropdownTasksIsOpen;
           setState(() {});
@@ -724,10 +738,6 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
           : Column(children: taskCheckboxes(context))
     ];
 
-    /// add items
-    if (dropdownTasksIsOpen) {
-      items.addAll(taskCheckboxes(context));
-    }
     return ListBody(children: items);
   }
 
@@ -744,8 +754,9 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
             maxLines: null,
             minLines: 2,
             controller: tpNotes,
-            onChanged: (String? s) {
-              //bridge.trackPointUserNotes = s?.trim() ?? '';
+            onChanged: (String? s) async {
+              bridge.trackPointUserNotes = await Cache.setValue<String>(
+                  CacheKeys.cacheBackgroundTrackPointUserNotes, tpNotes.text);
               modify();
             }));
   }

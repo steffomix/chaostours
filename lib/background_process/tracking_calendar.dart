@@ -71,7 +71,7 @@ class TrackingCalendar {
 
     String body = '$summary\n(Von $fTimeStart bis $fTimeEnd)\n\n';
 
-    String tasks = 'Erledigte Aufgaben (${tp.idTask.length}):\n';
+    String tasks = 'Erledigte Arbeiten (${tp.idTask.length}):\n';
     for (var t in tp.idTask) {
       tasks += '- ${ModelTask.getTask(t).task}\n';
     }

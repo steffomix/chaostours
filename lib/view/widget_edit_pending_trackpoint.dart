@@ -79,7 +79,7 @@ class _WidgetAddTasksState extends State<WidgetEditPendingTrackPoint> {
                   : Text('Alias: ${alias.join('\n- ')}')),
           Text(AppWidgets.timeInfo(tStart, tEnd)),
           Text(
-              'Aufgaben:${tasks.isEmpty ? ' -' : '\n   - ${tasks.join('\n   - ')}'}')
+              'Arbeiten:${tasks.isEmpty ? ' -' : '\n   - ${tasks.join('\n   - ')}'}')
         ]));
   }
 
@@ -169,7 +169,7 @@ class _WidgetAddTasksState extends State<WidgetEditPendingTrackPoint> {
     List<Widget> items = [
       ElevatedButton(
         child: ListTile(
-            trailing: const Icon(Icons.menu), title: Text('Aufgaben:$tasks')),
+            trailing: const Icon(Icons.menu), title: Text('Arbeiten:$tasks')),
         onPressed: () {
           dropdownTasksIsOpen = !dropdownTasksIsOpen;
           setState(() {});

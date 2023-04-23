@@ -89,7 +89,7 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
           Container(
               padding: const EdgeInsets.all(10),
               child: TextField(
-                decoration: const InputDecoration(label: Text('Aufgabe')),
+                decoration: const InputDecoration(label: Text('Arbeit')),
                 onChanged: ((value) {
                   task.task = value;
                   modify();
@@ -117,8 +117,8 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
           ListTile(
               title: const Text('Deaktiviert'),
               subtitle: const Text(
-                'Definiert ob diese Aufgabe sichtbar ist. '
-                '\nBereits zugewiesene Aufgaben bleiben grundsätzlich sichtbar.',
+                'Definiert ob diese Arbeit sichtbar ist. '
+                '\nBereits zugewiesene Arbeiten bleiben grundsätzlich sichtbar.',
                 softWrap: true,
               ),
               leading: Checkbox(

@@ -262,7 +262,7 @@ class _WidgetDrawer extends State<WidgetDrawer> {
                   onPressed: () {
                     AppWidgets.navigate(context, AppRoutes.listTasks);
                   },
-                  child: const Text('Aufgaben')),
+                  child: const Text('Arbeiten')),
 
               ///
               ElevatedButton(
