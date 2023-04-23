@@ -91,7 +91,7 @@ class _WidgetManageBackgroundGpsState extends State<WidgetManageBackgroundGps> {
           style: TextStyle(fontWeight: FontWeight.bold)),
       Text('Current Trackiong Status: ${bridge.trackingStatus.name}'),
       AppWidgets.divider(),
-      Text('Status change triggered: ${bridge.statusTriggered ? 'Yes' : 'No'}'),
+      Text('Status change triggered: ${bridge.triggeredTrackingStatus.name}'),
       AppWidgets.divider(),
       Text(
           'Gps status standing: ${bridge.trackPointGpsStartStanding?.toSharedString()}'),

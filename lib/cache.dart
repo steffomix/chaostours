@@ -28,7 +28,7 @@ enum JsonKeys {
 enum CacheKeys {
   /// cache foreground to background
   /// saved only on special event triggered by user
-  cacheEventForegroundTriggerStatus(bool),
+  cacheTriggerTrackingStatus(TrackingStatus),
 
   /// saved only on special events
   cacheEventBackgroundGpsStartMoving(PendingGps),

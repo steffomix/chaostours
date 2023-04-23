@@ -161,8 +161,7 @@ class ModelAlias {
       {required GPS gps, bool all = false, excludeDeleted = false}) {
     ModelAlias m;
     List<ModelAlias> list = [];
-    for (var i = 0; i < _table.length - 1; i++) {
-      m = _table[i];
+    for (var m in _table) {
       if (excludeDeleted && m.deleted) {
         continue;
       }
@@ -172,7 +171,9 @@ class ModelAlias {
       if (all) {
         list.add(m);
       } else {
-        if (m.sortDistance < m.radius && !m.deleted) list.add(m);
+        if (m.sortDistance < m.radius) {
+          list.add(m);
+        }
       }
     }
     list.sort((a, b) => a.sortDistance.compareTo(b.sortDistance));

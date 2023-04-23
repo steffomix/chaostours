@@ -87,10 +87,12 @@ class GPS {
   static double distanceOverTrackList(List<GPS> tracklist) {
     if (tracklist.length < 2) return 0;
     double dist = 0;
-    GPS gps = tracklist[0];
-    for (var i = 1; i < tracklist.length; i++) {
-      dist += GPS.distance(gps, tracklist[i]);
-      gps = tracklist[i];
+    GPS? gps;
+    for (var track in tracklist) {
+      if (gps != null) {
+        dist += GPS.distance(gps, track);
+      }
+      gps = track;
     }
     return dist;
   }

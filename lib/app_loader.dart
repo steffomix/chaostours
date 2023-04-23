@@ -49,7 +49,6 @@ class AppLoader {
           logger.error('preload alias: $e', stk);
         }
       }
-      await PermissionChecker.checkAll();
       //
       await BackgroundTracking.initialize();
       if (await PermissionChecker.checkLocation() &&

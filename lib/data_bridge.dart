@@ -18,14 +18,11 @@ class DataBridge {
 
   Future<void> reload() async => await Cache.reload();
 
-  /// trigger status
-  bool _triggerStatus = false;
-  bool get statusTriggered => _triggerStatus;
-  Future<void> triggerStatus() async => await _saveTriggerStatus(true);
-  Future<void> triggerStatusExecuted() async => await _saveTriggerStatus(false);
-  Future<void> _saveTriggerStatus(bool status) async {
-    _triggerStatus = await Cache.setValue<bool>(
-        CacheKeys.cacheEventForegroundTriggerStatus, status);
+  /// trigger driving status
+  TrackingStatus triggeredTrackingStatus = TrackingStatus.none;
+  Future<void> triggerTrackingStatus(TrackingStatus status) async {
+    triggeredTrackingStatus = await Cache.setValue<TrackingStatus>(
+        CacheKeys.cacheTriggerTrackingStatus, status);
   }
 
   ///
@@ -93,8 +90,8 @@ class DataBridge {
 
   /// load foreground by background
   Future<void> loadTriggerStatus() async {
-    _triggerStatus = await Cache.getValue<bool>(
-        CacheKeys.cacheEventForegroundTriggerStatus, false);
+    triggeredTrackingStatus = await Cache.getValue<TrackingStatus>(
+        CacheKeys.cacheTriggerTrackingStatus, TrackingStatus.none);
   }
 
   /// loaded by foreground and background
@@ -109,10 +106,10 @@ class DataBridge {
           await Cache.getValue<String>(CacheKeys.cacheBackgroundAddress, '');
 
       /// status and trigger
-      _triggerStatus = await Cache.getValue<bool>(
-          CacheKeys.cacheEventForegroundTriggerStatus, false);
       trackingStatus = await Cache.getValue<TrackingStatus>(
           CacheKeys.cacheBackgroundTrackingStatus, TrackingStatus.none);
+      triggeredTrackingStatus = await Cache.getValue<TrackingStatus>(
+          CacheKeys.cacheTriggerTrackingStatus, TrackingStatus.none);
 
       /// gps tracking
       lastGps = await Cache.getValue<PendingGps>(

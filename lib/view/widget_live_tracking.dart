@@ -38,7 +38,9 @@ class _TrackPointData {
   late DateTime tStart;
   late DateTime tEnd;
   late PendingGps gpslastStatusChange;
-  late double distanceStanding;
+  late int distanceStanding;
+  late int distanceStandingFromBorder;
+  late int standingRadius;
   late double distanceMoving;
   late List<ModelAlias> aliasList;
   late List<ModelUser> userList;
@@ -65,29 +67,30 @@ class _TrackPointData {
         : (GPS.distanceOverTrackList(bridge.gpsPoints) / 10).round() / 100;
     try {
       GPS gps;
+      int radius;
       if (bridge.trackPointAliasIdList.isNotEmpty) {
         var alias = ModelAlias.getAlias(bridge.trackPointAliasIdList.first);
         gps = GPS(alias.lat, alias.lon);
-        distanceStanding = bridge.gpsPoints.isEmpty
-            ? 0.0
-            : GPS.distance(
-                bridge.calcGpsPoints.isNotEmpty
-                    ? bridge.calcGpsPoints.first
-                    : bridge.gpsPoints.first,
-                gps);
+        radius = alias.radius;
       } else {
         gps = bridge.trackPointGpsStartStanding!;
-        distanceStanding = bridge.gpsPoints.isEmpty
-            ? 0.0
-            : GPS.distance(
-                bridge.calcGpsPoints.isNotEmpty
-                    ? bridge.calcGpsPoints.first
-                    : bridge.gpsPoints.first,
-                gps);
+        radius = Globals.distanceTreshold;
       }
+      distanceStanding = bridge.gpsPoints.isEmpty
+          ? 0
+          : GPS
+              .distance(
+                  bridge.calcGpsPoints.isNotEmpty
+                      ? bridge.calcGpsPoints.first
+                      : bridge.gpsPoints.first,
+                  gps)
+              .round();
+      distanceStandingFromBorder = radius - distanceStanding;
+      standingRadius = radius;
     } catch (e) {
-      distanceStanding = 0.0;
+      distanceStanding = 0;
     }
+
     aliasList = bridge.trackPointAliasIdList
         .map((id) => ModelAlias.getAlias(id))
         .toList();
@@ -102,12 +105,9 @@ class _TrackPointData {
     durationText = timeElapsed(tStart, tEnd, false);
     aliasText = aliasList.isEmpty
         ? ' ---'
-        : aliasList
-            .map((e) {
-              return '- ${e.alias}';
-            })
-            .toList()
-            .join('\n');
+        : '${aliasList.length == 1 ? '-' : '-->'} ${aliasList.map((e) {
+              return e.alias;
+            }).toList().join('\n- ')}';
     tasksText = taskList.isEmpty
         ? ' ---'
         : taskList
@@ -211,7 +211,6 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     if (displayMode == _DisplayMode.gps) {
       onOsmGpsPoints(EventOnWidgetDisposed());
     }
-    updateAliasList();
   }
 
   ///
@@ -327,7 +326,6 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
         /// recent mode
         default:
-          /*
           if (bridge.trackingStatus == TrackingStatus.moving) {
             body = renderTrackPointMoving(context);
           } else if (bridge.trackingStatus == TrackingStatus.standing) {
@@ -335,8 +333,6 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
           } else {
             body = AppWidgets.loading('Waiting for Tracking Status');
           }
-          */
-          body = renderTrackPointMoving(context);
       }
     }
 
@@ -388,13 +384,10 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       Center(
           child: Text('\n${Globals.weekDays[tp.tStart.weekday]}. den'
               ' ${tp.tStart.day}.${tp.tStart.month}.${tp.tStart.year}')),
-      Center(
+      const Center(
           heightFactor: 2,
-          child: Text(
-              bridge.trackingStatus == TrackingStatus.standing
-                  ? 'Halten'
-                  : 'Fahren',
-              style: const TextStyle(letterSpacing: 2, fontSize: 20))),
+          child:
+              Text('Fahren', style: TextStyle(letterSpacing: 2, fontSize: 20))),
       Center(
           heightFactor: 1.5,
           child: Text('${tp.distanceMoving} km',
@@ -402,6 +395,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       Center(
           child: Text(
               '${tp.tStart.hour}:${tp.tStart.minute} - ${tp.tEnd.hour}:${tp.tEnd.minute}')),
+    ]);
+    List<Widget> items = [
       divider,
       TextButton(
         style: ButtonStyle(
@@ -421,6 +416,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
           }
         },
       ),
+      divider,
       TextButton(
         style: ButtonStyle(
             padding:
@@ -438,184 +434,128 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
           }
         },
       ),
+    ];
+
+    return ListView(children: [
+      ListTile(
+          //contentPadding: EdgeInsets.fromLTRB(0, 0, 0, 0),
+          horizontalTitleGap: -30,
+          leading: Stack(children: [
+            IconButton(
+                icon: Icon(
+                    bridge.triggeredTrackingStatus == TrackingStatus.standing
+                        ? Icons.warning
+                        : Icons.warning_amber),
+                onPressed: () async {
+                  bridge.triggeredTrackingStatus = await Cache.setValue(
+                      CacheKeys.cacheTriggerTrackingStatus,
+                      TrackingStatus.standing);
+                  if (mounted) {
+                    setState(() {});
+                  }
+                }),
+            Container(
+                padding: const EdgeInsets.fromLTRB(8, 35, 0, 0),
+                child: const Text('STOP', style: TextStyle(fontSize: 10)))
+          ]),
+          title: body),
+      ...items
     ]);
-    return ListTile(
-        leading:
-            IconButton(icon: const Icon(Icons.warning_amber), onPressed: () {}),
-        title: body);
   }
 
   ///
   Widget renderTrackPointStanding(BuildContext context) {
-    return const Text('');
-  }
-
-  /// deprecated
-  Widget _renderTrackPoint(BuildContext context) {
-    if (bridge.gpsPoints.isEmpty) {
-      return AppWidgets.loading('Waiting for GPS from Background...');
-    }
+    _TrackPointData tp = _TrackPointData();
     Widget divider = AppWidgets.divider();
-    Screen screen = Screen(context);
-    DateTime tStart = (bridge.trackPointGpslastStatusChange?.time ??
-            bridge.gpsPoints.last.time)
-        .subtract(Globals.timeRangeTreshold);
-    DateTime tEnd = DateTime.now();
-    PendingGps gpslastStatusChange =
-        bridge.trackPointGpslastStatusChange ?? bridge.gpsPoints.last;
-    try {
-      String duration = timeElapsed(tStart, tEnd, false);
-      List<String> alias =
-          ModelAlias.nextAlias(gps: gpslastStatusChange).map((e) {
-        return '- ${e.alias}';
-      }).toList();
-      List<String> users = bridge.trackPointUserIdList.map((id) {
-        return '- ${ModelUser.getUser(id).user}';
-      }).toList();
-
-      List<String> task = bridge.trackPointTaskIdList
-          .map((e) => '- ${ModelTask.getTask(e).task}')
-          .toList();
-      String notes = bridge.trackPointUserNotes;
-
-      String sAlias = alias.isEmpty ? ' ---' : alias.join('\n');
-      String sTasks = task.isEmpty ? ' ---' : task.join('\n');
-      String sUsers = users.isEmpty ? ' ---' : users.join('\n');
-
-      Widget listBody = SizedBox(
-          width: screen.width - 50,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                  child: Text('\n${Globals.weekDays[tStart.weekday]}. den'
-                      ' ${tStart.day}.${tStart.month}.${tStart.year}')),
-              Center(
-                  heightFactor: 2,
-                  child: Text(
-                      bridge.trackingStatus == TrackingStatus.standing
-                          ? 'Halten'
-                          : 'Fahren',
-                      style: const TextStyle(letterSpacing: 2, fontSize: 20))),
-              Center(
-                  heightFactor: 1.5,
-                  child: Text(
-                      bridge.trackingStatus == TrackingStatus.standing
-                          ? duration
-                          : '~${(GPS.distanceOverTrackList(bridge.gpsPoints) / 10).round() / 100}km',
-                      style: const TextStyle(letterSpacing: 2, fontSize: 15))),
-              Center(
-                  child: Text(
-                      '${tStart.hour}:${tStart.minute} - ${tEnd.hour}:${tEnd.minute}')),
-              divider,
-              TextButton(
-                style: ButtonStyle(
-                    padding: MaterialStateProperty.all<EdgeInsets>(
-                        const EdgeInsets.all(0))),
-                child: Text('ALIAS:\n$sAlias'),
-                onPressed: () async {
-                  if (bridge.gpsPoints.isNotEmpty) {
-                    var gps = bridge.gpsPoints.first;
-                    bridge.trackPointAliasIdList =
-                        await Cache.setValue<List<int>>(
-                            CacheKeys.cacheBackgroundAliasIdList,
-                            ModelAlias.nextAlias(gps: gps)
-                                .map((e) => e.id)
-                                .toList());
-                    await Cache.reload();
-                    if (mounted) {
-                      setState(() {});
-                    }
-                  }
-                },
-              ),
-              TextButton(
-                style: ButtonStyle(
-                    padding: MaterialStateProperty.all<EdgeInsets>(
-                        const EdgeInsets.all(0))),
-                child: Text(
-                    'OSM:\n${bridge.currentAddress.isEmpty ? '---' : bridge.currentAddress}',
-                    softWrap: true),
-                onPressed: () async {
-                  if (bridge.gpsPoints.isNotEmpty) {
-                    var gps = bridge.gpsPoints.first;
-                    var addr = (await Address(gps).lookupAddress()).toString();
-                    bridge.currentAddress = await Cache.setValue<String>(
-                        CacheKeys.cacheBackgroundAddress, addr);
-                    if (mounted) {
-                      setState(() {});
-                    }
-                  }
-                },
-              ),
-              /*
-              divider,
-              dropdownUser(context),
-              divider,
-              dropdownTasks(context),
-              divider,
-              userNotes(context),
-              */
-
-              divider,
-              const Text('Personal:'),
-              Text(sUsers),
-              divider,
-              const Text('Aufgaben:'),
-              Text(sTasks),
-              divider,
-              const Text('Notizen:'),
-              Text(notes)
-            ],
-          ));
-
-      var iconEdit = IconButton(
-          icon: const Icon(size: 30, Icons.edit_location),
-          onPressed: () {
-            Navigator.pushNamed(context, AppRoutes.editPendingTrackPoint.route);
-          });
-
-      var iconTrigger = IconButton(
-          icon: Icon(
-              size: 30,
-              bridge.statusTriggered
-                  ? Icons.drive_eta
-                  : Icons.drive_eta_outlined),
-          onPressed: () {
-            bridge.triggerStatus().then((_) {
+    Widget body =
+        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Center(
+          child: Text('\n${Globals.weekDays[tp.tStart.weekday]}. den'
+              ' ${tp.tStart.day}.${tp.tStart.month}.${tp.tStart.year}')),
+      const Center(
+          heightFactor: 2,
+          child:
+              Text('Halten', style: TextStyle(letterSpacing: 2, fontSize: 20))),
+      Center(
+          heightFactor: 1.5,
+          child: Text(
+              'Distanz: ${tp.distanceStanding} m / ${tp.standingRadius} radius',
+              style: const TextStyle(letterSpacing: 2, fontSize: 15))),
+      Center(
+          child: Text(
+              '${tp.tStart.hour}:${tp.tStart.minute} - ${tp.tEnd.hour}:${tp.tEnd.minute}')),
+    ]);
+    List<Widget> items = [
+      divider,
+      TextButton(
+        style: ButtonStyle(
+            padding:
+                MaterialStateProperty.all<EdgeInsets>(const EdgeInsets.all(0))),
+        child: Text('ALIAS:\n${tp.aliasText}'),
+        onPressed: () async {
+          if (bridge.gpsPoints.isNotEmpty) {
+            var gps = bridge.gpsPoints.first;
+            bridge.trackPointAliasIdList = await Cache.setValue<List<int>>(
+                CacheKeys.cacheBackgroundAliasIdList,
+                ModelAlias.nextAlias(gps: gps).map((e) => e.id).toList());
+            await Cache.reload();
+            if (mounted) {
               setState(() {});
-            });
-          });
+            }
+          }
+        },
+      ),
+      divider,
+      TextButton(
+        style: ButtonStyle(
+            padding:
+                MaterialStateProperty.all<EdgeInsets>(const EdgeInsets.all(0))),
+        child: Text('OSM:\n${tp.addressText}', softWrap: true),
+        onPressed: () async {
+          if (bridge.gpsPoints.isNotEmpty) {
+            var gps = bridge.gpsPoints.first;
+            var addr = (await Address(gps).lookupAddress()).toString();
+            bridge.currentAddress = await Cache.setValue<String>(
+                CacheKeys.cacheBackgroundAddress, addr);
+            if (mounted) {
+              setState(() {});
+            }
+          }
+        },
+      ),
+      divider,
+      dropdownUser(context),
+      divider,
+      dropdownTasks(context),
+      divider,
+      userNotes(context),
+    ];
 
-      var action = bridge.trackingStatus == TrackingStatus.standing
-          ? Column(children: [
-              const Text('\n'),
-              iconTrigger,
-              const Text('\n'),
-              const Text('\n'),
-              const Text('\n'),
-              const Text('\n'),
-              iconEdit
-            ])
-          : Column(children: [iconEdit]);
-
-      ///
-      /// create widget
-      ///
-      ///
-      return SizedBox(
-          height: screen.height,
-          width: screen.width,
-          child: Row(children: [SizedBox(width: 50, child: action), listBody]));
-      /*
-      return ListTile(
-          leading: SizedBox(width: 55, height: 150, child: action),
-          title: listBody);
-          */
-    } catch (e, stk) {
-      logger.warn(e.toString());
-      return Text('$e \n$stk');
-    }
+    return ListView(children: [
+      ListTile(
+          //contentPadding: EdgeInsets.fromLTRB(0, 0, 0, 0),
+          horizontalTitleGap: -30,
+          leading: Stack(children: [
+            IconButton(
+                icon: Icon(
+                    bridge.triggeredTrackingStatus == TrackingStatus.moving
+                        ? Icons.drive_eta
+                        : Icons.drive_eta_outlined),
+                onPressed: () async {
+                  bridge.triggeredTrackingStatus = await Cache.setValue(
+                      CacheKeys.cacheTriggerTrackingStatus,
+                      TrackingStatus.moving);
+                  if (mounted) {
+                    setState(() {});
+                  }
+                }),
+            Container(
+                padding: const EdgeInsets.fromLTRB(8, 35, 0, 0),
+                child: const Text('STOP', style: TextStyle(fontSize: 10)))
+          ]),
+          title: body),
+      ...items
+    ]);
   }
 
   /// time based recent and location based lastVisited

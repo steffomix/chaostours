@@ -113,6 +113,10 @@ class TrackPoint {
       ///
       trackPoint();
 
+      /// reset TrackingStatus trigger
+      bridge.triggeredTrackingStatus = await Cache.setValue<TrackingStatus>(
+          CacheKeys.cacheTriggerTrackingStatus, TrackingStatus.none);
+
       /// if nothing has changed, nothing to do
       if (bridge.trackingStatus == oldTrackingStatus) {
         /// lookup address on every interval
@@ -318,12 +322,14 @@ class TrackPoint {
   }
 
   void trackPoint() {
-    /// status change triggered by user
-    if ((bridge.trackingStatus == TrackingStatus.standing ||
-            bridge.trackingStatus == TrackingStatus.none) &&
-        bridge.statusTriggered) {
+    /// process user triggers
+    if (bridge.triggeredTrackingStatus == TrackingStatus.standing) {
+      bridge.trackingStatus = TrackingStatus.standing;
+      return;
+    }
+
+    if (bridge.triggeredTrackingStatus == TrackingStatus.moving) {
       bridge.trackingStatus = TrackingStatus.moving;
-      bridge.triggerStatusExecuted();
       return;
     }
 
