@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 //
 import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/model/model_task.dart';
@@ -242,6 +243,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
               trackPoint.notes = tpNotes.text;
               ModelTrackPoint.update(trackPoint)
                   .then((_) => Navigator.pop(context));
+              Fluttertoast.showToast(msg: 'Trackpoint updated');
             } else {
               Navigator.pop(context);
             }

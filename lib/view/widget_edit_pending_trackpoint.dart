@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 ///
 import 'package:chaostours/view/app_widgets.dart';
@@ -268,6 +269,7 @@ class _WidgetAddTasksState extends State<WidgetEditPendingTrackPoint> {
                       CacheKeys.cacheBackgroundTrackPointUserNotes,
                       tpNotes.text);
                 }).then((_) {
+                  Fluttertoast.showToast(msg: 'Trackpoint updated');
                   if (mounted) {
                     modified.value = false;
                     setState(() {});

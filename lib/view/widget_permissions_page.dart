@@ -280,20 +280,12 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
         }));
     await Future.delayed(wait);
     permCalendar = await PermissionChecker.checkCalendar();
-    await _permissionItems();
     renderBody();
   }
 
   @override
   Widget build(BuildContext context) {
     _context = context;
-    bool id = ((ModalRoute.of(context)?.settings.arguments ?? 0) as int) > 0;
-    if (PermissionChecker.permissionsChecked &&
-        PermissionChecker.permissionsOk &&
-        !id) {
-      Future.delayed(const Duration(milliseconds: 200),
-          () => AppWidgets.navigate(context, AppRoutes.liveTracking));
-    }
     return AppWidgets.scaffold(context, body: widgetPermissions);
   }
 }

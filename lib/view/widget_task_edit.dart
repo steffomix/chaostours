@@ -1,5 +1,6 @@
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 ///
 import 'package:chaostours/logger.dart';
@@ -74,10 +75,12 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
                       task.task = '#$id';
                     }
                     Navigator.pop(context);
+                    Fluttertoast.showToast(msg: 'Task created');
                   });
                 } else {
                   ModelTask.update(task).then((_) {
                     Navigator.pop(context);
+                    Fluttertoast.showToast(msg: 'Task updated');
                   });
                 }
               } else if (tapId == 1) {

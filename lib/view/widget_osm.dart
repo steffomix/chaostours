@@ -8,6 +8,7 @@ import 'dart:convert';
 import 'package:android_intent_plus/android_intent.dart';
 // import 'package:android_intent_plus/flag.dart';
 import 'package:flutter/services.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 ///
 import 'package:chaostours/event_manager.dart';
@@ -385,9 +386,8 @@ class _WidgetOsm extends State<WidgetOsm> {
 
                   ModelAlias.update(_alias);
                   Navigator.pop(context);
+                  Fluttertoast.showToast(msg: 'Alias location updated');
                 } else {
-                  logger.log('create new alias...');
-
                   /// create alias
                   String address =
                       (await addr.Address(GPS(pos.latitude, pos.longitude))
@@ -402,7 +402,7 @@ class _WidgetOsm extends State<WidgetOsm> {
 
                   ModelAlias.insert(alias).then((_) {
                     Navigator.pop(context);
-                    logger.log('created new alias #${alias.id}');
+                    Fluttertoast.showToast(msg: 'Alias created');
                   }).onError((error, stackTrace) {
                     logger.error(error.toString(), stackTrace);
                   });

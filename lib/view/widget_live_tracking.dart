@@ -313,11 +313,6 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                   context, ModelTrackPoint.recentTrackPoints()));
           break;
 
-        /// tasks mode
-        case _DisplayMode.gps:
-          body = renderOSM(context);
-          break;
-
         /// last visited mode
         case _DisplayMode.lastVisited:
           GPS gps = bridge.gpsPoints.first;
@@ -571,6 +566,9 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   /// time based recent and location based lastVisited
   List<Widget> renderRecentTrackPointList(
       BuildContext context, List<ModelTrackPoint> tpList) {
+    if (tpList.isEmpty) {
+      return <Widget>[const Text('\n\nNoch keine Haltepunkte erstellt')];
+    }
     List<Widget> listItems = [];
     Widget divider = AppWidgets.divider();
     try {

@@ -1,11 +1,15 @@
+import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 ///
 import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/app_loader.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/globals.dart';
+import 'package:chaostours/cache.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/view/app_init.dart';
 import 'package:chaostours/view/app_colors.dart';
@@ -24,7 +28,6 @@ import 'package:chaostours/view/widget_alias_trackpoint_list.dart';
 import 'package:chaostours/view/widget_osm.dart';
 import 'package:chaostours/view/widget_storage_settings.dart';
 import 'package:chaostours/view/widget_app_settings.dart';
-import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:chaostours/view/widget_manage_background_gps.dart';
 
 enum AppColorScheme {
@@ -74,23 +77,23 @@ enum AppColors {
 /// use value instead of name to get the right
 enum AppRoutes {
   /// appStart
-  home('/'),
+  //home('/'),
   // live
-  liveTracking('/liveTracking'),
+  liveTracking('/'),
   editTrackPoint('/editTrackPoint'),
   editPendingTrackPoint('/editPendingTrackPoint'),
   // task
   listTasks('/listTasks'),
   editTasks('/listTasks/editTasks'),
-  createTask('/listTasks/editTasks/createTask'),
+  createTask('/listTasks/createTask'),
   // alias
   listAlias('/listAlias'),
-  editAlias('/listAlias/editAlias'),
-  listAliasTrackpoints('/listAlias/editAlias/listAliasTrackpoints'),
+  listAliasTrackpoints('/listAlias/listAliasTrackpoints'),
+  editAlias('/listAlias/listAliasTrackpoints/editAlias'),
   // user
   listUsers('/listUsers'),
   editUser('/listUsers/editUser'),
-  createUser('/listUsers/editUser/createUser'),
+  createUser('/listUsers/createUser'),
   // osm
   osm('/osm'),
   // system
@@ -120,7 +123,7 @@ class AppWidgets {
       initialRoute: AppRoutes.liveTracking.route,
       routes: {
         // home routes
-        AppRoutes.home.route: (context) => const WidgetPermissionsPage(),
+        //AppRoutes.home.route: (context) => const WidgetTrackingPage(),
 
         /// add/edit items routes
         // trackpoint
@@ -317,6 +320,16 @@ class _WidgetDrawer extends State<WidgetDrawer> {
                     AppLoader.loadAssetDatabase();
                   },
                   child: const Text('Lade Built-In Data')),
+
+              ///
+              ElevatedButton(
+                  onPressed: () async {
+                    await Cache.setValue<List<ModelTrackPoint>>(
+                        CacheKeys.tableModelTrackpoint, []);
+                    await ModelTrackPoint.open();
+                    Fluttertoast.showToast(msg: "All TrackPoints deleted");
+                  },
+                  child: const Text('Lösche alle Haltepunkte')),
             ])));
   }
 }

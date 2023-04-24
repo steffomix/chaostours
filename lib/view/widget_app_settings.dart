@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 import 'package:chaostours/globals.dart';
 import 'package:chaostours/data_bridge.dart';
@@ -456,6 +457,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
               settings[CacheKeys.globalsStatusStandingRequireAlias] =
                   b ? '1' : '0';
               saveSettings().then((_) {
+                Fluttertoast.showToast(msg: 'Settings saved');
                 Navigator.pop(context);
               });
             } else {

@@ -1,6 +1,7 @@
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 import 'package:android_intent_plus/android_intent.dart';
 import 'package:chaostours/gps.dart';
@@ -69,7 +70,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
               const BottomNavigationBarItem(
                   icon: Icon(Icons.cancel), label: 'Abbrechen'),
             ],
-            onTap: (int id) {
+            onTap: (int id) async {
               if (id == 0) {
                 Navigator.pushNamed(context, AppRoutes.osm.route, arguments: 0)
                     .then((_) {
@@ -92,6 +93,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                 intent.launch();
               } else if (id == 2) {
                 ModelAlias.update(alias).then((_) {
+                  Fluttertoast.showToast(msg: 'Alias updated');
                   Navigator.pop(context);
                 });
               } else if (id == 3) {

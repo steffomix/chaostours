@@ -71,7 +71,7 @@ class _WidgetManageBackgroundGpsState extends State<WidgetManageBackgroundGps> {
     DataBridge bridge = DataBridge.instance;
     items = [
       const Text(
-          'Wenn das Hintergrund GPS nicht wie erwartet funktioniert, versuchen sie ihn neu zu startetn.'),
+          'Wenn das Hintergrund GPS nicht wie erwartet funktioniert, versuchen sie es neu zu starten.'),
       ElevatedButton(
           child: const Text('Hintergrund GPS neustarten'),
           onPressed: () async {
@@ -87,9 +87,12 @@ class _WidgetManageBackgroundGpsState extends State<WidgetManageBackgroundGps> {
       AppWidgets.divider(),
       trackingSwitch!,
       AppWidgets.divider(),
-      const Text('Background Cache Data',
-          style: TextStyle(fontWeight: FontWeight.bold)),
-      Text('Current Trackiong Status: ${bridge.trackingStatus.name}'),
+      const Center(
+          child: Text('Background Cache Data',
+              style: TextStyle(fontWeight: FontWeight.bold))),
+      AppWidgets.divider(),
+      AppWidgets.divider(),
+      Text('Current Tracking Status: ${bridge.trackingStatus.name}'),
       AppWidgets.divider(),
       Text('Status change triggered: ${bridge.triggeredTrackingStatus.name}'),
       AppWidgets.divider(),

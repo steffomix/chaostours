@@ -1,5 +1,6 @@
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 ///
 import 'package:chaostours/logger.dart';
@@ -79,10 +80,14 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
                       });
                       return;
                     }
+                    Fluttertoast.showToast(msg: 'User created');
                   });
                   Navigator.pop(context);
                 } else {
-                  ModelUser.update(_user).then((_) => Navigator.pop(context));
+                  ModelUser.update(_user).then((_) {
+                    Navigator.pop(context);
+                    Fluttertoast.showToast(msg: 'User updated');
+                  });
                 }
               } else {
                 Navigator.pop(context);

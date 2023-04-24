@@ -261,12 +261,16 @@ class TrackPoint {
     bridge.smoothGpsPoints.clear();
     int smooth = Globals.gpsPointsSmoothCount;
     if (smooth < 2) {
+      /// smoothing is disabled
       bridge.smoothGpsPoints.addAll(bridge.gpsPoints);
       return;
     }
+
     if (bridge.gpsPoints.length <= smooth) {
+      /// too few gps points
       return;
     }
+
     int index = 0;
     while (index <= bridge.gpsPoints.length - 1 - smooth) {
       double smoothLat = 0;
@@ -296,25 +300,32 @@ class TrackPoint {
 
   /// calc points are not added until time range is fulfilled
   void calculateCalcPoints() {
-    // get gpsPoints of globals time range
-    // to measure movement
-    var points = bridge.smoothGpsPoints;
+    /// reset calcPoints
     bridge.calcGpsPoints.clear();
     if (bridge.smoothGpsPoints.length > 1) {
       List<PendingGps> gpsList = [];
-      int tRef = points.first.time.millisecondsSinceEpoch;
-      int dur = Globals.timeRangeTreshold.inMilliseconds;
-      int tUntil = tRef - dur;
-
       bool fullTresholdRange = false;
-      for (var gps in points) {
-        if (gps.time.millisecondsSinceEpoch >= tUntil) {
+
+      /// most recent gps time in ms
+      int tRef = bridge.smoothGpsPoints.first.time.millisecondsSinceEpoch;
+
+      /// duration in ms
+      int dur = Globals.timeRangeTreshold.inMilliseconds;
+
+      /// max past time in ms
+      int maxPast = tRef - dur;
+
+      /// iter into the past
+      for (var gps in bridge.smoothGpsPoints) {
+        if (gps.time.millisecondsSinceEpoch >= maxPast) {
           gpsList.add(gps);
         } else {
           fullTresholdRange = true;
           break;
         }
       }
+
+      /// add calcPoints only if time range is fulfilled
       if (fullTresholdRange) {
         bridge.calcGpsPoints.addAll(gpsList);
       }
@@ -322,34 +333,34 @@ class TrackPoint {
   }
 
   void trackPoint() {
-    /// process user triggers
+    /// process user trigger standing
     if (bridge.triggeredTrackingStatus == TrackingStatus.standing) {
       bridge.trackingStatus = TrackingStatus.standing;
       return;
     }
 
+    /// process user trigger moving
     if (bridge.triggeredTrackingStatus == TrackingStatus.moving) {
       bridge.trackingStatus = TrackingStatus.moving;
       return;
     }
 
     /// gps calc points min count
-    if (bridge.calcGpsPoints.length < 2) {
+    if (bridge.calcGpsPoints.isEmpty) {
       return;
     }
 
     /// check if we started moving
     /// try to calculate how far away we are from last standing point
-    if (bridge.trackingStatus == TrackingStatus.standing ||
-        bridge.trackingStatus == TrackingStatus.none) {
+    if (bridge.trackingStatus == TrackingStatus.standing) {
       var aliasList = bridge.trackPointAliasIdList
           .map((id) => ModelAlias.getAlias(id))
           .toList();
+      var dist =
+          aliasList.isEmpty ? Globals.distanceTreshold : aliasList.first.radius;
       if (GPS.distance(bridge.calcGpsPoints.first,
-              bridge.trackPointGpsStartMoving ?? bridge.calcGpsPoints.last) >
-          (aliasList.isEmpty
-              ? Globals.distanceTreshold
-              : aliasList.first.radius)) {
+              bridge.trackPointGpsStartStanding ?? bridge.calcGpsPoints.last) >
+          dist) {
         bridge.trackingStatus = TrackingStatus.moving;
       }
 

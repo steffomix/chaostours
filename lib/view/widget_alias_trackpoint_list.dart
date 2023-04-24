@@ -250,7 +250,6 @@ class _WidgetAliasTrackpoint extends State<WidgetAliasTrackpoint> {
         }
       }
     }
-
-    return Scaffold(appBar: AppWidgets.appBar(context), body: body(context));
+    return AppWidgets.scaffold(context, body: body(context));
   }
 }
