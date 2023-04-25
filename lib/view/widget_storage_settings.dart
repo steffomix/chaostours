@@ -30,6 +30,12 @@ class _WidgetStorageSettings extends State<WidgetStorageSettings> {
   FileManagerController controller = FileManagerController();
   @override
   Widget build(BuildContext context) {
+    FileManager.requestFilesAccessPermission();
+    FileManager.getStorageList().then((List<Directory> storages) {
+      for (var storage in storages) {
+        var i = 1;
+      }
+    });
     return AppWidgets.scaffold(
       context,
       body: FileManager(
@@ -46,6 +52,8 @@ class _WidgetStorageSettings extends State<WidgetStorageSettings> {
                       : const Icon(Icons.folder),
                   title: Text(FileManager.basename(entities[index])),
                   onTap: () {
+                    FileSystemEntity item = entities[index];
+                    bool abs = item.isAbsolute;
                     if (FileManager.isDirectory(entities[index])) {
                       controller
                           .openDirectory(entities[index]); // open directory

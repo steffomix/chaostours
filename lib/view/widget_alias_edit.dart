@@ -1,3 +1,4 @@
+import 'package:chaostours/data_bridge.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -21,8 +22,9 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
   // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetAliasEdit>();
 
-  ValueNotifier<bool> modified = ValueNotifier<bool>(false);
   late ModelAlias alias;
+  bool initialized = false;
+  ValueNotifier<bool> modified = ValueNotifier<bool>(false);
   TextEditingController addressController = TextEditingController();
   TextEditingController notesController = TextEditingController();
   TextEditingController radiusController = TextEditingController();
@@ -38,7 +40,10 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
     final id = ModalRoute.of(context)!.settings.arguments as int;
 
     ///
-    alias = ModelAlias.getAlias(id).clone();
+    if (!initialized) {
+      alias = ModelAlias.getAlias(id).clone();
+      initialized = true;
+    }
 
     addressController.text = alias.alias;
     notesController.text = alias.notes;
@@ -133,7 +138,10 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                             arguments: alias.id)
                         .then(
                       (value) {
-                        setState(() {});
+                        initialized = false;
+                        DataBridge.instance
+                            .reload()
+                            .then((_) => setState(() {}));
                       },
                     );
                   },
