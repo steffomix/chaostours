@@ -26,7 +26,7 @@ import 'package:chaostours/view/widget_user_edit.dart';
 import 'package:chaostours/view/widget_alias_edit.dart';
 import 'package:chaostours/view/widget_alias_trackpoint_list.dart';
 import 'package:chaostours/view/widget_osm.dart';
-import 'package:chaostours/view/widget_storage_settings.dart';
+import 'package:chaostours/view/widget_file_manager.dart';
 import 'package:chaostours/view/widget_app_settings.dart';
 import 'package:chaostours/view/widget_manage_background_gps.dart';
 
@@ -281,13 +281,6 @@ class _WidgetDrawer extends State<WidgetDrawer> {
               ///
               ElevatedButton(
                   onPressed: () {
-                    AppWidgets.navigate(context, AppRoutes.storageSettings);
-                  },
-                  child: const Text('Speicherort')),
-
-              ///
-              ElevatedButton(
-                  onPressed: () {
                     AppWidgets.navigate(context, AppRoutes.appSettings);
                   },
                   child: const Text('Einstellungen')),
@@ -313,6 +306,13 @@ class _WidgetDrawer extends State<WidgetDrawer> {
               SizedBox(
                   height: boxHeight,
                   child: const Center(child: Text('\nDatenbank'))),
+
+              ///
+              ElevatedButton(
+                  onPressed: () {
+                    AppWidgets.navigate(context, AppRoutes.storageSettings);
+                  },
+                  child: const Text('Export / Import')),
 
               ///
               ElevatedButton(
