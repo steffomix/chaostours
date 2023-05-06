@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:vector_math/vector_math.dart';
 import 'package:geolocator/geolocator.dart' as geo;
+import 'package:android_intent_plus/android_intent.dart';
 
 //import 'package:geolocator/geolocator.dart' show Position, Geolocator;
 //
@@ -151,5 +152,18 @@ class GPS {
             cos(endLongitudeRadians - startLongitudeRadians);
 
     return degrees(atan2(y, x));
+  }
+
+  static Future<void> launchGoogleMaps(
+      double lat, double lon, double lat1, double lon1) async {
+    var url = 'https://www.google.com/maps/dir/?'
+        'api=1&origin=$lat%2c$lon&destination=$lat1%2c$lon1&'
+        'travelmode=driving';
+
+    final intent = AndroidIntent(
+        action: 'action_view',
+        data: url,
+        package: 'com.google.android.apps.maps');
+    intent.launch();
   }
 }

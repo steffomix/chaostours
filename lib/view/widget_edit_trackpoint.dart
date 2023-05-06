@@ -9,6 +9,8 @@ import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/checkbox_controller.dart';
 import 'package:chaostours/util.dart';
 import 'package:chaostours/logger.dart';
+import 'package:chaostours/screen.dart';
+import 'package:chaostours/gps.dart';
 
 ///
 /// CheckBox list
@@ -184,6 +186,23 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
             }));
   }
 
+  Widget map(context) {
+    Screen screen = Screen(context);
+    return SizedBox(
+        width: screen.width,
+        height: 25,
+        child: IconButton(
+            icon: const Icon(Icons.map),
+            onPressed: () async {
+              var gps = await GPS.gps();
+              var lat = gps.lat;
+              var lon = gps.lon;
+              var lat1 = trackPoint.gps.lat;
+              var lon1 = trackPoint.gps.lon;
+              GPS.launchGoogleMaps(lat, lon, lat1, lon1);
+            }));
+  }
+
   ///
   @override
   Widget build(BuildContext context) {
@@ -197,14 +216,16 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
         tpNotes.text = trackPoint.notes;
         initialized = true;
       }
+      Widget divider = AppWidgets.divider();
       body = ListView(children: [
         /// current Trackpoint time info
+        map(context),
         trackPointInfo(context),
-        AppWidgets.divider(),
+        divider,
         notes(context),
-        AppWidgets.divider(),
+        divider,
         dropdownUser(context),
-        AppWidgets.divider(),
+        divider,
         dropdownTasks(context)
       ]);
     } catch (e, stk) {

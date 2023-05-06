@@ -26,7 +26,7 @@ import 'package:chaostours/view/widget_user_edit.dart';
 import 'package:chaostours/view/widget_alias_edit.dart';
 import 'package:chaostours/view/widget_alias_trackpoint_list.dart';
 import 'package:chaostours/view/widget_osm.dart';
-import 'package:chaostours/view/widget_file_manager.dart';
+import 'package:chaostours/view/widget_import_export.dart';
 import 'package:chaostours/view/widget_app_settings.dart';
 import 'package:chaostours/view/widget_manage_background_gps.dart';
 
@@ -100,7 +100,7 @@ enum AppRoutes {
   appInit('/appInit'),
   logger('/logger'),
   permissions('/permissions'),
-  storageSettings('/storagesettings'),
+  storageSettings('/importexport'),
   appSettings('/appsettings'),
   backgroundGps('/manageBackgroundGps');
 
@@ -151,7 +151,7 @@ class AppWidgets {
         AppRoutes.logger.route: (context) => const WidgetLoggerPage(),
         AppRoutes.permissions.route: (context) => const WidgetPermissionsPage(),
         AppRoutes.storageSettings.route: (context) =>
-            const WidgetStorageSettings(),
+            const WidgetImportExport(),
         AppRoutes.appSettings.route: (context) => const WidgetAppSettings(),
         AppRoutes.backgroundGps.route: (context) =>
             const WidgetManageBackgroundGps()

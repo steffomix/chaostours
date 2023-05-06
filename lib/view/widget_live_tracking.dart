@@ -490,6 +490,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     ]);
     List<Widget> items = [
       divider,
+
+      /// alias
       TextButton(
         style: ButtonStyle(
             alignment: Alignment.centerLeft,
@@ -510,6 +512,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         },
       ),
       divider,
+
+      /// osm
       TextButton(
         style: ButtonStyle(
             alignment: Alignment.centerLeft,
@@ -601,7 +605,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
             Text(tp.notes),
           ]),
           leading: IconButton(
-              icon: const Icon(Icons.edit_location_outlined),
+              icon: const Icon(Icons.edit_note),
               onPressed: () {
                 Navigator.pushNamed(context, AppRoutes.editTrackPoint.route,
                     arguments: tp.id);

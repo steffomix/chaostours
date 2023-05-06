@@ -14,16 +14,16 @@ import 'package:chaostours/view/app_widgets.dart';
 import 'package:path/path.dart';
 import 'package:chaostours/cache.dart';
 
-class WidgetStorageSettings extends StatefulWidget {
-  const WidgetStorageSettings({super.key});
+class WidgetImportExport extends StatefulWidget {
+  const WidgetImportExport({super.key});
 
   @override
-  State<WidgetStorageSettings> createState() => _WidgetStorageSettings();
+  State<WidgetImportExport> createState() => _WidgetImportExport();
 }
 
-class _WidgetStorageSettings extends State<WidgetStorageSettings> {
+class _WidgetImportExport extends State<WidgetImportExport> {
   // ignore: unused_field
-  static final Logger logger = Logger.logger<WidgetStorageSettings>();
+  static final Logger logger = Logger.logger<WidgetImportExport>();
 
   @override
   void dispose() {
@@ -91,6 +91,175 @@ class _WidgetStorageSettings extends State<WidgetStorageSettings> {
     Fluttertoast.showToast(msg: 'Files Exported');
   }
 
+  Future<void> importDatabaseFiles(BuildContext context, String dir) async {
+    List<String> errors = [];
+    List<ModelTrackPoint> trackPointModels = [];
+    List<ModelAlias> aliasModels = [];
+    List<ModelTask> taskModels = [];
+    List<ModelUser> userModels = [];
+
+    /// trackpoint.tsv
+    /// check ids
+    try {
+      var file = 'trackpoint';
+      File f = File(join(dir, '$file.tsv'));
+      if (f.existsSync()) {
+        List<String> data = f.readAsStringSync().split('\n');
+        var id = 1;
+        for (var row in data) {
+          try {
+            ModelTrackPoint tp = ModelTrackPoint.toModel(row);
+            if (tp.id != id) {
+              throw ('id must be $id');
+            }
+          } catch (e) {
+            throw ('$file.tsv line ${id - 1}: ${e.toString()}');
+          }
+          id++;
+        }
+      } else {
+        trackPointModels = await Cache.getValue<List<ModelTrackPoint>>(
+            CacheKeys.tableModelTrackpoint, []);
+      }
+    } catch (e) {
+      errors.add(e.toString());
+    }
+
+    /// alias.tsv
+    /// ceck id
+    try {
+      var file = 'alias';
+      File f = File(join(dir, '$file.tsv'));
+      if (await f.exists()) {
+        List<String> data = f.readAsStringSync().split('\n');
+        var id = 1;
+        for (var row in data) {
+          try {
+            ModelAlias model = ModelAlias.toModel(row);
+            if (model.id != id) {
+              throw ('id must be $id');
+            }
+          } catch (e) {
+            throw ('$file.tsv line ${id - 1}: ${e.toString()}');
+          }
+          id++;
+        }
+      } else {
+        aliasModels = await Cache.getValue<List<ModelAlias>>(
+            CacheKeys.tableModelAlias, []);
+      }
+    } catch (e) {
+      errors.add(e.toString());
+    }
+
+    /// task.tsv
+    /// ceck id
+    try {
+      var file = 'task';
+      File f = File(join(dir, '$file.tsv'));
+      if (await f.exists()) {
+        List<String> data = f.readAsStringSync().split('\n');
+        var id = 1;
+        for (var row in data) {
+          try {
+            ModelTask model = ModelTask.toModel(row);
+            if (model.id != id) {
+              throw ('id must be $id');
+            }
+          } catch (e) {
+            throw ('$file.tsv line ${id - 1}: ${e.toString()}');
+          }
+          id++;
+        }
+      } else {
+        taskModels =
+            await Cache.getValue<List<ModelTask>>(CacheKeys.tableModelTask, []);
+      }
+    } catch (e) {
+      errors.add(e.toString());
+    }
+
+    /// user.tsv
+    /// ceck id
+    try {
+      var file = 'user';
+      File f = File(join(dir, '$file.tsv'));
+      if (await f.exists()) {
+        List<String> data = f.readAsStringSync().split('\n');
+        var id = 1;
+        for (var row in data) {
+          try {
+            ModelUser model = ModelUser.toModel(row);
+            if (model.id != id) {
+              throw ('id must be $id');
+            }
+          } catch (e) {
+            throw ('$file.tsv line ${id - 1}: ${e.toString()}');
+          }
+          id++;
+        }
+      } else {
+        userModels = await Cache.getValue(CacheKeys.tableModelUser, []);
+      }
+    } catch (e) {
+      errors.add(e.toString());
+    }
+
+    /// check relational integrity
+    if (errors.isEmpty) {
+      try {
+        int line = 0;
+        for (var tp in trackPointModels) {
+          for (var id in tp.idAlias) {
+            if (id < 1 || id > aliasModels.length) {
+              throw ('trackpoint.tsv line $line: alias id must be > 0 and < ${aliasModels.length + 1}');
+            }
+          }
+          for (var id in tp.idTask) {
+            if (id < 1 || id > taskModels.length) {
+              throw ('trackpoint.tsv line $line: task id must be > 0 and < ${taskModels.length + 1}');
+            }
+          }
+          for (var id in tp.idUser) {
+            if (id < 1 || id > userModels.length) {
+              throw ('trackpoint.tsv line $line: user id must be > 0 and < ${userModels.length + 1}');
+            }
+          }
+          line++;
+        }
+      } catch (e) {
+        errors.add(e.toString());
+      }
+    }
+    if (errors.isEmpty) {
+      await Cache.setValue<List<ModelTrackPoint>>(
+          CacheKeys.tableModelTrackpoint, trackPointModels);
+      await Cache.setValue<List<ModelAlias>>(
+          CacheKeys.tableModelAlias, aliasModels);
+      await Cache.setValue<List<ModelTask>>(
+          CacheKeys.tableModelTask, taskModels);
+      await Cache.setValue<List<ModelUser>>(
+          CacheKeys.tableModelUser, userModels);
+      await Cache.reload();
+      Fluttertoast.showToast(msg: 'Data imported');
+    } else {
+      try {
+        File f = File(join(dir, 'chaostours_import_errors.txt'));
+        f.writeAsStringSync(errors.join('\n'));
+      } catch (e) {
+        // ignore
+      }
+      Fluttertoast.showToast(msg: 'Import error(s)');
+      Future.microtask(() async {
+        AppWidgets.navigate(context, AppRoutes.logger);
+        for (var e in errors) {
+          logger.error('Import Error: $e', StackTrace.empty);
+          await Future.delayed(const Duration(milliseconds: 50));
+        }
+      });
+    }
+  }
+
   FileManagerController controller = FileManagerController();
   @override
   Widget build(BuildContext context) {
@@ -134,11 +303,11 @@ class _WidgetStorageSettings extends State<WidgetStorageSettings> {
               ],
               onTap: (int id) async {
                 /// export here
+                var dir = controller.getCurrentDirectory;
+                var path = controller.getCurrentPath;
                 if (id == 0) {
                   // export
 
-                  var dir = controller.getCurrentDirectory;
-                  var path = controller.getCurrentPath;
                   if (!(await controller.isRootDirectory())) {
                     if (mounted) {
                       showDialog(
@@ -189,7 +358,52 @@ class _WidgetStorageSettings extends State<WidgetStorageSettings> {
                   }
                 }
                 if (id == 2) {
-                  /// import from here
+                  if (!(await controller.isRootDirectory())) {
+                    if (mounted) {
+                      showDialog(
+                          context: context,
+                          builder: (context) {
+                            return Dialog(
+                                child: Padding(
+                                    padding: const EdgeInsets.all(10),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                            'Import Database Files\n- trackpoint.tsv\n- alias.tsv\n- task.tsv\n- user.tsv\nfrom \n"$path"?'
+                                            '\n\nWARNING!\nThis action can fail or destroy all your Data.\nMake sure background GPS is turned OFF'),
+                                        const Text(''),
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            TextButton(
+                                              child: const Text('Yes, DO IT!'),
+                                              onPressed: () async {
+                                                /// export
+                                                logger.log('export');
+                                                Navigator.pop(context);
+                                                await importDatabaseFiles(
+                                                    context, path);
+                                              },
+                                            ),
+                                            TextButton(
+                                              style: const ButtonStyle(
+                                                  alignment:
+                                                      Alignment.centerRight),
+                                              child: const Text('Hell, NO!'),
+                                              onPressed: () {
+                                                Navigator.pop(context);
+                                              },
+                                            )
+                                          ],
+                                        )
+                                      ],
+                                    )));
+                          });
+                    }
+                  }
+
                   ///
                 }
                 if (id == 1) {

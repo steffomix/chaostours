@@ -62,21 +62,13 @@ class _WidgetAliasTrackpoint extends State<WidgetAliasTrackpoint> {
         height: 25,
         child: IconButton(
             icon: const Icon(Icons.map),
-            onPressed: () {
-              var gps = GPS.lastGps!;
+            onPressed: () async {
+              var gps = await GPS.gps();
               var lat = gps.lat;
               var lon = gps.lon;
               var lat1 = _alias.lat;
               var lon1 = _alias.lon;
-              var url = 'https://www.google.com/maps/dir/?'
-                  'api=1&origin=$lat%2c$lon&destination=$lat1%2c$lon1&'
-                  'travelmode=driving';
-
-              final intent = AndroidIntent(
-                  action: 'action_view',
-                  data: url,
-                  package: 'com.google.android.apps.maps');
-              intent.launch();
+              GPS.launchGoogleMaps(lat, lon, lat1, lon1);
             }));
   }
 
