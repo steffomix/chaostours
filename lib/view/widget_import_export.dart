@@ -36,6 +36,11 @@ class _WidgetImportExport extends State<WidgetImportExport> {
   }
 
   ValueNotifier<bool> isBaseDir = ValueNotifier(true);
+  ValueNotifier<bool> hasImportFiles = ValueNotifier(false);
+  String trackPointFilename = 'trackpoint';
+  String userFilename = 'user';
+  String taskFilename = 'task';
+  String aliasFilename = 'alias';
 
   Future<void> exportDatabaseFiles(Directory dir) async {
     /// export trackPoints
@@ -43,7 +48,7 @@ class _WidgetImportExport extends State<WidgetImportExport> {
     File f;
     List<ModelTrackPoint> tpList = await Cache.getValue<List<ModelTrackPoint>>(
         CacheKeys.tableModelTrackpoint, []);
-    path = join(dir.path, 'trackpoint.tsv');
+    path = join(dir.path, '$trackPointFilename.tsv');
     tsv = tpList
         .map(
           (e) => e.toString(),
@@ -55,7 +60,7 @@ class _WidgetImportExport extends State<WidgetImportExport> {
     /// export alias
     List<ModelAlias> aliasList =
         await Cache.getValue<List<ModelAlias>>(CacheKeys.tableModelAlias, []);
-    path = join(dir.path, 'alias.tsv');
+    path = join(dir.path, '$aliasFilename.tsv');
     tsv = aliasList
         .map(
           (e) => e.toString(),
@@ -67,7 +72,7 @@ class _WidgetImportExport extends State<WidgetImportExport> {
     /// export tasks
     List<ModelTask> taskList =
         await Cache.getValue<List<ModelTask>>(CacheKeys.tableModelTask, []);
-    path = join(dir.path, 'task.tsv');
+    path = join(dir.path, '$taskFilename.tsv');
     tsv = taskList
         .map(
           (e) => e.toString(),
@@ -79,7 +84,7 @@ class _WidgetImportExport extends State<WidgetImportExport> {
     /// export users
     List<ModelUser> userList =
         await Cache.getValue<List<ModelUser>>(CacheKeys.tableModelUser, []);
-    path = join(dir.path, 'user.tsv');
+    path = join(dir.path, '$userFilename.tsv');
     tsv = userList
         .map(
           (e) => e.toString(),
@@ -101,7 +106,7 @@ class _WidgetImportExport extends State<WidgetImportExport> {
     /// trackpoint.tsv
     /// check ids
     try {
-      var file = 'trackpoint';
+      var file = trackPointFilename;
       File f = File(join(dir, '$file.tsv'));
       if (f.existsSync()) {
         List<String> data = f.readAsStringSync().split('\n');
@@ -128,7 +133,7 @@ class _WidgetImportExport extends State<WidgetImportExport> {
     /// alias.tsv
     /// ceck id
     try {
-      var file = 'alias';
+      var file = aliasFilename;
       File f = File(join(dir, '$file.tsv'));
       if (await f.exists()) {
         List<String> data = f.readAsStringSync().split('\n');
@@ -155,7 +160,7 @@ class _WidgetImportExport extends State<WidgetImportExport> {
     /// task.tsv
     /// ceck id
     try {
-      var file = 'task';
+      var file = taskFilename;
       File f = File(join(dir, '$file.tsv'));
       if (await f.exists()) {
         List<String> data = f.readAsStringSync().split('\n');
@@ -182,7 +187,7 @@ class _WidgetImportExport extends State<WidgetImportExport> {
     /// user.tsv
     /// ceck id
     try {
-      var file = 'user';
+      var file = userFilename;
       File f = File(join(dir, '$file.tsv'));
       if (await f.exists()) {
         List<String> data = f.readAsStringSync().split('\n');
@@ -212,17 +217,17 @@ class _WidgetImportExport extends State<WidgetImportExport> {
         for (var tp in trackPointModels) {
           for (var id in tp.idAlias) {
             if (id < 1 || id > aliasModels.length) {
-              throw ('trackpoint.tsv line $line: alias id must be > 0 and < ${aliasModels.length + 1}');
+              throw ('$trackPointFilename.tsv line $line: alias id must be > 0 and < ${aliasModels.length + 1}');
             }
           }
           for (var id in tp.idTask) {
             if (id < 1 || id > taskModels.length) {
-              throw ('trackpoint.tsv line $line: task id must be > 0 and < ${taskModels.length + 1}');
+              throw ('$trackPointFilename.tsv line $line: task id must be > 0 and < ${taskModels.length + 1}');
             }
           }
           for (var id in tp.idUser) {
             if (id < 1 || id > userModels.length) {
-              throw ('trackpoint.tsv line $line: user id must be > 0 and < ${userModels.length + 1}');
+              throw ('$trackPointFilename.tsv line $line: user id must be > 0 and < ${userModels.length + 1}');
             }
           }
           line++;
@@ -231,6 +236,7 @@ class _WidgetImportExport extends State<WidgetImportExport> {
         errors.add(e.toString());
       }
     }
+    errors.addAll(['hi', 'yx', 'abc']);
     if (errors.isEmpty) {
       await Cache.setValue<List<ModelTrackPoint>>(
           CacheKeys.tableModelTrackpoint, trackPointModels);
@@ -241,21 +247,28 @@ class _WidgetImportExport extends State<WidgetImportExport> {
       await Cache.setValue<List<ModelUser>>(
           CacheKeys.tableModelUser, userModels);
       await Cache.reload();
+      await ModelTrackPoint.open();
+      await ModelAlias.open();
+      await ModelTask.open();
+      await ModelUser.open();
       Fluttertoast.showToast(msg: 'Data imported');
     } else {
+      /*
       try {
         File f = File(join(dir, 'chaostours_import_errors.txt'));
         f.writeAsStringSync(errors.join('\n'));
       } catch (e) {
         // ignore
       }
+      */
       Fluttertoast.showToast(msg: 'Import error(s)');
-      Future.microtask(() async {
-        AppWidgets.navigate(context, AppRoutes.logger);
-        for (var e in errors) {
-          logger.error('Import Error: $e', StackTrace.empty);
-          await Future.delayed(const Duration(milliseconds: 50));
-        }
+      Future.microtask(() {
+        AppWidgets.navigate(context, AppRoutes.logger).then((_) async {
+          for (var e in errors) {
+            logger.error('Import Error: $e', StackTrace.empty);
+            await Future.delayed(const Duration(milliseconds: 50));
+          }
+        });
       });
     }
   }
@@ -298,8 +311,19 @@ class _WidgetImportExport extends State<WidgetImportExport> {
                 ),
                 const BottomNavigationBarItem(
                     icon: Icon(Icons.cancel), label: 'Cancel'),
-                const BottomNavigationBarItem(
-                    icon: Icon(Icons.upload), label: 'Import')
+                BottomNavigationBarItem(
+                  icon: ValueListenableBuilder<bool>(
+                    valueListenable: hasImportFiles,
+                    builder: (context, value, child) {
+                      if (value) {
+                        return const Icon(Icons.file_upload);
+                      } else {
+                        return const Icon(Icons.file_upload_off);
+                      }
+                    },
+                  ),
+                  label: 'Import',
+                ),
               ],
               onTap: (int id) async {
                 /// export here
@@ -320,7 +344,7 @@ class _WidgetImportExport extends State<WidgetImportExport> {
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         Text(
-                                            'Export Database Files\n- trackpoint.tsv\n- alias.tsv\n- task.tsv\n- user.tsv\ninto \n"$path"?'),
+                                            'Export Database Files\n- $trackPointFilename.tsv\n- $aliasFilename.tsv\n- $taskFilename.tsv\n- $userFilename.tsv\ninto \n"$path"?'),
                                         const Text(''),
                                         Row(
                                           mainAxisAlignment:
@@ -370,7 +394,7 @@ class _WidgetImportExport extends State<WidgetImportExport> {
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         Text(
-                                            'Import Database Files\n- trackpoint.tsv\n- alias.tsv\n- task.tsv\n- user.tsv\nfrom \n"$path"?'
+                                            'Import Database Files\n- $trackPointFilename.tsv\n- $aliasFilename.tsv\n- $taskFilename.tsv\n- $userFilename.tsv\nfrom \n"$path"?'
                                             '\n\nWARNING!\nThis action can fail or destroy all your Data.\nMake sure background GPS is turned OFF'),
                                         const Text(''),
                                         Row(
@@ -407,7 +431,9 @@ class _WidgetImportExport extends State<WidgetImportExport> {
                   ///
                 }
                 if (id == 1) {
-                  AppWidgets.navigate(context, AppRoutes.liveTracking);
+                  if (mounted) {
+                    AppWidgets.navigate(context, AppRoutes.liveTracking);
+                  }
                 }
               }),
           appBar: appBar(context),
@@ -417,6 +443,26 @@ class _WidgetImportExport extends State<WidgetImportExport> {
               controller
                   .isRootDirectory()
                   .then((value) => isBaseDir.value = value);
+              Future.microtask(() async {
+                try {
+                  var isRoot = await controller.isRootDirectory();
+
+                  var path = controller.getCurrentPath;
+                  bool tp =
+                      File(join(path, '$trackPointFilename.tsv')).existsSync();
+                  bool usr = File(join(path, '$userFilename.tsv')).existsSync();
+                  bool tsk = File(join(path, '$taskFilename.tsv')).existsSync();
+                  bool als =
+                      File(join(path, '$aliasFilename.tsv')).existsSync();
+                  if (mounted) {
+                    hasImportFiles.value = (tp || usr || tsk || als);
+                    isBaseDir.value = isRoot;
+                  }
+                } catch (e, stk) {
+                  logger.error(e, stk);
+                }
+              });
+
               final List<FileSystemEntity> entities = snapshot;
               return ListView.builder(
                 padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 0),

@@ -161,8 +161,8 @@ class AppWidgets {
     );
   }
 
-  static void navigate(BuildContext context, AppRoutes route,
-      [Object? arguments]) {
+  static Future<void> navigate(BuildContext context, AppRoutes route,
+      [Object? arguments]) async {
     while (Navigator.canPop(context)) {
       Navigator.pop(context);
     }
