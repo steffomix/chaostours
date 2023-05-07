@@ -42,7 +42,41 @@ class _WidgetImportExport extends State<WidgetImportExport> {
   String taskFilename = 'task';
   String aliasFilename = 'alias';
 
-  Future<void> exportDatabaseFiles(Directory dir) async {
+  Future<Map<String, bool>> getFiles(FileManagerController controller) async {
+    Map<String, bool> files = {};
+    try {
+      var isRoot = await controller.isRootDirectory();
+
+      var path = controller.getCurrentPath;
+      bool tp = File(join(path, '$trackPointFilename.tsv')).existsSync();
+      bool usr = File(join(path, '$userFilename.tsv')).existsSync();
+      bool tsk = File(join(path, '$taskFilename.tsv')).existsSync();
+      bool als = File(join(path, '$aliasFilename.tsv')).existsSync();
+      if (mounted) {
+        hasImportFiles.value = (tp || usr || tsk || als);
+        isBaseDir.value = isRoot;
+      }
+      return <String, bool>{
+        trackPointFilename: tp,
+        userFilename: usr,
+        taskFilename: tsk,
+        aliasFilename: als,
+        'error': false
+      };
+    } catch (e, stk) {
+      logger.error(e, stk);
+      return <String, bool>{
+        trackPointFilename: false,
+        userFilename: false,
+        taskFilename: false,
+        aliasFilename: false,
+        'error': true
+      };
+    }
+  }
+
+  Future<void> exportDatabaseFiles(
+      FileManagerController controller, Directory dir) async {
     /// export trackPoints
     String path, tsv;
     File f;
@@ -102,6 +136,8 @@ class _WidgetImportExport extends State<WidgetImportExport> {
     List<ModelAlias> aliasModels = [];
     List<ModelTask> taskModels = [];
     List<ModelUser> userModels = [];
+
+    await Cache.reload();
 
     /// trackpoint.tsv
     /// check ids
@@ -253,14 +289,6 @@ class _WidgetImportExport extends State<WidgetImportExport> {
       await ModelUser.open();
       Fluttertoast.showToast(msg: 'Data imported');
     } else {
-      /*
-      try {
-        File f = File(join(dir, 'chaostours_import_errors.txt'));
-        f.writeAsStringSync(errors.join('\n'));
-      } catch (e) {
-        // ignore
-      }
-      */
       Fluttertoast.showToast(msg: 'Import error(s)');
       Future.microtask(() {
         AppWidgets.navigate(context, AppRoutes.logger).then((_) async {
@@ -329,10 +357,13 @@ class _WidgetImportExport extends State<WidgetImportExport> {
                 /// export here
                 var dir = controller.getCurrentDirectory;
                 var path = controller.getCurrentPath;
-                if (id == 0) {
-                  // export
+                var strike =
+                    const TextStyle(decoration: TextDecoration.lineThrough);
 
-                  if (!(await controller.isRootDirectory())) {
+                /// export database
+                if (id == 0) {
+                  if (!isBaseDir.value) {
+                    Map<String, bool> files = await getFiles(controller);
                     if (mounted) {
                       showDialog(
                           context: context,
@@ -344,8 +375,32 @@ class _WidgetImportExport extends State<WidgetImportExport> {
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         Text(
-                                            'Export Database Files\n- $trackPointFilename.tsv\n- $aliasFilename.tsv\n- $taskFilename.tsv\n- $userFilename.tsv\ninto \n"$path"?'),
-                                        const Text(''),
+                                            'Export Database Files into "$path"?'),
+                                        files[trackPointFilename] ?? false
+                                            ? Text('- $trackPointFilename.tsv')
+                                            : Text(
+                                                '- $trackPointFilename.tsv',
+                                                style: strike,
+                                              ),
+                                        files[aliasFilename] ?? false
+                                            ? Text('- $aliasFilename.tsv')
+                                            : Text(
+                                                '- $aliasFilename.tsv',
+                                                style: strike,
+                                              ),
+                                        files[taskFilename] ?? false
+                                            ? Text('- $taskFilename.tsv')
+                                            : Text(
+                                                '- $taskFilename.tsv',
+                                                style: strike,
+                                              ),
+                                        files[userFilename] ?? false
+                                            ? Text('- $userFilename.tsv')
+                                            : Text(
+                                                '- $trackPointFilename.tsv',
+                                                style: strike,
+                                              ),
+                                        AppWidgets.divider(),
                                         Row(
                                           mainAxisAlignment:
                                               MainAxisAlignment.spaceBetween,
@@ -356,7 +411,8 @@ class _WidgetImportExport extends State<WidgetImportExport> {
                                                 /// export
                                                 logger.log('export');
                                                 Navigator.pop(context);
-                                                await exportDatabaseFiles(dir);
+                                                await exportDatabaseFiles(
+                                                    controller, dir);
                                                 controller
                                                     .goToParentDirectory()
                                                     .then((_) {
@@ -381,8 +437,11 @@ class _WidgetImportExport extends State<WidgetImportExport> {
                     }
                   }
                 }
+
+                /// import database
                 if (id == 2) {
-                  if (!(await controller.isRootDirectory())) {
+                  if (hasImportFiles.value) {
+                    Map<String, bool> files = await getFiles(controller);
                     if (mounted) {
                       showDialog(
                           context: context,
@@ -394,9 +453,32 @@ class _WidgetImportExport extends State<WidgetImportExport> {
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         Text(
-                                            'Import Database Files\n- $trackPointFilename.tsv\n- $aliasFilename.tsv\n- $taskFilename.tsv\n- $userFilename.tsv\nfrom \n"$path"?'
-                                            '\n\nWARNING!\nThis action can fail or destroy all your Data.\nMake sure background GPS is turned OFF'),
-                                        const Text(''),
+                                            'Import Database Files from "$path"?'),
+                                        files[trackPointFilename] ?? false
+                                            ? Text('- $trackPointFilename.tsv')
+                                            : Text(
+                                                '- $trackPointFilename.tsv',
+                                                style: strike,
+                                              ),
+                                        files[aliasFilename] ?? false
+                                            ? Text('- $aliasFilename.tsv')
+                                            : Text(
+                                                '- $aliasFilename.tsv',
+                                                style: strike,
+                                              ),
+                                        files[taskFilename] ?? false
+                                            ? Text('- $taskFilename.tsv')
+                                            : Text(
+                                                '- $taskFilename.tsv',
+                                                style: strike,
+                                              ),
+                                        files[userFilename] ?? false
+                                            ? Text('- $userFilename.tsv')
+                                            : Text(
+                                                '- $trackPointFilename.tsv',
+                                                style: strike,
+                                              ),
+                                        AppWidgets.divider(),
                                         Row(
                                           mainAxisAlignment:
                                               MainAxisAlignment.spaceBetween,
@@ -427,9 +509,9 @@ class _WidgetImportExport extends State<WidgetImportExport> {
                           });
                     }
                   }
-
-                  ///
                 }
+
+                /// return
                 if (id == 1) {
                   if (mounted) {
                     AppWidgets.navigate(context, AppRoutes.liveTracking);
@@ -481,34 +563,7 @@ class _WidgetImportExport extends State<WidgetImportExport> {
                       subtitle: subtitle(entity),
                       onTap: () async {
                         if (FileManager.isDirectory(entity)) {
-                          // open the folder
                           controller.openDirectory(entity);
-                          // delete a folder
-                          // await entity.delete(recursive: true);
-
-                          // rename a folder
-                          // await entity.rename("newPath");
-
-                          // Check weather folder exists
-                          // entity.exists();
-
-                          // get date of file
-                          // DateTime date = (await entity.stat()).modified;
-                        } else {
-                          // delete a file
-                          // await entity.delete();
-
-                          // rename a file
-                          // await entity.rename("newPath");
-
-                          // Check weather file exists
-                          // entity.exists();
-
-                          // get date of file
-                          // DateTime date = (await entity.stat()).modified;
-
-                          // get the size of the file
-                          // int size = (await entity.stat()).size;
                         }
                       },
                     ),
@@ -620,30 +675,30 @@ class _WidgetImportExport extends State<WidgetImportExport> {
       context: context,
       builder: (context) => Dialog(
         child: Container(
-          padding: EdgeInsets.all(10),
+          padding: const EdgeInsets.all(10),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                  title: Text("Name"),
+                  title: const Text("Name"),
                   onTap: () {
                     controller.sortBy(SortBy.name);
                     Navigator.pop(context);
                   }),
               ListTile(
-                  title: Text("Size"),
+                  title: const Text("Size"),
                   onTap: () {
                     controller.sortBy(SortBy.size);
                     Navigator.pop(context);
                   }),
               ListTile(
-                  title: Text("Date"),
+                  title: const Text("Date"),
                   onTap: () {
                     controller.sortBy(SortBy.date);
                     Navigator.pop(context);
                   }),
               ListTile(
-                  title: Text("type"),
+                  title: const Text("type"),
                   onTap: () {
                     controller.sortBy(SortBy.type);
                     Navigator.pop(context);
@@ -658,11 +713,11 @@ class _WidgetImportExport extends State<WidgetImportExport> {
   createFolder(BuildContext context) async {
     showDialog(
       context: context,
-      builder: (context) {
+      builder: (context2) {
         TextEditingController folderName = TextEditingController();
         return Dialog(
           child: Container(
-            padding: EdgeInsets.all(10),
+            padding: const EdgeInsets.all(10),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -683,10 +738,11 @@ class _WidgetImportExport extends State<WidgetImportExport> {
                     } catch (e) {
                       // ignore
                     }
-
-                    Navigator.pop(context);
+                    if (mounted) {
+                      Navigator.pop(context2);
+                    }
                   },
-                  child: Text('Create Folder'),
+                  child: const Text('Create Folder'),
                 )
               ],
             ),

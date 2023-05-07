@@ -102,8 +102,7 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
               icon: const Icon(Icons.settings),
               onPressed: () {
                 if (_context != null) {
-                  Navigator.pushNamed(
-                          _context!, AppRoutes.storageSettings.route)
+                  Navigator.pushNamed(_context!, AppRoutes.importExport.route)
                       .then((_) {
                     _permissionItems().then((_) {
                       renderBody();
@@ -120,8 +119,7 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
               icon: const Icon(Icons.settings),
               onPressed: () {
                 if (_context != null) {
-                  Navigator.pushNamed(
-                          _context!, AppRoutes.storageSettings.route)
+                  Navigator.pushNamed(_context!, AppRoutes.importExport.route)
                       .then((_) {
                     _permissionItems().then((_) {
                       renderBody();

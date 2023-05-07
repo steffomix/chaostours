@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_osm_plugin/flutter_osm_plugin.dart' as osm;
+import 'package:fluttertoast/fluttertoast.dart';
 //
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/view/widget_disposed.dart';
@@ -12,7 +13,6 @@ import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
-import 'package:chaostours/checkbox_controller.dart';
 //
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/address.dart';
@@ -452,6 +452,10 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                   bridge.triggeredTrackingStatus = await Cache.setValue(
                       CacheKeys.cacheTriggerTrackingStatus,
                       TrackingStatus.standing);
+                  if (bridge.triggeredTrackingStatus !=
+                      TrackingStatus.standing) {
+                    Fluttertoast.showToast(msg: 'Standing sheduled');
+                  }
                   if (mounted) {
                     setState(() {});
                   }
@@ -554,6 +558,9 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                   bridge.triggeredTrackingStatus = await Cache.setValue(
                       CacheKeys.cacheTriggerTrackingStatus,
                       TrackingStatus.moving);
+                  if (bridge.triggeredTrackingStatus != TrackingStatus.moving) {
+                    Fluttertoast.showToast(msg: 'Moving sheduled');
+                  }
                   if (mounted) {
                     setState(() {});
                   }

@@ -29,6 +29,7 @@ import 'package:chaostours/view/widget_osm.dart';
 import 'package:chaostours/view/widget_import_export.dart';
 import 'package:chaostours/view/widget_app_settings.dart';
 import 'package:chaostours/view/widget_manage_background_gps.dart';
+import 'package:chaostours/view/widget_manage_calendar.dart';
 
 enum AppColorScheme {
   bright(mangoMojitoLight),
@@ -94,13 +95,15 @@ enum AppRoutes {
   listUsers('/listUsers'),
   editUser('/listUsers/editUser'),
   createUser('/listUsers/createUser'),
+  // trackpoint events
+  selectCalendar('/selectCalendar'),
   // osm
   osm('/osm'),
   // system
   appInit('/appInit'),
   logger('/logger'),
   permissions('/permissions'),
-  storageSettings('/importexport'),
+  importExport('/importexport'),
   appSettings('/appsettings'),
   backgroundGps('/manageBackgroundGps');
 
@@ -143,6 +146,9 @@ class AppWidgets {
         AppRoutes.editAlias.route: (context) => const WidgetAliasEdit(),
         AppRoutes.listAliasTrackpoints.route: (context) =>
             const WidgetAliasTrackpoint(),
+        // trackPoint events
+        AppRoutes.selectCalendar.route: (context) =>
+            const WidgetManageCalendar(),
         // osm
         AppRoutes.osm.route: (context) => const WidgetOsm(),
 
@@ -150,8 +156,7 @@ class AppWidgets {
         AppRoutes.appInit.route: (context) => const AppInit(),
         AppRoutes.logger.route: (context) => const WidgetLoggerPage(),
         AppRoutes.permissions.route: (context) => const WidgetPermissionsPage(),
-        AppRoutes.storageSettings.route: (context) =>
-            const WidgetImportExport(),
+        AppRoutes.importExport.route: (context) => const WidgetImportExport(),
         AppRoutes.appSettings.route: (context) => const WidgetAppSettings(),
         AppRoutes.backgroundGps.route: (context) =>
             const WidgetManageBackgroundGps()
@@ -276,6 +281,17 @@ class _WidgetDrawer extends State<WidgetDrawer> {
 
               SizedBox(
                   height: boxHeight,
+                  child: const Center(child: Text('\nEvents'))),
+
+              ///
+              ElevatedButton(
+                  onPressed: () {
+                    AppWidgets.navigate(context, AppRoutes.selectCalendar);
+                  },
+                  child: const Text('Calendar')),
+
+              SizedBox(
+                  height: boxHeight,
                   child: const Center(child: Text('\nEinstellungen'))),
 
               ///
@@ -310,7 +326,7 @@ class _WidgetDrawer extends State<WidgetDrawer> {
               ///
               ElevatedButton(
                   onPressed: () {
-                    AppWidgets.navigate(context, AppRoutes.storageSettings);
+                    AppWidgets.navigate(context, AppRoutes.importExport);
                   },
                   child: const Text('Export / Import')),
 
