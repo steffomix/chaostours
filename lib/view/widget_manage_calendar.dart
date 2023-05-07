@@ -2,9 +2,12 @@ import 'package:chaostours/view/app_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:device_calendar/device_calendar.dart';
 import 'package:flutter/services.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 ///
 import 'package:chaostours/logger.dart';
+import 'package:chaostours/cache.dart';
+import 'package:chaostours/calendar.dart';
 
 class WidgetManageCalendar extends StatefulWidget {
   const WidgetManageCalendar({super.key});
@@ -15,17 +18,20 @@ class WidgetManageCalendar extends StatefulWidget {
 
 class _WidgetManageCalendarState extends State<WidgetManageCalendar> {
   static final Logger logger = Logger.logger<WidgetManageCalendar>();
-  late DeviceCalendarPlugin _deviceCalendarPlugin;
+  late AppCalendar appCalendar;
 
   _WidgetManageCalendarState() {
-    _deviceCalendarPlugin = DeviceCalendarPlugin();
+    appCalendar = AppCalendar();
   }
 
-  List<Calendar> _calendars = [];
+  Calendar? selectedCalendar;
 
   @override
   void initState() {
-    _retrieveCalendars().then((_) {
+    appCalendar.retrieveCalendars().then((_) async {
+      String cId = await Cache.getValue<String>(CacheKeys.selectedCalendar, '');
+      selectedCalendar =
+          appCalendar.getCalendarfromCacheId(cId, appCalendar.calendars);
       if (mounted) {
         setState(() {});
       }
@@ -35,17 +41,29 @@ class _WidgetManageCalendarState extends State<WidgetManageCalendar> {
 
   Widget calendarList() {
     List<Widget> tiles = [
-      const ListTile(
-        title: Text('Selected Calendar:'),
-        subtitle: Text('none'),
+      const Center(
+          child: Text('Selected Calendar',
+              style: TextStyle(fontWeight: FontWeight.bold))),
+      ListTile(
+        title: Text(selectedCalendar?.name ?? ' --- '),
+        subtitle: Text(selectedCalendar?.accountName ?? ''),
       ),
       AppWidgets.divider()
     ];
     var i = 1;
-    for (var cal in _calendars) {
+    for (var cal in appCalendar.calendars) {
       tiles.add(ListTile(
         title: Text(cal.name ?? 'Calendar $i'),
         subtitle: Text(cal.accountName ?? 'Unknown account'),
+        onTap: (() async {
+          await Cache.setValue<String>(CacheKeys.selectedCalendar,
+              appCalendar.getCacheIdFromCalendar(cal));
+          selectedCalendar = cal;
+          Fluttertoast.showToast(msg: 'Calendar selected');
+          if (mounted) {
+            setState(() {});
+          }
+        }),
       ));
     }
 
@@ -55,28 +73,5 @@ class _WidgetManageCalendarState extends State<WidgetManageCalendar> {
   @override
   Widget build(BuildContext context) {
     return AppWidgets.scaffold(context, body: calendarList());
-  }
-
-  Future<void> _retrieveCalendars() async {
-    try {
-      var permissionsGranted = await _deviceCalendarPlugin.hasPermissions();
-      if (permissionsGranted.isSuccess &&
-          (permissionsGranted.data == null ||
-              permissionsGranted.data == false)) {
-        permissionsGranted = await _deviceCalendarPlugin.requestPermissions();
-        if (!permissionsGranted.isSuccess ||
-            permissionsGranted.data == null ||
-            permissionsGranted.data == false) {
-          return;
-        }
-      }
-
-      final calendarsResult = await _deviceCalendarPlugin.retrieveCalendars();
-      setState(() {
-        _calendars = calendarsResult.data as List<Calendar>;
-      });
-    } on PlatformException catch (e, stk) {
-      logger.error('retrieve calendars: $e', stk);
-    }
   }
 }

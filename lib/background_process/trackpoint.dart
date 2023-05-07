@@ -1,3 +1,7 @@
+import 'package:chaostours/trackpoint_data.dart';
+import 'package:device_calendar/device_calendar.dart';
+
+///
 import 'package:chaostours/globals.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/logger.dart';
@@ -5,6 +9,7 @@ import 'package:chaostours/cache.dart';
 import 'package:chaostours/data_bridge.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_alias.dart';
+import 'package:chaostours/calendar.dart';
 
 enum TrackingStatus {
   none(0),
@@ -144,6 +149,11 @@ class TrackPoint {
         await Cache.setValue<List<PendingGps>>(
             CacheKeys.cacheBackgroundCalcGpsPoints, bridge.calcGpsPoints);
       } else {
+        ///
+        ///
+        /// ---------- status changed -----------
+        ///
+        ///
         /// update osm address
         if (Globals.osmLookupCondition == OsmLookup.onStatus) {
           await bridge.setAddress(gps);
@@ -160,7 +170,7 @@ class TrackPoint {
               await Cache.setValue<PendingGps>(
                   CacheKeys.cacheEventBackgroundGpsLastStatusChange, gps);
 
-          await Cache.setValue<TrackingStatus>(
+          bridge.trackingStatus = await Cache.setValue<TrackingStatus>(
               CacheKeys.cacheBackgroundTrackingStatus, bridge.trackingStatus);
 
           ///
@@ -169,8 +179,12 @@ class TrackPoint {
 
           /// load and filter alias models from cached idList
           List<ModelAlias> aliasFilteredList = [];
+          bool locationIsRestricted = false;
           for (var id in bridge.trackPointAliasIdList) {
             var model = ModelAlias.getAlias(id);
+            if (model.status == AliasStatus.restricted) {
+              locationIsRestricted = true;
+            }
             if (!model.deleted && model.status != AliasStatus.restricted) {
               aliasFilteredList.add(model);
             }
@@ -205,6 +219,11 @@ class TrackPoint {
                 model.timesVisited++;
               }
               await ModelAlias.write();
+            }
+
+            /// only if no restricted alias is present
+            if (!locationIsRestricted) {
+              await addCalendarEvent(newTrackPoint);
             }
 
             /// reset user data
@@ -371,6 +390,45 @@ class TrackPoint {
           Globals.distanceTreshold) {
         bridge.trackingStatus = TrackingStatus.standing;
       }
+    }
+  }
+
+  Future<void> addCalendarEvent(ModelTrackPoint tp) async {
+    try {
+      var appCalendar = AppCalendar();
+      await appCalendar.retrieveCalendars();
+      if (appCalendar.calendars.isNotEmpty) {
+        var cacheId =
+            await Cache.getValue<String>(CacheKeys.selectedCalendar, '');
+        Calendar? c =
+            appCalendar.getCalendarfromCacheId(cacheId, appCalendar.calendars);
+        if (c != null) {
+          final berlin = getLocation('Europe/Berlin');
+          var tp = TrackPointData();
+
+          var start = TZDateTime.from(tp.tStart, berlin);
+          var end = TZDateTime.from(tp.tEnd, berlin);
+          Event e = Event(
+            c.id,
+            title:
+                '${tp.aliasList.isNotEmpty ? tp.aliasList.first.alias : tp.addressText}; ${tp.durationText} ',
+            start: start,
+            end: end,
+            location:
+                '${tp.gpslastStatusChange.lat},${tp.gpslastStatusChange.lon}',
+            description:
+                '${tp.aliasList.isNotEmpty ? tp.aliasList.first.alias : tp.addressText}\n'
+                '${start.day}.${start.month}. - ${tp.durationText}\n'
+                '(${start.hour}.${start.minute} - ${end.hour}.${end.minute})\n\n'
+                'Arbeiten:\n${tp.tasksText}\n\n'
+                'Mitarbeiter:\n${tp.usersText}\n\n'
+                'Notizen: ${tp.notes.isEmpty ? '-' : tp.notes}',
+          );
+          await appCalendar.inserOrUpdate(e);
+        }
+      }
+    } catch (e, stk) {
+      logger.error('addCalendarEvent: $e', stk);
     }
   }
 }

@@ -1,4 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:device_calendar/device_calendar.dart';
+
+///
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/globals.dart';
 import 'package:chaostours/gps.dart';
@@ -57,6 +60,10 @@ enum CacheKeys {
   tableModelAlias(List<ModelAlias>),
   tableModelUser(List<ModelUser>),
   tableModelTask(List<ModelTask>),
+
+  /// eventCalendar
+  /// "id\tname\taccount"
+  selectedCalendar(String),
 
   /// globals
   globalsWeekDays(List<String>),
