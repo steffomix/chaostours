@@ -6,7 +6,6 @@ import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/view/app_widgets.dart';
-import 'package:chaostours/checkbox_controller.dart';
 import 'package:chaostours/util.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/screen.dart';
