@@ -14,14 +14,14 @@ class TrackPointData {
   late int distanceStandingFromBorder;
   late int standingRadius;
   late double distanceMoving;
-  late List<ModelAlias> aliasList;
-  late List<ModelUser> userList;
-  late List<ModelTask> taskList;
+  List<ModelAlias> aliasList = [];
+  late String aliasText;
+  List<ModelUser> userList = [];
+  late String tasksText;
+  List<ModelTask> taskList = [];
+  late String usersText;
   late String trackPointNotes;
   late String durationText;
-  late String aliasText;
-  late String tasksText;
-  late String usersText;
   late String addressText;
   late String notes;
 
@@ -63,24 +63,30 @@ class TrackPointData {
     } catch (e) {
       distanceStanding = 0;
     }
+    aliasList = bridge.trackPointAliasIdList.isEmpty
+        ? []
+        : bridge.trackPointAliasIdList
+            .map((id) => ModelAlias.getAlias(id))
+            .toList();
 
-    aliasList = bridge.trackPointAliasIdList
-        .map((id) => ModelAlias.getAlias(id))
-        .toList();
+    userList = bridge.trackPointUserIdList.isEmpty
+        ? []
+        : bridge.trackPointUserIdList
+            .map((id) => ModelUser.getUser(id))
+            .toList();
 
-    userList =
-        bridge.trackPointUserIdList.map((id) => ModelUser.getUser(id)).toList();
+    taskList = bridge.trackPointTaskIdList.isEmpty
+        ? []
+        : bridge.trackPointTaskIdList
+            .map((id) => ModelTask.getTask(id))
+            .toList();
 
-    taskList =
-        bridge.trackPointTaskIdList.map((id) => ModelTask.getTask(id)).toList();
-    trackPointNotes = bridge.trackPointUserNotes;
-
-    durationText = timeElapsed(tStart, tEnd, false);
     aliasText = aliasList.isEmpty
         ? ' ---'
         : '${aliasList.length == 1 ? '-' : '-->'} ${aliasList.map((e) {
               return e.alias;
             }).toList().join('\n- ')}';
+
     tasksText = taskList.isEmpty
         ? ' ---'
         : taskList
@@ -89,6 +95,7 @@ class TrackPointData {
             })
             .toList()
             .join('\n');
+
     usersText = userList.isEmpty
         ? ' ---'
         : userList
@@ -98,8 +105,8 @@ class TrackPointData {
             .toList()
             .join('\n');
 
+    trackPointNotes = bridge.trackPointUserNotes;
+    durationText = timeElapsed(tStart, tEnd, false);
     addressText = bridge.currentAddress.isEmpty ? '---' : bridge.currentAddress;
-
-    notes = bridge.trackPointUserNotes;
   }
 }

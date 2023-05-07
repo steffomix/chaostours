@@ -30,8 +30,7 @@ class _WidgetManageCalendarState extends State<WidgetManageCalendar> {
   void initState() {
     appCalendar.retrieveCalendars().then((_) async {
       String cId = await Cache.getValue<String>(CacheKeys.selectedCalendar, '');
-      selectedCalendar =
-          appCalendar.getCalendarfromCacheId(cId, appCalendar.calendars);
+      selectedCalendar = appCalendar.getCalendarfromCacheId(cId);
       if (mounted) {
         setState(() {});
       }

@@ -9,7 +9,7 @@ class AppCalendar {
 
   late DeviceCalendarPlugin _deviceCalendarPlugin;
 
-  _WidgetManageCalendarState() {
+  AppCalendar() {
     _deviceCalendarPlugin = DeviceCalendarPlugin();
   }
 
@@ -50,7 +50,7 @@ class AppCalendar {
     ].join('\t');
   }
 
-  Calendar? getCalendarfromCacheId(String cache, List<Calendar> calendars) {
+  Calendar? getCalendarfromCacheId(String cache) {
     try {
       List<String> parts = cache.split('\t');
       for (var cal in calendars) {

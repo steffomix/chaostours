@@ -272,7 +272,6 @@ class _WidgetImportExport extends State<WidgetImportExport> {
         errors.add(e.toString());
       }
     }
-    errors.addAll(['hi', 'yx', 'abc']);
     if (errors.isEmpty) {
       await Cache.setValue<List<ModelTrackPoint>>(
           CacheKeys.tableModelTrackpoint, trackPointModels);
@@ -377,29 +376,29 @@ class _WidgetImportExport extends State<WidgetImportExport> {
                                         Text(
                                             'Export Database Files into "$path"?'),
                                         files[trackPointFilename] ?? false
-                                            ? Text('- $trackPointFilename.tsv')
-                                            : Text(
+                                            ? Text(
                                                 '- $trackPointFilename.tsv',
                                                 style: strike,
-                                              ),
+                                              )
+                                            : Text('- $trackPointFilename.tsv'),
                                         files[aliasFilename] ?? false
-                                            ? Text('- $aliasFilename.tsv')
-                                            : Text(
+                                            ? Text(
                                                 '- $aliasFilename.tsv',
                                                 style: strike,
-                                              ),
+                                              )
+                                            : Text('- $aliasFilename.tsv'),
                                         files[taskFilename] ?? false
-                                            ? Text('- $taskFilename.tsv')
-                                            : Text(
+                                            ? Text(
                                                 '- $taskFilename.tsv',
                                                 style: strike,
-                                              ),
+                                              )
+                                            : Text('- $taskFilename.tsv'),
                                         files[userFilename] ?? false
-                                            ? Text('- $userFilename.tsv')
-                                            : Text(
-                                                '- $trackPointFilename.tsv',
+                                            ? Text(
+                                                '- $userFilename.tsv',
                                                 style: strike,
-                                              ),
+                                              )
+                                            : Text('- $trackPointFilename.tsv'),
                                         AppWidgets.divider(),
                                         Row(
                                           mainAxisAlignment:

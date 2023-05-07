@@ -9,6 +9,8 @@ import 'package:chaostours/cache.dart';
 import 'package:chaostours/data_bridge.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_alias.dart';
+import 'package:chaostours/model/model_task.dart';
+import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/calendar.dart';
 
 enum TrackingStatus {
@@ -179,9 +181,13 @@ class TrackPoint {
 
           /// load and filter alias models from cached idList
           List<ModelAlias> aliasFilteredList = [];
+          bool locationIsPrivate = false;
           bool locationIsRestricted = false;
           for (var id in bridge.trackPointAliasIdList) {
             var model = ModelAlias.getAlias(id);
+            if (model.status == AliasStatus.privat) {
+              locationIsPrivate = true;
+            }
             if (model.status == AliasStatus.restricted) {
               locationIsRestricted = true;
             }
@@ -221,8 +227,8 @@ class TrackPoint {
               await ModelAlias.write();
             }
 
-            /// only if no restricted alias is present
-            if (!locationIsRestricted) {
+            /// only if no private or restricted alias is present
+            if (!(locationIsPrivate || locationIsRestricted)) {
               await addCalendarEvent(newTrackPoint);
             }
 
@@ -395,35 +401,37 @@ class TrackPoint {
 
   Future<void> addCalendarEvent(ModelTrackPoint tp) async {
     try {
+      await ModelTask.open();
+      await ModelUser.open();
+      var tp = TrackPointData();
       var appCalendar = AppCalendar();
       await appCalendar.retrieveCalendars();
       if (appCalendar.calendars.isNotEmpty) {
         var cacheId =
             await Cache.getValue<String>(CacheKeys.selectedCalendar, '');
-        Calendar? c =
-            appCalendar.getCalendarfromCacheId(cacheId, appCalendar.calendars);
+        Calendar? c = appCalendar.getCalendarfromCacheId(cacheId);
         if (c != null) {
           final berlin = getLocation('Europe/Berlin');
-          var tp = TrackPointData();
 
           var start = TZDateTime.from(tp.tStart, berlin);
           var end = TZDateTime.from(tp.tEnd, berlin);
-          Event e = Event(
-            c.id,
-            title:
-                '${tp.aliasList.isNotEmpty ? tp.aliasList.first.alias : tp.addressText}; ${tp.durationText} ',
-            start: start,
-            end: end,
-            location:
-                '${tp.gpslastStatusChange.lat},${tp.gpslastStatusChange.lon}',
-            description:
-                '${tp.aliasList.isNotEmpty ? tp.aliasList.first.alias : tp.addressText}\n'
-                '${start.day}.${start.month}. - ${tp.durationText}\n'
-                '(${start.hour}.${start.minute} - ${end.hour}.${end.minute})\n\n'
-                'Arbeiten:\n${tp.tasksText}\n\n'
-                'Mitarbeiter:\n${tp.usersText}\n\n'
-                'Notizen: ${tp.notes.isEmpty ? '-' : tp.notes}',
-          );
+          var title =
+              '${tp.aliasList.isNotEmpty ? tp.aliasList.first.alias : tp.addressText}; ${tp.durationText}';
+          var location =
+              'maps.google.com?q=${tp.gpslastStatusChange.lat},${tp.gpslastStatusChange.lon}';
+          var description =
+              '${tp.aliasList.isNotEmpty ? tp.aliasList.first.alias : tp.addressText}\n'
+              '${start.day}.${start.month}. - ${tp.durationText}\n'
+              '(${start.hour}.${start.minute} - ${end.hour}.${end.minute})\n\n'
+              'Arbeiten:\n${tp.tasksText}\n\n'
+              'Mitarbeiter:\n${tp.usersText}\n\n'
+              'Notizen: ${tp.trackPointNotes.isEmpty ? '-' : tp.trackPointNotes}';
+          Event e = Event(c.id,
+              title: title,
+              start: start,
+              end: end,
+              location: location,
+              description: description);
           await appCalendar.inserOrUpdate(e);
         }
       }
