@@ -66,7 +66,7 @@ class EventManager {
   static bool listen<T>(Function(T) fn) {
     bool added = _get<T>().add(fn);
     if (added) {
-      logger.log('add Listener ${T.toString()}');
+      //logger.verbose('add Listener ${T.toString()}');
     } else {
       logger
           .warn('add Listener  ${T.toString()} skipped: Listener already set');
@@ -107,7 +107,7 @@ class EventManager {
     var set = _get<T>();
     if (set.contains(fn)) {
       _get<T>().removeWhere((el) => el == fn);
-      logger.log('remove Listener ${T.toString()}');
+      //logger.verbose('remove Listener ${T.toString()}');
     } else {
       logger.warn(
           'remove Listener ${T.toString()} skipped: Listener not present');

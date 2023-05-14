@@ -167,11 +167,6 @@ class TrackPoint {
           bridge.trackPointGpsStartMoving = await Cache.setValue<PendingGps>(
               CacheKeys.cacheEventBackgroundGpsStartMoving, gps);
 
-          /// save general status changed event
-          bridge.trackPointGpslastStatusChange =
-              await Cache.setValue<PendingGps>(
-                  CacheKeys.cacheEventBackgroundGpsLastStatusChange, gps);
-
           bridge.trackingStatus = await Cache.setValue<TrackingStatus>(
               CacheKeys.cacheBackgroundTrackingStatus, bridge.trackingStatus);
 
@@ -231,6 +226,11 @@ class TrackPoint {
             if (!(locationIsPrivate || locationIsRestricted)) {
               await addCalendarEvent(newTrackPoint);
             }
+
+            /// save general status changed event AFTER saving
+            bridge.trackPointGpslastStatusChange =
+                await Cache.setValue<PendingGps>(
+                    CacheKeys.cacheEventBackgroundGpsLastStatusChange, gps);
 
             /// reset user data
             await Cache.setValue<List<int>>(
@@ -399,11 +399,11 @@ class TrackPoint {
     }
   }
 
-  Future<void> addCalendarEvent(ModelTrackPoint tp) async {
+  Future<void> addCalendarEvent(ModelTrackPoint tpModel) async {
     try {
       await ModelTask.open();
       await ModelUser.open();
-      var tp = TrackPointData();
+      var tpData = TrackPointData();
       var appCalendar = AppCalendar();
       await appCalendar.retrieveCalendars();
       if (appCalendar.calendars.isNotEmpty) {
@@ -413,26 +413,26 @@ class TrackPoint {
         if (c != null) {
           final berlin = getLocation('Europe/Berlin');
 
-          var start = TZDateTime.from(tp.tStart, berlin);
-          var end = TZDateTime.from(tp.tEnd, berlin);
+          var start = TZDateTime.from(tpData.tStart, berlin);
+          var end = TZDateTime.from(tpData.tEnd, berlin);
           var title =
-              '${tp.aliasList.isNotEmpty ? tp.aliasList.first.alias : tp.addressText}; ${tp.durationText}';
+              '${tpData.aliasList.isNotEmpty ? tpData.aliasList.first.alias : tpData.addressText}; ${tpData.durationText}';
           var location =
-              'maps.google.com?q=${tp.gpslastStatusChange.lat},${tp.gpslastStatusChange.lon}';
+              'maps.google.com?q=${tpData.gpslastStatusChange.lat},${tpData.gpslastStatusChange.lon}';
           var description =
-              '${tp.aliasList.isNotEmpty ? tp.aliasList.first.alias : tp.addressText}\n'
-              '${start.day}.${start.month}. - ${tp.durationText}\n'
+              '${tpData.aliasList.isNotEmpty ? tpData.aliasList.first.alias : tpData.addressText}\n'
+              '${start.day}.${start.month}. - ${tpData.durationText}\n'
               '(${start.hour}.${start.minute} - ${end.hour}.${end.minute})\n\n'
-              'Arbeiten:\n${tp.tasksText}\n\n'
-              'Mitarbeiter:\n${tp.usersText}\n\n'
-              'Notizen: ${tp.trackPointNotes.isEmpty ? '-' : tp.trackPointNotes}';
-          Event e = Event(c.id,
+              'Arbeiten:\n${tpData.tasksText}\n\n'
+              'Mitarbeiter:\n${tpData.usersText}\n\n'
+              'Notizen: ${tpData.trackPointNotes.isEmpty ? '-' : tpData.trackPointNotes}';
+          Event event = Event(c.id,
               title: title,
               start: start,
               end: end,
               location: location,
               description: description);
-          await appCalendar.inserOrUpdate(e);
+          await appCalendar.inserOrUpdate(event);
         }
       }
     } catch (e, stk) {

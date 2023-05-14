@@ -16,7 +16,7 @@ class PendingModelTrackPoint extends ModelTrackPoint {
       gps: GPS(0, 0),
       timeStart: DateTime.now(),
       idAlias: <int>[],
-      deleted: 0,
+      deleted: false,
       notes: '');
 
   PendingModelTrackPoint(
@@ -71,7 +71,7 @@ class PendingModelTrackPoint extends ModelTrackPoint {
         gps: gps,
         timeStart: DateTime.parse(p[3]),
         idAlias: ModelTrackPoint.parseIdList(p[5]),
-        deleted: 0);
+        deleted: false);
     model.status = TrackingStatus.byValue(int.parse(p[0]));
     model.timeEnd = DateTime.parse(p[4]);
     model.idTask = ModelTrackPoint.parseIdList(p[6]);
@@ -93,7 +93,7 @@ class ModelTrackPoint {
   ///
   /// Model owners
   ///
-  int deleted = 0; // 0 or 1
+  bool deleted = false;
   GPS gps;
 
   /// "lat,lon;lat,lon;..."
@@ -123,7 +123,7 @@ class ModelTrackPoint {
       {required this.gps,
       required this.idAlias,
       required this.timeStart,
-      this.deleted = 0,
+      this.deleted = false,
       this.notes = ''});
 
   static ModelTrackPoint get last => _table.last;
@@ -262,7 +262,7 @@ class ModelTrackPoint {
     return list.reversed.toList();
   }
 
-  Set<ModelTask> getTask() {
+  Set<ModelTask> getTasks() {
     Set<ModelTask> list = {};
     for (int id in idAlias) {
       list.add(ModelTask.getTask(id));
@@ -271,6 +271,66 @@ class ModelTrackPoint {
     return list;
   }
 
+  static T _parse<T>(
+      int field, String fieldName, String str, T Function(String s) fn) {
+    try {
+      return fn(str);
+    } catch (e) {
+      throw ('Parse error at column ${field + 1} ($fieldName): $e');
+    }
+  }
+
+  static List<int> _parseList(int field, String fieldName, String str,
+      List<int> Function(String s) fn) {
+    try {
+      return fn(str);
+    } catch (e) {
+      throw ('Parse error at column ${field + 1} ($fieldName): $e');
+    }
+  }
+
+  static ModelTrackPoint toModel(String row) {
+    List<String> p = row.split('\t');
+    if (p.length < 12) {
+      throw ('Table Trackpoint must have at least 12 columns: 1:ID, 2:deleted, 3:tracking status, '
+          '4:latitude, 5:longitude, 6:time start, 7:time end, 8:alias IDs, 9:task IDs, 10:userIDs, 11:OSM address, 12: notes');
+    }
+    GPS gps = GPS(_parse<double>(3, 'GPS Latitude', p[3], double.parse),
+        _parse<double>(4, 'GPS Longitude', p[4], double.parse));
+    //GPS gps = GPS(double.parse(p[3]), double.parse(p[4]));
+    ModelTrackPoint tp = ModelTrackPoint(
+        deleted: _parse<int>(1, 'Deleted', p[1], int.parse) == 1
+            ? true
+            : false, //int.parse(p[1]),
+        gps: gps,
+        timeStart: _parse<DateTime>(
+            5, 'Time Start', p[5], DateTime.parse), //DateTime.parse(p[5]),
+        idAlias:
+            _parseList(7, 'Alias IDs', p[7], parseIdList), // parseIdList(p[7]),
+        notes: _parse<String>(11, 'Notes', p[11], decode)); // decode(p[11]));
+
+    tp._id = _parse<int>(0, 'ID', p[0], int.parse); // int.parse(p[0]);
+    //tp.status = TrackingStatus.byValue(int.parse(p[2]));
+
+    var type = _parse<int>(2, 'Tracking Status', p[2], int.parse);
+    if (type == 1 || type == 2) {
+      tp.status = TrackingStatus.byValue(type);
+    } else {
+      throw ('Tracking Status must be 1 (standing) or 2 (moving)');
+    }
+
+    tp.timeEnd = _parse<DateTime>(
+        6, 'Time End', p[6], DateTime.parse); //DateTime.parse(p[6]);
+    tp.idTask =
+        _parseList(8, 'Task IDs', p[8], parseIdList); //parseIdList(p[8]);
+    tp.idUser =
+        _parseList(9, 'User IDs', p[9], parseIdList); //parseIdList(p[9]);
+    tp.address =
+        _parse<String>(10, 'OSM Address', p[10], decode); //decode(p[10]);
+    return tp;
+  }
+
+/* 
   static ModelTrackPoint toModel(String row) {
     List<String> p = row.split('\t');
     GPS gps = GPS(double.parse(p[3]), double.parse(p[4]));
@@ -288,13 +348,13 @@ class ModelTrackPoint {
     tp.idUser = parseIdList(p[9]);
     tp.address = decode(p[10]);
     return tp;
-  }
+  } */
 
   @override
   String toString() {
     List<String> cols = [
       _id.toString(), // 0
-      deleted.toString(), // 1
+      deleted ? '1' : '0', // 1
       status.index.toString(), // 2
       gps.lat.toString(), // 3
       gps.lon.toString(), // 4

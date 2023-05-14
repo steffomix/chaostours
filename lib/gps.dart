@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:vector_math/vector_math.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:android_intent_plus/android_intent.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 //import 'package:geolocator/geolocator.dart' show Position, Geolocator;
 //
@@ -48,24 +49,21 @@ class GPS {
   GPS(this.lat, this.lon);
 
   static Future<GPS> gps() async {
-    if (lastGps == null) {
-      /// no cache present yet
-      return await _gps();
-    } else {
-      var t = lastGps!.time;
-      if (t.add(Globals.cacheGpsTime).isAfter(DateTime.now())) {
-        /// cache is outdated
-        return await _gps();
-      } else {
-        /// use cache
-        return lastGps!;
-      }
+    if (!(await Permission.location.isGranted)) {
+      await Permission.location.request();
     }
-  }
+    bool cacheOutdated =
+        lastGps?.time.add(Globals.cacheGpsTime).isBefore(DateTime.now()) ??
+            true;
 
-  static Future<GPS> _gps() async {
-    geo.Position pos = await geo.Geolocator.getCurrentPosition();
-    return lastGps ??= GPS(pos.latitude, pos.longitude);
+    if (cacheOutdated) {
+      /// cache is outdated
+      geo.Position pos = await geo.Geolocator.getCurrentPosition();
+      return GPS(pos.latitude, pos.longitude);
+    } else {
+      /// use cache
+      return lastGps!;
+    }
   }
 
   @override

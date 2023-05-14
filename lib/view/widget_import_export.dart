@@ -149,12 +149,13 @@ class _WidgetImportExport extends State<WidgetImportExport> {
         var id = 1;
         for (var row in data) {
           try {
-            ModelTrackPoint tp = ModelTrackPoint.toModel(row);
-            if (tp.id != id) {
+            ModelTrackPoint model = ModelTrackPoint.toModel(row);
+            if (model.id != id) {
               throw ('id must be $id');
             }
+            trackPointModels.add(model);
           } catch (e) {
-            throw ('$file.tsv line ${id - 1}: ${e.toString()}');
+            throw ('$file.tsv line ${id - 1}: $e');
           }
           id++;
         }
@@ -180,8 +181,9 @@ class _WidgetImportExport extends State<WidgetImportExport> {
             if (model.id != id) {
               throw ('id must be $id');
             }
+            aliasModels.add(model);
           } catch (e) {
-            throw ('$file.tsv line ${id - 1}: ${e.toString()}');
+            throw ('$file.tsv line ${id - 1}: $e');
           }
           id++;
         }
@@ -207,8 +209,9 @@ class _WidgetImportExport extends State<WidgetImportExport> {
             if (model.id != id) {
               throw ('id must be $id');
             }
+            taskModels.add(model);
           } catch (e) {
-            throw ('$file.tsv line ${id - 1}: ${e.toString()}');
+            throw ('$file.tsv line ${id - 1}: $e');
           }
           id++;
         }
@@ -234,8 +237,9 @@ class _WidgetImportExport extends State<WidgetImportExport> {
             if (model.id != id) {
               throw ('id must be $id');
             }
+            userModels.add(model);
           } catch (e) {
-            throw ('$file.tsv line ${id - 1}: ${e.toString()}');
+            throw ('$file.tsv line ${id - 1}: $e');
           }
           id++;
         }
@@ -292,8 +296,8 @@ class _WidgetImportExport extends State<WidgetImportExport> {
       Future.microtask(() {
         AppWidgets.navigate(context, AppRoutes.logger).then((_) async {
           for (var e in errors) {
+            await Future.delayed(const Duration(milliseconds: 200));
             logger.error('Import Error: $e', StackTrace.empty);
-            await Future.delayed(const Duration(milliseconds: 50));
           }
         });
       });

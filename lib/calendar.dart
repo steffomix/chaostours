@@ -1,8 +1,11 @@
 import 'package:device_calendar/device_calendar.dart';
+import 'package:timezone/timezone.dart';
 import 'package:flutter/services.dart';
 
 ///
 import 'package:chaostours/logger.dart';
+import 'package:chaostours/cache.dart';
+import 'package:chaostours/data_bridge.dart';
 
 class AppCalendar {
   static final Logger logger = Logger.logger<AppCalendar>();
@@ -34,6 +37,14 @@ class AppCalendar {
       }
 
       final calendarsResult = await _deviceCalendarPlugin.retrieveCalendars();
+      if (calendarsResult.hasErrors) {
+        List<String> err = [];
+        calendarsResult.errors.map((e) {
+          err.add(e.errorMessage);
+        });
+        DataBridge.instance.trackPointUserNotes = await Cache.setValue<String>(
+            CacheKeys.cacheBackgroundTrackPointUserNotes, err.join('\n\n'));
+      }
       calendars.clear();
       calendars.addAll(calendarsResult.data as List<Calendar>);
     } catch (e, stk) {

@@ -29,8 +29,7 @@ class TrackPointData {
     DataBridge bridge = DataBridge.instance;
 
     tStart = (bridge.trackPointGpslastStatusChange?.time ??
-            bridge.gpsPoints.last.time)
-        .subtract(Globals.timeRangeTreshold);
+        bridge.gpsPoints.last.time.subtract(Globals.timeRangeTreshold));
     tEnd = DateTime.now();
     gpslastStatusChange =
         bridge.trackPointGpslastStatusChange ?? bridge.gpsPoints.last;

@@ -60,19 +60,52 @@ class ModelAlias {
 
   static List<ModelAlias> getAll() => <ModelAlias>[..._table];
 
+  static T _parse<T>(
+      int field, String fieldName, String str, T Function(String s) fn) {
+    try {
+      return fn(str);
+    } catch (e) {
+      throw ('Parse error at column ${field + 1} ($fieldName): $e');
+    }
+  }
+
+  static List<int> _parseList(int field, String fieldName, String str,
+      List<int> Function(String s) fn) {
+    try {
+      return fn(str);
+    } catch (e) {
+      throw ('Parse error at column ${field + 1} ($fieldName): $e');
+    }
+  }
+
   static ModelAlias toModel(String row) {
     List<String> p = row.trim().split('\t');
-    int id = int.parse(p[0]);
+    if (p.length < 10) {
+      throw ('Table Alias must have at least 10 columns: 1:ID, 2: deleted, 3: latitude, 4: longitude, 5: radius, '
+          '6: alias name, 7: notes, 8: alias type, 9: last visited, 10: count visted');
+    }
+    int id = _parse<int>(0, 'ID', p[0], int.parse); // int.parse(p[0]);
+    var aliasType = _parse<int>(7, 'Alias Type', p[7], int.parse);
+    if (!(aliasType >= 0 && aliasType <= 2)) {
+      throw ('Alias Type must be 0: resticted, 1: private, or 2: public');
+    }
+
     ModelAlias a = ModelAlias(
-        deleted: p[1] == '1' ? true : false,
-        lat: double.parse(p[2]),
-        lon: double.parse(p[3]),
-        radius: int.parse(p[4]),
-        alias: decode(p[5]),
-        notes: decode(p[6]),
-        status: AliasStatus.byValue(int.parse(p[7])),
-        lastVisited: DateTime.parse(p[8]),
-        timesVisited: int.parse(p[9]));
+        deleted: _parse<int>(1, 'Deleted', p[1], int.parse) == 1
+            ? true
+            : false, // p[1] == '1' ? true : false,
+        lat: _parse<double>(
+            2, 'Latitude', p[2], double.parse), //double.parse(p[2]),
+        lon: _parse<double>(
+            3, 'Longitude', p[3], double.parse), // double.parse(p[3]),
+        radius: _parse<int>(4, 'Radius', p[4], int.parse), // int.parse(p[4]),
+        alias: _parse<String>(5, 'Alias Name', p[5], decode), //decode(p[5]),
+        notes: _parse<String>(6, 'Notes', p[6], decode), //decode(p[6]),
+        status: AliasStatus.byValue(aliasType),
+        lastVisited: _parse<DateTime>(
+            8, 'Last visited', p[8], DateTime.parse), // DateTime.parse(p[8]),
+        timesVisited: _parse<int>(
+            9, 'Count visited', p[9], int.parse)); //int.parse(p[9]));
     a._id = id;
     return a;
   }

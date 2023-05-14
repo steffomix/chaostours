@@ -39,13 +39,27 @@ class ModelUser {
     return parts.join('\t');
   }
 
+  static T _parse<T>(
+      int field, String fieldName, String str, T Function(String s) fn) {
+    try {
+      return fn(str);
+    } catch (e) {
+      throw ('Parse error at column ${field + 1} ($fieldName): $e');
+    }
+  }
+
   static ModelUser toModel(String row) {
-    List<String> parts = row.split('\t');
-    int id = int.parse(parts[0]);
+    List<String> p = row.split('\t');
+    if (p.length < 4) {
+      throw ('Table User must have at least 4 columns: 1:ID, 2:deleted, 3:user name, 4:notes');
+    }
+    int id = _parse<int>(0, 'ID', p[0], int.parse); // int.parse(parts[0]);
     ModelUser model = ModelUser(
-        deleted: parts[1] == '1' ? true : false,
-        user: decode(parts[2]),
-        notes: decode(parts[3]));
+        deleted: _parse<int>(1, 'Deleted', p[1], int.parse) == 1
+            ? true
+            : false, //p[1] == '1' ? true : false,
+        user: _parse<String>(2, 'User name', p[2], decode), //decode(p[2]),
+        notes: _parse<String>(3, 'Notes', p[3], decode)); // decode(p[3]));
     model._id = id;
     return model;
   }

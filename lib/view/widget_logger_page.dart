@@ -13,15 +13,21 @@ class WidgetLoggerPage extends StatefulWidget {
 }
 
 class _WidgetLoggerPage extends State<WidgetLoggerPage> {
-  _WidgetLoggerPage() {
-    EventManager.listen<EventOnAppTick>(onTick);
-    EventManager.listen<EventOnLog>(onLog);
-  }
+  static List<Widget> logs = [];
+  static int counter = 0;
+
   @override
   void dispose() {
     EventManager.remove<EventOnAppTick>(onTick);
     EventManager.remove<EventOnLog>(onLog);
     super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    EventManager.listen<EventOnAppTick>(onTick);
+    EventManager.listen<EventOnLog>(onLog);
   }
 
   static String get time {
@@ -90,7 +96,10 @@ class _WidgetLoggerPage extends State<WidgetLoggerPage> {
   }
 
   void onTick(EventOnAppTick event) {
-    //setState(() {});
+    counter++;
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   void onLog(EventOnLog e) async {
@@ -100,15 +109,17 @@ class _WidgetLoggerPage extends State<WidgetLoggerPage> {
     while (logs.length > 200) {
       logs.removeLast();
     }
-    setState(() {});
+    if (mounted) {
+      setState(() {});
+    }
   }
 
-  List<Widget> logs = [];
-  int counter = 0;
   @override
   Widget build(BuildContext context) {
+    if (logs.isEmpty) {
+      logs.add(const Text('No Logs yet...'));
+    }
     return AppWidgets.scaffold(context,
-        body:
-            ListView(children: [Text('Background ticks: $counter'), ...logs]));
+        body: ListView(children: [Text('App ticks: $counter'), ...logs]));
   }
 }

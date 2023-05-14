@@ -54,7 +54,8 @@ dependencies:
   loading_animation_widget: 1.2.0
   confirm_dialog: 1.0.1
   app_settings: 4.2.0
-  device_calendar: ^4.3.1-4217521123 # prerelease due to source null-savety errors
+  # receiveCalendar bugfix: https://github.com/builttoroam/device_calendar/issues/99#issuecomment-612449677
+  device_calendar: 4.3.1 
   #geolocator: 7.4.0 # version 9.x collides with background_location_tracker
   geolocator: 9.0.2
   file_manager: ^1.0.2
