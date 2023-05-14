@@ -18,8 +18,24 @@ class AppCalendar {
 
   final List<Calendar> calendars = [];
 
-  Future<void> inserOrUpdate(Event e) async {
-    _deviceCalendarPlugin.createOrUpdateEvent(e);
+  Future<Result<String>?> inserOrUpdate(Event e) async {
+    Result<String>? id = await _deviceCalendarPlugin.createOrUpdateEvent(e);
+    return id;
+  }
+
+  Future<Event?> getEventById(String id) async {
+    Calendar? cal = await getCalendarfromCacheId();
+    if (cal != null) {
+      var params = RetrieveEventsParams(eventIds: [id]);
+      var events = await _deviceCalendarPlugin.retrieveEvents(cal.id, params);
+      if (events.isSuccess) {
+        List<Event>? data = events.data ?? <Event>[];
+        if (data.isNotEmpty) {
+          var event = data.first;
+          return event;
+        }
+      }
+    }
   }
 
   Future<void> retrieveCalendars() async {
@@ -61,8 +77,9 @@ class AppCalendar {
     ].join('\t');
   }
 
-  Calendar? getCalendarfromCacheId(String cache) {
+  Future<Calendar?> getCalendarfromCacheId() async {
     try {
+      var cache = await Cache.getValue<String>(CacheKeys.selectedCalendar, '');
       List<String> parts = cache.split('\t');
       for (var cal in calendars) {
         if (cal.id == parts[0] &&

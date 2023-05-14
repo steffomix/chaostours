@@ -11,7 +11,10 @@ import 'package:chaostours/globals.dart';
 class DataBridge {
   static final Logger logger = Logger.logger<DataBridge>();
 
-  DataBridge._();
+  DataBridge._() {
+    // reset background logger
+    Cache.setValue<List<String>>(CacheKeys.backgroundLogger, []);
+  }
   static DataBridge? _instance;
   factory DataBridge() => _instance ??= DataBridge._();
   static DataBridge get instance => _instance ??= DataBridge._();
@@ -24,6 +27,8 @@ class DataBridge {
     triggeredTrackingStatus = await Cache.setValue<TrackingStatus>(
         CacheKeys.cacheTriggerTrackingStatus, status);
   }
+
+  String lastCalendarId = '';
 
   ///
   /// backround values
@@ -81,6 +86,11 @@ class DataBridge {
             EventManager.fire<EventOnCacheLoaded>(EventOnCacheLoaded());
           } catch (e, stk) {
             logger.error('service execution: $e', stk);
+          }
+          try {
+            await Logger.getBackgroundLogs();
+          } catch (e, stk) {
+            logger.error('getBackgroundLogs: $e', stk);
           }
           await Future.delayed(Globals.trackPointInterval);
         }
@@ -146,6 +156,10 @@ class DataBridge {
 
       trackPointUserNotes = await Cache.getValue<String>(
           CacheKeys.cacheBackgroundTrackPointUserNotes, '');
+
+      /// calendar
+      lastCalendarId =
+          await Cache.getValue<String>(CacheKeys.lastCalendarEvent, '');
     } catch (e, stk) {
       logger.error('loadBackgroundSession: $e', stk);
     }

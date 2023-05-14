@@ -92,6 +92,8 @@ class _WidgetManageBackgroundGpsState extends State<WidgetManageBackgroundGps> {
               style: TextStyle(fontWeight: FontWeight.bold))),
       AppWidgets.divider(),
       AppWidgets.divider(),
+      Text('Last Calendar ID: ${bridge.lastCalendarId}'),
+      AppWidgets.divider(),
       Text('Current Tracking Status: ${bridge.trackingStatus.name}'),
       AppWidgets.divider(),
       Text('Status change triggered: ${bridge.triggeredTrackingStatus.name}'),

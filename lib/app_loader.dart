@@ -22,7 +22,7 @@ class AppLoader {
   /// preload recources
   static Future<void> preload() async {
     try {
-      Logger.logLevel = LogLevel.verbose;
+      Logger.globalLogLevel = LogLevel.verbose;
       logger.important('start Preload sequence...');
       await webKey();
       await DataBridge.instance.reload();
@@ -93,7 +93,6 @@ class AppLoader {
   static Future<void> ticks() async {
     DataBridge.instance.startService();
     _appTick();
-    Logger.listenOnTick();
   }
 
   static Future<void> _appTick() async {

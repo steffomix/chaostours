@@ -19,7 +19,6 @@ class _WidgetLoggerPage extends State<WidgetLoggerPage> {
   @override
   void dispose() {
     EventManager.remove<EventOnAppTick>(onTick);
-    EventManager.remove<EventOnLog>(onLog);
     super.dispose();
   }
 
@@ -27,8 +26,39 @@ class _WidgetLoggerPage extends State<WidgetLoggerPage> {
   void initState() {
     super.initState();
     EventManager.listen<EventOnAppTick>(onTick);
-    EventManager.listen<EventOnLog>(onLog);
   }
+
+  Future<void> onTick(EventOnAppTick event) async {
+    counter++;
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (logs.isEmpty) {
+      logs.add(const Text('No Logs yet...'));
+    }
+    var loggerLogs = Logger.loggerLogs;
+    ListView renderedLogs = ListView.builder(
+      itemCount: loggerLogs.length + 1,
+      itemBuilder: (context, index) {
+        if (index == 0) {
+          return Text('App ticks: $counter');
+        }
+        var e = loggerLogs[index - 1];
+        return renderLog(e);
+      },
+    );
+    return AppWidgets.scaffold(context, body: renderedLogs);
+  }
+
+  ///
+  ///
+  ///
+  ///
+  ///
 
   static String get time {
     DateTime t = DateTime.now();
@@ -48,10 +78,13 @@ class _WidgetLoggerPage extends State<WidgetLoggerPage> {
     return '$time ::${level.name} $time<$loggerName>:: $msg$stk';
   }
 
-  static Widget renderLog(String prefix, LogLevel level, String msg,
-      [String? stackTrace]) {
-    msg = '$prefix $msg';
-    switch (level) {
+  static Widget renderLog(LoggerLog log) {
+    var t = log.time;
+    String time = '${t.hour}:${t.minute}:${t.second}::${t.millisecond}';
+    String msg =
+        '${log.prefix}$time ::${log.level.name} <${log.name}>:: ${log.msg}';
+
+    switch (log.level) {
       case LogLevel.verbose:
         return Container(
             margin: const EdgeInsets.only(top: 6),
@@ -82,44 +115,19 @@ class _WidgetLoggerPage extends State<WidgetLoggerPage> {
         return Container(
             margin: const EdgeInsets.only(top: 6),
             color: Colors.red,
-            child: Text('$msg\n$stackTrace',
-                style: const TextStyle(color: Colors.white)));
+            child: Text(
+              '$msg${log.stackTrace == null ? '' : '\n${log.stackTrace}'}',
+              style: const TextStyle(color: Colors.white),
+            ));
 
       default: // LogLevel.fatal:
         return Container(
             margin: const EdgeInsets.only(top: 6),
             color: Colors.purple,
-            child: Text('$msg\n$stackTrace',
-                style: const TextStyle(
-                    color: Colors.white, fontWeight: FontWeight.bold)));
+            child: Text(
+              '$msg${log.stackTrace == null ? '' : '\n${log.stackTrace}'}',
+              style: const TextStyle(color: Colors.white),
+            ));
     }
-  }
-
-  void onTick(EventOnAppTick event) {
-    counter++;
-    if (mounted) {
-      setState(() {});
-    }
-  }
-
-  void onLog(EventOnLog e) async {
-    Widget widget = renderLog(e.prefix, e.level,
-        composeMessage(e.name, e.level, e.msg, e.stackTrace), e.stackTrace);
-    logs.insert(0, widget);
-    while (logs.length > 200) {
-      logs.removeLast();
-    }
-    if (mounted) {
-      setState(() {});
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (logs.isEmpty) {
-      logs.add(const Text('No Logs yet...'));
-    }
-    return AppWidgets.scaffold(context,
-        body: ListView(children: [Text('App ticks: $counter'), ...logs]));
   }
 }

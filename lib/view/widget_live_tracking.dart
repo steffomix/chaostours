@@ -250,36 +250,92 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
   ///
   BottomNavigationBar bottomNavBar(BuildContext context) {
-    return BottomNavigationBar(
-        currentIndex: _bottomBarIndex,
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: AppColors.yellow.color,
-        fixedColor: AppColors.black.color,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.near_me), label: 'Live'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.recent_actors), label: 'Lokal'),
-          BottomNavigationBarItem(icon: Icon(Icons.timer), label: 'Zeit'),
-          BottomNavigationBarItem(icon: Icon(Icons.map), label: 'GPS'),
-        ],
-        onTap: (int id) {
-          switch (id) {
-            case 1: // 2.
-              displayMode = _DisplayMode.lastVisited;
-              break;
-            case 2: // 3.
-              displayMode = _DisplayMode.recentTrackPoints;
-              break;
-            case 3: // 4.
-              displayMode = _DisplayMode.gps;
-              break;
-            default: // 5.
-              displayMode = _DisplayMode.live;
-          }
-          _bottomBarIndex = id;
-          setState(() {});
-          //logger.log('BottomNavBar tapped but no method connected');
-        });
+    if (displayMode == _DisplayMode.gps) {
+      return BottomNavigationBar(
+          currentIndex: _bottomBarIndex,
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: AppColors.yellow.color,
+          fixedColor: AppColors.black.color,
+          items: const [
+            BottomNavigationBarItem(
+                icon: Icon(Icons.arrow_back), label: 'Live'),
+            BottomNavigationBarItem(icon: Icon(Icons.add), label: 'Alias'),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.search), label: 'Lookup Alias'),
+            BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Route'),
+          ],
+          onTap: (int id) async {
+            switch (id) {
+              case 1: // 2.
+                Navigator.pushNamed(context, AppRoutes.listAlias.route)
+                    .then((_) {
+                  if (mounted) {
+                    setState(() {});
+                  }
+                });
+                break;
+              case 2: // 3.
+
+                osm.GeoPoint gps = await mapController
+                    .getCurrentPositionAdvancedPositionPicker();
+                List<ModelAlias> aliasList =
+                    ModelAlias.nextAlias(gps: GPS(gps.latitude, gps.longitude));
+                if (aliasList.isNotEmpty) {
+                  var id = aliasList.first.id;
+                  if (mounted) {
+                    Navigator.pushNamed(context, AppRoutes.editAlias.route,
+                        arguments: id);
+                  }
+                } else {
+                  Fluttertoast.showToast(msg: 'Here is no Alias');
+                }
+                break;
+              case 3: // 4.
+                GPS gps = await GPS.gps();
+                osm.GeoPoint gps2 = await mapController
+                    .getCurrentPositionAdvancedPositionPicker();
+                GPS.launchGoogleMaps(
+                    gps.lat, gps.lon, gps2.latitude, gps2.longitude);
+                break;
+              default: // 1.
+                displayMode = _DisplayMode.live;
+            }
+            _bottomBarIndex = id;
+            setState(() {});
+            //logger.log('BottomNavBar tapped but no method connected');
+          });
+    } else {
+      return BottomNavigationBar(
+          currentIndex: _bottomBarIndex,
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: AppColors.yellow.color,
+          fixedColor: AppColors.black.color,
+          items: const [
+            BottomNavigationBarItem(icon: Icon(Icons.near_me), label: 'Live'),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.recent_actors), label: 'Lokal'),
+            BottomNavigationBarItem(icon: Icon(Icons.timer), label: 'Zeit'),
+            BottomNavigationBarItem(icon: Icon(Icons.map), label: 'GPS'),
+          ],
+          onTap: (int id) {
+            switch (id) {
+              case 1: // 2.
+                displayMode = _DisplayMode.lastVisited;
+                break;
+              case 2: // 3.
+                displayMode = _DisplayMode.recentTrackPoints;
+                break;
+              case 3: // 4.
+                displayMode = _DisplayMode.gps;
+                break;
+              default: // 5.
+                displayMode = _DisplayMode.live;
+            }
+            _bottomBarIndex = id;
+            setState(() {});
+            //logger.log('BottomNavBar tapped but no method connected');
+          });
+    }
   }
 
   ///
@@ -355,13 +411,13 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                         ? Icons.warning
                         : Icons.warning_amber),
                 onPressed: () async {
-                  bridge.triggeredTrackingStatus = await Cache.setValue(
-                      CacheKeys.cacheTriggerTrackingStatus,
-                      TrackingStatus.standing);
                   if (bridge.triggeredTrackingStatus !=
                       TrackingStatus.standing) {
                     Fluttertoast.showToast(msg: 'Standing sheduled');
                   }
+                  bridge.triggeredTrackingStatus = await Cache.setValue(
+                      CacheKeys.cacheTriggerTrackingStatus,
+                      TrackingStatus.standing);
                   if (mounted) {
                     setState(() {});
                   }
@@ -461,12 +517,12 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                         ? Icons.drive_eta
                         : Icons.drive_eta_outlined),
                 onPressed: () async {
-                  bridge.triggeredTrackingStatus = await Cache.setValue(
-                      CacheKeys.cacheTriggerTrackingStatus,
-                      TrackingStatus.moving);
                   if (bridge.triggeredTrackingStatus != TrackingStatus.moving) {
                     Fluttertoast.showToast(msg: 'Moving sheduled');
                   }
+                  bridge.triggeredTrackingStatus = await Cache.setValue(
+                      CacheKeys.cacheTriggerTrackingStatus,
+                      TrackingStatus.moving);
                   if (mounted) {
                     setState(() {});
                   }
@@ -540,7 +596,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       mapIsLoading: const WidgetDisposed(),
       androidHotReloadSupport: true,
       controller: mapController,
-      isPicker: false,
+      isPicker: true,
       initZoom: 17,
       minZoomLevel: 8,
       maxZoomLevel: 19,

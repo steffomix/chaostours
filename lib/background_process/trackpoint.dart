@@ -30,12 +30,13 @@ enum TrackingStatus {
 }
 
 class TrackPoint {
-  final Logger logger = Logger.logger<TrackPoint>();
+  final Logger logger = Logger.logger<TrackPoint>(
+      specialBackgroundLogger: true,
+      specialLogLevel: LogLevel.verbose,
+      specialPrefix: '~~');
 
   static TrackPoint? _instance;
   TrackPoint._() {
-    Logger.prefix = '~~';
-    Logger.backgroundLogger = true;
     bridge = DataBridge.instance;
   }
   factory TrackPoint() => _instance ??= TrackPoint._();
@@ -45,6 +46,10 @@ class TrackPoint {
   late DataBridge bridge;
 
   Future<void> startShared({required double lat, required double lon}) async {
+    var t = DateTime.now();
+    logger.log(
+        'Processing Background GPS with lat:$lat, lon:$lon at time: ${t.hour}:${t.minute}:${t.second}');
+
     /// create gpsPoint
     PendingGps gps = PendingGps(lat, lon);
     GPS.lastGps = gps;
@@ -224,7 +229,7 @@ class TrackPoint {
 
             /// only if no private or restricted alias is present
             if (!(locationIsPrivate || locationIsRestricted)) {
-              await addCalendarEvent(newTrackPoint);
+              await completeCalendarEvent(newTrackPoint);
             }
 
             /// save general status changed event AFTER saving
@@ -254,6 +259,21 @@ class TrackPoint {
 
           await Cache.setValue<TrackingStatus>(
               CacheKeys.cacheBackgroundTrackingStatus, bridge.trackingStatus);
+
+          /// add calendar entry
+          bool private = false;
+          List<ModelAlias> aliasList = ModelAlias.nextAlias(gps: gps);
+          for (var model in aliasList) {
+            if (model.status == AliasStatus.privat ||
+                model.status == AliasStatus.restricted) {
+              private = true;
+              break;
+            }
+          }
+
+          if (!private) {
+            await startCalendarEvent();
+          }
 
           /// reset user data
           await Cache.setValue<String>(
@@ -399,7 +419,46 @@ class TrackPoint {
     }
   }
 
-  Future<void> addCalendarEvent(ModelTrackPoint tpModel) async {
+  Future<void> startCalendarEvent() async {
+    var tpData = TrackPointData();
+
+    var appCalendar = AppCalendar();
+    await appCalendar.retrieveCalendars();
+    if (appCalendar.calendars.isNotEmpty) {
+      /// get dates
+      final berlin = getLocation('Europe/Berlin');
+      var start = TZDateTime.from(tpData.tStart, berlin);
+
+      /// get calendar
+      Calendar? calendar = await appCalendar.getCalendarfromCacheId();
+
+      /// get lastEvent
+      if (calendar != null) {
+        var title =
+            'Ankunft ${tpData.aliasList.isNotEmpty ? tpData.aliasList.first.alias : tpData.addressText} - ${start.hour}.${start.minute}';
+        var location =
+            'maps.google.com?q=${tpData.gpslastStatusChange.lat},${tpData.gpslastStatusChange.lon}';
+        var description =
+            '${tpData.aliasList.isNotEmpty ? tpData.aliasList.first.alias : tpData.addressText}\n'
+            'am ${start.day}.${start.month}\n'
+            'um ${start.hour}.${start.minute} - unbekannt)\n\n'
+            'Arbeiten: ...\n\n'
+            'Mitarbeiter:\n${tpData.usersText}\n\n'
+            'Notizen: ...';
+        Event event = Event(calendar.id,
+            title: title,
+            start: start,
+            location: location,
+            description: description);
+        var id = await appCalendar.inserOrUpdate(event);
+        if (id?.data != null) {
+          Cache.setValue<String>(CacheKeys.lastCalendarEvent, id!.data!);
+        }
+      }
+    }
+  }
+
+  Future<void> completeCalendarEvent(ModelTrackPoint tpModel) async {
     try {
       await ModelTask.open();
       await ModelUser.open();
@@ -407,14 +466,23 @@ class TrackPoint {
       var appCalendar = AppCalendar();
       await appCalendar.retrieveCalendars();
       if (appCalendar.calendars.isNotEmpty) {
-        var cacheId =
-            await Cache.getValue<String>(CacheKeys.selectedCalendar, '');
-        Calendar? c = appCalendar.getCalendarfromCacheId(cacheId);
-        if (c != null) {
-          final berlin = getLocation('Europe/Berlin');
+        /// get dates
+        final berlin = getLocation('Europe/Berlin');
+        var start = TZDateTime.from(tpData.tStart, berlin);
+        var end = TZDateTime.from(tpData.tEnd, berlin);
 
-          var start = TZDateTime.from(tpData.tStart, berlin);
-          var end = TZDateTime.from(tpData.tEnd, berlin);
+        /// get calendar
+        Calendar? calendar = await appCalendar.getCalendarfromCacheId();
+
+        /// get lastEvent
+        if (calendar != null) {
+          Event? lastEvent =
+              await appCalendar.getEventById(bridge.lastCalendarId);
+          String? eventId;
+          if (lastEvent != null) {
+            eventId = lastEvent.eventId;
+          }
+
           var title =
               '${tpData.aliasList.isNotEmpty ? tpData.aliasList.first.alias : tpData.addressText}; ${tpData.durationText}';
           var location =
@@ -426,13 +494,15 @@ class TrackPoint {
               'Arbeiten:\n${tpData.tasksText}\n\n'
               'Mitarbeiter:\n${tpData.usersText}\n\n'
               'Notizen: ${tpData.trackPointNotes.isEmpty ? '-' : tpData.trackPointNotes}';
-          Event event = Event(c.id,
+          Event event = Event(calendar.id,
+              eventId: eventId,
               title: title,
               start: start,
               end: end,
               location: location,
               description: description);
           await appCalendar.inserOrUpdate(event);
+          await Cache.setValue<String>(CacheKeys.lastCalendarEvent, '');
         }
       }
     } catch (e, stk) {

@@ -49,21 +49,30 @@ class GPS {
   GPS(this.lat, this.lon);
 
   static Future<GPS> gps() async {
-    if (!(await Permission.location.isGranted)) {
-      await Permission.location.request();
-    }
-    bool cacheOutdated =
-        lastGps?.time.add(Globals.cacheGpsTime).isBefore(DateTime.now()) ??
-            true;
+    try {
+      if (!(await Permission.location.isGranted)) {
+        await Permission.location.request();
+      }
+      bool cacheOutdated =
+          lastGps?.time.add(Globals.cacheGpsTime).isBefore(DateTime.now()) ??
+              true;
 
-    if (cacheOutdated) {
-      /// cache is outdated
-      geo.Position pos = await geo.Geolocator.getCurrentPosition();
-      return GPS(pos.latitude, pos.longitude);
-    } else {
-      /// use cache
-      return lastGps!;
+      if (cacheOutdated) {
+        /// cache is outdated
+        return await _gps();
+      } else {
+        /// use cache
+        return lastGps!;
+      }
+    } catch (e, stk) {
+      logger.error('get GPS: $e', stk);
+      return await _gps();
     }
+  }
+
+  static Future<GPS> _gps() async {
+    geo.Position pos = await geo.Geolocator.getCurrentPosition();
+    return GPS(pos.latitude, pos.longitude);
   }
 
   @override

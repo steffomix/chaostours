@@ -64,6 +64,7 @@ enum CacheKeys {
   /// eventCalendar
   /// "id\tname\taccount"
   selectedCalendar(String),
+  lastCalendarEvent(String),
 
   /// globals
   globalsWeekDays(List<String>),

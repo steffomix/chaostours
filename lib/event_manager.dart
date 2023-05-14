@@ -82,7 +82,7 @@ class EventManager {
     int s = t.second;
     int ms = t.millisecond;
 
-    String prefix = Logger.prefix;
+    String prefix = Logger.globalPrefix;
     Map<dynamic Function(T), dynamic> results = {};
 
     /// copy list to prevent modification during iteration
