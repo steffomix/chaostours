@@ -36,6 +36,7 @@ class AppCalendar {
         }
       }
     }
+    return null;
   }
 
   Future<void> retrieveCalendars() async {

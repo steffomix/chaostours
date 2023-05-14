@@ -428,6 +428,7 @@ class TrackPoint {
       /// get dates
       final berlin = getLocation('Europe/Berlin');
       var start = TZDateTime.from(tpData.tStart, berlin);
+      var end = start.add(const Duration(minutes: 2));
 
       /// get calendar
       Calendar? calendar = await appCalendar.getCalendarfromCacheId();
@@ -440,7 +441,7 @@ class TrackPoint {
             'maps.google.com?q=${tpData.gpslastStatusChange.lat},${tpData.gpslastStatusChange.lon}';
         var description =
             '${tpData.aliasList.isNotEmpty ? tpData.aliasList.first.alias : tpData.addressText}\n'
-            'am ${start.day}.${start.month}\n'
+            'am ${start.day}.${start.month}.${start.year}\n'
             'um ${start.hour}.${start.minute} - unbekannt)\n\n'
             'Arbeiten: ...\n\n'
             'Mitarbeiter:\n${tpData.usersText}\n\n'
@@ -448,11 +449,12 @@ class TrackPoint {
         Event event = Event(calendar.id,
             title: title,
             start: start,
+            end: end,
             location: location,
             description: description);
         var id = await appCalendar.inserOrUpdate(event);
         if (id?.data != null) {
-          Cache.setValue<String>(CacheKeys.lastCalendarEvent, id!.data!);
+          await Cache.setValue<String>(CacheKeys.lastCalendarEvent, id!.data!);
         }
       }
     }
