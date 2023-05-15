@@ -28,7 +28,8 @@ class DataBridge {
         CacheKeys.cacheTriggerTrackingStatus, status);
   }
 
-  String lastCalendarId = '';
+  String lastCalendarEventId = '';
+  String selectedCalendarId = '';
 
   ///
   /// backround values
@@ -147,19 +148,18 @@ class DataBridge {
           PendingGps(gps.lat, gps.lon));
 
       /// user data
-      ///
-
       trackPointUserIdList = await Cache.getValue<List<int>>(
           CacheKeys.cacheBackgroundUserIdList, []);
       trackPointTaskIdList = await Cache.getValue<List<int>>(
           CacheKeys.cacheBackgroundTaskIdList, []);
-
       trackPointUserNotes = await Cache.getValue<String>(
           CacheKeys.cacheBackgroundTrackPointUserNotes, '');
 
       /// calendar
-      lastCalendarId =
-          await Cache.getValue<String>(CacheKeys.lastCalendarEvent, '');
+      lastCalendarEventId =
+          await Cache.getValue<String>(CacheKeys.lastCalendarEventId, '');
+      selectedCalendarId =
+          await Cache.getValue<String>(CacheKeys.selectedCalendarId, '');
     } catch (e, stk) {
       logger.error('loadBackgroundSession: $e', stk);
     }

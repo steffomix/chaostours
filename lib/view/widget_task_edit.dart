@@ -21,9 +21,7 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
   //TextEditingController nameController = TextEditingController();
   //TextEditingController notesController = TextEditingController();
 
-  late bool? deleted;
-  late bool create;
-  ModelTask task = ModelTask(task: '', deleted: false, notes: '');
+  late ModelTask task;
   int taskId = 0;
   bool _initialized = false;
   @override
@@ -37,11 +35,13 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
 
   @override
   Widget build(BuildContext context) {
-    final taskId = (ModalRoute.of(context)?.settings.arguments ?? 0) as int;
     if (!_initialized) {
-      create = taskId <= 0;
-      task = ModelTask.getTask(taskId).clone();
-      deleted = task.deleted;
+      taskId = (ModalRoute.of(context)?.settings.arguments ?? 0) as int;
+      if (taskId > 0) {
+        task = ModelTask.getTask(taskId).clone();
+      } else {
+        task = ModelTask(task: '', notes: '');
+      }
       _initialized = true;
     }
 
@@ -125,10 +125,9 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
                 softWrap: true,
               ),
               leading: Checkbox(
-                value: deleted,
+                value: task.deleted,
                 onChanged: (val) {
                   task.deleted = val ?? false;
-                  deleted = task.deleted;
                   modify();
                   setState(() {});
                 },

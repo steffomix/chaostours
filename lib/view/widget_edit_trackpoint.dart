@@ -130,7 +130,6 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
           ? const SizedBox.shrink()
           : Column(children: userCheckboxes(context))
     ];
-
     return ListBody(children: items);
   }
 
@@ -159,11 +158,6 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
           ? const SizedBox.shrink()
           : Column(children: taskCheckboxes(context))
     ];
-
-    /// add items
-    if (dropdownTasksIsOpen) {
-      items.addAll(taskCheckboxes(context));
-    }
     return ListBody(children: items);
   }
 

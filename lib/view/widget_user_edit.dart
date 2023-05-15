@@ -18,9 +18,8 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
   static final Logger logger = Logger.logger<WidgetUserEdit>();
 
   int userId = 0;
-  ModelUser _user = ModelUser(user: '', deleted: false, notes: '');
+  late ModelUser _user;
   // checkbox
-  bool? _deleted;
   ValueNotifier<bool> modified = ValueNotifier<bool>(false);
   bool initialized = false;
 
@@ -36,12 +35,12 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
   @override
   Widget build(BuildContext context) {
     if (!initialized) {
-      userId = ModalRoute.of(context)!.settings.arguments as int;
+      userId = (ModalRoute.of(context)?.settings.arguments ?? 0) as int;
       if (userId > 0) {
         _user = ModelUser.getUser(userId).clone();
+      } else {
+        _user = ModelUser(user: '', notes: '');
       }
-      _deleted ??= _user.deleted;
-      //bool deleted = _deleted!;
       initialized = true;
     }
     return AppWidgets.scaffold(context,
@@ -131,9 +130,8 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
                 softWrap: true,
               ),
               leading: Checkbox(
-                value: _deleted,
+                value: _user.deleted,
                 onChanged: (val) {
-                  _deleted = val;
                   _user.deleted = val ?? false;
                   modify();
                   setState(() {

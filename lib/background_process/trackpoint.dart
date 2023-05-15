@@ -454,7 +454,8 @@ class TrackPoint {
             description: description);
         var id = await appCalendar.inserOrUpdate(event);
         if (id?.data != null) {
-          await Cache.setValue<String>(CacheKeys.lastCalendarEvent, id!.data!);
+          await Cache.setValue<String>(
+              CacheKeys.lastCalendarEventId, id!.data!);
         }
       }
     }
@@ -479,7 +480,7 @@ class TrackPoint {
         /// get lastEvent
         if (calendar != null) {
           Event? lastEvent =
-              await appCalendar.getEventById(bridge.lastCalendarId);
+              await appCalendar.getEventById(bridge.lastCalendarEventId);
           String? eventId;
           if (lastEvent != null) {
             eventId = lastEvent.eventId;
@@ -504,7 +505,7 @@ class TrackPoint {
               location: location,
               description: description);
           await appCalendar.inserOrUpdate(event);
-          await Cache.setValue<String>(CacheKeys.lastCalendarEvent, '');
+          await Cache.setValue<String>(CacheKeys.lastCalendarEventId, '');
         }
       }
     } catch (e, stk) {

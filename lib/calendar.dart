@@ -80,7 +80,8 @@ class AppCalendar {
 
   Future<Calendar?> getCalendarfromCacheId() async {
     try {
-      var cache = await Cache.getValue<String>(CacheKeys.selectedCalendar, '');
+      var cache =
+          await Cache.getValue<String>(CacheKeys.selectedCalendarId, '');
       List<String> parts = cache.split('\t');
       for (var cal in calendars) {
         if (cal.id == parts[0] &&
