@@ -199,7 +199,17 @@ class ModelTrackPoint {
     _table.clear();
     _table.addAll((await Cache.getValue<List<ModelTrackPoint>>(
         CacheKeys.tableModelTrackpoint, [])));
+
     return _table.length;
+  }
+
+  static Future<void> resetIds() async {
+    int id = 1;
+    for (var model in _table) {
+      model._id = id;
+      id++;
+    }
+    await write();
   }
 
   void addAlias(ModelAlias m) => idAlias.add(m.id);

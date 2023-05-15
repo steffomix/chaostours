@@ -287,6 +287,7 @@ class _WidgetImportExport extends State<WidgetImportExport> {
           CacheKeys.tableModelUser, userModels);
       await Cache.reload();
       await ModelTrackPoint.open();
+      await ModelTrackPoint.resetIds();
       await ModelAlias.open();
       await ModelTask.open();
       await ModelUser.open();

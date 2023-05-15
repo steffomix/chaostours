@@ -5,8 +5,6 @@ import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
 import 'package:http/http.dart' as http;
 import 'package:chaostours/data_bridge.dart';
 import 'dart:convert';
-import 'package:android_intent_plus/android_intent.dart';
-// import 'package:android_intent_plus/flag.dart';
 import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
@@ -268,8 +266,9 @@ class _WidgetOsm extends State<WidgetOsm> {
         width: 1000,
         child: Container(
             alignment: Alignment.center,
-            decoration:
-                const BoxDecoration(color: Color.fromARGB(92, 255, 255, 255)),
+            decoration: BoxDecoration(
+                color: const Color.fromARGB(92, 255, 255, 255),
+                border: Border.all()),
             child: boxContent));
   }
 

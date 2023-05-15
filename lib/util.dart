@@ -130,9 +130,8 @@ class CheckboxController {
     if (enabled) {
       toggle();
       onToggle?.call();
-    } else {
-      return null;
     }
+    return null;
   }
 }
 

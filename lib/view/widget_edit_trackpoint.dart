@@ -81,7 +81,10 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
                 referenceList: referenceList,
                 deleted: tp.deleted,
                 title: tp.task,
-                subtitle: tp.notes)));
+                subtitle: tp.notes,
+                onToggle: () {
+                  modify();
+                })));
       }
     }
     return checkBoxes;
@@ -99,7 +102,10 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
                 referenceList: referenceList,
                 deleted: tp.deleted,
                 title: tp.user,
-                subtitle: tp.notes)));
+                subtitle: tp.notes,
+                onToggle: () {
+                  modify();
+                })));
       }
     }
     return checkBoxes;
@@ -175,7 +181,6 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
             controller: tpNotes,
             onChanged: (String? s) {
               modify();
-              logger.log('$s');
             }));
   }
 
