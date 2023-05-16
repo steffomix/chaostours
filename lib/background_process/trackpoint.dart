@@ -396,25 +396,44 @@ class TrackPoint {
     }
 
     /// check if we started moving
-    /// try to calculate how far away we are from last standing point
+    /// all calc gps points need to be out of standing area
     if (bridge.trackingStatus == TrackingStatus.standing) {
       var aliasList = bridge.trackPointAliasIdList
           .map((id) => ModelAlias.getAlias(id))
           .toList();
-      var dist =
+      int distance =
           aliasList.isEmpty ? Globals.distanceTreshold : aliasList.first.radius;
-      if (GPS.distance(bridge.calcGpsPoints.first,
-              bridge.trackPointGpsStartStanding ?? bridge.calcGpsPoints.last) >
-          dist) {
-        bridge.trackingStatus = TrackingStatus.moving;
+      PendingGps location =
+          bridge.trackPointGpsStartStanding ?? bridge.calcGpsPoints.last;
+      bool moving = true;
+      for (var gps in bridge.calcGpsPoints) {
+        if (GPS.distance(location, gps) <= distance) {
+          // still standing
+          moving = false;
+          break;
+        }
       }
+      if (moving) {
+        bridge.trackingStatus = TrackingStatus.moving;
+        return;
+      }
+    }
 
-      /// check if we stopped moving
-      /// using smoothGpsPoints because calcGpsPoints are way too few for calculation
-    } else if (bridge.trackingStatus == TrackingStatus.moving) {
+    /// check if we stopped moving
+    /// calc distance over calc gps points
+    if (bridge.trackingStatus == TrackingStatus.moving) {
       if (GPS.distanceOverTrackList(bridge.calcGpsPoints) <
           Globals.distanceTreshold) {
-        bridge.trackingStatus = TrackingStatus.standing;
+        PendingGps location = bridge.calcGpsPoints.first;
+        if (Globals.statusStandingRequireAlias) {
+          if (ModelAlias.nextAlias(gps: location).isNotEmpty) {
+            bridge.trackingStatus = TrackingStatus.standing;
+          }
+        } else {
+          bridge.trackingStatus = TrackingStatus.standing;
+        }
+
+        return;
       }
     }
   }

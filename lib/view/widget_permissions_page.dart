@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:chaostours/background_process/tracking.dart';
 import 'package:flutter/material.dart';
 import 'package:app_settings/app_settings.dart';
-import 'package:chaostours/file_handler.dart';
 //
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/view/app_widgets.dart';
@@ -27,7 +26,6 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
   bool permLocation = false;
   bool permLocationAlways = false;
   bool permIgnoreBattery = false;
-  bool permStorage = FileHandler.storageKey != Storages.notSet;
   bool permManageExternalStorage = false;
   bool permNotification = false;
   bool permCalendar = false;
@@ -93,41 +91,6 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
 
     ///
     ///
-    if (FileHandler.storageKey == Storages.notSet) {
-      items.add(ListTile(
-          leading: const Icon(Icons.error_outline, color: Colors.red),
-          title: const Text('Kein Speicherort gesetzt'),
-          subtitle: const Text('Wird benötigt, um Daten zu speichern.'),
-          trailing: IconButton(
-              icon: const Icon(Icons.settings),
-              onPressed: () {
-                if (_context != null) {
-                  Navigator.pushNamed(_context!, AppRoutes.importExport.route)
-                      .then((_) {
-                    _permissionItems().then((_) {
-                      renderBody();
-                    });
-                  });
-                }
-              })));
-    } else {
-      items.add(ListTile(
-          leading: const Icon(Icons.done, color: Colors.green),
-          title: const Text('Speicherort gesetzt'),
-          subtitle: Text('${FileHandler.storagePath}'),
-          trailing: IconButton(
-              icon: const Icon(Icons.settings),
-              onPressed: () {
-                if (_context != null) {
-                  Navigator.pushNamed(_context!, AppRoutes.importExport.route)
-                      .then((_) {
-                    _permissionItems().then((_) {
-                      renderBody();
-                    });
-                  });
-                }
-              })));
-    }
 
     items.add(AppWidgets.divider());
 

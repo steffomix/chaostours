@@ -1,5 +1,6 @@
-import 'package:chaostours/file_handler.dart';
 import 'package:chaostours/globals.dart';
+
+import 'package:chaostours/model/model.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/background_process/trackpoint.dart';
@@ -137,7 +138,7 @@ class ModelTrackPoint {
     for (var i in _table) {
       dump.add(i.toString());
     }
-    return dump.join(FileHandler.lineSep);
+    return dump.join(Model.lineSep);
   }
 
   static countAlias(int id) {

@@ -10,7 +10,6 @@ import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_user.dart';
-import 'package:chaostours/file_handler.dart';
 
 /*
 enum JsonKeys {
@@ -49,11 +48,6 @@ enum CacheKeys {
   cacheBackgroundSmoothGpsPoints(List<PendingGps>),
   cacheBackgroundCalcGpsPoints(List<PendingGps>),
   cacheBackgroundAddress(String),
-
-  /// fileHandler
-  fileHandlerStoragePath(String),
-  fileHandlerStoragePathDelete(Null),
-  fileHandlerStorageKey(Storages),
 
   /// cache database
   tableModelTrackpoint(List<ModelTrackPoint>),
@@ -207,11 +201,6 @@ class Cache {
   static OsmLookup? deserializeOsmLookup(String? osm) =>
       osm == null ? OsmLookup.never : OsmLookup.values.byName(osm);
 
-  /// Storages
-  static String serializeStorages(Storages lo) => lo.name;
-  static Storages? deserializeStorages(String? osm) =>
-      osm == null ? Storages.notSet : Storages.values.byName(osm);
-
   /// IntMap
   static const intSeparator = ',';
   static String serializeIntSet(Set<int> se) => se.join(intSeparator);
@@ -224,14 +213,6 @@ class Cache {
       set.add(int.parse(i));
     }
     return set;
-  }
-
-  static String? serializeNullStorages(Storages? s) {
-    return s?.name;
-  }
-
-  static Storages? deserializeNullStorages(String? s) {
-    return s == null ? null : Storages.values.byName(s);
   }
 
   static Future<T> setValue<T>(CacheKeys cacheKey, T value) async {
@@ -317,9 +298,6 @@ class Cache {
         case OsmLookup:
           await prefs.setString(key, serializeOsmLookup(value as OsmLookup));
           break;
-        case Storages:
-          await prefs.setString(key, serializeStorages(value as Storages));
-          break;
         case Null:
           await prefs.remove(key);
           break;
@@ -400,9 +378,6 @@ class Cache {
               defaultValue;
         case OsmLookup:
           return deserializeOsmLookup(prefs.getString(key)) as T? ??
-              defaultValue;
-        case Storages:
-          return deserializeStorages(prefs.getString(key)) as T? ??
               defaultValue;
         default:
           throw Exception("Unsupported data type $T");

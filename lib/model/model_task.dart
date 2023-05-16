@@ -1,6 +1,6 @@
 import 'package:flutter/services.dart';
 //
-import 'package:chaostours/file_handler.dart';
+import 'package:chaostours/model/model.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/cache.dart';
 
@@ -107,13 +107,13 @@ class ModelTask {
     for (var i in _table) {
       dump.add(i.toString());
     }
-    return dump.join(FileHandler.lineSep);
+    return dump.join(Model.lineSep);
   }
 
   static Future<int> openFromAsset() async {
     logger.warn('Load built-in Tasks from assets');
     String string = await rootBundle.loadString('assets/task.tsv');
-    List<String> lines = string.trim().split(FileHandler.lineSep);
+    List<String> lines = string.trim().split(Model.lineSep);
     _table.clear();
     for (var row in lines) {
       _table.add(toModel(row));
