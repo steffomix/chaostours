@@ -37,7 +37,8 @@ class PendingModelTrackPoint extends ModelTrackPoint {
   /// 6 idTask separated by ,<br>
   /// 7 lat, lon TrackPoints separated by ; and reduced to four digits<br>
   /// 8 notes
-  /// 9 | as line end
+  /// 9 calendarId;calendarEventId
+  /// 10 | as line end
   String toSharedString() {
     List<String> cols = [
       status.index.toString(), // 0
@@ -49,6 +50,7 @@ class PendingModelTrackPoint extends ModelTrackPoint {
       idTask.join(','), // 6
       idUser.join(','), // 7
       encode(notes), // 8
+      calendarId,
       '|' // 9 (secure line end)
     ];
     return cols.join('\t');
@@ -64,7 +66,8 @@ class PendingModelTrackPoint extends ModelTrackPoint {
   /// 6 idTask separated by ,<br>
   /// 7 idUser separated by ,<br>
   /// 8 notes
-  /// 9 | as line end
+  /// 9 calendarId;calendarEventId
+  /// 10 | as line end
   static PendingModelTrackPoint toSharedModel(String row) {
     List<String> p = row.split('\t');
     GPS gps = GPS(double.parse(p[1]), double.parse(p[2]));
@@ -78,6 +81,7 @@ class PendingModelTrackPoint extends ModelTrackPoint {
     model.idTask = ModelTrackPoint.parseIdList(p[6]);
     model.idUser = ModelTrackPoint.parseIdList(p[7]);
     model.notes = decode(p[8]);
+    model.calendarId = p[9];
     return model;
   }
 }
@@ -108,8 +112,9 @@ class ModelTrackPoint {
 
   /// "id,id,..." needs to be ordered by user
   List<int> idTask = [];
-  String notes = '';
   String address = '';
+  String notes = '';
+  String calendarId = ''; // calendarId;calendarEventId
 
   int _id = 0;
 
@@ -338,6 +343,7 @@ class ModelTrackPoint {
         _parseList(9, 'User IDs', p[9], parseIdList); //parseIdList(p[9]);
     tp.address =
         _parse<String>(10, 'OSM Address', p[10], decode); //decode(p[10]);
+    tp.calendarId = p[12];
     return tp;
   }
 
@@ -358,6 +364,8 @@ class ModelTrackPoint {
     tp.idTask = parseIdList(p[8]);
     tp.idUser = parseIdList(p[9]);
     tp.address = decode(p[10]);
+    tp.notes = decode(p[11]);
+    tp.calendarId = p[12];
     return tp;
   } */
 
@@ -376,6 +384,7 @@ class ModelTrackPoint {
       idUser.join(','), // 9
       encode(address), // 10
       encode(notes), // 11
+      calendarId,
       '|'
     ];
     return cols.join('\t');

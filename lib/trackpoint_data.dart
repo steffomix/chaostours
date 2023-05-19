@@ -1,4 +1,5 @@
 import 'package:chaostours/data_bridge.dart';
+import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_user.dart';
@@ -10,7 +11,7 @@ import 'package:chaostours/view/app_widgets.dart';
 
 class TrackPointData {
   static final Logger logger = Logger.logger<TrackPointData>();
-
+  ModelTrackPoint? tp;
   late DateTime tStart;
   late DateTime tEnd;
   late PendingGps gpslastStatusChange;
@@ -28,19 +29,23 @@ class TrackPointData {
   late String durationText;
   late String addressText;
   late String notes;
+  String calendarId = '';
+  String calendarEventId = '';
 
-  TrackPointData() {
+  TrackPointData({this.tp}) {
     DataBridge bridge = DataBridge.instance;
 
-    tStart = (bridge.trackPointGpslastStatusChange?.time ??
-        bridge.gpsPoints.last.time.subtract(Globals.timeRangeTreshold));
-    tEnd = DateTime.now();
+    tStart = tp?.timeStart ??
+        (bridge.trackPointGpslastStatusChange?.time ??
+            bridge.gpsPoints.last.time.subtract(Globals.timeRangeTreshold));
+    tEnd = tp?.timeEnd ?? DateTime.now();
     gpslastStatusChange =
         bridge.trackPointGpslastStatusChange ?? bridge.gpsPoints.last;
 
     distanceMoving = bridge.gpsPoints.isEmpty
         ? 0.0
         : (GPS.distanceOverTrackList(bridge.gpsPoints) / 10).round() / 100;
+
     try {
       GPS gps;
       int radius;
@@ -66,30 +71,18 @@ class TrackPointData {
     } catch (e) {
       distanceStanding = 0;
     }
-    aliasList = bridge.trackPointAliasIdList.isEmpty
-        ? []
-        : bridge.trackPointAliasIdList
-            .map((id) => ModelAlias.getAlias(id))
-            .toList();
-
-    userList = bridge.trackPointUserIdList.isEmpty
-        ? []
-        : bridge.trackPointUserIdList
-            .map((id) => ModelUser.getUser(id))
-            .toList();
-
-    taskList = bridge.trackPointTaskIdList.isEmpty
-        ? []
-        : bridge.trackPointTaskIdList
-            .map((id) => ModelTask.getTask(id))
-            .toList();
-
+    var aliasIds = tp?.idAlias ?? bridge.trackPointAliasIdList;
+    aliasList = aliasIds.map((id) => ModelAlias.getAlias(id)).toList();
+    // don't sort alias
     aliasText = aliasList.isEmpty
         ? ' ---'
         : '${aliasList.length == 1 ? '-' : '-->'} ${aliasList.map((e) {
               return e.alias;
             }).toList().join('\n- ')}';
 
+    var taskIds = tp?.idTask ?? bridge.trackPointTaskIdList;
+    taskList = taskIds.map((id) => ModelTask.getTask(id)).toList();
+    taskList.sort((a, b) => a.sortOrder - b.sortOrder);
     tasksText = taskList.isEmpty
         ? ' ---'
         : taskList
@@ -99,6 +92,9 @@ class TrackPointData {
             .toList()
             .join('\n');
 
+    var userIds = tp?.idUser ?? bridge.trackPointUserIdList;
+    userList = userIds.map((id) => ModelUser.getUser(id)).toList();
+    userList.sort((a, b) => a.sortOrder - b.sortOrder);
     usersText = userList.isEmpty
         ? ' ---'
         : userList
@@ -108,8 +104,20 @@ class TrackPointData {
             .toList()
             .join('\n');
 
-    trackPointNotes = bridge.trackPointUserNotes;
+    trackPointNotes = tp?.notes ?? bridge.trackPointUserNotes;
     durationText = timeElapsed(tStart, tEnd, false);
-    addressText = bridge.currentAddress.isEmpty ? '---' : bridge.currentAddress;
+    var addr = tp?.address ?? bridge.currentAddress;
+    addressText = addr.isEmpty ? '---' : addr;
+
+    /// calendar
+    var calData = (tp?.calendarId ??
+            '${bridge.selectedCalendarId};${bridge.lastCalendarEventId}')
+        .split(';');
+    if (calData.isNotEmpty) {
+      calendarId = calData[0];
+    }
+    if (calData.length > 1) {
+      calendarEventId = calData[1];
+    }
   }
 }

@@ -5,6 +5,8 @@ import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
+import 'package:chaostours/trackpoint_data.dart';
+import 'package:chaostours/calendar.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/util.dart';
 import 'package:chaostours/logger.dart';
@@ -257,11 +259,15 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
             const BottomNavigationBarItem(
                 icon: Icon(Icons.cancel), label: 'Abbrechen'),
           ],
-          onTap: (int id) {
+          onTap: (int id) async {
             if (id == 0 && modified.value) {
               trackPoint.notes = tpNotes.text;
-              ModelTrackPoint.update(trackPoint)
-                  .then((_) => Navigator.pop(context));
+              await ModelTrackPoint.update(trackPoint);
+              await AppCalendar()
+                  .completeCalendarEvent(TrackPointData(tp: trackPoint));
+              if (mounted) {
+                Navigator.pop(context);
+              }
               Fluttertoast.showToast(msg: 'Trackpoint updated');
             } else {
               Navigator.pop(context);

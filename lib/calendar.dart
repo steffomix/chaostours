@@ -6,17 +6,15 @@ import 'package:flutter/services.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/cache.dart';
 import 'package:chaostours/data_bridge.dart';
+import 'package:chaostours/trackpoint_data.dart';
 
 class AppCalendar {
   static final Logger logger = Logger.logger<AppCalendar>();
 
-  late DeviceCalendarPlugin _deviceCalendarPlugin;
-
-  AppCalendar() {
-    _deviceCalendarPlugin = DeviceCalendarPlugin();
-  }
+  DeviceCalendarPlugin _deviceCalendarPlugin = DeviceCalendarPlugin();
 
   final List<Calendar> calendars = [];
+  final bridge = DataBridge.instance;
 
   Future<Result<String>?> inserOrUpdate(Event e) async {
     Result<String>? id = await _deviceCalendarPlugin.createOrUpdateEvent(e);
@@ -69,30 +67,129 @@ class AppCalendar {
     }
   }
 
-  String getCacheIdFromCalendar(Calendar c) {
-    return <String>[
-      c.id?.toString() ?? '0',
-      c.name ?? '',
-      c.accountName ?? '',
-      c.accountType ?? ''
-    ].join('\t');
-  }
-
   Future<Calendar?> getCalendarfromCacheId() async {
     try {
       var cache =
           await Cache.getValue<String>(CacheKeys.selectedCalendarId, '');
-      List<String> parts = cache.split('\t');
-      for (var cal in calendars) {
-        if (cal.id == parts[0] &&
-            cal.name == parts[1] &&
-            cal.accountName == parts[2] &&
-            cal.accountType == parts[3]) {
-          return cal;
+      for (var c in calendars) {
+        if (c.id == cache) {
+          return c;
         }
       }
     } catch (e, stk) {
       logger.error('getCalendarFromCacheId: $e', stk);
+    }
+    return null;
+  }
+
+  Future<String?> startCalendarEvent(TrackPointData tpData) async {
+    try {
+      var appCalendar = AppCalendar();
+      await appCalendar.retrieveCalendars();
+      if (appCalendar.calendars.isNotEmpty) {
+        /// get dates
+        final berlin = getLocation('Europe/Berlin');
+        var start = TZDateTime.from(tpData.tStart, berlin);
+        var end = start.add(const Duration(minutes: 2));
+
+        /// get calendar
+        Calendar? calendar; // = await appCalendar.getCalendarfromCacheId();
+        for (var c in appCalendar.calendars) {
+          if (c.id == tpData.calendarId) {
+            calendar = c;
+            break;
+          }
+        }
+
+        /// get lastEvent
+        if (calendar != null) {
+          var title =
+              'Ankunft ${tpData.aliasList.isNotEmpty ? tpData.aliasList.first.alias : tpData.addressText} - ${start.hour}.${start.minute}';
+          var location =
+              'maps.google.com?q=${tpData.gpslastStatusChange.lat},${tpData.gpslastStatusChange.lon}';
+          var description =
+              '${tpData.aliasList.isNotEmpty ? tpData.aliasList.first.alias : tpData.addressText}\n'
+              'am ${start.day}.${start.month}.${start.year}\n'
+              'um ${start.hour}.${start.minute} - unbekannt)\n\n'
+              'Arbeiten: ...\n\n'
+              'Mitarbeiter:\n${tpData.usersText}\n\n'
+              'Notizen: ...';
+          Event event = Event(calendar.id,
+              title: title,
+              start: start,
+              end: end,
+              location: location,
+              description: description);
+          var id = await appCalendar.inserOrUpdate(event);
+          logger.log('added calendar event');
+          return id?.data;
+        } else {
+          logger.warn('no calendar for adding event found');
+        }
+      }
+    } catch (e, stk) {
+      logger.error('create calendar event: $e', stk);
+    }
+    return null;
+  }
+
+  Future<String?> completeCalendarEvent(TrackPointData tpData) async {
+    try {
+      var appCalendar = AppCalendar();
+      await appCalendar.retrieveCalendars();
+      if (appCalendar.calendars.isNotEmpty) {
+        /// get dates
+        final berlin = getLocation('Europe/Berlin');
+        var start = TZDateTime.from(tpData.tStart, berlin);
+        var end = TZDateTime.from(tpData.tEnd, berlin);
+
+        /// get calendar
+        Calendar? calendar; // = await appCalendar.getCalendarfromCacheId();
+        for (var c in appCalendar.calendars) {
+          if (c.id == tpData.calendarId) {
+            calendar = c;
+            break;
+          }
+        }
+
+        /// get lastEvent
+        if (calendar != null) {
+          Event? lastEvent =
+              await appCalendar.getEventById(tpData.calendarEventId);
+          String? eventId;
+          if (lastEvent != null) {
+            eventId = lastEvent.eventId;
+          }
+
+          var title =
+              '${tpData.aliasList.isNotEmpty ? tpData.aliasList.first.alias : tpData.addressText}; ${tpData.durationText}';
+          var location =
+              'maps.google.com?q=${tpData.gpslastStatusChange.lat},${tpData.gpslastStatusChange.lon}';
+          var description =
+              '${tpData.aliasList.isNotEmpty ? tpData.aliasList.first.alias : tpData.addressText}\n'
+              '${start.day}.${start.month}. - ${tpData.durationText}\n'
+              '(${start.hour}.${start.minute} - ${end.hour}.${end.minute})\n\n'
+              'Arbeiten:\n${tpData.tasksText}\n\n'
+              'Mitarbeiter:\n${tpData.usersText}\n\n'
+              'Notizen: ${tpData.trackPointNotes.isEmpty ? '-' : tpData.trackPointNotes}';
+          Event event = Event(calendar.id,
+              eventId: eventId,
+              title: title,
+              start: start,
+              end: end,
+              location: location,
+              description: description);
+          var data = await appCalendar.inserOrUpdate(event);
+          logger.log('completed calendar event');
+          return data?.data;
+        } else {
+          logger.warn('no calendar for completing event found');
+        }
+      }
+    } catch (e, stk) {
+      logger.error(
+          'complete or update calendarID:${bridge.selectedCalendarId} eventID:${bridge.lastCalendarEventId}: $e',
+          stk);
     }
     return null;
   }
