@@ -14,6 +14,7 @@ class ModelUser {
   /// Is set only once during save to disk
   /// and represents the current _table.length
   int get id => _id;
+  int sortOrder = 0;
   static int get length => _table.length;
 
   String user;
@@ -25,12 +26,17 @@ class ModelUser {
     return _table[id - 1];
   }
 
-  static List<ModelUser> getAll() => <ModelUser>[..._table];
+  static List<ModelUser> getAll() {
+    var list = [..._table];
+    list.sort((a, b) => a.sortOrder - b.sortOrder);
+    return list;
+  }
 
   @override
   String toString() {
     List<String> parts = [
       _id.toString(),
+      sortOrder.toString(),
       deleted ? '1' : '0',
       encode(user),
       encode(notes),
@@ -50,16 +56,18 @@ class ModelUser {
 
   static ModelUser toModel(String row) {
     List<String> p = row.split('\t');
-    if (p.length < 4) {
+    if (p.length < 5) {
       throw ('Table User must have at least 4 columns: 1:ID, 2:deleted, 3:user name, 4:notes');
     }
     int id = _parse<int>(0, 'ID', p[0], int.parse); // int.parse(parts[0]);
+    int sortOrder = _parse<int>(1, 'ID', p[1], int.parse);
     ModelUser model = ModelUser(
-        deleted: _parse<int>(1, 'Deleted', p[1], int.parse) == 1
+        deleted: _parse<int>(2, 'Deleted', p[2], int.parse) == 1
             ? true
             : false, //p[1] == '1' ? true : false,
-        user: _parse<String>(2, 'User name', p[2], decode), //decode(p[2]),
-        notes: _parse<String>(3, 'Notes', p[3], decode)); // decode(p[3]));
+        user: _parse<String>(3, 'User name', p[3], decode), //decode(p[2]),
+        notes: _parse<String>(4, 'Notes', p[4], decode)); // decode(p[3]));
+    model.sortOrder = sortOrder;
     model._id = id;
     return model;
   }
@@ -109,17 +117,5 @@ class ModelUser {
       dump.add(i.toString());
     }
     return dump.join(Model.lineSep);
-  }
-
-  static Future<int> openFromAsset() async {
-    logger.warn('Load built-in Tasks from assets');
-    String string = await rootBundle.loadString('assets/user.tsv');
-    List<String> lines = string.trim().split(Model.lineSep);
-    _table.clear();
-    for (var row in lines) {
-      _table.add(toModel(row));
-    }
-    await write();
-    return _table.length;
   }
 }

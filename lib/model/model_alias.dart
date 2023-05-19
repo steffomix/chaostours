@@ -218,16 +218,4 @@ class ModelAlias {
     list.sort((a, b) => b.lastVisited.compareTo(a.lastVisited));
     return list;
   }
-
-  static Future<int> openFromAsset() async {
-    logger.warn('Loading built-in alias List from assets');
-    String string = await rootBundle.loadString('assets/alias.tsv');
-    List<String> lines = string.trim().split(Model.lineSep);
-    _table.clear();
-    for (var row in lines) {
-      _table.add(toModel(row));
-    }
-    await write();
-    return _table.length;
-  }
 }

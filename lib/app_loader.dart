@@ -77,15 +77,12 @@ class AppLoader {
 
     ///
     if (ModelAlias.length < 1) {
-      await ModelAlias.openFromAsset();
       await ModelAlias.write();
     }
     if (ModelUser.length < 1) {
-      await ModelUser.openFromAsset();
       await ModelUser.write();
     }
     if (ModelTask.length < 1) {
-      await ModelTask.openFromAsset();
       await ModelTask.write();
     }
   }

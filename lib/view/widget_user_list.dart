@@ -9,6 +9,12 @@ import 'package:chaostours/logger.dart';
 import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/util.dart';
 import 'package:chaostours/cache.dart';
+import 'package:chaostours/view/app_colors.dart';
+
+enum _DisplayMode {
+  list,
+  sort;
+}
 
 class WidgetUserList extends StatefulWidget {
   const WidgetUserList({super.key});
@@ -24,13 +30,23 @@ class _WidgetUserList extends State<WidgetUserList> {
   TextEditingController controller = TextEditingController();
   String search = '';
   bool showDeleted = false;
+  _DisplayMode displayMode = _DisplayMode.list;
 
   ValueNotifier<bool> modified = ValueNotifier<bool>(false);
 
   void modify() {
     modified.value = true;
-
     setState(() {});
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    Cache.reload().then((_) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
   }
 
   List<int> userIdList = DataBridge.instance.trackPointUserIdList;
@@ -56,20 +72,26 @@ class _WidgetUserList extends State<WidgetUserList> {
 
       ///
       Container(child: dropdownUser(context)),
-      Container(padding: const EdgeInsets.all(5), child: AppWidgets.divider()),
     ]);
   }
 
   bool dropdownUserIsOpen = false;
   Widget dropdownUser(context) {
     /// render selected users
-    List<String> userList = [];
+    List<ModelUser> userModels = [];
+
     for (var id in userIdList) {
       var user = ModelUser.getUser(id);
       if (!user.deleted) {
-        userList.add(ModelUser.getUser(id).user);
+        userModels.add(user);
       }
     }
+    userModels.sort((a, b) => a.sortOrder - b.sortOrder);
+    List<String> userList = userModels
+        .map(
+          (e) => e.user,
+        )
+        .toList();
     String users =
         userList.isNotEmpty ? '- ${userList.join('\n- ')}' : 'Keine Ausgewählt';
 
@@ -80,18 +102,23 @@ class _WidgetUserList extends State<WidgetUserList> {
           Center(
               child: Container(
                   padding: const EdgeInsets.all(5),
-                  child: const Text('Vorausgewähltes Personal',
-                      style: TextStyle(fontSize: 16)))),
-          ListTile(trailing: const Icon(Icons.menu), title: Text(users)),
+                  child: Text(
+                      dropdownUserIsOpen
+                          ? 'Personal vorauswählen'
+                          : 'Vorausgewähltes Personal',
+                      style: const TextStyle(fontSize: 16)))),
+          ListTile(
+              trailing: const Icon(Icons.menu),
+              title: dropdownUserIsOpen ? null : Text(users),
+              subtitle: !dropdownUserIsOpen
+                  ? null
+                  : Column(children: userCheckboxes(context))),
         ]),
         onPressed: () {
           dropdownUserIsOpen = !dropdownUserIsOpen;
           setState(() {});
         },
       ),
-      !dropdownUserIsOpen
-          ? const SizedBox.shrink()
-          : Column(children: userCheckboxes(context))
     ];
     return ListBody(children: items);
   }
@@ -155,9 +182,13 @@ class _WidgetUserList extends State<WidgetUserList> {
   Widget usersWidget(context) {
     /// search
     List<ModelUser> userlist = [];
-    for (var item in ModelUser.getAll().reversed) {
+    for (var item in ModelUser.getAll()) {
       if (!showDeleted && item.deleted) {
         continue;
+      } else {
+        if (showDeleted && !item.deleted) {
+          continue;
+        }
       }
       if (search.trim().isEmpty) {
         userlist.add(item);
@@ -169,11 +200,14 @@ class _WidgetUserList extends State<WidgetUserList> {
     }
 
     return ListView.builder(
-        itemCount: userlist.length + 1,
+        itemCount: dropdownUserIsOpen ? 1 : userlist.length + 1,
         itemBuilder: (BuildContext context, int id) {
           if (id == 0) {
             return searchWidget(context);
           } else {
+            if (userlist.length == 1) {
+              return AppWidgets.loading('No Items found');
+            }
             ModelUser user = userlist[id - 1];
             return ListBody(children: [
               ListTile(
@@ -190,19 +224,55 @@ class _WidgetUserList extends State<WidgetUserList> {
                                 arguments: user.id)
                             .then((_) => setState(() {}));
                       })),
-              AppWidgets.divider()
             ]);
           }
         });
   }
 
+  Widget sortWidget(BuildContext context) {
+    var list = ModelUser.getAll();
+    return ListView.builder(
+      itemCount: list.length,
+      itemBuilder: (context, index) {
+        var model = list[index];
+        return ListTile(
+            leading: IconButton(
+                icon: const Icon(Icons.arrow_downward),
+                onPressed: () {
+                  if (index < list.length - 1) {
+                    list[index + 1].sortOrder--;
+                    list[index].sortOrder++;
+                  }
+                  ModelUser.write().then((_) => setState(() {}));
+                }),
+            trailing: IconButton(
+              icon: const Icon(Icons.arrow_upward),
+              onPressed: () {
+                if (index > 0) {
+                  list[index - 1].sortOrder++;
+                  list[index].sortOrder--;
+                }
+                ModelUser.write().then((_) => setState(() {}));
+              },
+            ),
+            title: Text(model.user,
+                style: model.deleted
+                    ? const TextStyle(decoration: TextDecoration.lineThrough)
+                    : null),
+            subtitle: Text(model.notes));
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return AppWidgets.scaffold(context,
-        body: usersWidget(context),
+        body: displayMode == _DisplayMode.list
+            ? usersWidget(context)
+            : sortWidget(context),
         navBar: BottomNavigationBar(
             type: BottomNavigationBarType.fixed,
-            backgroundColor: AppColors.yellow.color,
+            backgroundColor: AppColorScheme.bright.scheme.primary,
             fixedColor: AppColors.black.color,
             items: [
               BottomNavigationBarItem(
@@ -218,11 +288,18 @@ class _WidgetUserList extends State<WidgetUserList> {
                   label: 'Speichern'),
               const BottomNavigationBarItem(
                   icon: Icon(Icons.add), label: 'Neu'),
+              displayMode == _DisplayMode.list
+                  ? const BottomNavigationBarItem(
+                      icon: Icon(Icons.sort), label: 'Sortieren')
+                  : const BottomNavigationBarItem(
+                      icon: Icon(Icons.list), label: 'Liste'),
               BottomNavigationBarItem(
-                  icon: const Icon(Icons.remove_red_eye),
-                  label: showDeleted
-                      ? 'Gelöschte verbergen'
-                      : 'Gelöschte anzeigen'),
+                  icon: Icon(showDeleted || displayMode == _DisplayMode.sort
+                      ? Icons.remove_red_eye
+                      : Icons.delete),
+                  label: showDeleted || displayMode == _DisplayMode.sort
+                      ? 'Zeige Gel.'
+                      : 'Verb. Gel.'),
             ],
             onTap: (int id) {
               if (id == 0 && modified.value) {
@@ -230,6 +307,7 @@ class _WidgetUserList extends State<WidgetUserList> {
                         CacheKeys.cacheBackgroundUserIdList, userIdList)
                     .then((_) {
                   modified.value = false;
+
                   dropdownUserIsOpen = false;
                   if (mounted) {
                     setState(() {});
@@ -242,7 +320,16 @@ class _WidgetUserList extends State<WidgetUserList> {
                 Navigator.pushNamed(context, AppRoutes.editUser.route,
                         arguments: 0)
                     .then((_) => setState(() {}));
-              } else {
+              }
+              if (id == 2) {
+                if (displayMode == _DisplayMode.list) {
+                  displayMode = _DisplayMode.sort;
+                } else {
+                  displayMode = _DisplayMode.list;
+                }
+                setState(() {});
+              }
+              if (id == 3) {
                 showDeleted = !showDeleted;
                 setState(() {});
               }

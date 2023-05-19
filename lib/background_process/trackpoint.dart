@@ -424,14 +424,7 @@ class TrackPoint {
     if (bridge.trackingStatus == TrackingStatus.moving) {
       if (GPS.distanceOverTrackList(bridge.calcGpsPoints) <
           Globals.distanceTreshold) {
-        PendingGps location = bridge.calcGpsPoints.first;
-        if (Globals.statusStandingRequireAlias) {
-          if (ModelAlias.nextAlias(gps: location).isNotEmpty) {
-            bridge.trackingStatus = TrackingStatus.standing;
-          }
-        } else {
-          bridge.trackingStatus = TrackingStatus.standing;
-        }
+        bridge.trackingStatus = TrackingStatus.standing;
 
         return;
       }

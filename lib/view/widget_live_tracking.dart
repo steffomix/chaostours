@@ -200,6 +200,18 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
           strokeWidth: 10,
         ));
       }
+      if (bridge.trackPointGpsStartStanding != null &&
+          bridge.trackingStatus == TrackingStatus.standing &&
+          bridge.trackPointAliasIdList.isEmpty) {
+        GPS gps = bridge.trackPointGpsStartStanding!;
+        mapController.drawCircle(osm.CircleOSM(
+          key: "circle${++circleId}",
+          centerPoint: osm.GeoPoint(latitude: gps.lat, longitude: gps.lon),
+          radius: 5,
+          color: const Color.fromARGB(255, 202, 197, 46),
+          strokeWidth: 10,
+        ));
+      }
     } catch (e, stk) {
       logger.error(e.toString(), stk);
     }
@@ -209,39 +221,47 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   @override
   Widget build(BuildContext context) {
     Widget body = AppWidgets.loading('Waiting for GPS Signal');
+    try {
+      /// nothing checked at this point
+      if (bridge.gpsPoints.isNotEmpty) {
+        switch (displayMode) {
+          case _DisplayMode.recentTrackPoints:
+            body = ListView(
+                children: renderRecentTrackPointList(
+                    context, ModelTrackPoint.recentTrackPoints()));
+            break;
 
-    /// nothing checked at this point
-    if (bridge.gpsPoints.isNotEmpty) {
-      switch (displayMode) {
-        case _DisplayMode.recentTrackPoints:
-          body = ListView(
-              children: renderRecentTrackPointList(
-                  context, ModelTrackPoint.recentTrackPoints()));
-          break;
+          /// last visited mode
+          case _DisplayMode.lastVisited:
+            GPS gps = bridge.gpsPoints.first;
+            body = ListView(
+                children: renderRecentTrackPointList(
+                    context, ModelTrackPoint.lastVisited(gps)));
+            break;
 
-        /// last visited mode
-        case _DisplayMode.lastVisited:
-          GPS gps = bridge.gpsPoints.first;
-          body = ListView(
-              children: renderRecentTrackPointList(
-                  context, ModelTrackPoint.lastVisited(gps)));
-          break;
+          /// tasks mode
+          case _DisplayMode.gps:
+            body = renderOSM(context);
+            break;
 
-        /// tasks mode
-        case _DisplayMode.gps:
-          body = renderOSM(context);
-          break;
-
-        /// recent mode
-        default:
-          if (bridge.trackingStatus == TrackingStatus.moving) {
-            body = renderTrackPointMoving(context);
-          } else if (bridge.trackingStatus == TrackingStatus.standing) {
-            body = renderTrackPointStanding(context);
-          } else {
-            body = AppWidgets.loading('Waiting for Tracking Status');
-          }
+          /// recent mode
+          default:
+            if (bridge.trackingStatus == TrackingStatus.moving) {
+              body = renderTrackPointMoving(context);
+            } else if (bridge.trackingStatus == TrackingStatus.standing) {
+              body = renderTrackPointStanding(context);
+            } else {
+              body = AppWidgets.loading('Waiting for Tracking Status');
+            }
+        }
       }
+    } catch (e, stk) {
+      logger.error('::build error: $e', stk);
+      body = AppWidgets.loading('Error, please open App Logger for details');
+      Future.delayed(const Duration(seconds: 1), () {
+        AppWidgets.navigate(context, AppRoutes.logger);
+        dispose();
+      });
     }
 
     return AppWidgets.scaffold(context,
@@ -656,27 +676,32 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   bool dropdownUserIsOpen = false;
   Widget dropdownUser(context) {
     /// render selected users
-    List<String> userList = [];
+
+    List<ModelUser> userModels = [];
     for (var model in ModelUser.getAll()) {
       if (tpUsers.contains(model.id)) {
-        userList.add(model.user);
+        userModels.add(model);
       }
     }
+    userModels.sort((a, b) => a.sortOrder - b.sortOrder);
+    var userList = userModels.map((e) => e.user);
     String users = userList.isNotEmpty ? '\n- ${userList.join('\n- ')}' : ' - ';
 
     /// dropdown menu botten with selected users
     List<Widget> items = [
       ElevatedButton(
         child: ListTile(
-            trailing: const Icon(Icons.menu), title: Text('Personal:$users')),
+          trailing: const Icon(Icons.menu),
+          title: Text(dropdownUserIsOpen ? '' : 'Personal:$users'),
+          subtitle: !dropdownUserIsOpen
+              ? null
+              : Column(children: userCheckboxes(context)),
+        ),
         onPressed: () {
           dropdownUserIsOpen = !dropdownUserIsOpen;
           setState(() {});
         },
       ),
-      !dropdownUserIsOpen
-          ? const SizedBox.shrink()
-          : Column(children: userCheckboxes(context))
     ];
 
     return ListBody(children: items);
@@ -686,27 +711,33 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   bool dropdownTasksIsOpen = false;
   Widget dropdownTasks(context) {
     /// render selected tasks
-    List<String> taskList = [];
+    List<ModelTask> taskModels = [];
     for (var item in ModelTask.getAll()) {
       if (tpTasks.contains(item.id)) {
-        taskList.add(item.task);
+        taskModels.add(item);
       }
     }
+    taskModels.sort((a, b) => a.sortOrder - b.sortOrder);
+    var taskList = taskModels.map(
+      (e) => e.task,
+    );
     String tasks = taskList.isNotEmpty ? '\n- ${taskList.join('\n- ')}' : ' - ';
 
     /// dropdown menu botten with selected tasks
     List<Widget> items = [
       ElevatedButton(
         child: ListTile(
-            trailing: const Icon(Icons.menu), title: Text('Arbeiten:$tasks')),
+          trailing: const Icon(Icons.menu),
+          title: Text(dropdownTasksIsOpen ? '' : 'Arbeiten:$tasks'),
+          subtitle: !dropdownTasksIsOpen
+              ? null
+              : Column(children: taskCheckboxes(context)),
+        ),
         onPressed: () {
           dropdownTasksIsOpen = !dropdownTasksIsOpen;
           setState(() {});
         },
       ),
-      !dropdownTasksIsOpen
-          ? const SizedBox.shrink()
-          : Column(children: taskCheckboxes(context))
     ];
 
     return ListBody(children: items);

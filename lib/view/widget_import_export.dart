@@ -5,6 +5,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'dart:io';
 
 ///
+import 'package:chaostours/model/model.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
@@ -78,53 +79,85 @@ class _WidgetImportExport extends State<WidgetImportExport> {
   Future<void> exportDatabaseFiles(
       FileManagerController controller, Directory dir) async {
     /// export trackPoints
-    String path, tsv;
-    File f;
-    List<ModelTrackPoint> tpList = await Cache.getValue<List<ModelTrackPoint>>(
-        CacheKeys.tableModelTrackpoint, []);
-    path = join(dir.path, '$trackPointFilename.tsv');
-    tsv = tpList
-        .map(
-          (e) => e.toString(),
-        )
-        .join('\n');
-    f = File(path);
+    String tsv;
+    String path = join(dir.path, '$trackPointFilename.tsv');
+    File f = File(path);
+    try {
+      List<ModelTrackPoint> tpList =
+          await Cache.getValue<List<ModelTrackPoint>>(
+              CacheKeys.tableModelTrackpoint, []);
+      tsv = tpList
+          .map(
+            (e) => e.toString(),
+          )
+          .join('\n');
+    } catch (e, stk) {
+      tsv = (await Cache.dumpKey(CacheKeys.tableModelTrackpoint))
+              .list
+              ?.join(Model.lineSep) ??
+          '';
+      logger.error('export trackpoint: $e', stk);
+    }
     await f.writeAsString(tsv);
 
     /// export alias
-    List<ModelAlias> aliasList =
-        await Cache.getValue<List<ModelAlias>>(CacheKeys.tableModelAlias, []);
-    path = join(dir.path, '$aliasFilename.tsv');
-    tsv = aliasList
-        .map(
-          (e) => e.toString(),
-        )
-        .join('\n');
-    f = File(path);
+    try {
+      List<ModelAlias> aliasList =
+          await Cache.getValue<List<ModelAlias>>(CacheKeys.tableModelAlias, []);
+      tsv = aliasList
+          .map(
+            (e) => e.toString(),
+          )
+          .join('\n');
+    } catch (e, stk) {
+      tsv = (await Cache.dumpKey(CacheKeys.tableModelAlias))
+              .list
+              ?.join(Model.lineSep) ??
+          '';
+
+      logger.error('export model alias: $e', stk);
+    }
+    f = File(join(dir.path, '$aliasFilename.tsv'));
     await f.writeAsString(tsv);
 
     /// export tasks
-    List<ModelTask> taskList =
-        await Cache.getValue<List<ModelTask>>(CacheKeys.tableModelTask, []);
-    path = join(dir.path, '$taskFilename.tsv');
-    tsv = taskList
-        .map(
-          (e) => e.toString(),
-        )
-        .join('\n');
-    f = File(path);
+    try {
+      List<ModelTask> taskList =
+          await Cache.getValue<List<ModelTask>>(CacheKeys.tableModelTask, []);
+      tsv = taskList
+          .map(
+            (e) => e.toString(),
+          )
+          .join('\n');
+    } catch (e, stk) {
+      tsv = (await Cache.dumpKey(CacheKeys.tableModelTask))
+              .list
+              ?.join(Model.lineSep) ??
+          '';
+
+      logger.error('export model task: $e', stk);
+    }
+    f = File(join(dir.path, '$taskFilename.tsv'));
     await f.writeAsString(tsv);
 
     /// export users
-    List<ModelUser> userList =
-        await Cache.getValue<List<ModelUser>>(CacheKeys.tableModelUser, []);
-    path = join(dir.path, '$userFilename.tsv');
-    tsv = userList
-        .map(
-          (e) => e.toString(),
-        )
-        .join('\n');
-    f = File(path);
+    try {
+      List<ModelUser> userList =
+          await Cache.getValue<List<ModelUser>>(CacheKeys.tableModelUser, []);
+      tsv = userList
+          .map(
+            (e) => e.toString(),
+          )
+          .join('\n');
+    } catch (e, stk) {
+      tsv = (await Cache.dumpKey(CacheKeys.tableModelUser))
+              .list
+              ?.join(Model.lineSep) ??
+          '';
+
+      logger.error('export model user: $e', stk);
+    }
+    f = File(join(dir.path, '$userFilename.tsv'));
     await f.writeAsString(tsv);
 
     Fluttertoast.showToast(msg: 'Files Exported');

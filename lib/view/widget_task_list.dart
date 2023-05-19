@@ -5,6 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/model/model_task.dart';
 
+enum _DisplayMode {
+  list,
+  sort;
+}
+
 class WidgetTaskList extends StatefulWidget {
   const WidgetTaskList({super.key});
 
@@ -19,6 +24,7 @@ class _WidgetTaskList extends State<WidgetTaskList> {
   bool showDeleted = false;
   String search = '';
   TextEditingController controller = TextEditingController();
+  _DisplayMode displayMode = _DisplayMode.list;
 
   @override
   void dispose() {
@@ -65,6 +71,41 @@ class _WidgetTaskList extends State<WidgetTaskList> {
     );
   }
 
+  Widget sortWidget(BuildContext context) {
+    var list = ModelTask.getAll();
+    return ListView.builder(
+      itemCount: list.length,
+      itemBuilder: (context, index) {
+        var model = list[index];
+        return ListTile(
+            leading: IconButton(
+                icon: const Icon(Icons.arrow_downward),
+                onPressed: () {
+                  if (index < list.length - 1) {
+                    list[index + 1].sortOrder--;
+                    list[index].sortOrder++;
+                  }
+                  ModelTask.write().then((_) => setState(() {}));
+                }),
+            trailing: IconButton(
+              icon: const Icon(Icons.arrow_upward),
+              onPressed: () {
+                if (index > 0) {
+                  list[index - 1].sortOrder++;
+                  list[index].sortOrder--;
+                }
+                ModelTask.write().then((_) => setState(() {}));
+              },
+            ),
+            title: Text(model.task,
+                style: model.deleted
+                    ? const TextStyle(decoration: TextDecoration.lineThrough)
+                    : null),
+            subtitle: Text(model.notes));
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     List<Widget> tasks = [];
@@ -81,26 +122,42 @@ class _WidgetTaskList extends State<WidgetTaskList> {
     }
 
     return AppWidgets.scaffold(context,
-        body: ListView(children: [searchWidget(context), ...tasks]),
+        body: displayMode == _DisplayMode.list
+            ? ListView(children: [searchWidget(context), ...tasks])
+            : sortWidget(context),
         navBar: BottomNavigationBar(
             type: BottomNavigationBarType.fixed,
-            backgroundColor: AppColors.yellow.color,
-            fixedColor: AppColors.black.color,
+            backgroundColor: AppColorScheme.bright.scheme.primary,
+            fixedColor: AppColorScheme.bright.scheme.onPrimary,
             items: [
               const BottomNavigationBarItem(
                   icon: Icon(Icons.add), label: 'Neu'),
+              displayMode == _DisplayMode.list
+                  ? const BottomNavigationBarItem(
+                      icon: Icon(Icons.sort), label: 'Sortieren')
+                  : const BottomNavigationBarItem(
+                      icon: Icon(Icons.list), label: 'Liste'),
               BottomNavigationBarItem(
-                  icon: const Icon(Icons.remove_red_eye),
-                  label: showDeleted
-                      ? 'Gelöschte verbergen'
-                      : 'Gelöschte anzeigen'),
+                  icon: Icon(showDeleted || displayMode == _DisplayMode.sort
+                      ? Icons.delete
+                      : Icons.remove_red_eye),
+                  label: showDeleted || displayMode == _DisplayMode.sort
+                      ? 'Verb. Gel.'
+                      : 'Zeige Gel.'),
             ],
             onTap: (int id) {
               if (id == 0) {
                 Navigator.pushNamed(context, AppRoutes.editTasks.route,
                     arguments: 0);
-              } else {
+              }
+              if (id == 2) {
                 showDeleted = !showDeleted;
+                setState(() {});
+              }
+              if (id == 1) {
+                displayMode = displayMode == _DisplayMode.list
+                    ? _DisplayMode.sort
+                    : _DisplayMode.list;
                 setState(() {});
               }
             }));

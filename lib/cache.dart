@@ -6,6 +6,7 @@ import 'package:chaostours/logger.dart';
 import 'package:chaostours/globals.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/background_process/trackpoint.dart';
+import 'package:chaostours/model/model.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_task.dart';
@@ -27,6 +28,15 @@ enum JsonKeys {
   fgActiveTrackPoint;
 }
 */
+
+class CacheKeyDump {
+  int? number;
+  double? doubleNumber;
+  bool? boolean;
+  String? string;
+  List<String>? list;
+}
+
 enum CacheKeys {
   /// cache foreground to background
   /// saved only on special event triggered by user
@@ -54,6 +64,12 @@ enum CacheKeys {
   tableModelAlias(List<ModelAlias>),
   tableModelUser(List<ModelUser>),
   tableModelTask(List<ModelTask>),
+
+  /// readOnly
+  tableDumpModelTrackpoint(String),
+  tableDumpModelAlias(String),
+  tableDumpModelUser(String),
+  tableDumpModelTask(String),
 
   /// eventCalendar
   /// "id\tname\taccount"
@@ -308,6 +324,27 @@ class Cache {
       logger.error('setValue for $key failed: $e', stk);
     }
     return value;
+  }
+
+  static CacheKeyDump _dumpKey(String keyName, SharedPreferences prefs) {
+    var dump = CacheKeyDump();
+    dump
+      ..number = prefs.getInt(keyName)
+      ..doubleNumber = prefs.getDouble(keyName)
+      ..boolean = prefs.getBool(keyName)
+      ..string = prefs.getString(keyName)
+      ..list = prefs.getStringList(keyName);
+    return dump;
+  }
+
+  static Future<CacheKeyDump> dumpKey(CacheKeys key) async {
+    final prefs = await SharedPreferences.getInstance();
+    return _dumpKey(key.name, prefs);
+  }
+
+  static Future<List<CacheKeyDump>> dumpKeys() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getKeys().map((e) => _dumpKey(e, prefs)).toList();
   }
 
   static Future<T> getValue<T>(CacheKeys cacheKey, T defaultValue) async {

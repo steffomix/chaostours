@@ -30,6 +30,7 @@ class _GlobalDefaults {
 
   /// the distance to travel within <timeRangeTreshold> to trigger a status change.
   /// Above to trigger moving, below to trigger standing
+  /// This is also the default radius for new alias
   static int distanceTreshold = 150; //meters
 
   /// stop time needed to trigger stop.
@@ -48,7 +49,7 @@ class _GlobalDefaults {
   /// compensate unprecise impossible to reach gpsPoints
   /// by ignoring points that can't be reached under a maximum of speed
   /// in km/h (1 m/s = 3,6km/h = 2,23693629 miles/h)
-  static int gpsMaxSpeed = 150;
+  static int gpsMaxSpeed = 100;
 
   /// when background looks for an address of given gps
   static OsmLookup osmLookupCondition = OsmLookup.onStatus;

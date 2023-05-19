@@ -10,6 +10,7 @@ import 'package:chaostours/gps.dart';
 ///
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/model/model_alias.dart';
+import 'package:chaostours/globals.dart';
 
 class WidgetAliasEdit extends StatefulWidget {
   const WidgetAliasEdit({super.key});

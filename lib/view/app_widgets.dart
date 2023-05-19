@@ -122,48 +122,49 @@ class AppWidgets {
 
   static Widget materialApp(BuildContext context) {
     return MaterialApp(
-      title: 'Chaos Tours',
-      initialRoute: AppRoutes.liveTracking.route,
-      routes: {
-        // home routes
-        //AppRoutes.home.route: (context) => const WidgetTrackingPage(),
+        debugShowCheckedModeBanner: false,
+        //themeMode: ThemeMode.system,
+        title: 'Chaos Tours',
+        initialRoute: AppRoutes.liveTracking.route,
+        routes: {
+          // home routes
+          //AppRoutes.home.route: (context) => const WidgetTrackingPage(),
 
-        /// add/edit items routes
-        // trackpoint
-        AppRoutes.liveTracking.route: (context) => const WidgetTrackingPage(),
-        AppRoutes.editTrackPoint.route: (context) =>
-            const WidgetEditTrackPoint(),
-        AppRoutes.editPendingTrackPoint.route: (context) =>
-            const WidgetEditPendingTrackPoint(),
-        // user
-        AppRoutes.listUsers.route: (context) => const WidgetUserList(),
-        AppRoutes.editUser.route: (context) => const WidgetUserEdit(),
-        // task
-        AppRoutes.listTasks.route: (context) => const WidgetTaskList(),
-        AppRoutes.editTasks.route: (context) => const WidgetTaskEdit(),
-        // alias
-        AppRoutes.listAlias.route: (context) => const WidgetAliasList(),
-        AppRoutes.editAlias.route: (context) => const WidgetAliasEdit(),
-        AppRoutes.listAliasTrackpoints.route: (context) =>
-            const WidgetAliasTrackpoint(),
-        // trackPoint events
-        AppRoutes.selectCalendar.route: (context) =>
-            const WidgetManageCalendar(),
-        // osm
-        AppRoutes.osm.route: (context) => const WidgetOsm(),
+          /// add/edit items routes
+          // trackpoint
+          AppRoutes.liveTracking.route: (context) => const WidgetTrackingPage(),
+          AppRoutes.editTrackPoint.route: (context) =>
+              const WidgetEditTrackPoint(),
+          AppRoutes.editPendingTrackPoint.route: (context) =>
+              const WidgetEditPendingTrackPoint(),
+          // user
+          AppRoutes.listUsers.route: (context) => const WidgetUserList(),
+          AppRoutes.editUser.route: (context) => const WidgetUserEdit(),
+          // task
+          AppRoutes.listTasks.route: (context) => const WidgetTaskList(),
+          AppRoutes.editTasks.route: (context) => const WidgetTaskEdit(),
+          // alias
+          AppRoutes.listAlias.route: (context) => const WidgetAliasList(),
+          AppRoutes.editAlias.route: (context) => const WidgetAliasEdit(),
+          AppRoutes.listAliasTrackpoints.route: (context) =>
+              const WidgetAliasTrackpoint(),
+          // trackPoint events
+          AppRoutes.selectCalendar.route: (context) =>
+              const WidgetManageCalendar(),
+          // osm
+          AppRoutes.osm.route: (context) => const WidgetOsm(),
 
-        /// system config routes
-        AppRoutes.appInit.route: (context) => const AppInit(),
-        AppRoutes.logger.route: (context) => const WidgetLoggerPage(),
-        AppRoutes.permissions.route: (context) => const WidgetPermissionsPage(),
-        AppRoutes.importExport.route: (context) => const WidgetImportExport(),
-        AppRoutes.appSettings.route: (context) => const WidgetAppSettings(),
-        AppRoutes.backgroundGps.route: (context) =>
-            const WidgetManageBackgroundGps()
-      },
-      theme: ThemeData(colorScheme: AppColorScheme.bright.scheme),
-      //home: const WidgetTrackingPage(),
-    );
+          /// system config routes
+          AppRoutes.appInit.route: (context) => const AppInit(),
+          AppRoutes.logger.route: (context) => const WidgetLoggerPage(),
+          AppRoutes.permissions.route: (context) =>
+              const WidgetPermissionsPage(),
+          AppRoutes.importExport.route: (context) => const WidgetImportExport(),
+          AppRoutes.appSettings.route: (context) => const WidgetAppSettings(),
+          AppRoutes.backgroundGps.route: (context) =>
+              const WidgetManageBackgroundGps()
+        },
+        theme: ThemeData(colorScheme: AppColorScheme.bright.scheme));
   }
 
   static Future<void> navigate(BuildContext context, AppRoutes route,
