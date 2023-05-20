@@ -1,3 +1,18 @@
+/*
+Copyright 2023 Stefan Brinkmann <st.brinkmann@gmail.com>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
 import 'package:chaostours/trackpoint_data.dart';
 import 'package:device_calendar/device_calendar.dart';
 
@@ -44,10 +59,6 @@ class TrackPoint {
   DataBridge bridge = DataBridge.instance;
 
   Future<void> startShared({required double lat, required double lon}) async {
-    var t = DateTime.now();
-    logger.log(
-        'Processing Background GPS with lat:$lat, lon:$lon at time: ${t.hour}:${t.minute}:${t.second}');
-
     /// create gpsPoint
     PendingGps gps = PendingGps(lat, lon);
     GPS.lastGps = gps;
@@ -216,7 +227,13 @@ class TrackPoint {
             newTrackPoint.idTask = bridge.trackPointTaskIdList;
             newTrackPoint.idUser = bridge.trackPointUserIdList;
             newTrackPoint.notes = bridge.trackPointUserNotes;
+            newTrackPoint.calendarId =
+                '${bridge.selectedCalendarId};${bridge.lastCalendarEventId}';
 
+            /// insert
+            await ModelTrackPoint.insert(newTrackPoint);
+
+            /// complete calendar event from trackpoint data
             /// only if no private or restricted alias is present
             if (!(locationIsPrivate || locationIsRestricted)) {
               await ModelTask.open();
@@ -224,11 +241,6 @@ class TrackPoint {
               await AppCalendar()
                   .completeCalendarEvent(TrackPointData(tp: newTrackPoint));
             }
-            newTrackPoint.calendarId =
-                '${bridge.selectedCalendarId};${bridge.lastCalendarEventId}';
-
-            /// insert
-            await ModelTrackPoint.insert(newTrackPoint);
 
             /// reset calendarEvent ID
             bridge.lastCalendarEventId =
@@ -271,7 +283,7 @@ class TrackPoint {
           await Cache.setValue<TrackingStatus>(
               CacheKeys.cacheBackgroundTrackingStatus, bridge.trackingStatus);
 
-          /// add calendar entry
+          /// check privacy for calendar entry
           bool private = false;
           List<ModelAlias> aliasList = ModelAlias.nextAlias(gps: gps);
           for (var model in aliasList) {
@@ -285,7 +297,10 @@ class TrackPoint {
             }
           }
 
+          /// create calendar entry from cache data
           if (!private) {
+            await ModelTask.open();
+            await ModelUser.open();
             var id = await AppCalendar().startCalendarEvent(TrackPointData());
 
             /// cache event id

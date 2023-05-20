@@ -1,3 +1,19 @@
+/*
+Copyright 2023 Stefan Brinkmann <st.brinkmann@gmail.com>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 import 'package:device_calendar/device_calendar.dart';
 import 'package:timezone/timezone.dart';
 import 'package:flutter/services.dart';
@@ -11,14 +27,13 @@ import 'package:chaostours/trackpoint_data.dart';
 class AppCalendar {
   static final Logger logger = Logger.logger<AppCalendar>();
 
-  DeviceCalendarPlugin _deviceCalendarPlugin = DeviceCalendarPlugin();
-
+  final DeviceCalendarPlugin _deviceCalendarPlugin = DeviceCalendarPlugin();
   final List<Calendar> calendars = [];
   final bridge = DataBridge.instance;
 
-  Future<Result<String>?> inserOrUpdate(Event e) async {
+  Future<String?> inserOrUpdate(Event e) async {
     Result<String>? id = await _deviceCalendarPlugin.createOrUpdateEvent(e);
-    return id;
+    return id?.data;
   }
 
   Future<Event?> getEventById(String id) async {
@@ -93,13 +108,7 @@ class AppCalendar {
         var end = start.add(const Duration(minutes: 2));
 
         /// get calendar
-        Calendar? calendar; // = await appCalendar.getCalendarfromCacheId();
-        for (var c in appCalendar.calendars) {
-          if (c.id == tpData.calendarId) {
-            calendar = c;
-            break;
-          }
-        }
+        Calendar? calendar = await appCalendar.getCalendarfromCacheId();
 
         /// get lastEvent
         if (calendar != null) {
@@ -120,11 +129,12 @@ class AppCalendar {
               end: end,
               location: location,
               description: description);
-          var id = await appCalendar.inserOrUpdate(event);
-          logger.log('added calendar event');
-          return id?.data;
+          var id = (await appCalendar.inserOrUpdate(event));
+          logger.log(
+              'added calendar event ID: $id to calendar ID: ${calendar.id}');
+          return id;
         } else {
-          logger.warn('no calendar for adding event found');
+          logger.warn('create event: no calendar found');
         }
       }
     } catch (e, stk) {
@@ -144,22 +154,12 @@ class AppCalendar {
         var end = TZDateTime.from(tpData.tEnd, berlin);
 
         /// get calendar
-        Calendar? calendar; // = await appCalendar.getCalendarfromCacheId();
-        for (var c in appCalendar.calendars) {
-          if (c.id == tpData.calendarId) {
-            calendar = c;
-            break;
-          }
-        }
+        Calendar? calendar = await appCalendar.getCalendarfromCacheId();
 
         /// get lastEvent
         if (calendar != null) {
-          Event? lastEvent =
-              await appCalendar.getEventById(tpData.calendarEventId);
-          String? eventId;
-          if (lastEvent != null) {
-            eventId = lastEvent.eventId;
-          }
+          String? eventId =
+              (await appCalendar.getEventById(tpData.calendarEventId))?.eventId;
 
           var title =
               '${tpData.aliasList.isNotEmpty ? tpData.aliasList.first.alias : tpData.addressText}; ${tpData.durationText}';
@@ -173,22 +173,23 @@ class AppCalendar {
               'Mitarbeiter:\n${tpData.usersText}\n\n'
               'Notizen: ${tpData.trackPointNotes.isEmpty ? '-' : tpData.trackPointNotes}';
           Event event = Event(calendar.id,
-              eventId: eventId,
+              eventId: tpData.calendarEventId,
               title: title,
               start: start,
               end: end,
               location: location,
               description: description);
-          var data = await appCalendar.inserOrUpdate(event);
-          logger.log('completed calendar event');
-          return data?.data;
+          String? id = await appCalendar.inserOrUpdate(event);
+          logger.log(
+              'completed calendar event ID: ${id} on calendar ${calendar.id}');
+          return id;
         } else {
-          logger.warn('no calendar for completing event found');
+          logger.warn('complete/update event: no calendar for found');
         }
       }
     } catch (e, stk) {
       logger.error(
-          'complete or update calendarID:${bridge.selectedCalendarId} eventID:${bridge.lastCalendarEventId}: $e',
+          'complete/update calendarID:${bridge.selectedCalendarId} eventID:${bridge.lastCalendarEventId}: $e',
           stk);
     }
     return null;

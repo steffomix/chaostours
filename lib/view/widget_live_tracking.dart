@@ -1,3 +1,19 @@
+/*
+Copyright 2023 Stefan Brinkmann <st.brinkmann@gmail.com>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 import 'package:flutter/material.dart';
 import 'package:flutter_osm_plugin/flutter_osm_plugin.dart' as osm;
 import 'package:fluttertoast/fluttertoast.dart';
@@ -127,7 +143,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   }
 
   ///
-  Future<void> onTick(EventOnAppTick tick) async {
+  void onTick(EventOnAppTick tick) {
     if (displayMode != _DisplayMode.gps) {
       setState(() {});
     }
@@ -272,27 +288,51 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   BottomNavigationBar bottomNavBar(BuildContext context) {
     if (displayMode == _DisplayMode.gps) {
       return BottomNavigationBar(
-          currentIndex: _bottomBarIndex,
+          currentIndex: 3,
           type: BottomNavigationBarType.fixed,
           backgroundColor: AppColors.yellow.color,
           fixedColor: AppColors.black.color,
           items: const [
             BottomNavigationBarItem(
-                icon: Icon(Icons.arrow_back), label: 'Live'),
-            BottomNavigationBarItem(icon: Icon(Icons.add), label: 'Alias'),
+                icon: Icon(Icons.arrow_back), label: 'Back to Live'),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.add), label: 'Create Alias'),
             BottomNavigationBarItem(
                 icon: Icon(Icons.search), label: 'Lookup Alias'),
-            BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Route'),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.map), label: 'Google Maps'),
           ],
           onTap: (int id) async {
             switch (id) {
               case 1: // 2.
-                Navigator.pushNamed(context, AppRoutes.listAlias.route)
-                    .then((_) {
-                  if (mounted) {
-                    setState(() {});
-                  }
-                });
+                await AppWidgets.dialog(contents: <Widget>[
+                  const Text('Create Alias here?')
+                ], buttons: <Widget>[
+                  TextButton(
+                    child: const Text('Yes'),
+                    onPressed: () async {
+                      osm.GeoPoint pos = await mapController
+                          .getCurrentPositionAdvancedPositionPicker();
+                      GPS gps = GPS(pos.latitude, pos.longitude);
+                      String address =
+                          (await Address(gps).lookupAddress()).toString();
+                      ModelAlias alias = ModelAlias(
+                          alias: address,
+                          lat: gps.lat,
+                          lon: gps.lon,
+                          lastVisited: DateTime.now(),
+                          radius: Globals.distanceTreshold);
+                      await ModelAlias.insert(alias);
+                      if (mounted) {
+                        setState(() {});
+                      }
+                    },
+                  ),
+                  TextButton(
+                    child: const Text('No'),
+                    onPressed: () => Navigator.pop(context),
+                  )
+                ], context: context);
                 break;
               case 2: // 3.
 
@@ -318,6 +358,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                     gps.lat, gps.lon, gps2.latitude, gps2.longitude);
                 break;
               default: // 1.
+                _bottomBarIndex = 0;
                 displayMode = _DisplayMode.live;
             }
             _bottomBarIndex = id;

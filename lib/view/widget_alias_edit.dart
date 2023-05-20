@@ -1,3 +1,19 @@
+/*
+Copyright 2023 Stefan Brinkmann <st.brinkmann@gmail.com>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 import 'package:chaostours/data_bridge.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:flutter/material.dart';
@@ -83,20 +99,9 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                   setState(() {});
                 });
               } else if (id == 1) {
-                var gps = GPS.lastGps!;
-                var lat = gps.lat;
-                var lon = gps.lon;
-                var lat1 = alias.lat;
-                var lon1 = alias.lon;
-                var url = 'https://www.google.com/maps/dir/?'
-                    'api=1&origin=$lat%2c$lon&destination=$lat1%2c$lon1&'
-                    'travelmode=driving';
-
-                final intent = AndroidIntent(
-                    action: 'action_view',
-                    data: url,
-                    package: 'com.google.android.apps.maps');
-                intent.launch();
+                var gps = await GPS.gps();
+                await GPS.launchGoogleMaps(
+                    gps.lat, gps.lon, alias.lat, alias.lon);
               } else if (id == 2) {
                 ModelAlias.update(alias).then((_) {
                   Fluttertoast.showToast(msg: 'Alias updated');
