@@ -141,6 +141,7 @@ class _WidgetTaskList extends State<WidgetTaskList> {
         body: displayMode == _DisplayMode.list
             ? ListView(children: [searchWidget(context), ...tasks])
             : sortWidget(context),
+        appBar: AppBar(title: const Text('Aufgaben Liste')),
         navBar: BottomNavigationBar(
             type: BottomNavigationBarType.fixed,
             backgroundColor: AppColorScheme.bright.scheme.primary,

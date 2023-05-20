@@ -27,10 +27,7 @@ import 'package:chaostours/globals.dart';
 class DataBridge {
   static final Logger logger = Logger.logger<DataBridge>();
 
-  DataBridge._() {
-    // reset background logger
-    Cache.setValue<List<String>>(CacheKeys.backgroundLogger, []);
-  }
+  DataBridge._();
   static DataBridge? _instance;
   factory DataBridge() => _instance ??= DataBridge._();
   static DataBridge get instance => _instance ??= DataBridge._();

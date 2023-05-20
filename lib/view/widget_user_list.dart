@@ -283,6 +283,7 @@ class _WidgetUserList extends State<WidgetUserList> {
   @override
   Widget build(BuildContext context) {
     return AppWidgets.scaffold(context,
+        appBar: AppBar(title: const Text('Arbeiter Liste')),
         body: displayMode == _DisplayMode.list
             ? usersWidget(context)
             : sortWidget(context),

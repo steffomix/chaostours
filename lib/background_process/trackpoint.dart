@@ -59,6 +59,8 @@ class TrackPoint {
   DataBridge bridge = DataBridge.instance;
 
   Future<void> startShared({required double lat, required double lon}) async {
+    var exec = DateTime.now();
+
     /// create gpsPoint
     PendingGps gps = PendingGps(lat, lon);
     GPS.lastGps = gps;
@@ -330,7 +332,9 @@ class TrackPoint {
     } catch (e, stk) {
       logger.error('start shared: $e', stk);
     }
-
+    Duration d = DateTime.now().difference(exec);
+    logger.log(
+        'Executed background gps in ${d.inSeconds}.${d.inMilliseconds} seconds');
     // wait before shutdown task
     await Future.delayed(const Duration(seconds: 1));
   }

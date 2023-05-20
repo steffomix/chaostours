@@ -258,6 +258,7 @@ class _WidgetAliasTrackpoint extends State<WidgetAliasTrackpoint> {
         }
       }
     }
-    return AppWidgets.scaffold(context, body: body(context));
+    return AppWidgets.scaffold(context,
+        body: body(context), appBar: AppBar(title: const Text('Haltepunkte')));
   }
 }

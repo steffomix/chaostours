@@ -610,6 +610,7 @@ class _WidgetOsm extends State<WidgetOsm> {
       Future.delayed(const Duration(seconds: 2), drawCircles);
     }
     var body = AppWidgets.scaffold(context,
+        appBar: AppBar(title: const Text('OSM & Alias')),
         body: Stack(children: [
           osm,
           centerAim(context),

@@ -241,6 +241,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
   Widget build(BuildContext context) {
     return AppWidgets.scaffold(
       context,
+      appBar: AppBar(title: const Text('Einstellungen')),
       body: ListView(children: [
         ///
         Container(

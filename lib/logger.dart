@@ -60,7 +60,7 @@ class Logger {
     _print(msg);
   }
 
-  static List<LoggerLog> _loggerLogs = [];
+  static final List<LoggerLog> _loggerLogs = [];
   static List<LoggerLog> get loggerLogs {
     return [..._loggerLogs];
   }
@@ -199,7 +199,7 @@ class Logger {
       while (list.length >= maxSharedCount) {
         list.removeLast();
       }
-      list.add(parts.join('\t'));
+      list.insert(0, parts.join('\t'));
       await Cache.setValue<List<String>>(CacheKeys.backgroundLogger, list);
     } catch (e, stk) {
       _exceptionLogger.error('_addSharedLog: $e', stk);

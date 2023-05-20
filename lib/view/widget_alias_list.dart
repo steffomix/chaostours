@@ -206,6 +206,8 @@ class _WidgetAliasList extends State<WidgetAliasList> {
   @override
   Widget build(BuildContext context) {
     return AppWidgets.scaffold(context,
-        body: body(context), navBar: navBar(context));
+        body: body(context),
+        navBar: navBar(context),
+        appBar: AppBar(title: const Text('Alias List')));
   }
 }

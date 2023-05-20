@@ -62,6 +62,7 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
     }
 
     return AppWidgets.scaffold(context,
+        appBar: AppBar(title: const Text('Aufgabe bearbeiten')),
         navBar: BottomNavigationBar(
             fixedColor: AppColors.black.color,
             type: BottomNavigationBarType.fixed,

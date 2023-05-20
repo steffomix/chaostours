@@ -71,7 +71,6 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
   Widget trackPointInfo(BuildContext context) {
     var alias =
         trackPoint.idAlias.map((id) => ModelAlias.getAlias(id).alias).toList();
-    var tasks = tpTasks.map((id) => ModelTask.getTask(id).task).toList();
 
     return Container(
         padding: const EdgeInsets.all(10),
@@ -82,8 +81,6 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
                   ? Text('OSM: ${trackPoint.address}')
                   : Text('Alias: ${alias.join('\n- ')}')),
           Text(AppWidgets.timeInfo(trackPoint.timeStart, trackPoint.timeEnd)),
-          Text(
-              'Arbeiten:${tasks.isEmpty ? ' -' : '\n   - ${tasks.join('\n   - ')}'}')
         ]));
   }
 
@@ -238,11 +235,11 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
         map(context),
         trackPointInfo(context),
         divider,
-        notes(context),
+        dropdownTasks(context),
         divider,
         dropdownUser(context),
         divider,
-        dropdownTasks(context)
+        notes(context),
       ]);
     } catch (e, stk) {
       body = AppWidgets.loading('No valid ID found');
@@ -254,6 +251,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
     return AppWidgets.scaffold(
       context,
       body: body,
+      appBar: AppBar(title: const Text('Haltepunkt bearbeiten')),
       navBar: BottomNavigationBar(
           type: BottomNavigationBarType.fixed,
           fixedColor: AppColors.black.color,

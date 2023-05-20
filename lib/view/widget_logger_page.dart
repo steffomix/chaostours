@@ -20,6 +20,7 @@ import 'package:flutter/material.dart';
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/view/app_widgets.dart';
+import 'package:chaostours/globals.dart';
 
 class WidgetLoggerPage extends StatefulWidget {
   const WidgetLoggerPage({super.key});
@@ -61,13 +62,14 @@ class _WidgetLoggerPage extends State<WidgetLoggerPage> {
       itemCount: loggerLogs.length + 1,
       itemBuilder: (context, index) {
         if (index == 0) {
-          return Text('App ticks: $counter');
+          return Text('Ticks: ${Globals.appTicks}');
         }
         var e = loggerLogs[index - 1];
         return renderLog(e);
       },
     );
-    return AppWidgets.scaffold(context, body: renderedLogs);
+    return AppWidgets.scaffold(context,
+        body: renderedLogs, appBar: AppBar(title: const Text('Logger')));
   }
 
   ///
@@ -82,16 +84,6 @@ class _WidgetLoggerPage extends State<WidgetLoggerPage> {
     var s = t.second;
     var ms = t.millisecond;
     return '$m:$s.$ms';
-  }
-
-  /// compose without prefix due to background process uses a different one
-  static String composeMessage(
-      String loggerName, LogLevel level, String msg, String? stackTrace) {
-    String stk = '';
-    if (stackTrace != null) {
-      stk = '\n$stackTrace';
-    }
-    return '$time ::${level.name} $time<$loggerName>:: $msg$stk';
   }
 
   static Widget renderLog(LoggerLog log) {

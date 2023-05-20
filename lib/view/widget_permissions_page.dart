@@ -263,6 +263,8 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
   @override
   Widget build(BuildContext context) {
     _context = context;
-    return AppWidgets.scaffold(context, body: widgetPermissions);
+    return AppWidgets.scaffold(context,
+        body: widgetPermissions,
+        appBar: AppBar(title: const Text('Permissions')));
   }
 }

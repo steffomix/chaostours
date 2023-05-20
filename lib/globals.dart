@@ -88,6 +88,7 @@ class _GlobalDefaults {
 }
 
 class Globals {
+  static int appTicks = 0;
   static final Logger logger = Logger.logger<Globals>();
 
   static String version = _GlobalDefaults.version;

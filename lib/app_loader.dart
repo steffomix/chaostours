@@ -38,6 +38,8 @@ class AppLoader {
   /// preload recources
   static Future<void> preload() async {
     try {
+      // reset background logger
+      await Cache.setValue<List<String>>(CacheKeys.backgroundLogger, []);
       Logger.globalLogLevel = LogLevel.verbose;
       logger.important('start Preload sequence...');
       await webKey();
@@ -111,6 +113,7 @@ class AppLoader {
   static Future<void> _appTick() async {
     while (true) {
       var event = EventOnAppTick();
+      Globals.appTicks++;
       try {
         EventManager.fire<EventOnAppTick>(event);
       } catch (e, stk) {

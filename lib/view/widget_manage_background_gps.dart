@@ -150,6 +150,7 @@ class _WidgetManageBackgroundGpsState extends State<WidgetManageBackgroundGps> {
     return AppWidgets.scaffold(context,
         body: Container(
             padding: const EdgeInsets.all(5),
-            child: ListView(children: [...items])));
+            child: ListView(children: [...items])),
+        appBar: AppBar(title: const Text('Cache & Backgr. GPS')));
   }
 }

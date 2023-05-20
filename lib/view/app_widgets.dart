@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:url_launcher/url_launcher.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -33,7 +34,6 @@ import 'package:chaostours/view/widget_live_tracking.dart';
 import 'package:chaostours/view/widget_logger_page.dart';
 import 'package:chaostours/view/widget_permissions_page.dart';
 import 'package:chaostours/view/widget_edit_trackpoint.dart';
-import 'package:chaostours/view/widget_edit_pending_trackpoint.dart';
 import 'package:chaostours/view/widget_user_list.dart';
 import 'package:chaostours/view/widget_task_list.dart';
 import 'package:chaostours/view/widget_alias_list.dart';
@@ -98,7 +98,6 @@ enum AppRoutes {
   // live
   liveTracking('/'),
   editTrackPoint('/editTrackPoint'),
-  editPendingTrackPoint('/editPendingTrackPoint'),
   // task
   listTasks('/listTasks'),
   editTasks('/listTasks/editTasks'),
@@ -151,8 +150,6 @@ class AppWidgets {
           AppRoutes.liveTracking.route: (context) => const WidgetTrackingPage(),
           AppRoutes.editTrackPoint.route: (context) =>
               const WidgetEditTrackPoint(),
-          AppRoutes.editPendingTrackPoint.route: (context) =>
-              const WidgetEditPendingTrackPoint(),
           // user
           AppRoutes.listUsers.route: (context) => const WidgetUserList(),
           AppRoutes.editUser.route: (context) => const WidgetUserEdit(),
@@ -192,18 +189,16 @@ class AppWidgets {
   }
 
   static Widget scaffold(BuildContext context,
-      {required Widget body,
-      BottomNavigationBar? navBar,
-      AppBar? customAppBar}) {
+      {required Widget body, BottomNavigationBar? navBar, AppBar? appBar}) {
     return Scaffold(
-      appBar: appBar(context),
+      appBar: appBar ?? _appBar(context),
       drawer: const WidgetDrawer(),
       body: body,
       bottomNavigationBar: navBar,
     );
   }
 
-  static AppBar appBar(BuildContext context) {
+  static AppBar _appBar(BuildContext context) {
     return AppBar(title: const Text('ChaosTours'));
   }
 
@@ -272,25 +267,14 @@ class _WidgetDrawer extends State<WidgetDrawer> {
             padding: const EdgeInsets.all(20),
             child: ListView(padding: EdgeInsets.zero, children: [
               SizedBox(
-                  height: boxHeight,
-                  child: const Center(child: Text('\nLive Tracking'))),
+                  height: boxHeight, child: const Center(child: Text('\n'))),
 
               ///
               ElevatedButton(
                   onPressed: () {
                     AppWidgets.navigate(context, AppRoutes.liveTracking);
                   },
-                  child: const Text('Tracking')),
-              SizedBox(
-                  height: boxHeight,
-                  child: const Center(child: Text('\nManage Hintergrund GPS'))),
-
-              ///
-              ElevatedButton(
-                  onPressed: () {
-                    AppWidgets.navigate(context, AppRoutes.backgroundGps);
-                  },
-                  child: const Text('Background GPS')),
+                  child: const Text('Live Tracking')),
 
               SizedBox(
                   height: boxHeight,
@@ -353,6 +337,13 @@ class _WidgetDrawer extends State<WidgetDrawer> {
               ///
               ElevatedButton(
                   onPressed: () {
+                    AppWidgets.navigate(context, AppRoutes.backgroundGps);
+                  },
+                  child: const Text('Cache & Background GPS')),
+
+              ///
+              ElevatedButton(
+                  onPressed: () {
                     AppWidgets.navigate(context, AppRoutes.logger);
                   },
                   child: const Text('App Logger')),
@@ -368,22 +359,18 @@ class _WidgetDrawer extends State<WidgetDrawer> {
                   },
                   child: const Text('Export / Import')),
 
-              ///
-              ElevatedButton(
-                  onPressed: () {
-                    AppLoader.loadAssetDatabase();
-                  },
-                  child: const Text('Lade Built-In Data')),
-
-              ///
-              ElevatedButton(
-                  onPressed: () async {
-                    await Cache.setValue<List<ModelTrackPoint>>(
-                        CacheKeys.tableModelTrackpoint, []);
-                    await ModelTrackPoint.open();
-                    Fluttertoast.showToast(msg: "All TrackPoints deleted");
-                  },
-                  child: const Text('Lösche alle Haltepunkte')),
+              SizedBox(
+                  height: 200,
+                  child: Center(
+                      child: TextButton(
+                          child: Text(
+                              'ChaosTours:\nLizenz: Apache 2.0\nCopyright ©${DateTime.now().year}\nby Stefan Brinmann\nst.brinkmann@gmail.com'),
+                          onPressed: () {
+                            try {
+                              launchUrl(Uri.parse(
+                                  'https://www.apache.org/licenses/LICENSE-2.0.html'));
+                            } catch (e) {}
+                          }))),
             ])));
   }
 }

@@ -137,6 +137,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
   ///
   void onCacheLoaded(EventOnCacheLoaded e) {
+    logger.log('onCacheLoaded');
     if (displayMode == _DisplayMode.gps) {
       onOsmGpsPoints(EventOnWidgetDisposed());
     }
@@ -281,7 +282,9 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     }
 
     return AppWidgets.scaffold(context,
-        body: body, navBar: bottomNavBar(context));
+        body: body,
+        navBar: bottomNavBar(context),
+        appBar: AppBar(title: const Text('Live Tracking')));
   }
 
   ///

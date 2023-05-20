@@ -86,6 +86,8 @@ class _WidgetManageCalendarState extends State<WidgetManageCalendar> {
 
   @override
   Widget build(BuildContext context) {
-    return AppWidgets.scaffold(context, body: calendarList());
+    return AppWidgets.scaffold(context,
+        body: calendarList(),
+        appBar: AppBar(title: const Text('Select Calendar')));
   }
 }

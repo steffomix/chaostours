@@ -60,6 +60,7 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
       initialized = true;
     }
     return AppWidgets.scaffold(context,
+        appBar: AppBar(title: const Text('Arbeiter bearbeiten')),
         navBar: BottomNavigationBar(
             type: BottomNavigationBarType.fixed,
             fixedColor: AppColors.black.color,
