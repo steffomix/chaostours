@@ -45,10 +45,7 @@ enum TrackingStatus {
 }
 
 class TrackPoint {
-  final Logger logger = Logger.logger<TrackPoint>(
-      specialBackgroundLogger: true,
-      specialLogLevel: LogLevel.verbose,
-      specialPrefix: '~~');
+  final Logger logger = Logger.logger<TrackPoint>();
 
   static TrackPoint? _instance;
   TrackPoint._();
@@ -58,7 +55,7 @@ class TrackPoint {
 
   DataBridge bridge = DataBridge.instance;
 
-  Future<void> startShared({required double lat, required double lon}) async {
+  Future<void> track({required double lat, required double lon}) async {
     try {
       var exec = DateTime.now();
 
@@ -156,11 +153,11 @@ class TrackPoint {
       ///
       /// process user trigger standing
       if (bridge.triggeredTrackingStatus == TrackingStatus.standing) {
-        bridge.trackingStatus = TrackingStatus.standing;
+        await cacheNewStatusStanding(gps);
 
         /// process user trigger moving
       } else if (bridge.triggeredTrackingStatus == TrackingStatus.moving) {
-        bridge.trackingStatus = TrackingStatus.moving;
+        await cacheNewStatusMoving(gps);
 
         /// check for standing
       } else if (oldTrackingStatus == TrackingStatus.standing) {
@@ -180,25 +177,13 @@ class TrackPoint {
           }
         }
         if (startedMoving) {
-          bridge.trackingStatus = await Cache.setValue<TrackingStatus>(
-              CacheKeys.cacheBackgroundTrackingStatus, TrackingStatus.moving);
-          bridge.trackPointGpsStartMoving = await Cache.setValue<PendingGps>(
-              CacheKeys.cacheEventBackgroundGpsStartMoving, gps);
-          bridge.trackPointGpslastStatusChange =
-              await Cache.setValue<PendingGps>(
-                  CacheKeys.cacheEventBackgroundGpsLastStatusChange, gps);
+          await cacheNewStatusMoving(gps);
         }
       } else {
         /// to calculate standing simply add path distance over all calc points
         if (GPS.distanceOverTrackList(bridge.calcGpsPoints) <
             Globals.distanceTreshold) {
-          bridge.trackingStatus = await Cache.setValue<TrackingStatus>(
-              CacheKeys.cacheBackgroundTrackingStatus, TrackingStatus.standing);
-          bridge.trackPointGpslastStatusChange =
-              await Cache.setValue<PendingGps>(
-                  CacheKeys.cacheEventBackgroundGpsLastStatusChange, gps);
-          bridge.trackPointGpsStartStanding = await Cache.setValue<PendingGps>(
-              CacheKeys.cacheEventBackgroundGpsStartMoving, gps);
+          await cacheNewStatusStanding(gps);
         }
       }
 
@@ -303,7 +288,11 @@ class TrackPoint {
           ///
         } else if (bridge.trackingStatus == TrackingStatus.standing) {
           /// create calendar entry from cache data
-          if (!locationIsPrivate) {
+
+          if (!locationIsPrivate &&
+              (!Globals.statusStandingRequireAlias ||
+                  (Globals.statusStandingRequireAlias &&
+                      aliasList.isNotEmpty))) {
             await ModelTask.open();
             await ModelUser.open();
             var id = await AppCalendar().startCalendarEvent(TrackPointData());
@@ -331,6 +320,24 @@ class TrackPoint {
     } catch (e, stk) {
       logger.error('processing background gps: $e', stk);
     }
+  }
+
+  Future<void> cacheNewStatusStanding(PendingGps gps) async {
+    bridge.trackingStatus = await Cache.setValue<TrackingStatus>(
+        CacheKeys.cacheBackgroundTrackingStatus, TrackingStatus.standing);
+    bridge.trackPointGpsStartStanding = await Cache.setValue<PendingGps>(
+        CacheKeys.cacheEventBackgroundGpsStartStanding, gps);
+    bridge.trackPointGpslastStatusChange = await Cache.setValue<PendingGps>(
+        CacheKeys.cacheEventBackgroundGpsLastStatusChange, gps);
+  }
+
+  Future<void> cacheNewStatusMoving(PendingGps gps) async {
+    bridge.trackingStatus = await Cache.setValue<TrackingStatus>(
+        CacheKeys.cacheBackgroundTrackingStatus, TrackingStatus.moving);
+    bridge.trackPointGpsStartMoving = await Cache.setValue<PendingGps>(
+        CacheKeys.cacheEventBackgroundGpsStartMoving, gps);
+    bridge.trackPointGpslastStatusChange = await Cache.setValue<PendingGps>(
+        CacheKeys.cacheEventBackgroundGpsLastStatusChange, gps);
   }
 
   void calculateSmoothPoints() {
@@ -404,60 +411,6 @@ class TrackPoint {
       /// add calcPoints only if time range is fulfilled
       if (fullTresholdRange) {
         bridge.calcGpsPoints.addAll(gpsList);
-      }
-    }
-  }
-
-  void trackPoint() {
-    /// process user trigger standing
-    if (bridge.triggeredTrackingStatus == TrackingStatus.standing) {
-      bridge.trackingStatus = TrackingStatus.standing;
-      return;
-    }
-
-    /// process user trigger moving
-    if (bridge.triggeredTrackingStatus == TrackingStatus.moving) {
-      bridge.trackingStatus = TrackingStatus.moving;
-      return;
-    }
-
-    /// gps calc points min count
-    if (bridge.calcGpsPoints.isEmpty) {
-      return;
-    }
-
-    /// check if we started moving
-    /// all calc gps points need to be out of standing area
-    if (bridge.trackingStatus == TrackingStatus.standing) {
-      var aliasList = bridge.trackPointAliasIdList
-          .map((id) => ModelAlias.getAlias(id))
-          .toList();
-      int distance =
-          aliasList.isEmpty ? Globals.distanceTreshold : aliasList.first.radius;
-      PendingGps location =
-          bridge.trackPointGpsStartStanding ?? bridge.calcGpsPoints.last;
-      bool moving = true;
-      for (var gps in bridge.calcGpsPoints) {
-        if (GPS.distance(location, gps) <= distance) {
-          // still standing
-          moving = false;
-          break;
-        }
-      }
-      if (moving) {
-        bridge.trackingStatus = TrackingStatus.moving;
-        return;
-      }
-    }
-
-    /// check if we stopped moving
-    /// calc distance over calc gps points
-    if (bridge.trackingStatus == TrackingStatus.moving) {
-      if (GPS.distanceOverTrackList(bridge.calcGpsPoints) <
-          Globals.distanceTreshold) {
-        bridge.trackingStatus = TrackingStatus.standing;
-
-        return;
       }
     }
   }

@@ -54,7 +54,7 @@ class TrackPointData {
     try {
       tStart = tp?.timeStart ??
           (bridge.trackPointGpslastStatusChange?.time ??
-              bridge.gpsPoints.last.time.subtract(Globals.timeRangeTreshold));
+              bridge.gpsPoints.last.time);
       tEnd = tp?.timeEnd ?? DateTime.now();
     } catch (e, stk) {
       logger.error('process dates: $e', stk);

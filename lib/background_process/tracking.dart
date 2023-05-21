@@ -17,13 +17,16 @@ limitations under the License.
 import 'package:background_location_tracker/background_location_tracker.dart';
 import 'package:chaostours/background_process/trackpoint.dart';
 import 'package:chaostours/globals.dart';
+import 'package:chaostours/logger.dart';
 
 @pragma('vm:entry-point')
 void backgroundCallback() {
   BackgroundLocationTrackerManager.handleBackgroundUpdated(
       (BackgroundLocationUpdateData data) async {
-    //print('~~ skip trackpoint in tracking.dart');
-    await TrackPoint().startShared(lat: data.lat, lon: data.lon);
+    Logger.globalBackgroundLogger = true;
+    Logger.globalLogLevel = LogLevel.verbose;
+    Logger.globalPrefix = '~~';
+    await TrackPoint().track(lat: data.lat, lon: data.lon);
 
     // wait before shutdown task
     await Future.delayed(const Duration(seconds: 1));

@@ -129,26 +129,28 @@ class Logger {
   /// ```
   Logger();
 
-  Future<void> verbose(Object msg) =>
-      Future.microtask(() => _log(LogLevel.verbose, msg.toString()));
+  Future<void> verbose(Object msg) => Future.microtask(
+      () async => await _log(LogLevel.verbose, msg.toString()));
   //
   Future<void> log(Object msg) =>
-      Future.microtask(() => _log(LogLevel.log, msg.toString()));
+      Future.microtask(() async => await _log(LogLevel.log, msg.toString()));
   //
-  Future<void> important(Object msg) =>
-      Future.microtask(() => _log(LogLevel.important, msg.toString()));
+  Future<void> important(Object msg) => Future.microtask(
+      () async => await _log(LogLevel.important, msg.toString()));
   //
   Future<void> warn(Object msg) =>
-      Future.microtask(() => _log(LogLevel.warn, msg.toString()));
+      Future.microtask(() async => await _log(LogLevel.warn, msg.toString()));
   //
-  Future<void> error(Object msg, StackTrace? stackTrace) => Future.microtask(
-      () => _log(LogLevel.error, msg.toString(), stackTrace.toString()));
+  Future<void> error(Object msg, StackTrace? stackTrace) =>
+      Future.microtask(() async =>
+          await _log(LogLevel.error, msg.toString(), stackTrace.toString()));
   //
-  Future<void> fatal(Object msg, StackTrace? stackTrace) => Future.microtask(
-      () => _log(LogLevel.fatal, msg.toString(), stackTrace.toString()));
+  Future<void> fatal(Object msg, StackTrace? stackTrace) =>
+      Future.microtask(() async =>
+          await _log(LogLevel.fatal, msg.toString(), stackTrace.toString()));
 
   /// main log method
-  _log(LogLevel level, String msg, [String? stackTrace]) {
+  Future<void> _log(LogLevel level, String msg, [String? stackTrace]) async {
     if (level.level >= logLevel.level && loggerEnabled) {
       try {
         print(
@@ -157,7 +159,7 @@ class Logger {
         // ignore
       }
       if (backGroundLogger) {
-        _addBackgroundLog(level, msg, stackTrace);
+        await _addBackgroundLog(level, msg, stackTrace);
       } else {
         // prevent stack overflow due to EventManager.fire triggers a log
         addLoggerLog(LoggerLog(

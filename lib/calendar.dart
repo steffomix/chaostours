@@ -129,7 +129,7 @@ class AppCalendar {
               end: end,
               location: location,
               description: description);
-          var id = (await appCalendar.inserOrUpdate(event));
+          var id = await appCalendar.inserOrUpdate(event);
           logger.log(
               'added calendar event ID: $id to calendar ID: ${calendar.id}');
           return id;
@@ -158,9 +158,6 @@ class AppCalendar {
 
         /// get lastEvent
         if (calendar != null) {
-          String? eventId =
-              (await appCalendar.getEventById(tpData.calendarEventId))?.eventId;
-
           var title =
               '${tpData.aliasList.isNotEmpty ? tpData.aliasList.first.alias : tpData.addressText}; ${tpData.durationText}';
           var location =
@@ -181,7 +178,7 @@ class AppCalendar {
               description: description);
           String? id = await appCalendar.inserOrUpdate(event);
           logger.log(
-              'completed calendar event ID: ${id} on calendar ${calendar.id}');
+              'completed calendar event ID: $id on calendar ${calendar.id}');
           return id;
         } else {
           logger.warn('complete/update event: no calendar for found');
