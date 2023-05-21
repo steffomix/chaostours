@@ -363,8 +363,11 @@ class _WidgetDrawer extends State<WidgetDrawer> {
                   height: 200,
                   child: Center(
                       child: TextButton(
-                          child: Text(
-                              'ChaosTours:\nLizenz: Apache 2.0\nCopyright ©${DateTime.now().year}\nby Stefan Brinmann\nst.brinkmann@gmail.com'),
+                          child: Text('ChaosTours\n'
+                              'Lizenz: Apache 2.0\n'
+                              'Copyright ©${DateTime.now().year}\n'
+                              'by Stefan Brinmann\n'
+                              'st.brinkmann@gmail.com'),
                           onPressed: () {
                             try {
                               launchUrl(Uri.parse(

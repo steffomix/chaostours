@@ -24,6 +24,9 @@ void backgroundCallback() {
       (BackgroundLocationUpdateData data) async {
     //print('~~ skip trackpoint in tracking.dart');
     await TrackPoint().startShared(lat: data.lat, lon: data.lon);
+
+    // wait before shutdown task
+    await Future.delayed(const Duration(seconds: 1));
   });
 }
 

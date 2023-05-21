@@ -293,7 +293,8 @@ class _WidgetImportExport extends State<WidgetImportExport> {
           id++;
         }
       } else {
-        userModels = await Cache.getValue(CacheKeys.tableModelUser, []);
+        userModels =
+            await Cache.getValue<List<ModelUser>>(CacheKeys.tableModelUser, []);
       }
     } catch (e) {
       errors.add(e.toString());

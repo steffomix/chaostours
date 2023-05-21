@@ -59,102 +59,166 @@ class TrackPoint {
   DataBridge bridge = DataBridge.instance;
 
   Future<void> startShared({required double lat, required double lon}) async {
-    var exec = DateTime.now();
-
-    /// create gpsPoint
-    PendingGps gps = PendingGps(lat, lon);
-    GPS.lastGps = gps;
-
-    /// reload shared preferences
-    await Cache.reload();
-
-    /// load database
-    await ModelTrackPoint.open();
-    await ModelAlias.open();
-
-    /// load global settings
-    await Globals.loadSettings();
-
-    /// load last session data
-    await bridge.loadCache(gps);
-
-    if (bridge.trackingStatus == TrackingStatus.none) {
-      /// initialize basic events if not set
-      /// this must be done before loading last session
-      bridge.trackPointGpsStartMoving = await Cache.setValue<PendingGps>(
-          CacheKeys.cacheEventBackgroundGpsStartMoving, gps);
-      bridge.trackPointGpsStartStanding = await Cache.setValue<PendingGps>(
-          CacheKeys.cacheEventBackgroundGpsStartStanding, gps);
-      bridge.trackPointGpslastStatusChange = await Cache.setValue<PendingGps>(
-          CacheKeys.cacheEventBackgroundGpsLastStatusChange, gps);
-
-      /// app start, no status yet
-      bridge.trackingStatus = await Cache.setValue<TrackingStatus>(
-          CacheKeys.cacheBackgroundTrackingStatus, TrackingStatus.standing);
-    }
-
-    /// load if user triggered status change to moving
-    await bridge.loadTriggerStatus();
-
     try {
+      var exec = DateTime.now();
+
+      /// create gpsPoint
+      PendingGps gps = PendingGps(lat, lon);
+      GPS.lastGps = gps;
+
+      /// reload shared preferences
+      await Cache.reload();
+
+      /// load database
+      await ModelTrackPoint.open();
+      await ModelAlias.open();
+
+      /// load global settings
+      await Globals.loadSettings();
+
+      /// load last session data
+      await bridge.loadCache(gps);
+
+      if (bridge.trackingStatus == TrackingStatus.none) {
+        /// initialize basic events if not set
+        /// this must be done before loading last session
+        bridge.trackPointGpsStartMoving = await Cache.setValue<PendingGps>(
+            CacheKeys.cacheEventBackgroundGpsStartMoving, gps);
+        bridge.trackPointGpsStartStanding = await Cache.setValue<PendingGps>(
+            CacheKeys.cacheEventBackgroundGpsStartStanding, gps);
+        bridge.trackPointGpslastStatusChange = await Cache.setValue<PendingGps>(
+            CacheKeys.cacheEventBackgroundGpsLastStatusChange, gps);
+
+        /// app start, no status yet
+        bridge.trackingStatus = await Cache.setValue<TrackingStatus>(
+            CacheKeys.cacheBackgroundTrackingStatus, TrackingStatus.standing);
+      }
+
+      /// load if user triggered status change to moving
+      await bridge.loadTriggerStatus();
+      int maxGpsPoints = (Globals.timeRangeTreshold.inSeconds /
+              Globals.trackPointInterval.inSeconds *
+              10)
+          .round();
+
+      /// prefill gpsPoints
+      while (bridge.gpsPoints.length < maxGpsPoints) {
+        bridge.gpsPoints.insert(0, gps);
+      }
+
+      /// add current gps point
       bridge.gpsPoints.insert(0, gps);
 
-      /// prune down to 10 times of gpsPoints needed for one time range calculation
-      /// except we are moving
+      /// prune gpsPoints
       if (bridge.trackingStatus != TrackingStatus.moving) {
-        while (bridge.gpsPoints.length >
-            (Globals.timeRangeTreshold.inSeconds /
-                    Globals.trackPointInterval.inSeconds *
-                    10)
-                .round()) {
-          /// don't remove the very last.
-          /// it's required to measure durations
+        while (bridge.gpsPoints.length > maxGpsPoints) {
           bridge.gpsPoints.removeAt(bridge.gpsPoints.length - 2);
         }
       }
 
-      /// filter points for trackpoint calculation
-      ///
+      /// filter gps points for trackpoint calculation
       calculateSmoothPoints();
       calculateCalcPoints();
 
-      /// get a secure calc point if user has triggered status change
-      if (bridge.calcGpsPoints.isNotEmpty) {
-        gps = bridge.calcGpsPoints.first;
-      } else if (bridge.smoothGpsPoints.isNotEmpty) {
-        gps = bridge.smoothGpsPoints.first;
-      } else {
-        gps = gps;
+      /// continue with smoothed gps
+      gps = bridge.calcGpsPoints.first;
+
+      /// select and filter alias list from given gps
+      List<ModelAlias> aliasList = [];
+      bool locationIsPrivate = false;
+      bool locationIsRestricted = false;
+      for (var model in ModelAlias.nextAlias(gps: gps)) {
+        if (!model.deleted) {
+          aliasList.add(model);
+        } else {
+          continue;
+        }
+        if (model.status == AliasStatus.privat) {
+          locationIsPrivate = true;
+        }
+        if (model.status == AliasStatus.restricted) {
+          locationIsPrivate = true;
+          locationIsRestricted = true;
+        }
       }
+
+      /// cache alias list
+      bridge.trackPointAliasIdList = await Cache.setValue<List<int>>(
+          CacheKeys.cacheBackgroundAliasIdList,
+          aliasList.map((model) => model.id).toList());
 
       /// remember old status
       oldTrackingStatus = bridge.trackingStatus;
 
       ///
-      /// heart of this whole app:
-      /// process trackpoint for new status
+      /// process trackpoint
       ///
-      trackPoint();
+      ///
+      /// process user trigger standing
+      if (bridge.triggeredTrackingStatus == TrackingStatus.standing) {
+        bridge.trackingStatus = TrackingStatus.standing;
 
-      /// reset TrackingStatus trigger
+        /// process user trigger moving
+      } else if (bridge.triggeredTrackingStatus == TrackingStatus.moving) {
+        bridge.trackingStatus = TrackingStatus.moving;
+
+        /// check for standing
+      } else if (oldTrackingStatus == TrackingStatus.standing) {
+        int distanceTreshold = aliasList.isEmpty
+            ? Globals.distanceTreshold
+            : aliasList.first.radius;
+        PendingGps location =
+            bridge.trackPointGpsStartStanding ?? bridge.calcGpsPoints.last;
+        bool startedMoving = true;
+
+        /// check if all calc points are below distance treshold
+        for (var gps in bridge.calcGpsPoints) {
+          if (GPS.distance(location, gps) <= distanceTreshold) {
+            // still standing
+            startedMoving = false;
+            break;
+          }
+        }
+        if (startedMoving) {
+          bridge.trackingStatus = await Cache.setValue<TrackingStatus>(
+              CacheKeys.cacheBackgroundTrackingStatus, TrackingStatus.moving);
+          bridge.trackPointGpsStartMoving = await Cache.setValue<PendingGps>(
+              CacheKeys.cacheEventBackgroundGpsStartMoving, gps);
+          bridge.trackPointGpslastStatusChange =
+              await Cache.setValue<PendingGps>(
+                  CacheKeys.cacheEventBackgroundGpsLastStatusChange, gps);
+        }
+      } else {
+        /// to calculate standing simply add path distance over all calc points
+        if (GPS.distanceOverTrackList(bridge.calcGpsPoints) <
+            Globals.distanceTreshold) {
+          bridge.trackingStatus = await Cache.setValue<TrackingStatus>(
+              CacheKeys.cacheBackgroundTrackingStatus, TrackingStatus.standing);
+          bridge.trackPointGpslastStatusChange =
+              await Cache.setValue<PendingGps>(
+                  CacheKeys.cacheEventBackgroundGpsLastStatusChange, gps);
+          bridge.trackPointGpsStartStanding = await Cache.setValue<PendingGps>(
+              CacheKeys.cacheEventBackgroundGpsStartMoving, gps);
+        }
+      }
+
+      /// always reset TrackingStatus trigger
       bridge.triggeredTrackingStatus = await Cache.setValue<TrackingStatus>(
           CacheKeys.cacheTriggerTrackingStatus, TrackingStatus.none);
+
+      if (locationIsRestricted) {
+        logger.log('location is restricted, skip processing status change');
+        Duration d = DateTime.now().difference(exec);
+        logger.log(
+            'Executed background gps in ${d.inSeconds}.${d.inMilliseconds} seconds');
+        return;
+      }
 
       /// if nothing has changed, nothing to do
       if (bridge.trackingStatus == oldTrackingStatus) {
         /// lookup address on every interval
         if (Globals.osmLookupCondition == OsmLookup.always) {
           await bridge.setAddress(gps);
-        }
-
-        /// update alias if moving
-        if (bridge.trackingStatus == TrackingStatus.moving) {
-          bridge.trackPointAliasIdList.clear();
-          for (var model in ModelAlias.nextAlias(gps: gps)) {
-            bridge.trackPointAliasIdList.add(model.id);
-          }
-          await Cache.setValue<List<int>>(CacheKeys.cacheBackgroundAliasIdList,
-              bridge.trackPointAliasIdList);
         }
 
         /// if nothing changed simply write data back
@@ -166,12 +230,13 @@ class TrackPoint {
             CacheKeys.cacheBackgroundSmoothGpsPoints, bridge.smoothGpsPoints);
         await Cache.setValue<List<PendingGps>>(
             CacheKeys.cacheBackgroundCalcGpsPoints, bridge.calcGpsPoints);
-      } else {
+
         ///
         ///
         /// ---------- status changed -----------
         ///
         ///
+      } else {
         /// update osm address
         if (Globals.osmLookupCondition == OsmLookup.onStatus) {
           await bridge.setAddress(gps);
@@ -179,53 +244,19 @@ class TrackPoint {
 
         /// we started moving
         if (bridge.trackingStatus == TrackingStatus.moving) {
-          /// save new start moving event
-          bridge.trackPointGpsStartMoving = await Cache.setValue<PendingGps>(
-              CacheKeys.cacheEventBackgroundGpsStartMoving, gps);
-
-          bridge.trackingStatus = await Cache.setValue<TrackingStatus>(
-              CacheKeys.cacheBackgroundTrackingStatus, bridge.trackingStatus);
-
-          ///
-          ///   --- update alias models from cached list ---
-          ///
-
-          /// load and filter alias models from cached idList
-          List<ModelAlias> aliasFilteredList = [];
-          bool locationIsPrivate = false;
-          bool locationIsRestricted = false;
-          for (var id in bridge.trackPointAliasIdList) {
-            var model = ModelAlias.getAlias(id);
-            if (model.deleted) {
-              continue;
-            }
-            if (model.status == AliasStatus.privat) {
-              locationIsPrivate = true;
-            }
-            if (model.status == AliasStatus.restricted) {
-              locationIsRestricted = true;
-            }
-            if (model.status != AliasStatus.restricted) {
-              aliasFilteredList.add(model);
-            }
-          }
-
           ///
           ///     --- insert and update database entrys ---
           ///
           if (!Globals.statusStandingRequireAlias ||
-              (Globals.statusStandingRequireAlias &&
-                  aliasFilteredList.isNotEmpty)) {
+              (Globals.statusStandingRequireAlias && aliasList.isNotEmpty)) {
             /// create and insert new trackpoint
             ModelTrackPoint newTrackPoint = ModelTrackPoint(
                 gps: gps,
-                idAlias: aliasFilteredList.map((e) => e.id).toList(),
-                timeStart: bridge.trackPointGpsStartStanding?.time ??
-                    gps.time.subtract(Globals.timeRangeTreshold));
+                idAlias: aliasList.map((e) => e.id).toList(),
+                timeStart: bridge.trackPointGpsStartStanding?.time ?? gps.time);
             newTrackPoint.address = bridge.currentAddress;
             newTrackPoint.status = oldTrackingStatus;
-            newTrackPoint.timeEnd =
-                gps.time.subtract(Globals.trackPointInterval);
+            newTrackPoint.timeEnd = gps.time;
             newTrackPoint.idTask = bridge.trackPointTaskIdList;
             newTrackPoint.idUser = bridge.trackPointUserIdList;
             newTrackPoint.notes = bridge.trackPointUserNotes;
@@ -237,7 +268,7 @@ class TrackPoint {
 
             /// complete calendar event from trackpoint data
             /// only if no private or restricted alias is present
-            if (!(locationIsPrivate || locationIsRestricted)) {
+            if (!locationIsPrivate) {
               await ModelTask.open();
               await ModelUser.open();
               await AppCalendar()
@@ -246,21 +277,18 @@ class TrackPoint {
 
             /// reset calendarEvent ID
             bridge.lastCalendarEventId =
-                await Cache.setValue(CacheKeys.lastCalendarEventId, '');
+                await Cache.setValue<String>(CacheKeys.lastCalendarEventId, '');
 
             /// update alias
-            if (aliasFilteredList.isNotEmpty) {
-              for (var model in aliasFilteredList) {
+            if (aliasList.isNotEmpty) {
+              for (var model in aliasList) {
                 model.lastVisited = bridge.trackPointGpsStartStanding!.time;
                 model.timesVisited++;
               }
               await ModelAlias.write();
+              // wait before shutdown task
+              await Future.delayed(const Duration(seconds: 1));
             }
-
-            /// save general status changed event AFTER saving
-            bridge.trackPointGpslastStatusChange =
-                await Cache.setValue<PendingGps>(
-                    CacheKeys.cacheEventBackgroundGpsLastStatusChange, gps);
 
             /// reset user data
             await Cache.setValue<List<int>>(
@@ -274,33 +302,8 @@ class TrackPoint {
 
           ///
         } else if (bridge.trackingStatus == TrackingStatus.standing) {
-          /// new status is standing
-          /// save events
-          bridge.trackPointGpsStartStanding = await Cache.setValue<PendingGps>(
-              CacheKeys.cacheEventBackgroundGpsStartStanding, gps);
-          bridge.trackPointGpslastStatusChange =
-              await Cache.setValue<PendingGps>(
-                  CacheKeys.cacheEventBackgroundGpsLastStatusChange, gps);
-
-          await Cache.setValue<TrackingStatus>(
-              CacheKeys.cacheBackgroundTrackingStatus, bridge.trackingStatus);
-
-          /// check privacy for calendar entry
-          bool private = false;
-          List<ModelAlias> aliasList = ModelAlias.nextAlias(gps: gps);
-          for (var model in aliasList) {
-            if (model.deleted) {
-              continue;
-            }
-            if (model.status == AliasStatus.privat ||
-                model.status == AliasStatus.restricted) {
-              private = true;
-              break;
-            }
-          }
-
           /// create calendar entry from cache data
-          if (!private) {
+          if (!locationIsPrivate) {
             await ModelTask.open();
             await ModelUser.open();
             var id = await AppCalendar().startCalendarEvent(TrackPointData());
@@ -309,34 +312,25 @@ class TrackPoint {
             bridge.lastCalendarEventId = await Cache.setValue<String>(
                 CacheKeys.lastCalendarEventId, id ?? '');
           }
-
-          /// reset user data
-          await Cache.setValue<String>(
-              CacheKeys.cacheBackgroundTrackPointUserNotes, '');
-          await Cache.setValue<List<int>>(
-              CacheKeys.cacheBackgroundTaskIdList, []);
         }
 
-        /// general cleanup on status change
-        bridge.gpsPoints.clear();
-        bridge.gpsPoints.add(gps);
-
+        /// write back gps points
         await Cache.setValue<PendingGps>(CacheKeys.cacheBackgroundLastGps, gps);
         await Cache.setValue<List<PendingGps>>(
-            CacheKeys.cacheBackgroundGpsPoints, [gps]);
+            CacheKeys.cacheBackgroundGpsPoints, bridge.gpsPoints);
         await Cache.setValue<List<PendingGps>>(
-            CacheKeys.cacheBackgroundSmoothGpsPoints, []);
+            CacheKeys.cacheBackgroundSmoothGpsPoints, bridge.smoothGpsPoints);
         await Cache.setValue<List<PendingGps>>(
-            CacheKeys.cacheBackgroundCalcGpsPoints, []);
+            CacheKeys.cacheBackgroundCalcGpsPoints, bridge.calcGpsPoints);
       }
+
+      /// log success
+      Duration d = DateTime.now().difference(exec);
+      logger.log(
+          'Executed background gps in ${d.inSeconds}.${d.inMilliseconds} seconds');
     } catch (e, stk) {
-      logger.error('start shared: $e', stk);
+      logger.error('processing background gps: $e', stk);
     }
-    Duration d = DateTime.now().difference(exec);
-    logger.log(
-        'Executed background gps in ${d.inSeconds}.${d.inMilliseconds} seconds');
-    // wait before shutdown task
-    await Future.delayed(const Duration(seconds: 1));
   }
 
   void calculateSmoothPoints() {
