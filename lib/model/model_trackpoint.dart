@@ -217,9 +217,17 @@ class ModelTrackPoint {
 
   static Future<int> open() async {
     await Cache.reload();
+    List<ModelTrackPoint> tpList = await Cache.getValue<List<ModelTrackPoint>>(
+        CacheKeys.tableModelTrackpoint, []);
+    // reset ids
+    int id = 1;
+    for (var model in tpList) {
+      model._id = id;
+      id++;
+    }
+
     _table.clear();
-    _table.addAll((await Cache.getValue<List<ModelTrackPoint>>(
-        CacheKeys.tableModelTrackpoint, [])));
+    _table.addAll(tpList);
 
     return _table.length;
   }

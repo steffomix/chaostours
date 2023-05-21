@@ -197,6 +197,9 @@ class _WidgetImportExport extends State<WidgetImportExport> {
         List<String> data = f.readAsStringSync().split('\n');
         var id = 1;
         for (var row in data) {
+          if (row.trim().isEmpty) {
+            continue;
+          }
           try {
             ModelTrackPoint model = ModelTrackPoint.toModel(row);
             if (model.id != id) {
@@ -225,6 +228,9 @@ class _WidgetImportExport extends State<WidgetImportExport> {
         List<String> data = f.readAsStringSync().split('\n');
         var id = 1;
         for (var row in data) {
+          if (row.trim().isEmpty) {
+            continue;
+          }
           try {
             ModelAlias model = ModelAlias.toModel(row);
             if (model.id != id) {
@@ -253,6 +259,9 @@ class _WidgetImportExport extends State<WidgetImportExport> {
         List<String> data = f.readAsStringSync().split('\n');
         var id = 1;
         for (var row in data) {
+          if (row.trim().isEmpty) {
+            continue;
+          }
           try {
             ModelTask model = ModelTask.toModel(row);
             if (model.id != id) {
@@ -281,6 +290,9 @@ class _WidgetImportExport extends State<WidgetImportExport> {
         List<String> data = f.readAsStringSync().split('\n');
         var id = 1;
         for (var row in data) {
+          if (row.trim().isEmpty) {
+            continue;
+          }
           try {
             ModelUser model = ModelUser.toModel(row);
             if (model.id != id) {
