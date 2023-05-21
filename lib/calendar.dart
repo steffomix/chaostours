@@ -22,6 +22,7 @@ import 'package:flutter/services.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/cache.dart';
 import 'package:chaostours/data_bridge.dart';
+import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/trackpoint_data.dart';
 
 class AppCalendar {
@@ -36,20 +37,11 @@ class AppCalendar {
     return id?.data;
   }
 
-  Future<Event?> getEventById(String id) async {
-    Calendar? cal = await getCalendarfromCacheId();
-    if (cal != null) {
-      var params = RetrieveEventsParams(eventIds: [id]);
-      var events = await _deviceCalendarPlugin.retrieveEvents(cal.id, params);
-      if (events.isSuccess) {
-        List<Event>? data = events.data ?? <Event>[];
-        if (data.isNotEmpty) {
-          var event = data.first;
-          return event;
-        }
-      }
-    }
-    return null;
+  Future<List<Event?>> getEventsById(
+      {required String calendarId, required String eventId}) async {
+    var params = RetrieveEventsParams(eventIds: [eventId]);
+    var events = await _deviceCalendarPlugin.retrieveEvents(calendarId, params);
+    return events.data ?? <Event>[];
   }
 
   Future<void> retrieveCalendars() async {
@@ -99,16 +91,15 @@ class AppCalendar {
 
   Future<String?> startCalendarEvent(TrackPointData tpData) async {
     try {
-      var appCalendar = AppCalendar();
-      await appCalendar.retrieveCalendars();
-      if (appCalendar.calendars.isNotEmpty) {
+      await retrieveCalendars();
+      if (calendars.isNotEmpty) {
         /// get dates
         final berlin = getLocation('Europe/Berlin');
         var start = TZDateTime.from(tpData.tStart, berlin);
         var end = start.add(const Duration(minutes: 2));
 
         /// get calendar
-        Calendar? calendar = await appCalendar.getCalendarfromCacheId();
+        Calendar? calendar = await getCalendarfromCacheId();
 
         /// get lastEvent
         if (calendar != null) {
@@ -129,7 +120,7 @@ class AppCalendar {
               end: end,
               location: location,
               description: description);
-          var id = await appCalendar.inserOrUpdate(event);
+          var id = await inserOrUpdate(event);
           logger.log(
               'added calendar event ID: $id to calendar ID: ${calendar.id}');
           return id;
@@ -145,19 +136,25 @@ class AppCalendar {
 
   Future<String?> completeCalendarEvent(TrackPointData tpData) async {
     try {
-      var appCalendar = AppCalendar();
-      await appCalendar.retrieveCalendars();
-      if (appCalendar.calendars.isNotEmpty) {
+      await retrieveCalendars();
+      if (calendars.isNotEmpty) {
         /// get dates
         final berlin = getLocation('Europe/Berlin');
         var start = TZDateTime.from(tpData.tStart, berlin);
         var end = TZDateTime.from(tpData.tEnd, berlin);
 
         /// get calendar
-        Calendar? calendar = await appCalendar.getCalendarfromCacheId();
+        Calendar? calendar = await getCalendarfromCacheId();
 
         /// get lastEvent
         if (calendar != null) {
+          var events = await getEventsById(
+              calendarId: tpData.calendarId, eventId: tpData.calendarEventId);
+          if (events.isEmpty) {
+            logger.warn(
+                'no event ID ${tpData.calendarEventId} in calendar ID ${tpData.calendarId} found. Create new event');
+          }
+
           var title =
               '${tpData.aliasList.isNotEmpty ? tpData.aliasList.first.alias : tpData.addressText}; ${tpData.durationText}';
           var location =
@@ -170,13 +167,17 @@ class AppCalendar {
               'Mitarbeiter:\n${tpData.usersText}\n\n'
               'Notizen: ${tpData.trackPointNotes.isEmpty ? '-' : tpData.trackPointNotes}';
           Event event = Event(calendar.id,
-              eventId: tpData.calendarEventId,
+              eventId: events.isEmpty ? null : tpData.calendarEventId,
               title: title,
               start: start,
               end: end,
               location: location,
               description: description);
-          String? id = await appCalendar.inserOrUpdate(event);
+          String? id = await inserOrUpdate(event);
+          if (tpData.tp != null && events.isEmpty) {
+            tpData.tp!.calendarId = '${tpData.calendarId};$id';
+            await ModelTrackPoint.write();
+          }
           logger.log(
               'completed calendar event ID: $id on calendar ${calendar.id}');
           return id;

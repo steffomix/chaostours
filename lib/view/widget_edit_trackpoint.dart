@@ -69,17 +69,32 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
 
   /// current trackpoint
   Widget trackPointInfo(BuildContext context) {
-    var alias =
-        trackPoint.idAlias.map((id) => ModelAlias.getAlias(id).alias).toList();
+    var aliasList = trackPoint.idAlias.map((id) => ModelAlias.getAlias(id));
 
     return Container(
         padding: const EdgeInsets.all(10),
         child: ListBody(children: [
           Center(
               heightFactor: 2,
-              child: alias.isEmpty
-                  ? Text('OSM: ${trackPoint.address}')
-                  : Text('Alias: ${alias.join('\n- ')}')),
+              child: aliasList.isEmpty
+                  ? TextButton(
+                      child: Text('OSM: ${trackPoint.address}'),
+                      onPressed: () async {
+                        GPS gps = await GPS.gps();
+                        await GPS.launchGoogleMaps(gps.lat, gps.lon,
+                            trackPoint.gps.lat, trackPoint.gps.lon);
+                      },
+                    )
+                  : TextButton(
+                      child: Text(
+                          'Alias: ${aliasList.map((e) => e.alias).join('\n- ')}'),
+                      onPressed: () async {
+                        int id = aliasList.first.id;
+                        await Navigator.pushNamed(
+                            context, AppRoutes.editAlias.route,
+                            arguments: id);
+                      },
+                    )),
           Text(AppWidgets.timeInfo(trackPoint.timeStart, trackPoint.timeEnd)),
         ]));
   }

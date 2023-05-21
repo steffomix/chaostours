@@ -253,7 +253,10 @@ class TrackPoint {
 
             /// complete calendar event from trackpoint data
             /// only if no private or restricted alias is present
-            if (!locationIsPrivate) {
+            if (!locationIsPrivate &&
+                (!Globals.statusStandingRequireAlias ||
+                    (Globals.statusStandingRequireAlias &&
+                        aliasList.isNotEmpty))) {
               await ModelTask.open();
               await ModelUser.open();
               await AppCalendar()
