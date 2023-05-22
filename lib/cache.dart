@@ -54,6 +54,12 @@ class CacheKeyDump {
 }
 
 enum CacheKeys {
+  /// logger
+  backgroundLogger(List<LoggerLog>),
+
+  /// persistent logs
+  errorLogs(List<LoggerLog>),
+
   /// cache foreground to background
   /// saved only on special event triggered by user
   cacheTriggerTrackingStatus(TrackingStatus),
@@ -103,10 +109,7 @@ enum CacheKeys {
   globalsTimeRangeTreshold(Duration),
   globalsAppTickDuration(Duration),
   globalsGpsMaxSpeed(int),
-  globalsGpsPointsSmoothCount(int),
-
-  /// logger
-  backgroundLogger(List<String>);
+  globalsGpsPointsSmoothCount(int);
 
   final Type cacheType;
   const CacheKeys(this.cacheType);
@@ -123,6 +126,12 @@ class Cache {
   static Future<void> reload() async {
     await (await SharedPreferences.getInstance()).reload();
   }
+
+  /// LoggerLog
+  static List<String> serializeLoggerLog(List<LoggerLog> logs) =>
+      logs.map((e) => e.toString()).toList();
+  static List<LoggerLog> deserializeLoggerLog(List<String>? s) =>
+      s == null ? [] : s.map((e) => LoggerLog.toObject(e)).toList();
 
   /// intList
   static List<String> serializeIntList(List<int> list) =>
@@ -277,6 +286,10 @@ class Cache {
         case Duration:
           await prefs.setInt(key, serializeDuration(value as Duration));
           break;
+        case List<LoggerLog>:
+          await prefs.setStringList(
+              key, serializeLoggerLog(value as List<LoggerLog>));
+          break;
         case DateTime:
           await prefs.setString(key, serializeDateTime(value as DateTime));
           break;
@@ -388,6 +401,9 @@ class Cache {
           return prefs.getDouble(key) as T? ?? defaultValue;
         case Duration:
           return deserializeDuration(prefs.getInt(key)) as T? ?? defaultValue;
+        case List<LoggerLog>:
+          return deserializeLoggerLog(prefs.getStringList(key)) as T? ??
+              defaultValue;
         case DateTime:
           return deserializeDateTime(prefs.getString(key)) as T? ??
               defaultValue;

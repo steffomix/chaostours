@@ -227,6 +227,9 @@ class TrackPoint {
           await bridge.setAddress(gps);
         }
 
+        await ModelTask.open();
+        await ModelUser.open();
+
         /// we started moving
         if (bridge.trackingStatus == TrackingStatus.moving) {
           ///
@@ -257,8 +260,6 @@ class TrackPoint {
                 (!Globals.statusStandingRequireAlias ||
                     (Globals.statusStandingRequireAlias &&
                         aliasList.isNotEmpty))) {
-              await ModelTask.open();
-              await ModelUser.open();
               await AppCalendar()
                   .completeCalendarEvent(TrackPointData(tp: newTrackPoint));
             }
@@ -296,8 +297,6 @@ class TrackPoint {
               (!Globals.statusStandingRequireAlias ||
                   (Globals.statusStandingRequireAlias &&
                       aliasList.isNotEmpty))) {
-            await ModelTask.open();
-            await ModelUser.open();
             var id = await AppCalendar().startCalendarEvent(TrackPointData());
 
             /// cache event id

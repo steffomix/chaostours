@@ -32,19 +32,50 @@ enum LogLevel {
 
 class LoggerLog {
   DateTime time = DateTime.now();
-  final Logger logger;
+  //final Logger logger;
   final String prefix;
-  final String name;
+  final String loggerName;
   final LogLevel level;
   final String msg;
   final String? stackTrace;
   LoggerLog(
-      {required this.logger,
+      { //required this.logger,
       required this.prefix,
-      required this.name,
+      required this.loggerName,
       required this.level,
       required this.msg,
       required this.stackTrace});
+
+  @override
+  String toString() {
+    return [
+      Uri.encodeFull(DateTime.now().toIso8601String()),
+      Uri.encodeFull(prefix),
+      Uri.encodeFull(loggerName),
+      Uri.encodeFull(level.name),
+      Uri.encodeFull(msg),
+      Uri.encodeFull(stackTrace.toString()),
+      '|'
+    ].join('\t');
+  }
+
+  static LoggerLog toObject(String log) {
+    List<String> p = log.split('\t');
+    DateTime time = DateTime.parse(Uri.decodeFull(p[0]));
+    String prefix = Uri.decodeFull(p[1]);
+    String loggerName = Uri.decodeFull(p[2]);
+    LogLevel level = LogLevel.values.byName(Uri.decodeFull(p[3]));
+    String msg = Uri.decodeFull(p[4]);
+    String stackTrace = Uri.decodeFull(p[5]);
+    var loggerLog = LoggerLog(
+        prefix: prefix,
+        loggerName: loggerName,
+        level: level,
+        msg: msg,
+        stackTrace: stackTrace);
+    loggerLog.time = time;
+    return loggerLog;
+  }
 }
 
 var _print = print;
@@ -155,20 +186,28 @@ class Logger {
       try {
         print(
             '$prefix ${composeMessage(_loggerName, level, msg, stackTrace)}'); // ignore: avoid_print
-      } catch (e) {
-        // ignore
-      }
-      if (backGroundLogger) {
-        await _addBackgroundLog(level, msg, stackTrace);
-      } else {
-        // prevent stack overflow due to EventManager.fire triggers a log
-        addLoggerLog(LoggerLog(
-            logger: this,
+
+        LoggerLog log = LoggerLog(
             prefix: prefix,
-            name: loggerId,
+            loggerName: loggerId,
             level: level,
             msg: msg,
-            stackTrace: stackTrace));
+            stackTrace: stackTrace);
+
+        if (backGroundLogger) {
+          /// add active log
+          await _cacheLog(log, CacheKeys.backgroundLogger);
+        } else {
+          // prevent stack overflow due to EventManager.fire triggers a log
+          addLoggerLog(log);
+        }
+
+        /// add errorLog
+        if (level.level >= LogLevel.warn.level) {
+          await _cacheLog(log, CacheKeys.errorLogs);
+        }
+      } catch (e, stk) {
+        print('Log Error: $e\n${stk.toString()}');
       }
     }
   }
@@ -183,59 +222,24 @@ class Logger {
     return '$time ::${level.name} $time<$loggerName>:: $msg$stk';
   }
 
-  _addBackgroundLog(LogLevel level, String msg, String? stackTrace) async {
-    try {
-      // ignore: unused_local_variable
-      List<String> parts = [
-        Uri.encodeFull(DateTime.now().toIso8601String()),
-        Uri.encodeFull(prefix),
-        Uri.encodeFull(_loggerName),
-        Uri.encodeFull(level.name),
-        Uri.encodeFull(msg),
-        Uri.encodeFull(stackTrace.toString()),
-        '|'
-      ];
-
-      List<String> list =
-          await Cache.getValue<List<String>>(CacheKeys.backgroundLogger, []);
-      while (list.length >= maxSharedCount) {
-        list.removeLast();
-      }
-      list.insert(0, parts.join('\t'));
-      await Cache.setValue<List<String>>(CacheKeys.backgroundLogger, list);
-    } catch (e, stk) {
-      _exceptionLogger.error('_addSharedLog: $e', stk);
+  Future<void> _cacheLog(LoggerLog log, CacheKeys key) async {
+    await Cache.reload();
+    var logs = await Cache.getValue<List<LoggerLog>>(key, []);
+    logs.insert(0, log);
+    while (logs.length >= maxSharedCount) {
+      logs.removeLast();
     }
+    await Cache.setValue<List<LoggerLog>>(key, logs);
   }
 
   /// fires
   static Future<void> getBackgroundLogs() async {
-    List<String> list =
-        await Cache.getValue<List<String>>(CacheKeys.backgroundLogger, []);
+    List<LoggerLog> list =
+        await Cache.getValue<List<LoggerLog>>(CacheKeys.backgroundLogger, []);
     // reset list
-    await Cache.setValue<List<String>>(CacheKeys.backgroundLogger, []);
-    List<LoggerLog> logs = [];
+    await Cache.setValue<List<LoggerLog>>(CacheKeys.backgroundLogger, []);
     for (var item in list) {
-      try {
-        List<String> p = item.split('\t');
-        DateTime time = DateTime.parse(Uri.decodeFull(p[0]));
-        String prefix = Uri.decodeFull(p[1]);
-        String loggerName = Uri.decodeFull(p[2]);
-        LogLevel level = LogLevel.values.byName(Uri.decodeFull(p[3]));
-        String msg = Uri.decodeFull(p[4]);
-        String stackTrace = Uri.decodeFull(p[5]);
-        var log = LoggerLog(
-            logger: _logger,
-            prefix: prefix,
-            name: loggerName,
-            level: level,
-            msg: msg,
-            stackTrace: stackTrace);
-        log.time = time;
-        addLoggerLog(log);
-      } catch (e, stk) {
-        _exceptionLogger.error('renderSharedLog: $e \non item:\n $item', stk);
-      }
+      addLoggerLog(item);
     }
   }
 

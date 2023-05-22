@@ -21,6 +21,7 @@ import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/globals.dart';
+import 'package:chaostours/cache.dart';
 
 class WidgetLoggerPage extends StatefulWidget {
   const WidgetLoggerPage({super.key});
@@ -31,6 +32,7 @@ class WidgetLoggerPage extends StatefulWidget {
 
 class _WidgetLoggerPage extends State<WidgetLoggerPage> {
   static List<Widget> logs = [];
+  static List<LoggerLog> errorLogs = [];
   static int counter = 0;
 
   @override
@@ -46,6 +48,7 @@ class _WidgetLoggerPage extends State<WidgetLoggerPage> {
   }
 
   Future<void> onTick(EventOnAppTick event) async {
+    errorLogs = await Cache.getValue<List<LoggerLog>>(CacheKeys.errorLogs, []);
     counter++;
     if (mounted) {
       setState(() {});
@@ -54,22 +57,19 @@ class _WidgetLoggerPage extends State<WidgetLoggerPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (logs.isEmpty) {
-      logs.add(const Text('No Logs yet...'));
-    }
-    var loggerLogs = Logger.loggerLogs;
     ListView renderedLogs = ListView.builder(
-      itemCount: loggerLogs.length + 1,
+      itemCount: errorLogs.length + 1,
       itemBuilder: (context, index) {
         if (index == 0) {
           return Text('Ticks: ${Globals.appTicks}');
         }
-        var e = loggerLogs[index - 1];
+        var e = errorLogs[index - 1];
         return renderLog(e);
       },
     );
     return AppWidgets.scaffold(context,
-        body: renderedLogs, appBar: AppBar(title: const Text('Logger')));
+        body: renderedLogs,
+        appBar: AppBar(title: const Text('App Errors & Warnings')));
   }
 
   ///
@@ -77,20 +77,12 @@ class _WidgetLoggerPage extends State<WidgetLoggerPage> {
   ///
   ///
   ///
-
-  static String get time {
-    DateTime t = DateTime.now();
-    var m = t.minute;
-    var s = t.second;
-    var ms = t.millisecond;
-    return '$m:$s.$ms';
-  }
 
   static Widget renderLog(LoggerLog log) {
     var t = log.time;
     String time = '${t.hour}:${t.minute}:${t.second}::${t.millisecond}';
     String msg =
-        '${log.prefix}$time ::${log.level.name} <${log.name}>:: ${log.msg}';
+        '${log.prefix}$time ::${log.level.name} <${log.loggerName}>:: ${log.msg}';
 
     switch (log.level) {
       case LogLevel.verbose:
