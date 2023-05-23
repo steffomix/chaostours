@@ -421,6 +421,11 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
           child: Text('${tp.distanceMoving} km',
               style: const TextStyle(letterSpacing: 2, fontSize: 15))),
       Center(
+          heightFactor: 1.5,
+          child: Text(
+              'Treshold: ${GPS.distanceOverTrackList(bridge.calcGpsPoints).round()}/${Globals.distanceTreshold} in ${Globals.timeRangeTreshold.inSeconds}s',
+              style: const TextStyle(letterSpacing: 2, fontSize: 15))),
+      Center(
           child: Text(
               '${tp.tStart.hour}:${tp.tStart.minute} - ${tp.tEnd.hour}:${tp.tEnd.minute}')),
     ]);

@@ -176,9 +176,8 @@ class AppCalendar {
           String? id = await inserOrUpdate(event);
           if (tpData.tp != null && events.isEmpty) {
             tpData.tp!.calendarId = '${tpData.calendarId};$id';
-            await ModelTrackPoint.write();
           }
-          logger.log(
+          logger.warn(
               'completed calendar event ID: $id on calendar ${calendar.id}');
           return id;
         } else {
