@@ -59,6 +59,7 @@ class DataBridge {
   TrackingStatus trackingStatus = TrackingStatus.none;
 
   String currentAddress = '';
+  String lastStandingAddress = '';
   Future<void> setAddress(GPS gps) async {
     try {
       currentAddress = (await Address(gps).lookupAddress()).toString();
@@ -70,7 +71,12 @@ class DataBridge {
         CacheKeys.cacheBackgroundAddress, currentAddress);
   }
 
+  /// trackPoint calculation only
   List<int> trackPointAliasIdList = [];
+
+  /// temporary or user updated alias id list
+  List<int> currentAliasIdList = [];
+
   List<int> trackPointUserIdList = [];
   List<int> trackPointTaskIdList = [];
   String trackPointUserNotes = '';
@@ -112,12 +118,6 @@ class DataBridge {
     }
   }
 
-  /// load foreground by background
-  Future<void> loadTriggerStatus() async {
-    triggeredTrackingStatus = await Cache.getValue<TrackingStatus>(
-        CacheKeys.cacheTriggerTrackingStatus, TrackingStatus.none);
-  }
-
   /// loaded by foreground and background
   Future<void> loadCache([GPS? gps]) async {
     try {
@@ -128,6 +128,9 @@ class DataBridge {
       /// address update
       currentAddress =
           await Cache.getValue<String>(CacheKeys.cacheBackgroundAddress, '');
+
+      lastStandingAddress = await Cache.getValue(
+          CacheKeys.cacheBackgroundLastStandingAddress, '');
 
       /// status and trigger
       trackingStatus = await Cache.getValue<TrackingStatus>(
@@ -148,6 +151,8 @@ class DataBridge {
       /// alias list
       trackPointAliasIdList = await Cache.getValue<List<int>>(
           CacheKeys.cacheBackgroundAliasIdList, []);
+      currentAliasIdList = await Cache.getValue<List<int>>(
+          CacheKeys.cacheCurrentAliasIdList, []);
 
       /// status events
       trackPointGpsStartMoving = await Cache.getValue<PendingGps>(

@@ -47,15 +47,15 @@ class _GlobalDefaults {
   /// the distance to travel within <timeRangeTreshold> to trigger a status change.
   /// Above to trigger moving, below to trigger standing
   /// This is also the default radius for new alias
-  static int distanceTreshold = 150; //meters
+  static int distanceTreshold = 100; //meters
 
   /// stop time needed to trigger stop.
   /// Shoud be at least 3 times more than Globals.tickTrackPointDuration
-  static Duration timeRangeTreshold = Duration(seconds: 120);
+  static Duration timeRangeTreshold = Duration(seconds: 60);
 
   /// check status interval.
   /// Should be at least 3 seconds due to GPS lookup needs at least 2 seconds
-  static Duration trackPointInterval = Duration(seconds: 5);
+  static Duration trackPointInterval = Duration(seconds: 10);
 
   /// compensate unprecise gps by using average of given gpsPoints.
   /// That means that a smooth count of 3 requires at least 4 gpsPoints
@@ -90,6 +90,11 @@ class _GlobalDefaults {
 class Globals {
   static int appTicks = 0;
   static final Logger logger = Logger.logger<Globals>();
+
+  static Future<void> reset() async {
+    _GlobalDefaults.restoreDefaults();
+    await saveSettings();
+  }
 
   static String version = _GlobalDefaults.version;
   static List<String> weekDays = _GlobalDefaults.weekDays;
@@ -170,5 +175,7 @@ class Globals {
 
     await Cache.setValue<OsmLookup>(
         CacheKeys.globalsOsmLookupCondition, osmLookupCondition);
+
+    await Cache.reload();
   }
 }

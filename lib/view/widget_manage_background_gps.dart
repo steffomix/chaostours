@@ -21,6 +21,8 @@ import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/background_process/tracking.dart';
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/data_bridge.dart';
+import 'package:chaostours/cache.dart';
+import 'package:chaostours/globals.dart';
 
 class WidgetManageBackgroundGps extends StatefulWidget {
   const WidgetManageBackgroundGps({Key? key}) : super(key: key);
@@ -35,6 +37,8 @@ class _WidgetManageBackgroundGpsState extends State<WidgetManageBackgroundGps> {
     AppWidgets.loading('Checking Background Tracking Status')
   ];
   Widget? trackingSwitch;
+  double latShift = 0;
+  double lonShift = 0;
   @override
   void initState() {
     DataBridge.instance.startService();
@@ -49,7 +53,7 @@ class _WidgetManageBackgroundGpsState extends State<WidgetManageBackgroundGps> {
     super.dispose();
   }
 
-  void onCacheLoaded(EventOnCacheLoaded e) {
+  void onCacheLoaded(EventOnCacheLoaded e) async {
     updateBody();
   }
 
@@ -80,7 +84,9 @@ class _WidgetManageBackgroundGpsState extends State<WidgetManageBackgroundGps> {
     updateBody();
   }
 
-  void updateBody() {
+  Future<void> updateBody() async {
+    latShift = await Cache.getValue<double>(CacheKeys.gpsLatShift, 0.0);
+    lonShift = await Cache.getValue<double>(CacheKeys.gpsLonShift, 0.0);
     if (trackingSwitch == null) {
       return;
     }
@@ -102,6 +108,54 @@ class _WidgetManageBackgroundGpsState extends State<WidgetManageBackgroundGps> {
           }),
       AppWidgets.divider(),
       trackingSwitch!,
+      AppWidgets.divider(),
+      ElevatedButton(
+          child: const Text('Clear Cache'),
+          onPressed: () async {
+            await Cache.clear();
+            await Globals.reset();
+            await updateBody();
+          }),
+      AppWidgets.divider(),
+      Column(crossAxisAlignment: CrossAxisAlignment.center, children: [
+        ElevatedButton(
+          child: Text('++lat $latShift'),
+          onPressed: () async {
+            await Cache.setValue<double>(
+                CacheKeys.gpsLatShift, latShift + 0.001);
+            await updateBody();
+          },
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            ElevatedButton(
+              child: Text('--lon $lonShift'),
+              onPressed: () async {
+                await Cache.setValue<double>(
+                    CacheKeys.gpsLonShift, lonShift - 0.001);
+                await updateBody();
+              },
+            ),
+            ElevatedButton(
+              child: Text('++lon $lonShift'),
+              onPressed: () async {
+                await Cache.setValue<double>(
+                    CacheKeys.gpsLonShift, lonShift + 0.001);
+                await updateBody();
+              },
+            ),
+          ],
+        ),
+        ElevatedButton(
+          child: Text('--lat $latShift'),
+          onPressed: () async {
+            await Cache.setValue<double>(
+                CacheKeys.gpsLatShift, latShift - 0.001);
+            await updateBody();
+          },
+        ),
+      ]),
       AppWidgets.divider(),
       const Center(
           child: Text('Background Cache Data',

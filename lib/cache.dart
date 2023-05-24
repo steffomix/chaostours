@@ -60,9 +60,16 @@ enum CacheKeys {
   /// persistent logs
   errorLogs(List<LoggerLog>),
 
+  /// debug cheats
+  gpsLatShift(double),
+  gpsLonShift(double),
+
   /// cache foreground to background
   /// saved only on special event triggered by user
   cacheTriggerTrackingStatus(TrackingStatus),
+
+  /// current or user updated alias Id List
+  cacheCurrentAliasIdList(List<int>),
 
   /// saved only on special events
   cacheEventBackgroundGpsStartMoving(PendingGps),
@@ -80,6 +87,7 @@ enum CacheKeys {
   cacheBackgroundSmoothGpsPoints(List<PendingGps>),
   cacheBackgroundCalcGpsPoints(List<PendingGps>),
   cacheBackgroundAddress(String),
+  cacheBackgroundLastStandingAddress(String),
 
   /// cache database
   tableModelTrackpoint(List<ModelTrackPoint>),
@@ -125,6 +133,10 @@ class Cache {
 
   static Future<void> reload() async {
     await (await SharedPreferences.getInstance()).reload();
+  }
+
+  static Future<void> clear() async {
+    await (await SharedPreferences.getInstance()).clear();
   }
 
   /// LoggerLog

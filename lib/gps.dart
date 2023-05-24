@@ -25,6 +25,7 @@ import 'package:permission_handler/permission_handler.dart';
 //
 import 'package:chaostours/globals.dart';
 import 'package:chaostours/logger.dart';
+import 'package:chaostours/cache.dart';
 
 class PendingGps extends GPS {
   PendingGps(super.lat, super.lon);
@@ -75,7 +76,9 @@ class GPS {
 
       if (cacheOutdated) {
         /// cache is outdated
-        return await _gps();
+        GPS gps = await _gps();
+        lastGps = gps;
+        return gps;
       } else {
         /// use cache
         return lastGps!;

@@ -115,8 +115,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   Future<void> updateAliasList() async {
     try {
       if (bridge.calcGpsPoints.isNotEmpty) {
-        bridge.trackPointAliasIdList = await Cache.setValue<List<int>>(
-            CacheKeys.cacheBackgroundAliasIdList,
+        bridge.currentAliasIdList = await Cache.setValue<List<int>>(
+            CacheKeys.cacheCurrentAliasIdList,
             ModelAlias.nextAlias(gps: bridge.calcGpsPoints.first)
                 .map((e) => e.id)
                 .toList());
@@ -439,8 +439,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         onPressed: () async {
           if (bridge.gpsPoints.isNotEmpty) {
             var gps = bridge.gpsPoints.first;
-            bridge.trackPointAliasIdList = await Cache.setValue<List<int>>(
-                CacheKeys.cacheBackgroundAliasIdList,
+            bridge.currentAliasIdList = await Cache.setValue<List<int>>(
+                CacheKeys.cacheCurrentAliasIdList,
                 ModelAlias.nextAlias(gps: gps).map((e) => e.id).toList());
             await Cache.reload();
             if (mounted) {
@@ -536,8 +536,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         onPressed: () async {
           if (bridge.gpsPoints.isNotEmpty) {
             var gps = bridge.gpsPoints.first;
-            bridge.trackPointAliasIdList = await Cache.setValue<List<int>>(
-                CacheKeys.cacheBackgroundAliasIdList,
+            bridge.currentAliasIdList = await Cache.setValue<List<int>>(
+                CacheKeys.cacheCurrentAliasIdList,
                 ModelAlias.nextAlias(gps: gps).map((e) => e.id).toList());
             await Cache.reload();
             if (mounted) {
