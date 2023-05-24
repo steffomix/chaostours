@@ -206,9 +206,13 @@ class TrackPoint {
           }
         } else if (oldTrackingStatus == TrackingStatus.moving) {
           /// to calculate standing simply add path distance over all calc points
-          if (GPS.distanceOverTrackList(bridge.calcGpsPoints) <
-              Globals.distanceTreshold) {
-            await cacheNewStatusStanding(gps);
+          if (Globals.statusStandingRequireAlias && aliasList.isEmpty) {
+            ///
+          } else {
+            if (GPS.distanceOverTrackList(bridge.calcGpsPoints) <
+                Globals.distanceTreshold) {
+              await cacheNewStatusStanding(gps);
+            }
           }
         }
       }
