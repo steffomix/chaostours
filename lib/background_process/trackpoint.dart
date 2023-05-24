@@ -186,9 +186,20 @@ class TrackPoint {
       } else {
         /// check for standing
         if (oldTrackingStatus == TrackingStatus.standing) {
-          int distanceTreshold = aliasList.isEmpty
-              ? Globals.distanceTreshold
-              : aliasList.first.radius;
+          ///
+          int distanceTreshold = Globals.distanceTreshold;
+          if (bridge.trackPointAliasIdList.isNotEmpty) {
+            try {
+              distanceTreshold =
+                  ModelAlias.getAlias(bridge.trackPointAliasIdList.first)
+                      .radius;
+            } catch (e) {
+              if (aliasList.isNotEmpty) {
+                distanceTreshold = aliasList.first.radius;
+              }
+            }
+          }
+
           PendingGps location =
               bridge.trackPointGpsStartStanding ?? bridge.calcGpsPoints.last;
           bool startedMoving = true;
@@ -207,7 +218,7 @@ class TrackPoint {
         } else if (oldTrackingStatus == TrackingStatus.moving) {
           /// to calculate standing simply add path distance over all calc points
           if (Globals.statusStandingRequireAlias && aliasList.isEmpty) {
-            ///
+            /// don't stand without alias
           } else {
             if (GPS.distanceOverTrackList(bridge.calcGpsPoints) <
                 Globals.distanceTreshold) {
@@ -276,10 +287,27 @@ class TrackPoint {
 
             /// complete calendar event from trackpoint data
             /// only if no private or restricted alias is present
+            var tpData = TrackPointData(tp: newTrackPoint);
+            bool locationIsPrivate = false;
+            bool locationIsRestricted = false;
+            for (var model in tpData.aliasList) {
+              if (!model.deleted) {
+                aliasList.add(model);
+              } else {
+                continue;
+              }
+              if (model.status == AliasStatus.privat) {
+                locationIsPrivate = true;
+              }
+              if (model.status == AliasStatus.restricted) {
+                locationIsPrivate = true;
+                locationIsRestricted = true;
+              }
+            }
             if (!locationIsPrivate &&
                 (!Globals.statusStandingRequireAlias ||
                     (Globals.statusStandingRequireAlias &&
-                        aliasList.isNotEmpty))) {
+                        tpData.aliasList.isNotEmpty))) {
               logger.warn('complete calendar event');
               await AppCalendar()
                   .completeCalendarEvent(TrackPointData(tp: newTrackPoint));
