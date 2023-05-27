@@ -23,7 +23,7 @@ import 'package:chaostours/view/widget_disposed.dart';
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/cache.dart';
 import 'package:chaostours/data_bridge.dart';
-import 'package:chaostours/background_process/trackpoint.dart';
+import 'package:chaostours/tracking.dart';
 import 'package:chaostours/util.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_task.dart';

@@ -46,6 +46,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
   bool? statusStandingRequireAlias = Globals.statusStandingRequireAlias;
   bool? backgroundTrackingEnabled = Globals.backgroundTrackingEnabled;
 
+  TextEditingController? txAutocreateAlias;
   TextEditingController? txTrackPointInterval;
   TextEditingController? txAddressLookupInterval;
   TextEditingController? txCacheGpsTime;
@@ -55,112 +56,29 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
   TextEditingController? txGpsSmoothCount;
   TextEditingController? txGpsMaxSpeed;
 
-  static Map<CacheKeys, String> settings = {
-    CacheKeys.globalsBackgroundTrackingEnabled:
-        Globals.backgroundTrackingEnabled ? '1' : '0',
-    CacheKeys.globalsStatusStandingRequireAlias:
-        Globals.statusStandingRequireAlias ? '1' : '0', // bool
-    CacheKeys.globalsTrackPointInterval:
-        Globals.trackPointInterval.inSeconds.toString(), // int
-    CacheKeys.globalsOsmLookupCondition:
-        Globals.osmLookupCondition.name, // String enum name
-    CacheKeys.globalsCacheGpsTime:
-        Globals.cacheGpsTime.inSeconds.toString(), // int
-    CacheKeys.globalsDistanceTreshold:
-        Globals.distanceTreshold.toString(), // int
-    CacheKeys.globalsTimeRangeTreshold:
-        Globals.timeRangeTreshold.inSeconds.toString(), // int
-    CacheKeys.globalsAppTickDuration:
-        Globals.appTickDuration.inSeconds.toString(), // bool 1|0
-    CacheKeys.globalsGpsMaxSpeed: Globals.gpsMaxSpeed.toString(), // int
-    CacheKeys.globalsGpsPointsSmoothCount:
-        Globals.gpsPointsSmoothCount.toString() // int
-  };
-
-  Future<void> saveSettings() async {
-    try {
-      CacheKeys key;
-      key = CacheKeys.globalsBackgroundTrackingEnabled;
-      await Cache.setValue<bool>(key, backgroundTrackingEnabled ?? false);
-
-      key = CacheKeys.globalsStatusStandingRequireAlias;
-      await Cache.setValue<bool>(key, statusStandingRequireAlias ?? false);
-
-      Duration dur(String? value, Duration defaultValue) {
-        if (value == null) {
-          return defaultValue;
-        }
-        return Duration(seconds: int.parse(value));
-      }
-
-      key = CacheKeys.globalsTrackPointInterval;
-      await Cache.setValue<Duration>(
-          key, dur(settings[key], Globals.trackPointInterval));
-
-      key = CacheKeys.globalsOsmLookupCondition;
-      await Cache.setValue<OsmLookup>(
-          key,
-          OsmLookup.values
-              .byName(settings[key] ?? Globals.osmLookupCondition.name));
-
-      key = CacheKeys.globalsCacheGpsTime;
-      await Cache.setValue<Duration>(
-          key, dur(settings[key], Globals.trackPointInterval));
-
-      key = CacheKeys.globalsDistanceTreshold;
-      await Cache.setValue<int>(
-          key, int.parse(settings[key] ?? Globals.distanceTreshold.toString()));
-
-      key = CacheKeys.globalsTimeRangeTreshold;
-      await Cache.setValue<Duration>(
-          key, dur(settings[key], Globals.timeRangeTreshold));
-
-      key = CacheKeys.globalsAppTickDuration;
-      await Cache.setValue<Duration>(
-          key, dur(settings[key], Globals.appTickDuration));
-
-      key = CacheKeys.globalsGpsMaxSpeed;
-      await Cache.setValue<int>(
-          key, int.parse(settings[key] ?? Globals.gpsMaxSpeed.toString()));
-
-      key = CacheKeys.globalsGpsPointsSmoothCount;
-      await Cache.setValue<int>(key,
-          int.parse(settings[key] ?? Globals.gpsPointsSmoothCount.toString()));
-      await Cache.reload();
-      await Globals.loadSettings();
-    } catch (e, stk) {
-      logger.error('save app settings: $e', stk);
-    }
-  }
-
   @override
   void dispose() {
     super.dispose();
   }
 
-  ValueNotifier<bool> modified = ValueNotifier<bool>(false);
-
   void modify() {
-    modified.value = true;
-
     setState(() {});
   }
 
   void setStatus(BuildContext context, OsmLookup? val) {
     Globals.osmLookupCondition = val ?? OsmLookup.never;
-    modified.value = true;
     setState(() {});
   }
 
-  Widget numberField({
-    required BuildContext context,
-    required TextEditingController controller,
-    required CacheKeys cacheKey,
-    required int minValue,
-    required int maxValue,
-    String title = '',
-    String description = '',
-  }) {
+  Widget numberField(
+      {required BuildContext context,
+      required TextEditingController controller,
+      required CacheKeys cacheKey,
+      required int minValue,
+      required int maxValue,
+      String title = '',
+      String description = '',
+      int multiplicator = 1}) {
     return Container(
         padding: const EdgeInsets.all(10),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -178,7 +96,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                 label: Text(
                     '$minValue - ${maxValue > 0 ? maxValue : 'unbegrenzt'}',
                     softWrap: true)),
-            onChanged: ((value) {
+            onChanged: ((value) async {
               try {
                 int i = int.parse(value);
                 if (i < minValue) {
@@ -187,10 +105,27 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                 if (maxValue > 0 && i > maxValue) {
                   i = maxValue;
                 }
-                settings[cacheKey] = i.toString();
+                i *= multiplicator;
+                Type type = cacheKey.cacheType;
+                switch (type) {
+                  case Duration:
+                    await Cache.setValue<Duration>(
+                        cacheKey, Duration(seconds: i));
+                    break;
+                  case int:
+                    await Cache.setValue<int>(cacheKey, i);
+                    break;
+
+                  default:
+                    logger.error(
+                        'save ${cacheKey.name} with type $type and value $i. Type not implemented',
+                        StackTrace.current);
+
+                  ///
+                }
                 modify();
-              } catch (e) {
-                //
+              } catch (e, stk) {
+                logger.error('save globals ${cacheKey.name}: $e', stk);
               }
             }),
             maxLines: 1, //
@@ -213,7 +148,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
       onChanged: (OsmLookup? value) {
         // This is called when the user selects an item.
         setState(() {
-          Globals.osmLookupCondition = value!;
+          Globals.osmLookupCondition = value ?? OsmLookup.never;
         });
       },
       items: list.map<DropdownMenuItem<OsmLookup>>((OsmLookup value) {
@@ -239,185 +174,129 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
 
   @override
   Widget build(BuildContext context) {
-    return AppWidgets.scaffold(
-      context,
-      appBar: AppBar(title: const Text('Einstellungen')),
-      body: ListView(children: [
-        ///
-        Container(
-            padding: const EdgeInsets.all(5),
-            child: ListTile(
-              leading: Checkbox(
-                  value: statusStandingRequireAlias,
-                  onChanged: (bool? b) {
-                    statusStandingRequireAlias = b;
-                    modify();
-                  }),
-              title: const Text('Haltepunkt benötigt Alias'),
-              subtitle: const Text(
-                  'Ein Haltepunkt wird nur gespeichert wenn sie in einem Alias stehen. '
-                  'Dies verhindert das speichern von Haltepunkten wenn sie im Stau oder lange an einer Ampel stehen.'),
-            )),
+    return AppWidgets.scaffold(context,
+        appBar: AppBar(title: const Text('Einstellungen')),
+        body: ListView(children: [
+          ///
+          AppWidgets.divider(),
+          const Center(
+              child: Text('Alias (Orte)',
+                  style: TextStyle(fontWeight: FontWeight.bold))),
+          AppWidgets.divider(),
 
-        AppWidgets.divider(),
+          Container(
+              padding: const EdgeInsets.all(5),
+              child: ListTile(
+                leading: Checkbox(
+                    value: Globals.statusStandingRequireAlias,
+                    onChanged: (bool? b) {
+                      Globals.statusStandingRequireAlias = b ?? false;
+                      modify();
+                    }),
+                title: const Text('Haltepunkt benötigt Alias'),
+                subtitle: const Text(
+                    'Ein Haltepunkt wird nur gespeichert wenn sie in einem Alias stehen. '
+                    'Dies verhindert das speichern von Haltepunkten wenn sie im Stau oder lange an einer Ampel stehen.'),
+              )),
 
-        ///
-        Container(
-            padding: const EdgeInsets.all(5),
-            child: ListTile(
-              leading: Checkbox(
-                  value: backgroundTrackingEnabled,
-                  onChanged: (bool? b) {
-                    backgroundTrackingEnabled = b;
-                    modify();
-                  }),
-              title: const Text('Hintergrund GPS aktivieren'),
-              subtitle: const Text(
-                  'Ob der Hintergrund GPS automatisch starten soll wenn sie die App starten. '
-                  'Sollten sie ihn versehentlich abgeschaltet haben, wird er beim nächsten start der app automatisch neu gestartet.'),
-            )),
+          AppWidgets.divider(),
 
-        AppWidgets.divider(),
+          ///
+          /// trackPointInterval
+          numberField(
+              context: context,
+              controller: txAutocreateAlias ??= TextEditingController(
+                  text: Globals.autoCreateAlias.toString()),
+              cacheKey: CacheKeys.globalsAutocreateAlias,
+              minValue: 0,
+              maxValue: 0,
+              multiplicator: 60, // minutes to seconds
+              title: 'Alias automatisch erstellen',
+              description:
+                  'Nach wie viel MINUTEN stehen ein Alias automatisch erstellt werden soll.\n'
+                  'Der Wert 0 deativiert die Funktion.'),
 
-        ///
-        /// trackPointInterval
-        numberField(
-            context: context,
-            controller: txTrackPointInterval ??= TextEditingController(
-                text: settings[CacheKeys.globalsTrackPointInterval]),
-            cacheKey: CacheKeys.globalsTrackPointInterval,
-            minValue: 20,
-            maxValue: 0,
-            title: 'Hintergrund GPS Interval',
-            description:
-                'In welchen Zeitabständen in SEKUNDEN das Hintergrung GPS abgefragt wird.\n'
-                'Bei Änderungen ist ein Neustart der App Erforderlich.'),
+          AppWidgets.divider(),
+          const Center(
+              child: Text('Hintergrund GPS Verarbeitung',
+                  style: TextStyle(fontWeight: FontWeight.bold))),
+          AppWidgets.divider(),
 
-        /// OsmLookup
-        Container(
-            padding: const EdgeInsets.all(10),
-            child: Column(children: [
-              const ListTile(
-                title: Text('OSM lookup Hintergrundabfrage.'),
-                subtitle: Text(
-                  'Definiert ob und wann im Hintergrundprozess die Adresse anhand '
-                  'der GPS Daten abgefragt wird. Dies ist nur notwendig wenn Haltepunkte '
-                  'aufgezeichnet werden können, wo kein Alias ist. Siehe oben: "Haltepunkt benötigt Alias"',
-                  softWrap: true,
-                ),
-              ),
-              ListTile(
-                  title: Text('Niemals',
-                      style: TextStyle(
-                        backgroundColor: AppColors.aliasRestricted.color,
-                      )),
-                  subtitle: const Text(
-                    'Die Hintergrundabfrage ist abgeschaltet',
-                    softWrap: true,
-                  ),
-                  leading: Radio<OsmLookup>(
-                      value: OsmLookup.never,
-                      groupValue: Globals.osmLookupCondition,
-                      onChanged: (OsmLookup? val) {
-                        settings[CacheKeys.globalsOsmLookupCondition] =
-                            val?.name ?? OsmLookup.never.name;
-                        setStatus(context, val);
-                      })),
-              ListTile(
-                  title: Text('Bei Statuswechsel',
-                      style: TextStyle(
-                        backgroundColor: AppColors.aliasPrivate.color,
-                      )),
-                  subtitle: const Text(
-                    'Die Hintergrundabfrage wird nur bei einem Halten/Fahren Statuswechsel ausgeführt.',
-                    softWrap: true,
-                  ),
-                  leading: Radio<OsmLookup>(
-                      value: OsmLookup.onStatus,
-                      groupValue: Globals.osmLookupCondition,
-                      onChanged: (OsmLookup? val) {
-                        settings[CacheKeys.globalsOsmLookupCondition] =
-                            val?.name ?? OsmLookup.never.name;
-                        setStatus(context, val);
-                      })),
-              ListTile(
-                  title: Text('Bei jeder GPS Abfrage',
-                      style: TextStyle(
-                        backgroundColor: AppColors.aliasPubplic.color,
-                      )),
-                  subtitle: const Text(
-                    'Die OSM Address wird bei jeder "Hintergrund GPS Interval" Abfrage ausgeführt. '
-                    'Siehe oben für die Einstellung des Intervals.',
-                    softWrap: true,
-                  ),
-                  leading: Radio<OsmLookup>(
-                      value: OsmLookup.always,
-                      groupValue: Globals.osmLookupCondition,
-                      onChanged: (OsmLookup? val) {
-                        settings[CacheKeys.globalsOsmLookupCondition] =
-                            val?.name ?? OsmLookup.never.name;
-                        setStatus(context, val);
-                      }))
-            ])),
+          ///
+          Container(
+              padding: const EdgeInsets.all(5),
+              child: ListTile(
+                leading: Checkbox(
+                    value: Globals.backgroundTrackingEnabled,
+                    onChanged: (bool? b) {
+                      Globals.backgroundTrackingEnabled = b ?? false;
+                      modify();
+                    }),
+                title: const Text('Hintergrund GPS aktivieren'),
+                subtitle: const Text(
+                    'Ob der Hintergrund GPS automatisch starten soll wenn die App startet. '
+                    'Sollten sie ihn versehentlich abgeschaltet haben, wird er beim nächsten start der app automatisch neu gestartet.'),
+              )),
 
-        /// cacheGpsTime
-        numberField(
-            context: context,
-            controller: txCacheGpsTime ??= TextEditingController(
-                text: settings[CacheKeys.globalsCacheGpsTime]),
-            cacheKey: CacheKeys.globalsCacheGpsTime,
-            minValue: 0,
-            maxValue: 0,
-            title: 'GPS Cache - Vorhaltezeit',
-            description:
-                'Stellt ein wie viel Zeit in SEKUNDEN vergehen muss bis das '
-                'vorgehaltene Vordergrund GPS verworfen und erneuert wird.'),
+          ///
+          /// trackPointInterval
+          numberField(
+              context: context,
+              controller: txTrackPointInterval ??= TextEditingController(
+                  text: Globals.trackPointInterval.inSeconds.toString()),
+              cacheKey: CacheKeys.globalsTrackPointInterval,
+              minValue: 20,
+              maxValue: 0,
+              title: 'Hintergrund GPS Interval',
+              description:
+                  'In welchen Zeitabständen in SEKUNDEN das Hintergrung GPS abgefragt wird.\n'
+                  'Bei Änderungen ist ein Neustart der App Erforderlich.'),
 
-        /// distanceTreshold
-        numberField(
-            context: context,
-            controller: txDistanceTrehold ??= TextEditingController(
-                text: settings[CacheKeys.globalsDistanceTreshold]),
-            cacheKey: CacheKeys.globalsDistanceTreshold,
-            minValue: 20,
-            maxValue: 0,
-            title: 'Distanzschwellwert',
-            description:
-                'Die Distanz in METER, die sie sich innerhalb von "Zeitschwellwert" (siehe unten) '
-                'fortbewegen müssen, um in den Satus Fahren zu wechseln. Oder anders herum '
-                'die Distanz, die sie innerhalb von "Zeitschwellwert" unterschreiten müssen, '
-                'um in den Status Halten zu wechseln'),
+          /// distanceTreshold
+          numberField(
+              context: context,
+              controller: txDistanceTrehold ??= TextEditingController(
+                  text: Globals.distanceTreshold.toString()),
+              cacheKey: CacheKeys.globalsDistanceTreshold,
+              minValue: 20,
+              maxValue: 0,
+              title: 'Distanzschwellwert',
+              description:
+                  'Die Distanz in METER, die sie sich innerhalb von "Zeitschwellwert" (siehe unten) '
+                  'fortbewegen müssen, um in den Satus Fahren zu wechseln. Oder anders herum '
+                  'die Distanz, die sie innerhalb von "Zeitschwellwert" unterschreiten müssen, '
+                  'um in den Status Halten zu wechseln'),
 
-        /// timeRangeTreshold
-        numberField(
-            context: context,
-            controller: txTimeRangeTreshold ??= TextEditingController(
-                text: settings[CacheKeys.globalsTimeRangeTreshold]),
-            cacheKey: CacheKeys.globalsTimeRangeTreshold,
-            minValue: 20,
-            maxValue: 0,
-            title: 'Zeitschwellwert',
-            description:
-                'Zur Festellung des Halten/Fahren Status wird für den Zeitraum von "Zeitschwellwert" in SEKUNDEN '
-                'die Weg der bis dahin gesammelten GPS Punkte berechnet. Um in den Status Fahren zu wechseln, '
-                'müssen sie sich also mit einer gewissen Mindestgeschwindigkeit fortbewegen, die durch die durch die '
-                '"Distanzschwellwert" / "Zeitschwellwert" eingestellt werden kann'),
+          /// timeRangeTreshold
+          numberField(
+              context: context,
+              controller: txTimeRangeTreshold ??= TextEditingController(
+                  text: Globals.timeRangeTreshold.inMinutes.toString()),
+              cacheKey: CacheKeys.globalsTimeRangeTreshold,
+              minValue: 1,
+              maxValue: 0,
+              multiplicator: 60, // minutes to seconds
+              title: 'Zeitschwellwert',
+              description:
+                  'Zur Festellung des Halten/Fahren Status wird für den Zeitraum von "Zeitschwellwert" in Minuten '
+                  'die Weg der bis dahin gesammelten GPS Punkte berechnet. Um in den Status Fahren zu wechseln, '
+                  'müssen sie sich also mit einer gewissen Mindestgeschwindigkeit fortbewegen, die durch die durch die '
+                  '"Distanzschwellwert" / "Zeitschwellwert" eingestellt werden kann'),
 
-        /// appTickDuration
-        numberField(
-            context: context,
-            controller: txAppTickDuration ??= TextEditingController(
-                text: settings[CacheKeys.globalsAppTickDuration]),
-            cacheKey: CacheKeys.globalsAppTickDuration,
-            minValue: 5,
-            maxValue: 0,
-            title: 'Live Tracking Aktualisierungsinterval',
-            description:
-                'Wie oft der Live Tracking Vordergrundprozess nachschaut, '
-                'ob der GPS Hintergrundprozess ein neues GPS Signal erstellt '
-                'oder einen Statuswechsel festgestellt hat und die Live Tracking Seite '
-                'aktualisiert'),
-
+          /// gpsPointsSmoothCount
+          numberField(
+              context: context,
+              controller: txGpsSmoothCount ??= TextEditingController(
+                  text: Globals.gpsPointsSmoothCount.toString()),
+              cacheKey: CacheKeys.globalsGpsPointsSmoothCount,
+              minValue: 0,
+              maxValue: 0,
+              title: 'GPS smoothing',
+              description:
+                  'Bei der GPS Messung kann es zu kleinen Ungenauigkeiten kommen. '
+                  'Diese Funktion berechnet aus der ANZAHL der gegebenen GPS Punkte den Durchschnittswert. '
+                  'Der Wert 0 deaktiviert diese Funktion'),
+/*
         /// gpsMaxSpeed
         numberField(
             context: context,
@@ -431,56 +310,152 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                 'Bei der GPS Messung kann es zu groben ausrutschern kommen. '
                 'Diese Funktion ingnoriert GPS Punkte, die unmöglich in der gegebenen maximimalen '
                 'GESCHWINDIGKEIT IN KM/H erreicht werden können.'),
+*/
+          AppWidgets.divider(),
+          const Center(
+              child: Text('Open Street Map',
+                  style: TextStyle(fontWeight: FontWeight.bold))),
+          AppWidgets.divider(),
 
-        /// gpsPointsSmoothCount
-        numberField(
-            context: context,
-            controller: txGpsSmoothCount ??= TextEditingController(
-                text: settings[CacheKeys.globalsGpsPointsSmoothCount]),
-            cacheKey: CacheKeys.globalsGpsPointsSmoothCount,
-            minValue: 0,
-            maxValue: 0,
-            title: 'GPS feine ungenauigkeit kompensieren',
-            description:
-                'Bei der GPS Messung kann es zu kleinen Ungenauigkeiten kommen. '
-                'Diese Funktion berechnet aus der ANZAHL der gegebenen GPS Punkte den Durchschnittswert.'),
+          /// OsmLookup
+          Container(
+              padding: const EdgeInsets.all(10),
+              child: Column(children: [
+                const ListTile(
+                  title: Text('OSM lookup Hintergrundabfrage.'),
+                  subtitle: Text(
+                    'Definiert ob und wann im Hintergrundprozess die Adresse anhand '
+                    'der GPS Daten abgefragt wird. Dies ist nur notwendig wenn Haltepunkte '
+                    'aufgezeichnet werden können, wo kein Alias ist. Siehe oben: "Haltepunkt benötigt Alias"',
+                    softWrap: true,
+                  ),
+                ),
+                ListTile(
+                    title: Text('Niemals',
+                        style: TextStyle(
+                          backgroundColor: AppColors.aliasRestricted.color,
+                        )),
+                    subtitle: const Text(
+                      'Die Hintergrundabfrage ist abgeschaltet',
+                      softWrap: true,
+                    ),
+                    leading: Radio<OsmLookup>(
+                        value: OsmLookup.never,
+                        groupValue: Globals.osmLookupCondition,
+                        onChanged: (OsmLookup? val) {
+                          if (val != null) {
+                            Globals.osmLookupCondition = val;
+                          }
+                          setStatus(context, val);
+                        })),
+                ListTile(
+                    title: Text('Bei Statuswechsel',
+                        style: TextStyle(
+                          backgroundColor: AppColors.aliasPrivate.color,
+                        )),
+                    subtitle: const Text(
+                      'Die Hintergrundabfrage wird nur bei einem Halten/Fahren Statuswechsel ausgeführt.',
+                      softWrap: true,
+                    ),
+                    leading: Radio<OsmLookup>(
+                        value: OsmLookup.onStatus,
+                        groupValue: Globals.osmLookupCondition,
+                        onChanged: (OsmLookup? val) {
+                          if (val != null) {
+                            Globals.osmLookupCondition = val;
+                          }
+                          setStatus(context, val);
+                        })),
+                ListTile(
+                    title: Text('Bei jeder GPS Abfrage',
+                        style: TextStyle(
+                          backgroundColor: AppColors.aliasPubplic.color,
+                        )),
+                    subtitle: const Text(
+                      'Die OSM Address wird bei jeder "Hintergrund GPS Interval" Abfrage ausgeführt. '
+                      'Siehe oben für die Einstellung des Intervals.',
+                      softWrap: true,
+                    ),
+                    leading: Radio<OsmLookup>(
+                        value: OsmLookup.always,
+                        groupValue: Globals.osmLookupCondition,
+                        onChanged: (OsmLookup? val) {
+                          if (val != null) {
+                            Globals.osmLookupCondition = val;
+                          }
+                          setStatus(context, val);
+                        }))
+              ])),
 
-        ///
-      ]),
-      navBar: BottomNavigationBar(
-          type: BottomNavigationBarType.fixed,
-          fixedColor: AppColors.black.color,
-          backgroundColor: AppColors.yellow.color,
-          items: [
-            // 0 alphabethic
-            BottomNavigationBarItem(
-                icon: ValueListenableBuilder(
-                    valueListenable: modified,
-                    builder: ((context, value, child) {
-                      return Icon(Icons.done,
-                          size: 30,
-                          color: modified.value == true
-                              ? AppColors.green.color
-                              : AppColors.white54.color);
-                    })),
-                label: 'Speichern'),
-            // 1 nearest
-            const BottomNavigationBarItem(
-                icon: Icon(Icons.cancel), label: 'Abbrechen'),
-          ],
-          onTap: (int id) {
-            if (id == 0) {
-              bool b = statusStandingRequireAlias ?? false;
-              settings[CacheKeys.globalsStatusStandingRequireAlias] =
-                  b ? '1' : '0';
-              saveSettings().then((_) {
-                Fluttertoast.showToast(msg: 'Settings saved');
-                Navigator.pop(context);
-              });
-            } else {
-              Navigator.pop(context);
-            }
-          }),
-    );
+          ///
+          AppWidgets.divider(),
+          const Center(
+              child: Text('Kalender',
+                  style: TextStyle(fontWeight: FontWeight.bold))),
+          AppWidgets.divider(),
+
+          Container(
+              padding: const EdgeInsets.all(5),
+              child: ListTile(
+                leading: Checkbox(
+                    value: Globals.publishToCalendar,
+                    onChanged: (bool? b) {
+                      Globals.publishToCalendar = b ?? false;
+                      modify();
+                    }),
+                title: const Text('Gerätekalender verwenden'),
+                subtitle: const Text(
+                    'Haltepunkte in einen Kalender ihres Gerätes schreiben. '
+                    'Diese Funktion gibt ihnen die Möglichkeit ihre Haltepunkte über ihren Kalender mit anderen zu teilen. '
+                    'So können sie ihre Mitarbeiter, Freunde oder Familienangehörige stets wissen lassen wo sie gerade sind '
+                    'oder was sie am besuchten Ort gemacht haben.'),
+              )),
+
+          AppWidgets.divider(),
+
+          AppWidgets.divider(),
+          const Center(
+              child:
+                  Text('GPS', style: TextStyle(fontWeight: FontWeight.bold))),
+          AppWidgets.divider(),
+
+          /// cacheGpsTime
+          numberField(
+              context: context,
+              controller: txCacheGpsTime ??= TextEditingController(
+                  text: Globals.cacheGpsTime.inSeconds.toString()),
+              cacheKey: CacheKeys.globalsCacheGpsTime,
+              minValue: 0,
+              maxValue: 0,
+              title: 'GPS Cache - Vorhaltezeit',
+              description:
+                  'Stellt ein wie viel Zeit in SEKUNDEN vergehen muss bis das '
+                  'vorgehaltene Vordergrund GPS verworfen und erneuert wird. '
+                  'Der Wert 0 deaktiviert diese Funktion.Default'),
+
+          AppWidgets.divider(),
+          const Center(
+              child: Text('HUD Framerate',
+                  style: TextStyle(fontWeight: FontWeight.bold))),
+          AppWidgets.divider(),
+
+          /// appTickDuration
+          numberField(
+              context: context,
+              controller: txAppTickDuration ??= TextEditingController(
+                  text: Globals.appTickDuration.inSeconds.toString()),
+              cacheKey: CacheKeys.globalsAppTickDuration,
+              minValue: 5,
+              maxValue: 0,
+              title: 'Live Tracking Aktualisierungsinterval',
+              description:
+                  'Wie oft der Live Tracking Vordergrundprozess nachschaut, '
+                  'ob der GPS Hintergrundprozess ein neues GPS Signal erstellt '
+                  'oder einen Statuswechsel festgestellt hat und die Live Tracking Seite '
+                  'aktualisiert'),
+
+          ///
+        ]),
+        navBar: null);
   }
 }

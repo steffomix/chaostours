@@ -18,7 +18,7 @@ import 'package:flutter/material.dart';
 
 ///
 import 'package:chaostours/view/app_widgets.dart';
-import 'package:chaostours/background_process/tracking.dart';
+import 'package:chaostours/tracking.dart';
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/data_bridge.dart';
 import 'package:chaostours/cache.dart';

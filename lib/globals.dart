@@ -21,130 +21,168 @@ import 'package:chaostours/data_bridge.dart';
 
 enum OsmLookup { never, onStatus, always }
 
-class _GlobalDefaults {
-  static String version = '1.0';
-
-  /// german default short week names
-  static List<String> weekDays = ['', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
-
-  /// user edit settings.
-  /// All setting names must match enum AppSettings values in app_settings.dart
-  /// if backgroundTracking is enabled and starts automatic
-  static bool backgroundTrackingEnabled = true;
-
-  ///
-  /// If true, status standing is triggered only if location has an alias.
-  static bool statusStandingRequireAlias = true;
-
-  /// currently only used on live tracking page.
-  /// Looks for new background data.
-  static Duration appTickDuration = Duration(seconds: 3);
-
-  /// User interactions can cause massive foreground gps lookups.
-  /// to prevent application lags, gps is chached for some seconds
-  static Duration cacheGpsTime = Duration(seconds: 10);
-
-  /// the distance to travel within <timeRangeTreshold> to trigger a status change.
-  /// Above to trigger moving, below to trigger standing
-  /// This is also the default radius for new alias
-  static int distanceTreshold = 100; //meters
-
-  /// stop time needed to trigger stop.
-  /// Shoud be at least 3 times more than Globals.tickTrackPointDuration
-  static Duration timeRangeTreshold = Duration(seconds: 60);
-
-  /// check status interval.
-  /// Should be at least 3 seconds due to GPS lookup needs at least 2 seconds
-  static Duration trackPointInterval = Duration(seconds: 10);
-
-  /// compensate unprecise gps by using average of given gpsPoints.
-  /// That means that a smooth count of 3 requires at least 4 gpsPoints
-  /// for trackpoint calculation
-  static int gpsPointsSmoothCount = 5;
-
-  /// compensate unprecise impossible to reach gpsPoints
-  /// by ignoring points that can't be reached under a maximum of speed
-  /// in km/h (1 m/s = 3,6km/h = 2,23693629 miles/h)
-  static int gpsMaxSpeed = 100;
-
-  /// when background looks for an address of given gps
-  static OsmLookup osmLookupCondition = OsmLookup.onStatus;
-
-  // ignore: unused_element
-  static Future<void> restoreDefaults() async {
-    Globals.version = version;
-    Globals.weekDays = weekDays;
-    Globals.backgroundTrackingEnabled = backgroundTrackingEnabled;
-    Globals.statusStandingRequireAlias = statusStandingRequireAlias;
-    Globals.appTickDuration = appTickDuration;
-    Globals.cacheGpsTime = cacheGpsTime;
-    Globals.distanceTreshold = distanceTreshold;
-    Globals.timeRangeTreshold = timeRangeTreshold;
-    Globals.trackPointInterval = trackPointInterval;
-    Globals.gpsPointsSmoothCount = gpsPointsSmoothCount;
-    Globals.gpsMaxSpeed = gpsMaxSpeed;
-    Globals.osmLookupCondition = osmLookupCondition;
-  }
-}
-
 class Globals {
   static int appTicks = 0;
   static final Logger logger = Logger.logger<Globals>();
 
-  static Future<void> reset() async {
-    _GlobalDefaults.restoreDefaults();
-    await saveSettings();
+  static String version = '0.0.1';
+
+  /// german default short week names
+  static const List<String> _weekDays = [
+    '',
+    'Mo',
+    'Di',
+    'Mi',
+    'Do',
+    'Fr',
+    'Sa',
+    'So'
+  ];
+
+  static List<String> weekDays = _weekDays;
+
+  /// user edit settings.
+  /// All setting names must match enum AppSettings values in app_settings.dart
+  /// if backgroundTracking is enabled and starts automatic
+  static const bool _backgroundTrackingEnabledDefault = true;
+  static bool backgroundTrackingEnabled = _backgroundTrackingEnabledDefault;
+
+  ///
+  /// If true, status standing is triggered only if location has an alias.
+  static const bool _statusStandingRequireAliasDefault = true;
+  static bool statusStandingRequireAlias = _statusStandingRequireAliasDefault;
+
+  /// currently only used on live tracking page.
+  /// Looks for new background data.
+  static const Duration _appTickDurationDefault = Duration(seconds: 1);
+  static Duration appTickDuration = _appTickDurationDefault;
+
+  /// User interactions can cause massive foreground gps lookups.
+  /// to prevent application lags, gps is chached for some seconds
+  static const Duration _cacheGpsTimeDefault = Duration(seconds: 10);
+  static Duration cacheGpsTime = _cacheGpsTimeDefault;
+
+  /// the distance to travel within <timeRangeTreshold> to trigger a status change.
+  /// Above to trigger moving, below to trigger standing
+  /// This is also the default radius for new alias
+  static const int _distanceTresholdDefault = 100; //meters
+  static int distanceTreshold = _distanceTresholdDefault;
+
+  /// stop time needed to trigger stop.
+  /// Shoud be at least 3 times more than Globals.tickTrackPointDuration
+  static const Duration _timeRangeTresholdDefault = Duration(seconds: 180);
+  static Duration timeRangeTreshold = _timeRangeTresholdDefault;
+
+  /// check status interval.
+  /// Should be at least 3 seconds due to GPS lookup needs at least 2 seconds
+  static const Duration _trackPointIntervalDefault = Duration(seconds: 30);
+  static Duration trackPointInterval = _trackPointIntervalDefault;
+
+  /// compensate unprecise gps by using average of given gpsPoints.
+  /// That means that a smooth count of 3 requires at least 4 gpsPoints
+  /// for trackpoint calculation
+  static const int _gpsPointsSmoothCountDefault = 5;
+  static int _gpsPointsSmoothCount = _gpsPointsSmoothCountDefault;
+
+  static int get gpsPointsSmoothCount => _gpsPointsSmoothCount;
+  static set gpsPointsSmoothCount(int count) {
+    if (count >= timeRangeTreshold.inSeconds / trackPointInterval.inSeconds) {
+      _gpsPointsSmoothCount =
+          (timeRangeTreshold.inSeconds / trackPointInterval.inSeconds).floor();
+    } else {
+      _gpsPointsSmoothCount = count;
+    }
   }
 
-  static String version = _GlobalDefaults.version;
-  static List<String> weekDays = _GlobalDefaults.weekDays;
-  static bool backgroundTrackingEnabled =
-      _GlobalDefaults.backgroundTrackingEnabled;
-  static bool statusStandingRequireAlias =
-      _GlobalDefaults.statusStandingRequireAlias;
-  static Duration appTickDuration = _GlobalDefaults.appTickDuration;
-  static Duration cacheGpsTime = _GlobalDefaults.cacheGpsTime;
-  static int distanceTreshold = _GlobalDefaults.distanceTreshold;
-  static Duration timeRangeTreshold = _GlobalDefaults.timeRangeTreshold;
-  static Duration trackPointInterval = _GlobalDefaults.trackPointInterval;
-  static int gpsPointsSmoothCount = _GlobalDefaults.gpsPointsSmoothCount;
-  static int gpsMaxSpeed = _GlobalDefaults.gpsMaxSpeed;
-  static OsmLookup osmLookupCondition = _GlobalDefaults.osmLookupCondition;
+  static const bool _publishToCalendarDefault = false;
+  static bool publishToCalendar = _publishToCalendarDefault;
+
+  /// compensate unprecise impossible to reach gpsPoints
+  /// by ignoring points that can't be reached under a maximum of speed
+  /// in km/h (1 m/s = 3,6km/h = 2,23693629 miles/h)
+  static const int _gpsMaxSpeedDefault = 200;
+  static int gpsMaxSpeed = _gpsMaxSpeedDefault;
+
+  /// when background looks for an address of given gps
+  static const OsmLookup _osmLookupConditionDefault = OsmLookup.onStatus;
+  static OsmLookup osmLookupCondition = _osmLookupConditionDefault;
+
+  /// if no alias is found on trackingstatus standing
+  /// how long in minutes to wait until an alias is autocreated
+  /// 0 = disabled
+  static const Duration _autocreateAliasDefault = Duration(minutes: 10);
+  static Duration _autoCreateAlias = _autocreateAliasDefault;
+  //
+  static Duration get autoCreateAlias => _autoCreateAlias;
+  static set autoCreateAlias(Duration dur) {
+    if (dur.inSeconds > 0) {
+      var min = timeRangeTreshold.inSeconds * 2;
+      _autoCreateAlias = dur.inSeconds < min ? Duration(seconds: min) : dur;
+    } else {
+      // deactivate future
+      _autoCreateAlias = Duration();
+    }
+  }
 
   static Future<void> loadSettings() async {
     try {
       statusStandingRequireAlias = await Cache.getValue<bool>(
-          CacheKeys.globalsStatusStandingRequireAlias, false);
+          CacheKeys.globalsStatusStandingRequireAlias,
+          _statusStandingRequireAliasDefault);
 
       backgroundTrackingEnabled = await Cache.getValue<bool>(
-          CacheKeys.globalsBackgroundTrackingEnabled, false);
+          CacheKeys.globalsBackgroundTrackingEnabled,
+          _backgroundTrackingEnabledDefault);
 
       appTickDuration = await Cache.getValue<Duration>(
-          CacheKeys.globalsAppTickDuration, Duration(seconds: 1));
+          CacheKeys.globalsAppTickDuration, _appTickDurationDefault);
 
       cacheGpsTime = await Cache.getValue<Duration>(
-          CacheKeys.globalsCacheGpsTime, Duration(seconds: 10));
+          CacheKeys.globalsCacheGpsTime, _cacheGpsTimeDefault);
 
-      distanceTreshold =
-          await Cache.getValue<int>(CacheKeys.globalsDistanceTreshold, 150);
+      distanceTreshold = await Cache.getValue<int>(
+          CacheKeys.globalsDistanceTreshold, _distanceTresholdDefault);
 
       timeRangeTreshold = await Cache.getValue<Duration>(
-          CacheKeys.globalsTimeRangeTreshold, Duration(seconds: 120));
+          CacheKeys.globalsTimeRangeTreshold, _timeRangeTresholdDefault);
 
       trackPointInterval = await Cache.getValue<Duration>(
-          CacheKeys.globalsTrackPointInterval, Duration(seconds: 20));
+          CacheKeys.globalsTrackPointInterval, _trackPointIntervalDefault);
 
-      gpsPointsSmoothCount =
-          await Cache.getValue<int>(CacheKeys.globalsGpsPointsSmoothCount, 5);
+      gpsPointsSmoothCount = await Cache.getValue<int>(
+          CacheKeys.globalsGpsPointsSmoothCount, _gpsPointsSmoothCountDefault);
 
-      gpsMaxSpeed =
-          await Cache.getValue<int>(CacheKeys.globalsGpsMaxSpeed, 150);
+      gpsMaxSpeed = await Cache.getValue<int>(
+          CacheKeys.globalsGpsMaxSpeed, _gpsMaxSpeedDefault);
 
       osmLookupCondition = await Cache.getValue<OsmLookup>(
-          CacheKeys.globalsOsmLookupCondition, OsmLookup.onStatus);
+          CacheKeys.globalsOsmLookupCondition, _osmLookupConditionDefault);
+
+      autoCreateAlias = await Cache.getValue<Duration>(
+          CacheKeys.globalsAutocreateAlias, _autocreateAliasDefault);
+
+      publishToCalendar = await Cache.getValue<bool>(
+          CacheKeys.globalPublishToCalendar, _publishToCalendarDefault);
     } catch (e, stk) {
       logger.error('load settings: $e', stk);
     }
+  }
+
+  static Future<void> reset() async {
+    weekDays = _weekDays;
+    backgroundTrackingEnabled = _backgroundTrackingEnabledDefault;
+    statusStandingRequireAlias = _statusStandingRequireAliasDefault;
+    appTickDuration = _appTickDurationDefault;
+    cacheGpsTime = _cacheGpsTimeDefault;
+    distanceTreshold = _distanceTresholdDefault;
+    timeRangeTreshold = _timeRangeTresholdDefault;
+    trackPointInterval = _trackPointIntervalDefault;
+    gpsPointsSmoothCount = _gpsPointsSmoothCountDefault;
+    gpsMaxSpeed = _gpsMaxSpeedDefault;
+    osmLookupCondition = _osmLookupConditionDefault;
+    autoCreateAlias = _autocreateAliasDefault;
+    publishToCalendar = _publishToCalendarDefault;
+    await saveSettings();
   }
 
   static Future<void> saveSettings() async {
@@ -175,6 +213,12 @@ class Globals {
 
     await Cache.setValue<OsmLookup>(
         CacheKeys.globalsOsmLookupCondition, osmLookupCondition);
+
+    await Cache.getValue<Duration>(
+        CacheKeys.globalsAutocreateAlias, autoCreateAlias);
+
+    await Cache.setValue<bool>(
+        CacheKeys.globalPublishToCalendar, publishToCalendar);
 
     await Cache.reload();
   }

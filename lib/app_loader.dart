@@ -22,7 +22,7 @@ import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_user.dart';
-import 'package:chaostours/background_process/tracking.dart';
+import 'package:chaostours/tracking.dart';
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/permission_checker.dart';
@@ -75,37 +75,22 @@ class AppLoader {
     logger.log('SSL Key loaded');
   }
 
-  //
-  static Future<void> loadAssetDatabase() async {
-    logger.important('load databasde from asset');
-
-    ///
-    if (ModelAlias.length < 1) {
-      await ModelAlias.write();
-    }
-    if (ModelUser.length < 1) {
-      await ModelUser.write();
-    }
-    if (ModelTask.length < 1) {
-      await ModelTask.write();
-    }
-  }
-
   static Future<void> ticks() async {
     DataBridge.instance.startService();
     _appTick();
   }
 
   static Future<void> _appTick() async {
+    var dur = const Duration(seconds: 1);
     while (true) {
-      var event = EventOnAppTick();
-      Globals.appTicks++;
       try {
-        EventManager.fire<EventOnAppTick>(event);
+        EventManager.fire<EventOnAppTick>(EventOnAppTick());
+        Globals.appTicks++;
       } catch (e, stk) {
-        logger.error('appTick #${event.id} failed: $e', stk);
+        logger.error(
+            'appTick ${DateTime.now().toIso8601String()} failed: $e', stk);
       }
-      await Future.delayed(Globals.appTickDuration);
+      await Future.delayed(dur);
     }
   }
 }

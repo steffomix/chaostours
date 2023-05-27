@@ -16,7 +16,7 @@ limitations under the License.
 
 import 'dart:async';
 
-import 'package:chaostours/background_process/tracking.dart';
+import 'package:chaostours/tracking.dart';
 import 'package:flutter/material.dart';
 import 'package:app_settings/app_settings.dart';
 //

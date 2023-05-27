@@ -19,7 +19,7 @@ import 'package:chaostours/globals.dart';
 import 'package:chaostours/model/model.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_alias.dart';
-import 'package:chaostours/background_process/trackpoint.dart';
+import 'package:chaostours/tracking.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/logger.dart';

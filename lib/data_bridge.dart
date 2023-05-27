@@ -20,7 +20,7 @@ import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/address.dart';
-import 'package:chaostours/background_process/trackpoint.dart';
+import 'package:chaostours/tracking.dart';
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/globals.dart';
 
@@ -60,7 +60,7 @@ class DataBridge {
 
   String currentAddress = '';
   String lastStandingAddress = '';
-  Future<void> setAddress(GPS gps) async {
+  Future<String> setAddress(GPS gps) async {
     try {
       currentAddress = (await Address(gps).lookupAddress()).toString();
     } catch (e, stk) {
@@ -69,6 +69,7 @@ class DataBridge {
     }
     await Cache.setValue<String>(
         CacheKeys.cacheBackgroundAddress, currentAddress);
+    return currentAddress;
   }
 
   /// trackPoint calculation only
@@ -112,7 +113,7 @@ class DataBridge {
           } catch (e, stk) {
             logger.error('getBackgroundLogs: $e', stk);
           }
-          await Future.delayed(Globals.trackPointInterval);
+          await Future.delayed(Globals.appTickDuration);
         }
       });
     }

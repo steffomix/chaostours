@@ -21,7 +21,7 @@ import 'package:device_calendar/device_calendar.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/globals.dart';
 import 'package:chaostours/gps.dart';
-import 'package:chaostours/background_process/trackpoint.dart';
+import 'package:chaostours/tracking.dart';
 import 'package:chaostours/model/model.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_alias.dart';
@@ -117,7 +117,9 @@ enum CacheKeys {
   globalsTimeRangeTreshold(Duration),
   globalsAppTickDuration(Duration),
   globalsGpsMaxSpeed(int),
-  globalsGpsPointsSmoothCount(int);
+  globalsGpsPointsSmoothCount(int),
+  globalsAutocreateAlias(Duration),
+  globalPublishToCalendar(bool);
 
   final Type cacheType;
   const CacheKeys(this.cacheType);
