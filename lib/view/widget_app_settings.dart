@@ -61,7 +61,9 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
     super.dispose();
   }
 
-  void modify() {
+  Future<void> modify() async {
+    await Globals.loadSettings();
+
     setState(() {});
   }
 
@@ -107,22 +109,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                 }
                 i *= multiplicator;
                 Type type = cacheKey.cacheType;
-                switch (type) {
-                  case Duration:
-                    await Cache.setValue<Duration>(
-                        cacheKey, Duration(seconds: i));
-                    break;
-                  case int:
-                    await Cache.setValue<int>(cacheKey, i);
-                    break;
-
-                  default:
-                    logger.error(
-                        'save ${cacheKey.name} with type $type and value $i. Type not implemented',
-                        StackTrace.current);
-
-                  ///
-                }
+                await Globals.updateValue(key: cacheKey, type: type, value: i);
                 modify();
               } catch (e, stk) {
                 logger.error('save globals ${cacheKey.name}: $e', stk);
@@ -178,9 +165,8 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
         appBar: AppBar(title: const Text('Einstellungen')),
         body: ListView(children: [
           ///
-          AppWidgets.divider(),
           const Center(
-              child: Text('Alias (Orte)',
+              child: Text('\n\nAlias (Orte)',
                   style: TextStyle(fontWeight: FontWeight.bold))),
           AppWidgets.divider(),
 
@@ -206,19 +192,18 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
           numberField(
               context: context,
               controller: txAutocreateAlias ??= TextEditingController(
-                  text: Globals.autoCreateAlias.toString()),
+                  text: Globals.autoCreateAlias.inMinutes.toString()),
               cacheKey: CacheKeys.globalsAutocreateAlias,
               minValue: 0,
               maxValue: 0,
               multiplicator: 60, // minutes to seconds
               title: 'Alias automatisch erstellen',
               description:
-                  'Nach wie viel MINUTEN stehen ein Alias automatisch erstellt werden soll.\n'
+                  'Nach wie viel MINUTEN Standzeit ein Alias automatisch erstellt wird.\n'
                   'Der Wert 0 deativiert die Funktion.'),
 
-          AppWidgets.divider(),
           const Center(
-              child: Text('Hintergrund GPS Verarbeitung',
+              child: Text('\n\n\nHintergrund GPS Verarbeitung',
                   style: TextStyle(fontWeight: FontWeight.bold))),
           AppWidgets.divider(),
 
@@ -237,6 +222,8 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                     'Ob der Hintergrund GPS automatisch starten soll wenn die App startet. '
                     'Sollten sie ihn versehentlich abgeschaltet haben, wird er beim nächsten start der app automatisch neu gestartet.'),
               )),
+
+          AppWidgets.divider(),
 
           ///
           /// trackPointInterval
@@ -278,8 +265,8 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
               multiplicator: 60, // minutes to seconds
               title: 'Zeitschwellwert',
               description:
-                  'Zur Festellung des Halten/Fahren Status wird für den Zeitraum von "Zeitschwellwert" in Minuten '
-                  'die Weg der bis dahin gesammelten GPS Punkte berechnet. Um in den Status Fahren zu wechseln, '
+                  'Zur Festellung des Halten/Fahren Status wird für den Zeitraum von "Zeitschwellwert" in MINUTEN '
+                  'der Weg der bis dahin gesammelten GPS Punkte berechnet. Um in den Status Fahren zu wechseln, '
                   'müssen sie sich also mit einer gewissen Mindestgeschwindigkeit fortbewegen, die durch die durch die '
                   '"Distanzschwellwert" / "Zeitschwellwert" eingestellt werden kann'),
 
@@ -311,9 +298,8 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                 'Diese Funktion ingnoriert GPS Punkte, die unmöglich in der gegebenen maximimalen '
                 'GESCHWINDIGKEIT IN KM/H erreicht werden können.'),
 */
-          AppWidgets.divider(),
           const Center(
-              child: Text('Open Street Map',
+              child: Text('\n\n\nOpen Street Map',
                   style: TextStyle(fontWeight: FontWeight.bold))),
           AppWidgets.divider(),
 
@@ -324,17 +310,12 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                 const ListTile(
                   title: Text('OSM lookup Hintergrundabfrage.'),
                   subtitle: Text(
-                    'Definiert ob und wann im Hintergrundprozess die Adresse anhand '
-                    'der GPS Daten abgefragt wird. Dies ist nur notwendig wenn Haltepunkte '
-                    'aufgezeichnet werden können, wo kein Alias ist. Siehe oben: "Haltepunkt benötigt Alias"',
+                    'Diese Funktion verbraucht etwa 1KB Online-Daten pro Abfrage beim kostenlosen Service von OpenStreetMap.com',
                     softWrap: true,
                   ),
                 ),
                 ListTile(
-                    title: Text('Niemals',
-                        style: TextStyle(
-                          backgroundColor: AppColors.aliasRestricted.color,
-                        )),
+                    title: const Text('Niemals'),
                     subtitle: const Text(
                       'Die Hintergrundabfrage ist abgeschaltet',
                       softWrap: true,
@@ -349,10 +330,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                           setStatus(context, val);
                         })),
                 ListTile(
-                    title: Text('Bei Statuswechsel',
-                        style: TextStyle(
-                          backgroundColor: AppColors.aliasPrivate.color,
-                        )),
+                    title: const Text('Bei Statuswechsel'),
                     subtitle: const Text(
                       'Die Hintergrundabfrage wird nur bei einem Halten/Fahren Statuswechsel ausgeführt.',
                       softWrap: true,
@@ -367,13 +345,11 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                           setStatus(context, val);
                         })),
                 ListTile(
-                    title: Text('Bei jeder GPS Abfrage',
-                        style: TextStyle(
-                          backgroundColor: AppColors.aliasPubplic.color,
-                        )),
-                    subtitle: const Text(
+                    title: const Text('Bei jeder GPS Abfrage'),
+                    subtitle: Text(
                       'Die OSM Address wird bei jeder "Hintergrund GPS Interval" Abfrage ausgeführt. '
-                      'Siehe oben für die Einstellung des Intervals.',
+                      'Bei dem gegenwärtig eingestellten Hintergrund GPS Interval von ${Globals.trackPointInterval.inSeconds}sec. sollten sie mit einem Datenverbrauch von etwa '
+                      '${(3600 / Globals.trackPointInterval.inSeconds * 24 / 1024).ceil()}MB/Tag rechnen. ',
                       softWrap: true,
                     ),
                     leading: Radio<OsmLookup>(
@@ -388,9 +364,8 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
               ])),
 
           ///
-          AppWidgets.divider(),
           const Center(
-              child: Text('Kalender',
+              child: Text('\n\n\nKalender',
                   style: TextStyle(fontWeight: FontWeight.bold))),
           AppWidgets.divider(),
 
@@ -412,11 +387,9 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
               )),
 
           AppWidgets.divider(),
-
-          AppWidgets.divider(),
           const Center(
-              child:
-                  Text('GPS', style: TextStyle(fontWeight: FontWeight.bold))),
+              child: Text('\n\n\nGPS',
+                  style: TextStyle(fontWeight: FontWeight.bold))),
           AppWidgets.divider(),
 
           /// cacheGpsTime
@@ -433,9 +406,8 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                   'vorgehaltene Vordergrund GPS verworfen und erneuert wird. '
                   'Der Wert 0 deaktiviert diese Funktion.Default'),
 
-          AppWidgets.divider(),
           const Center(
-              child: Text('HUD Framerate',
+              child: Text('\n\n\nHUD Framerate',
                   style: TextStyle(fontWeight: FontWeight.bold))),
           AppWidgets.divider(),
 
@@ -453,6 +425,23 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                   'ob der GPS Hintergrundprozess ein neues GPS Signal erstellt '
                   'oder einen Statuswechsel festgestellt hat und die Live Tracking Seite '
                   'aktualisiert'),
+
+          const Center(
+              child: Text('\n\n\nReset',
+                  style: TextStyle(fontWeight: FontWeight.bold))),
+          AppWidgets.divider(),
+          Padding(
+              padding: EdgeInsets.all(10),
+              child: ElevatedButton(
+                  onPressed: () async {
+                    await Globals.reset();
+                    modify();
+                  },
+                  child: const Text('Einstellungen zurücksetzen'))),
+
+          const Center(
+              child:
+                  Text('\n\n', style: TextStyle(fontWeight: FontWeight.bold))),
 
           ///
         ]),

@@ -115,9 +115,15 @@ class Globals {
   //
   static Duration get autoCreateAlias => _autoCreateAlias;
   static set autoCreateAlias(Duration dur) {
-    if (dur.inSeconds > 0) {
+    var old = _autoCreateAlias.inSeconds;
+    var secs = dur.inSeconds;
+    if (secs > 0) {
       var min = timeRangeTreshold.inSeconds * 2;
-      _autoCreateAlias = dur.inSeconds < min ? Duration(seconds: min) : dur;
+      if (min > secs) {
+        _autoCreateAlias = Duration(seconds: min);
+      } else {
+        _autoCreateAlias = dur;
+      }
     } else {
       // deactivate future
       _autoCreateAlias = Duration();
@@ -182,6 +188,48 @@ class Globals {
     osmLookupCondition = _osmLookupConditionDefault;
     autoCreateAlias = _autocreateAliasDefault;
     publishToCalendar = _publishToCalendarDefault;
+    await saveSettings();
+  }
+
+  static Future<void> updateValue(
+      {required CacheKeys key,
+      required Type type,
+      required dynamic value}) async {
+    switch (key) {
+      case CacheKeys.globalsAppTickDuration:
+        appTickDuration = Duration(seconds: value as int);
+        break;
+      case CacheKeys.globalsCacheGpsTime:
+        cacheGpsTime = Duration(seconds: value as int);
+        break;
+
+      case CacheKeys.globalsDistanceTreshold:
+        distanceTreshold = value as int;
+        break;
+
+      case CacheKeys.globalsTimeRangeTreshold:
+        timeRangeTreshold = Duration(seconds: value as int);
+        break;
+
+      case CacheKeys.globalsTrackPointInterval:
+        trackPointInterval = Duration(seconds: value as int);
+        break;
+      case CacheKeys.globalsGpsPointsSmoothCount:
+        gpsPointsSmoothCount = value as int;
+        break;
+
+      case CacheKeys.globalsGpsMaxSpeed:
+        gpsMaxSpeed = value as int;
+        break;
+
+      case CacheKeys.globalsAutocreateAlias:
+        autoCreateAlias = Duration(seconds: value as int);
+        break;
+
+      default:
+
+      ///
+    }
     await saveSettings();
   }
 
