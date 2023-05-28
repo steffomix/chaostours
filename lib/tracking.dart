@@ -299,7 +299,7 @@ class _TrackPoint {
                         lastVisited: bridge.smoothGpsPoints.last.time,
                         timesVisited: 1,
                         notes:
-                            'Auto created alias at address:\n"$address"\n\nat date/time: ${gps.time.toIso8601String()}',
+                            'Auto created Alias\nat address:\n"$address"\n\nat date/time: ${gps.time.toIso8601String()}',
                         radius: AppSettings.distanceTreshold);
                     await ModelAlias.insert(newAlias);
 
