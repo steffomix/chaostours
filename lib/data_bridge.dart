@@ -22,7 +22,7 @@ import 'package:chaostours/gps.dart';
 import 'package:chaostours/address.dart';
 import 'package:chaostours/tracking.dart';
 import 'package:chaostours/event_manager.dart';
-import 'package:chaostours/conf/globals.dart';
+import 'package:chaostours/conf/app_settings.dart';
 
 class DataBridge {
   static final Logger logger = Logger.logger<DataBridge>();
@@ -113,7 +113,7 @@ class DataBridge {
           } catch (e, stk) {
             logger.error('getBackgroundLogs: $e', stk);
           }
-          await Future.delayed(Globals.appTickDuration);
+          await Future.delayed(AppSettings.backgroundLookupDuration);
         }
       });
     }

@@ -36,7 +36,7 @@ import 'package:chaostours/trackpoint_data.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/address.dart';
 import 'package:chaostours/gps.dart';
-import 'package:chaostours/conf/globals.dart';
+import 'package:chaostours/conf/app_settings.dart';
 import 'package:chaostours/screen.dart';
 
 enum _DisplayMode {
@@ -315,7 +315,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                           lat: gps.lat,
                           lon: gps.lon,
                           lastVisited: DateTime.now(),
-                          radius: Globals.distanceTreshold);
+                          radius: AppSettings.distanceTreshold);
                       await ModelAlias.insert(alias);
                       if (mounted) {
                         setState(() {});
@@ -399,7 +399,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     Widget body =
         Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Center(
-          child: Text('\n${Globals.weekDays[tp.tStart.weekday]}. den'
+          child: Text('\n${AppSettings.weekDays[tp.tStart.weekday]}. den'
               ' ${tp.tStart.day}.${tp.tStart.month}.${tp.tStart.year}')),
       const Center(
           heightFactor: 2,
@@ -412,7 +412,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       Center(
           heightFactor: 1.5,
           child: Text(
-              'Treshold: ${GPS.distanceOverTrackList(bridge.calcGpsPoints).round()}/${Globals.distanceTreshold} in ${Globals.timeRangeTreshold.inSeconds}s',
+              'Treshold: ${GPS.distanceOverTrackList(bridge.calcGpsPoints).round()}/${AppSettings.distanceTreshold} in ${AppSettings.timeRangeTreshold.inSeconds}s',
               style: const TextStyle(letterSpacing: 2, fontSize: 15))),
       Center(
           child: Text(
@@ -496,7 +496,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     Widget body =
         Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Center(
-          child: Text('\n${Globals.weekDays[tp.tStart.weekday]}. den'
+          child: Text('\n${AppSettings.weekDays[tp.tStart.weekday]}. den'
               ' ${tp.tStart.day}.${tp.tStart.month}.${tp.tStart.year}')),
       const Center(
           heightFactor: 2,

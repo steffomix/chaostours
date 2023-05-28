@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import 'package:chaostours/conf/globals.dart';
+import 'package:chaostours/conf/app_settings.dart';
 
 import 'package:chaostours/model/model.dart';
 import 'package:chaostours/model/model_task.dart';
@@ -284,7 +284,7 @@ class ModelTrackPoint {
   static List<ModelTrackPoint> lastVisited(GPS gps, {int max = 30}) {
     List<ModelTrackPoint> list = [];
     List<ModelAlias> alias = ModelAlias.nextAlias(gps: gps);
-    int distance = Globals.distanceTreshold;
+    int distance = AppSettings.distanceTreshold;
     if (alias.isNotEmpty) {
       gps = GPS(alias.first.lat, alias.first.lon);
       distance = alias.first.radius;

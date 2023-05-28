@@ -22,7 +22,7 @@ import 'package:chaostours/tracking.dart';
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/data_bridge.dart';
 import 'package:chaostours/cache.dart';
-import 'package:chaostours/conf/globals.dart';
+import 'package:chaostours/conf/app_settings.dart';
 
 class WidgetManageBackgroundGps extends StatefulWidget {
   const WidgetManageBackgroundGps({Key? key}) : super(key: key);
@@ -113,7 +113,7 @@ class _WidgetManageBackgroundGpsState extends State<WidgetManageBackgroundGps> {
           child: const Text('Clear Cache'),
           onPressed: () async {
             await Cache.clear();
-            await Globals.reset();
+            await AppSettings.reset();
             await updateBody();
           }),
       AppWidgets.divider(),

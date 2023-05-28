@@ -32,7 +32,7 @@ import 'package:chaostours/gps.dart';
 import 'package:chaostours/address.dart' as addr;
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/screen.dart';
-import 'package:chaostours/conf/globals.dart';
+import 'package:chaostours/conf/app_settings.dart';
 
 class OsmSearchResult {
   final double lat;
@@ -404,7 +404,7 @@ class _WidgetOsm extends State<WidgetOsm> {
                       lat: pos.latitude,
                       lon: pos.longitude,
                       alias: address,
-                      radius: Globals.distanceTreshold,
+                      radius: AppSettings.distanceTreshold,
                       lastVisited: DateTime.now());
 
                   ModelAlias.insert(alias).then((_) {

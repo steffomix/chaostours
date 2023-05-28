@@ -27,7 +27,7 @@ import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/conf/theme_provider.dart';
 
 import 'package:chaostours/logger.dart';
-import 'package:chaostours/conf/globals.dart';
+import 'package:chaostours/conf/app_settings.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/view/app_init.dart';
 import 'package:chaostours/conf/app_theme_data.dart';
@@ -132,7 +132,7 @@ class AppWidgets {
   }
 
   static String timeInfo(DateTime timeStart, DateTime timeEnd) {
-    var day = '${Globals.weekDays[timeStart.weekday]}. den'
+    var day = '${AppSettings.weekDays[timeStart.weekday]}. den'
         ' ${timeStart.day}.${timeStart.month}.${timeStart.year}';
     String duration = util.timeElapsed(timeStart, timeEnd, false);
     return '$day, ${timeStart.hour}:${timeStart.minute} - ${timeEnd.hour}:${timeEnd.minute}\n ($duration)';

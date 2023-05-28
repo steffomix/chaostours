@@ -20,7 +20,7 @@ import 'package:flutter/material.dart';
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/view/app_widgets.dart';
-import 'package:chaostours/conf/globals.dart';
+import 'package:chaostours/conf/app_settings.dart';
 import 'package:chaostours/cache.dart';
 
 class WidgetLoggerPage extends StatefulWidget {
@@ -61,7 +61,7 @@ class _WidgetLoggerPage extends State<WidgetLoggerPage> {
       itemCount: errorLogs.length + 1,
       itemBuilder: (context, index) {
         if (index == 0) {
-          return Text('Ticks: ${Globals.appTicks}');
+          return Text('Ticks: ${AppSettings.appTicks}');
         }
         var e = errorLogs[index - 1];
         return renderLog(e);

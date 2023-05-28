@@ -23,7 +23,7 @@ import 'package:permission_handler/permission_handler.dart';
 
 //import 'package:geolocator/geolocator.dart' show Position, Geolocator;
 //
-import 'package:chaostours/conf/globals.dart';
+import 'package:chaostours/conf/app_settings.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/cache.dart';
 
@@ -70,9 +70,10 @@ class GPS {
       if (!(await Permission.location.isGranted)) {
         await Permission.location.request();
       }
-      bool cacheOutdated =
-          lastGps?.time.add(Globals.cacheGpsTime).isBefore(DateTime.now()) ??
-              true;
+      bool cacheOutdated = lastGps?.time
+              .add(AppSettings.cacheGpsTime)
+              .isBefore(DateTime.now()) ??
+          true;
 
       if (cacheOutdated) {
         /// cache is outdated

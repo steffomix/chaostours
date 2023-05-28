@@ -26,7 +26,7 @@ import 'package:chaostours/tracking.dart';
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/permission_checker.dart';
-import 'package:chaostours/conf/globals.dart';
+import 'package:chaostours/conf/app_settings.dart';
 import 'package:chaostours/cache.dart';
 import 'package:chaostours/data_bridge.dart';
 import 'package:chaostours/gps.dart';
@@ -44,8 +44,8 @@ class AppLoader {
       logger.important('start Preload sequence...');
       await webKey();
       await DataBridge.instance.reload();
-      await Globals.loadSettings();
-      await Globals.saveSettings();
+      await AppSettings.loadSettings();
+      await AppSettings.saveSettings();
       await DataBridge.instance.loadCache();
 
       await ModelTrackPoint.open();
@@ -56,7 +56,7 @@ class AppLoader {
       //
       await BackgroundTracking.initialize();
       if (await PermissionChecker.checkLocation() &&
-          Globals.backgroundTrackingEnabled) {
+          AppSettings.backgroundTrackingEnabled) {
         await BackgroundTracking.startTracking();
       }
       ticks();
@@ -85,7 +85,7 @@ class AppLoader {
     while (true) {
       try {
         EventManager.fire<EventOnAppTick>(EventOnAppTick());
-        Globals.appTicks++;
+        AppSettings.appTicks++;
       } catch (e, stk) {
         logger.error(
             'appTick ${DateTime.now().toIso8601String()} failed: $e', stk);

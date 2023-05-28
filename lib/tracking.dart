@@ -19,11 +19,12 @@ import 'package:background_location_tracker/background_location_tracker.dart';
 ///
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/trackpoint_data.dart';
-import 'package:chaostours/conf/globals.dart';
+import 'package:chaostours/conf/app_settings.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/cache.dart';
 import 'package:chaostours/data_bridge.dart';
 import 'package:chaostours/Location.dart';
+import 'package:chaostours/conf/osm.dart';
 
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_alias.dart';
@@ -57,7 +58,7 @@ class BackgroundTracking {
         enableNotificationLocationUpdates: false,
         cancelTrackingActionText: 'Stop Tracking',
         enableCancelTrackingAction: true,
-        trackingInterval: Globals.trackPointInterval);
+        trackingInterval: AppSettings.trackPointInterval);
   }
 
   static Future<bool> isTracking() async {
@@ -137,7 +138,7 @@ class _TrackPoint {
       await ModelAlias.open();
 
       /// load global settings
-      await Globals.loadSettings();
+      await AppSettings.loadSettings();
 
       /// load last session data
       await bridge.loadCache(gps);
@@ -157,8 +158,8 @@ class _TrackPoint {
             CacheKeys.cacheBackgroundTrackingStatus, TrackingStatus.moving);
       }
 
-      int maxGpsPoints = (Globals.autoCreateAlias.inSeconds /
-              Globals.trackPointInterval.inSeconds)
+      int maxGpsPoints = (AppSettings.autoCreateAlias.inSeconds /
+              AppSettings.trackPointInterval.inSeconds)
           .round();
 
       /// add current gps point
@@ -169,7 +170,7 @@ class _TrackPoint {
         while (bridge.gpsPoints.length < maxGpsPoints) {
           var gpsFiller = PendingGps(gps.lat, gps.lon);
           gpsFiller.time =
-              bridge.gpsPoints.last.time.add(Globals.trackPointInterval);
+              bridge.gpsPoints.last.time.add(AppSettings.trackPointInterval);
           bridge.gpsPoints.add(gpsFiller);
         }
 
@@ -183,8 +184,8 @@ class _TrackPoint {
 
       /// get calculation range from smoothPoints
       bridge.calcGpsPoints.clear();
-      int calculationRange = (Globals.timeRangeTreshold.inSeconds /
-              Globals.trackPointInterval.inSeconds)
+      int calculationRange = (AppSettings.timeRangeTreshold.inSeconds /
+              AppSettings.trackPointInterval.inSeconds)
           .ceil();
       bridge.calcGpsPoints
           .addAll(bridge.smoothGpsPoints.getRange(0, calculationRange));
@@ -227,7 +228,7 @@ class _TrackPoint {
         /// check for standing
         if (oldTrackingStatus == TrackingStatus.standing) {
           ///
-          int distanceTreshold = Globals.distanceTreshold;
+          int distanceTreshold = AppSettings.distanceTreshold;
           if (bridge.trackPointAliasIdList.isNotEmpty) {
             try {
               distanceTreshold =
@@ -257,16 +258,16 @@ class _TrackPoint {
           }
         } else if (oldTrackingStatus == TrackingStatus.moving) {
           /// to calculate standing simply add path distance over all calc points
-          if (Globals.statusStandingRequireAlias && !gpsLocation.hasAlias) {
+          if (AppSettings.statusStandingRequireAlias && !gpsLocation.hasAlias) {
             /// autocreate alias
             try {
               /// autocreate must be activated
-              if (Globals.autoCreateAlias.inMinutes > 0) {
+              if (AppSettings.autoCreateAlias.inMinutes > 0) {
                 if ((bridge.trackPointGpsStartMoving?.time ?? gps.time)
-                    .isBefore(gps.time.subtract(Globals.autoCreateAlias))) {
+                    .isBefore(gps.time.subtract(AppSettings.autoCreateAlias))) {
                   bool allPointsInside = true;
                   for (var sm in bridge.calcGpsPoints) {
-                    if (GPS.distance(sm, gps) > Globals.distanceTreshold) {
+                    if (GPS.distance(sm, gps) > AppSettings.distanceTreshold) {
                       allPointsInside = false;
                       break;
                     }
@@ -274,18 +275,19 @@ class _TrackPoint {
 
                   ///
                   if (allPointsInside) {
-                    String address =
-                        Globals.osmLookupCondition == OsmLookup.onStatus ||
-                                Globals.osmLookupCondition == OsmLookup.always
-                            ? await bridge.setAddress(gps)
-                            : '';
+                    String address = AppSettings.osmLookupCondition ==
+                                OsmLookupConditions.onStatus ||
+                            AppSettings.osmLookupCondition ==
+                                OsmLookupConditions.always
+                        ? await bridge.setAddress(gps)
+                        : '';
                     ModelAlias newAlias = ModelAlias(
                         alias: address,
                         lat: gps.lat,
                         lon: gps.lon,
                         lastVisited: DateTime.now(),
                         timesVisited: 1,
-                        radius: Globals.distanceTreshold);
+                        radius: AppSettings.distanceTreshold);
                     logger.error('autocreate alias skipped in line 290',
                         StackTrace.empty);
                     //ModelAlias.insert(newAlias);
@@ -297,7 +299,7 @@ class _TrackPoint {
             }
           } else {
             if (GPS.distanceOverTrackList(bridge.calcGpsPoints) <
-                Globals.distanceTreshold) {
+                AppSettings.distanceTreshold) {
               await cacheNewStatusStanding(gps);
             }
           }
@@ -316,7 +318,7 @@ class _TrackPoint {
       /// if nothing has changed, nothing to do
       if (bridge.trackingStatus == oldTrackingStatus) {
         /// lookup address on every interval
-        if (Globals.osmLookupCondition == OsmLookup.always) {
+        if (AppSettings.osmLookupCondition == OsmLookupConditions.always) {
           await bridge.setAddress(gps);
         }
 
@@ -327,7 +329,7 @@ class _TrackPoint {
         ///
       } else {
         /// update osm address
-        if (Globals.osmLookupCondition == OsmLookup.onStatus) {
+        if (AppSettings.osmLookupCondition == OsmLookupConditions.onStatus) {
           await bridge.setAddress(gps);
         }
 
@@ -341,8 +343,8 @@ class _TrackPoint {
           ///
           ///     --- insert and update database entrys ---
           ///
-          if (!Globals.statusStandingRequireAlias ||
-              (Globals.statusStandingRequireAlias &&
+          if (!AppSettings.statusStandingRequireAlias ||
+              (AppSettings.statusStandingRequireAlias &&
                   bridge.trackPointAliasIdList.isNotEmpty)) {
             /// create and insert new trackpoint
             ModelTrackPoint newTrackPoint = ModelTrackPoint(
@@ -362,8 +364,8 @@ class _TrackPoint {
             /// only if no private or restricted alias is present
             var tpData = TrackPointData(tp: newTrackPoint);
             if (!gpsLocation.isPrivate &&
-                (!Globals.statusStandingRequireAlias ||
-                    (Globals.statusStandingRequireAlias &&
+                (!AppSettings.statusStandingRequireAlias ||
+                    (AppSettings.statusStandingRequireAlias &&
                         tpData.aliasList.isNotEmpty))) {
               logger.warn('complete calendar event');
               await AppCalendar()
@@ -406,7 +408,7 @@ class _TrackPoint {
 
           bridge.lastStandingAddress = await Cache.setValue<String>(
               CacheKeys.cacheBackgroundLastStandingAddress,
-              Globals.osmLookupCondition == OsmLookup.never
+              AppSettings.osmLookupCondition == OsmLookupConditions.never
                   ? ''
                   : bridge.currentAddress);
 
@@ -416,8 +418,8 @@ class _TrackPoint {
 
           /// create calendar entry from cache data
           if (!gpsLocation.isPrivate &&
-              (!Globals.statusStandingRequireAlias ||
-                  (Globals.statusStandingRequireAlias &&
+              (!AppSettings.statusStandingRequireAlias ||
+                  (AppSettings.statusStandingRequireAlias &&
                       gpsLocation.hasAlias))) {
             logger.warn('create new calendar event');
             String? id =
@@ -455,7 +457,7 @@ class _TrackPoint {
 
   void calculateSmoothPoints() {
     bridge.smoothGpsPoints.clear();
-    int smooth = Globals.gpsPointsSmoothCount;
+    int smooth = AppSettings.gpsPointsSmoothCount;
     if (smooth < 2) {
       /// smoothing is disabled
       bridge.smoothGpsPoints.addAll(bridge.gpsPoints);
@@ -499,8 +501,8 @@ class _TrackPoint {
   void calculateCalcPoints() {
     /// reset calcPoints
     bridge.calcGpsPoints.clear();
-    int p = (Globals.timeRangeTreshold.inSeconds /
-            Globals.trackPointInterval.inSeconds)
+    int p = (AppSettings.timeRangeTreshold.inSeconds /
+            AppSettings.trackPointInterval.inSeconds)
         .ceil();
     if (bridge.smoothGpsPoints.length >= p) {
       bridge.calcGpsPoints.addAll(bridge.smoothGpsPoints.getRange(0, p));
@@ -513,7 +515,7 @@ class _TrackPoint {
       int tRef = bridge.smoothGpsPoints.first.time.millisecondsSinceEpoch;
 
       /// duration in ms
-      int dur = Globals.timeRangeTreshold.inMilliseconds;
+      int dur = AppSettings.timeRangeTreshold.inMilliseconds;
 
       /// max past time in ms
       int maxPast = tRef - dur;

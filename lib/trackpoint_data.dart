@@ -20,7 +20,7 @@ import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/gps.dart';
-import 'package:chaostours/conf/globals.dart';
+import 'package:chaostours/conf/app_settings.dart';
 import 'package:chaostours/util.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/view/app_widgets.dart';
@@ -80,7 +80,7 @@ class TrackPointData {
         radius = alias.radius;
       } else {
         gps = bridge.trackPointGpsStartStanding!;
-        radius = Globals.distanceTreshold;
+        radius = AppSettings.distanceTreshold;
       }
       distanceStanding = bridge.gpsPoints.isEmpty
           ? 0

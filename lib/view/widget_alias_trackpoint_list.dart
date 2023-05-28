@@ -21,7 +21,7 @@ import 'package:chaostours/gps.dart';
 import 'package:flutter/services.dart';
 
 ///
-import 'package:chaostours/conf/globals.dart';
+import 'package:chaostours/conf/app_settings.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/conf/app_colors.dart';
@@ -124,7 +124,7 @@ class _WidgetAliasTrackpoint extends State<WidgetAliasTrackpoint> {
   }
 
   Widget trackPoint(BuildContext context, ModelTrackPoint tp) {
-    var date = '${Globals.weekDays[tp.timeStart.weekday]}. '
+    var date = '${AppSettings.weekDays[tp.timeStart.weekday]}. '
         '${tp.timeStart.day}.${tp.timeStart.month}.${tp.timeStart.year}';
     var dur = timeElapsed(tp.timeStart, tp.timeEnd, false);
     var time =

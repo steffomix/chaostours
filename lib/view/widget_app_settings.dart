@@ -18,8 +18,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
-import 'package:chaostours/conf/globals.dart';
+import 'package:chaostours/conf/app_settings.dart';
 import 'package:chaostours/conf/app_colors.dart';
+import 'package:chaostours/conf/osm.dart';
 import 'package:chaostours/data_bridge.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/cache.dart';
@@ -44,8 +45,8 @@ class WidgetAppSettings extends StatefulWidget {
 class _WidgetAppSettings extends State<WidgetAppSettings> {
   static final Logger logger = Logger.logger<WidgetAppSettings>();
 
-  bool? statusStandingRequireAlias = Globals.statusStandingRequireAlias;
-  bool? backgroundTrackingEnabled = Globals.backgroundTrackingEnabled;
+  bool? statusStandingRequireAlias = AppSettings.statusStandingRequireAlias;
+  bool? backgroundTrackingEnabled = AppSettings.backgroundTrackingEnabled;
 
   TextEditingController? txAutocreateAlias;
   TextEditingController? txTrackPointInterval;
@@ -63,13 +64,13 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
   }
 
   Future<void> modify() async {
-    await Globals.loadSettings();
+    await AppSettings.loadSettings();
 
     setState(() {});
   }
 
-  void setStatus(BuildContext context, OsmLookup? val) {
-    Globals.osmLookupCondition = val ?? OsmLookup.never;
+  void setStatus(BuildContext context, OsmLookupConditions? val) {
+    AppSettings.osmLookupCondition = val ?? OsmLookupConditions.never;
     setState(() {});
   }
 
@@ -110,7 +111,8 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                 }
                 i *= multiplicator;
                 Type type = cacheKey.cacheType;
-                await Globals.updateValue(key: cacheKey, type: type, value: i);
+                await AppSettings.updateValue(
+                    key: cacheKey, type: type, value: i);
                 modify();
               } catch (e, stk) {
                 logger.error('save globals ${cacheKey.name}: $e', stk);
@@ -124,35 +126,36 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
   }
 
   Widget osmLookup(BuildContext context) {
-    List<OsmLookup> list = [
-      OsmLookup.always,
-      OsmLookup.onStatus,
-      OsmLookup.never
+    List<OsmLookupConditions> list = [
+      OsmLookupConditions.always,
+      OsmLookupConditions.onStatus,
+      OsmLookupConditions.never
     ];
-    return DropdownButton<OsmLookup>(
-      value: Globals.osmLookupCondition,
+    return DropdownButton<OsmLookupConditions>(
+      value: AppSettings.osmLookupCondition,
       icon: const Icon(Icons.arrow_drop_down),
       style: TextStyle(color: AppColors.black.color),
-      onChanged: (OsmLookup? value) {
+      onChanged: (OsmLookupConditions? value) {
         // This is called when the user selects an item.
         setState(() {
-          Globals.osmLookupCondition = value ?? OsmLookup.never;
+          AppSettings.osmLookupCondition = value ?? OsmLookupConditions.never;
         });
       },
-      items: list.map<DropdownMenuItem<OsmLookup>>((OsmLookup value) {
+      items: list.map<DropdownMenuItem<OsmLookupConditions>>(
+          (OsmLookupConditions value) {
         String text = '';
         switch (value) {
-          case OsmLookup.never:
+          case OsmLookupConditions.never:
             text = 'niemals';
             break;
-          case OsmLookup.onStatus:
+          case OsmLookupConditions.onStatus:
             text = 'Bei Halten/Fahren wechsel';
             break;
-          case OsmLookup.always:
+          case OsmLookupConditions.always:
             text = 'Bei jedem GPS Interval';
             break;
         }
-        return DropdownMenuItem<OsmLookup>(
+        return DropdownMenuItem<OsmLookupConditions>(
           value: value,
           child: Text(text),
         );
@@ -175,9 +178,9 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
               padding: const EdgeInsets.all(5),
               child: ListTile(
                 leading: Checkbox(
-                    value: Globals.statusStandingRequireAlias,
+                    value: AppSettings.statusStandingRequireAlias,
                     onChanged: (bool? b) {
-                      Globals.statusStandingRequireAlias = b ?? false;
+                      AppSettings.statusStandingRequireAlias = b ?? false;
                       modify();
                     }),
                 title: const Text('Haltepunkt benötigt Alias'),
@@ -193,7 +196,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
           numberField(
               context: context,
               controller: txAutocreateAlias ??= TextEditingController(
-                  text: Globals.autoCreateAlias.inMinutes.toString()),
+                  text: AppSettings.autoCreateAlias.inMinutes.toString()),
               cacheKey: CacheKeys.globalsAutocreateAlias,
               minValue: 0,
               maxValue: 0,
@@ -213,9 +216,9 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
               padding: const EdgeInsets.all(5),
               child: ListTile(
                 leading: Checkbox(
-                    value: Globals.backgroundTrackingEnabled,
+                    value: AppSettings.backgroundTrackingEnabled,
                     onChanged: (bool? b) {
-                      Globals.backgroundTrackingEnabled = b ?? false;
+                      AppSettings.backgroundTrackingEnabled = b ?? false;
                       modify();
                     }),
                 title: const Text('Hintergrund GPS aktivieren'),
@@ -231,7 +234,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
           numberField(
               context: context,
               controller: txTrackPointInterval ??= TextEditingController(
-                  text: Globals.trackPointInterval.inSeconds.toString()),
+                  text: AppSettings.trackPointInterval.inSeconds.toString()),
               cacheKey: CacheKeys.globalsTrackPointInterval,
               minValue: 20,
               maxValue: 0,
@@ -244,7 +247,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
           numberField(
               context: context,
               controller: txDistanceTrehold ??= TextEditingController(
-                  text: Globals.distanceTreshold.toString()),
+                  text: AppSettings.distanceTreshold.toString()),
               cacheKey: CacheKeys.globalsDistanceTreshold,
               minValue: 20,
               maxValue: 0,
@@ -259,7 +262,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
           numberField(
               context: context,
               controller: txTimeRangeTreshold ??= TextEditingController(
-                  text: Globals.timeRangeTreshold.inMinutes.toString()),
+                  text: AppSettings.timeRangeTreshold.inMinutes.toString()),
               cacheKey: CacheKeys.globalsTimeRangeTreshold,
               minValue: 1,
               maxValue: 0,
@@ -275,7 +278,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
           numberField(
               context: context,
               controller: txGpsSmoothCount ??= TextEditingController(
-                  text: Globals.gpsPointsSmoothCount.toString()),
+                  text: AppSettings.gpsPointsSmoothCount.toString()),
               cacheKey: CacheKeys.globalsGpsPointsSmoothCount,
               minValue: 0,
               maxValue: 0,
@@ -321,12 +324,12 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                       'Die Hintergrundabfrage ist abgeschaltet',
                       softWrap: true,
                     ),
-                    leading: Radio<OsmLookup>(
-                        value: OsmLookup.never,
-                        groupValue: Globals.osmLookupCondition,
-                        onChanged: (OsmLookup? val) {
+                    leading: Radio<OsmLookupConditions>(
+                        value: OsmLookupConditions.never,
+                        groupValue: AppSettings.osmLookupCondition,
+                        onChanged: (OsmLookupConditions? val) {
                           if (val != null) {
-                            Globals.osmLookupCondition = val;
+                            AppSettings.osmLookupCondition = val;
                           }
                           setStatus(context, val);
                         })),
@@ -336,12 +339,12 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                       'Die Hintergrundabfrage wird nur bei einem Halten/Fahren Statuswechsel ausgeführt.',
                       softWrap: true,
                     ),
-                    leading: Radio<OsmLookup>(
-                        value: OsmLookup.onStatus,
-                        groupValue: Globals.osmLookupCondition,
-                        onChanged: (OsmLookup? val) {
+                    leading: Radio<OsmLookupConditions>(
+                        value: OsmLookupConditions.onStatus,
+                        groupValue: AppSettings.osmLookupCondition,
+                        onChanged: (OsmLookupConditions? val) {
                           if (val != null) {
-                            Globals.osmLookupCondition = val;
+                            AppSettings.osmLookupCondition = val;
                           }
                           setStatus(context, val);
                         })),
@@ -349,16 +352,16 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                     title: const Text('Bei jeder GPS Abfrage'),
                     subtitle: Text(
                       'Die OSM Address wird bei jeder "Hintergrund GPS Interval" Abfrage ausgeführt. '
-                      'Bei dem gegenwärtig eingestellten Hintergrund GPS Interval von ${Globals.trackPointInterval.inSeconds}sec. sollten sie mit einem Datenverbrauch von etwa '
-                      '${(3600 / Globals.trackPointInterval.inSeconds * 24 / 1024).ceil()}MB/Tag rechnen. ',
+                      'Bei dem gegenwärtig eingestellten Hintergrund GPS Interval von ${AppSettings.trackPointInterval.inSeconds}sec. sollten sie mit einem Datenverbrauch von etwa '
+                      '${(3600 / AppSettings.trackPointInterval.inSeconds * 24 / 1024).ceil()}MB/Tag rechnen. ',
                       softWrap: true,
                     ),
-                    leading: Radio<OsmLookup>(
-                        value: OsmLookup.always,
-                        groupValue: Globals.osmLookupCondition,
-                        onChanged: (OsmLookup? val) {
+                    leading: Radio<OsmLookupConditions>(
+                        value: OsmLookupConditions.always,
+                        groupValue: AppSettings.osmLookupCondition,
+                        onChanged: (OsmLookupConditions? val) {
                           if (val != null) {
-                            Globals.osmLookupCondition = val;
+                            AppSettings.osmLookupCondition = val;
                           }
                           setStatus(context, val);
                         }))
@@ -374,9 +377,9 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
               padding: const EdgeInsets.all(5),
               child: ListTile(
                 leading: Checkbox(
-                    value: Globals.publishToCalendar,
+                    value: AppSettings.publishToCalendar,
                     onChanged: (bool? b) {
-                      Globals.publishToCalendar = b ?? false;
+                      AppSettings.publishToCalendar = b ?? false;
                       modify();
                     }),
                 title: const Text('Gerätekalender verwenden'),
@@ -397,7 +400,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
           numberField(
               context: context,
               controller: txCacheGpsTime ??= TextEditingController(
-                  text: Globals.cacheGpsTime.inSeconds.toString()),
+                  text: AppSettings.cacheGpsTime.inSeconds.toString()),
               cacheKey: CacheKeys.globalsCacheGpsTime,
               minValue: 0,
               maxValue: 0,
@@ -416,7 +419,8 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
           numberField(
               context: context,
               controller: txAppTickDuration ??= TextEditingController(
-                  text: Globals.appTickDuration.inSeconds.toString()),
+                  text: AppSettings.backgroundLookupDuration.inSeconds
+                      .toString()),
               cacheKey: CacheKeys.globalsAppTickDuration,
               minValue: 5,
               maxValue: 0,
@@ -435,7 +439,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
               padding: EdgeInsets.all(10),
               child: ElevatedButton(
                   onPressed: () async {
-                    await Globals.reset();
+                    await AppSettings.reset();
                     modify();
                   },
                   child: const Text('Einstellungen zurücksetzen'))),

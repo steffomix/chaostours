@@ -19,7 +19,8 @@ import 'package:device_calendar/device_calendar.dart';
 
 ///
 import 'package:chaostours/logger.dart';
-import 'package:chaostours/conf/globals.dart';
+import 'package:chaostours/conf/app_settings.dart';
+import 'package:chaostours/conf/osm.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/tracking.dart';
 import 'package:chaostours/model/model.dart';
@@ -111,12 +112,11 @@ enum CacheKeys {
   globalsBackgroundTrackingEnabled(bool),
   globalsStatusStandingRequireAlias(bool),
   globalsTrackPointInterval(Duration),
-  globalsOsmLookupCondition(OsmLookup),
+  globalsOsmLookupCondition(OsmLookupConditions),
   globalsCacheGpsTime(Duration),
   globalsDistanceTreshold(int),
   globalsTimeRangeTreshold(Duration),
   globalsAppTickDuration(Duration),
-  globalsGpsMaxSpeed(int),
   globalsGpsPointsSmoothCount(int),
   globalsAutocreateAlias(Duration),
   globalPublishToCalendar(bool);
@@ -252,9 +252,10 @@ class Cache {
           : list.map((e) => PendingModelTrackPoint.toSharedModel(e)).toList();
 
   /// OSMLookup
-  static String serializeOsmLookup(OsmLookup lo) => lo.name;
-  static OsmLookup? deserializeOsmLookup(String? osm) =>
-      osm == null ? OsmLookup.never : OsmLookup.values.byName(osm);
+  static String serializeOsmLookup(OsmLookupConditions lo) => lo.name;
+  static OsmLookupConditions? deserializeOsmLookup(String? osm) => osm == null
+      ? OsmLookupConditions.never
+      : OsmLookupConditions.values.byName(osm);
 
   /// IntMap
   static const intSeparator = ',';
@@ -354,8 +355,9 @@ class Cache {
               serializePendingModelTrackPointList(
                   value as List<PendingModelTrackPoint>));
           break;
-        case OsmLookup:
-          await prefs.setString(key, serializeOsmLookup(value as OsmLookup));
+        case OsmLookupConditions:
+          await prefs.setString(
+              key, serializeOsmLookup(value as OsmLookupConditions));
           break;
         case Null:
           await prefs.remove(key);
@@ -459,7 +461,7 @@ class Cache {
           return desrializePendingModelTrackPointList(prefs.getStringList(key))
                   as T? ??
               defaultValue;
-        case OsmLookup:
+        case OsmLookupConditions:
           return deserializeOsmLookup(prefs.getString(key)) as T? ??
               defaultValue;
         default:
