@@ -141,7 +141,7 @@ class AppSettings {
   static Duration get trackPointInterval => _trackPointInterval;
   static AppSettingLimits get trackingIntervalLimits {
     return AppSettingLimits(
-        min: 15, max: (_timeRangeTreshold.inSeconds / 4).ceil());
+        min: 15, max: (_timeRangeTreshold.inSeconds / 1).ceil());
   }
 
   static set trackPointInterval(Duration value) {
@@ -190,9 +190,11 @@ class AppSettings {
   /// how long in minutes to wait until an alias is autocreated
   /// 0 = disabled
   static const Duration _autocreateAliasDefault = Duration(minutes: 10);
+  static Duration get autocreateAliasDefault => _autocreateAliasDefault;
   static Duration _autoCreateAlias = _autocreateAliasDefault;
   static Duration get autoCreateAlias => _autoCreateAlias;
-  static AppSettingLimits autoCreateAliasLimits = AppSettingLimits(min: 5);
+  static AppSettingLimits autoCreateAliasLimits =
+      AppSettingLimits(min: 10, zeroDisables: true);
   static set autoCreateAlias(Duration dur) {
     if (autoCreateAliasLimits.isValid(dur.inMinutes)) {
       _autoCreateAlias = dur;
@@ -201,6 +203,7 @@ class AppSettings {
 
   static Future<void> loadSettings() async {
     try {
+      await Cache.reload();
       _statusStandingRequireAlias = await Cache.getValue<bool>(
           CacheKeys.globalsStatusStandingRequireAlias,
           _statusStandingRequireAliasDefault);

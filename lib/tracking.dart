@@ -158,9 +158,11 @@ class _TrackPoint {
             CacheKeys.cacheBackgroundTrackingStatus, TrackingStatus.moving);
       }
 
-      int maxGpsPoints = (AppSettings.autoCreateAlias.inSeconds /
-              AppSettings.trackPointInterval.inSeconds)
-          .round();
+      int maxGpsPoints = (AppSettings.autoCreateAlias.inSeconds == 0
+              ? AppSettings.autocreateAliasDefault.inSeconds
+              : AppSettings.autoCreateAlias.inSeconds /
+                  AppSettings.trackPointInterval.inSeconds)
+          .ceil();
 
       /// add current gps point
       bridge.gpsPoints.insert(0, gps);
@@ -186,7 +188,7 @@ class _TrackPoint {
       bridge.calcGpsPoints.clear();
       int calculationRange = (AppSettings.timeRangeTreshold.inSeconds /
               AppSettings.trackPointInterval.inSeconds)
-          .ceil();
+          .floor();
       bridge.calcGpsPoints
           .addAll(bridge.smoothGpsPoints.getRange(0, calculationRange));
 
@@ -263,34 +265,54 @@ class _TrackPoint {
             try {
               /// autocreate must be activated
               if (AppSettings.autoCreateAlias.inMinutes > 0) {
+                /// check if enough time has passed
                 if ((bridge.trackPointGpsStartMoving?.time ?? gps.time)
                     .isBefore(gps.time.subtract(AppSettings.autoCreateAlias))) {
+                  /// check if all points are in radius
                   bool allPointsInside = true;
-                  for (var sm in bridge.calcGpsPoints) {
+                  for (var sm in bridge.smoothGpsPoints) {
                     if (GPS.distance(sm, gps) > AppSettings.distanceTreshold) {
                       allPointsInside = false;
                       break;
                     }
                   }
 
-                  ///
+                  /// all conditions ok, auto create alias
                   if (allPointsInside) {
+                    /// get address if enabled
                     String address = AppSettings.osmLookupCondition ==
                                 OsmLookupConditions.onStatus ||
                             AppSettings.osmLookupCondition ==
                                 OsmLookupConditions.always
                         ? await bridge.setAddress(gps)
                         : '';
+
+                    /// realign gps
+                    gps = PendingGps.average(bridge.smoothGpsPoints);
+                    gps.time = DateTime.now();
+
+                    /// create alias
                     ModelAlias newAlias = ModelAlias(
                         alias: address,
                         lat: gps.lat,
                         lon: gps.lon,
-                        lastVisited: DateTime.now(),
+                        lastVisited: bridge.smoothGpsPoints.last.time,
                         timesVisited: 1,
+                        notes:
+                            'Auto created alias at address:\n"$address"\n\nat date/time: ${gps.time.toIso8601String()}',
                         radius: AppSettings.distanceTreshold);
-                    logger.error('autocreate alias skipped in line 290',
-                        StackTrace.empty);
-                    //ModelAlias.insert(newAlias);
+                    await ModelAlias.insert(newAlias);
+
+                    /// recreate location with new alias
+                    gpsLocation = Location(gps);
+
+                    /// update cache alias list
+                    bridge.currentAliasIdList = await Cache.setValue<List<int>>(
+                        CacheKeys.cacheCurrentAliasIdList,
+                        gpsLocation.aliasIdList);
+
+                    /// change status
+                    await cacheNewStatusStanding(gps);
                   }
                 }
               }
@@ -470,29 +492,11 @@ class _TrackPoint {
     }
 
     int index = 0;
-    while (index <= bridge.gpsPoints.length - 1 - smooth) {
-      double smoothLat = 0;
-      double smoothLon = 0;
-      for (var i = 1; i <= smooth; i++) {
-        smoothLat += bridge.gpsPoints[index + i - 1].lat;
-        smoothLon += bridge.gpsPoints[index + i - 1].lon;
-      }
-      smoothLat /= smooth;
-      smoothLon /= smooth;
-      PendingGps gps = PendingGps(smoothLat, smoothLon);
-      /*
-      if (bridge.smoothGpsPoints.isNotEmpty) {
-        int m = GPS.distance(gps, bridge.smoothGpsPoints.last).round();
-        int s = Globals.trackPointInterval.inSeconds;
-        double ms = m / s;
-        double kmh = ms * 3.6;
-        if (kmh > Globals.gpsMaxSpeed) {
-          logger.warn('calculate smooth gps with $kmh speed');
-        }
-      }
-      */
-      gps.time = bridge.gpsPoints[index].time;
-      bridge.smoothGpsPoints.add(gps);
+    int range = bridge.gpsPoints.length - smooth - 1;
+    while (index <= range) {
+      var averageGps = PendingGps.average(
+          bridge.gpsPoints.getRange(index, index + smooth).toList());
+      averageGps.time = bridge.gpsPoints[index].time;
       index++;
     }
   }

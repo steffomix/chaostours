@@ -76,6 +76,7 @@ class _WidgetManageCalendarState extends State<WidgetManageCalendar> {
           Fluttertoast.showToast(msg: 'Calendar selected');
           if (mounted) {
             setState(() {});
+            Navigator.pop(context);
           }
         }),
       ));

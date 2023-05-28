@@ -20,6 +20,9 @@ import 'package:fluttertoast/fluttertoast.dart';
 
 import 'package:chaostours/conf/app_settings.dart';
 import 'package:chaostours/conf/app_colors.dart';
+import 'package:chaostours/conf/app_routes.dart';
+import 'package:chaostours/calendar.dart';
+import 'package:device_calendar/device_calendar.dart';
 import 'package:chaostours/conf/osm.dart';
 import 'package:chaostours/data_bridge.dart';
 import 'package:chaostours/view/app_widgets.dart';
@@ -58,6 +61,28 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
   TextEditingController? txGpsSmoothCount;
   TextEditingController? txGpsMaxSpeed;
 
+  String selectedCalendar = ' --- ';
+
+  @override
+  void initState() {
+    super.initState();
+    getCalendarId();
+  }
+
+  Future<void> getCalendarId() async {
+    var appCalendar = AppCalendar();
+    appCalendar.retrieveCalendars().then((data) async {
+      Calendar? calendar = await appCalendar.getCalendarfromCacheId();
+      if (calendar != null) {
+        selectedCalendar =
+            '#${calendar.id}: ${calendar.name}\n<${calendar.accountName}>';
+      }
+      if (mounted) {
+        setState(() {});
+      }
+    });
+  }
+
   @override
   void dispose() {
     super.dispose();
@@ -81,6 +106,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
       required int minValue,
       required int maxValue,
       String title = '',
+      String unit = '',
       String description = '',
       int multiplicator = 1}) {
     return Container(
@@ -98,7 +124,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
             ],
             decoration: InputDecoration(
                 label: Text(
-                    '$minValue - ${maxValue > 0 ? maxValue : 'unbegrenzt'}',
+                    '$minValue - ${maxValue > 0 ? maxValue : 'unbegrenzt'} $unit',
                     softWrap: true)),
             onChanged: ((value) async {
               try {
@@ -198,12 +224,16 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
               controller: txAutocreateAlias ??= TextEditingController(
                   text: AppSettings.autoCreateAlias.inMinutes.toString()),
               cacheKey: CacheKeys.globalsAutocreateAlias,
-              minValue: 0,
-              maxValue: 0,
+              minValue: AppSettings.autoCreateAliasLimits.min ?? 0,
+              maxValue: AppSettings.autoCreateAliasLimits.max ?? 0,
+              unit: 'minuten',
               multiplicator: 60, // minutes to seconds
               title: 'Alias automatisch erstellen',
               description:
                   'Nach wie viel MINUTEN Standzeit ein Alias automatisch erstellt wird.\n'
+                  'Bitte beachten sie dass sich alle ${DataBridge().calcGpsPoints.length} blauen GPS Berechnungspunkte '
+                  'im ${AppSettings.distanceTreshold}m radius des Distanzschwellwertes befinden müssen, '
+                  'um sie eindeutig als "vor Ort" identifizieren zu können.\n'
                   'Der Wert 0 deativiert die Funktion.'),
 
           const Center(
@@ -236,8 +266,9 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
               controller: txTrackPointInterval ??= TextEditingController(
                   text: AppSettings.trackPointInterval.inSeconds.toString()),
               cacheKey: CacheKeys.globalsTrackPointInterval,
-              minValue: 20,
-              maxValue: 0,
+              minValue: AppSettings.trackingIntervalLimits.min ?? 0,
+              maxValue: AppSettings.trackingIntervalLimits.max ?? 0,
+              unit: 'sekunden',
               title: 'Hintergrund GPS Interval',
               description:
                   'In welchen Zeitabständen in SEKUNDEN das Hintergrung GPS abgefragt wird.\n'
@@ -249,8 +280,9 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
               controller: txDistanceTrehold ??= TextEditingController(
                   text: AppSettings.distanceTreshold.toString()),
               cacheKey: CacheKeys.globalsDistanceTreshold,
-              minValue: 20,
-              maxValue: 0,
+              minValue: AppSettings.distanceTresholdLimits.min ?? 0,
+              maxValue: AppSettings.distanceTresholdLimits.max ?? 0,
+              unit: 'meter',
               title: 'Distanzschwellwert',
               description:
                   'Die Distanz in METER, die sie sich innerhalb von "Zeitschwellwert" (siehe unten) '
@@ -264,8 +296,11 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
               controller: txTimeRangeTreshold ??= TextEditingController(
                   text: AppSettings.timeRangeTreshold.inMinutes.toString()),
               cacheKey: CacheKeys.globalsTimeRangeTreshold,
-              minValue: 1,
-              maxValue: 0,
+              minValue:
+                  ((AppSettings.timeRangeTresholdLimits.min ?? 0) / 60).round(),
+              maxValue:
+                  ((AppSettings.timeRangeTresholdLimits.max ?? 0) / 60).round(),
+              unit: 'minuten',
               multiplicator: 60, // minutes to seconds
               title: 'Zeitschwellwert',
               description:
@@ -280,28 +315,15 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
               controller: txGpsSmoothCount ??= TextEditingController(
                   text: AppSettings.gpsPointsSmoothCount.toString()),
               cacheKey: CacheKeys.globalsGpsPointsSmoothCount,
-              minValue: 0,
-              maxValue: 0,
+              minValue: AppSettings.gpsPointsSmoothCountLimits.min ?? 0,
+              maxValue: AppSettings.gpsPointsSmoothCountLimits.max ?? 0,
+              unit: 'stück',
               title: 'GPS smoothing',
               description:
                   'Bei der GPS Messung kann es zu kleinen Ungenauigkeiten kommen. '
                   'Diese Funktion berechnet aus der ANZAHL der gegebenen GPS Punkte den Durchschnittswert. '
                   'Der Wert 0 deaktiviert diese Funktion'),
-/*
-        /// gpsMaxSpeed
-        numberField(
-            context: context,
-            controller: txGpsMaxSpeed ??= TextEditingController(
-                text: settings[CacheKeys.globalsGpsMaxSpeed]),
-            cacheKey: CacheKeys.globalsGpsMaxSpeed,
-            minValue: 5,
-            maxValue: 0,
-            title: 'Grobe GPS ausrutscher ignorieren',
-            description:
-                'Bei der GPS Messung kann es zu groben ausrutschern kommen. '
-                'Diese Funktion ingnoriert GPS Punkte, die unmöglich in der gegebenen maximimalen '
-                'GESCHWINDIGKEIT IN KM/H erreicht werden können.'),
-*/
+
           const Center(
               child: Text('\n\n\nOpen Street Map',
                   style: TextStyle(fontWeight: FontWeight.bold))),
@@ -389,6 +411,25 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                     'So können sie ihre Mitarbeiter, Freunde oder Familienangehörige stets wissen lassen wo sie gerade sind '
                     'oder was sie am besuchten Ort gemacht haben.'),
               )),
+          Padding(
+              padding: const EdgeInsets.all(10),
+              child: ElevatedButton(
+                  style: ButtonStyle(alignment: Alignment.centerLeft),
+                  onPressed: () {
+                    Navigator.pushNamed(context, AppRoutes.selectCalendar.route)
+                        .then((_) {
+                      getCalendarId();
+                    });
+                  },
+                  child: Padding(
+                      padding: EdgeInsets.all(5),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Kalender auswählen. Aktuell:\n'),
+                          Text(selectedCalendar)
+                        ],
+                      )))),
 
           AppWidgets.divider(),
           const Center(
@@ -402,8 +443,9 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
               controller: txCacheGpsTime ??= TextEditingController(
                   text: AppSettings.cacheGpsTime.inSeconds.toString()),
               cacheKey: CacheKeys.globalsCacheGpsTime,
-              minValue: 0,
-              maxValue: 0,
+              minValue: AppSettings.cachGpsTimeLimits.min ?? 0,
+              maxValue: AppSettings.cachGpsTimeLimits.max ?? 0,
+              unit: 'sekunden',
               title: 'GPS Cache - Vorhaltezeit',
               description:
                   'Stellt ein wie viel Zeit in SEKUNDEN vergehen muss bis das '
@@ -422,8 +464,9 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                   text: AppSettings.backgroundLookupDuration.inSeconds
                       .toString()),
               cacheKey: CacheKeys.globalsAppTickDuration,
-              minValue: 5,
-              maxValue: 0,
+              minValue: AppSettings.backgroundLookupDurationLimits.min ?? 0,
+              maxValue: AppSettings.backgroundLookupDurationLimits.max ?? 0,
+              unit: 'sekunden',
               title: 'Live Tracking Aktualisierungsinterval',
               description:
                   'Wie oft der Live Tracking Vordergrundprozess nachschaut, '
@@ -436,7 +479,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                   style: TextStyle(fontWeight: FontWeight.bold))),
           AppWidgets.divider(),
           Padding(
-              padding: EdgeInsets.all(10),
+              padding: const EdgeInsets.all(10),
               child: ElevatedButton(
                   onPressed: () async {
                     await AppSettings.reset();

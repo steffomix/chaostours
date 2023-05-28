@@ -50,6 +50,18 @@ class PendingGps extends GPS {
     gps.time = DateTime.parse(parts[1]);
     return gps;
   }
+
+  static PendingGps average(List<PendingGps> gpsList) {
+    int count = 0;
+    double lat = 0;
+    double lon = 0;
+    for (var gps in gpsList) {
+      lat += gps.lat;
+      lon += gps.lon;
+      count++;
+    }
+    return PendingGps(lat / count, lon / count);
+  }
 }
 
 class GPS {
@@ -106,6 +118,18 @@ class GPS {
     double lat = double.parse(p[0]);
     double lon = double.parse(p[1]);
     return GPS(lat, lon);
+  }
+
+  static GPS average(List<GPS> gpsList) {
+    int count = 0;
+    double lat = 0;
+    double lon = 0;
+    for (var gps in gpsList) {
+      lat += gps.lat;
+      lon += gps.lon;
+      count++;
+    }
+    return GPS(lat / count, lon / count);
   }
 
   static double distance(GPS g1, GPS g2) =>

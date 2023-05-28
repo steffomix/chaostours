@@ -73,8 +73,6 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   final osm.MapController mapController = osm.MapController();
 
   /// editable fields
-  List<int> tpTasks = [...DataBridge.instance.trackPointTaskIdList];
-  List<int> tpUsers = [...DataBridge.instance.trackPointUserIdList];
   TextEditingController tpNotes =
       TextEditingController(text: DataBridge.instance.trackPointUserNotes);
 
@@ -82,6 +80,16 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     if (mounted) {
       setState(() {});
     }
+  }
+
+  @override
+  void deactivate() {
+    super.deactivate();
+  }
+
+  @override
+  void activate() {
+    super.activate();
   }
 
   ///
@@ -132,9 +140,10 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   }
 
   void onTrackingStatusChanged(EventOnTrackingStatusChanged e) {
-    tpUsers = [...bridge.trackPointUserIdList];
-    tpTasks = [...bridge.trackPointTaskIdList];
-    tpNotes.text = bridge.trackPointUserNotes;
+    tpNotes.text = DataBridge.instance.trackPointUserNotes;
+    if (displayMode != _DisplayMode.gps) {
+      setState(() {});
+    }
   }
 
   ///
@@ -147,7 +156,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
   ///
   void onTick(EventOnAppTick tick) {
-    if (displayMode != _DisplayMode.gps) {
+    if (mounted && displayMode != _DisplayMode.gps) {
       setState(() {});
     }
   }
@@ -664,7 +673,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
   ///
   List<Widget> taskCheckboxes(context) {
-    var referenceList = tpTasks;
+    var referenceList = DataBridge.instance.trackPointTaskIdList;
     var checkBoxes = <Widget>[];
     for (var model in ModelTask.getAll()) {
       if (!model.deleted) {
@@ -678,7 +687,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                 subtitle: model.notes,
                 onToggle: () async {
                   bridge.trackPointTaskIdList = await Cache.setValue<List<int>>(
-                      CacheKeys.cacheBackgroundTaskIdList, tpTasks);
+                      CacheKeys.cacheBackgroundTaskIdList,
+                      DataBridge.instance.trackPointTaskIdList);
                   modify();
                 })));
       }
@@ -688,7 +698,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
   ///
   List<Widget> userCheckboxes(context) {
-    var referenceList = tpUsers;
+    var referenceList = DataBridge.instance.trackPointUserIdList;
     var checkBoxes = <Widget>[];
     for (var model in ModelUser.getAll()) {
       if (!model.deleted) {
@@ -702,7 +712,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                 subtitle: model.notes,
                 onToggle: () async {
                   bridge.trackPointUserIdList = await Cache.setValue<List<int>>(
-                      CacheKeys.cacheBackgroundUserIdList, tpUsers);
+                      CacheKeys.cacheBackgroundUserIdList,
+                      DataBridge.instance.trackPointUserIdList);
                   modify();
                 })));
       }
@@ -717,7 +728,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
     List<ModelUser> userModels = [];
     for (var model in ModelUser.getAll()) {
-      if (tpUsers.contains(model.id)) {
+      if (DataBridge.instance.trackPointUserIdList.contains(model.id)) {
         userModels.add(model);
       }
     }
@@ -751,7 +762,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     /// render selected tasks
     List<ModelTask> taskModels = [];
     for (var item in ModelTask.getAll()) {
-      if (tpTasks.contains(item.id)) {
+      if (DataBridge.instance.trackPointTaskIdList.contains(item.id)) {
         taskModels.add(item);
       }
     }
