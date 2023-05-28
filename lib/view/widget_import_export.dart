@@ -21,6 +21,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'dart:io';
 
 ///
+import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/model/model.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_task.dart';
@@ -387,8 +388,6 @@ class _WidgetImportExport extends State<WidgetImportExport> {
       child: Scaffold(
           bottomNavigationBar: BottomNavigationBar(
               type: BottomNavigationBarType.fixed,
-              fixedColor: AppColors.black.color,
-              backgroundColor: AppColors.yellow.color,
               items: [
                 BottomNavigationBarItem(
                   icon: ValueListenableBuilder<bool>(

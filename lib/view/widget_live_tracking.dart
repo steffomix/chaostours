@@ -19,6 +19,8 @@ import 'package:flutter_osm_plugin/flutter_osm_plugin.dart' as osm;
 import 'package:fluttertoast/fluttertoast.dart';
 //
 import 'package:chaostours/logger.dart';
+import 'package:chaostours/conf/app_routes.dart';
+import 'package:chaostours/conf/app_colors.dart';
 import 'package:chaostours/view/widget_disposed.dart';
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/cache.dart';
@@ -34,7 +36,7 @@ import 'package:chaostours/trackpoint_data.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/address.dart';
 import 'package:chaostours/gps.dart';
-import 'package:chaostours/globals.dart';
+import 'package:chaostours/conf/globals.dart';
 import 'package:chaostours/screen.dart';
 
 enum _DisplayMode {
@@ -156,20 +158,11 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
     for (var alias in ModelAlias.getAll()) {
       try {
-        Color color;
-        if (alias.status == AliasStatus.public) {
-          color = AppColors.aliasPubplic.color;
-        } else if (alias.status == AliasStatus.privat) {
-          color = AppColors.aliasPrivate.color;
-        } else {
-          color = AppColors.aliasRestricted.color;
-        }
-
         mapController.drawCircle(osm.CircleOSM(
           key: "circle${++circleId}",
           centerPoint: osm.GeoPoint(latitude: alias.lat, longitude: alias.lon),
           radius: alias.radius.toDouble(),
-          color: color,
+          color: AppColors.aliasStatusColor(alias.status),
           strokeWidth: 10,
         ));
       } catch (e, stk) {
@@ -185,7 +178,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
           key: "circle${++circleId}",
           centerPoint: osm.GeoPoint(latitude: gps.lat, longitude: gps.lon),
           radius: 2,
-          color: const Color.fromARGB(255, 111, 111, 111),
+          color: AppColors.rawGpsTrackingDot.color,
           strokeWidth: 10,
         ));
       }
@@ -194,7 +187,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
           key: "circle${++circleId}",
           centerPoint: osm.GeoPoint(latitude: gps.lat, longitude: gps.lon),
           radius: 3,
-          color: Colors.black,
+          color: AppColors.smoothedGpsTrackingDot.color,
           strokeWidth: 10,
         ));
       }
@@ -203,7 +196,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
           key: "circle${++circleId}",
           centerPoint: osm.GeoPoint(latitude: gps.lat, longitude: gps.lon),
           radius: 4,
-          color: Colors.blue,
+          color: AppColors.calcGpsTrackingDot.color,
           strokeWidth: 10,
         ));
       }
@@ -213,7 +206,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
           key: "circle${++circleId}",
           centerPoint: osm.GeoPoint(latitude: gps.lat, longitude: gps.lon),
           radius: 5,
-          color: Colors.red,
+          color: AppColors.lastTrackingStatusWithAliasDot.color,
           strokeWidth: 10,
         ));
       }
@@ -225,7 +218,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
           key: "circle${++circleId}",
           centerPoint: osm.GeoPoint(latitude: gps.lat, longitude: gps.lon),
           radius: 5,
-          color: const Color.fromARGB(255, 202, 197, 46),
+          color: AppColors.lastTrackingStatusWithoutAliasDot.color,
           strokeWidth: 10,
         ));
       }
@@ -293,8 +286,6 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       return BottomNavigationBar(
           currentIndex: 3,
           type: BottomNavigationBarType.fixed,
-          backgroundColor: AppColors.yellow.color,
-          fixedColor: AppColors.black.color,
           items: const [
             BottomNavigationBarItem(
                 icon: Icon(Icons.arrow_back), label: 'Back to Live'),
@@ -372,8 +363,6 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       return BottomNavigationBar(
           currentIndex: _bottomBarIndex,
           type: BottomNavigationBarType.fixed,
-          backgroundColor: AppColors.yellow.color,
-          fixedColor: AppColors.black.color,
           items: const [
             BottomNavigationBarItem(icon: Icon(Icons.near_me), label: 'Live'),
             BottomNavigationBarItem(

@@ -19,6 +19,8 @@ import 'package:flutter/material.dart';
 
 ///
 import 'package:chaostours/logger.dart';
+import 'package:chaostours/conf/app_routes.dart';
+import 'package:chaostours/conf/app_colors.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/gps.dart';
@@ -163,8 +165,6 @@ class _WidgetAliasList extends State<WidgetAliasList> {
   BottomNavigationBar navBar(BuildContext context) {
     return BottomNavigationBar(
         currentIndex: selectedNavBarItem,
-        fixedColor: AppColors.black.color,
-        backgroundColor: AppColors.yellow.color,
         items: const [
           // new on osm
           BottomNavigationBarItem(icon: Icon(Icons.add), label: '*Neu*'),

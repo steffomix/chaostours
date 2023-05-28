@@ -20,6 +20,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 
 ///
 import 'package:chaostours/logger.dart';
+import 'package:chaostours/conf/app_colors.dart';
 import 'package:chaostours/model/model_user.dart';
 
 class WidgetUserEdit extends StatefulWidget {
@@ -63,8 +64,6 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
         appBar: AppBar(title: const Text('Arbeiter bearbeiten')),
         navBar: BottomNavigationBar(
             type: BottomNavigationBarType.fixed,
-            fixedColor: AppColors.black.color,
-            backgroundColor: AppColors.yellow.color,
             items: [
               // 0 alphabethic
               BottomNavigationBarItem(

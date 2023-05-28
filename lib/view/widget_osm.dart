@@ -23,14 +23,16 @@ import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 ///
-import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/logger.dart';
+import 'package:chaostours/event_manager.dart';
+import 'package:chaostours/conf/app_routes.dart';
+import 'package:chaostours/conf/app_colors.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/address.dart' as addr;
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/screen.dart';
-import 'package:chaostours/globals.dart';
+import 'package:chaostours/conf/globals.dart';
 
 class OsmSearchResult {
   final double lat;
@@ -365,8 +367,6 @@ class _WidgetOsm extends State<WidgetOsm> {
   BottomNavigationBar navBar(context) {
     return BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
-        backgroundColor: AppColors.yellow.color,
-        fixedColor: AppColors.black.color,
         items: [
           BottomNavigationBarItem(
               icon: const Icon(Icons.done),
@@ -472,7 +472,7 @@ class _WidgetOsm extends State<WidgetOsm> {
       try {
         Color color;
         if (alias.status == AliasStatus.public) {
-          color = AppColors.aliasPubplic.color;
+          color = AppColors.aliasPublic.color;
         } else if (alias.status == AliasStatus.privat) {
           color = AppColors.aliasPrivate.color;
         } else {

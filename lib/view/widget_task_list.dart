@@ -19,6 +19,7 @@ import 'package:flutter/material.dart';
 
 ///
 import 'package:chaostours/logger.dart';
+import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/model/model_task.dart';
 
 enum _DisplayMode {
@@ -144,8 +145,6 @@ class _WidgetTaskList extends State<WidgetTaskList> {
         appBar: AppBar(title: const Text('Aufgaben Liste')),
         navBar: BottomNavigationBar(
             type: BottomNavigationBarType.fixed,
-            backgroundColor: AppColorScheme.bright.scheme.primary,
-            fixedColor: AppColorScheme.bright.scheme.onPrimary,
             items: [
               const BottomNavigationBarItem(
                   icon: Icon(Icons.add), label: 'Neu'),

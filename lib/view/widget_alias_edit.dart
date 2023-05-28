@@ -26,7 +26,8 @@ import 'package:chaostours/gps.dart';
 ///
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/model/model_alias.dart';
-import 'package:chaostours/globals.dart';
+import 'package:chaostours/conf/app_routes.dart';
+import 'package:chaostours/conf/app_colors.dart';
 
 class WidgetAliasEdit extends StatefulWidget {
   const WidgetAliasEdit({super.key});
@@ -69,8 +70,6 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
     return AppWidgets.scaffold(context,
         navBar: BottomNavigationBar(
             type: BottomNavigationBarType.fixed,
-            fixedColor: AppColors.black.color,
-            backgroundColor: AppColors.yellow.color,
             items: [
               const BottomNavigationBarItem(
                   icon: Icon(Icons.add), label: 'Neu'),
@@ -207,7 +206,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                 ListTile(
                     title: Text('Öffentlich',
                         style: TextStyle(
-                          backgroundColor: AppColors.aliasPubplic.color,
+                          backgroundColor: AppColors.aliasPublic.color,
                         )),
                     subtitle: const Text(
                       'Ereignisse die diesen Ort betreffen können gespeichert und '

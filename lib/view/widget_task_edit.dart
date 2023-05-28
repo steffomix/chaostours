@@ -20,6 +20,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 
 ///
 import 'package:chaostours/logger.dart';
+import 'package:chaostours/conf/app_colors.dart';
 import 'package:chaostours/model/model_task.dart';
 
 class WidgetTaskEdit extends StatefulWidget {
@@ -64,9 +65,7 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
     return AppWidgets.scaffold(context,
         appBar: AppBar(title: const Text('Aufgabe bearbeiten')),
         navBar: BottomNavigationBar(
-            fixedColor: AppColors.black.color,
             type: BottomNavigationBarType.fixed,
-            backgroundColor: AppColors.yellow.color,
             items: [
               // 0 alphabethic
               BottomNavigationBarItem(

@@ -18,7 +18,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
-import 'package:chaostours/globals.dart';
+import 'package:chaostours/conf/globals.dart';
+import 'package:chaostours/conf/app_colors.dart';
 import 'package:chaostours/data_bridge.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/cache.dart';

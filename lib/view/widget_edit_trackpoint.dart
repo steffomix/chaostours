@@ -17,6 +17,8 @@ limitations under the License.
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 //
+import 'package:chaostours/conf/app_routes.dart';
+import 'package:chaostours/conf/app_colors.dart';
 import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_alias.dart';
@@ -269,8 +271,6 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
       appBar: AppBar(title: const Text('Haltepunkt bearbeiten')),
       navBar: BottomNavigationBar(
           type: BottomNavigationBarType.fixed,
-          fixedColor: AppColors.black.color,
-          backgroundColor: AppColors.yellow.color,
           items: [
             // 0 alphabethic
             BottomNavigationBarItem(
