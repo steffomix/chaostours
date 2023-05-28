@@ -58,11 +58,13 @@ dependencies:
   device_calendar: 4.3.1 
   #geolocator: 7.4.0 # version 9.x collides with background_location_tracker
   geolocator: 9.0.2
+  url_launcher: ^6.1.11
   file_manager: ^1.0.2
   fluttertoast: ^8.2.1
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
-  cupertino_icons: 1.0.5
+  cupertino_icons: ^1.0.5
+  provider: ^6.0.5
 
 dependency_overrides:
   geolocator_android: 4.1.4

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import 'package:chaostours/globals.dart';
+import 'package:chaostours/conf/globals.dart';
 
 import 'package:chaostours/model/model.dart';
 import 'package:chaostours/model/model_task.dart';

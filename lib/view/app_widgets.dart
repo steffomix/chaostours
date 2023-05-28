@@ -14,22 +14,25 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/conf/app_color_schemes.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:provider/provider.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 ///
 import 'package:chaostours/util.dart' as util;
-import 'package:chaostours/app_loader.dart';
+import 'package:chaostours/conf/theme_provider.dart';
+
 import 'package:chaostours/logger.dart';
-import 'package:chaostours/globals.dart';
-import 'package:chaostours/cache.dart';
+import 'package:chaostours/conf/globals.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/view/app_init.dart';
-import 'package:chaostours/view/app_colors.dart';
+import 'package:chaostours/conf/app_theme_data.dart';
+import 'package:chaostours/conf/app_routes.dart';
+import 'package:chaostours/conf/app_colors.dart';
 import 'package:chaostours/view/widget_live_tracking.dart';
 import 'package:chaostours/view/widget_logger_page.dart';
 import 'package:chaostours/view/widget_permissions_page.dart';
@@ -46,85 +49,7 @@ import 'package:chaostours/view/widget_import_export.dart';
 import 'package:chaostours/view/widget_app_settings.dart';
 import 'package:chaostours/view/widget_manage_background_gps.dart';
 import 'package:chaostours/view/widget_manage_calendar.dart';
-
-enum AppColorScheme {
-  bright(mangoMojitoLight),
-  dark(mangoMojitoLight);
-
-  final ColorScheme scheme;
-
-  const AppColorScheme(this.scheme);
-}
-
-enum AppColors {
-  /// theme colors
-  yellow(Colors.amber),
-  green(Color(0xFF4b830d)),
-
-  /// icons
-  black(Color.fromARGB(255, 51, 51, 51)),
-
-  ///Background
-  white(Color(0xFFDDDDDD)),
-
-  /// transparent background
-  white54(Colors.white54),
-
-  /// alias colors
-  aliasRestricted(Colors.red),
-  aliasPrivate(Colors.blue),
-  aliasPubplic(Colors.green);
-
-  static Color aliasStatusColor(AliasStatus status) {
-    Color color;
-    if (status == AliasStatus.privat) {
-      color = AppColors.aliasPrivate.color;
-    } else if (status == AliasStatus.restricted) {
-      color = AppColors.aliasRestricted.color;
-    } else {
-      color = AppColors.aliasPubplic.color;
-    }
-    return color;
-  }
-
-  final Color color;
-  const AppColors(this.color);
-}
-
-/// use value instead of name to get the right
-enum AppRoutes {
-  /// appStart
-  //home('/'),
-  // live
-  liveTracking('/'),
-  editTrackPoint('/editTrackPoint'),
-  // task
-  listTasks('/listTasks'),
-  editTasks('/listTasks/editTasks'),
-  createTask('/listTasks/createTask'),
-  // alias
-  listAlias('/listAlias'),
-  listAliasTrackpoints('/listAlias/listAliasTrackpoints'),
-  editAlias('/listAlias/listAliasTrackpoints/editAlias'),
-  // user
-  listUsers('/listUsers'),
-  editUser('/listUsers/editUser'),
-  createUser('/listUsers/createUser'),
-  // trackpoint events
-  selectCalendar('/selectCalendar'),
-  // osm
-  osm('/osm'),
-  // system
-  appInit('/appInit'),
-  logger('/logger'),
-  permissions('/permissions'),
-  importExport('/importexport'),
-  appSettings('/appsettings'),
-  backgroundGps('/manageBackgroundGps');
-
-  final String route;
-  const AppRoutes(this.route);
-}
+import 'package:chaostours/conf/app_theme_data.dart';
 
 ///
 ///
@@ -177,7 +102,7 @@ class AppWidgets {
           AppRoutes.backgroundGps.route: (context) =>
               const WidgetManageBackgroundGps()
         },
-        theme: ThemeData(colorScheme: AppColorScheme.bright.scheme));
+        theme: Provider.of<ThemeProvider>(context).themeData);
   }
 
   static Future<void> navigate(BuildContext context, AppRoutes route,
@@ -261,6 +186,7 @@ class WidgetDrawer extends StatefulWidget {
 class _WidgetDrawer extends State<WidgetDrawer> {
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     double boxHeight = 45;
     return Drawer(
         child: Container(
@@ -360,10 +286,22 @@ class _WidgetDrawer extends State<WidgetDrawer> {
                   child: const Text('Export / Import')),
 
               SizedBox(
+                  height: boxHeight,
+                  child: const Center(child: Text('\nColor Scheme'))),
+
+              ///
+              ElevatedButton(
+                  onPressed: () {
+                    AppThemeData.colorScheme = AppColorShemes.mangoMojito.dark;
+                    themeProvider.themeData = AppThemeData.theme;
+                  },
+                  child: const Text('dark theme')),
+
+              SizedBox(
                   height: 200,
                   child: Center(
                       child: TextButton(
-                          child: Text('ChaosTours\n'
+                          child: Text('\n\nChaosTours\n'
                               'Lizenz: Apache 2.0\n'
                               'Copyright ©${DateTime.now().year}\n'
                               'by Stefan Brinmann\n'

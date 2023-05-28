@@ -20,7 +20,7 @@ import 'package:flutter/material.dart';
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/view/app_widgets.dart';
-import 'package:chaostours/globals.dart';
+import 'package:chaostours/conf/globals.dart';
 import 'package:chaostours/cache.dart';
 
 class WidgetLoggerPage extends StatefulWidget {

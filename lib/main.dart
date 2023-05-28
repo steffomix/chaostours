@@ -13,15 +13,27 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+///
+import 'package:chaostours/conf/theme_provider.dart';
+import 'package:chaostours/conf/app_theme_data.dart';
 import 'package:chaostours/app_loader.dart';
 import 'package:chaostours/view/app_widgets.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AppLoader.preload();
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => ThemeProvider(
+        AppThemeData.theme, // Set the initial theme
+      ),
+      // ignore: prefer_const_constructors
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {

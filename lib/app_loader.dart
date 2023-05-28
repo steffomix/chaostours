@@ -26,7 +26,7 @@ import 'package:chaostours/tracking.dart';
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/permission_checker.dart';
-import 'package:chaostours/globals.dart';
+import 'package:chaostours/conf/globals.dart';
 import 'package:chaostours/cache.dart';
 import 'package:chaostours/data_bridge.dart';
 import 'package:chaostours/gps.dart';

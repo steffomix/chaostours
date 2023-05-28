@@ -19,7 +19,7 @@ import 'package:background_location_tracker/background_location_tracker.dart';
 ///
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/trackpoint_data.dart';
-import 'package:chaostours/globals.dart';
+import 'package:chaostours/conf/globals.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/cache.dart';
 import 'package:chaostours/data_bridge.dart';

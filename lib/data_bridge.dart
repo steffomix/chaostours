@@ -22,7 +22,7 @@ import 'package:chaostours/gps.dart';
 import 'package:chaostours/address.dart';
 import 'package:chaostours/tracking.dart';
 import 'package:chaostours/event_manager.dart';
-import 'package:chaostours/globals.dart';
+import 'package:chaostours/conf/globals.dart';
 
 class DataBridge {
   static final Logger logger = Logger.logger<DataBridge>();

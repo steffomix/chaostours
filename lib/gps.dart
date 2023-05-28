@@ -23,7 +23,7 @@ import 'package:permission_handler/permission_handler.dart';
 
 //import 'package:geolocator/geolocator.dart' show Position, Geolocator;
 //
-import 'package:chaostours/globals.dart';
+import 'package:chaostours/conf/globals.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/cache.dart';
 

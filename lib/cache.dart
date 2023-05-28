@@ -19,7 +19,7 @@ import 'package:device_calendar/device_calendar.dart';
 
 ///
 import 'package:chaostours/logger.dart';
-import 'package:chaostours/globals.dart';
+import 'package:chaostours/conf/globals.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/tracking.dart';
 import 'package:chaostours/model/model.dart';

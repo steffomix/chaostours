@@ -16,16 +16,15 @@ limitations under the License.
 
 import 'package:chaostours/data_bridge.dart';
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 
 ///
-import 'package:chaostours/globals.dart';
-import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/logger.dart';
+import 'package:chaostours/conf/app_routes.dart';
+import 'package:chaostours/conf/app_colors.dart';
+import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/util.dart';
 import 'package:chaostours/cache.dart';
-import 'package:chaostours/view/app_colors.dart';
 
 enum _DisplayMode {
   list,
@@ -289,8 +288,6 @@ class _WidgetUserList extends State<WidgetUserList> {
             : sortWidget(context),
         navBar: BottomNavigationBar(
             type: BottomNavigationBarType.fixed,
-            backgroundColor: AppColorScheme.bright.scheme.primary,
-            fixedColor: AppColors.black.color,
             items: [
               BottomNavigationBarItem(
                   icon: ValueListenableBuilder(
