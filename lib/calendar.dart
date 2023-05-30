@@ -77,7 +77,7 @@ class AppCalendar {
   Future<Calendar?> getCalendarfromCacheId() async {
     try {
       var cache =
-          await Cache.getValue<String>(CacheKeys.selectedCalendarId, '');
+          await Cache.getValue<String>(CacheKeys.calendarSelectedId, '');
       for (var c in calendars) {
         if (c.id == cache) {
           return c;

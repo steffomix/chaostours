@@ -21,12 +21,29 @@ import 'package:chaostours/logger.dart';
 import 'package:chaostours/cache.dart';
 import 'package:chaostours/conf/osm.dart';
 
+enum SettingUnits {
+  second(1),
+  minute(60),
+  meter(1),
+  piece(1);
+
+  final int multiplicator;
+  const SettingUnits(this.multiplicator);
+}
+
 class AppSettingLimits {
+  final CacheKeys cacheKey;
   final int? min;
   final int? max;
   final bool zeroDisables;
+  final SettingUnits unit;
 
-  AppSettingLimits({this.min, this.max, this.zeroDisables = false});
+  AppSettingLimits(
+      {required this.cacheKey,
+      this.min,
+      this.max,
+      this.zeroDisables = false,
+      this.unit = SettingUnits.second});
 
   bool isValid(num value) {
     return ((value == 0 && zeroDisables) || isBetween(value));
@@ -88,8 +105,8 @@ class AppSettings {
       Duration(seconds: 10);
   static Duration _backgroundLookupDuration = _backgroundLookupDurationDefault;
   static Duration get backgroundLookupDuration => _backgroundLookupDuration;
-  static AppSettingLimits backgroundLookupDurationLimits =
-      AppSettingLimits(min: 5, max: 60);
+  static AppSettingLimits backgroundLookupDurationLimits = AppSettingLimits(
+      cacheKey: CacheKeys.globalsBackgroundLookupDuration, min: 5, max: 60);
   static set backgroundLookupDuration(Duration value) {
     if (backgroundLookupDurationLimits.isValid(value.inSeconds)) {
       _backgroundLookupDuration = value;
@@ -101,8 +118,8 @@ class AppSettings {
   static const Duration _cacheGpsTimeDefault = Duration(seconds: 10);
   static Duration _cacheGpsTime = _cacheGpsTimeDefault;
   static Duration get cacheGpsTime => _cacheGpsTime;
-  static AppSettingLimits cachGpsTimeLimits =
-      AppSettingLimits(max: 600, zeroDisables: true);
+  static AppSettingLimits cachGpsTimeLimits = AppSettingLimits(
+      cacheKey: CacheKeys.globalsCacheGpsTime, max: 600, zeroDisables: true);
 
   static set cacheGpsTime(Duration value) {
     if (cachGpsTimeLimits.isValid(value.inSeconds)) {
@@ -116,7 +133,10 @@ class AppSettings {
   static const int _distanceTresholdDefault = 100; //meters
   static int _distanceTreshold = _distanceTresholdDefault;
   static int get distanceTreshold => _distanceTreshold;
-  static AppSettingLimits distanceTresholdLimits = AppSettingLimits(min: 10);
+  static AppSettingLimits distanceTresholdLimits = AppSettingLimits(
+      cacheKey: CacheKeys.globalsDistanceTreshold,
+      min: 10,
+      unit: SettingUnits.meter);
   static set distanceTreshold(int value) {
     if (distanceTresholdLimits.isValid(value)) {
       _distanceTreshold = value;
@@ -124,13 +144,17 @@ class AppSettings {
   }
 
   /// stop time needed to trigger stop.
-  /// Shoud be at least 3 times more than Globals.tickTrackPointDuration
+  /// Shoud be at least 3 times more than trackPointDuration
   static const Duration _timeRangeTresholdDefault = Duration(seconds: 180);
   static Duration _timeRangeTreshold = _timeRangeTresholdDefault;
   static Duration get timeRangeTreshold => _timeRangeTreshold;
-  static AppSettingLimits timeRangeTresholdLimits = AppSettingLimits(min: 60);
+  static AppSettingLimits timeRangeTresholdLimits = AppSettingLimits(
+      cacheKey: CacheKeys.globalsTimeRangeTreshold,
+      min: (trackPointInterval.inSeconds * 3 / 60).ceil(),
+      unit: SettingUnits.minute);
   static set timeRangeTreshold(Duration value) {
-    if (timeRangeTresholdLimits.isValid(value.inSeconds)) {
+    if (timeRangeTresholdLimits.isValid(value.inSeconds) &&
+        value.inSeconds >= trackPointInterval.inSeconds * 3) {
       _timeRangeTreshold = value;
     }
   }
@@ -139,13 +163,15 @@ class AppSettings {
   static const Duration _trackPointIntervalDefault = Duration(seconds: 30);
   static Duration _trackPointInterval = _trackPointIntervalDefault;
   static Duration get trackPointInterval => _trackPointInterval;
-  static AppSettingLimits get trackingIntervalLimits {
+  static AppSettingLimits get trackPointIntervalLimits {
     return AppSettingLimits(
-        min: 15, max: (_timeRangeTreshold.inSeconds / 1).ceil());
+        cacheKey: CacheKeys.globalsTrackPointInterval,
+        min: 15,
+        max: (_timeRangeTreshold.inSeconds / 1).ceil());
   }
 
   static set trackPointInterval(Duration value) {
-    if (trackingIntervalLimits.isValid(value.inSeconds)) {
+    if (trackPointIntervalLimits.isValid(value.inSeconds)) {
       _trackPointInterval = value;
     }
   }
@@ -158,10 +184,12 @@ class AppSettings {
   static int get gpsPointsSmoothCount => _gpsPointsSmoothCount;
   static AppSettingLimits get gpsPointsSmoothCountLimits {
     return AppSettingLimits(
+        cacheKey: CacheKeys.globalsGpsPointsSmoothCount,
         min: 2,
         max: (timeRangeTreshold.inSeconds / trackPointInterval.inSeconds)
             .floor(),
-        zeroDisables: true);
+        zeroDisables: true,
+        unit: SettingUnits.piece);
   }
 
   static set gpsPointsSmoothCount(int count) {
@@ -193,8 +221,11 @@ class AppSettings {
   static Duration get autocreateAliasDefault => _autocreateAliasDefault;
   static Duration _autoCreateAlias = _autocreateAliasDefault;
   static Duration get autoCreateAlias => _autoCreateAlias;
-  static AppSettingLimits autoCreateAliasLimits =
-      AppSettingLimits(min: 10, zeroDisables: true);
+  static AppSettingLimits autoCreateAliasLimits = AppSettingLimits(
+      cacheKey: CacheKeys.globalsAutocreateAlias,
+      min: 10,
+      zeroDisables: true,
+      unit: SettingUnits.minute);
   static set autoCreateAlias(Duration dur) {
     if (autoCreateAliasLimits.isValid(dur.inMinutes)) {
       _autoCreateAlias = dur;
@@ -213,7 +244,8 @@ class AppSettings {
           _backgroundTrackingEnabledDefault);
 
       _backgroundLookupDuration = await Cache.getValue<Duration>(
-          CacheKeys.globalsAppTickDuration, _backgroundLookupDurationDefault);
+          CacheKeys.globalsBackgroundLookupDuration,
+          _backgroundLookupDurationDefault);
 
       _cacheGpsTime = await Cache.getValue<Duration>(
           CacheKeys.globalsCacheGpsTime, _cacheGpsTimeDefault);
@@ -260,42 +292,75 @@ class AppSettings {
     await saveSettings();
   }
 
-  static Future<void> updateValue(
-      {required CacheKeys key,
-      required Type type,
-      required dynamic value}) async {
-    switch (key) {
-      case CacheKeys.globalsAppTickDuration:
-        backgroundLookupDuration = Duration(seconds: value as int);
-        break;
-      case CacheKeys.globalsCacheGpsTime:
-        cacheGpsTime = Duration(seconds: value as int);
-        break;
+  static Future<bool> updateValue(
+      {required CacheKeys key, required dynamic value}) async {
+    if (value.runtimeType == int) {
+      int? oldValue;
+      int? newValue;
+      switch (key) {
+        case CacheKeys.globalsBackgroundLookupDuration:
+          oldValue = backgroundLookupDuration.inSeconds;
+          backgroundLookupDuration = Duration(seconds: value as int);
+          newValue = backgroundLookupDuration.inSeconds;
+          break;
 
-      case CacheKeys.globalsDistanceTreshold:
-        distanceTreshold = value as int;
-        break;
+        case CacheKeys.globalsCacheGpsTime:
+          oldValue = cacheGpsTime.inSeconds;
+          cacheGpsTime = Duration(seconds: value as int);
+          newValue = cacheGpsTime.inSeconds;
+          break;
 
-      case CacheKeys.globalsTimeRangeTreshold:
-        timeRangeTreshold = Duration(seconds: value as int);
-        break;
+        case CacheKeys.globalsDistanceTreshold:
+          oldValue = distanceTreshold;
+          distanceTreshold = value as int;
+          newValue = distanceTreshold;
+          break;
 
-      case CacheKeys.globalsTrackPointInterval:
-        trackPointInterval = Duration(seconds: value as int);
-        break;
-      case CacheKeys.globalsGpsPointsSmoothCount:
-        gpsPointsSmoothCount = value as int;
-        break;
+        case CacheKeys.globalsTimeRangeTreshold:
+          oldValue = timeRangeTreshold.inSeconds;
+          timeRangeTreshold = Duration(seconds: value as int);
+          newValue = timeRangeTreshold.inSeconds;
+          break;
 
-      case CacheKeys.globalsAutocreateAlias:
-        autoCreateAlias = Duration(seconds: value as int);
-        break;
+        case CacheKeys.globalsTrackPointInterval:
+          oldValue = trackPointInterval.inSeconds;
+          trackPointInterval = Duration(seconds: value as int);
+          newValue = trackPointInterval.inSeconds;
+          break;
 
-      default:
+        case CacheKeys.globalsGpsPointsSmoothCount:
+          oldValue = gpsPointsSmoothCount;
+          gpsPointsSmoothCount = value as int;
+          newValue = gpsPointsSmoothCount;
+          break;
 
-      ///
+        case CacheKeys.globalsAutocreateAlias:
+          oldValue = autoCreateAlias.inSeconds;
+          autoCreateAlias = Duration(seconds: value as int);
+          newValue = autoCreateAlias.inSeconds;
+          break;
+
+        default:
+          return false;
+
+        ///
+      }
+      if (oldValue != newValue) {
+        await saveSettings();
+        return true;
+      }
+      return false;
     }
-    await saveSettings();
+    if (key.cacheType == bool && value.runtimeType == key.cacheType) {
+      await Cache.setValue<bool>(key, value);
+      return true;
+    }
+    if (key.cacheType == OsmLookupConditions &&
+        value.runtimeType == key.cacheType) {
+      await Cache.setValue<OsmLookupConditions>(key, value);
+      return true;
+    }
+    return false;
   }
 
   static Future<void> saveSettings() async {
@@ -306,7 +371,7 @@ class AppSettings {
         statusStandingRequireAlias);
 
     await Cache.setValue<Duration>(
-        CacheKeys.globalsAppTickDuration, backgroundLookupDuration);
+        CacheKeys.globalsBackgroundLookupDuration, backgroundLookupDuration);
 
     await Cache.setValue<Duration>(CacheKeys.globalsCacheGpsTime, cacheGpsTime);
 

@@ -71,7 +71,7 @@ class _WidgetManageCalendarState extends State<WidgetManageCalendar> {
         subtitle: Text(cal.accountName ?? 'Unknown account'),
         onTap: (() async {
           await Cache.setValue<String>(
-              CacheKeys.selectedCalendarId, cal.id ?? '');
+              CacheKeys.calendarSelectedId, cal.id ?? '');
           selectedCalendar = cal;
           Fluttertoast.showToast(msg: 'Calendar selected');
           if (mounted) {

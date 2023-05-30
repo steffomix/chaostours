@@ -104,8 +104,10 @@ enum CacheKeys {
 
   /// eventCalendar
   /// "id\tname\taccount"
-  selectedCalendarId(String),
-  lastCalendarEventId(String),
+  ///
+  calendarSelectedId(String),
+  calendarLastEventId(String),
+  calendarPublishStatusEnabled(bool),
 
   /// globals
   globalsWeekDays(List<String>),
@@ -116,7 +118,7 @@ enum CacheKeys {
   globalsCacheGpsTime(Duration),
   globalsDistanceTreshold(int),
   globalsTimeRangeTreshold(Duration),
-  globalsAppTickDuration(Duration),
+  globalsBackgroundLookupDuration(Duration),
   globalsGpsPointsSmoothCount(int),
   globalsAutocreateAlias(Duration),
   globalPublishToCalendar(bool);

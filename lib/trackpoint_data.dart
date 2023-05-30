@@ -37,6 +37,8 @@ class TrackPointData {
   late double distanceMoving;
   List<ModelAlias> aliasList = [];
   late String aliasText;
+  List<ModelAlias> currentAliasList = [];
+  late String currentAliasText;
   List<ModelUser> userList = [];
   late String tasksText;
   List<ModelTask> taskList = [];
@@ -106,6 +108,20 @@ class TrackPointData {
       aliasText = aliasList.isEmpty
           ? ' ---'
           : '${aliasList.length == 1 ? '-' : '-->'} ${aliasList.map((e) {
+                return e.alias;
+              }).toList().join('\n- ')}';
+    } catch (e, stk) {
+      logger.error('process aliasIds: $e', stk);
+      rethrow;
+    }
+    try {
+      var currentAliasIds = tp?.idAlias ?? bridge.currentAliasIdList;
+      currentAliasList =
+          currentAliasIds.map((id) => ModelAlias.getAlias(id)).toList();
+      // don't sort alias
+      currentAliasText = currentAliasList.isEmpty
+          ? ' ---'
+          : '${currentAliasList.length == 1 ? '-' : '-->'} ${currentAliasList.map((e) {
                 return e.alias;
               }).toList().join('\n- ')}';
     } catch (e, stk) {

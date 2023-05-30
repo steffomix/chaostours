@@ -25,6 +25,7 @@ import 'package:chaostours/cache.dart';
 import 'package:chaostours/data_bridge.dart';
 import 'package:chaostours/Location.dart';
 import 'package:chaostours/conf/osm.dart';
+import 'dart:math' as math;
 
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_alias.dart';
@@ -167,8 +168,8 @@ class _TrackPoint {
       /// add current gps point
       bridge.gpsPoints.insert(0, gps);
 
-      /// prefill gpsPoints
       if (bridge.gpsPoints.length != maxGpsPoints) {
+        /// prefill gpsPoints
         while (bridge.gpsPoints.length < maxGpsPoints) {
           var gpsFiller = PendingGps(gps.lat, gps.lon);
           gpsFiller.time =
@@ -176,6 +177,7 @@ class _TrackPoint {
           bridge.gpsPoints.add(gpsFiller);
         }
 
+        /// prune gpsPoints
         while (bridge.gpsPoints.length > maxGpsPoints) {
           bridge.gpsPoints.removeLast();
         }
@@ -189,8 +191,8 @@ class _TrackPoint {
       int calculationRange = (AppSettings.timeRangeTreshold.inSeconds /
               AppSettings.trackPointInterval.inSeconds)
           .floor();
-      bridge.calcGpsPoints
-          .addAll(bridge.smoothGpsPoints.getRange(0, calculationRange));
+      bridge.calcGpsPoints.addAll(bridge.smoothGpsPoints.getRange(
+          0, math.min(bridge.smoothGpsPoints.length - 1, calculationRange)));
 
       /// continue with smoothed gps
       gps = bridge.calcGpsPoints.first;
@@ -301,6 +303,7 @@ class _TrackPoint {
                         notes:
                             'Auto created Alias\nat address:\n"$address"\n\nat date/time: ${gps.time.toIso8601String()}',
                         radius: AppSettings.distanceTreshold);
+                    logger.log('auto create new alias');
                     await ModelAlias.insert(newAlias);
 
                     /// recreate location with new alias
@@ -312,6 +315,7 @@ class _TrackPoint {
                         gpsLocation.aliasIdList);
 
                     /// change status
+                    gps.time = bridge.smoothGpsPoints.last.time;
                     await cacheNewStatusStanding(gps);
                   }
                 }
@@ -360,7 +364,7 @@ class _TrackPoint {
 
         /// we started moving
         if (bridge.trackingStatus == TrackingStatus.moving) {
-          logger.warn('tracking status MOVING');
+          logger.log('tracking status MOVING');
 
           ///
           ///     --- insert and update database entrys ---
@@ -385,11 +389,12 @@ class _TrackPoint {
             /// complete calendar event from trackpoint data
             /// only if no private or restricted alias is present
             var tpData = TrackPointData(tp: newTrackPoint);
-            if (!gpsLocation.isPrivate &&
+            if (AppSettings.publishToCalendar &&
+                !gpsLocation.isPrivate &&
                 (!AppSettings.statusStandingRequireAlias ||
                     (AppSettings.statusStandingRequireAlias &&
                         tpData.aliasList.isNotEmpty))) {
-              logger.warn('complete calendar event');
+              logger.log('complete calendar event');
               await AppCalendar()
                   .completeCalendarEvent(TrackPointData(tp: newTrackPoint));
             }
@@ -400,7 +405,7 @@ class _TrackPoint {
 
             /// reset calendarEvent ID
             bridge.lastCalendarEventId =
-                await Cache.setValue<String>(CacheKeys.lastCalendarEventId, '');
+                await Cache.setValue<String>(CacheKeys.calendarLastEventId, '');
 
             /// update alias
             if (gpsLocation.hasAlias) {
@@ -418,15 +423,15 @@ class _TrackPoint {
                 CacheKeys.cacheBackgroundTaskIdList, []);
             await Cache.setValue<String>(
                 CacheKeys.cacheBackgroundTrackPointUserNotes, '');
-            logger.warn('status MOVING finished');
+            logger.log('status MOVING finished');
           } else {
-            logger.warn(
+            logger.log(
                 'New trackpoint not saved due to app settings- or alias restrictions');
           }
 
           ///
         } else if (bridge.trackingStatus == TrackingStatus.standing) {
-          logger.warn('tracking status STANDING');
+          logger.log('tracking status STANDING');
 
           bridge.lastStandingAddress = await Cache.setValue<String>(
               CacheKeys.cacheBackgroundLastStandingAddress,
@@ -439,19 +444,20 @@ class _TrackPoint {
               CacheKeys.cacheBackgroundAliasIdList, gpsLocation.aliasIdList);
 
           /// create calendar entry from cache data
-          if (!gpsLocation.isPrivate &&
+          if (AppSettings.publishToCalendar &&
+              !gpsLocation.isPrivate &&
               (!AppSettings.statusStandingRequireAlias ||
                   (AppSettings.statusStandingRequireAlias &&
                       gpsLocation.hasAlias))) {
-            logger.warn('create new calendar event');
+            logger.log('create new calendar event');
             String? id =
                 await AppCalendar().startCalendarEvent(TrackPointData());
 
             /// cache event id
             bridge.lastCalendarEventId = await Cache.setValue<String>(
-                CacheKeys.lastCalendarEventId, id ?? '');
+                CacheKeys.calendarLastEventId, id ?? '');
           }
-          logger.warn('tracking status STANDING finished');
+          logger.log('tracking status STANDING finished');
         }
       }
     } catch (e, stk) {
@@ -487,16 +493,22 @@ class _TrackPoint {
     }
 
     if (bridge.gpsPoints.length <= smooth) {
-      /// too few gps points
+      logger.warn('too few gpsPoints for $smooth smoothPoints. '
+          'Use all gpsPoints as smoothPoints directly without smmothing effect');
+      bridge.smoothGpsPoints.addAll(bridge.gpsPoints);
       return;
     }
-
     int index = 0;
-    int range = bridge.gpsPoints.length - smooth - 1;
-    while (index <= range) {
-      var averageGps = PendingGps.average(
-          bridge.gpsPoints.getRange(index, index + smooth).toList());
-      averageGps.time = bridge.gpsPoints[index].time;
+    int range = bridge.gpsPoints.length - smooth;
+    while (index < range) {
+      try {
+        var averageGps = PendingGps.average(
+            bridge.gpsPoints.getRange(index, index + smooth).toList());
+        averageGps.time = bridge.gpsPoints[index].time;
+        bridge.smoothGpsPoints.add(averageGps);
+      } catch (e, stk) {
+        logger.error('calculateSmoothPoints: $e', stk);
+      }
       index++;
     }
   }

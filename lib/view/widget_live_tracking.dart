@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/Location.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_osm_plugin/flutter_osm_plugin.dart' as osm;
 import 'package:fluttertoast/fluttertoast.dart';
@@ -276,11 +277,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       }
     } catch (e, stk) {
       logger.error('::build error: $e', stk);
-      body = AppWidgets.loading('Error, please open App Logger for details');
-      Future.delayed(const Duration(seconds: 1), () {
-        AppWidgets.navigate(context, AppRoutes.logger);
-        dispose();
-      });
+      body = AppWidgets.loading('Error, please open App Logger for details.');
     }
 
     return AppWidgets.scaffold(context,
@@ -403,8 +400,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   ///
   Widget renderTrackPointMoving(BuildContext context) {
     TrackPointData tp = TrackPointData();
+    Location location = Location(bridge.calcGpsPoints.first);
     Widget divider = AppWidgets.divider();
-    Screen screen = Screen(context);
     Widget body =
         Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Center(
@@ -433,7 +430,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         style: ButtonStyle(
             padding:
                 MaterialStateProperty.all<EdgeInsets>(const EdgeInsets.all(0))),
-        child: Text('ALIAS:\n${tp.aliasText}'),
+        child: Text('ALIAS: (${location.status.name})\n${tp.currentAliasText}'),
         onPressed: () async {
           if (bridge.gpsPoints.isNotEmpty) {
             var gps = bridge.gpsPoints.first;
@@ -502,6 +499,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   Widget renderTrackPointStanding(BuildContext context) {
     TrackPointData tp = TrackPointData();
     Widget divider = AppWidgets.divider();
+    Location location = Location(bridge.calcGpsPoints.first);
     Widget body =
         Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Center(
@@ -530,13 +528,11 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
             alignment: Alignment.centerLeft,
             padding: MaterialStateProperty.all<EdgeInsets>(
                 const EdgeInsets.fromLTRB(30, 0, 20, 0))),
-        child: Text('ALIAS:\n${tp.aliasText}'),
+        child: Text('ALIAS (${location.status.name}):\n${tp.currentAliasText}'),
         onPressed: () async {
-          if (bridge.gpsPoints.isNotEmpty) {
-            var gps = bridge.gpsPoints.first;
+          if (bridge.calcGpsPoints.isNotEmpty) {
             bridge.currentAliasIdList = await Cache.setValue<List<int>>(
-                CacheKeys.cacheCurrentAliasIdList,
-                ModelAlias.nextAlias(gps: gps).map((e) => e.id).toList());
+                CacheKeys.cacheCurrentAliasIdList, location.aliasIdList);
             await Cache.reload();
             if (mounted) {
               setState(() {});

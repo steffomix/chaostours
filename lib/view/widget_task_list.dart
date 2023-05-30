@@ -68,7 +68,12 @@ class _WidgetTaskList extends State<WidgetTaskList> {
               icon: const Icon(Icons.edit),
               onPressed: () {
                 Navigator.pushNamed(context, AppRoutes.editTasks.route,
-                    arguments: task.id);
+                        arguments: task.id)
+                    .then((_) {
+                  if (mounted) {
+                    setState(() {});
+                  }
+                });
               })),
       AppWidgets.divider()
     ]);
