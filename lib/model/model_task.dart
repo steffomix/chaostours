@@ -20,7 +20,7 @@ import 'package:chaostours/model/model.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/cache.dart';
 
-class ModelTask {
+class ModelTask extends Model {
   static Logger logger = Logger.logger<ModelTask>();
   static final List<ModelTask> _table = [];
   int _id = 0;
@@ -32,12 +32,9 @@ class ModelTask {
   int get id => _id;
   static int get length => _table.length;
 
-  String task;
-  String notes = '';
-  bool deleted;
-  ModelTask({required this.task, this.notes = '', this.deleted = false});
+  ModelTask({super.title, super.notes, super.deleted});
 
-  static ModelTask getTask(int id) {
+  static ModelTask getModel(int id) {
     return _table[id - 1];
   }
 
@@ -53,7 +50,7 @@ class ModelTask {
       _id.toString(),
       sortOrder.toString(),
       deleted ? '1' : '0',
-      encode(task),
+      encode(title),
       encode(notes),
       '|'
     ];
@@ -80,7 +77,7 @@ class ModelTask {
         deleted: _parse<int>(1, 'Deleted', p[2], int.parse) == 1
             ? true
             : false, //p[1] == '1' ? true : false,
-        task: _parse<String>(2, 'Task name', p[3], decode), //decode(p[2]),
+        title: _parse<String>(2, 'Task name', p[3], decode), //decode(p[2]),
         notes: _parse<String>(3, 'Notes', p[4], decode)); // decode(p[3]));
     model._id = id;
     model.sortOrder = sortOrder;
@@ -99,7 +96,7 @@ class ModelTask {
   static Future<int> insert(ModelTask m) async {
     _table.add(m);
     m._id = _table.length;
-    logger.log('Insert Task ${m.task} \n    which now has ID $m._id');
+    logger.log('Insert Task ${m.title} \n    which now has ID $m._id');
     await write();
     return m._id;
   }
@@ -117,7 +114,7 @@ class ModelTask {
 
   static Future<void> delete(ModelTask m) async {
     m.deleted = true;
-    logger.log('Delete Task ${m.task} with ID ${m.id}');
+    logger.log('Delete Task ${m.title} with ID ${m.id}');
     await write();
   }
 

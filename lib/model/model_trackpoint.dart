@@ -14,11 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'dart:collection';
+
 import 'package:chaostours/conf/app_settings.dart';
 
 import 'package:chaostours/model/model.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_alias.dart';
+import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/tracking.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/util.dart' as util;
@@ -131,12 +134,14 @@ class ModelTrackPoint {
   String notes = '';
   String calendarId = ''; // calendarId;calendarEventId
 
-  int _id = 0;
-
   /// real ID<br>
   /// Is set only once during save to disk
   /// and represents the current _table.length
+  int _id = 0;
   int get id => _id;
+
+  /// temporary distance for sort
+  int sortDistance = 0;
 
   static int get length => _table.length;
 
@@ -250,7 +255,7 @@ class ModelTrackPoint {
   List<ModelAlias> getAlias() {
     List<ModelAlias> list = [];
     for (int id in idAlias) {
-      list.add(ModelAlias.getAlias(id));
+      list.add(ModelAlias.getModel(id));
     }
     logger.verbose('get ${list.length} alias from TrackPoint ID $id');
     return list;
@@ -281,33 +286,114 @@ class ModelTrackPoint {
     return list;
   }
 
-  static List<ModelTrackPoint> lastVisited(GPS gps, {int max = 30}) {
+  static List<ModelTrackPoint> lastVisited(GPS gps) {
     List<ModelTrackPoint> list = [];
-    List<ModelAlias> alias = ModelAlias.nextAlias(gps: gps);
     int distance = AppSettings.distanceTreshold;
-    if (alias.isNotEmpty) {
-      gps = GPS(alias.first.lat, alias.first.lon);
-      distance = alias.first.radius;
-    }
-    DateTime time = DateTime.now().subtract(const Duration(days: 365));
-    for (var tp in _table.reversed) {
-      if (tp.timeStart.isBefore(time)) {
-        break;
-      }
-      if (GPS.distance(gps, tp.gps) <= distance) {
+
+    for (var tp in _table) {
+      tp.sortDistance = GPS.distance(gps, tp.gps).round();
+      if (tp.sortDistance <= distance) {
         list.add(tp);
       }
     }
+    //list.sort((a, b) => (a.sortDistance - b.sortDistance));
     return list.reversed.toList();
   }
 
-  Set<ModelTask> getTasks() {
+  /// secure method to get models from idLists
+  List<ModelTask> getTaskModels() {
     Set<ModelTask> list = {};
-    for (int id in idAlias) {
-      list.add(ModelTask.getTask(id));
+    for (int id in idTask) {
+      try {
+        list.add(ModelTask.getModel(id));
+      } catch (e) {
+        logger.warn('Task #$id does not exist');
+      }
     }
-    logger.log('get Tasks: $list');
-    return list;
+    return list.toList();
+  }
+
+  static List<ModelTrackPoint> getAll() {
+    return [..._table];
+  }
+
+  /// secure method to get models from idLists
+  List<ModelUser> getUserModels() {
+    Set<ModelUser> list = {};
+    for (int id in idTask) {
+      try {
+        list.add(ModelUser.getModel(id));
+      } catch (e) {
+        logger.warn('User #$id does not exist');
+      }
+    }
+    return list.toList();
+  }
+
+  /// secure method to get models from idLists
+  List<ModelAlias> getAliasModels() {
+    Set<ModelAlias> list = {};
+    for (int id in idTask) {
+      try {
+        list.add(ModelAlias.getModel(id));
+      } catch (e) {
+        logger.warn('Alias #$id does not exist');
+      }
+    }
+    return list.toList();
+  }
+
+  static bool _searchIdLists(List<int> l1, List<int> l2) {
+    var found = false;
+    for (var id1 in l1) {
+      if (!found) {
+        for (var id2 in l2) {
+          if (id1 == id2) {
+            found = true;
+            break;
+          }
+        }
+      }
+    }
+    return found;
+  }
+
+  static List<ModelTrackPoint> search(String search,
+      [List<ModelTrackPoint>? resource]) {
+    resource ??= ModelTrackPoint.getAll();
+    List<ModelTrackPoint> tpList = [];
+    if (search.isNotEmpty) {
+      List<int> aliasIds = [];
+      List<int> userIds = [];
+      List<int> taskIds = [];
+      for (var model in ModelUser.getAll()) {
+        if (model.containsString(search)) {
+          userIds.add(model.id);
+        }
+      }
+      for (var model in ModelAlias.getAll()) {
+        if (model.containsString(search)) {
+          aliasIds.add(model.id);
+        }
+      }
+      for (var model in ModelTask.getAll()) {
+        if (model.containsString(search)) {
+          taskIds.add(model.id);
+        }
+      }
+      for (var model in resource) {
+        if (model.address.contains(search) ||
+            model.timeStart.toIso8601String().contains(search) ||
+            _searchIdLists(model.idTask, taskIds) ||
+            _searchIdLists(model.idUser, userIds) ||
+            _searchIdLists(model.idAlias, aliasIds)) {
+          tpList.add(model);
+        }
+      }
+      return tpList;
+    } else {
+      return resource.reversed.toList();
+    }
   }
 
   static T _parse<T>(

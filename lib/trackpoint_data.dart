@@ -77,7 +77,7 @@ class TrackPointData {
       GPS gps;
       int radius;
       if (bridge.trackPointAliasIdList.isNotEmpty) {
-        var alias = ModelAlias.getAlias(bridge.trackPointAliasIdList.first);
+        var alias = ModelAlias.getModel(bridge.trackPointAliasIdList.first);
         gps = GPS(alias.lat, alias.lon);
         radius = alias.radius;
       } else {
@@ -103,12 +103,12 @@ class TrackPointData {
     }
     try {
       var aliasIds = tp?.idAlias ?? bridge.trackPointAliasIdList;
-      aliasList = aliasIds.map((id) => ModelAlias.getAlias(id)).toList();
+      aliasList = aliasIds.map((id) => ModelAlias.getModel(id)).toList();
       // don't sort alias
       aliasText = aliasList.isEmpty
           ? ' ---'
           : '${aliasList.length == 1 ? '-' : '-->'} ${aliasList.map((e) {
-                return e.alias;
+                return e.title;
               }).toList().join('\n- ')}';
     } catch (e, stk) {
       logger.error('process aliasIds: $e', stk);
@@ -117,12 +117,12 @@ class TrackPointData {
     try {
       var currentAliasIds = tp?.idAlias ?? bridge.currentAliasIdList;
       currentAliasList =
-          currentAliasIds.map((id) => ModelAlias.getAlias(id)).toList();
+          currentAliasIds.map((id) => ModelAlias.getModel(id)).toList();
       // don't sort alias
       currentAliasText = currentAliasList.isEmpty
           ? ' ---'
           : '${currentAliasList.length == 1 ? '-' : '-->'} ${currentAliasList.map((e) {
-                return e.alias;
+                return e.title;
               }).toList().join('\n- ')}';
     } catch (e, stk) {
       logger.error('process aliasIds: $e', stk);
@@ -130,13 +130,13 @@ class TrackPointData {
     }
     try {
       var taskIds = tp?.idTask ?? bridge.trackPointTaskIdList;
-      taskList = taskIds.map((id) => ModelTask.getTask(id)).toList();
+      taskList = taskIds.map((id) => ModelTask.getModel(id)).toList();
       taskList.sort((a, b) => a.sortOrder - b.sortOrder);
       tasksText = taskList.isEmpty
           ? ' ---'
           : taskList
               .map((e) {
-                return '- ${e.task}';
+                return '- ${e.title}';
               })
               .toList()
               .join('\n');
@@ -146,13 +146,13 @@ class TrackPointData {
     }
     try {
       var userIds = tp?.idUser ?? bridge.trackPointUserIdList;
-      userList = userIds.map((id) => ModelUser.getUser(id)).toList();
+      userList = userIds.map((id) => ModelUser.getModel(id)).toList();
       userList.sort((a, b) => a.sortOrder - b.sortOrder);
       usersText = userList.isEmpty
           ? ' ---'
           : userList
               .map((e) {
-                return '- ${e.user}';
+                return '- ${e.title}';
               })
               .toList()
               .join('\n');

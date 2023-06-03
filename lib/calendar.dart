@@ -104,11 +104,11 @@ class AppCalendar {
         /// get lastEvent
         if (calendar != null) {
           var title =
-              'Ankunft ${tpData.aliasList.isNotEmpty ? tpData.aliasList.first.alias : tpData.addressText} - ${start.hour}.${start.minute}';
+              'Ankunft ${tpData.aliasList.isNotEmpty ? tpData.aliasList.first.title : tpData.addressText} - ${start.hour}.${start.minute}';
           var location =
               'maps.google.com?q=${tpData.gpslastStatusChange.lat},${tpData.gpslastStatusChange.lon}';
           var description =
-              '${tpData.aliasList.isNotEmpty ? tpData.aliasList.first.alias : tpData.addressText}\n'
+              '${tpData.aliasList.isNotEmpty ? tpData.aliasList.first.title : tpData.addressText}\n'
               'am ${start.day}.${start.month}.${start.year}\n'
               'um ${start.hour}.${start.minute} - unbekannt)\n\n'
               'Arbeiten: ...\n\n'
@@ -156,11 +156,11 @@ class AppCalendar {
           }
 
           var title =
-              '${tpData.aliasList.isNotEmpty ? tpData.aliasList.first.alias : tpData.addressText}; ${tpData.durationText}';
+              '${tpData.aliasList.isNotEmpty ? tpData.aliasList.first.title : tpData.addressText}; ${tpData.durationText}';
           var location =
               'maps.google.com?q=${tpData.gpslastStatusChange.lat},${tpData.gpslastStatusChange.lon}';
           var description =
-              '${tpData.aliasList.isNotEmpty ? tpData.aliasList.first.alias : tpData.addressText}\n'
+              '${tpData.aliasList.isNotEmpty ? tpData.aliasList.first.title : tpData.addressText}\n'
               '${start.day}.${start.month}. - ${tpData.durationText}\n'
               '(${start.hour}.${start.minute} - ${end.hour}.${end.minute})\n\n'
               'Arbeiten:\n${tpData.tasksText}\n\n'

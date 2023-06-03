@@ -71,7 +71,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
 
   /// current trackpoint
   Widget trackPointInfo(BuildContext context) {
-    var aliasList = trackPoint.idAlias.map((id) => ModelAlias.getAlias(id));
+    var aliasList = trackPoint.idAlias.map((id) => ModelAlias.getModel(id));
 
     return Container(
         padding: const EdgeInsets.all(10),
@@ -89,7 +89,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
                     )
                   : TextButton(
                       child: Text(
-                          'Alias: ${aliasList.map((e) => e.alias).join('\n- ')}'),
+                          'Alias: ${aliasList.map((e) => e.title).join('\n- ')}'),
                       onPressed: () async {
                         int id = aliasList.first.id;
                         await Navigator.pushNamed(
@@ -112,7 +112,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
                 idReference: tp.id,
                 referenceList: referenceList,
                 deleted: tp.deleted,
-                title: tp.task,
+                title: tp.title,
                 subtitle: tp.notes,
                 onToggle: () {
                   modify();
@@ -133,7 +133,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
                 idReference: tp.id,
                 referenceList: referenceList,
                 deleted: tp.deleted,
-                title: tp.user,
+                title: tp.title,
                 subtitle: tp.notes,
                 onToggle: () {
                   modify();
@@ -149,7 +149,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
     List<String> userList = [];
     for (var item in ModelUser.getAll()) {
       if (tpUsers.contains(item.id)) {
-        userList.add(item.user);
+        userList.add(item.title);
       }
     }
     String users = userList.isNotEmpty ? '\n- ${userList.join('\n- ')}' : ' - ';
@@ -177,7 +177,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
     List<String> taskList = [];
     for (var item in ModelTask.getAll()) {
       if (tpTasks.contains(item.id)) {
-        taskList.add(item.task);
+        taskList.add(item.title);
       }
     }
     String tasks = taskList.isNotEmpty ? '\n- ${taskList.join('\n- ')}' : ' - ';

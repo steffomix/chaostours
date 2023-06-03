@@ -76,6 +76,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   /// editable fields
   TextEditingController tpNotes =
       TextEditingController(text: DataBridge.instance.trackPointUserNotes);
+  TextEditingController tpSearch = TextEditingController();
 
   void modify() {
     if (mounted) {
@@ -246,17 +247,25 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       if (bridge.gpsPoints.isNotEmpty) {
         switch (displayMode) {
           case _DisplayMode.recentTrackPoints:
-            body = ListView(
-                children: renderRecentTrackPointList(
-                    context, ModelTrackPoint.recentTrackPoints()));
+            body = AppWidgets.renderTrackPointSearchList(
+                context: context,
+                textController: tpSearch,
+                onUpdate: () {
+                  setState(() {});
+                });
             break;
 
           /// last visited mode
           case _DisplayMode.lastVisited:
-            GPS gps = bridge.gpsPoints.first;
-            body = ListView(
-                children: renderRecentTrackPointList(
-                    context, ModelTrackPoint.lastVisited(gps)));
+            GPS gps = bridge.calcGpsPoints.first;
+            body = AppWidgets.renderTrackPointSearchList(
+                context: context,
+                textController: tpSearch,
+                onUpdate: () {
+                  setState(() {});
+                },
+                gps: gps);
+
             break;
 
           /// tasks mode
@@ -317,9 +326,11 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                       String address =
                           (await Address(gps).lookupAddress()).toString();
                       ModelAlias alias = ModelAlias(
-                          alias: address,
+                          title: address,
                           lat: gps.lat,
                           lon: gps.lon,
+                          deleted: false,
+                          notes: '',
                           lastVisited: DateTime.now(),
                           radius: AppSettings.distanceTreshold);
                       await ModelAlias.insert(alias);
@@ -599,60 +610,6 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     ]);
   }
 
-  /// time based recent and location based lastVisited
-  List<Widget> renderRecentTrackPointList(
-      BuildContext context, List<ModelTrackPoint> tpList) {
-    if (tpList.isEmpty) {
-      return <Widget>[const Text('\n\nNoch keine Haltepunkte erstellt')];
-    }
-    List<Widget> listItems = [];
-    Widget divider = AppWidgets.divider();
-    try {
-      for (var tp in tpList) {
-        // get task and alias models
-        var alias =
-            tp.idAlias.map((id) => ModelAlias.getAlias(id).alias).toList();
-
-        var tasks = tp.idTask.map((id) => ModelTask.getTask(id).task).toList();
-        var users = tp.idUser.map((id) => ModelUser.getUser(id).user).toList();
-
-        ///
-
-        listItems.add(ListTile(
-          title: ListBody(children: [
-            Center(
-                heightFactor: 2,
-                child: alias.isEmpty
-                    ? Text('OSM Addr: ${tp.address}')
-                    : Text('Alias: - ${alias.join('\n- ')}')),
-            Center(child: Text(AppWidgets.timeInfo(tp.timeStart, tp.timeEnd))),
-            divider,
-            Text(
-                'Arbeiten:${tasks.isEmpty ? ' -' : '\n   - ${tasks.join('\n   - ')}'}'),
-            divider,
-            Text(
-                'Personal:${tasks.isEmpty ? ' -' : '\n   - ${users.join('\n   - ')}'}'),
-            divider,
-            const Text('Notizen:'),
-            Text(tp.notes),
-          ]),
-          leading: IconButton(
-              icon: const Icon(Icons.edit_note),
-              onPressed: () {
-                Navigator.pushNamed(context, AppRoutes.editTrackPoint.route,
-                    arguments: tp.id);
-              }),
-        ));
-        listItems.add(AppWidgets.divider(color: Colors.black));
-      }
-    } catch (e, stk) {
-      listItems.add(Text(e.toString()));
-      logger.error(e.toString(), stk);
-    }
-
-    return listItems.reversed.toList();
-  }
-
   /// init OSM Map
   Widget renderOSM(BuildContext context) {
     return osm.OSMFlutter(
@@ -679,7 +636,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                 idReference: model.id,
                 referenceList: referenceList,
                 deleted: model.deleted,
-                title: model.task,
+                title: model.title,
                 subtitle: model.notes,
                 onToggle: () async {
                   bridge.trackPointTaskIdList = await Cache.setValue<List<int>>(
@@ -704,7 +661,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                 idReference: model.id,
                 referenceList: referenceList,
                 deleted: model.deleted,
-                title: model.user,
+                title: model.title,
                 subtitle: model.notes,
                 onToggle: () async {
                   bridge.trackPointUserIdList = await Cache.setValue<List<int>>(
@@ -729,7 +686,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       }
     }
     userModels.sort((a, b) => a.sortOrder - b.sortOrder);
-    var userList = userModels.map((e) => e.user);
+    var userList = userModels.map((e) => e.title);
     String users = userList.isNotEmpty ? '\n- ${userList.join('\n- ')}' : ' - ';
 
     /// dropdown menu botten with selected users
@@ -764,7 +721,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     }
     taskModels.sort((a, b) => a.sortOrder - b.sortOrder);
     var taskList = taskModels.map(
-      (e) => e.task,
+      (e) => e.title,
     );
     String tasks = taskList.isNotEmpty ? '\n- ${taskList.join('\n- ')}' : ' - ';
 

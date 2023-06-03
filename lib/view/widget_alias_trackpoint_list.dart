@@ -104,9 +104,9 @@ class _WidgetAliasTrackpoint extends State<WidgetAliasTrackpoint> {
   }
 
   Widget alias(BuildContext context) {
-    var alias = ModelAlias.getAlias(_id);
+    var alias = ModelAlias.getModel(_id);
     return ListTile(
-        title: Text(alias.alias),
+        title: Text(alias.title),
         subtitle: Text(alias.notes),
         leading: Text('${_tpList.length}x',
             style: TextStyle(
@@ -129,8 +129,10 @@ class _WidgetAliasTrackpoint extends State<WidgetAliasTrackpoint> {
     var dur = timeElapsed(tp.timeStart, tp.timeEnd, false);
     var time =
         'von ${tp.timeStart.hour}:${tp.timeStart.minute} bis ${tp.timeEnd.hour}:${tp.timeEnd.minute}\n($dur)';
-    Iterable<String> tasks = tp.idTask.map((id) => ModelTask.getTask(id).task);
-    Iterable<String> users = tp.idUser.map((id) => ModelUser.getUser(id).user);
+    Iterable<String> tasks =
+        tp.idTask.map((id) => ModelTask.getModel(id).title);
+    Iterable<String> users =
+        tp.idUser.map((id) => ModelUser.getModel(id).title);
     List<Widget> widgets = [
       ListTile(
           title: Text(date),
@@ -215,7 +217,7 @@ class _WidgetAliasTrackpoint extends State<WidgetAliasTrackpoint> {
   Widget build(BuildContext context) {
     _id = ModalRoute.of(context)!.settings.arguments as int;
 
-    _alias = ModelAlias.getAlias(_id);
+    _alias = ModelAlias.getModel(_id);
 
     if (_search.trim().isEmpty) {
       _tpList = ModelTrackPoint.byAlias(_id);
@@ -226,12 +228,12 @@ class _WidgetAliasTrackpoint extends State<WidgetAliasTrackpoint> {
       List<int> hasTask = [];
       List<int> hasUser = [];
       for (var item in ModelTask.getAll()) {
-        if (item.task.toLowerCase().contains(_search)) {
+        if (item.title.toLowerCase().contains(_search)) {
           hasTask.add(item.id);
         }
       }
       for (var item in ModelUser.getAll()) {
-        if (item.user.toLowerCase().contains(_search)) {
+        if (item.title.toLowerCase().contains(_search)) {
           hasUser.add(item.id);
         }
       }

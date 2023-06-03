@@ -59,11 +59,11 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
 
     ///
     if (!initialized) {
-      alias = ModelAlias.getAlias(id).clone();
+      alias = ModelAlias.getModel(id).clone();
       initialized = true;
     }
 
-    addressController.text = alias.alias;
+    addressController.text = alias.title;
     notesController.text = alias.notes;
     radiusController.text = alias.radius.toString();
 
@@ -117,7 +117,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
               child: TextField(
                 decoration: const InputDecoration(label: Text('Alias/Adresse')),
                 onChanged: ((value) {
-                  alias.alias = value;
+                  alias.title = value;
                   modify();
                 }),
                 maxLines: 3,

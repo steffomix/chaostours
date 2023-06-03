@@ -51,7 +51,7 @@ class _WidgetTaskList extends State<WidgetTaskList> {
   Widget taskWidget(BuildContext context, ModelTask task) {
     return ListBody(children: [
       ListTile(
-          title: Text(task.task,
+          title: Text(task.title,
               style: TextStyle(
                   decoration: task.deleted
                       ? TextDecoration.lineThrough
@@ -119,7 +119,7 @@ class _WidgetTaskList extends State<WidgetTaskList> {
                 ModelTask.write().then((_) => setState(() {}));
               },
             ),
-            title: Text(model.task,
+            title: Text(model.title,
                 style: model.deleted
                     ? const TextStyle(decoration: TextDecoration.lineThrough)
                     : null),
@@ -136,7 +136,7 @@ class _WidgetTaskList extends State<WidgetTaskList> {
         continue;
       }
       if (search.trim().isNotEmpty &&
-          (item.task.contains(search) || item.notes.contains(search))) {
+          (item.title.contains(search) || item.notes.contains(search))) {
         tasks.add(taskWidget(context, item));
       } else {
         tasks.add(taskWidget(context, item));

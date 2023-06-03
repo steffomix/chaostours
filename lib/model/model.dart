@@ -19,18 +19,17 @@ var encode = Uri.encodeFull;
 
 class Model {
   static const String lineSep = '\n';
-  String _data = '';
+  String title;
+  String notes;
+  bool deleted;
 
-  Model.raw({String? row}) {
-    row ??= '';
-    if (row.contains(lineSep)) {
-      throw (r'Model.raw:: string must not contain a lineseparator ' + lineSep);
-    }
-    _data = row;
-  }
+  Model({this.title = '', this.notes = '', this.deleted = false});
 
-  @override
-  toString() {
-    return _data;
+  bool containsString(String search) {
+    search = search.toLowerCase();
+    var t = this.title.toLowerCase();
+    return t
+        .toLowerCase()
+        .contains(search); // || notes.toLowerCase().contains(search);
   }
 }

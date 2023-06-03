@@ -27,28 +27,15 @@ import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/conf/theme_provider.dart';
 
 import 'package:chaostours/logger.dart';
+import 'package:chaostours/gps.dart';
 import 'package:chaostours/conf/app_settings.dart';
+import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_alias.dart';
-import 'package:chaostours/view/app_init.dart';
+import 'package:chaostours/model/model_task.dart';
+import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/conf/app_theme_data.dart';
 import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/conf/app_colors.dart';
-import 'package:chaostours/view/widget_live_tracking.dart';
-import 'package:chaostours/view/widget_logger_page.dart';
-import 'package:chaostours/view/widget_permissions_page.dart';
-import 'package:chaostours/view/widget_edit_trackpoint.dart';
-import 'package:chaostours/view/widget_user_list.dart';
-import 'package:chaostours/view/widget_task_list.dart';
-import 'package:chaostours/view/widget_alias_list.dart';
-import 'package:chaostours/view/widget_task_edit.dart';
-import 'package:chaostours/view/widget_user_edit.dart';
-import 'package:chaostours/view/widget_alias_edit.dart';
-import 'package:chaostours/view/widget_alias_trackpoint_list.dart';
-import 'package:chaostours/view/widget_osm.dart';
-import 'package:chaostours/view/widget_import_export.dart';
-import 'package:chaostours/view/widget_app_settings.dart';
-import 'package:chaostours/view/widget_manage_background_gps.dart';
-import 'package:chaostours/view/widget_manage_calendar.dart';
 import 'package:chaostours/conf/app_theme_data.dart';
 
 ///
@@ -66,42 +53,7 @@ class AppWidgets {
         //themeMode: ThemeMode.system,
         title: 'Chaos Tours',
         initialRoute: AppRoutes.liveTracking.route,
-        routes: {
-          // home routes
-          //AppRoutes.home.route: (context) => const WidgetTrackingPage(),
-
-          /// add/edit items routes
-          // trackpoint
-          AppRoutes.liveTracking.route: (context) => const WidgetTrackingPage(),
-          AppRoutes.editTrackPoint.route: (context) =>
-              const WidgetEditTrackPoint(),
-          // user
-          AppRoutes.listUsers.route: (context) => const WidgetUserList(),
-          AppRoutes.editUser.route: (context) => const WidgetUserEdit(),
-          // task
-          AppRoutes.listTasks.route: (context) => const WidgetTaskList(),
-          AppRoutes.editTasks.route: (context) => const WidgetTaskEdit(),
-          // alias
-          AppRoutes.listAlias.route: (context) => const WidgetAliasList(),
-          AppRoutes.editAlias.route: (context) => const WidgetAliasEdit(),
-          AppRoutes.listAliasTrackpoints.route: (context) =>
-              const WidgetAliasTrackpoint(),
-          // trackPoint events
-          AppRoutes.selectCalendar.route: (context) =>
-              const WidgetManageCalendar(),
-          // osm
-          AppRoutes.osm.route: (context) => const WidgetOsm(),
-
-          /// system config routes
-          AppRoutes.appInit.route: (context) => const AppInit(),
-          AppRoutes.logger.route: (context) => const WidgetLoggerPage(),
-          AppRoutes.permissions.route: (context) =>
-              const WidgetPermissionsPage(),
-          AppRoutes.importExport.route: (context) => const WidgetImportExport(),
-          AppRoutes.appSettings.route: (context) => const WidgetAppSettings(),
-          AppRoutes.backgroundGps.route: (context) =>
-              const WidgetManageBackgroundGps()
-        },
+        routes: AppRoutes.routes,
         theme: Provider.of<ThemeProvider>(context).themeData);
   }
 
@@ -167,6 +119,93 @@ class AppWidgets {
 
     return dialog;
   }
+
+  static Widget searchWidget(
+      {required BuildContext context,
+      required TextEditingController controller,
+      required void Function(String value) onChange}) {
+    return TextField(
+      controller: controller,
+      minLines: 1,
+      maxLines: 1,
+      decoration: const InputDecoration(
+          icon: Icon(Icons.search, size: 30), border: InputBorder.none),
+      onChanged: (value) {
+        onChange(value);
+      },
+    );
+  }
+
+  static ListTile trackPointInfo(BuildContext context, ModelTrackPoint tp) {
+    var alias = tp.idAlias.map((id) => ModelAlias.getModel(id).title);
+    var tasks = tp.idTask.map((id) => ModelTask.getModel(id).title);
+    var users = tp.idUser.map((id) => ModelUser.getModel(id).title);
+    return ListTile(
+      title: ListBody(children: [
+        Center(
+            heightFactor: 2,
+            child: alias.isEmpty
+                ? Text('OSM Addr: ${tp.address}')
+                : Text('Alias: - ${alias.join('\n- ')}')),
+        Center(child: Text(AppWidgets.timeInfo(tp.timeStart, tp.timeEnd))),
+        divider(),
+        Text(
+            'Arbeiten:${tasks.isEmpty ? ' -' : '\n   - ${tasks.join('\n   - ')}'}'),
+        divider(),
+        Text(
+            'Personal:${users.isEmpty ? ' -' : '\n   - ${users.join('\n   - ')}'}'),
+        divider(),
+        const Text('Notizen:'),
+        Text(tp.notes),
+      ]),
+      leading: IconButton(
+          icon: const Icon(Icons.edit_note),
+          onPressed: () {
+            Navigator.pushNamed(context, AppRoutes.editTrackPoint.route,
+                arguments: tp.id);
+          }),
+    );
+  }
+
+  /// time based recent and location based lastVisited
+  static Widget renderTrackPointSearchList(
+      {required BuildContext context,
+      required TextEditingController textController,
+      required void Function() onUpdate,
+      GPS? gps}) {
+    List<ModelTrackPoint> tpList = gps == null
+        ? ModelTrackPoint.search(textController.text)
+        : ModelTrackPoint.search(
+            textController.text, ModelTrackPoint.lastVisited(gps));
+
+    var searchWidget = ListTile(
+        subtitle: Text('Count: ${tpList.length}'),
+        title: AppWidgets.searchWidget(
+          context: context,
+          controller: textController,
+          onChange: (String value) {
+            if (value != textController.text) {
+              textController.text = value;
+              onUpdate();
+            }
+          },
+        ));
+
+    if (tpList.isEmpty) {
+      return ListView(children: [
+        searchWidget,
+        const Text('\n\nNoch keine Haltepunkte erstellt')
+      ]);
+    }
+    return ListView.builder(
+        itemCount: tpList.length + 1,
+        itemBuilder: (context, index) {
+          if (index == 0) {
+            return searchWidget;
+          }
+          return AppWidgets.trackPointInfo(context, tpList[index - 1]);
+        });
+  }
 }
 
 ///
@@ -205,6 +244,13 @@ class _WidgetDrawer extends State<WidgetDrawer> {
               SizedBox(
                   height: boxHeight,
                   child: const Center(child: Text('\nAssets'))),
+
+              ///
+              ElevatedButton(
+                  onPressed: () {
+                    AppWidgets.navigate(context, AppRoutes.trackpoints);
+                  },
+                  child: const Text('Haltepunkte')),
 
               ///
               ElevatedButton(
@@ -318,7 +364,7 @@ class _WidgetDrawer extends State<WidgetDrawer> {
 
 ///
 ///
-///
+/// not used
 ///
 ///
 ///

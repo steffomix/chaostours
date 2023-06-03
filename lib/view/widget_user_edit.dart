@@ -54,9 +54,9 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
     if (!initialized) {
       userId = (ModalRoute.of(context)?.settings.arguments ?? 0) as int;
       if (userId > 0) {
-        _user = ModelUser.getUser(userId).clone();
+        _user = ModelUser.getModel(userId).clone();
       } else {
-        _user = ModelUser(user: '', notes: '');
+        _user = ModelUser(title: '', notes: '', deleted: false);
       }
       initialized = true;
     }
@@ -83,13 +83,13 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
             ],
             onTap: (int id) {
               if (id == 0 && modified.value) {
-                if (_user.user.trim().isEmpty) {
-                  _user.user = '#${_user.id}';
+                if (_user.title.trim().isEmpty) {
+                  _user.title = '#${_user.id}';
                 }
                 if (userId == 0) {
                   ModelUser.insert(_user).then((int id) {
-                    if (_user.user.isEmpty) {
-                      _user.user = '#${_user.id}';
+                    if (_user.title.isEmpty) {
+                      _user.title = '#${_user.id}';
                       ModelUser.update().then((_) {
                         Navigator.pop(context);
                       });
@@ -116,11 +116,11 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
                 decoration: const InputDecoration(label: Text('Name')),
                 onChanged: ((value) {
                   modify();
-                  _user.user = value.trim();
+                  _user.title = value.trim();
                 }),
                 maxLines: 1,
                 minLines: 1,
-                controller: TextEditingController(text: _user.user),
+                controller: TextEditingController(text: _user.title),
               )),
 
           /// notes

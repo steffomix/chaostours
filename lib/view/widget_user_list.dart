@@ -96,7 +96,7 @@ class _WidgetUserList extends State<WidgetUserList> {
     List<ModelUser> userModels = [];
 
     for (var id in userIdList) {
-      var user = ModelUser.getUser(id);
+      var user = ModelUser.getModel(id);
       if (!user.deleted) {
         userModels.add(user);
       }
@@ -104,7 +104,7 @@ class _WidgetUserList extends State<WidgetUserList> {
     userModels.sort((a, b) => a.sortOrder - b.sortOrder);
     List<String> userList = userModels
         .map(
-          (e) => e.user,
+          (e) => e.title,
         )
         .toList();
     String users =
@@ -146,7 +146,7 @@ class _WidgetUserList extends State<WidgetUserList> {
             idReference: m.id,
             referenceList: userIdList,
             deleted: m.deleted,
-            title: m.user,
+            title: m.title,
             subtitle: m.notes)));
       }
     }
@@ -208,7 +208,7 @@ class _WidgetUserList extends State<WidgetUserList> {
       if (search.trim().isEmpty) {
         userlist.add(item);
       } else {
-        if (item.user.contains(search) || item.notes.contains(search)) {
+        if (item.title.contains(search) || item.notes.contains(search)) {
           userlist.add(item);
         }
       }
@@ -226,7 +226,7 @@ class _WidgetUserList extends State<WidgetUserList> {
             ModelUser user = userlist[id - 1];
             return ListBody(children: [
               ListTile(
-                  title: Text(user.user,
+                  title: Text(user.title,
                       style: TextStyle(
                           decoration: user.deleted
                               ? TextDecoration.lineThrough
@@ -270,7 +270,7 @@ class _WidgetUserList extends State<WidgetUserList> {
                 ModelUser.write().then((_) => setState(() {}));
               },
             ),
-            title: Text(model.user,
+            title: Text(model.title,
                 style: model.deleted
                     ? const TextStyle(decoration: TextDecoration.lineThrough)
                     : null),

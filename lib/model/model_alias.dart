@@ -38,15 +38,12 @@ enum AliasStatus {
   }
 }
 
-class ModelAlias {
+class ModelAlias extends Model {
   static Logger logger = Logger.logger<ModelAlias>();
   static final List<ModelAlias> _table = [];
-  bool deleted;
   double lat;
   double lon;
   int radius;
-  String alias;
-  String notes;
   AliasStatus status;
   final List<int> idTrackPoint = [];
   DateTime lastVisited;
@@ -66,27 +63,18 @@ class ModelAlias {
   ModelAlias(
       {required this.lat,
       required this.lon,
-      required this.alias,
       required this.lastVisited,
-      this.deleted = false,
       this.radius = 50,
-      this.notes = '',
       this.status = AliasStatus.public,
-      this.timesVisited = 0});
+      this.timesVisited = 0,
+      super.title,
+      super.deleted,
+      super.notes});
 
   static List<ModelAlias> getAll() => <ModelAlias>[..._table];
 
   static T _parse<T>(
       int field, String fieldName, String str, T Function(String s) fn) {
-    try {
-      return fn(str);
-    } catch (e) {
-      throw ('Parse error at column ${field + 1} ($fieldName): $e');
-    }
-  }
-
-  static List<int> _parseList(int field, String fieldName, String str,
-      List<int> Function(String s) fn) {
     try {
       return fn(str);
     } catch (e) {
@@ -115,7 +103,7 @@ class ModelAlias {
         lon: _parse<double>(
             3, 'Longitude', p[3], double.parse), // double.parse(p[3]),
         radius: _parse<int>(4, 'Radius', p[4], int.parse), // int.parse(p[4]),
-        alias: _parse<String>(5, 'Alias Name', p[5], decode), //decode(p[5]),
+        title: _parse<String>(5, 'Alias Name', p[5], decode), //decode(p[5]),
         notes: _parse<String>(6, 'Notes', p[6], decode), //decode(p[6]),
         status: AliasStatus.byValue(aliasType),
         lastVisited: _parse<DateTime>(
@@ -134,7 +122,7 @@ class ModelAlias {
       lat.toString(),
       lon.toString(),
       radius.toString(),
-      encode(alias),
+      encode(title),
       encode(notes),
       status.value.toString(),
       lastVisited.toIso8601String(),
@@ -148,7 +136,7 @@ class ModelAlias {
   static Future<int> insert(ModelAlias m) async {
     _table.add(m);
     m._id = _table.length;
-    logger.log('Insert Alias ${m.alias}\nwith ID #${m._id}');
+    logger.log('Insert Alias ${m.title}\nwith ID #${m._id}');
     await write();
     return m._id;
   }
@@ -165,7 +153,7 @@ class ModelAlias {
   }
 
   static Future<void> delete(ModelAlias m) async {
-    logger.log('Delete ${m.alias} with ID ${m.id}');
+    logger.log('Delete ${m.title} with ID ${m.id}');
     m.deleted = true;
     await write();
   }
@@ -196,7 +184,7 @@ class ModelAlias {
     return _table[Random().nextInt(_table.length - 1)];
   }
 
-  static ModelAlias getAlias(int id) {
+  static ModelAlias getModel(int id) {
     return _table[id - 1];
   }
 

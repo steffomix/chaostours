@@ -53,7 +53,7 @@ class _WidgetAliasList extends State<WidgetAliasList> {
 
   Widget title(BuildContext context, ModelAlias alias) {
     var lines =
-        (alias.alias.length / 50).round() + (alias.alias.split('\n').length);
+        (alias.title.length / 50).round() + (alias.title.split('\n').length);
     int dur = DateTime.now().difference(alias.lastVisited).inDays;
     int count = ModelTrackPoint.countAlias(alias.id);
     return ListTile(
@@ -65,17 +65,17 @@ class _WidgetAliasList extends State<WidgetAliasList> {
                 hintText: 'Alias Bezeichnung', border: InputBorder.none),
             minLines: lines,
             maxLines: lines + 2,
-            controller: TextEditingController(text: alias.alias),
+            controller: TextEditingController(text: alias.title),
             onChanged: ((value) {
               if (value.isNotEmpty) {
-                alias.alias = value;
+                alias.title = value;
               }
             })));
   }
 
-  Widget subtitle(BuildContext context, alias) {
+  Widget subtitle(BuildContext context, ModelAlias alias) {
     var lines =
-        (alias.alias.length / 50).round() + (alias.alias.split('\n').length);
+        (alias.title.length / 50).round() + (alias.title.split('\n').length);
     return TextField(
         readOnly: true,
         style: const TextStyle(fontSize: 12),
@@ -126,7 +126,7 @@ class _WidgetAliasList extends State<WidgetAliasList> {
     for (var alias in select) {
       if (search.isEmpty) {
         list.add(alias);
-      } else if (alias.alias.toLowerCase().contains(search.toLowerCase()) ||
+      } else if (alias.title.toLowerCase().contains(search.toLowerCase()) ||
           alias.notes.toLowerCase().contains(search.toLowerCase())) {
         list.add(alias);
       }

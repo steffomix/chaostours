@@ -403,7 +403,9 @@ class _WidgetOsm extends State<WidgetOsm> {
                   ModelAlias alias = ModelAlias(
                       lat: pos.latitude,
                       lon: pos.longitude,
-                      alias: address,
+                      title: address,
+                      notes: '',
+                      deleted: false,
                       radius: AppSettings.distanceTreshold,
                       lastVisited: DateTime.now());
 
@@ -549,10 +551,10 @@ class _WidgetOsm extends State<WidgetOsm> {
     if (!_initialized) {
       _id = ModalRoute.of(context)?.settings.arguments as int? ?? 0;
       if (_id > 0) {
-        var alias = ModelAlias.getAlias(_id);
+        var alias = ModelAlias.getModel(_id);
         _alias = alias.clone();
         _gps = GPS(alias.lat, alias.lon);
-        _address.value = alias.alias;
+        _address.value = alias.title;
         _controller = MapController(
             initMapWithUserPosition: false,
             initPosition: (GeoPoint(latitude: _gps.lat, longitude: _gps.lon)));

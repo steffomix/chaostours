@@ -236,7 +236,7 @@ class _TrackPoint {
           if (bridge.trackPointAliasIdList.isNotEmpty) {
             try {
               distanceTreshold =
-                  ModelAlias.getAlias(bridge.trackPointAliasIdList.first)
+                  ModelAlias.getModel(bridge.trackPointAliasIdList.first)
                       .radius;
             } catch (e) {
               if (gpsLocation.hasAlias) {
@@ -295,11 +295,12 @@ class _TrackPoint {
 
                     /// create alias
                     ModelAlias newAlias = ModelAlias(
-                        alias: address,
+                        title: address,
                         lat: gps.lat,
                         lon: gps.lon,
                         lastVisited: bridge.smoothGpsPoints.last.time,
                         timesVisited: 1,
+                        deleted: false,
                         notes:
                             'Auto created Alias\nat address:\n"$address"\n\nat date/time: ${gps.time.toIso8601String()}',
                         radius: AppSettings.distanceTreshold);

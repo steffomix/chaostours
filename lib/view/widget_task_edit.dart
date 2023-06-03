@@ -55,9 +55,9 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
     if (!_initialized) {
       taskId = (ModalRoute.of(context)?.settings.arguments ?? 0) as int;
       if (taskId > 0) {
-        task = ModelTask.getTask(taskId).clone();
+        task = ModelTask.getModel(taskId).clone();
       } else {
-        task = ModelTask(task: '', notes: '');
+        task = ModelTask(title: '', notes: '', deleted: false);
       }
       _initialized = true;
     }
@@ -87,8 +87,8 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
               if (tapId == 0 && modified.value) {
                 if (taskId == 0) {
                   ModelTask.insert(task).then((id) {
-                    if (task.task.trim().isEmpty) {
-                      task.task = '#$id';
+                    if (task.title.trim().isEmpty) {
+                      task.title = '#$id';
                     }
                     Navigator.pop(context);
                     Fluttertoast.showToast(msg: 'Task created');
@@ -110,12 +110,12 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
               child: TextField(
                 decoration: const InputDecoration(label: Text('Arbeit')),
                 onChanged: ((value) {
-                  task.task = value;
+                  task.title = value;
                   modify();
                 }),
                 maxLines: 1,
                 minLines: 1,
-                controller: TextEditingController(text: task.task),
+                controller: TextEditingController(text: task.title),
               )),
 
           /// notes
