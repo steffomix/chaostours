@@ -71,7 +71,18 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
   /// osm
   int circleId = 0;
-  final osm.MapController mapController = osm.MapController();
+  osm.GeoPoint? geoPoint;
+  double? _mapZoom;
+  osm.MapController _mapController = osm.MapController();
+  osm.MapController get mapController {
+    if (geoPoint == null) {
+      return _mapController;
+    } else {
+      _mapController.osmBaseController.changeLocation(geoPoint!);
+
+      return _mapController;
+    }
+  }
 
   /// editable fields
   TextEditingController tpNotes =
@@ -163,6 +174,20 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     }
   }
 
+  /// init OSM Map
+  Widget renderOSM(BuildContext context) {
+    return osm.OSMFlutter(
+      mapIsLoading: const WidgetDisposed(),
+      androidHotReloadSupport: true,
+      controller: mapController,
+      isPicker: true,
+      initZoom: 17,
+      minZoomLevel: 8,
+      maxZoomLevel: 19,
+      stepZoom: 1.0,
+    );
+  }
+
   /// render gpsPoints on OSM Map
   Future<void> onOsmGpsPoints(EventOnWidgetDisposed e) async {
     await mapController.removeAllCircle();
@@ -232,6 +257,15 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
           color: AppColors.lastTrackingStatusWithoutAliasDot.color,
           strokeWidth: 10,
         ));
+      }
+      if (geoPoint != null) {
+        Future.delayed(const Duration(milliseconds: 100), () {
+          if (_mapZoom != null) {
+            _mapController.setZoom(zoomLevel: _mapZoom);
+            _mapZoom = null;
+          }
+          geoPoint = null;
+        });
       }
     } catch (e, stk) {
       logger.error(e.toString(), stk);
@@ -320,9 +354,9 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                   TextButton(
                     child: const Text('Yes'),
                     onPressed: () async {
-                      osm.GeoPoint pos = await mapController
+                      geoPoint = await _mapController
                           .getCurrentPositionAdvancedPositionPicker();
-                      GPS gps = GPS(pos.latitude, pos.longitude);
+                      GPS gps = GPS(geoPoint!.latitude, geoPoint!.longitude);
                       String address =
                           (await Address(gps).lookupAddress()).toString();
                       ModelAlias alias = ModelAlias(
@@ -334,9 +368,11 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                           lastVisited: DateTime.now(),
                           radius: AppSettings.distanceTreshold);
                       await ModelAlias.insert(alias);
-                      if (mounted) {
-                        setState(() {});
-                      }
+                      Future.delayed(const Duration(milliseconds: 100), () {
+                        if (mounted) {
+                          setState(() {});
+                        }
+                      });
                     },
                   ),
                   TextButton(
@@ -344,18 +380,27 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                     onPressed: () => Navigator.pop(context),
                   )
                 ], context: context);
+
                 break;
               case 2: // 3.
 
-                osm.GeoPoint gps = await mapController
+                geoPoint = await mapController
                     .getCurrentPositionAdvancedPositionPicker();
-                List<ModelAlias> aliasList =
-                    ModelAlias.nextAlias(gps: GPS(gps.latitude, gps.longitude));
+                List<ModelAlias> aliasList = ModelAlias.nextAlias(
+                    gps: GPS(geoPoint!.latitude, geoPoint!.longitude));
                 if (aliasList.isNotEmpty) {
                   var id = aliasList.first.id;
+                  _mapZoom = await _mapController.getZoom();
                   if (mounted) {
                     Navigator.pushNamed(context, AppRoutes.editAlias.route,
-                        arguments: id);
+                            arguments: id)
+                        .then(
+                      (value) {
+                        if (mounted) {
+                          setState(() {});
+                        }
+                      },
+                    );
                   }
                 } else {
                   Fluttertoast.showToast(msg: 'Here is no Alias');
@@ -363,18 +408,16 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                 break;
               case 3: // 4.
                 GPS gps = await GPS.gps();
-                osm.GeoPoint gps2 = await mapController
+                geoPoint = await mapController
                     .getCurrentPositionAdvancedPositionPicker();
                 GPS.launchGoogleMaps(
-                    gps.lat, gps.lon, gps2.latitude, gps2.longitude);
+                    gps.lat, gps.lon, geoPoint!.latitude, geoPoint!.longitude);
                 break;
               default: // 1.
                 _bottomBarIndex = 0;
                 displayMode = _DisplayMode.live;
             }
             _bottomBarIndex = id;
-            setState(() {});
-            //logger.log('BottomNavBar tapped but no method connected');
           });
     } else {
       return BottomNavigationBar(
@@ -608,20 +651,6 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
           title: body),
       ...items
     ]);
-  }
-
-  /// init OSM Map
-  Widget renderOSM(BuildContext context) {
-    return osm.OSMFlutter(
-      mapIsLoading: const WidgetDisposed(),
-      androidHotReloadSupport: true,
-      controller: mapController,
-      isPicker: true,
-      initZoom: 17,
-      minZoomLevel: 8,
-      maxZoomLevel: 19,
-      stepZoom: 1.0,
-    );
   }
 
   ///
