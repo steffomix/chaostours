@@ -371,7 +371,9 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                         groupValue: AppSettings.osmLookupCondition,
                         onChanged: (OsmLookupConditions? val) {
                           if (val != null) {
-                            AppSettings.osmLookupCondition = val;
+                            AppSettings.updateValue(
+                                key: CacheKeys.globalsOsmLookupCondition,
+                                value: val);
                           }
                           setStatus(context, val);
                         })),
@@ -386,7 +388,9 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                         groupValue: AppSettings.osmLookupCondition,
                         onChanged: (OsmLookupConditions? val) {
                           if (val != null) {
-                            AppSettings.osmLookupCondition = val;
+                            AppSettings.updateValue(
+                                key: CacheKeys.globalsOsmLookupCondition,
+                                value: val);
                           }
                           setStatus(context, val);
                         })),
@@ -403,7 +407,9 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                         groupValue: AppSettings.osmLookupCondition,
                         onChanged: (OsmLookupConditions? val) {
                           if (val != null) {
-                            AppSettings.osmLookupCondition = val;
+                            AppSettings.updateValue(
+                                key: CacheKeys.globalsOsmLookupCondition,
+                                value: val);
                           }
                           setStatus(context, val);
                         }))

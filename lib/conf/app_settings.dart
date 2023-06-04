@@ -295,69 +295,72 @@ class AppSettings {
   static Future<bool> updateValue(
       {required CacheKeys key, required dynamic value}) async {
     if (value.runtimeType == int) {
-      int? oldValue;
-      int? newValue;
       switch (key) {
         case CacheKeys.globalsBackgroundLookupDuration:
-          oldValue = backgroundLookupDuration.inSeconds;
-          backgroundLookupDuration = Duration(seconds: value as int);
-          newValue = backgroundLookupDuration.inSeconds;
+          backgroundLookupDuration = await Cache.setValue<Duration>(
+              key, Duration(seconds: value as int));
           break;
 
         case CacheKeys.globalsCacheGpsTime:
-          oldValue = cacheGpsTime.inSeconds;
-          cacheGpsTime = Duration(seconds: value as int);
-          newValue = cacheGpsTime.inSeconds;
+          cacheGpsTime = await Cache.setValue<Duration>(
+              key, Duration(seconds: value as int));
           break;
 
         case CacheKeys.globalsDistanceTreshold:
-          oldValue = distanceTreshold;
-          distanceTreshold = value as int;
-          newValue = distanceTreshold;
+          distanceTreshold = await Cache.setValue<int>(key, value as int);
           break;
 
         case CacheKeys.globalsTimeRangeTreshold:
-          oldValue = timeRangeTreshold.inSeconds;
-          timeRangeTreshold = Duration(seconds: value as int);
-          newValue = timeRangeTreshold.inSeconds;
+          timeRangeTreshold = await Cache.setValue<Duration>(
+              key, Duration(seconds: value as int));
           break;
 
         case CacheKeys.globalsTrackPointInterval:
-          oldValue = trackPointInterval.inSeconds;
-          trackPointInterval = Duration(seconds: value as int);
-          newValue = trackPointInterval.inSeconds;
+          trackPointInterval = await Cache.setValue<Duration>(
+              key, Duration(seconds: value as int));
           break;
 
         case CacheKeys.globalsGpsPointsSmoothCount:
-          oldValue = gpsPointsSmoothCount;
-          gpsPointsSmoothCount = value as int;
-          newValue = gpsPointsSmoothCount;
+          gpsPointsSmoothCount = await Cache.setValue<int>(key, value as int);
           break;
 
         case CacheKeys.globalsAutocreateAlias:
-          oldValue = autoCreateAlias.inSeconds;
-          autoCreateAlias = Duration(seconds: value as int);
-          newValue = autoCreateAlias.inSeconds;
+          autoCreateAlias = await Cache.setValue<Duration>(
+              key, Duration(seconds: value as int));
           break;
 
         default:
+          logger.error('unsupportet key $key for type ${key.cacheType}',
+              StackTrace.current);
           return false;
-
-        ///
       }
-      if (oldValue != newValue) {
-        await saveSettings();
-        return true;
-      }
-      return false;
     }
     if (key.cacheType == bool && value.runtimeType == key.cacheType) {
-      await Cache.setValue<bool>(key, value);
-      return true;
+      switch (key) {
+        case CacheKeys.globalsStatusStandingRequireAlias:
+          statusStandingRequireAlias =
+              await Cache.setValue<bool>(key, value as bool);
+          return true;
+
+        case CacheKeys.globalsBackgroundTrackingEnabled:
+          backgroundTrackingEnabled =
+              await Cache.setValue<bool>(key, value as bool);
+          return true;
+
+        case CacheKeys.globalPublishToCalendar:
+          publishToCalendar = await Cache.setValue<bool>(key, value as bool);
+          return true;
+
+        default:
+          logger.error('unsupportet key $key for type ${key.cacheType}',
+              StackTrace.current);
+          return false;
+      }
     }
     if (key.cacheType == OsmLookupConditions &&
         value.runtimeType == key.cacheType) {
-      await Cache.setValue<OsmLookupConditions>(key, value);
+      osmLookupCondition = await Cache.setValue<OsmLookupConditions>(
+          key, value as OsmLookupConditions);
       return true;
     }
     return false;

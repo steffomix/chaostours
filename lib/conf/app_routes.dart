@@ -28,7 +28,7 @@ import 'package:chaostours/view/widget_task_edit.dart';
 import 'package:chaostours/view/widget_user_edit.dart';
 import 'package:chaostours/view/widget_alias_edit.dart';
 import 'package:chaostours/view/widget_alias_trackpoint_list.dart';
-import 'package:chaostours/view/widget_osm.dart';
+import 'package:chaostours/view/widget_edit_alias_osm.dart';
 import 'package:chaostours/view/widget_import_export.dart';
 import 'package:chaostours/view/widget_app_settings.dart';
 import 'package:chaostours/view/widget_manage_background_gps.dart';

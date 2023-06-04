@@ -30,6 +30,7 @@ import 'package:chaostours/conf/app_colors.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/address.dart' as addr;
+import 'package:chaostours/osm_tools.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/screen.dart';
 import 'package:chaostours/conf/app_settings.dart';
@@ -81,6 +82,9 @@ class _WidgetOsm extends State<WidgetOsm> {
 
   /// screen
   //late SizeChangedLayoutNotifier screenListener;
+
+  /// osm tools to draw circles
+  final OsmTools osmTools = OsmTools();
 
   /// alias id
   int _id = 0;
@@ -461,84 +465,7 @@ class _WidgetOsm extends State<WidgetOsm> {
   }
 
   Future<void> drawCircles() async {
-    await _controller.removeAllCircle();
-
-    /// draw cirles
-    _widgetActive = true;
-    var list = ModelAlias.getAll();
-    while (list.isNotEmpty) {
-      if (!_widgetActive) {
-        break;
-      }
-      var alias = list.last;
-      try {
-        Color color;
-        if (alias.status == AliasStatus.public) {
-          color = AppColors.aliasPublic.color;
-        } else if (alias.status == AliasStatus.privat) {
-          color = AppColors.aliasPrivate.color;
-        } else {
-          color = AppColors.aliasRestricted.color;
-        }
-
-        _controller.drawCircle(CircleOSM(
-          key: "circle${++circleId}",
-          centerPoint: GeoPoint(latitude: alias.lat, longitude: alias.lon),
-          radius: alias.radius.toDouble(),
-          color: color,
-          strokeWidth: 10,
-        ));
-      } catch (e, stk) {
-        logger.error(e.toString(), stk);
-        await Future.delayed(const Duration(seconds: 1));
-      }
-      list.removeLast();
-    }
-
-    /// draw gps points
-    try {
-      DataBridge bridge = DataBridge.instance;
-
-      for (GPS gps in bridge.gpsPoints) {
-        _controller.drawCircle(CircleOSM(
-          key: "circle${++circleId}",
-          centerPoint: GeoPoint(latitude: gps.lat, longitude: gps.lon),
-          radius: 1,
-          color: const Color.fromARGB(255, 98, 98, 98),
-          strokeWidth: 10,
-        ));
-      }
-      for (GPS gps in bridge.smoothGpsPoints) {
-        _controller.drawCircle(CircleOSM(
-          key: "circle${++circleId}",
-          centerPoint: GeoPoint(latitude: gps.lat, longitude: gps.lon),
-          radius: 2,
-          color: const Color.fromARGB(255, 0, 0, 0),
-          strokeWidth: 10,
-        ));
-      }
-      for (GPS gps in bridge.calcGpsPoints) {
-        _controller.drawCircle(CircleOSM(
-          key: "circle${++circleId}",
-          centerPoint: GeoPoint(latitude: gps.lat, longitude: gps.lon),
-          radius: 3,
-          color: const Color.fromARGB(255, 0, 0, 255),
-          strokeWidth: 10,
-        ));
-      }
-      if (bridge.trackPointGpsStartMoving != null) {
-        GPS gps = bridge.trackPointGpsStartMoving!;
-        _controller.drawCircle(CircleOSM(
-          key: "circle${++circleId}",
-          centerPoint: GeoPoint(latitude: gps.lat, longitude: gps.lon),
-          radius: 4,
-          color: const Color.fromARGB(255, 255, 0, 0),
-          strokeWidth: 10,
-        ));
-      }
-    } catch (e, stk) {
-      logger.error(e.toString(), stk);
-    }
+    await osmTools.renderAlias(_controller);
   }
 
   ///

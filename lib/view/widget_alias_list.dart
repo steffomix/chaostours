@@ -92,7 +92,10 @@ class _WidgetAliasList extends State<WidgetAliasList> {
   Widget btnInfo(BuildContext context, alias) {
     return IconButton(
       icon: Icon(Icons.info_outline_rounded,
-          size: 30, color: AppColors.aliasStatusColor(alias.status)),
+          size: 30,
+          color: alias.deleted
+              ? Colors.black
+              : AppColors.aliasStatusColor(alias.status)),
       onPressed: () {
         Navigator.pushNamed(context, AppRoutes.listAliasTrackpoints.route,
                 arguments: alias.id)
