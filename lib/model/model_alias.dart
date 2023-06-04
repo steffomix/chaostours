@@ -51,6 +51,8 @@ class ModelAlias extends Model {
   int timesVisited;
   int _id = 0;
 
+  String calendarId = '';
+
   /// real ID<br>
   /// Is set only once during save to disk
   /// and represents the current _table.length
@@ -178,10 +180,6 @@ class ModelAlias extends Model {
       dump.add(i.toString());
     }
     return dump.join(Model.lineSep);
-  }
-
-  static ModelAlias get random {
-    return _table[Random().nextInt(_table.length - 1)];
   }
 
   static ModelAlias getModel(int id) {

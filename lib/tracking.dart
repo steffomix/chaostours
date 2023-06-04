@@ -32,6 +32,7 @@ import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/calendar.dart';
+import 'package:chaostours/database.dart';
 
 @pragma('vm:entry-point')
 void backgroundCallback() {
@@ -463,6 +464,13 @@ class _TrackPoint {
       }
     } catch (e, stk) {
       logger.error('processing background gps: $e', stk);
+    }
+    if (AppSettings.autoCreateAlias.inSeconds > 0) {
+      try {
+        await AppDatabase.insert('');
+      } catch (e, stk) {
+        logger.error('Database insert: $e', stk);
+      }
     }
   }
 

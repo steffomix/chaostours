@@ -23,6 +23,7 @@ import 'package:chaostours/address.dart';
 import 'package:chaostours/tracking.dart';
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/conf/app_settings.dart';
+import 'package:chaostours/database.dart';
 
 class DataBridge {
   static final Logger logger = Logger.logger<DataBridge>();
@@ -114,6 +115,13 @@ class DataBridge {
             logger.error('getBackgroundLogs: $e', stk);
           }
           await Future.delayed(AppSettings.backgroundLookupDuration);
+          if (AppSettings.autoCreateAlias.inSeconds > 0) {
+            try {
+              await AppDatabase.insert('');
+            } catch (e, stk) {
+              logger.error('Database insert: $e', stk);
+            }
+          }
         }
       });
     }

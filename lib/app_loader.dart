@@ -30,6 +30,10 @@ import 'package:chaostours/conf/app_settings.dart';
 import 'package:chaostours/cache.dart';
 import 'package:chaostours/data_bridge.dart';
 import 'package:chaostours/gps.dart';
+import 'package:chaostours/database.dart';
+import 'package:sqflite/sqflite.dart';
+
+import 'dart:isolate';
 
 class AppLoader {
   static Logger logger = Logger.logger<AppLoader>();
@@ -37,6 +41,19 @@ class AppLoader {
   ///
   /// preload recources
   static Future<void> preload() async {
+    /*
+    Future.delayed(const Duration(seconds: 1), () async {
+      var i = 0;
+      while (i++ < 100) {
+        Isolate.run(
+          () {
+            print('$i');
+            AppDatabase.insert('');
+          },
+        );
+      }
+    });
+    */
     try {
       // reset background logger
       //await Cache.setValue<List<String>>(CacheKeys.backgroundLogger, []);
