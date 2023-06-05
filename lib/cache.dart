@@ -96,12 +96,6 @@ enum CacheKeys {
   tableModelUser(List<ModelUser>),
   tableModelTask(List<ModelTask>),
 
-  /// readOnly
-  tableDumpModelTrackpoint(String),
-  tableDumpModelAlias(String),
-  tableDumpModelUser(String),
-  tableDumpModelTask(String),
-
   /// eventCalendar
   /// "id\tname\taccount"
   ///
