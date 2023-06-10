@@ -41,18 +41,21 @@ class AppLoader {
   ///
   /// preload recources
   static Future<void> preload() async {
-    /*
+    try {
+      //await AppDatabase.deleteDb();
+    } catch (e) {
+      logger.warn(e);
+    }
     try {
       await AppDatabase.deleteDb();
+      await Future.delayed(const Duration(seconds: 1));
+      var appDb = await AppDatabase.getDatabase();
+      var res = await appDb.rawQuery('select * from user');
+      var x = 1;
     } catch (e) {
       logger.warn(e);
     }
-    try {
-      await AppDatabase.getDatabase();
-    } catch (e) {
-      logger.warn(e);
-    }
-    */
+
     try {
       // reset background logger
       //await Cache.setValue<List<String>>(CacheKeys.backgroundLogger, []);

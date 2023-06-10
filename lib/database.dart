@@ -9,7 +9,10 @@ import 'package:chaostours/logger.dart';
 import 'package:chaostours/model/model.dart';
 import 'package:chaostours/cache.dart';
 import 'package:chaostours/model/model_alias.dart';
+import 'package:chaostours/model/model_user.dart';
+import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
+import 'conf/db_schema.dart';
 
 class Insert {
   final String table;
@@ -31,22 +34,39 @@ class AppDatabase {
     await deleteDatabase(await getPath());
   }
 
+  static Future<void> closeDb() async {
+    await _database?.close();
+    _database = null;
+  }
+
   /// /data/user/0/com..../databases/chaostours.sqlite
   static Future<String> getPath() async {
     var path = _path ?? await getDatabasesPath();
     path = join(path, dbFile);
-    //logger.log('database path: $path');
+    logger.log('database path: $path');
     return path;
   }
 
   static Future<Database> getDatabase() async {
     return _database ??= await openDatabase(await getPath(),
         version: dbVersion,
-        singleInstance: false, onCreate: (Database db, int version) async {
-      String sql = await rootBundle.loadString('asset/db.sql');
-      await db.execute(sql);
-      await db.execute(await trackpointToSql());
-      await db.execute(await aliasToSql());
+        singleInstance: true, onCreate: (Database db, int version) async {
+      try {
+        var batch = db.batch();
+        for (var s in schema) {
+          batch.execute(s);
+        }
+        batch.execute(await trackpointToSql());
+        batch.execute(await aliasToSql());
+        batch.execute(await userToSql());
+        batch.execute(await taskToSql());
+        batch.execute(await trackPointAliasToSql());
+        batch.execute(await trackPointTaskToSql());
+        batch.execute(await trackPointUserToSql());
+        await batch.commit();
+      } catch (e, stk) {
+        logger.error('create database: $e', stk);
+      }
     });
   }
 
@@ -71,7 +91,7 @@ class AppDatabase {
       Future<T> Function(Transaction) action) async {
     Database db = await getDatabase();
     T result = await db.transaction<T>(action);
-    await db.close();
+    await closeDb();
     _database = null;
     return result;
   }
@@ -88,11 +108,11 @@ Future<String> trackpointToSql() async {
     var start =
         (model.timeStart.millisecondsSinceEpoch / 1000).round().toString();
     var end = (model.timeEnd.millisecondsSinceEpoch / 1000).round().toString();
-    var address = decode(model.address);
+    var address = model.address.replaceAll(RegExp('"'), '""');
     sql.add('("${<String>[id, lat, lon, start, end, address].join('","')}")');
   }
 
-  return 'INSERT INTO "trackpoint" VALUES ${sql.join('\n')}';
+  return 'INSERT INTO "trackpoint" VALUES ${sql.join(',\n')};';
 }
 
 Future<String> aliasToSql() async {
@@ -106,8 +126,8 @@ Future<String> aliasToSql() async {
     var status = '0';
     var lat = model.lat.toString();
     var lon = model.lon.toString();
-    var title = model.title;
-    var description = model.notes;
+    var title = model.title.replaceAll(RegExp('"'), '""');
+    var description = model.notes.replaceAll(RegExp('"'), '""');
     sql.add('("${<String>[
       id,
       group,
@@ -119,7 +139,98 @@ Future<String> aliasToSql() async {
       description
     ].join('","')}")');
   }
-  return 'INSERT INTO "alias" VALUES ${sql.join('\n')}';
+  return 'INSERT INTO "alias" VALUES ${sql.join(',\n')};';
+}
+
+Future<String> userToSql() async {
+  await Cache.reload();
+  await ModelUser.open();
+  List<String> sql = [];
+  for (var model in ModelUser.getAll()) {
+    var id = model.id.toString();
+    var group = '1';
+    var active = !model.deleted ? '1' : '0';
+    var sort = model.sortOrder.toString();
+    var phone = '';
+    var address = '';
+    var title = model.title.replaceAll(RegExp('"'), '""');
+    var description = model.notes.replaceAll(RegExp('"'), '""');
+
+    sql.add('("${<String>[
+      id,
+      group,
+      active,
+      sort,
+      phone,
+      address,
+      title,
+      description
+    ].join('","')}")');
+  }
+  return 'INSERT INTO "user" VALUES ${sql.join(',\n')};';
+}
+
+Future<String> taskToSql() async {
+  await Cache.reload();
+  await ModelTask.open();
+  List<String> sql = [];
+  for (var model in ModelTask.getAll()) {
+    var id = model.id.toString();
+    var group = '1';
+    var active = !model.deleted ? '1' : '0';
+    var sort = model.sortOrder.toString();
+    var title = model.title.replaceAll(RegExp('"'), '""');
+    var description = model.notes.replaceAll(RegExp('"'), '""');
+
+    sql.add('("${<String>[
+      id,
+      group,
+      active,
+      sort,
+      title,
+      description
+    ].join('","')}")');
+  }
+  return 'INSERT INTO "task" VALUES ${sql.join(',\n')};';
+}
+
+Future<String> trackPointAliasToSql() async {
+  await Cache.reload();
+  await ModelTrackPoint.open();
+  List<String> sql = [];
+  for (var model in ModelTrackPoint.getAll()) {
+    var tp = model.id;
+    for (var id in model.idAlias) {
+      sql.add('($tp,$id)');
+    }
+  }
+  return 'INSERT INTO "trackpoint_alias" VALUES ${sql.join(',\n')};';
+}
+
+Future<String> trackPointTaskToSql() async {
+  await Cache.reload();
+  await ModelTrackPoint.open();
+  List<String> sql = [];
+  for (var model in ModelTrackPoint.getAll()) {
+    var tp = model.id;
+    for (var id in model.idTask) {
+      sql.add('($tp,$id)');
+    }
+  }
+  return 'INSERT INTO "trackpoint_task" VALUES ${sql.join(',\n')};';
+}
+
+Future<String> trackPointUserToSql() async {
+  await Cache.reload();
+  await ModelTrackPoint.open();
+  List<String> sql = [];
+  for (var model in ModelTrackPoint.getAll()) {
+    var tp = model.id;
+    for (var id in model.idUser) {
+      sql.add('($tp,$id)');
+    }
+  }
+  return 'INSERT INTO "trackpoint_user" VALUES ${sql.join(',\n')};';
 }
 
 /// written by chatGPT-4
