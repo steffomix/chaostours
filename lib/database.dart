@@ -1,31 +1,34 @@
-import 'package:chaostours/cache.dart';
-import 'package:chaostours/model/model_alias.dart';
-import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
-
 import 'dart:math';
 import 'package:vector_math/vector_math.dart';
+import 'package:flutter/services.dart';
 
 ///
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/model/model.dart';
+import 'package:chaostours/cache.dart';
+import 'package:chaostours/model/model_alias.dart';
+import 'package:chaostours/model/model_trackpoint.dart';
+
+class Insert {
+  final String table;
+  final Map<String, Object?> values;
+  int? lastInsertId;
+  Insert(this.table, this.values);
+}
 
 class AppDatabase {
   static final Logger logger = Logger.logger<AppDatabase>();
 
-  static AppDatabase? _instance;
-  factory AppDatabase() => _instance ??= AppDatabase._();
-
-  AppDatabase._();
-
   static const dbFile = 'chaostours.sqlite';
+  static const dbVersion = 1;
 
   static String? _path;
   static Database? _database;
 
   static Future<void> deleteDb() async {
-    deleteDatabase(await getPath());
+    await deleteDatabase(await getPath());
   }
 
   /// /data/user/0/com..../databases/chaostours.sqlite
@@ -38,27 +41,39 @@ class AppDatabase {
 
   static Future<Database> getDatabase() async {
     return _database ??= await openDatabase(await getPath(),
-        version: 1,
+        version: dbVersion,
         singleInstance: false, onCreate: (Database db, int version) async {
-      // When creating the db, create the table
-      await db.execute(
-          'CREATE TABLE Test (id INTEGER PRIMARY KEY, name TEXT, value INTEGER, num REAL)');
+      String sql = await rootBundle.loadString('asset/db.sql');
+      await db.execute(sql);
+      await db.execute(await trackpointToSql());
+      await db.execute(await aliasToSql());
     });
   }
 
-  static Future<void> insert(String query) async {
-    var db = await getDatabase();
-    await db.transaction((txn) async {
-      int id1 = await txn.rawInsert(
-          'INSERT INTO Test(name, value, num) VALUES("some name", 1234, 456.789)');
-      logger.log('inserted1: $id1');
-      int id2 = await txn.rawInsert(
-          'INSERT INTO Test(name, value, num) VALUES(?, ?, ?)',
-          ['another name', 12345678, 3.1416]);
-      logger.log('inserted2: $id2');
+  /// await txn.rawInsert(
+  ///        'INSERT INTO Test(name, value, num) VALUES(?, ?, ?)',
+  ///        ['another name', 12345678, 3.1416]);
+  static Future<int> insert(Insert insert) async {
+    return await _transaction<int>((txn) async {
+      return await txn.insert(insert.table, insert.values);
     });
-    db.close();
+  }
+
+  static Future<List<int>> insertMultiple(List<Insert> inserts) async {
+    List<int> ids = [];
+    for (var action in inserts) {
+      action.lastInsertId = await insert(action);
+    }
+    return ids;
+  }
+
+  static Future<T> _transaction<T>(
+      Future<T> Function(Transaction) action) async {
+    Database db = await getDatabase();
+    T result = await db.transaction<T>(action);
+    await db.close();
     _database = null;
+    return result;
   }
 }
 

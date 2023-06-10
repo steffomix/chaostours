@@ -161,7 +161,7 @@ class _TrackPoint {
       }
 
       int maxGpsPoints = (AppSettings.autoCreateAlias.inSeconds == 0
-              ? AppSettings.autocreateAliasDefault.inSeconds
+              ? AppSettings.autocreateAliasDefault.inSeconds / 60
               : AppSettings.autoCreateAlias.inSeconds /
                   AppSettings.trackPointInterval.inSeconds)
           .ceil();
@@ -464,13 +464,6 @@ class _TrackPoint {
       }
     } catch (e, stk) {
       logger.error('processing background gps: $e', stk);
-    }
-    if (AppSettings.autoCreateAlias.inSeconds > 0) {
-      try {
-        await AppDatabase.insert('');
-      } catch (e, stk) {
-        logger.error('Database insert: $e', stk);
-      }
     }
   }
 

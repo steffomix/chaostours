@@ -27,7 +27,7 @@ class Model {
 
   bool containsString(String search) {
     search = search.toLowerCase();
-    var t = this.title.toLowerCase();
+    var t = title.toLowerCase();
     return t
         .toLowerCase()
         .contains(search); // || notes.toLowerCase().contains(search);

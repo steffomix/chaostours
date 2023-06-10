@@ -115,13 +115,6 @@ class DataBridge {
             logger.error('getBackgroundLogs: $e', stk);
           }
           await Future.delayed(AppSettings.backgroundLookupDuration);
-          if (AppSettings.autoCreateAlias.inSeconds > 0) {
-            try {
-              await AppDatabase.insert('');
-            } catch (e, stk) {
-              logger.error('Database insert: $e', stk);
-            }
-          }
         }
       });
     }

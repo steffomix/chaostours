@@ -24,9 +24,9 @@ import 'package:chaostours/logger.dart';
 import 'package:chaostours/cache.dart';
 
 enum AliasStatus {
-  restricted(0),
   public(1),
-  privat(2);
+  privat(2),
+  restricted(3);
 
   final int value;
   const AliasStatus(this.value);

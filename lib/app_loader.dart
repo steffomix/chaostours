@@ -42,17 +42,16 @@ class AppLoader {
   /// preload recources
   static Future<void> preload() async {
     /*
-    Future.delayed(const Duration(seconds: 1), () async {
-      var i = 0;
-      while (i++ < 100) {
-        Isolate.run(
-          () {
-            print('$i');
-            AppDatabase.insert('');
-          },
-        );
-      }
-    });
+    try {
+      await AppDatabase.deleteDb();
+    } catch (e) {
+      logger.warn(e);
+    }
+    try {
+      await AppDatabase.getDatabase();
+    } catch (e) {
+      logger.warn(e);
+    }
     */
     try {
       // reset background logger
@@ -84,9 +83,11 @@ class AppLoader {
 
   ///
   /// load ssh key for https connections
+  /// add cert for https requests you can download here:
+  /// https://letsencrypt.org/certs/lets-encrypt-r3.pem
   static Future<void> webKey() async {
     ByteData data =
-        await PlatformAssetBundle().load('assets/ca/lets-encrypt-r3.pem');
+        await PlatformAssetBundle().load('assets/lets-encrypt-r3.pem');
     io.SecurityContext.defaultContext
         .setTrustedCertificatesBytes(data.buffer.asUint8List());
     logger.log('SSL Key loaded');

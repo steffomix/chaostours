@@ -95,13 +95,9 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
-    - assets/ca/lets-encrypt-r3.pem
-    - assets/google-api/service-account.json
-    - assets/google-api/calendar-id.txt
-    - assets/locationAlias.tsv
-    - assets/alias.tsv
-    - assets/task.tsv
-    - assets/user.tsv
+    # https://letsencrypt.org/certs/lets-encrypt-r3.pem
+    - assets/lets-encrypt-r3.pem
+    - assets/db.sql
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware

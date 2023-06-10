@@ -31,6 +31,7 @@ import 'package:chaostours/logger.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:path/path.dart';
 import 'package:chaostours/cache.dart';
+import 'package:chaostours/database.dart';
 
 class WidgetImportExport extends StatefulWidget {
   const WidgetImportExport({super.key});
@@ -90,6 +91,16 @@ class _WidgetImportExport extends State<WidgetImportExport> {
         aliasFilename: false,
         'error': true
       };
+    }
+  }
+
+  Future<void> exportSqlite(Directory dir) async {
+    try {
+      String path = await AppDatabase.getPath();
+      File f = File(path);
+      await f.copy(join(dir.path, 'db.sqlite'));
+    } catch (e, stk) {
+      logger.error('export db.sqlite: $e', stk);
     }
   }
 
@@ -417,6 +428,8 @@ class _WidgetImportExport extends State<WidgetImportExport> {
                   ),
                   label: 'Import',
                 ),
+                const BottomNavigationBarItem(
+                    icon: Icon(Icons.storage), label: 'Export DB')
               ],
               onTap: (int id) async {
                 /// export here
@@ -581,6 +594,11 @@ class _WidgetImportExport extends State<WidgetImportExport> {
                   if (mounted) {
                     AppWidgets.navigate(context, AppRoutes.liveTracking);
                   }
+                }
+
+                if (id == 3) {
+                  await exportSqlite(dir);
+                  Fluttertoast.showToast(msg: 'Sqlite exported');
                 }
               }),
           appBar: appBar(context),
