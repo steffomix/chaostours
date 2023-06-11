@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 ///
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/model/model.dart';
+import 'package:chaostours/gps.dart';
 import 'package:chaostours/cache.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_user.dart';
@@ -53,7 +54,7 @@ class AppDatabase {
         singleInstance: true, onCreate: (Database db, int version) async {
       try {
         var batch = db.batch();
-        for (var s in schema) {
+        for (var s in dbSchemaVersion1) {
           batch.execute(s);
         }
         batch.execute(await trackpointToSql());
@@ -92,7 +93,6 @@ class AppDatabase {
     Database db = await getDatabase();
     T result = await db.transaction<T>(action);
     await closeDb();
-    _database = null;
     return result;
   }
 }
@@ -235,45 +235,34 @@ Future<String> trackPointUserToSql() async {
 
 /// written by chatGPT-4
 
-class GpsPoint {
-  double latitude;
-  double longitude;
-
-  GpsPoint(this.latitude, this.longitude);
-}
-
-List<GpsPoint> calculateSurroundingPoints(
-    GpsPoint startPoint, double distance) {
+/// based on ChatGPT-4 response
+GpsArea calculateSurroundingPoints(
+    {required double latitude,
+    required double longitude,
+    required double distance}) {
   // Constants for Earth's radius in meters
   const earthRadius = 6371000.0;
 
   // Convert the start position to radians
-  final startLatitudeRad = radians(startPoint.latitude);
-  final startLongitudeRad = radians(startPoint.longitude);
+  final startLatitudeRad = radians(latitude);
+  final startLongitudeRad = radians(longitude);
 
   // Calculate distances in radians
-  final northernDistanceRad = distance / earthRadius;
-  final easternDistanceRad = distance / (earthRadius * cos(startLatitudeRad));
-  final southernDistanceRad = -distance / earthRadius;
-  final westernDistanceRad = -distance / (earthRadius * cos(startLatitudeRad));
+  final latDistanceRad = distance / earthRadius;
+  final lonDistanceRad = distance / (earthRadius * cos(startLatitudeRad));
 
   // Calculate new latitudes and longitudes
-  final northernLatitude = asin(
-      sin(startLatitudeRad) * cos(northernDistanceRad) +
-          cos(startLatitudeRad) * sin(northernDistanceRad) * cos(0));
+  final northernLatitude = asin(sin(startLatitudeRad) * cos(latDistanceRad) +
+      cos(startLatitudeRad) * sin(latDistanceRad) * cos(0));
+  final southernLatitude = asin(sin(startLatitudeRad) * cos(latDistanceRad) +
+      cos(startLatitudeRad) * sin(latDistanceRad) * cos(180));
+
   final easternLongitude = startLongitudeRad +
-      atan2(
-          sin(0) * sin(easternDistanceRad) * cos(startLatitudeRad),
-          cos(easternDistanceRad) -
-              sin(startLatitudeRad) * sin(northernLatitude));
-  final southernLatitude = asin(
-      sin(startLatitudeRad) * cos(southernDistanceRad) +
-          cos(startLatitudeRad) * sin(southernDistanceRad) * cos(0));
-  final westernLongitude = startLongitudeRad +
-      atan2(
-          sin(0) * sin(westernDistanceRad) * cos(startLatitudeRad),
-          cos(westernDistanceRad) -
-              sin(startLatitudeRad) * sin(northernLatitude));
+      atan2(sin(lonDistanceRad) * cos(startLatitudeRad),
+          cos(latDistanceRad) - sin(startLatitudeRad) * sin(northernLatitude));
+  final westernLongitude = startLongitudeRad -
+      atan2(sin(lonDistanceRad) * cos(startLatitudeRad),
+          cos(latDistanceRad) - sin(startLatitudeRad) * sin(southernLatitude));
 
   // Convert the new latitudes and longitudes to degrees
   final northernLatitudeDeg = degrees(northernLatitude);
@@ -282,29 +271,32 @@ List<GpsPoint> calculateSurroundingPoints(
   final westernLongitudeDeg = degrees(westernLongitude);
 
   // Create the surrounding GPS points
-  final northernPoint = GpsPoint(northernLatitudeDeg, startPoint.longitude);
-  final easternPoint = GpsPoint(startPoint.latitude, easternLongitudeDeg);
-  final southernPoint = GpsPoint(southernLatitudeDeg, startPoint.longitude);
-  final westernPoint = GpsPoint(startPoint.latitude, westernLongitudeDeg);
+  final north = GPS(northernLatitudeDeg, longitude);
+  final east = GPS(latitude, easternLongitudeDeg);
+  final south = GPS(southernLatitudeDeg, longitude);
+  final west = GPS(latitude, westernLongitudeDeg);
 
-  return [northernPoint, easternPoint, southernPoint, westernPoint];
-/*
-void test() {
-  final startPoint = GpsPoint(
-      52.5200, 13.4050); // Example starting point (latitude, longitude)
-  const distance = 1000; // 1000 meters
+  return GpsArea(north: north, east: east, south: south, west: west);
+  /*
 
-  final surroundingPoints =
-      calculateSurroundingPoints(startPoint, distance.toDouble());
+calculateSurroundingPoints(GpsPoint(50, 30), 1000.0);
 
-  print(
-      "Northern Point: ${surroundingPoints[0].latitude}, ${surroundingPoints[0].longitude}");
-  print(
-      "Eastern Point: ${surroundingPoints[1].latitude}, ${surroundingPoints[1].longitude}");
-  print(
-      "Southern Point: ${surroundingPoints[2].latitude}, ${surroundingPoints[2].longitude}");
-  print(
-      "Western Point: ${surroundingPoints[3].latitude}, ${surroundingPoints[3].longitude}");
-}
+Northern Point: 50.008993216059196, 30
+Eastern Point: 50, 30.021770141923543
+Southern Point: 49.99100678394081, 30
+Western Point: 50, 29.978238001159266
+
+
+
 */
+}
+
+void test() {
+  final area =
+      calculateSurroundingPoints(latitude: 50, longitude: 30, distance: 1000.0);
+
+  print("Northern Point: ${area.north.lat}, ${area.north.lon}");
+  print("Eastern Point: ${area.east.lat}, ${area.east.lon}");
+  print("Southern Point: ${area.south.lat}, ${area.south.lon}");
+  print("Western Point: ${area.west.lat}, ${area.west.lon}");
 }
