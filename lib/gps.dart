@@ -21,11 +21,51 @@ import 'package:geolocator/geolocator.dart' as geo;
 import 'package:android_intent_plus/android_intent.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-//import 'package:geolocator/geolocator.dart' show Position, Geolocator;
 //
 import 'package:chaostours/conf/app_settings.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/cache.dart';
+
+/// <pre>
+/// --------
+///  north
+///   ++
+/// latitude
+///   --
+///  south
+/// ---------
+/// west -- longitude ++ east
+/// </pre>
+class GpsArea {
+  final GPS north;
+  final GPS east;
+  final GPS south;
+  final GPS west;
+
+  double get latMin => south.lat;
+  double get latMax => north.lat;
+  double get lonMin => west.lon;
+  double get lonMax => east.lon;
+
+  bool isInArea({
+    double? lat,
+    double? lon,
+    GPS? gps,
+  }) {
+    lat ??= gps?.lat;
+    lon ??= gps?.lon;
+    if (lat == null || lon == null) {
+      throw ('GpsArea::isInArea: provide rather a gps or lat and lon');
+    }
+    return (lat >= latMin && lat <= latMax && lon >= lonMin && lon <= lonMax);
+  }
+
+  GpsArea(
+      {required this.north,
+      required this.east,
+      required this.south,
+      required this.west});
+}
 
 class PendingGps extends GPS {
   PendingGps(super.lat, super.lon);

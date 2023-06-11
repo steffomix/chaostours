@@ -1,4 +1,4 @@
-List<String> schema = [
+List<String> dbSchemaVersion1 = [
   '''
 CREATE TABLE IF NOT EXISTS "trackpoint" (
 	"id"	INTEGER NOT NULL,
