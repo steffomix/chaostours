@@ -1,29 +1,65 @@
+/*
+Copyright 2023 Stefan Brinkmann <st.brinkmann@gmail.com>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
-import 'dart:math';
-import 'package:vector_math/vector_math.dart';
-import 'package:flutter/services.dart';
 
 ///
 import 'package:chaostours/logger.dart';
-import 'package:chaostours/model/model.dart';
-import 'package:chaostours/gps.dart';
-import 'package:chaostours/cache.dart';
-import 'package:chaostours/model/model_alias.dart';
-import 'package:chaostours/model/model_user.dart';
-import 'package:chaostours/model/model_task.dart';
-import 'package:chaostours/model/model_trackpoint.dart';
-import 'conf/db_schema.dart';
 
-class Insert {
-  final String table;
-  final Map<String, Object?> values;
-  int? lastInsertId;
-  Insert(this.table, this.values);
+class DB {
+  /// <pre>
+  /// var result = await query<T>((Transaction txn){
+  ///   return await txn...;
+  /// });
+  ///
+  /// </pre>
+  static var query = _AppDatabase._query;
+
+  static int parseInt(Object? value, {int fallback = 0}) {
+    if (value is int) {
+      return value;
+    } else if (value is String) {
+      try {
+        return int.parse(value.trim());
+      } catch (e) {
+        return fallback;
+      }
+    } else {
+      return fallback;
+    }
+  }
+
+  static double parseDouble(Object? value, {double fallback = 0.0}) {
+    if (value is double) {
+      return value;
+    } else if (value is String) {
+      try {
+        return double.parse(value.trim());
+      } catch (e) {
+        return fallback;
+      }
+    } else {
+      return fallback;
+    }
+  }
 }
 
-class AppDatabase {
-  static final Logger logger = Logger.logger<AppDatabase>();
+class _AppDatabase {
+  static final Logger logger = Logger.logger<_AppDatabase>();
 
   static const dbFile = 'chaostours.sqlite';
   static const dbVersion = 1;
@@ -31,11 +67,7 @@ class AppDatabase {
   static String? _path;
   static Database? _database;
 
-  static Future<void> deleteDb() async {
-    await deleteDatabase(await getPath());
-  }
-
-  static Future<void> closeDb() async {
+  static Future<void> _closeDb() async {
     await _database?.close();
     _database = null;
   }
@@ -48,54 +80,547 @@ class AppDatabase {
     return path;
   }
 
-  static Future<Database> getDatabase() async {
+  static Future<Database> _getDatabase() async {
     return _database ??= await openDatabase(await getPath(),
         version: dbVersion,
-        singleInstance: true, onCreate: (Database db, int version) async {
-      try {
-        var batch = db.batch();
-        for (var s in dbSchemaVersion1) {
-          batch.execute(s);
-        }
-        batch.execute(await trackpointToSql());
-        batch.execute(await aliasToSql());
-        batch.execute(await userToSql());
-        batch.execute(await taskToSql());
-        batch.execute(await trackPointAliasToSql());
-        batch.execute(await trackPointTaskToSql());
-        batch.execute(await trackPointUserToSql());
-        await batch.commit();
-      } catch (e, stk) {
-        logger.error('create database: $e', stk);
-      }
-    });
+        singleInstance: true,
+        onCreate: (Database db, int version) async {});
   }
 
-  /// await txn.rawInsert(
-  ///        'INSERT INTO Test(name, value, num) VALUES(?, ?, ?)',
-  ///        ['another name', 12345678, 3.1416]);
-  static Future<int> insert(Insert insert) async {
-    return await _transaction<int>((txn) async {
-      return await txn.insert(insert.table, insert.values);
-    });
-  }
-
-  static Future<List<int>> insertMultiple(List<Insert> inserts) async {
-    List<int> ids = [];
-    for (var action in inserts) {
-      action.lastInsertId = await insert(action);
-    }
-    return ids;
-  }
-
-  static Future<T> _transaction<T>(
-      Future<T> Function(Transaction) action) async {
-    Database db = await getDatabase();
+  /// ```dart
+  /// var result = await query<ExpectedType>((Transaction txn){
+  ///   ExpectedType result await txn...;
+  ///   return result;
+  /// });
+  ///
+  /// ```
+  static Future<T> _query<T>(Future<T> Function(Transaction txn) action) async {
+    Database db = await _getDatabase();
     T result = await db.transaction<T>(action);
-    await closeDb();
+    await _closeDb();
     return result;
   }
 }
+
+///
+///
+///
+/// schemata
+///
+///
+///
+
+enum TableTrackPoint {
+  id('id'),
+  latitude('latitude'),
+  longitude('longitude'),
+  timeStart('datetime_start'),
+  timeEnd('datetime_end'),
+  address('address');
+
+  static const String table = 'trackpoint';
+
+  TableTrackPoint get primaryKey {
+    return id;
+  }
+
+  final String column;
+  const TableTrackPoint(this.column);
+
+  static String get schema => '''CREATE TABLE IF NOT EXISTS "$table" (
+	"${id.column}"	INTEGER NOT NULL,
+	"${latitude.column}"	NUMERIC NOT NULL,
+	"${longitude.column}"	NUMERIC NOT NULL,
+	"${timeStart.column}"	TEXT NOT NULL,
+	"${timeEnd.column}"	TEXT NOT NULL,
+	"${address.column}"	TEXT,
+	PRIMARY KEY("${id.column}" AUTOINCREMENT)
+  );;
+''';
+
+  @override
+  String toString() {
+    return '$table.$column';
+  }
+}
+
+enum TableTrackPointAlias {
+  idTrackPoint('id_trackpoint'),
+  idAlias('id_alias');
+
+  static const String table = 'trackpoint_alias';
+
+  final String column;
+  const TableTrackPointAlias(this.column);
+
+  static String get schema => '''CREATE TABLE IF NOT EXISTS "trackpoint_alias" (
+	"${idTrackPoint.column}"	INTEGER NOT NULL,
+	"${idAlias.column}"	INTEGER NOT NULL
+);''';
+
+  @override
+  String toString() {
+    return '$table.$column';
+  }
+}
+
+enum TableTrackPointTask {
+  idTrackPoint('id_trackpoint'),
+  idTask('id_task');
+
+  static const String table = 'trackpoint_task';
+
+  final String column;
+  const TableTrackPointTask(this.column);
+
+  static String get schema => '''CREATE TABLE IF NOT EXISTS "trackpoint_task" (
+	"${idTrackPoint.column}"	INTEGER NOT NULL,
+	"${idTask.column}"	INTEGER NOT NULL
+);''';
+
+  @override
+  String toString() {
+    return '$table.$column';
+  }
+}
+
+enum TableTrackPointUser {
+  idTrackPoint('id_trackpoint'),
+  idUser('id_user');
+
+  static const String table = 'trackpoint_user';
+
+  final String column;
+  const TableTrackPointUser(this.column);
+
+  static String get schema => '''CREATE TABLE IF NOT EXISTS "trackpoint_user" (
+	"${idTrackPoint.column}"	INTEGER NOT NULL,
+	"${idUser.column}"	INTEGER NOT NULL
+);''';
+
+  @override
+  String toString() {
+    return '$table.$column';
+  }
+}
+
+enum TableTask {
+  id('id'),
+  idTaskGroup('id_task_group'),
+  isActive('active'),
+  sortOrder('sort'),
+  title('title'),
+  description('description');
+
+  static const String table = 'task';
+
+  TableTask get primaryKey {
+    return id;
+  }
+
+  final String column;
+  const TableTask(this.column);
+
+  static String get schema => '''CREATE TABLE IF NOT EXISTS "$table" (
+	"${id.column}"	INTEGER NOT NULL,
+	"${idTaskGroup.column}"	INTEGER NOT NULL DEFAULT 1,
+	"${isActive.column}"	INTEGER DEFAULT 1,
+	"${sortOrder.column}"	INTEGER DEFAULT 1,
+	"${title.column}"	TEXT NOT NULL,
+	"${description.column}"	TEXT,
+	PRIMARY KEY("id" AUTOINCREMENT)
+);''';
+
+  @override
+  String toString() {
+    return '$table.$column';
+  }
+}
+
+enum TableAlias {
+  id('id'),
+  idAliasGroup('id_alias_group'),
+  isActive('active'),
+  visibility('visibilty'),
+  latitude('latitude'),
+  longitude('longitude'),
+  title('title'),
+  description('description');
+
+  static const String table = 'alias';
+
+  TableAlias get primaryKey {
+    return id;
+  }
+
+  final String column;
+  const TableAlias(this.column);
+
+  static String get schema => '''CREATE TABLE IF NOT EXISTS "$table" (
+	"${id.column}"	INTEGER NOT NULL,
+	"${idAliasGroup.column}"	INTEGER NOT NULL,
+	"${isActive.column}"	INTEGER,
+	"${visibility.column}"	INTEGER,
+	"${latitude.column}"	NUMERIC NOT NULL,
+	"${longitude.column}"	NUMERIC NOT NULL,
+	"${title.column}"	TEXT NOT NULL,
+	"${description.column}"	TEXT,
+	PRIMARY KEY("${id.column}" AUTOINCREMENT)
+);''';
+
+  @override
+  String toString() {
+    return '$table.$column';
+  }
+}
+
+enum TableUser {
+  id('id'),
+  idUserGroup('id_user_group'),
+  isActive('active'),
+  sortOrder('sort'),
+  phone('phone'),
+  address('address'),
+  title('title'),
+  description('description');
+
+  static const String table = 'user';
+
+  TableUser get primaryKey {
+    return id;
+  }
+
+  final String column;
+  const TableUser(this.column);
+
+  static String get schema => '''CREATE TABLE IF NOT EXISTS "$table" (
+	"${id.column}"	INTEGER NOT NULL,
+	"${idUserGroup.column}"	INTEGER NOT NULL,
+	"${isActive.column}"	INTEGER,
+	"${sortOrder.column}"	INTEGER,
+	"${phone.column}"	TEXT,
+	"${address.column}"	TEXT,
+	"${title.column}"	TEXT NOT NULL,
+	"${description.column}"	TEXT,
+	PRIMARY KEY("${id.column}" AUTOINCREMENT)
+);''';
+
+  @override
+  String toString() {
+    return '$table.$column';
+  }
+}
+
+enum TableTaskGroup {
+  id('id'),
+  isActive('active'),
+  sortOrder('sort'),
+  title('title'),
+  description('description');
+
+  static const String table = 'task_group';
+
+  TableTaskGroup get primaryKey {
+    return id;
+  }
+
+  final String column;
+  const TableTaskGroup(this.column);
+
+  static String get schema => '''CREATE TABLE IF NOT EXISTS "$table" (
+	"${id.column}"	INTEGER NOT NULL,
+	"${isActive.column}"	INTEGER,
+	"${sortOrder.column}"	INTEGER,
+	"${title.column}"	TEXT NOT NULL,
+	"${description.column}"	TEXT,
+	PRIMARY KEY("${id.column}" AUTOINCREMENT)
+);''';
+
+  @override
+  String toString() {
+    return '$table.$column';
+  }
+}
+
+enum TableUserGroup {
+  id('id'),
+  isActive('active'),
+  sortOrder('sort'),
+  title('title'),
+  description('description');
+
+  static const String table = 'user_group';
+
+  TableUserGroup get primaryKey {
+    return id;
+  }
+
+  final String column;
+  const TableUserGroup(this.column);
+
+  static String get schema => '''CREATE TABLE IF NOT EXISTS "$table" (
+	"${id.column}"	INTEGER NOT NULL,
+	"${isActive.column}"	INTEGER,
+	"${sortOrder.column}"	INTEGER,
+	"${title.column}"	TEXT NOT NULL,
+	"${description.column}"	TEXT,
+	PRIMARY KEY("${id.column}" AUTOINCREMENT)
+);''';
+
+  @override
+  String toString() {
+    return '$table.$column';
+  }
+}
+
+enum TableAliasTopic {
+  idAlias('id_alias'),
+  idTopic('id_topic');
+
+  static const String table = 'alias_topic';
+
+  final String column;
+  const TableAliasTopic(this.column);
+
+  static String get schema => '''CREATE TABLE IF NOT EXISTS "$table" (
+	"${idAlias.column}"	INTEGER,
+	"${idTopic.column}"	INTEGER
+);''';
+
+  @override
+  String toString() {
+    return '$table.$column';
+  }
+}
+
+enum TableTopic {
+  id('id'),
+  isActive('active'),
+  sortOrder('sort'),
+  title('title'),
+  description('description');
+
+  static const String table = 'topic';
+
+  TableTopic get primaryKey {
+    return id;
+  }
+
+  final String column;
+  const TableTopic(this.column);
+
+  static String get schema => '''CREATE TABLE IF NOT EXISTS "$table" (
+	"${id.column}"	INTEGER NOT NULL,
+	"${isActive.column}"	INTEGER,
+	"${sortOrder.column}"	INTEGER,
+	"${title.column}"	TEXT NOT NULL,
+	"${description.column}"	TEXT,
+	PRIMARY KEY("${id.column}" AUTOINCREMENT)
+);''';
+
+  @override
+  String toString() {
+    return '$table.$column';
+  }
+}
+
+enum TableAliasGroup {
+  id('id'),
+  isActive('active'),
+  visibility('sort'),
+  title('title'),
+  description('description');
+
+  static const String table = 'alias_group';
+
+  TableAliasGroup get primaryKey {
+    return id;
+  }
+
+  final String column;
+  const TableAliasGroup(this.column);
+
+  static String get schema => '''CREATE TABLE IF NOT EXISTS "$table" (
+	"${id.column}"	INTEGER NOT NULL,
+	"${isActive.column}"	INTEGER,
+	"${visibility.column}"	INTEGER,
+	"${title.column}"	TEXT NOT NULL,
+	"${description.column}"	TEXT,
+	PRIMARY KEY("${id.column}" AUTOINCREMENT)
+);''';
+
+  @override
+  String toString() {
+    return '$table.$column';
+  }
+}
+
+class DatabaseSchema {
+  static final List<String> schemata = [
+    /// trackPoint
+    TableTrackPoint.schema,
+    TableTrackPointTask.schema,
+    TableTrackPointAlias.schema,
+    TableTrackPointUser.schema,
+
+    /// alias
+    TableAlias.schema,
+    TableAliasGroup.schema,
+    TableAliasTopic.schema,
+
+    /// task
+    TableTask.schema,
+    TableTaskGroup.schema,
+
+    /// user
+    TableUser.schema,
+    TableUserGroup.schema,
+  ];
+
+  static final List<String> indexes = [
+    '''
+CREATE INDEX IF NOT EXISTS "${TableTrackPoint.table}_gps" ON "${TableTrackPoint.table}" (
+	"${TableTrackPoint.latitude}"	ASC,
+	"${TableTrackPoint.longitude}"	ASC
+);''',
+    '''
+CREATE INDEX IF NOT EXISTS "${TableAlias.table}_gps" ON "${TableAlias.table}" (
+	"${TableAlias.latitude}"	ASC,
+	"${TableAlias.longitude}"	ASC
+)'''
+  ];
+
+  static final List<String> inserts = [
+    '''INSERT INTO "${TableTaskGroup.table}" VALUES (1,1,1,"Default Taskgroup",NULL)''',
+    '''INSERT INTO "${TableUserGroup.table}" VALUES (1,1,1,"Default Usergroup",NULL)''',
+    '''INSERT INTO "${TableAliasGroup.table}" VALUES (1,1,1,"Default Aliasgroup",NULL)''',
+  ];
+}
+
+List<String> dbSchemaVersion1 = [
+  '''
+CREATE TABLE IF NOT EXISTS "trackpoint" (
+	"id"	INTEGER NOT NULL,
+	"latitude"	NUMERIC NOT NULL,
+	"longitude"	NUMERIC NOT NULL,
+	"datetime_start"	TEXT NOT NULL,
+	"datetime_end"	TEXT NOT NULL,
+	"address"	TEXT,
+	PRIMARY KEY("id" AUTOINCREMENT)
+)''',
+  '''
+CREATE TABLE IF NOT EXISTS "trackpoint_alias" (
+	"id_trackpoint"	INTEGER NOT NULL,
+	"id_alias"	INTEGER NOT NULL
+)''',
+  '''
+CREATE TABLE IF NOT EXISTS "trackpoint_task" (
+	"id_trackpoint"	INTEGER NOT NULL,
+	"id_task"	INTEGER NOT NULL
+)''',
+  '''
+CREATE TABLE IF NOT EXISTS "trackpoint_user" (
+	"id_trackpoint"	INTEGER NOT NULL,
+	"id_user"	INTEGER NOT NULL
+)''',
+  '''
+CREATE TABLE IF NOT EXISTS "task" (
+	"id"	INTEGER NOT NULL,
+	"id_task_group"	INTEGER NOT NULL DEFAULT 1,
+	"active"	INTEGER DEFAULT 1,
+	"sort"	INTEGER DEFAULT 1,
+	"title"	TEXT NOT NULL,
+	"description"	TEXT NOT NULL,
+	PRIMARY KEY("id" AUTOINCREMENT)
+)''',
+  '''
+CREATE TABLE IF NOT EXISTS "alias" (
+	"id"	INTEGER NOT NULL,
+	"id_alias_group"	INTEGER NOT NULL,
+	"active"	INTEGER,
+	"visibilty"	INTEGER,
+	"latitude"	NUMERIC NOT NULL,
+	"longitude"	NUMERIC NOT NULL,
+	"title"	TEXT NOT NULL,
+	"description"	TEXT,
+	PRIMARY KEY("id" AUTOINCREMENT)
+)''',
+  '''
+CREATE TABLE IF NOT EXISTS "user" (
+	"id"	INTEGER NOT NULL,
+	"id_user_group"	INTEGER NOT NULL,
+	"active"	INTEGER,
+	"sort"	INTEGER,
+	"phone"	TEXT,
+	"address"	TEXT,
+	"title"	TEXT NOT NULL,
+	"description"	TEXT,
+	PRIMARY KEY("id" AUTOINCREMENT)
+)''',
+  '''
+CREATE TABLE IF NOT EXISTS "task_group" (
+	"id"	INTEGER NOT NULL,
+	"active"	INTEGER,
+	"sort"	INTEGER,
+	"title"	INTEGER,
+	"description"	INTEGER,
+	PRIMARY KEY("id" AUTOINCREMENT)
+)''',
+  '''
+CREATE TABLE IF NOT EXISTS "user_group" (
+	"id"	INTEGER NOT NULL,
+	"active"	INTEGER,
+	"sort"	INTEGER,
+	"title"	TEXT NOT NULL,
+	"description"	TEXT,
+	PRIMARY KEY("id" AUTOINCREMENT)
+)''',
+  '''
+CREATE TABLE IF NOT EXISTS "alias_topic" (
+	"id_alias"	INTEGER,
+	"id_topic"	INTEGER
+)''',
+  '''
+CREATE TABLE IF NOT EXISTS "topic" (
+	"id"	INTEGER NOT NULL,
+	"sort"	INTEGER,
+	"title"	TEXT NOT NULL UNIQUE,
+	"description"	INTEGER,
+	PRIMARY KEY("id" AUTOINCREMENT)
+)''',
+  '''
+CREATE TABLE IF NOT EXISTS "alias_group" (
+	"id"	INTEGER NOT NULL,
+	"active"	INTEGER,
+	"visibility"	INTEGER,
+	"title"	TEXT NOT NULL,
+	"description"	TEXT,
+	PRIMARY KEY("id" AUTOINCREMENT)
+)''',
+  '''
+INSERT INTO "task_group" VALUES (1,1,1,"Default Taskgroup",NULL)''',
+  '''
+INSERT INTO "user_group" VALUES (1,1,1,"Default Usergroup",NULL)''',
+  '''
+INSERT INTO "alias_group" VALUES (1,1,1,"Default Aliasgroup",NULL)''',
+  '''
+CREATE INDEX IF NOT EXISTS "trackpoint_latitude_longitude" ON "trackpoint" (
+	"latitude"	ASC,
+	"longitude"	ASC
+)''',
+  '''
+CREATE INDEX IF NOT EXISTS "alias_latitude_longitude" ON "alias" (
+	"latitude"	ASC,
+	"longitude"	ASC
+)'''
+];
+
+
+
+
+/*
+
+/// old tsv to sql
 
 Future<String> trackpointToSql() async {
   await Cache.reload();
@@ -233,70 +758,4 @@ Future<String> trackPointUserToSql() async {
   return 'INSERT INTO "trackpoint_user" VALUES ${sql.join(',\n')};';
 }
 
-/// written by chatGPT-4
-
-/// based on ChatGPT-4 response
-GpsArea calculateSurroundingPoints(
-    {required double latitude,
-    required double longitude,
-    required double distance}) {
-  // Constants for Earth's radius in meters
-  const earthRadius = 6371000.0;
-
-  // Convert the start position to radians
-  final startLatitudeRad = radians(latitude);
-  final startLongitudeRad = radians(longitude);
-
-  // Calculate distances in radians
-  final latDistanceRad = distance / earthRadius;
-  final lonDistanceRad = distance / (earthRadius * cos(startLatitudeRad));
-
-  // Calculate new latitudes and longitudes
-  final northernLatitude = asin(sin(startLatitudeRad) * cos(latDistanceRad) +
-      cos(startLatitudeRad) * sin(latDistanceRad) * cos(0));
-  final southernLatitude = asin(sin(startLatitudeRad) * cos(latDistanceRad) +
-      cos(startLatitudeRad) * sin(latDistanceRad) * cos(180));
-
-  final easternLongitude = startLongitudeRad +
-      atan2(sin(lonDistanceRad) * cos(startLatitudeRad),
-          cos(latDistanceRad) - sin(startLatitudeRad) * sin(northernLatitude));
-  final westernLongitude = startLongitudeRad -
-      atan2(sin(lonDistanceRad) * cos(startLatitudeRad),
-          cos(latDistanceRad) - sin(startLatitudeRad) * sin(southernLatitude));
-
-  // Convert the new latitudes and longitudes to degrees
-  final northernLatitudeDeg = degrees(northernLatitude);
-  final easternLongitudeDeg = degrees(easternLongitude);
-  final southernLatitudeDeg = degrees(southernLatitude);
-  final westernLongitudeDeg = degrees(westernLongitude);
-
-  // Create the surrounding GPS points
-  final north = GPS(northernLatitudeDeg, longitude);
-  final east = GPS(latitude, easternLongitudeDeg);
-  final south = GPS(southernLatitudeDeg, longitude);
-  final west = GPS(latitude, westernLongitudeDeg);
-
-  return GpsArea(north: north, east: east, south: south, west: west);
-  /*
-
-calculateSurroundingPoints(GpsPoint(50, 30), 1000.0);
-
-Northern Point: 50.008993216059196, 30
-Eastern Point: 50, 30.021770141923543
-Southern Point: 49.99100678394081, 30
-Western Point: 50, 29.978238001159266
-
-
-
 */
-}
-
-void test() {
-  final area =
-      calculateSurroundingPoints(latitude: 50, longitude: 30, distance: 1000.0);
-
-  print("Northern Point: ${area.north.lat}, ${area.north.lon}");
-  print("Eastern Point: ${area.east.lat}, ${area.east.lon}");
-  print("Southern Point: ${area.south.lat}, ${area.south.lon}");
-  print("Western Point: ${area.west.lat}, ${area.west.lon}");
-}

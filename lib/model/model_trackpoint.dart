@@ -17,7 +17,7 @@ limitations under the License.
 import 'dart:collection';
 
 import 'package:chaostours/conf/app_settings.dart';
-
+import 'package:chaostours/database.dart';
 import 'package:chaostours/model/model.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_alias.dart';
@@ -84,17 +84,26 @@ class ModelTrackPoint {
     return dump.join(Model.lineSep);
   }
 
-  static countAlias(int id) {
+  static countAlias(int id) async {
+    var table = TableTrackPointAlias.table;
+    var idAlias = TableTrackPointAlias.idAlias;
+    var idTrackPoint = TableTrackPointAlias.idTrackPoint;
+    var field = 'count';
     String q = '''
-    SELECT COUNT(id_alias) FROM 
+    SELECT COUNT($idAlias) AS $field FROM $table WHERE $idTrackPoint = $id;
 ''';
-    int count = 0;
-    for (var item in _table) {
-      if (item.idAlias.contains(id)) {
-        count++;
+    var res = await DB.query((txn) async {
+      List<Map<String, Object?>> res = await txn.query(table,
+          columns: ['COUNT($idAlias) AS $field'],
+          where: ' $idTrackPoint = ?',
+          whereArgs: [id],
+          groupBy: idTrackPoint.toString());
+      if (res.isEmpty) {
+        return 0;
       }
-    }
-    return count;
+      int count = DB.parseInt(res.first[field]);
+      return count;
+    });
   }
 
   ///

@@ -70,6 +70,71 @@ class GpsArea {
       required this.east,
       required this.south,
       required this.west});
+
+  /// based on ChatGPT-4 response
+  static GpsArea calculateArea(
+      {required double latitude,
+      required double longitude,
+      required double distance}) {
+    // Constants for Earth's radius in meters
+    const earthRadius = 6371000.0;
+
+    // Convert the start position to radians
+    final startLatitudeRad = radians(latitude);
+    final startLongitudeRad = radians(longitude);
+
+    // Calculate distances in radians
+    final latDistanceRad = distance / earthRadius;
+    final lonDistanceRad = distance / (earthRadius * cos(startLatitudeRad));
+
+    // Calculate new latitudes and longitudes
+    final northernLatitude = asin(sin(startLatitudeRad) * cos(latDistanceRad) +
+        cos(startLatitudeRad) * sin(latDistanceRad) * cos(0));
+    final southernLatitude = asin(sin(startLatitudeRad) * cos(latDistanceRad) +
+        cos(startLatitudeRad) * sin(latDistanceRad) * cos(180));
+
+    final easternLongitude = startLongitudeRad +
+        atan2(
+            sin(lonDistanceRad) * cos(startLatitudeRad),
+            cos(latDistanceRad) -
+                sin(startLatitudeRad) * sin(northernLatitude));
+    final westernLongitude = startLongitudeRad -
+        atan2(
+            sin(lonDistanceRad) * cos(startLatitudeRad),
+            cos(latDistanceRad) -
+                sin(startLatitudeRad) * sin(southernLatitude));
+
+    // Convert the new latitudes and longitudes to degrees
+    final northernLatitudeDeg = degrees(northernLatitude);
+    final easternLongitudeDeg = degrees(easternLongitude);
+    final southernLatitudeDeg = degrees(southernLatitude);
+    final westernLongitudeDeg = degrees(westernLongitude);
+
+    // Create the surrounding GPS points
+    final north = GPS(northernLatitudeDeg, longitude);
+    final east = GPS(latitude, easternLongitudeDeg);
+    final south = GPS(southernLatitudeDeg, longitude);
+    final west = GPS(latitude, westernLongitudeDeg);
+
+    return GpsArea(north: north, east: east, south: south, west: west);
+
+    /*
+    void test() {
+      final area =
+          calculateArea(latitude: 50, longitude: 30, distance: 1000.0);
+
+      print("Northern Point: ${area.north.lat}, ${area.north.lon}");
+      print("Eastern Point: ${area.east.lat}, ${area.east.lon}");
+      print("Southern Point: ${area.south.lat}, ${area.south.lon}");
+      print("Western Point: ${area.west.lat}, ${area.west.lon}");
+    }
+
+              Northern Point: 50.008993216059196, 30
+              Eastern Point: 50, 30.021770141923543
+              Southern Point: 49.99100678394081, 30
+              Western Point: 50, 29.978238001159266
+    */
+  }
 }
 
 class PendingGps extends GPS {
