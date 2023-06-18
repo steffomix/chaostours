@@ -27,14 +27,12 @@ import 'package:chaostours/logger.dart';
 import 'package:chaostours/cache.dart';
 
 /// <pre>
-/// --------
-///  north
-///   ++
-/// latitude
-///   --
-///  south
-/// ---------
-/// west -- longitude ++ east
+///         [N++lat]
+/// [W--lon]        [E++lon]
+///         [S--lat]
+///
+/// Latitude zero is at Equator
+/// Longitude zero is at GB London, Gateway to London Campus, University of the West of Scotland (UWS),
 /// </pre>
 class GpsArea {
   final GPS north;
@@ -42,9 +40,16 @@ class GpsArea {
   final GPS south;
   final GPS west;
 
+  /// South
   double get latMin => south.lat;
+
+  /// North
   double get latMax => north.lat;
+
+  /// West
   double get lonMin => west.lon;
+
+  /// East
   double get lonMax => east.lon;
 
   bool isInArea({

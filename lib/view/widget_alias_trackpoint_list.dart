@@ -43,13 +43,23 @@ class WidgetAliasTrackpoint extends StatefulWidget {
 class _WidgetAliasTrackpoint extends State<WidgetAliasTrackpoint> {
   // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetAliasTrackpoint>();
-  int _id = 0;
-  List _tpList = <ModelTrackPoint>[];
-  String _search = '';
-  TextEditingController controller = TextEditingController();
-  late ModelAlias _alias;
+  TextEditingController searchTextController = TextEditingController();
+  String _searchText = '';
 
-  List trackPointList = <ModelTrackPoint>[];
+  ///
+  List _trackPointModels = <ModelTrackPoint>[];
+
+  ///
+  int _idAlias = 0;
+  ModelAlias? _aliasModel;
+
+  /// widget parts
+  Widget? _bodyWidget;
+  Widget? _mapWidget;
+  Widget? _searchWidget;
+  Widget? _headerWidget;
+  Widget? _trackPointWidgets;
+
   @override
   void initState() {
     EventManager.listen<EventOnTrackingStatusChanged>(onNewTrackpoint);
@@ -73,10 +83,12 @@ class _WidgetAliasTrackpoint extends State<WidgetAliasTrackpoint> {
     });
   }
 
-  Widget map(context) {
-    Screen screen = Screen(context);
+  Widget mapWidget(BuildContext context) {
+    if (_aliasModel == null) {
+      return AppWidgets.empty;
+    }
     return SizedBox(
-        width: screen.width,
+        width: Screen(context).width,
         height: 25,
         child: IconButton(
             icon: const Icon(Icons.map),
@@ -84,38 +96,38 @@ class _WidgetAliasTrackpoint extends State<WidgetAliasTrackpoint> {
               var gps = await GPS.gps();
               var lat = gps.lat;
               var lon = gps.lon;
-              var lat1 = _alias.lat;
-              var lon1 = _alias.lon;
+              var lat1 = _aliasModel!.lat;
+              var lon1 = _aliasModel!.lon;
               GPS.launchGoogleMaps(lat, lon, lat1, lon1);
             }));
   }
 
-  Widget search(BuildContext context) {
+  Widget searchWidget() {
     return TextField(
-        controller: controller,
+        controller: searchTextController,
         minLines: 1,
         maxLines: 1,
         decoration: const InputDecoration(
             icon: Icon(Icons.search, size: 30), border: InputBorder.none),
         onChanged: (value) {
-          _search = value.toLowerCase();
+          _searchText = value.toLowerCase();
           setState(() {});
         });
   }
 
-  Widget alias(BuildContext context) {
-    var alias = ModelAlias.getModel(_id);
+  Future<Widget> aliasWidget(BuildContext context) async {
+    var alias = await ModelAlias.getModel(_idAlias);
     return ListTile(
         title: Text(alias.title),
         subtitle: Text(alias.notes),
-        leading: Text('${_tpList.length}x',
+        leading: Text('${_trackPointModels.length}x',
             style: TextStyle(
                 backgroundColor: AppColors.aliasStatusColor(alias.status))),
         trailing: IconButton(
           icon: Icon(Icons.edit, size: 30, color: AppColors.black.color),
           onPressed: () {
             Navigator.pushNamed(context, AppRoutes.editAlias.route,
-                    arguments: _id)
+                    arguments: _idAlias)
                 .then((_) {
               setState(() {});
             });
@@ -176,93 +188,110 @@ class _WidgetAliasTrackpoint extends State<WidgetAliasTrackpoint> {
     return Column(children: widgets);
   }
 
-  Widget header(context) {
+  Future<Widget> header(BuildContext context) async {
     return Container(
         padding: const EdgeInsets.only(bottom: 15),
         child: Column(children: [
-          map(context),
-          search(context),
-          alias(context),
+          mapWidget(context),
+          searchWidget(),
+          await aliasWidget(context),
           AppWidgets.divider()
         ]));
   }
 
-  Widget body(BuildContext context) {
-    if (_tpList.isEmpty) {
-      return ListView(
-        children: [
-          header(context),
-          Container(
-              padding: const EdgeInsets.all(30),
-              child: const Center(
-                  child: Text(
-                      'Für diesen Ort wurden noch keine Haltepunkte aufgezeichnet.',
-                      softWrap: true,
-                      style: TextStyle(fontSize: 15))))
-        ],
-      );
-    }
-    return ListView.builder(
-        itemCount: _tpList.length + 1,
-        itemBuilder: (context, id) {
-          if (id == 0) {
-            return header(context);
-          } else {
-            return trackPoint(context, _tpList[id - 1]);
-          }
-        });
-  }
+  Future<Widget?> body(BuildContext context) async {
+    _aliasModel = await ModelAlias.getModel(_idAlias);
 
-  @override
-  Widget build(BuildContext context) {
-    _id = ModalRoute.of(context)!.settings.arguments as int;
+    _searchWidget = searchWidget();
+    if (mounted) {
+      _mapWidget = await mapWidget(context);
 
-    _alias = ModelAlias.getModel(_id);
+      if (_searchText.trim().isEmpty) {
+        _trackPointModels = ModelTrackPoint.byAlias(_idAlias);
+      } else {
+        _trackPointModels.clear();
 
-    if (_search.trim().isEmpty) {
-      _tpList = ModelTrackPoint.byAlias(_id);
-    } else {
-      _tpList.clear();
-
-      /// pre-search idUser and idTask
-      List<int> hasTask = [];
-      List<int> hasUser = [];
-      for (var item in ModelTask.getAll()) {
-        if (item.title.toLowerCase().contains(_search)) {
-          hasTask.add(item.id);
-        }
-      }
-      for (var item in ModelUser.getAll()) {
-        if (item.title.toLowerCase().contains(_search)) {
-          hasUser.add(item.id);
-        }
-      }
-
-      /// begin search
-      for (var item in ModelTrackPoint.byAlias(_id)) {
-        var found = false;
-        if (item.notes.toLowerCase().contains(_search)) {
-          _tpList.add(item);
-          continue;
-        }
-        for (var id in hasTask) {
-          if (item.idTask.contains(id)) {
-            _tpList.add(item);
-            found = true;
-            break;
+        /// pre-search idUser and idTask
+        List<int> hasTask = [];
+        List<int> hasUser = [];
+        for (var item in ModelTask.getAll()) {
+          if (item.title.toLowerCase().contains(_searchText)) {
+            hasTask.add(item.id);
           }
         }
-        if (!found) {
-          for (var id in hasUser) {
-            if (item.idUser.contains(id)) {
-              _tpList.add(item);
+        for (var item in await ModelUser.getAll()) {
+          if (item.title.toLowerCase().contains(_searchText)) {
+            hasUser.add(item.id);
+          }
+        }
+
+        /// begin search
+        for (var item in ModelTrackPoint.byAlias(_idAlias)) {
+          var found = false;
+          if (item.notes.toLowerCase().contains(_searchText)) {
+            _trackPointModels.add(item);
+            continue;
+          }
+          for (var id in hasTask) {
+            if (item.idTask.contains(id)) {
+              _trackPointModels.add(item);
+              found = true;
               break;
+            }
+          }
+          if (!found) {
+            for (var id in hasUser) {
+              if (item.idUser.contains(id)) {
+                _trackPointModels.add(item);
+                break;
+              }
             }
           }
         }
       }
+      if (_trackPointModels.isEmpty) {
+        return ListView(
+          children: [
+            _headerWidget ?? AppWidgets.empty,
+            Container(
+                padding: const EdgeInsets.all(30),
+                child: const Center(
+                    child: Text(
+                        'Für diesen Ort wurden noch keine Haltepunkte aufgezeichnet.',
+                        softWrap: true,
+                        style: TextStyle(fontSize: 15))))
+          ],
+        );
+      }
+      return ListView.builder(
+          itemCount: _trackPointModels.length + 1,
+          itemBuilder: (context, id) {
+            if (id == 0) {
+              return _headerWidget ?? AppWidgets.empty;
+            } else {
+              return trackPoint(context, _trackPointModels[id - 1]);
+            }
+          });
     }
+    return null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    _idAlias = ModalRoute.of(context)!.settings.arguments as int;
+    body(context).then(
+      (value) {
+        if (_bodyWidget == null && mounted) {
+          Future.delayed(const Duration(milliseconds: 200), () {
+            body(context);
+            setState(() {});
+          });
+        }
+        setState(() {});
+      },
+    );
     return AppWidgets.scaffold(context,
-        body: body(context), appBar: AppBar(title: const Text('Haltepunkte')));
+        body: _bodyWidget ?? AppWidgets.loadingScreen(context),
+        appBar: AppBar(title: const Text('Haltepunkte')));
   }
 }

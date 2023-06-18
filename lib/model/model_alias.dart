@@ -182,7 +182,7 @@ class ModelAlias extends Model {
     return dump.join(Model.lineSep);
   }
 
-  static ModelAlias getModel(int id) {
+  static Future<ModelAlias> getModel(int id) async {
     return _table[id - 1];
   }
 

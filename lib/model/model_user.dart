@@ -39,7 +39,7 @@ class ModelUser extends Model {
     return _table[id - 1];
   }
 
-  static List<ModelUser> getAll() {
+  static Future<List<ModelUser>> getAll()async {
     var list = [..._table];
     list.sort((a, b) => a.sortOrder - b.sortOrder);
     return list;

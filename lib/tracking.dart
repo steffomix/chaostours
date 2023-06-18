@@ -385,7 +385,7 @@ class _TrackPoint {
             newTrackPoint.idTask = bridge.trackPointTaskIdList;
             newTrackPoint.idUser = bridge.trackPointUserIdList;
             newTrackPoint.notes = bridge.trackPointUserNotes;
-            newTrackPoint.calendarId =
+            newTrackPoint.calendarEventId =
                 '${bridge.selectedCalendarId};${bridge.lastCalendarEventId}';
 
             /// complete calendar event from trackpoint data

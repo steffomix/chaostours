@@ -175,7 +175,7 @@ class AppCalendar {
               description: description);
           String? id = await inserOrUpdate(event);
           if (tpData.tp != null && events.isEmpty) {
-            tpData.tp!.calendarId = '${tpData.calendarId};$id';
+            tpData.tp!.calendarEventId = '${tpData.calendarId};$id';
           }
           logger.warn(
               'completed calendar event ID: $id on calendar ${calendar.id}');

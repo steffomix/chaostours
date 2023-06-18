@@ -172,7 +172,7 @@ class TrackPointData {
     }
     try {
       /// calendar
-      var calData = (tp?.calendarId ??
+      var calData = (tp?.calendarEventId ??
               '${bridge.selectedCalendarId};${bridge.lastCalendarEventId}')
           .split(';');
       if (calData.isNotEmpty) {

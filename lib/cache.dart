@@ -199,13 +199,6 @@ class Cache {
     return s == null ? null : TrackingStatus.values.byName(s);
   }
 
-  /// PendingModelTrackPoint
-  static String serializePendingModelTrackPoint(PendingModelTrackPoint tp) =>
-      tp.toSharedString();
-  static PendingModelTrackPoint? deserializePendingModelTrackPoint(
-          String? tp) =>
-      tp == null ? null : PendingModelTrackPoint.toSharedModel(tp);
-
   // ModelTrackPoint
   static String serializeModelTrackPoint(ModelTrackPoint tp) => tp.toString();
   static ModelTrackPoint? deserializeModelTrackPoint(String? tp) =>
@@ -236,16 +229,6 @@ class Cache {
   static List<ModelTrackPoint>? deserializeModelTrackPointList(
           List<String>? list) =>
       list == null ? [] : list.map((e) => ModelTrackPoint.toModel(e)).toList();
-
-  /// List PendingModelTrackPoint
-  static List<String> serializePendingModelTrackPointList(
-          List<PendingModelTrackPoint> tpList) =>
-      tpList.map((e) => e.toSharedString()).toList();
-  static List<PendingModelTrackPoint>? desrializePendingModelTrackPointList(
-          List<String>? list) =>
-      list == null
-          ? []
-          : list.map((e) => PendingModelTrackPoint.toSharedModel(e)).toList();
 
   /// OSMLookup
   static String serializeOsmLookup(OsmLookupConditions lo) => lo.name;
@@ -340,16 +323,6 @@ class Cache {
         case List<ModelUser>:
           await prefs.setStringList(
               key, serializeModelUserList(value as List<ModelUser>));
-          break;
-        case PendingModelTrackPoint:
-          await prefs.setString(key,
-              serializePendingModelTrackPoint(value as PendingModelTrackPoint));
-          break;
-        case List<PendingModelTrackPoint>:
-          await prefs.setStringList(
-              key,
-              serializePendingModelTrackPointList(
-                  value as List<PendingModelTrackPoint>));
           break;
         case OsmLookupConditions:
           await prefs.setString(
@@ -448,14 +421,6 @@ class Cache {
               defaultValue;
         case List<ModelUser>:
           return deserializeModelUserList(prefs.getStringList(key)) as T? ??
-              defaultValue;
-        case PendingModelTrackPoint:
-          return deserializePendingModelTrackPoint(prefs.getString(key))
-                  as T? ??
-              defaultValue;
-        case List<PendingModelTrackPoint>:
-          return desrializePendingModelTrackPointList(prefs.getStringList(key))
-                  as T? ??
               defaultValue;
         case OsmLookupConditions:
           return deserializeOsmLookup(prefs.getString(key)) as T? ??

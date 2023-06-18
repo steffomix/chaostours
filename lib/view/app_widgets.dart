@@ -83,6 +83,8 @@ class AppWidgets {
     return Divider(thickness: 1, indent: 10, endIndent: 10, color: color);
   }
 
+  static const Widget empty = SizedBox.shrink();
+
   static String timeInfo(DateTime timeStart, DateTime timeEnd) {
     var day = '${AppSettings.weekDays[timeStart.weekday]}. den'
         ' ${timeStart.day}.${timeStart.month}.${timeStart.year}';
@@ -97,6 +99,10 @@ class AppWidgets {
           color: AppColors.black.color, size: 30),
       Text(info)
     ]));
+  }
+
+  static Widget loadingScreen(BuildContext context, [String? info]) {
+    return scaffold(context, body: loading(info ?? 'Loading...'));
   }
 
   static Future<T?> dialog<T>(

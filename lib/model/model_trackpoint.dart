@@ -28,117 +28,36 @@ import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/cache.dart';
 
-/// required for serialization
-/// Todo: move data to Cache and make this class obsolete
-class PendingModelTrackPoint extends ModelTrackPoint {
-  /// not yet saved active running trackpoint
-  static PendingModelTrackPoint pendingTrackPoint = PendingModelTrackPoint(
-      gps: GPS(0, 0),
-      timeStart: DateTime.now(),
-      idAlias: <int>[],
-      deleted: false,
-      notes: '');
-
-  PendingModelTrackPoint(
-      {required super.gps,
-      required super.idAlias,
-      required super.timeStart,
-      super.deleted,
-      super.notes});
-
-  /// <p><b>TSV columns: </b></p>
-  /// 0 TrackingStatus index<br>
-  /// 1 gps.lat<br>
-  /// 2 gps.lon<br>
-  /// 3 timeStart as toIso8601String<br>
-  /// 4 timeEnd as above<br>
-  /// 5 idAlias separated by ,<br>
-  /// 6 idTask separated by ,<br>
-  /// 7 lat, lon TrackPoints separated by ; and reduced to four digits<br>
-  /// 8 notes
-  /// 9 calendarId;calendarEventId
-  /// 10 | as line end
-  String toSharedString() {
-    List<String> cols = [
-      status.index.toString(), // 0
-      gps.lat.toString(), // 1
-      gps.lon.toString(), // 2
-      timeStart.toIso8601String(), // 3
-      timeEnd.toIso8601String(), // 4
-      idAlias.join(','), // 5
-      idTask.join(','), // 6
-      idUser.join(','), // 7
-      encode(notes), // 8
-      calendarId,
-      '|' // 9 (secure line end)
-    ];
-    return cols.join('\t');
-  }
-
-  /// <p><b>TSV columns: </b></p>
-  /// 0 TrackingStatus index<br>
-  /// 1 gps.lat <br>
-  /// 2 gps.lon<br>
-  /// 3 timeStart as toIso8601String<br>
-  /// 4 timeEnd as above<br>
-  /// 5 idAlias separated by ,<br>
-  /// 6 idTask separated by ,<br>
-  /// 7 idUser separated by ,<br>
-  /// 8 notes
-  /// 9 calendarId;calendarEventId
-  /// 10 | as line end
-  static PendingModelTrackPoint toSharedModel(String row) {
-    List<String> p = row.split('\t');
-    GPS gps = GPS(double.parse(p[1]), double.parse(p[2]));
-    PendingModelTrackPoint model = PendingModelTrackPoint(
-        gps: gps,
-        timeStart: DateTime.parse(p[3]),
-        idAlias: ModelTrackPoint.parseIdList(p[5]),
-        deleted: false);
-    model.status = TrackingStatus.byValue(int.parse(p[0]));
-    model.timeEnd = DateTime.parse(p[4]);
-    model.idTask = ModelTrackPoint.parseIdList(p[6]);
-    model.idUser = ModelTrackPoint.parseIdList(p[7]);
-    model.notes = decode(p[8]);
-    model.calendarId = p[9];
-    return model;
-  }
-}
-
 class ModelTrackPoint {
   static Logger logger = Logger.logger<ModelTrackPoint>();
   static final List<ModelTrackPoint> _table = [];
 
-  ///
-  /// TrackPoint owners
-  ///
-  TrackingStatus status = TrackingStatus.none;
+  final int id;
+  final GPS gps;
+  bool isActive = true;
 
-  ///
-  /// Model owners
-  ///
-  bool deleted = false;
-  GPS gps;
-
-  DateTime timeStart;
-  DateTime timeEnd = DateTime.now();
+  final DateTime timeStart;
+  final DateTime timeEnd;
 
   /// "id,id,..." needs to be sorted by distance
-  List<int> idAlias = [];
+  //List<int> idAlias = [];
+  List<ModelAlias> aliasModels = [];
 
-  List<int> idUser = [];
+  //List<int> idUser = [];
+  List<ModelUser> userModels = [];
 
   /// "id,id,..." needs to be ordered by user
-  List<int> idTask = [];
+  //List<int> idTask = [];
+  List<ModelTask> taskModels = [];
+
+  ///
   String address = '';
   String notes = '';
-  String calendarId = ''; // calendarId;calendarEventId
+  String calendarEventId = ''; // calendarId;calendarEventId
 
   /// real ID<br>
   /// Is set only once during save to disk
   /// and represents the current _table.length
-  int _id = 0;
-  int get id => _id;
 
   /// temporary distance for sort
   int sortDistance = 0;
@@ -146,11 +65,10 @@ class ModelTrackPoint {
   static int get length => _table.length;
 
   ModelTrackPoint(
-      {required this.gps,
-      required this.idAlias,
+      {required this.id,
       required this.timeStart,
-      this.deleted = false,
-      this.notes = ''});
+      required this.timeEnd,
+      required this.gps});
 
   static ModelTrackPoint get last => _table.last;
 
@@ -167,6 +85,9 @@ class ModelTrackPoint {
   }
 
   static countAlias(int id) {
+    String q = '''
+    SELECT COUNT(id_alias) FROM 
+''';
     int count = 0;
     for (var item in _table) {
       if (item.idAlias.contains(id)) {
@@ -252,7 +173,7 @@ class ModelTrackPoint {
   void addTask(ModelTask m) => idTask.add(m.id);
   void removeTask(ModelTask m) => idTask.remove(m.id);
 
-  List<ModelAlias> getAlias() {
+  Future<List<ModelAlias>> getAlias() {
     List<ModelAlias> list = [];
     for (int id in idAlias) {
       list.add(ModelAlias.getModel(id));
@@ -452,7 +373,7 @@ class ModelTrackPoint {
         _parseList(9, 'User IDs', p[9], parseIdList); //parseIdList(p[9]);
     tp.address =
         _parse<String>(10, 'OSM Address', p[10], decode); //decode(p[10]);
-    tp.calendarId = p[12];
+    tp.calendarEventId = p[12];
     return tp;
   }
 
@@ -482,7 +403,7 @@ class ModelTrackPoint {
   String toString() {
     List<String> cols = [
       _id.toString(), // 0
-      deleted ? '1' : '0', // 1
+      isActive ? '1' : '0', // 1
       status.index.toString(), // 2
       gps.lat.toString(), // 3
       gps.lon.toString(), // 4
@@ -493,7 +414,7 @@ class ModelTrackPoint {
       idUser.join(','), // 9
       encode(address), // 10
       encode(notes), // 11
-      calendarId,
+      calendarEventId,
       '|'
     ];
     return cols.join('\t');
