@@ -27,10 +27,10 @@ import 'package:chaostours/gps.dart';
 import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/cache.dart';
+import 'package:sqflite/sqflite.dart';
 
 class ModelTrackPoint {
   static Logger logger = Logger.logger<ModelTrackPoint>();
-  static final List<ModelTrackPoint> _table = [];
 
   final int id;
   final GPS gps;
@@ -62,26 +62,18 @@ class ModelTrackPoint {
   /// temporary distance for sort
   int sortDistance = 0;
 
-  static int get length => _table.length;
-
   ModelTrackPoint(
       {required this.id,
       required this.timeStart,
       required this.timeEnd,
-      required this.gps});
-
-  static ModelTrackPoint get last => _table.last;
+      required this.gps,
+      this.isActive = true,
+      this.address = '',
+      this.notes = '',
+      this.calendarEventId = ''});
 
   String timeElapsed() {
     return util.timeElapsed(timeStart, timeEnd);
-  }
-
-  static String dump() {
-    List<String> dump = [];
-    for (var i in _table) {
-      dump.add(i.toString());
-    }
-    return dump.join(Model.lineSep);
   }
 
   static countAlias(int id) async {
@@ -92,7 +84,7 @@ class ModelTrackPoint {
     String q = '''
     SELECT COUNT($idAlias) AS $field FROM $table WHERE $idTrackPoint = $id;
 ''';
-    var res = await DB.query((txn) async {
+    var res = await DB.query((Transaction txn) async {
       List<Map<String, Object?>> res = await txn.query(table,
           columns: ['COUNT($idAlias) AS $field'],
           where: ' $idTrackPoint = ?',
@@ -106,20 +98,38 @@ class ModelTrackPoint {
     });
   }
 
+  Map<String, Object?> toMap() {
+    return <String, Object?>{
+      TableTrackPoint.primaryKey.column: id,
+      TableTrackPoint.latitude.column: gps.lat,
+      TableTrackPoint.longitude.column: gps.lon,
+      TableTrackPoint.timeStart.column: timeStart.toIso8601String(),
+      TableTrackPoint.timeEnd.column: timeEnd.toIso8601String(),
+      TableTrackPoint.address.column: address
+    };
+  }
+
   ///
   /// insert only if Model doesn't have a valid (not null) _id
   /// otherwise writes table to disk
   ///
-  static Future<void> insert(ModelTrackPoint m) async {
-    if (m.id <= 0) {
-      _table.add(m);
-      m._id = _table.length;
-      logger.log('Insert TrackPoint #${m._id} "${m.toString()}"');
-    } else {
-      logger.warn(
-          'Insert Trackpoint skipped. TrackPoint with ID ${m._id} already exists');
-    }
-    await write();
+  static Future<ModelTrackPoint> insert(
+      {required GPS gps,
+      required DateTime timeStart,
+      required DateTime timeEnd}) async {
+    Map<String, Object?> params = {
+      TableTrackPoint.latitude.column: gps.lat,
+      TableTrackPoint.longitude.column: gps.lon,
+      TableTrackPoint.timeStart.column: timeStart.toIso8601String(),
+      TableTrackPoint.timeEnd.column: timeEnd.toIso8601String()
+    };
+
+    int id = await DB.query<int>((Transaction txn) async {
+      return await txn.insert(TableTrackPoint.table, params);
+    });
+
+    return ModelTrackPoint(
+        id: id, gps: gps, timeStart: timeStart, timeEnd: timeEnd);
   }
 
   ///
@@ -128,67 +138,223 @@ class ModelTrackPoint {
   /// The Model will then have a valid id
   /// that reflects (is same as) Table length.
   ///
-  static Future<void> update(ModelTrackPoint m) async {
-    if (m.id <= 0) {
-      logger.warn('Update Trackpoint forwarded to insert '
-          'due to negative TrackPoint ID ${m.id}');
-      await insert(m);
-    } else {
-      if (_table.indexWhere((e) => e.id == m.id) >= 0) {
-        _table[m.id - 1] = m;
-      }
-      await write();
-    }
+  static Future<int> update(ModelTrackPoint m) async {
+    return DB.query<int>((Transaction txn) async {
+      return await txn.update(TableTrackPoint.table, m.toMap(),
+          where: '${TableTrackPoint.primaryKey} = ?', whereArgs: [m.id]);
+    });
   }
 
   ModelTrackPoint clone() {
-    return toModel(toString());
+    var model = ModelTrackPoint(
+        id: id, gps: gps, timeStart: timeStart, timeEnd: timeEnd);
+    model.address = address;
+    return model;
   }
 
-  static Future<void> write() async {
-    await Cache.setValue<List<ModelTrackPoint>>(
-        CacheKeys.tableModelTrackpoint, _table);
-  }
-
-  static Future<int> open() async {
-    await Cache.reload();
-    List<ModelTrackPoint> tpList = await Cache.getValue<List<ModelTrackPoint>>(
-        CacheKeys.tableModelTrackpoint, []);
-    // reset ids
-    int id = 1;
-    for (var model in tpList) {
-      model._id = id;
-      id++;
+  Future<bool> _addAsset(
+      {required String table,
+      required String columnTrackPoint,
+      required String columnForeign,
+      required int idForeign}) async {
+    try {
+      await DB.query<int>((Transaction txn) async {
+        return await txn
+            .insert(table, {columnTrackPoint: id, columnForeign: idForeign});
+      });
+      return true;
+    } catch (e) {
+      logger.warn('addAlias: $e');
+      return false;
     }
-
-    _table.clear();
-    _table.addAll(tpList);
-
-    return _table.length;
   }
 
-  static Future<void> resetIds() async {
-    int id = 1;
-    for (var model in _table) {
-      model._id = id;
-      id++;
-    }
-    await write();
+  /// ignores dupliate errors but logs a warning
+  Future<bool> addAlias(ModelAlias m) async {
+    return await _addAsset(
+        table: TableTrackPointAlias.table,
+        columnTrackPoint: TableTrackPointAlias.idTrackPoint.column,
+        columnForeign: TableTrackPointAlias.idAlias.column,
+        idForeign: m.id);
   }
 
-  void addAlias(ModelAlias m) => idAlias.add(m.id);
-  void removeAlias(ModelAlias m) => idAlias.remove(m.id);
+  /// ignores dupliate errors but logs a warning
+  Future<bool> addTask(ModelTask m) async {
+    return await _addAsset(
+        table: TableTrackPointTask.table,
+        columnTrackPoint: TableTrackPointTask.idTrackPoint.column,
+        columnForeign: TableTrackPointTask.idTask.column,
+        idForeign: m.id);
+  }
 
-  void addTask(ModelTask m) => idTask.add(m.id);
-  void removeTask(ModelTask m) => idTask.remove(m.id);
+  /// ignores dupliate errors but logs a warning
+  Future<bool> addUser(ModelUser m) async {
+    return await _addAsset(
+        table: TableTrackPointUser.table,
+        columnTrackPoint: TableTrackPointUser.idTrackPoint.column,
+        columnForeign: TableTrackPointUser.idUser.column,
+        idForeign: m.id);
+  }
 
-  Future<List<ModelAlias>> getAlias() {
-    List<ModelAlias> list = [];
-    for (int id in idAlias) {
-      list.add(ModelAlias.getModel(id));
+  Future<bool> _removeAsset(
+      {required String table,
+      required String columnTrackPoint,
+      required String columnForeign,
+      required int idForeign}) async {
+    var i = await DB.query<int>((Transaction txn) async {
+      return await txn.delete(table,
+          where: '$columnTrackPoint = ? AND $columnForeign = ?',
+          whereArgs: [id, idForeign]);
+    });
+    return i > 0;
+  }
+
+  /// ignores dupliate errors but logs a warning
+  Future<bool> removeAlias(ModelAlias m) async {
+    return await _removeAsset(
+        table: TableTrackPointAlias.table,
+        columnTrackPoint: TableTrackPointAlias.idTrackPoint.column,
+        columnForeign: TableTrackPointAlias.idAlias.column,
+        idForeign: m.id);
+  }
+
+  /// ignores dupliate errors but logs a warning
+  Future<bool> removeTask(ModelTask m) async {
+    return await _removeAsset(
+        table: TableTrackPointTask.table,
+        columnTrackPoint: TableTrackPointTask.idTrackPoint.column,
+        columnForeign: TableTrackPointTask.idTask.column,
+        idForeign: m.id);
+  }
+
+  /// ignores dupliate errors but logs a warning
+  Future<bool> removeUser(ModelUser m) async {
+    return await _removeAsset(
+        table: TableTrackPointUser.table,
+        columnTrackPoint: TableTrackPointUser.idTrackPoint.column,
+        columnForeign: TableTrackPointUser.idUser.column,
+        idForeign: m.id);
+  }
+
+  Future _getAssetIds(
+      {required String table,
+      required String columnTrackPoint,
+      required String columnForeign}) async {
+    return await DB.query<List<Map<String, Object?>>>((Transaction txn) async {
+      return await txn.query(table,
+          columns: [columnForeign],
+          where: '$columnTrackPoint = ?',
+          whereArgs: [id]);
+    });
+  }
+
+  Future<List<ModelAlias>> getAliasList() async {
+    final column = TableTrackPointAlias.idAlias.column;
+    List<Map<String, Object?>> ids = await _getAssetIds(
+        table: TableTrackPointAlias.table,
+        columnTrackPoint: TableTrackPointAlias.idTrackPoint.column,
+        columnForeign: column);
+    if (ids.isNotEmpty) {
+      List<int> idList = [];
+      for (var row in ids) {
+        try {
+          idList.add(int.parse(row[column].toString()));
+        } catch (e, stk) {
+          logger.error('getAlias: $e', stk);
+        }
+      }
+      return await ModelAlias.byIdList(idList);
     }
-    logger.verbose('get ${list.length} alias from TrackPoint ID $id');
-    return list;
+    return <ModelAlias>[];
+  }
+
+  Future<List<ModelTask>> getTaskList() async {
+    final column = TableTrackPointTask.idTask.column;
+    List<Map<String, Object?>> ids = await _getAssetIds(
+        table: TableTrackPointTask.table,
+        columnTrackPoint: TableTrackPointTask.idTrackPoint.column,
+        columnForeign: column);
+    if (ids.isNotEmpty) {
+      List<int> idList = [];
+      for (var row in ids) {
+        try {
+          idList.add(int.parse(row[column].toString()));
+        } catch (e, stk) {
+          logger.error('getTask: $e', stk);
+        }
+      }
+      return await ModelTask.byIdList(idList);
+    }
+    return <ModelTask>[];
+  }
+
+  Future<List<ModelUser>> getUser() async {
+    final column = TableTrackPointUser.idUser.column;
+    List<int> idList = [];
+    List<Map<String, Object?>> ids = await _getAssetIds(
+        table: TableTrackPointUser.table,
+        columnTrackPoint: TableTrackPointUser.idTrackPoint.column,
+        columnForeign: column);
+    if (ids.isNotEmpty) {
+      for (var row in ids) {
+        try {
+          idList.add(int.parse(row[column].toString()));
+        } catch (e, stk) {
+          logger.error('getUser: $e', stk);
+        }
+      }
+    }
+    return await ModelUser.byIdList(idList);
+  }
+
+  static ModelTrackPoint _fromMap(Map<String, Object?> map) {
+    return ModelTrackPoint(
+        id: int.parse(map[TableTrackPoint.primaryKey].toString()),
+        gps: GPS(double.parse(map[TableTrackPoint.latitude.column].toString()),
+            double.parse(map[TableTrackPoint.longitude.column].toString())),
+        timeStart:
+            DateTime.parse(map[TableTrackPoint.timeStart.column].toString()),
+        timeEnd: DateTime.parse(map[TableTrackPoint.timeEnd.column].toString()),
+        address: (map[TableTrackPoint.address.column] ?? '').toString(),
+        notes: (map[TableTrackPoint.notes.column] ?? '').toString());
+  }
+
+  static Future<ModelTrackPoint?> byId(int id) async {
+    final rows = await DB.query<List<Map<String, Object?>>>(
+      (Transaction txn) async {
+        return await txn.query(TableTrackPoint.table,
+            where: '${TableTrackPoint.primaryKey} = ?', whereArgs: [id]);
+      },
+    );
+    if (rows.isNotEmpty) {
+      try {
+        _fromMap(rows.first);
+      } catch (e, stk) {
+        logger.error('byId: $e', stk);
+        return null;
+      }
+    }
+    return null;
+  }
+
+  static Future<List<ModelTrackPoint>> byIdList(List<int> ids) async {
+    final rows = await DB.query<List<Map<String, Object?>>>(
+      (Transaction txn) async {
+        return await txn.query(TableTrackPoint.table,
+            where:
+                '${TableTrackPoint.primaryKey} in IN (${List.filled(ids.length, '?').join(',')})',
+            whereArgs: ids);
+      },
+    );
+    List<ModelTrackPoint> models = [];
+    for (var row in rows) {
+      try {
+        models.add(_fromMap(row));
+      } catch (e, stk) {
+        logger.error('byId: $e', stk);
+      }
+    }
+    return models;
   }
 
   static List<ModelTrackPoint> recentTrackPoints({int max = 30}) {

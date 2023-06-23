@@ -73,6 +73,10 @@ class ModelAlias extends Model {
       super.deleted,
       super.notes});
 
+  static Future<ModelAlias> byId(int id) async {}
+
+  static Future<List<ModelAlias>> byIdList(List<int> ids) async {}
+
   static List<ModelAlias> getAll() => <ModelAlias>[..._table];
 
   static T _parse<T>(

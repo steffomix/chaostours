@@ -38,6 +38,10 @@ class ModelTask extends Model {
     return _table[id - 1];
   }
 
+  static Future<ModelTask> byId(int id) async {}
+
+  static Future<List<ModelTask>> byIdList(List<int> ids) async {}
+
   static List<ModelTask> getAll() {
     var list = [..._table];
     list.sort((a, b) => a.sortOrder - b.sortOrder);

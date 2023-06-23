@@ -15,19 +15,23 @@ limitations under the License.
 */
 
 import 'package:path/path.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite/sqflite.dart' as flite;
 
 ///
 import 'package:chaostours/logger.dart';
 
 class DB {
   /// <pre>
-  /// var result = await query<T>((Transaction txn){
+  /// var result = await query<T>((Transaction txn) async {
   ///   return await txn...;
   /// });
   ///
   /// </pre>
   static var query = _AppDatabase._query;
+
+  static Future<String> getPath = _AppDatabase.getPath();
+
+  static bool closeDb = false;
 
   static int parseInt(Object? value, {int fallback = 0}) {
     if (value is int) {
@@ -65,7 +69,7 @@ class _AppDatabase {
   static const dbVersion = 1;
 
   static String? _path;
-  static Database? _database;
+  static flite.Database? _database;
 
   static Future<void> _closeDb() async {
     await _database?.close();
@@ -74,17 +78,17 @@ class _AppDatabase {
 
   /// /data/user/0/com..../databases/chaostours.sqlite
   static Future<String> getPath() async {
-    var path = _path ?? await getDatabasesPath();
+    var path = _path ?? await flite.getDatabasesPath();
     path = join(path, dbFile);
     logger.log('database path: $path');
     return path;
   }
 
-  static Future<Database> _getDatabase() async {
-    return _database ??= await openDatabase(await getPath(),
+  static Future<flite.Database> _getDatabase() async {
+    return _database ??= await flite.openDatabase(await getPath(),
         version: dbVersion,
-        singleInstance: true,
-        onCreate: (Database db, int version) async {});
+        singleInstance: false,
+        onCreate: (flite.Database db, int version) async {});
   }
 
   /// ```dart
@@ -94,10 +98,13 @@ class _AppDatabase {
   /// });
   ///
   /// ```
-  static Future<T> _query<T>(Future<T> Function(Transaction txn) action) async {
-    Database db = await _getDatabase();
+  static Future<T> _query<T>(
+      Future<T> Function(flite.Transaction txn) action) async {
+    flite.Database db = await _getDatabase();
     T result = await db.transaction<T>(action);
-    await _closeDb();
+    if (DB.closeDb) {
+      await _closeDb();
+    }
     return result;
   }
 }
@@ -116,11 +123,12 @@ enum TableTrackPoint {
   longitude('longitude'),
   timeStart('datetime_start'),
   timeEnd('datetime_end'),
-  address('address');
+  address('address'),
+  notes('notes');
 
   static const String table = 'trackpoint';
 
-  TableTrackPoint get primaryKey {
+  static TableTrackPoint get primaryKey {
     return id;
   }
 
@@ -128,13 +136,14 @@ enum TableTrackPoint {
   const TableTrackPoint(this.column);
 
   static String get schema => '''CREATE TABLE IF NOT EXISTS "$table" (
-	"${id.column}"	INTEGER NOT NULL,
+	"${primaryKey.column}"	INTEGER NOT NULL,
 	"${latitude.column}"	NUMERIC NOT NULL,
 	"${longitude.column}"	NUMERIC NOT NULL,
 	"${timeStart.column}"	TEXT NOT NULL,
 	"${timeEnd.column}"	TEXT NOT NULL,
 	"${address.column}"	TEXT,
-	PRIMARY KEY("${id.column}" AUTOINCREMENT)
+	"${notes.column}"	TEXT,
+	PRIMARY KEY("${primaryKey.column}" AUTOINCREMENT)
   );;
 ''';
 
@@ -214,7 +223,7 @@ enum TableTask {
 
   static const String table = 'task';
 
-  TableTask get primaryKey {
+  static TableTask get primaryKey {
     return id;
   }
 
@@ -222,13 +231,13 @@ enum TableTask {
   const TableTask(this.column);
 
   static String get schema => '''CREATE TABLE IF NOT EXISTS "$table" (
-	"${id.column}"	INTEGER NOT NULL,
+	"${primaryKey.column}"	INTEGER NOT NULL,
 	"${idTaskGroup.column}"	INTEGER NOT NULL DEFAULT 1,
 	"${isActive.column}"	INTEGER DEFAULT 1,
 	"${sortOrder.column}"	INTEGER DEFAULT 1,
 	"${title.column}"	TEXT NOT NULL,
 	"${description.column}"	TEXT,
-	PRIMARY KEY("id" AUTOINCREMENT)
+	PRIMARY KEY("${primaryKey.column}" AUTOINCREMENT)
 );''';
 
   @override
@@ -242,6 +251,8 @@ enum TableAlias {
   idAliasGroup('id_alias_group'),
   isActive('active'),
   visibility('visibilty'),
+  lastVisited('last_visited'),
+  timesVisited('times_visited'),
   latitude('latitude'),
   longitude('longitude'),
   title('title'),
@@ -249,7 +260,7 @@ enum TableAlias {
 
   static const String table = 'alias';
 
-  TableAlias get primaryKey {
+  static TableAlias get primaryKey {
     return id;
   }
 
@@ -257,15 +268,17 @@ enum TableAlias {
   const TableAlias(this.column);
 
   static String get schema => '''CREATE TABLE IF NOT EXISTS "$table" (
-	"${id.column}"	INTEGER NOT NULL,
+	"${primaryKey.column}"	INTEGER NOT NULL,
 	"${idAliasGroup.column}"	INTEGER NOT NULL,
 	"${isActive.column}"	INTEGER,
 	"${visibility.column}"	INTEGER,
+	"${lastVisited.column}"	TEXT,
+	"${timesVisited.column}"	INTEGER,
 	"${latitude.column}"	NUMERIC NOT NULL,
 	"${longitude.column}"	NUMERIC NOT NULL,
 	"${title.column}"	TEXT NOT NULL,
 	"${description.column}"	TEXT,
-	PRIMARY KEY("${id.column}" AUTOINCREMENT)
+	PRIMARY KEY("${primaryKey.column}" AUTOINCREMENT)
 );''';
 
   @override
@@ -286,7 +299,7 @@ enum TableUser {
 
   static const String table = 'user';
 
-  TableUser get primaryKey {
+  static TableUser get primaryKey {
     return id;
   }
 
@@ -294,7 +307,7 @@ enum TableUser {
   const TableUser(this.column);
 
   static String get schema => '''CREATE TABLE IF NOT EXISTS "$table" (
-	"${id.column}"	INTEGER NOT NULL,
+	"${primaryKey.column}"	INTEGER NOT NULL,
 	"${idUserGroup.column}"	INTEGER NOT NULL,
 	"${isActive.column}"	INTEGER,
 	"${sortOrder.column}"	INTEGER,
@@ -302,7 +315,7 @@ enum TableUser {
 	"${address.column}"	TEXT,
 	"${title.column}"	TEXT NOT NULL,
 	"${description.column}"	TEXT,
-	PRIMARY KEY("${id.column}" AUTOINCREMENT)
+	PRIMARY KEY("${primaryKey.column}" AUTOINCREMENT)
 );''';
 
   @override
@@ -320,7 +333,7 @@ enum TableTaskGroup {
 
   static const String table = 'task_group';
 
-  TableTaskGroup get primaryKey {
+  static TableTaskGroup get primaryKey {
     return id;
   }
 
@@ -328,12 +341,12 @@ enum TableTaskGroup {
   const TableTaskGroup(this.column);
 
   static String get schema => '''CREATE TABLE IF NOT EXISTS "$table" (
-	"${id.column}"	INTEGER NOT NULL,
+	"${primaryKey.column}"	INTEGER NOT NULL,
 	"${isActive.column}"	INTEGER,
 	"${sortOrder.column}"	INTEGER,
 	"${title.column}"	TEXT NOT NULL,
 	"${description.column}"	TEXT,
-	PRIMARY KEY("${id.column}" AUTOINCREMENT)
+	PRIMARY KEY("${primaryKey.column}" AUTOINCREMENT)
 );''';
 
   @override
@@ -351,7 +364,7 @@ enum TableUserGroup {
 
   static const String table = 'user_group';
 
-  TableUserGroup get primaryKey {
+  static TableUserGroup get primaryKey {
     return id;
   }
 
@@ -359,12 +372,12 @@ enum TableUserGroup {
   const TableUserGroup(this.column);
 
   static String get schema => '''CREATE TABLE IF NOT EXISTS "$table" (
-	"${id.column}"	INTEGER NOT NULL,
+	"${primaryKey.column}"	INTEGER NOT NULL,
 	"${isActive.column}"	INTEGER,
 	"${sortOrder.column}"	INTEGER,
 	"${title.column}"	TEXT NOT NULL,
 	"${description.column}"	TEXT,
-	PRIMARY KEY("${id.column}" AUTOINCREMENT)
+	PRIMARY KEY("${primaryKey.column}" AUTOINCREMENT)
 );''';
 
   @override
@@ -402,7 +415,7 @@ enum TableTopic {
 
   static const String table = 'topic';
 
-  TableTopic get primaryKey {
+  static TableTopic get primaryKey {
     return id;
   }
 
@@ -410,12 +423,12 @@ enum TableTopic {
   const TableTopic(this.column);
 
   static String get schema => '''CREATE TABLE IF NOT EXISTS "$table" (
-	"${id.column}"	INTEGER NOT NULL,
+	"${primaryKey.column}"	INTEGER NOT NULL,
 	"${isActive.column}"	INTEGER,
 	"${sortOrder.column}"	INTEGER,
 	"${title.column}"	TEXT NOT NULL,
 	"${description.column}"	TEXT,
-	PRIMARY KEY("${id.column}" AUTOINCREMENT)
+	PRIMARY KEY("${primaryKey.column}" AUTOINCREMENT)
 );''';
 
   @override
@@ -433,7 +446,7 @@ enum TableAliasGroup {
 
   static const String table = 'alias_group';
 
-  TableAliasGroup get primaryKey {
+  static TableAliasGroup get primaryKey {
     return id;
   }
 
@@ -441,12 +454,12 @@ enum TableAliasGroup {
   const TableAliasGroup(this.column);
 
   static String get schema => '''CREATE TABLE IF NOT EXISTS "$table" (
-	"${id.column}"	INTEGER NOT NULL,
+	"${primaryKey.column}"	INTEGER NOT NULL,
 	"${isActive.column}"	INTEGER,
 	"${visibility.column}"	INTEGER,
 	"${title.column}"	TEXT NOT NULL,
 	"${description.column}"	TEXT,
-	PRIMARY KEY("${id.column}" AUTOINCREMENT)
+	PRIMARY KEY("${primaryKey.column}" AUTOINCREMENT)
 );''';
 
   @override
@@ -614,9 +627,6 @@ CREATE INDEX IF NOT EXISTS "alias_latitude_longitude" ON "alias" (
 	"longitude"	ASC
 )'''
 ];
-
-
-
 
 /*
 
