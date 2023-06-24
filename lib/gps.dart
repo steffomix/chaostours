@@ -40,16 +40,16 @@ class GpsArea {
   final GPS south;
   final GPS west;
 
-  /// South
+  /// South border
   double get latMin => south.lat;
 
-  /// North
+  /// North border
   double get latMax => north.lat;
 
-  /// West
+  /// West border
   double get lonMin => west.lon;
 
-  /// East
+  /// East border
   double get lonMax => east.lon;
 
   bool isInArea({
@@ -75,7 +75,7 @@ class GpsArea {
   static GpsArea calculateArea(
       {required double latitude,
       required double longitude,
-      required double distance}) {
+      required int distance}) {
     // Constants for Earth's radius in meters
     const earthRadius = 6371000.0;
 
