@@ -13,23 +13,19 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+import 'package:chaostours/logger.dart';
 
 var decode = Uri.decodeFull; // util.base64Codec().decode;
 var encode = Uri.encodeFull;
 
 class Model {
+  static final Logger logger = Logger.logger<Model>();
   static const String lineSep = '\n';
-  String title;
-  String notes;
-  bool deleted;
 
-  Model({this.title = '', this.notes = '', this.deleted = false});
-
-  bool containsString(String search) {
-    search = search.toLowerCase();
-    var t = title.toLowerCase();
-    return t
-        .toLowerCase()
-        .contains(search); // || notes.toLowerCase().contains(search);
+  final int id;
+  Model({required this.id}) {
+    if (id <= 0) {
+      throw ('Constructor: id must be > 0');
+    }
   }
 }

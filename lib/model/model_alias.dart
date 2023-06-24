@@ -19,9 +19,11 @@ import 'package:flutter/services.dart';
 
 ///
 import 'package:chaostours/model/model.dart';
+import 'package:chaostours/database.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/cache.dart';
+import 'package:sqflite/sqflite.dart';
 
 enum AliasStatus {
   public(1),
@@ -76,6 +78,66 @@ class ModelAlias extends Model {
   static Future<ModelAlias> byId(int id) async {}
 
   static Future<List<ModelAlias>> byIdList(List<int> ids) async {}
+
+  /// transforms text into %text%
+  static Future<List<ModelAlias>> search(String text) async {
+    text = '%$text%';
+    var rows = await DB.query<List<Map<String, Object?>>>(
+      (txn) async {
+        return await txn.query(TableAlias.table,
+            where:
+                '${TableAlias.title} like ? OR ${TableAlias.description} like ?',
+            whereArgs: [text, text]);
+      },
+    );
+    var models = <ModelAlias>[];
+    for (var row in rows) {
+      try {
+        models.add(_fromMap(row));
+      } catch (e, stk) {
+        logger.error('search: $e', stk);
+      }
+    }
+    return models;
+  }
+
+  static Future<List<ModelTrackPoint>> lastVisited(GPS gps) async {
+    var radius = AppSettings.distanceTreshold;
+    var rows = ModelAlias.byRadius(gps, radius);
+  }
+
+  ///
+  static Future<List<ModelAlias>> byRadius(
+      {required GPS gps, required int radius}) async {
+    var area = GpsArea.calculateArea(
+        latitude: gps.lat, longitude: gps.lon, distance: radius);
+    var table = TableAlias.table;
+    var latCol = TableAlias.latitude.column;
+    var lonCol = TableAlias.longitude.column;
+    var rows = await DB.query(
+      (Transaction txn) async {
+        return await txn.query(table,
+            where:
+                '$latCol > ? AND $latCol < ? AND $lonCol > ? AND $lonCol < ?',
+            whereArgs: [area.latMin, area.latMax, area.lonMin, area.lonMax]);
+      },
+    );
+    var rawModels = <ModelAlias>[];
+    for (var row in rows) {
+      rawModels.add(_fromMap(row));
+    }
+    var models = <ModelAlias>[];
+    for (var model in rawModels) {
+      if (GPS.distance(GPS(model.lat, model.lon), gps) <= radius) {
+        models.add(model);
+      }
+    }
+    return models;
+  }
+
+  static ModelAlias _fromMap(Map<String, Object?> map) {
+    return ModelAlias();
+  }
 
   static List<ModelAlias> getAll() => <ModelAlias>[..._table];
 

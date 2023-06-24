@@ -60,6 +60,14 @@ class DB {
       return fallback;
     }
   }
+
+  static int timeToInt(DateTime time) {
+    return (time.millisecondsSinceEpoch / 1000).round();
+  }
+
+  static DateTime intToTime(int i) {
+    return DateTime.fromMillisecondsSinceEpoch(i * 1000);
+  }
 }
 
 class _AppDatabase {

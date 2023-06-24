@@ -100,8 +100,6 @@ class DataBridge {
               // trackingstatus has changed
               // reload data
               await Cache.reload();
-              await ModelTrackPoint.open();
-              await ModelAlias.open();
               EventManager.fire<EventOnTrackingStatusChanged>(
                   EventOnTrackingStatusChanged());
             }

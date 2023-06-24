@@ -16,6 +16,7 @@ limitations under the License.
 
 import 'package:flutter/services.dart';
 //
+import 'package:chaostours/database.dart';
 import 'package:chaostours/model/model.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/cache.dart';
@@ -42,6 +43,32 @@ class ModelUser extends Model {
   static Future<ModelUser> byId(int id) async {}
 
   static Future<List<ModelUser>> byIdList(List<int> ids) async {}
+
+  /// transforms text into %text%
+  static Future<List<ModelUser>> search(String text) async {
+    text = '%$text%';
+    var rows = await DB.query<List<Map<String, Object?>>>(
+      (txn) async {
+        return await txn.query(TableUser.table,
+            where:
+                '${TableUser.title} like ? OR ${TableUser.description} like ?',
+            whereArgs: [text, text]);
+      },
+    );
+    var models = <ModelUser>[];
+    for (var row in rows) {
+      try {
+        models.add(_fromMap(row));
+      } catch (e, stk) {
+        logger.error('search: $e', stk);
+      }
+    }
+    return models;
+  }
+
+  static ModelUser _fromMap(Map<String, Object?> map) {
+    return ModelUser();
+  }
 
   static Future<List<ModelUser>> getAll() async {
     var list = [..._table];
