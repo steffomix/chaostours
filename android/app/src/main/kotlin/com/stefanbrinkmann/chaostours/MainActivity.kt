@@ -1,4 +1,4 @@
-package com.stefanbrinkmann.chaostours
+package com.stefanbrinkmann.chaosToursUnlimited
 
 import io.flutter.embedding.android.FlutterActivity
 
