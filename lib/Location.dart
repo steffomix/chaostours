@@ -11,11 +11,11 @@ class Location {
   bool _isPublic = true;
   bool _isPrivate = false;
   bool _isResticted = false;
-  AliasStatus _status = AliasStatus.restricted;
+  AliasVisibility _status = AliasVisibility.restricted;
 
   List<int> get aliasIdList => UnmodifiableListView(_aliasIdList);
   List<ModelAlias> get aliasModelList => UnmodifiableListView(_aliasModelList);
-  AliasStatus get status => _status;
+  AliasVisibility get status => _status;
   bool get isPublic => _isPublic;
   bool get isPrivate => _isPrivate;
   bool get isRestricted => _isResticted;
@@ -31,22 +31,22 @@ class Location {
     _aliasModelList.addAll(aliasList);
     _aliasIdList.addAll(aliasList.map((model) => model.id));
     for (var model in aliasList) {
-      if (model.status == AliasStatus.restricted) {
-        _status = AliasStatus.restricted;
+      if (model.status == AliasVisibility.restricted) {
+        _status = AliasVisibility.restricted;
         _isResticted = true;
         _isPrivate = true;
         _isPublic = false;
         return;
       }
-      if (model.status == AliasStatus.privat) {
-        _status = AliasStatus.privat;
+      if (model.status == AliasVisibility.privat) {
+        _status = AliasVisibility.privat;
         _isResticted = false;
         _isPrivate = true;
         _isPublic = false;
         return;
       }
     }
-    _status = AliasStatus.public;
+    _status = AliasVisibility.public;
     _isResticted = false;
     _isPrivate = false;
     _isPublic = true;

@@ -26,6 +26,8 @@ import 'package:chaostours/conf/app_settings.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/cache.dart';
 
+const earthRadius = 6378137.0;
+
 /// <pre>
 ///         [N++lat]
 /// [W--lon]        [E++lon]
@@ -77,7 +79,7 @@ class GpsArea {
       required double longitude,
       required int distance}) {
     // Constants for Earth's radius in meters
-    const earthRadius = 6371000.0;
+    //const earthRadius = 6371000.0;
 
     // Convert the start position to radians
     final startLatitudeRad = radians(latitude);
@@ -271,20 +273,20 @@ class GPS {
     double endLatitude,
     double endLongitude,
   ) {
-    var earthRadius = 6378137.0;
-    var dLat = _toRadians(endLatitude - startLatitude);
-    var dLon = _toRadians(endLongitude - startLongitude);
+    // var earthRadius = 6378137.0;
+    var dLat = toRadians(endLatitude - startLatitude);
+    var dLon = toRadians(endLongitude - startLongitude);
 
     var a = pow(sin(dLat / 2), 2) +
         pow(sin(dLon / 2), 2) *
-            cos(_toRadians(startLatitude)) *
-            cos(_toRadians(endLatitude));
+            cos(toRadians(startLatitude)) *
+            cos(toRadians(endLatitude));
     var c = 2 * asin(sqrt(a));
 
     return earthRadius * c;
   }
 
-  static double _toRadians(double degree) {
+  static double toRadians(double degree) {
     return degree * pi / 180;
   }
 

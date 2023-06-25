@@ -213,10 +213,10 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                       'z.B. automatisch in einem privaten oder öffentlichen Kalender publiziert werden.',
                       softWrap: true,
                     ),
-                    leading: Radio<AliasStatus>(
-                        value: AliasStatus.public,
+                    leading: Radio<AliasVisibility>(
+                        value: AliasVisibility.public,
                         groupValue: alias.status,
-                        onChanged: (AliasStatus? val) =>
+                        onChanged: (AliasVisibility? val) =>
                             setStatus(context, val))),
                 ListTile(
                     title: Text('Privat',
@@ -229,10 +229,10 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                       'und geben die Informationen selst an Dritte weiter.',
                       softWrap: true,
                     ),
-                    leading: Radio<AliasStatus>(
-                        value: AliasStatus.privat,
+                    leading: Radio<AliasVisibility>(
+                        value: AliasVisibility.privat,
                         groupValue: alias.status,
-                        onChanged: (AliasStatus? val) =>
+                        onChanged: (AliasVisibility? val) =>
                             setStatus(context, val))),
                 ListTile(
                     title: Text('Geheim',
@@ -247,10 +247,10 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                       'über Ort B(geheim) nach Ort C über einen bisher unbekannten Subraum transportiert.',
                       softWrap: true,
                     ),
-                    leading: Radio<AliasStatus>(
-                        value: AliasStatus.restricted,
+                    leading: Radio<AliasVisibility>(
+                        value: AliasVisibility.restricted,
                         groupValue: alias.status,
-                        onChanged: (AliasStatus? val) =>
+                        onChanged: (AliasVisibility? val) =>
                             setStatus(context, val)))
               ])),
           AppWidgets.divider(),
@@ -277,8 +277,8 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
     modified.value = true;
   }
 
-  void setStatus(BuildContext context, AliasStatus? val) {
-    alias.status = val ?? AliasStatus.restricted;
+  void setStatus(BuildContext context, AliasVisibility? val) {
+    alias.status = val ?? AliasVisibility.restricted;
     modified.value = true;
     setState(() {});
   }

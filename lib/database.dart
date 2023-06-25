@@ -27,7 +27,7 @@ class DB {
   /// });
   ///
   /// </pre>
-  static var query = _AppDatabase._query;
+  static var execute = _AppDatabase._query;
 
   static Future<String> getPath = _AppDatabase.getPath();
 
@@ -61,12 +61,38 @@ class DB {
     }
   }
 
+  static String parseString(Object? text, {fallback = ''}) {
+    if (text is String) {
+      return text;
+    }
+    if (text == null) {
+      return fallback;
+    }
+    return text.toString();
+  }
+
+  static bool parseBool(Object? value, {bool fallback = false}) {
+    if (value is bool) {
+      return value;
+    } else if (value is String) {
+      try {
+        return int.parse(value.toString()) > 0;
+      } catch (e) {
+        return fallback;
+      }
+    } else {
+      return fallback;
+    }
+  }
+
+  static int boolToInt(bool b) => b ? 1 : 0;
+
   static int timeToInt(DateTime time) {
     return (time.millisecondsSinceEpoch / 1000).round();
   }
 
-  static DateTime intToTime(int i) {
-    return DateTime.fromMillisecondsSinceEpoch(i * 1000);
+  static DateTime intToTime(Object? i) {
+    return DateTime.fromMillisecondsSinceEpoch(parseInt(i) * 1000);
   }
 }
 
@@ -140,6 +166,9 @@ enum TableTrackPoint {
     return id;
   }
 
+  static List<String> get columns =>
+      TableTrackPoint.values.map((e) => e.toString()).toList();
+
   final String column;
   const TableTrackPoint(this.column);
 
@@ -167,6 +196,9 @@ enum TableTrackPointAlias {
 
   static const String table = 'trackpoint_alias';
 
+  static List<String> get columns =>
+      TableTrackPointAlias.values.map((e) => e.toString()).toList();
+
   final String column;
   const TableTrackPointAlias(this.column);
 
@@ -187,6 +219,9 @@ enum TableTrackPointTask {
 
   static const String table = 'trackpoint_task';
 
+  static List<String> get columns =>
+      TableTrackPointTask.values.map((e) => e.toString()).toList();
+
   final String column;
   const TableTrackPointTask(this.column);
 
@@ -206,6 +241,9 @@ enum TableTrackPointUser {
   idUser('id_user');
 
   static const String table = 'trackpoint_user';
+
+  static List<String> get columns =>
+      TableTrackPointUser.values.map((e) => e.toString()).toList();
 
   final String column;
   const TableTrackPointUser(this.column);
@@ -230,6 +268,9 @@ enum TableTask {
   description('description');
 
   static const String table = 'task';
+
+  static List<String> get columns =>
+      TableTask.values.map((e) => e.toString()).toList();
 
   static TableTask get primaryKey {
     return id;
@@ -258,6 +299,8 @@ enum TableAlias {
   id('id'),
   idAliasGroup('id_alias_group'),
   isActive('active'),
+  calendarId('calendar_id'),
+  radius('radius'),
   visibility('visibilty'),
   lastVisited('last_visited'),
   timesVisited('times_visited'),
@@ -268,6 +311,9 @@ enum TableAlias {
 
   static const String table = 'alias';
 
+  static List<String> get columns =>
+      TableAlias.values.map((e) => e.toString()).toList();
+
   static TableAlias get primaryKey {
     return id;
   }
@@ -277,13 +323,15 @@ enum TableAlias {
 
   static String get schema => '''CREATE TABLE IF NOT EXISTS "$table" (
 	"${primaryKey.column}"	INTEGER NOT NULL,
-	"${idAliasGroup.column}"	INTEGER NOT NULL,
+	"${idAliasGroup.column}"	INTEGER NOT NULL DEFAULT 1,
 	"${isActive.column}"	INTEGER,
+  "${calendarId.column}" TEXT,
+  "${radius.column}" INTEGER,
 	"${visibility.column}"	INTEGER,
-	"${lastVisited.column}"	TEXT,
-	"${timesVisited.column}"	INTEGER,
 	"${latitude.column}"	NUMERIC NOT NULL,
 	"${longitude.column}"	NUMERIC NOT NULL,
+	"${lastVisited.column}"	TEXT,
+	"${timesVisited.column}"	INTEGER,
 	"${title.column}"	TEXT NOT NULL,
 	"${description.column}"	TEXT,
 	PRIMARY KEY("${primaryKey.column}" AUTOINCREMENT)
@@ -306,6 +354,9 @@ enum TableUser {
   description('description');
 
   static const String table = 'user';
+
+  static List<String> get columns =>
+      TableUser.values.map((e) => e.toString()).toList();
 
   static TableUser get primaryKey {
     return id;
@@ -341,6 +392,9 @@ enum TableTaskGroup {
 
   static const String table = 'task_group';
 
+  static List<String> get columns =>
+      TableTaskGroup.values.map((e) => e.toString()).toList();
+
   static TableTaskGroup get primaryKey {
     return id;
   }
@@ -371,6 +425,9 @@ enum TableUserGroup {
   description('description');
 
   static const String table = 'user_group';
+
+  static List<String> get columns =>
+      TableUserGroup.values.map((e) => e.toString()).toList();
 
   static TableUserGroup get primaryKey {
     return id;
@@ -403,6 +460,9 @@ enum TableAliasTopic {
   final String column;
   const TableAliasTopic(this.column);
 
+  static List<String> get columns =>
+      TableAliasTopic.values.map((e) => e.toString()).toList();
+
   static String get schema => '''CREATE TABLE IF NOT EXISTS "$table" (
 	"${idAlias.column}"	INTEGER,
 	"${idTopic.column}"	INTEGER
@@ -422,6 +482,9 @@ enum TableTopic {
   description('description');
 
   static const String table = 'topic';
+
+  static List<String> get columns =>
+      TableTopic.values.map((e) => e.toString()).toList();
 
   static TableTopic get primaryKey {
     return id;
@@ -453,6 +516,9 @@ enum TableAliasGroup {
   description('description');
 
   static const String table = 'alias_group';
+
+  static List<String> get columns =>
+      TableAliasGroup.values.map((e) => e.toString()).toList();
 
   static TableAliasGroup get primaryKey {
     return id;

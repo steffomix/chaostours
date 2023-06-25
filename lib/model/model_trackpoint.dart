@@ -88,7 +88,7 @@ class ModelTrackPoint extends Model {
     var idTrackPoint = TableTrackPointAlias.idTrackPoint;
     var field = 'count';
     var res =
-        await DB.query<List<Map<String, Object?>>>((Transaction txn) async {
+        await DB.execute<List<Map<String, Object?>>>((Transaction txn) async {
       return await txn.query(table,
           columns: ['COUNT(${idAlias.column}) AS $field'],
           where: ' $idTrackPoint = ?',
@@ -112,7 +112,7 @@ class ModelTrackPoint extends Model {
 
   static ModelTrackPoint _fromMap(Map<String, Object?> map) {
     return ModelTrackPoint(
-        id: DB.parseInt(map[TableTrackPoint.primaryKey]),
+        id: DB.parseInt(map[TableTrackPoint.primaryKey.column]),
         gps: GPS(DB.parseDouble(map[TableTrackPoint.latitude.column]),
             DB.parseDouble(map[TableTrackPoint.longitude.column])),
         timeStart:
@@ -126,35 +126,25 @@ class ModelTrackPoint extends Model {
   /// insert only if Model doesn't have a valid (not null) _id
   /// otherwise writes table to disk
   ///
-  static Future<ModelTrackPoint> insert(
-      {required GPS gps,
-      required DateTime timeStart,
-      required DateTime timeEnd}) async {
-    Map<String, Object?> params = {
-      TableTrackPoint.latitude.column: gps.lat,
-      TableTrackPoint.longitude.column: gps.lon,
-      TableTrackPoint.timeStart.column: timeStart.toIso8601String(),
-      TableTrackPoint.timeEnd.column: timeEnd.toIso8601String()
-    };
-
-    int id = await DB.query<int>((Transaction txn) async {
-      return await txn.insert(TableTrackPoint.table, params);
+  static Future<ModelTrackPoint> insert(ModelTrackPoint model) async {
+    var map = model.toMap();
+    map.removeWhere((key, value) => key == TableTrackPoint.primaryKey.column);
+    int id = await DB.execute<int>((Transaction txn) async {
+      return await txn.insert(TableTrackPoint.table, map);
     });
-
-    return ModelTrackPoint(
-        id: id, gps: gps, timeStart: timeStart, timeEnd: timeEnd);
+    model.id = id;
+    return model;
   }
 
   ///
-  /// Returns true if Model existed
-  /// otherwise false and Model will be inserted.
-  /// The Model will then have a valid id
-  /// that reflects (is same as) Table length.
-  ///
-  static Future<int> update(ModelTrackPoint m) async {
-    return DB.query<int>((Transaction txn) async {
-      return await txn.update(TableTrackPoint.table, m.toMap(),
-          where: '${TableTrackPoint.primaryKey} = ?', whereArgs: [m.id]);
+  static Future<int> update(ModelTrackPoint model) async {
+    if (model.id <= 0) {
+      throw ('update model has no id');
+    }
+    return await DB.execute<int>((Transaction txn) async {
+      return await txn.update(TableTrackPoint.table, model.toMap(),
+          where: '${TableTrackPoint.primaryKey.column} = ?',
+          whereArgs: [model.id]);
     });
   }
 
@@ -164,7 +154,7 @@ class ModelTrackPoint extends Model {
       required String columnForeign,
       required int idForeign}) async {
     try {
-      await DB.query<int>((Transaction txn) async {
+      await DB.execute<int>((Transaction txn) async {
         return await txn
             .insert(table, {columnTrackPoint: id, columnForeign: idForeign});
       });
@@ -207,7 +197,7 @@ class ModelTrackPoint extends Model {
       required String columnTrackPoint,
       required String columnForeign,
       required int idForeign}) async {
-    var i = await DB.query<int>((Transaction txn) async {
+    var i = await DB.execute<int>((Transaction txn) async {
       return await txn.delete(table,
           where: '$columnTrackPoint = ? AND $columnForeign = ?',
           whereArgs: [id, idForeign]);
@@ -246,7 +236,8 @@ class ModelTrackPoint extends Model {
       {required String table,
       required String columnTrackPoint,
       required String columnForeign}) async {
-    return await DB.query<List<Map<String, Object?>>>((Transaction txn) async {
+    return await DB
+        .execute<List<Map<String, Object?>>>((Transaction txn) async {
       return await txn.query(table,
           columns: [columnForeign],
           where: '$columnTrackPoint = ?',
@@ -294,7 +285,7 @@ class ModelTrackPoint extends Model {
     return <ModelTask>[];
   }
 
-  Future<List<ModelUser>> getUser() async {
+  Future<List<ModelUser>> getUserList() async {
     final column = TableTrackPointUser.idUser.column;
     List<int> idList = [];
     List<Map<String, Object?>> ids = await _getAssetIds(
@@ -314,10 +305,12 @@ class ModelTrackPoint extends Model {
   }
 
   static Future<ModelTrackPoint?> byId(int id) async {
-    final rows = await DB.query<List<Map<String, Object?>>>(
+    final rows = await DB.execute<List<Map<String, Object?>>>(
       (Transaction txn) async {
         return await txn.query(TableTrackPoint.table,
-            where: '${TableTrackPoint.primaryKey} = ?', whereArgs: [id]);
+            columns: TableTrackPoint.columns,
+            where: '${TableTrackPoint.primaryKey.column} = ?',
+            whereArgs: [id]);
       },
     );
     if (rows.isNotEmpty) {
@@ -332,11 +325,12 @@ class ModelTrackPoint extends Model {
   }
 
   static Future<List<ModelTrackPoint>> byIdList(List<int> ids) async {
-    final rows = await DB.query<List<Map<String, Object?>>>(
+    final rows = await DB.execute<List<Map<String, Object?>>>(
       (Transaction txn) async {
         return await txn.query(TableTrackPoint.table,
+            columns: TableTrackPoint.columns,
             where:
-                '${TableTrackPoint.primaryKey} in IN (${List.filled(ids.length, '?').join(',')})',
+                '${TableTrackPoint.primaryKey.column} in IN (${List.filled(ids.length, '?').join(',')})',
             whereArgs: ids);
       },
     );
@@ -353,9 +347,10 @@ class ModelTrackPoint extends Model {
 
   static Future<List<ModelTrackPoint>> select(
       {int offset = 0, int limit = 50}) async {
-    var rows = await DB.query(
+    var rows = await DB.execute<List<Map<String, Object?>>>(
       (Transaction txn) async {
         return await txn.query(TableTrackPoint.table,
+            columns: TableTrackPoint.columns,
             offset: offset,
             limit: limit,
             orderBy: '${TableTrackPoint.timeStart.column} DESC');
@@ -373,9 +368,10 @@ class ModelTrackPoint extends Model {
   }
 
   static Future<List<ModelTrackPoint>> byAlias(ModelAlias alias) async {
-    var rows = await DB.query<List<Map<String, Object?>>>(
+    var rows = await DB.execute<List<Map<String, Object?>>>(
       (Transaction txn) async {
         return await txn.query(TableTrackPointAlias.table,
+            columns: TableTrackPointAlias.columns,
             where: '${TableTrackPointAlias.idAlias} = ?',
             whereArgs: [alias.id]);
       },
@@ -392,11 +388,12 @@ class ModelTrackPoint extends Model {
     if (ids.isEmpty) {
       return models;
     }
-    rows = await DB.query<List<Map<String, Object?>>>(
+    rows = await DB.execute<List<Map<String, Object?>>>(
       (Transaction txn) async {
         return await txn.query(TableTrackPoint.table,
+            columns: TableTrackPoint.columns,
             where:
-                '${TableTrackPoint.primaryKey} IN (${List.filled(ids.length, '?').join(',')})',
+                '${TableTrackPoint.primaryKey.column} IN (${List.filled(ids.length, '?').join(',')})',
             whereArgs: ids);
       },
     );
@@ -418,12 +415,14 @@ class ModelTrackPoint extends Model {
     var table = TableTrackPoint.table;
     var latCol = TableTrackPoint.latitude.column;
     var lonCol = TableTrackPoint.longitude.column;
-    var rows = await DB.query(
+    var rows = await DB.execute<List<Map<String, Object?>>>(
       (Transaction txn) async {
         return await txn.query(table,
+            columns: TableTrackPoint.columns,
             where:
                 '$latCol > ? AND $latCol < ? AND $lonCol > ? AND $lonCol < ?',
-            whereArgs: [area.latMin, area.latMax, area.lonMin, area.lonMax]);
+            whereArgs: [area.latMin, area.latMax, area.lonMin, area.lonMax],
+            orderBy: '${TableTrackPoint.timeStart.column} ASC');
       },
     );
     var rawModels = <ModelTrackPoint>[];
@@ -440,12 +439,12 @@ class ModelTrackPoint extends Model {
   }
 
   static Future<List<ModelTrackPoint>> search(String text) async {
-    const col = 'id';
+    const idcol = 'id';
     var aliasModels = await ModelAlias.search(text);
-    var aliasIdRows = await DB.query<List<Map<String, Object?>>>(
+    var aliasIdRows = await DB.execute<List<Map<String, Object?>>>(
       (Transaction txn) async {
         return await txn.query(TableTrackPointAlias.table,
-            columns: ['${TableTrackPointAlias.idTrackPoint} as $col'],
+            columns: ['${TableTrackPointAlias.idTrackPoint} as $idcol'],
             where:
                 '${TableTrackPointAlias.idAlias.column} IN (${List.filled(aliasModels.length, '?')})',
             whereArgs: aliasModels.map((e) => e.id).toList());
@@ -454,10 +453,10 @@ class ModelTrackPoint extends Model {
 
     ///
     var taskModels = await ModelTask.search(text);
-    var taskIdRows = await DB.query<List<Map<String, Object?>>>(
+    var taskIdRows = await DB.execute<List<Map<String, Object?>>>(
       (Transaction txn) async {
         return await txn.query(TableTrackPointTask.table,
-            columns: ['${TableTrackPointTask.idTrackPoint} as $col'],
+            columns: ['${TableTrackPointTask.idTrackPoint} as $idcol'],
             where:
                 '${TableTrackPointTask.idTask.column} IN (${List.filled(taskModels.length, '?')})',
             whereArgs: taskModels.map((e) => e.id).toList());
@@ -466,10 +465,10 @@ class ModelTrackPoint extends Model {
 
     ///
     var userModels = await ModelUser.search(text);
-    var userIdRows = await DB.query<List<Map<String, Object?>>>(
+    var userIdRows = await DB.execute<List<Map<String, Object?>>>(
       (Transaction txn) async {
         return await txn.query(TableTrackPointUser.table,
-            columns: ['${TableTrackPointUser.idTrackPoint} as $col'],
+            columns: ['${TableTrackPointUser.idTrackPoint} as $idcol'],
             where:
                 '${TableTrackPointUser.idUser.column} IN (${List.filled(userModels.length, '?')})',
             whereArgs: userModels.map((e) => e.id).toList());
@@ -483,15 +482,16 @@ class ModelTrackPoint extends Model {
       ...taskIdRows,
       ...userIdRows
     ]) {
-      ids.add(DB.parseInt(row[col]));
+      ids.add(DB.parseInt(row[idcol]));
     }
 
     ///
-    var rows = await DB.query(
+    var rows = await DB.execute<List<Map<String, Object?>>>(
       (Transaction txn) async {
         return await txn.query(TableTrackPoint.table,
+            columns: TableTrackPoint.columns,
             where: '${TableTrackPoint.address.column} like ? OR '
-                '${TableTrackPoint.primaryKey} IN (${List.filled(ids.length, '?').join(',')})',
+                '${TableTrackPoint.primaryKey.column} IN (${List.filled(ids.length, '?').join(',')})',
             whereArgs: ['%text%', ...ids.toList()]);
       },
     );

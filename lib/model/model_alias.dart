@@ -14,77 +14,142 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'dart:html';
 import 'dart:math';
 import 'package:flutter/services.dart';
 
 ///
 import 'package:chaostours/model/model.dart';
+import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/database.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/cache.dart';
 import 'package:sqflite/sqflite.dart';
 
-enum AliasStatus {
+enum AliasVisibility {
   public(1),
   privat(2),
   restricted(3);
 
   final int value;
-  const AliasStatus(this.value);
+  const AliasVisibility(this.value);
 
-  static AliasStatus byValue(int id) {
-    AliasStatus status =
-        AliasStatus.values.firstWhere((status) => status.value == id);
+  static AliasVisibility byId(Object? value) {
+    int id = DB.parseInt(value, fallback: 3);
+    id = max(1, min(3, id));
+    return byValue(id);
+  }
+
+  static AliasVisibility byValue(int id) {
+    AliasVisibility status =
+        AliasVisibility.values.firstWhere((status) => status.value == id);
     return status;
   }
 }
 
 class ModelAlias extends Model {
   static Logger logger = Logger.logger<ModelAlias>();
-  static final List<ModelAlias> _table = [];
-  double lat;
-  double lon;
-  int radius;
-  AliasStatus status;
-  final List<int> idTrackPoint = [];
+  int groupId = 1;
+  GPS gps;
+  int radius = 50;
   DateTime lastVisited;
-
-  int timesVisited;
-  int _id = 0;
-
+  int timesVisited = 0;
   String calendarId = '';
-
-  /// real ID<br>
-  /// Is set only once during save to disk
-  /// and represents the current _table.length
-  int get id => _id;
-  static int get length => _table.length;
+  String title = '';
+  String description = '';
 
   /// temporary set during search for nearest Alias
   int sortDistance = 0;
 
-  ModelAlias(
-      {required this.lat,
-      required this.lon,
-      required this.lastVisited,
-      this.radius = 50,
-      this.status = AliasStatus.public,
-      this.timesVisited = 0,
-      super.title,
-      super.deleted,
-      super.notes});
+  ModelAlias({
+    super.id = 0,
+    this.groupId = 0,
+    required this.gps,
+    this.radius = 50,
+    required this.lastVisited,
+    this.timesVisited = 0,
+    required this.title,
+    this.description = '',
+  });
 
-  static Future<ModelAlias> byId(int id) async {}
+  static ModelAlias _fromMap(Map<String, Object?> map) {
+    return ModelAlias(
+        id: DB.parseInt(map[TableAlias.primaryKey.column]),
+        groupId: DB.parseInt(map[TableAlias.idAliasGroup.column], fallback: 1),
+        gps: GPS(DB.parseDouble(map[TableAlias.latitude.column]),
+            DB.parseDouble(map[TableAlias.longitude.column])),
+        radius: DB.parseInt(map[TableAlias.radius.column], fallback: 10),
+        lastVisited: DB.intToTime(map[TableAlias.lastVisited.column]),
+        timesVisited: DB.parseInt(map[TableAlias.timesVisited.column]),
+        title: DB.parseString(map[TableAlias.title.column]),
+        description: DB.parseString(map[TableAlias.description.column]));
+  }
 
-  static Future<List<ModelAlias>> byIdList(List<int> ids) async {}
+  Map<String, Object?> toMap() {
+    return <String, Object?>{
+      TableAlias.primaryKey.column: id,
+      TableAlias.idAliasGroup.column: groupId,
+      TableAlias.latitude.column: gps.lat,
+      TableAlias.longitude.column: gps.lon,
+      TableAlias.radius.column: radius,
+      TableAlias.lastVisited.column: DB.timeToInt(lastVisited),
+      TableAlias.timesVisited.column: timesVisited,
+      TableAlias.title.column: title,
+      TableAlias.description.column: description
+    };
+  }
+
+  ///
+  static Future<ModelAlias?> byId(int id) async {
+    final rows = await DB.execute<List<Map<String, Object?>>>(
+      (Transaction txn) async {
+        return await txn.query(TableAlias.table,
+            columns: TableAlias.columns,
+            where: '${TableAlias.primaryKey.column} = ?',
+            whereArgs: [id]);
+      },
+    );
+    if (rows.isNotEmpty) {
+      try {
+        _fromMap(rows.first);
+      } catch (e, stk) {
+        logger.error('byId: $e', stk);
+        return null;
+      }
+    }
+    return null;
+  }
+
+  ///
+  static Future<List<ModelAlias>> byIdList(List<int> ids) async {
+    final rows = await DB.execute<List<Map<String, Object?>>>(
+      (Transaction txn) async {
+        return await txn.query(TableAlias.table,
+            columns: TableAlias.columns,
+            where:
+                '${TableAlias.primaryKey.column} in IN (${List.filled(ids.length, '?').join(',')})',
+            whereArgs: ids);
+      },
+    );
+    List<ModelAlias> models = [];
+    for (var row in rows) {
+      try {
+        models.add(_fromMap(row));
+      } catch (e, stk) {
+        logger.error('byId: $e', stk);
+      }
+    }
+    return models;
+  }
 
   /// transforms text into %text%
   static Future<List<ModelAlias>> search(String text) async {
     text = '%$text%';
-    var rows = await DB.query<List<Map<String, Object?>>>(
+    var rows = await DB.execute<List<Map<String, Object?>>>(
       (txn) async {
         return await txn.query(TableAlias.table,
+            columns: TableAlias.columns,
             where:
                 '${TableAlias.title} like ? OR ${TableAlias.description} like ?',
             whereArgs: [text, text]);
@@ -101,9 +166,24 @@ class ModelAlias extends Model {
     return models;
   }
 
-  static Future<List<ModelTrackPoint>> lastVisited(GPS gps) async {
-    var radius = AppSettings.distanceTreshold;
-    var rows = ModelAlias.byRadius(gps, radius);
+  Future<List<ModelTrackPoint>> visited() async {
+    const idCol = 'id';
+    var rows =
+        await DB.execute<List<Map<String, Object?>>>((Transaction txn) async {
+      return await txn.query(TableTrackPointAlias.table,
+          columns: ['${TableTrackPointAlias.idTrackPoint.column} as $idCol'],
+          where: '${TableTrackPointAlias.idAlias.column} = ?',
+          whereArgs: [id]);
+    });
+    List<int> ids = [];
+    for (var row in rows) {
+      try {
+        ids.add(int.parse(row[idCol].toString()));
+      } catch (e, stk) {
+        logger.error('visited parse ids: $e', stk);
+      }
+    }
+    return await ModelTrackPoint.byIdList(ids);
   }
 
   ///
@@ -114,9 +194,10 @@ class ModelAlias extends Model {
     var table = TableAlias.table;
     var latCol = TableAlias.latitude.column;
     var lonCol = TableAlias.longitude.column;
-    var rows = await DB.query(
+    var rows = await DB.execute<List<Map<String, Object?>>>(
       (Transaction txn) async {
         return await txn.query(table,
+            columns: TableAlias.columns,
             where:
                 '$latCol > ? AND $latCol < ? AND $lonCol > ? AND $lonCol < ?',
             whereArgs: [area.latMin, area.latMax, area.lonMin, area.lonMax]);
@@ -128,128 +209,54 @@ class ModelAlias extends Model {
     }
     var models = <ModelAlias>[];
     for (var model in rawModels) {
-      if (GPS.distance(GPS(model.lat, model.lon), gps) <= radius) {
+      if (GPS.distance(model.gps, gps) <= radius) {
         models.add(model);
       }
     }
     return models;
   }
 
-  static ModelAlias _fromMap(Map<String, Object?> map) {
-    return ModelAlias();
-  }
-
-  static List<ModelAlias> getAll() => <ModelAlias>[..._table];
-
-  static T _parse<T>(
-      int field, String fieldName, String str, T Function(String s) fn) {
-    try {
-      return fn(str);
-    } catch (e) {
-      throw ('Parse error at column ${field + 1} ($fieldName): $e');
+  static Future<List<ModelAlias>> select(
+      {int offset = 0, int limit = 50}) async {
+    var rows =
+        await DB.execute<List<Map<String, Object?>>>((Transaction txn) async {
+      return await txn.query(TableAlias.table,
+          columns: TableAlias.columns, offset: offset, limit: limit);
+    });
+    var models = <ModelAlias>[];
+    for (var row in rows) {
+      try {
+        models.add(_fromMap(row));
+      } catch (e, stk) {
+        logger.error('select: $e', stk);
+      }
     }
+    return models;
   }
 
-  static ModelAlias toModel(String row) {
-    List<String> p = row.trim().split('\t');
-    if (p.length < 10) {
-      throw ('Table Alias must have at least 10 columns: 1:ID, 2: deleted, 3: latitude, 4: longitude, 5: radius, '
-          '6: alias name, 7: notes, 8: alias type, 9: last visited, 10: count visted');
+  static Future<ModelAlias> insert(ModelAlias model) async {
+    var map = model.toMap();
+    map.removeWhere((key, value) => key == TableAlias.primaryKey.column);
+    int id = await DB.execute<int>(
+      (Transaction txn) async {
+        return await txn.insert(TableAlias.table, map);
+      },
+    );
+    model.id = id;
+    return model;
+  }
+
+  /// returns number of changes
+  static Future<int> update(ModelAlias model) async {
+    if (model.id <= 0) {
+      throw ('update model "${model.title}" has no id');
     }
-    int id = _parse<int>(0, 'ID', p[0], int.parse); // int.parse(p[0]);
-    var aliasType = _parse<int>(7, 'Alias Type', p[7], int.parse);
-    if (!(aliasType >= 0 && aliasType <= 2)) {
-      throw ('Alias Type must be 0: resticted, 1: private, or 2: public');
-    }
-
-    ModelAlias a = ModelAlias(
-        deleted: _parse<int>(1, 'Deleted', p[1], int.parse) == 1
-            ? true
-            : false, // p[1] == '1' ? true : false,
-        lat: _parse<double>(
-            2, 'Latitude', p[2], double.parse), //double.parse(p[2]),
-        lon: _parse<double>(
-            3, 'Longitude', p[3], double.parse), // double.parse(p[3]),
-        radius: _parse<int>(4, 'Radius', p[4], int.parse), // int.parse(p[4]),
-        title: _parse<String>(5, 'Alias Name', p[5], decode), //decode(p[5]),
-        notes: _parse<String>(6, 'Notes', p[6], decode), //decode(p[6]),
-        status: AliasStatus.byValue(aliasType),
-        lastVisited: _parse<DateTime>(
-            8, 'Last visited', p[8], DateTime.parse), // DateTime.parse(p[8]),
-        timesVisited: _parse<int>(
-            9, 'Count visited', p[9], int.parse)); //int.parse(p[9]));
-    a._id = id;
-    return a;
-  }
-
-  @override
-  String toString() {
-    List<String> l = [
-      id.toString(),
-      deleted ? '1' : '0',
-      lat.toString(),
-      lon.toString(),
-      radius.toString(),
-      encode(title),
-      encode(notes),
-      status.value.toString(),
-      lastVisited.toIso8601String(),
-      timesVisited.toString(),
-      '|'
-    ];
-    return l.join('\t');
-  }
-
-  /// returns alias id
-  static Future<int> insert(ModelAlias m) async {
-    _table.add(m);
-    m._id = _table.length;
-    logger.log('Insert Alias ${m.title}\nwith ID #${m._id}');
-    await write();
-    return m._id;
-  }
-
-  static Future<void> update([ModelAlias? m]) async {
-    if (m != null && _table.indexWhere((e) => e.id == m.id) >= 0) {
-      _table[m.id - 1] = m;
-    }
-    await write();
-  }
-
-  ModelAlias clone() {
-    return toModel(toString());
-  }
-
-  static Future<void> delete(ModelAlias m) async {
-    logger.log('Delete ${m.title} with ID ${m.id}');
-    m.deleted = true;
-    await write();
-  }
-
-  // opens, read and parse database
-  static Future<int> open() async {
-    Cache.reload();
-    _table.clear();
-    _table.addAll(
-        await Cache.getValue<List<ModelAlias>>(CacheKeys.tableModelAlias, []));
-    return _table.length;
-  }
-
-  // writes the entire table back to disc
-  static Future<void> write() async {
-    await Cache.setValue<List<ModelAlias>>(CacheKeys.tableModelAlias, _table);
-  }
-
-  static String dump() {
-    List<String> dump = [];
-    for (var i in _table) {
-      dump.add(i.toString());
-    }
-    return dump.join(Model.lineSep);
-  }
-
-  static Future<ModelAlias> getModel(int id) async {
-    return _table[id - 1];
+    var count = await DB.execute<int>(
+      (Transaction txn) async {
+        return await txn.update(TableAlias.table, model.toMap());
+      },
+    );
+    return count;
   }
 
   /// if all == false
@@ -258,32 +265,32 @@ class ModelAlias extends Model {
   ///   returns all alias sorted by distance from gps
   ///
   /// The property sortDistance in meter can be used for user information
-  static List<ModelAlias> nextAlias(
-      {required GPS gps, bool all = false, excludeDeleted = false}) {
-    ModelAlias m;
-    List<ModelAlias> list = [];
-    for (var m in _table) {
-      if (excludeDeleted && m.deleted) {
-        continue;
-      }
-      m.sortDistance =
-          GPS.distanceBetween(m.lat, m.lon, gps.lat, gps.lon).round();
-
-      if (all) {
-        list.add(m);
-      } else {
-        if (m.sortDistance < m.radius) {
-          list.add(m);
-        }
+  /// (table.lat - lat)*(table.lat - lat) + (table.lon - lon)*(table.lon - lon)
+  static Future<List<ModelAlias>> nextAlias(
+      {required GPS gps, int limit = 1, int offset = 0}) async {
+    var lat = gps.lat;
+    var lon = gps.lon;
+    var latCol = TableAlias.latitude.column;
+    var lonCol = TableAlias.longitude.column;
+    var mathCol = 'distance';
+    var rows = await DB.execute((txn) async {
+      return await txn.query(TableAlias.table,
+          columns: [
+            ...TableAlias.columns,
+            '($latCol - $lat)*($latCol - $lat) + ($lonCol - $lon)*($latCol - $lon) as $mathCol'
+          ],
+          orderBy: '$mathCol ASC',
+          limit: limit,
+          offset: offset);
+    });
+    var models = <ModelAlias>[];
+    for (var row in rows) {
+      try {
+        models.add(_fromMap(row));
+      } catch (e, stk) {
+        logger.error('nextAlias fromMap $e', stk);
       }
     }
-    list.sort((a, b) => a.sortDistance.compareTo(b.sortDistance));
-    return list;
-  }
-
-  static List<ModelAlias> lastVisitedAlias([bool all = false]) {
-    List<ModelAlias> list = [..._table];
-    list.sort((a, b) => b.lastVisited.compareTo(a.lastVisited));
-    return list;
+    return models;
   }
 }

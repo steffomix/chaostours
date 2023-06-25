@@ -47,7 +47,7 @@ class ModelUser extends Model {
   /// transforms text into %text%
   static Future<List<ModelUser>> search(String text) async {
     text = '%$text%';
-    var rows = await DB.query<List<Map<String, Object?>>>(
+    var rows = await DB.execute<List<Map<String, Object?>>>(
       (txn) async {
         return await txn.query(TableUser.table,
             where:

@@ -44,11 +44,11 @@ enum AppColors {
   lastTrackingStatusWithoutAliasDot(Color.fromARGB(255, 244, 209, 54)),
   ;
 
-  static Color aliasStatusColor(AliasStatus status) {
+  static Color aliasStatusColor(AliasVisibility status) {
     switch (status) {
-      case AliasStatus.public:
+      case AliasVisibility.public:
         return aliasPublic.color;
-      case AliasStatus.privat:
+      case AliasVisibility.privat:
         return aliasPrivate.color;
       default:
         return aliasRestricted.color;

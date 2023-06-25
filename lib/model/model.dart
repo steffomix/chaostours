@@ -22,8 +22,8 @@ class Model {
   static final Logger logger = Logger.logger<Model>();
   static const String lineSep = '\n';
 
-  final int id;
-  Model({required this.id}) {
+  int id;
+  Model({this.id = 0}) {
     if (id <= 0) {
       throw ('Constructor: id must be > 0');
     }
