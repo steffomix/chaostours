@@ -14,60 +14,52 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-//
 import 'package:chaostours/database.dart';
-import 'package:chaostours/model/model.dart';
 import 'package:chaostours/logger.dart';
+import 'package:chaostours/model/model.dart';
+import 'package:chaostours/model/model_alias.dart';
 import 'package:sqflite/sqflite.dart';
 
-class ModelUser extends Model {
-  static Logger logger = Logger.logger<ModelUser>();
+class ModelTaskGroup extends Model {
+  static final Logger logger = Logger.logger<ModelTaskGroup>();
 
-  int groupId = 1;
-  int sortOrder = 0;
   bool isActive = true;
+  int sortOrder = 0;
   String title = '';
   String description = '';
-  String phone = '';
-  String address = '';
 
-  ModelUser(
+  ModelTaskGroup(
       {super.id = 0,
-      this.groupId = 1,
-      this.sortOrder = 0,
       this.isActive = true,
+      this.sortOrder = 0,
       this.title = '',
-      this.description = '',
-      this.phone = '',
-      this.address = ''});
-
-  static ModelUser _fromMap(Map<String, Object?> map) {
-    return ModelUser(
-        id: DB.parseInt(map[TableUser.primaryKey.column]),
-        groupId: DB.parseInt(map[TableUser.idUserGroup.column], fallback: 1),
-        isActive: DB.parseBool(map[TableUser.isActive.column]),
-        sortOrder: DB.parseInt(map[TableUser.sortOrder.column]),
-        title: DB.parseString(map[TableUser.title.column]),
-        description: DB.parseString(map[TableUser.description.column]));
-  }
+      this.description = ''});
 
   Map<String, Object?> toMap() {
     return <String, Object?>{
-      TableUser.primaryKey.column: id,
-      TableUser.idUserGroup.column: groupId,
-      TableUser.isActive.column: DB.boolToInt(isActive),
-      TableUser.sortOrder.column: sortOrder,
-      TableUser.title.column: title,
-      TableUser.description.column: description
+      TableTaskGroup.primaryKey.column: id,
+      TableTaskGroup.isActive.column: DB.boolToInt(isActive),
+      TableTaskGroup.sortOrder.column: sortOrder,
+      TableTaskGroup.title.column: title,
+      TableTaskGroup.description.column: description
     };
   }
 
-  static Future<ModelUser?> byId(int id) async {
+  static ModelTaskGroup _fromMap(Map<String, Object?> map) {
+    return ModelTaskGroup(
+        id: DB.parseInt(map[TableTaskGroup.primaryKey.column]),
+        isActive: DB.parseBool(map[TableTaskGroup.isActive.column]),
+        sortOrder: DB.parseInt(map[TableTaskGroup.sortOrder.column]),
+        title: DB.parseString(map[TableTaskGroup.title.column]),
+        description: DB.parseString(map[TableTaskGroup.description.column]));
+  }
+
+  static Future<ModelTaskGroup?> byId(int id) async {
     final rows = await DB.execute<List<Map<String, Object?>>>(
       (Transaction txn) async {
-        return await txn.query(TableUser.table,
-            columns: TableUser.columns,
-            where: '${TableUser.primaryKey.column} = ?',
+        return await txn.query(TableTaskGroup.table,
+            columns: TableTaskGroup.columns,
+            where: '${TableTaskGroup.primaryKey.column} = ?',
             whereArgs: [id]);
       },
     );
@@ -77,17 +69,17 @@ class ModelUser extends Model {
     return null;
   }
 
-  static Future<List<ModelUser>> byIdList(List<int> ids) async {
+  static Future<List<ModelTaskGroup>> byIdList(List<int> ids) async {
     final rows = await DB.execute<List<Map<String, Object?>>>(
       (Transaction txn) async {
-        return await txn.query(TableUser.table,
-            columns: TableUser.columns,
+        return await txn.query(TableTaskGroup.table,
+            columns: TableTaskGroup.columns,
             where:
-                '${TableUser.primaryKey.column} IN ${List.filled(ids.length, '?').join('?')}',
+                '${TableTaskGroup.primaryKey.column} IN ${List.filled(ids.length, '?').join('?')}',
             whereArgs: ids);
       },
     );
-    List<ModelUser> models = [];
+    List<ModelTaskGroup> models = [];
     for (var row in rows) {
       try {
         models.add(_fromMap(row));
@@ -99,17 +91,17 @@ class ModelUser extends Model {
   }
 
   /// transforms text into %text%
-  static Future<List<ModelUser>> search(String text) async {
+  static Future<List<ModelTaskGroup>> search(String text) async {
     text = '%$text%';
     var rows = await DB.execute<List<Map<String, Object?>>>(
       (txn) async {
-        return await txn.query(TableUser.table,
+        return await txn.query(TableTaskGroup.table,
             where:
-                '${TableUser.title} like ? OR ${TableUser.description} like ?',
+                '${TableTaskGroup.title} like ? OR ${TableTaskGroup.description} like ?',
             whereArgs: [text, text]);
       },
     );
-    var models = <ModelUser>[];
+    var models = <ModelTaskGroup>[];
     for (var row in rows) {
       try {
         models.add(_fromMap(row));
@@ -120,18 +112,18 @@ class ModelUser extends Model {
     return models;
   }
 
-  static Future<List<ModelUser>> select(
+  static Future<List<ModelTaskGroup>> select(
       {int limit = 50, int offset = 0}) async {
     final rows = await DB.execute<List<Map<String, Object?>>>(
       (Transaction txn) async {
-        return await txn.query(TableUser.table,
-            columns: TableUser.columns,
+        return await txn.query(TableTaskGroup.table,
+            columns: TableTaskGroup.columns,
             limit: limit,
             offset: offset,
-            orderBy: TableUser.primaryKey.column);
+            orderBy: TableTaskGroup.primaryKey.column);
       },
     );
-    List<ModelUser> models = [];
+    List<ModelTaskGroup> models = [];
     for (var row in rows) {
       try {
         models.add(_fromMap(row));
@@ -143,31 +135,31 @@ class ModelUser extends Model {
   }
 
   /// returns task id
-  static Future<ModelUser> insert(ModelUser model) async {
+  static Future<ModelTaskGroup> insert(ModelTaskGroup model) async {
     var map = model.toMap();
-    map.removeWhere((key, value) => key == TableUser.primaryKey.column);
+    map.removeWhere((key, value) => key == TableTaskGroup.primaryKey.column);
     int id = await DB.execute<int>(
       (Transaction txn) async {
-        return await txn.insert(TableUser.table, map);
+        return await txn.insert(TableTaskGroup.table, map);
       },
     );
     model.id = id;
     return model;
   }
 
-  static Future<int> update(ModelUser model) async {
+  static Future<int> update(ModelTaskGroup model) async {
     if (model.id <= 0) {
       throw ('update model "${model.title}" has no id');
     }
     var count = await DB.execute<int>(
       (Transaction txn) async {
-        return await txn.update(TableUser.table, model.toMap());
+        return await txn.update(TableTaskGroup.table, model.toMap());
       },
     );
     return count;
   }
 
-  ModelUser clone() {
+  ModelTaskGroup clone() {
     return _fromMap(toMap());
   }
 }

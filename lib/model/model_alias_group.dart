@@ -14,60 +14,53 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-//
 import 'package:chaostours/database.dart';
-import 'package:chaostours/model/model.dart';
 import 'package:chaostours/logger.dart';
+import 'package:chaostours/model/model.dart';
+import 'package:chaostours/model/model_alias.dart';
 import 'package:sqflite/sqflite.dart';
 
-class ModelUser extends Model {
-  static Logger logger = Logger.logger<ModelUser>();
+class ModelAliasGroup extends Model {
+  static final Logger logger = Logger.logger<ModelAliasGroup>();
 
-  int groupId = 1;
-  int sortOrder = 0;
   bool isActive = true;
+  AliasVisibility visibility = AliasVisibility.public;
   String title = '';
   String description = '';
-  String phone = '';
-  String address = '';
 
-  ModelUser(
+  ModelAliasGroup(
       {super.id = 0,
-      this.groupId = 1,
-      this.sortOrder = 0,
       this.isActive = true,
+      this.visibility = AliasVisibility.public,
       this.title = '',
-      this.description = '',
-      this.phone = '',
-      this.address = ''});
-
-  static ModelUser _fromMap(Map<String, Object?> map) {
-    return ModelUser(
-        id: DB.parseInt(map[TableUser.primaryKey.column]),
-        groupId: DB.parseInt(map[TableUser.idUserGroup.column], fallback: 1),
-        isActive: DB.parseBool(map[TableUser.isActive.column]),
-        sortOrder: DB.parseInt(map[TableUser.sortOrder.column]),
-        title: DB.parseString(map[TableUser.title.column]),
-        description: DB.parseString(map[TableUser.description.column]));
-  }
+      this.description = ''});
 
   Map<String, Object?> toMap() {
     return <String, Object?>{
-      TableUser.primaryKey.column: id,
-      TableUser.idUserGroup.column: groupId,
-      TableUser.isActive.column: DB.boolToInt(isActive),
-      TableUser.sortOrder.column: sortOrder,
-      TableUser.title.column: title,
-      TableUser.description.column: description
+      TableAliasGroup.primaryKey.column: id,
+      TableAliasGroup.isActive.column: DB.boolToInt(isActive),
+      TableAliasGroup.visibility.column: visibility.value,
+      TableAliasGroup.title.column: title,
+      TableAliasGroup.description.column: description
     };
   }
 
-  static Future<ModelUser?> byId(int id) async {
+  static ModelAliasGroup _fromMap(Map<String, Object?> map) {
+    return ModelAliasGroup(
+        id: DB.parseInt(map[TableAliasGroup.primaryKey.column]),
+        isActive: DB.parseBool(map[TableAliasGroup.isActive.column]),
+        visibility:
+            AliasVisibility.byId(map[TableAliasGroup.visibility.column]),
+        title: DB.parseString(map[TableAliasGroup.title.column]),
+        description: DB.parseString(map[TableAliasGroup.description.column]));
+  }
+
+  static Future<ModelAliasGroup?> byId(int id) async {
     final rows = await DB.execute<List<Map<String, Object?>>>(
       (Transaction txn) async {
-        return await txn.query(TableUser.table,
-            columns: TableUser.columns,
-            where: '${TableUser.primaryKey.column} = ?',
+        return await txn.query(TableAliasGroup.table,
+            columns: TableAliasGroup.columns,
+            where: '${TableAliasGroup.primaryKey.column} = ?',
             whereArgs: [id]);
       },
     );
@@ -77,17 +70,17 @@ class ModelUser extends Model {
     return null;
   }
 
-  static Future<List<ModelUser>> byIdList(List<int> ids) async {
+  static Future<List<ModelAliasGroup>> byIdList(List<int> ids) async {
     final rows = await DB.execute<List<Map<String, Object?>>>(
       (Transaction txn) async {
-        return await txn.query(TableUser.table,
-            columns: TableUser.columns,
+        return await txn.query(TableAliasGroup.table,
+            columns: TableAliasGroup.columns,
             where:
-                '${TableUser.primaryKey.column} IN ${List.filled(ids.length, '?').join('?')}',
+                '${TableAliasGroup.primaryKey.column} IN ${List.filled(ids.length, '?').join('?')}',
             whereArgs: ids);
       },
     );
-    List<ModelUser> models = [];
+    List<ModelAliasGroup> models = [];
     for (var row in rows) {
       try {
         models.add(_fromMap(row));
@@ -99,17 +92,17 @@ class ModelUser extends Model {
   }
 
   /// transforms text into %text%
-  static Future<List<ModelUser>> search(String text) async {
+  static Future<List<ModelAliasGroup>> search(String text) async {
     text = '%$text%';
     var rows = await DB.execute<List<Map<String, Object?>>>(
       (txn) async {
-        return await txn.query(TableUser.table,
+        return await txn.query(TableAliasGroup.table,
             where:
-                '${TableUser.title} like ? OR ${TableUser.description} like ?',
+                '${TableAliasGroup.title} like ? OR ${TableAliasGroup.description} like ?',
             whereArgs: [text, text]);
       },
     );
-    var models = <ModelUser>[];
+    var models = <ModelAliasGroup>[];
     for (var row in rows) {
       try {
         models.add(_fromMap(row));
@@ -120,18 +113,18 @@ class ModelUser extends Model {
     return models;
   }
 
-  static Future<List<ModelUser>> select(
+  static Future<List<ModelAliasGroup>> select(
       {int limit = 50, int offset = 0}) async {
     final rows = await DB.execute<List<Map<String, Object?>>>(
       (Transaction txn) async {
-        return await txn.query(TableUser.table,
-            columns: TableUser.columns,
+        return await txn.query(TableAliasGroup.table,
+            columns: TableAliasGroup.columns,
             limit: limit,
             offset: offset,
-            orderBy: TableUser.primaryKey.column);
+            orderBy: TableAliasGroup.primaryKey.column);
       },
     );
-    List<ModelUser> models = [];
+    List<ModelAliasGroup> models = [];
     for (var row in rows) {
       try {
         models.add(_fromMap(row));
@@ -143,31 +136,31 @@ class ModelUser extends Model {
   }
 
   /// returns task id
-  static Future<ModelUser> insert(ModelUser model) async {
+  static Future<ModelAliasGroup> insert(ModelAliasGroup model) async {
     var map = model.toMap();
-    map.removeWhere((key, value) => key == TableUser.primaryKey.column);
+    map.removeWhere((key, value) => key == TableAliasGroup.primaryKey.column);
     int id = await DB.execute<int>(
       (Transaction txn) async {
-        return await txn.insert(TableUser.table, map);
+        return await txn.insert(TableAliasGroup.table, map);
       },
     );
     model.id = id;
     return model;
   }
 
-  static Future<int> update(ModelUser model) async {
+  static Future<int> update(ModelAliasGroup model) async {
     if (model.id <= 0) {
       throw ('update model "${model.title}" has no id');
     }
     var count = await DB.execute<int>(
       (Transaction txn) async {
-        return await txn.update(TableUser.table, model.toMap());
+        return await txn.update(TableAliasGroup.table, model.toMap());
       },
     );
     return count;
   }
 
-  ModelUser clone() {
+  ModelAliasGroup clone() {
     return _fromMap(toMap());
   }
 }

@@ -16,6 +16,7 @@ limitations under the License.
 
 import 'dart:html';
 import 'dart:math';
+import 'package:chaostours/conf/app_settings.dart';
 import 'package:flutter/services.dart';
 
 ///
@@ -166,7 +167,8 @@ class ModelAlias extends Model {
     return models;
   }
 
-  Future<List<ModelTrackPoint>> visited() async {
+  /// find trackpoints by aliasId
+  Future<List<ModelTrackPoint>> trackpoints() async {
     const idCol = 'id';
     var rows =
         await DB.execute<List<Map<String, Object?>>>((Transaction txn) async {
@@ -267,21 +269,43 @@ class ModelAlias extends Model {
   /// The property sortDistance in meter can be used for user information
   /// (table.lat - lat)*(table.lat - lat) + (table.lon - lon)*(table.lon - lon)
   static Future<List<ModelAlias>> nextAlias(
-      {required GPS gps, int limit = 1, int offset = 0}) async {
+      {required GPS gps,
+      int limit = 1,
+      int offset = 0,
+      includeInactive = false}) async {
     var lat = gps.lat;
     var lon = gps.lon;
     var latCol = TableAlias.latitude.column;
     var lonCol = TableAlias.longitude.column;
+    var mathSql =
+        '($latCol - $lat)*($latCol - $lat) + ($lonCol - $lon)*($latCol - $lon)';
     var mathCol = 'distance';
+    var isActiveCol = 'isActive';
     var rows = await DB.execute((txn) async {
-      return await txn.query(TableAlias.table,
-          columns: [
-            ...TableAlias.columns,
-            '($latCol - $lat)*($latCol - $lat) + ($lonCol - $lon)*($latCol - $lon) as $mathCol'
-          ],
-          orderBy: '$mathCol ASC',
-          limit: limit,
-          offset: offset);
+      if (!includeInactive) {
+        return await txn.rawQuery('''
+SELECT ${TableAlias.columns.join(', ')}, ${TableAliasGroup.isActive} AS $isActiveCol, $mathSql AS $mathCol FROM ${TableAlias.table}
+LEFT JOIN ${TableAliasGroup.table} ON ${TableAlias.idAliasGroup} = ${TableAliasGroup.primaryKey}
+WHERE $mathCol <= ? AND $isActiveCol = ?
+ORDER BY $mathCol
+LIMIT ?,?
+          ''', [
+          AppSettings.distanceTreshold * AppSettings.distanceTreshold,
+          DB.boolToInt(includeInactive),
+          limit,
+          offset
+        ]);
+      } else {
+        return await txn.query(TableAlias.table,
+            columns: [...TableAlias.columns, '$mathSql as $mathCol'],
+            where: '$mathCol <= ?',
+            whereArgs: [
+              AppSettings.distanceTreshold * AppSettings.distanceTreshold
+            ],
+            orderBy: '$mathCol ASC',
+            limit: limit,
+            offset: offset);
+      }
     });
     var models = <ModelAlias>[];
     for (var row in rows) {
