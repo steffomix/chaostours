@@ -200,35 +200,46 @@ class Cache {
   }
 
   // ModelTrackPoint
-  static String serializeModelTrackPoint(ModelTrackPoint tp) => tp.toString();
+  static String serializeModelTrackPoint(ModelTrackPoint tp) =>
+      Model.toJson(tp.toMap());
   static ModelTrackPoint? deserializeModelTrackPoint(String? tp) =>
-      tp == null ? null : ModelTrackPoint.toModel(tp);
+      tp == null ? null : ModelTrackPoint.fromMap(Model.fromJson(tp));
 
   /// List ModelAlias
   static List<String> serializeModelAliasList(List<ModelAlias> tpList) =>
-      tpList.map((e) => e.toString()).toList();
+      tpList.map((e) => Model.toJson(e.toMap())).toList();
   static List<ModelAlias>? deserializeModelAliasList(List<String>? list) =>
-      list == null ? [] : list.map((e) => ModelAlias.toModel(e)).toList();
+      list == null
+          ? []
+          : list.map((e) => ModelAlias.fromMap(Model.fromJson(e))).toList();
 
   /// List ModelUser
   static List<String> serializeModelUserList(List<ModelUser> tpList) =>
-      tpList.map((e) => e.toString()).toList();
+      tpList.map((e) => Model.toJson(e.toMap())).toList();
   static List<ModelUser>? deserializeModelUserList(List<String>? list) =>
-      list == null ? [] : list.map((e) => ModelUser.toModel(e)).toList();
+      list == null
+          ? []
+          : list.map((e) => ModelUser.fromMap(Model.fromJson(e))).toList();
 
   /// List ModelTask
   static List<String> serializeModelTaskList(List<ModelTask> tpList) =>
-      tpList.map((e) => e.toString()).toList();
+      tpList.map((e) => Model.toJson(e.toMap())).toList();
   static List<ModelTask>? deserializeModelTaskList(List<String>? list) =>
-      list == null ? [] : list.map((e) => ModelTask.toModel(e)).toList();
+      list == null
+          ? []
+          : list.map((e) => ModelTask.fromMap(Model.fromJson(e))).toList();
 
   /// List ModelTrackPoint
   static List<String> serializeModelTrackPointList(
           List<ModelTrackPoint> tpList) =>
-      tpList.map((e) => e.toString()).toList();
+      tpList.map((e) => Model.toJson(e.toMap())).toList();
   static List<ModelTrackPoint>? deserializeModelTrackPointList(
           List<String>? list) =>
-      list == null ? [] : list.map((e) => ModelTrackPoint.toModel(e)).toList();
+      list == null
+          ? []
+          : list
+              .map((e) => ModelTrackPoint.fromMap(Model.fromJson(e)))
+              .toList();
 
   /// OSMLookup
   static String serializeOsmLookup(OsmLookupConditions lo) => lo.name;

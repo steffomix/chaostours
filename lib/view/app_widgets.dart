@@ -143,9 +143,9 @@ class AppWidgets {
   }
 
   static ListTile trackPointInfo(BuildContext context, ModelTrackPoint tp) {
-    var alias = tp.idAlias.map((id) => ModelAlias.getModel(id).title);
-    var tasks = tp.idTask.map((id) => ModelTask.getModel(id).title);
-    var users = tp.idUser.map((id) => ModelUser.getModel(id).title);
+    var alias = tp.aliasIds.map((id) => ModelAlias.getModel(id).title);
+    var tasks = tp.taskIds.map((id) => ModelTask.getModel(id).title);
+    var users = tp.userIds.map((id) => ModelUser.getModel(id).title);
     return ListTile(
       title: ListBody(children: [
         Center(

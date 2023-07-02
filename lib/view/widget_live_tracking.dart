@@ -66,6 +66,9 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   _DisplayMode displayMode = _DisplayMode.live;
   static int _bottomBarIndex = 0;
 
+  TrackPointData? trackPointData;
+  Location? location;
+
   final DataBridge bridge = DataBridge.instance;
 
   /// osm
@@ -200,90 +203,6 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         });
       }
     });
-    /*
-    await mapController.removeAllCircle();
-
-    for (var alias in ModelAlias.getAll()) {
-      if (alias.deleted) {
-        continue;
-      }
-      try {
-        mapController.drawCircle(osm.CircleOSM(
-          key: "circle${++circleId}",
-          centerPoint: osm.GeoPoint(latitude: alias.lat, longitude: alias.lon),
-          radius: alias.radius.toDouble(),
-          color: AppColors.aliasStatusColor(alias.status),
-          strokeWidth: 10,
-        ));
-      } catch (e, stk) {
-        logger.error(e.toString(), stk);
-        await Future.delayed(const Duration(seconds: 1));
-      }
-    }
-
-    /// draw gps points
-    try {
-      for (var gps in bridge.gpsPoints) {
-        mapController.drawCircle(osm.CircleOSM(
-          key: "circle${++circleId}",
-          centerPoint: osm.GeoPoint(latitude: gps.lat, longitude: gps.lon),
-          radius: 2,
-          color: AppColors.rawGpsTrackingDot.color,
-          strokeWidth: 10,
-        ));
-      }
-      for (var gps in bridge.smoothGpsPoints) {
-        mapController.drawCircle(osm.CircleOSM(
-          key: "circle${++circleId}",
-          centerPoint: osm.GeoPoint(latitude: gps.lat, longitude: gps.lon),
-          radius: 3,
-          color: AppColors.smoothedGpsTrackingDot.color,
-          strokeWidth: 10,
-        ));
-      }
-      for (var gps in bridge.calcGpsPoints) {
-        mapController.drawCircle(osm.CircleOSM(
-          key: "circle${++circleId}",
-          centerPoint: osm.GeoPoint(latitude: gps.lat, longitude: gps.lon),
-          radius: 4,
-          color: AppColors.calcGpsTrackingDot.color,
-          strokeWidth: 10,
-        ));
-      }
-      if (bridge.gpsPoints.isNotEmpty) {
-        GPS gps = bridge.trackPointGpsStartStanding ?? bridge.gpsPoints.last;
-        mapController.drawCircle(osm.CircleOSM(
-          key: "circle${++circleId}",
-          centerPoint: osm.GeoPoint(latitude: gps.lat, longitude: gps.lon),
-          radius: 5,
-          color: AppColors.lastTrackingStatusWithAliasDot.color,
-          strokeWidth: 10,
-        ));
-      }
-      if (bridge.trackPointGpsStartStanding != null &&
-          bridge.trackingStatus == TrackingStatus.standing &&
-          bridge.trackPointAliasIdList.isEmpty) {
-        GPS gps = bridge.trackPointGpsStartStanding!;
-        mapController.drawCircle(osm.CircleOSM(
-          key: "circle${++circleId}",
-          centerPoint: osm.GeoPoint(latitude: gps.lat, longitude: gps.lon),
-          radius: 5,
-          color: AppColors.lastTrackingStatusWithoutAliasDot.color,
-          strokeWidth: 10,
-        ));
-      }
-      if (_mapZoom != null) {
-        Future.delayed(const Duration(milliseconds: 100), () {
-          if (_mapZoom != null) {
-            _mapController.setZoom(zoomLevel: _mapZoom);
-            _mapZoom = null;
-          }
-        });
-      }
-    } catch (e, stk) {
-      logger.error(e.toString(), stk);
-    }
-    */
   }
 
   ///
@@ -503,7 +422,9 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
             var gps = bridge.gpsPoints.first;
             bridge.currentAliasIdList = await Cache.setValue<List<int>>(
                 CacheKeys.cacheCurrentAliasIdList,
-                ModelAlias.nextAlias(gps: gps).map((e) => e.id).toList());
+                (await ModelAlias.nextAlias(gps: gps))
+                    .map((e) => e.id)
+                    .toList());
             await Cache.reload();
             if (mounted) {
               setState(() {});
@@ -631,7 +552,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       divider,
       dropdownTasks(context),
       divider,
-      dropdownUser(context),
+      dropdownUser(),
       divider,
       userNotes(context),
     ];
@@ -667,7 +588,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   }
 
   ///
-  List<Widget> taskCheckboxes(context) {
+  List<Widget> taskCheckboxes() {
     var referenceList = DataBridge.instance.trackPointTaskIdList;
     var checkBoxes = <Widget>[];
     for (var model in ModelTask.getAll()) {
@@ -692,7 +613,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   }
 
   ///
-  List<Widget> userCheckboxes(context) {
+  List<Widget> userCheckboxes() {
     var referenceList = DataBridge.instance.trackPointUserIdList;
     var checkBoxes = <Widget>[];
     for (var model in ModelUser.getAll()) {
@@ -718,7 +639,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
   ///
   bool dropdownUserIsOpen = false;
-  Widget dropdownUser(context) {
+  Widget dropdownUser() {
     /// render selected users
 
     List<ModelUser> userModels = [];
@@ -737,9 +658,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         child: ListTile(
           trailing: const Icon(Icons.menu),
           title: Text(dropdownUserIsOpen ? '' : 'Personal:$users'),
-          subtitle: !dropdownUserIsOpen
-              ? null
-              : Column(children: userCheckboxes(context)),
+          subtitle:
+              !dropdownUserIsOpen ? null : Column(children: userCheckboxes()),
         ),
         onPressed: () {
           dropdownUserIsOpen = !dropdownUserIsOpen;

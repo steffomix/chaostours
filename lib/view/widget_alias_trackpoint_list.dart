@@ -142,9 +142,9 @@ class _WidgetAliasTrackpoint extends State<WidgetAliasTrackpoint> {
     var time =
         'von ${tp.timeStart.hour}:${tp.timeStart.minute} bis ${tp.timeEnd.hour}:${tp.timeEnd.minute}\n($dur)';
     Iterable<String> tasks =
-        tp.idTask.map((id) => ModelTask.getModel(id).title);
+        tp.taskIds.map((id) => ModelTask.getModel(id).title);
     Iterable<String> users =
-        tp.idUser.map((id) => ModelUser.getModel(id).title);
+        tp.userIds.map((id) => ModelUser.getModel(id).title);
     List<Widget> widgets = [
       ListTile(
           title: Text(date),

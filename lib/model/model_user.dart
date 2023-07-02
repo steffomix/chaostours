@@ -41,7 +41,7 @@ class ModelUser extends Model {
       this.phone = '',
       this.address = ''});
 
-  static ModelUser _fromMap(Map<String, Object?> map) {
+  static ModelUser fromMap(Map<String, Object?> map) {
     return ModelUser(
         id: DB.parseInt(map[TableUser.primaryKey.column]),
         groupId: DB.parseInt(map[TableUser.idUserGroup.column], fallback: 1),
@@ -72,7 +72,7 @@ class ModelUser extends Model {
       },
     );
     if (rows.isNotEmpty) {
-      return _fromMap(rows.first);
+      return fromMap(rows.first);
     }
     return null;
   }
@@ -90,7 +90,7 @@ class ModelUser extends Model {
     List<ModelUser> models = [];
     for (var row in rows) {
       try {
-        models.add(_fromMap(row));
+        models.add(fromMap(row));
       } catch (e, stk) {
         logger.error('byIdList iter through rows: $e', stk);
       }
@@ -112,7 +112,7 @@ class ModelUser extends Model {
     var models = <ModelUser>[];
     for (var row in rows) {
       try {
-        models.add(_fromMap(row));
+        models.add(fromMap(row));
       } catch (e, stk) {
         logger.error('search: $e', stk);
       }
@@ -134,7 +134,7 @@ class ModelUser extends Model {
     List<ModelUser> models = [];
     for (var row in rows) {
       try {
-        models.add(_fromMap(row));
+        models.add(fromMap(row));
       } catch (e, stk) {
         logger.error('select _fromMap: $e', stk);
       }
@@ -155,19 +155,20 @@ class ModelUser extends Model {
     return model;
   }
 
-  static Future<int> update(ModelUser model) async {
-    if (model.id <= 0) {
-      throw ('update model "${model.title}" has no id');
+  Future<int> update() async {
+    if (id <= 0) {
+      throw ('update model "$title" has no id');
     }
     var count = await DB.execute<int>(
       (Transaction txn) async {
-        return await txn.update(TableUser.table, model.toMap());
+        return await txn.update(TableUser.table, toMap(),
+            where: '${TableUser.primaryKey.column} = ?', whereArgs: [id]);
       },
     );
     return count;
   }
 
   ModelUser clone() {
-    return _fromMap(toMap());
+    return fromMap(toMap());
   }
 }

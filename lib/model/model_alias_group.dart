@@ -45,7 +45,7 @@ class ModelAliasGroup extends Model {
     };
   }
 
-  static ModelAliasGroup _fromMap(Map<String, Object?> map) {
+  static ModelAliasGroup fromMap(Map<String, Object?> map) {
     return ModelAliasGroup(
         id: DB.parseInt(map[TableAliasGroup.primaryKey.column]),
         isActive: DB.parseBool(map[TableAliasGroup.isActive.column]),
@@ -65,7 +65,7 @@ class ModelAliasGroup extends Model {
       },
     );
     if (rows.isNotEmpty) {
-      return _fromMap(rows.first);
+      return fromMap(rows.first);
     }
     return null;
   }
@@ -83,7 +83,7 @@ class ModelAliasGroup extends Model {
     List<ModelAliasGroup> models = [];
     for (var row in rows) {
       try {
-        models.add(_fromMap(row));
+        models.add(fromMap(row));
       } catch (e, stk) {
         logger.error('byIdList iter through rows: $e', stk);
       }
@@ -105,7 +105,7 @@ class ModelAliasGroup extends Model {
     var models = <ModelAliasGroup>[];
     for (var row in rows) {
       try {
-        models.add(_fromMap(row));
+        models.add(fromMap(row));
       } catch (e, stk) {
         logger.error('search: $e', stk);
       }
@@ -127,7 +127,7 @@ class ModelAliasGroup extends Model {
     List<ModelAliasGroup> models = [];
     for (var row in rows) {
       try {
-        models.add(_fromMap(row));
+        models.add(fromMap(row));
       } catch (e, stk) {
         logger.error('select _fromMap: $e', stk);
       }
@@ -148,19 +148,20 @@ class ModelAliasGroup extends Model {
     return model;
   }
 
-  static Future<int> update(ModelAliasGroup model) async {
-    if (model.id <= 0) {
-      throw ('update model "${model.title}" has no id');
+  Future<int> update() async {
+    if (id <= 0) {
+      throw ('update model "$title" has no id');
     }
     var count = await DB.execute<int>(
       (Transaction txn) async {
-        return await txn.update(TableAliasGroup.table, model.toMap());
+        return await txn.update(TableAliasGroup.table, toMap(),
+            where: '${TableAliasGroup.primaryKey.column} = ?', whereArgs: [id]);
       },
     );
     return count;
   }
 
   ModelAliasGroup clone() {
-    return _fromMap(toMap());
+    return fromMap(toMap());
   }
 }

@@ -46,15 +46,6 @@ class AppLoader {
     } catch (e) {
       logger.warn(e);
     }
-    try {
-      await AppDatabase.deleteDb();
-      await Future.delayed(const Duration(seconds: 1));
-      var appDb = await AppDatabase.getDatabase();
-      var res = await appDb.rawQuery('select * from user');
-      var x = 1;
-    } catch (e) {
-      logger.warn(e);
-    }
 
     try {
       // reset background logger
@@ -66,11 +57,6 @@ class AppLoader {
       await AppSettings.loadSettings();
       await AppSettings.saveSettings();
       await DataBridge.instance.loadCache();
-
-      await ModelTrackPoint.open();
-      await ModelUser.open();
-      await ModelTask.open();
-      await ModelAlias.open();
 
       //
       await BackgroundTracking.initialize();

@@ -45,7 +45,7 @@ class ModelTaskGroup extends Model {
     };
   }
 
-  static ModelTaskGroup _fromMap(Map<String, Object?> map) {
+  static ModelTaskGroup fromMap(Map<String, Object?> map) {
     return ModelTaskGroup(
         id: DB.parseInt(map[TableTaskGroup.primaryKey.column]),
         isActive: DB.parseBool(map[TableTaskGroup.isActive.column]),
@@ -64,7 +64,7 @@ class ModelTaskGroup extends Model {
       },
     );
     if (rows.isNotEmpty) {
-      return _fromMap(rows.first);
+      return fromMap(rows.first);
     }
     return null;
   }
@@ -82,7 +82,7 @@ class ModelTaskGroup extends Model {
     List<ModelTaskGroup> models = [];
     for (var row in rows) {
       try {
-        models.add(_fromMap(row));
+        models.add(fromMap(row));
       } catch (e, stk) {
         logger.error('byIdList iter through rows: $e', stk);
       }
@@ -104,7 +104,7 @@ class ModelTaskGroup extends Model {
     var models = <ModelTaskGroup>[];
     for (var row in rows) {
       try {
-        models.add(_fromMap(row));
+        models.add(fromMap(row));
       } catch (e, stk) {
         logger.error('search: $e', stk);
       }
@@ -126,7 +126,7 @@ class ModelTaskGroup extends Model {
     List<ModelTaskGroup> models = [];
     for (var row in rows) {
       try {
-        models.add(_fromMap(row));
+        models.add(fromMap(row));
       } catch (e, stk) {
         logger.error('select _fromMap: $e', stk);
       }
@@ -147,19 +147,20 @@ class ModelTaskGroup extends Model {
     return model;
   }
 
-  static Future<int> update(ModelTaskGroup model) async {
-    if (model.id <= 0) {
-      throw ('update model "${model.title}" has no id');
+  Future<int> update() async {
+    if (id <= 0) {
+      throw ('update model "$title" has no id');
     }
     var count = await DB.execute<int>(
       (Transaction txn) async {
-        return await txn.update(TableTaskGroup.table, model.toMap());
+        return await txn.update(TableTaskGroup.table, toMap(),
+            where: '${TableTaskGroup.primaryKey.column} = ?', whereArgs: [id]);
       },
     );
     return count;
   }
 
   ModelTaskGroup clone() {
-    return _fromMap(toMap());
+    return fromMap(toMap());
   }
 }

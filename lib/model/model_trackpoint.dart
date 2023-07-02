@@ -32,21 +32,21 @@ import 'package:sqflite/sqflite.dart';
 class ModelTrackPoint extends Model {
   static Logger logger = Logger.logger<ModelTrackPoint>();
 
-  final GPS gps;
+  GPS gps;
   bool isActive = true;
 
-  final DateTime timeStart;
-  final DateTime timeEnd;
+  DateTime timeStart;
+  DateTime timeEnd;
 
   /// "id,id,..." needs to be sorted by distance
-  //List<int> idAlias = [];
+  List<int> aliasIds = [];
   List<ModelAlias> aliasModels = [];
 
-  //List<int> idUser = [];
+  List<int> userIds = [];
   List<ModelUser> userModels = [];
 
   /// "id,id,..." needs to be ordered by user
-  //List<int> idTask = [];
+  List<int> taskIds = [];
   List<ModelTask> taskModels = [];
 
   ///
@@ -62,7 +62,7 @@ class ModelTrackPoint extends Model {
   int sortDistance = 0;
 
   ModelTrackPoint(
-      {required super.id,
+      {super.id,
       required this.timeStart,
       required this.timeEnd,
       required this.gps,
@@ -110,7 +110,7 @@ class ModelTrackPoint extends Model {
     };
   }
 
-  static ModelTrackPoint _fromMap(Map<String, Object?> map) {
+  static ModelTrackPoint fromMap(Map<String, Object?> map) {
     return ModelTrackPoint(
         id: DB.parseInt(map[TableTrackPoint.primaryKey.column]),
         gps: GPS(DB.parseDouble(map[TableTrackPoint.latitude.column]),
@@ -130,21 +130,51 @@ class ModelTrackPoint extends Model {
     var map = model.toMap();
     map.removeWhere((key, value) => key == TableTrackPoint.primaryKey.column);
     int id = await DB.execute<int>((Transaction txn) async {
-      return await txn.insert(TableTrackPoint.table, map);
+      int count = await txn.insert(TableTrackPoint.table, map);
+      for (var id in model.aliasIds) {
+        try {
+          await txn.insert(TableTrackPointAlias.table, {
+            TableTrackPointAlias.idAlias.column: id,
+            TableTrackPointAlias.idTrackPoint.column: model.id
+          });
+        } catch (e, stk) {
+          logger.error('insert idAlias: $e', stk);
+        }
+      }
+      for (var id in model.taskIds) {
+        try {
+          await txn.insert(TableTrackPointTask.table, {
+            TableTrackPointTask.idTask.column: id,
+            TableTrackPointTask.idTrackPoint.column: model.id
+          });
+        } catch (e, stk) {
+          logger.error('insert idTask: $e', stk);
+        }
+      }
+      for (var id in model.userIds) {
+        try {
+          await txn.insert(TableTrackPointUser.table, {
+            TableTrackPointUser.idUser.column: id,
+            TableTrackPointUser.idTrackPoint.column: model.id
+          });
+        } catch (e, stk) {
+          logger.error('insert idUser: $e', stk);
+        }
+      }
+      return count;
     });
     model.id = id;
     return model;
   }
 
   ///
-  static Future<int> update(ModelTrackPoint model) async {
-    if (model.id <= 0) {
+  Future<int> update() async {
+    if (id <= 0) {
       throw ('update model has no id');
     }
     return await DB.execute<int>((Transaction txn) async {
-      return await txn.update(TableTrackPoint.table, model.toMap(),
-          where: '${TableTrackPoint.primaryKey.column} = ?',
-          whereArgs: [model.id]);
+      return await txn.update(TableTrackPoint.table, toMap(),
+          where: '${TableTrackPoint.primaryKey.column} = ?', whereArgs: [id]);
     });
   }
 
@@ -245,7 +275,7 @@ class ModelTrackPoint extends Model {
     });
   }
 
-  Future<List<ModelAlias>> getAliasList() async {
+  Future<List<ModelAlias>> loadAliasList() async {
     final column = TableTrackPointAlias.idAlias.column;
     List<Map<String, Object?>> ids = await _getAssetIds(
         table: TableTrackPointAlias.table,
@@ -260,12 +290,14 @@ class ModelTrackPoint extends Model {
           logger.error('getAlias: $e', stk);
         }
       }
-      return await ModelAlias.byIdList(idList);
+      aliasIds = idList;
+      aliasModels = await ModelAlias.byIdList(idList);
+      return aliasModels;
     }
     return <ModelAlias>[];
   }
 
-  Future<List<ModelTask>> getTaskList() async {
+  Future<List<ModelTask>> loadTaskList() async {
     final column = TableTrackPointTask.idTask.column;
     List<Map<String, Object?>> ids = await _getAssetIds(
         table: TableTrackPointTask.table,
@@ -280,12 +312,14 @@ class ModelTrackPoint extends Model {
           logger.error('getTask: $e', stk);
         }
       }
-      return await ModelTask.byIdList(idList);
+      taskIds = idList;
+      taskModels = await ModelTask.byIdList(idList);
+      return taskModels;
     }
     return <ModelTask>[];
   }
 
-  Future<List<ModelUser>> getUserList() async {
+  Future<List<ModelUser>> loadUserList() async {
     final column = TableTrackPointUser.idUser.column;
     List<int> idList = [];
     List<Map<String, Object?>> ids = await _getAssetIds(
@@ -301,7 +335,15 @@ class ModelTrackPoint extends Model {
         }
       }
     }
-    return await ModelUser.byIdList(idList);
+    userIds = idList;
+    userModels = await ModelUser.byIdList(idList);
+    return userModels;
+  }
+
+  Future<void> loadAssets() async {
+    aliasModels = await loadAliasList();
+    taskModels = await loadTaskList();
+    userModels = await loadUserList();
   }
 
   static Future<ModelTrackPoint?> byId(int id) async {
@@ -315,7 +357,7 @@ class ModelTrackPoint extends Model {
     );
     if (rows.isNotEmpty) {
       try {
-        _fromMap(rows.first);
+        fromMap(rows.first);
       } catch (e, stk) {
         logger.error('byId: $e', stk);
         return null;
@@ -337,7 +379,7 @@ class ModelTrackPoint extends Model {
     List<ModelTrackPoint> models = [];
     for (var row in rows) {
       try {
-        models.add(_fromMap(row));
+        models.add(fromMap(row));
       } catch (e, stk) {
         logger.error('byId: $e', stk);
       }
@@ -359,7 +401,7 @@ class ModelTrackPoint extends Model {
     var models = <ModelTrackPoint>[];
     for (var row in rows) {
       try {
-        models.add(_fromMap(row));
+        models.add(fromMap(row));
       } catch (e, stk) {
         logger.error('select: $e', stk);
       }
@@ -399,7 +441,7 @@ class ModelTrackPoint extends Model {
     );
     for (var row in rows) {
       try {
-        models.add(_fromMap(row));
+        models.add(fromMap(row));
       } catch (e, stk) {
         logger.error('byAlias select models: $e', stk);
       }
@@ -427,7 +469,7 @@ class ModelTrackPoint extends Model {
     );
     var rawModels = <ModelTrackPoint>[];
     for (var row in rows) {
-      rawModels.add(_fromMap(row));
+      rawModels.add(fromMap(row));
     }
     var models = <ModelTrackPoint>[];
     for (var model in rawModels) {
@@ -498,7 +540,7 @@ class ModelTrackPoint extends Model {
     var models = <ModelTrackPoint>[];
     for (var row in rows) {
       try {
-        models.add(_fromMap(row));
+        models.add(fromMap(row));
       } catch (e, stk) {
         logger.error('search at parse models: $e', stk);
       }

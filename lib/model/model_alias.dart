@@ -60,6 +60,10 @@ class ModelAlias extends Model {
   String title = '';
   String description = '';
 
+  /// group values
+  AliasVisibility visibility = AliasVisibility.restricted;
+  bool isActive = false;
+
   /// temporary set during search for nearest Alias
   int sortDistance = 0;
 
@@ -74,7 +78,7 @@ class ModelAlias extends Model {
     this.description = '',
   });
 
-  static ModelAlias _fromMap(Map<String, Object?> map) {
+  static ModelAlias fromMap(Map<String, Object?> map) {
     return ModelAlias(
         id: DB.parseInt(map[TableAlias.primaryKey.column]),
         groupId: DB.parseInt(map[TableAlias.idAliasGroup.column], fallback: 1),
@@ -113,7 +117,7 @@ class ModelAlias extends Model {
     );
     if (rows.isNotEmpty) {
       try {
-        _fromMap(rows.first);
+        fromMap(rows.first);
       } catch (e, stk) {
         logger.error('byId: $e', stk);
         return null;
@@ -136,7 +140,7 @@ class ModelAlias extends Model {
     List<ModelAlias> models = [];
     for (var row in rows) {
       try {
-        models.add(_fromMap(row));
+        models.add(fromMap(row));
       } catch (e, stk) {
         logger.error('byId: $e', stk);
       }
@@ -159,7 +163,7 @@ class ModelAlias extends Model {
     var models = <ModelAlias>[];
     for (var row in rows) {
       try {
-        models.add(_fromMap(row));
+        models.add(fromMap(row));
       } catch (e, stk) {
         logger.error('search: $e', stk);
       }
@@ -207,7 +211,7 @@ class ModelAlias extends Model {
     );
     var rawModels = <ModelAlias>[];
     for (var row in rows) {
-      rawModels.add(_fromMap(row));
+      rawModels.add(fromMap(row));
     }
     var models = <ModelAlias>[];
     for (var model in rawModels) {
@@ -228,7 +232,7 @@ class ModelAlias extends Model {
     var models = <ModelAlias>[];
     for (var row in rows) {
       try {
-        models.add(_fromMap(row));
+        models.add(fromMap(row));
       } catch (e, stk) {
         logger.error('select: $e', stk);
       }
@@ -249,13 +253,14 @@ class ModelAlias extends Model {
   }
 
   /// returns number of changes
-  static Future<int> update(ModelAlias model) async {
-    if (model.id <= 0) {
-      throw ('update model "${model.title}" has no id');
+  Future<int> update() async {
+    if (id <= 0) {
+      throw ('update model "$title" has no id');
     }
     var count = await DB.execute<int>(
       (Transaction txn) async {
-        return await txn.update(TableAlias.table, model.toMap());
+        return await txn.update(TableAlias.table, toMap(),
+            where: '${TableAlias.primaryKey.column} = ?', whereArgs: [id]);
       },
     );
     return count;
@@ -310,7 +315,7 @@ LIMIT ?,?
     var models = <ModelAlias>[];
     for (var row in rows) {
       try {
-        models.add(_fromMap(row));
+        models.add(fromMap(row));
       } catch (e, stk) {
         logger.error('nextAlias fromMap $e', stk);
       }

@@ -13,6 +13,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+import 'dart:convert';
+
 import 'package:chaostours/logger.dart';
 
 var decode = Uri.decodeFull; // util.base64Codec().decode;
@@ -27,5 +29,19 @@ class Model {
     if (id <= 0) {
       throw ('Constructor: id must be > 0');
     }
+  }
+
+  static String toJson(Map<String, Object?> map) => jsonEncode(map);
+  static Map<String, Object?> fromJson(String json) {
+    var obj = jsonDecode(json);
+    Map<String, Object?> map = {};
+    if (obj is Map) {
+      for (var k in obj.keys) {
+        map[k] = obj[k] as Object?;
+      }
+    } else {
+      throw ('fromJson decoded String is NOT a Map');
+    }
+    return map;
   }
 }

@@ -37,7 +37,7 @@ class ModelTask extends Model {
       this.title = '',
       this.description = ''});
 
-  static ModelTask _fromMap(Map<String, Object?> map) {
+  static ModelTask fromMap(Map<String, Object?> map) {
     return ModelTask(
         id: DB.parseInt(map[TableTask.primaryKey.column]),
         groupId: DB.parseInt(map[TableTask.idTaskGroup.column], fallback: 1),
@@ -68,7 +68,7 @@ class ModelTask extends Model {
       },
     );
     if (rows.isNotEmpty) {
-      return _fromMap(rows.first);
+      return fromMap(rows.first);
     }
     return null;
   }
@@ -86,7 +86,7 @@ class ModelTask extends Model {
     List<ModelTask> models = [];
     for (var row in rows) {
       try {
-        models.add(_fromMap(row));
+        models.add(fromMap(row));
       } catch (e, stk) {
         logger.error('byIdList iter through rows: $e', stk);
       }
@@ -108,7 +108,7 @@ class ModelTask extends Model {
     var models = <ModelTask>[];
     for (var row in rows) {
       try {
-        models.add(_fromMap(row));
+        models.add(fromMap(row));
       } catch (e, stk) {
         logger.error('search: $e', stk);
       }
@@ -130,7 +130,7 @@ class ModelTask extends Model {
     List<ModelTask> models = [];
     for (var row in rows) {
       try {
-        models.add(_fromMap(row));
+        models.add(fromMap(row));
       } catch (e, stk) {
         logger.error('select _fromMap: $e', stk);
       }
@@ -151,19 +151,20 @@ class ModelTask extends Model {
     return model;
   }
 
-  static Future<int> update(ModelTask model) async {
-    if (model.id <= 0) {
-      throw ('update model "${model.title}" has no id');
+  Future<int> update() async {
+    if (id <= 0) {
+      throw ('update model "$title" has no id');
     }
     var count = await DB.execute<int>(
       (Transaction txn) async {
-        return await txn.update(TableTask.table, model.toMap());
+        return await txn.update(TableTask.table, toMap(),
+            where: '${TableTask.primaryKey.column} = ?', whereArgs: [id]);
       },
     );
     return count;
   }
 
   ModelTask clone() {
-    return _fromMap(toMap());
+    return fromMap(toMap());
   }
 }

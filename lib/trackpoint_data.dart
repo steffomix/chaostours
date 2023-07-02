@@ -50,7 +50,19 @@ class TrackPointData {
   String calendarId = '';
   String calendarEventId = '';
 
-  TrackPointData({this.tp}) {
+  /// may fallback to use Cache if id doesn't exist
+  static Future<TrackPointData> fromId(int id) async {
+    var tp = await ModelTrackPoint.byId(id);
+    await tp?.loadAssets();
+    return TrackPointData(tp);
+  }
+
+  static Future<TrackPointData> fromTrackPoint(ModelTrackPoint tp) async {
+    await tp.loadAssets();
+    return TrackPointData(tp);
+  }
+
+  TrackPointData([this.tp]) {
     DataBridge bridge = DataBridge.instance;
 
     try {
@@ -102,7 +114,7 @@ class TrackPointData {
       distanceStanding = 0;
     }
     try {
-      var aliasIds = tp?.idAlias ?? bridge.trackPointAliasIdList;
+      var aliasIds = tp?.aliasIds ?? bridge.trackPointAliasIdList;
       aliasList = aliasIds.map((id) => ModelAlias.getModel(id)).toList();
       // don't sort alias
       aliasText = aliasList.isEmpty
@@ -115,7 +127,7 @@ class TrackPointData {
       rethrow;
     }
     try {
-      var currentAliasIds = tp?.idAlias ?? bridge.currentAliasIdList;
+      var currentAliasIds = tp?.aliasIds ?? bridge.currentAliasIdList;
       currentAliasList =
           currentAliasIds.map((id) => ModelAlias.getModel(id)).toList();
       // don't sort alias
@@ -129,7 +141,7 @@ class TrackPointData {
       rethrow;
     }
     try {
-      var taskIds = tp?.idTask ?? bridge.trackPointTaskIdList;
+      var taskIds = tp?.taskIds ?? bridge.trackPointTaskIdList;
       taskList = taskIds.map((id) => ModelTask.getModel(id)).toList();
       taskList.sort((a, b) => a.sortOrder - b.sortOrder);
       tasksText = taskList.isEmpty
@@ -145,7 +157,7 @@ class TrackPointData {
       rethrow;
     }
     try {
-      var userIds = tp?.idUser ?? bridge.trackPointUserIdList;
+      var userIds = tp?.userIds ?? bridge.trackPointUserIdList;
       userList = userIds.map((id) => ModelUser.getModel(id)).toList();
       userList.sort((a, b) => a.sortOrder - b.sortOrder);
       usersText = userList.isEmpty

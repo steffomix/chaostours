@@ -71,7 +71,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
 
   /// current trackpoint
   Widget trackPointInfo(BuildContext context) {
-    var aliasList = trackPoint.idAlias.map((id) => ModelAlias.getModel(id));
+    var aliasList = trackPoint.aliasIds.map((id) => ModelAlias.getModel(id));
 
     return Container(
         padding: const EdgeInsets.all(10),
@@ -241,8 +241,8 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
       if (!initialized) {
         final id = (ModalRoute.of(context)?.settings.arguments ?? 0) as int;
         trackPoint = ModelTrackPoint.byId(id);
-        tpTasks = trackPoint.idTask;
-        tpUsers = trackPoint.idUser;
+        tpTasks = trackPoint.taskIds;
+        tpUsers = trackPoint.userIds;
         tpNotes.text = trackPoint.notes;
         initialized = true;
       }

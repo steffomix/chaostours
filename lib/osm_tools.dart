@@ -23,6 +23,7 @@ import 'package:chaostours/conf/app_colors.dart';
 import 'package:chaostours/data_bridge.dart';
 import 'package:chaostours/tracking.dart';
 import 'package:chaostours/model/model_alias.dart';
+import 'package:chaostours/model/model_alias_group.dart';
 import 'package:chaostours/gps.dart';
 
 class OsmTools {
@@ -34,13 +35,14 @@ class OsmTools {
   Future<void> renderAlias(osm.MapController mapController) async {
     await mapController.removeAllCircle();
 
-    for (var alias in ModelAlias.getAll()) {
+    for (var alias in await ModelAlias.select(limit: 1000)) {
       try {
-        if (alias.deleted) {
+        ModelAliasGroup? group = await ModelAliasGroup.byId(alias.groupId);
+        if (!(group?.isActive ?? false)) {
           mapController.drawCircle(osm.CircleOSM(
             key: "circle${++circleId}",
             centerPoint:
-                osm.GeoPoint(latitude: alias.lat, longitude: alias.lon),
+                osm.GeoPoint(latitude: alias.gps.lat, longitude: alias.gps.lon),
             radius: alias.radius.toDouble(),
             color: Color.fromARGB(72, 0, 0, 0),
             strokeWidth: 10,
@@ -49,9 +51,10 @@ class OsmTools {
           mapController.drawCircle(osm.CircleOSM(
             key: "circle${++circleId}",
             centerPoint:
-                osm.GeoPoint(latitude: alias.lat, longitude: alias.lon),
+                osm.GeoPoint(latitude: alias.gps.lat, longitude: alias.gps.lon),
             radius: alias.radius.toDouble(),
-            color: AppColors.aliasStatusColor(alias.status),
+            color: AppColors.aliasStatusColor(
+                group?.visibility ?? AliasVisibility.restricted),
             strokeWidth: 10,
           ));
         }

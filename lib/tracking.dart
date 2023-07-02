@@ -135,10 +135,6 @@ class _TrackPoint {
       gps.lat += latShift;
       gps.lon += lonShift;
 
-      /// load database
-      await ModelTrackPoint.open();
-      await ModelAlias.open();
-
       /// load global settings
       await AppSettings.loadSettings();
 
@@ -237,8 +233,9 @@ class _TrackPoint {
           if (bridge.trackPointAliasIdList.isNotEmpty) {
             try {
               distanceTreshold =
-                  ModelAlias.getModel(bridge.trackPointAliasIdList.first)
-                      .radius;
+                  (await ModelAlias.byId(bridge.trackPointAliasIdList.first))
+                          ?.radius ??
+                      AppSettings.distanceTreshold;
             } catch (e) {
               if (gpsLocation.hasAlias) {
                 distanceTreshold = gpsLocation.aliasModelList.first.radius;
@@ -296,13 +293,12 @@ class _TrackPoint {
 
                     /// create alias
                     ModelAlias newAlias = ModelAlias(
-                        title: address,
-                        lat: gps.lat,
-                        lon: gps.lon,
+                        groupId: 1,
+                        gps: gps,
                         lastVisited: bridge.smoothGpsPoints.last.time,
                         timesVisited: 1,
-                        deleted: false,
-                        notes:
+                        title: address,
+                        description:
                             'Auto created Alias\nat address:\n"$address"\n\nat date/time: ${gps.time.toIso8601String()}',
                         radius: AppSettings.distanceTreshold);
                     logger.log('auto create new alias');
@@ -361,9 +357,6 @@ class _TrackPoint {
           await bridge.setAddress(gps);
         }
 
-        await ModelTask.open();
-        await ModelUser.open();
-
         /// we started moving
         if (bridge.trackingStatus == TrackingStatus.moving) {
           logger.log('tracking status MOVING');
@@ -377,16 +370,15 @@ class _TrackPoint {
             /// create and insert new trackpoint
             ModelTrackPoint newTrackPoint = ModelTrackPoint(
                 gps: gps,
-                idAlias: bridge.trackPointAliasIdList,
-                timeStart: bridge.trackPointGpsStartStanding?.time ?? gps.time);
-            newTrackPoint.address = bridge.lastStandingAddress;
-            newTrackPoint.status = oldTrackingStatus;
-            newTrackPoint.timeEnd = gps.time;
-            newTrackPoint.idTask = bridge.trackPointTaskIdList;
-            newTrackPoint.idUser = bridge.trackPointUserIdList;
-            newTrackPoint.notes = bridge.trackPointUserNotes;
-            newTrackPoint.calendarEventId =
-                '${bridge.selectedCalendarId};${bridge.lastCalendarEventId}';
+                timeStart: bridge.trackPointGpsStartStanding?.time ?? gps.time,
+                timeEnd: gps.time,
+                calendarEventId:
+                    '${bridge.selectedCalendarId};${bridge.lastCalendarEventId}',
+                address: bridge.lastStandingAddress,
+                notes: bridge.trackPointUserNotes);
+            newTrackPoint.aliasIds = bridge.trackPointAliasIdList;
+            newTrackPoint.taskIds = bridge.trackPointTaskIdList;
+            newTrackPoint.userIds = bridge.trackPointUserIdList;
 
             /// complete calendar event from trackpoint data
             /// only if no private or restricted alias is present
@@ -414,8 +406,8 @@ class _TrackPoint {
               for (var model in gpsLocation.aliasModelList) {
                 model.lastVisited = bridge.trackPointGpsStartStanding!.time;
                 model.timesVisited++;
+                await model.update();
               }
-              await ModelAlias.write();
               // wait before shutdown task
               await Future.delayed(const Duration(seconds: 1));
             }

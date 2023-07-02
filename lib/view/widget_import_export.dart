@@ -329,17 +329,17 @@ class _WidgetImportExport extends State<WidgetImportExport> {
       try {
         int line = 0;
         for (var tp in trackPointModels) {
-          for (var id in tp.idAlias) {
+          for (var id in tp.aliasIds) {
             if (id < 1 || id > aliasModels.length) {
               throw ('$trackPointFilename.tsv line $line: alias id must be > 0 and < ${aliasModels.length + 1}');
             }
           }
-          for (var id in tp.idTask) {
+          for (var id in tp.taskIds) {
             if (id < 1 || id > taskModels.length) {
               throw ('$trackPointFilename.tsv line $line: task id must be > 0 and < ${taskModels.length + 1}');
             }
           }
-          for (var id in tp.idUser) {
+          for (var id in tp.userIds) {
             if (id < 1 || id > userModels.length) {
               throw ('$trackPointFilename.tsv line $line: user id must be > 0 and < ${userModels.length + 1}');
             }
