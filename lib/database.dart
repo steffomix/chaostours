@@ -386,6 +386,7 @@ enum TableUser {
 enum TableTaskGroup {
   id('id'),
   isActive('active'),
+  visibility('visibility'),
   sortOrder('sort'),
   title('title'),
   description('description');
@@ -405,6 +406,7 @@ enum TableTaskGroup {
   static String get schema => '''CREATE TABLE IF NOT EXISTS "$table" (
 	"${primaryKey.column}"	INTEGER NOT NULL,
 	"${isActive.column}"	INTEGER,
+	"${visibility.column}"	INTEGER,
 	"${sortOrder.column}"	INTEGER,
 	"${title.column}"	TEXT NOT NULL,
 	"${description.column}"	TEXT,
@@ -510,6 +512,7 @@ enum TableTopic {
 
 enum TableAliasGroup {
   id('id'),
+  idCalendar('id_calendar'),
   isActive('active'),
   visibility('sort'),
   title('title'),
@@ -529,6 +532,7 @@ enum TableAliasGroup {
 
   static String get schema => '''CREATE TABLE IF NOT EXISTS "$table" (
 	"${primaryKey.column}"	INTEGER NOT NULL,
+	"${idCalendar.column}"	TEXT,
 	"${isActive.column}"	INTEGER,
 	"${visibility.column}"	INTEGER,
 	"${title.column}"	TEXT NOT NULL,

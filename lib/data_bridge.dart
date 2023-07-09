@@ -43,7 +43,6 @@ class DataBridge {
   }
 
   String lastCalendarEventId = '';
-  String selectedCalendarId = '';
 
   ///
   /// backround values
@@ -176,8 +175,6 @@ class DataBridge {
       /// calendar
       lastCalendarEventId =
           await Cache.getValue<String>(CacheKeys.calendarLastEventId, '');
-      selectedCalendarId =
-          await Cache.getValue<String>(CacheKeys.calendarSelectedId, '');
     } catch (e, stk) {
       logger.error('loadBackgroundSession: $e', stk);
     }

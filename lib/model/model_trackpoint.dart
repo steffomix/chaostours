@@ -33,7 +33,6 @@ class ModelTrackPoint extends Model {
   static Logger logger = Logger.logger<ModelTrackPoint>();
 
   GPS gps;
-  bool isActive = true;
 
   DateTime timeStart;
   DateTime timeEnd;
@@ -66,7 +65,6 @@ class ModelTrackPoint extends Model {
       required this.timeStart,
       required this.timeEnd,
       required this.gps,
-      this.isActive = true,
       this.address = '',
       this.notes = '',
       this.calendarEventId = ''});
@@ -80,6 +78,12 @@ class ModelTrackPoint extends Model {
         id: id, gps: gps, timeStart: timeStart, timeEnd: timeEnd);
     model.address = address;
     return model;
+  }
+
+  /// creates an empty trackpoint with GPS(0,0)
+  static ModelTrackPoint createTrackPoint() {
+    var t = DateTime.now();
+    return ModelTrackPoint(gps: GPS(0, 0), timeStart: t, timeEnd: t);
   }
 
   static Future<int> countAlias(int id) async {

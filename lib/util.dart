@@ -26,6 +26,14 @@ double fileSize(File file) {
   return mb;
 }
 
+Duration timeDifference(DateTime t1, DateTime t2) {
+  var diff = t1.difference(t2);
+  if (diff.isNegative) {
+    diff = t2.difference(t1);
+  }
+  return diff;
+}
+
 String timeElapsed(DateTime t1, DateTime t2, [bool short = true]) {
   DateTime t0;
   if (t1.difference(t2).isNegative) {

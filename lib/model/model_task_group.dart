@@ -24,6 +24,7 @@ class ModelTaskGroup extends Model {
   static final Logger logger = Logger.logger<ModelTaskGroup>();
 
   bool isActive = true;
+  AliasVisibility visibility = AliasVisibility.public;
   int sortOrder = 0;
   String title = '';
   String description = '';
@@ -31,6 +32,7 @@ class ModelTaskGroup extends Model {
   ModelTaskGroup(
       {super.id = 0,
       this.isActive = true,
+      this.visibility = AliasVisibility.public,
       this.sortOrder = 0,
       this.title = '',
       this.description = ''});

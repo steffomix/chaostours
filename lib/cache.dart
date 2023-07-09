@@ -99,7 +99,6 @@ enum CacheKeys {
   /// eventCalendar
   /// "id\tname\taccount"
   ///
-  calendarSelectedId(String),
   calendarLastEventId(String),
   calendarPublishStatusEnabled(bool),
 

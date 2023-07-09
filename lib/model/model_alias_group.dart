@@ -24,12 +24,14 @@ class ModelAliasGroup extends Model {
   static final Logger logger = Logger.logger<ModelAliasGroup>();
 
   bool isActive = true;
+  String idCalendar = '';
   AliasVisibility visibility = AliasVisibility.public;
   String title = '';
   String description = '';
 
   ModelAliasGroup(
       {super.id = 0,
+      this.idCalendar = '',
       this.isActive = true,
       this.visibility = AliasVisibility.public,
       this.title = '',
@@ -38,6 +40,7 @@ class ModelAliasGroup extends Model {
   Map<String, Object?> toMap() {
     return <String, Object?>{
       TableAliasGroup.primaryKey.column: id,
+      TableAliasGroup.idCalendar.column: idCalendar,
       TableAliasGroup.isActive.column: DB.boolToInt(isActive),
       TableAliasGroup.visibility.column: visibility.value,
       TableAliasGroup.title.column: title,
@@ -48,6 +51,7 @@ class ModelAliasGroup extends Model {
   static ModelAliasGroup fromMap(Map<String, Object?> map) {
     return ModelAliasGroup(
         id: DB.parseInt(map[TableAliasGroup.primaryKey.column]),
+        idCalendar: DB.parseString(map[TableAliasGroup.idCalendar.column]),
         isActive: DB.parseBool(map[TableAliasGroup.isActive.column]),
         visibility:
             AliasVisibility.byId(map[TableAliasGroup.visibility.column]),

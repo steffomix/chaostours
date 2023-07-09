@@ -1,54 +1,60 @@
-import 'dart:collection';
-
 import 'package:chaostours/gps.dart';
+import 'package:chaostours/logger.dart';
 import 'package:chaostours/model/model_alias.dart';
 
 class Location {
+  static final Logger logger = Logger.logger<Location>();
   final GPS gps;
 
-  final List<int> _aliasIdList = [];
-  final List<ModelAlias> _aliasModelList = [];
-  bool _isPublic = true;
-  bool _isPrivate = false;
-  bool _isResticted = false;
-  AliasVisibility _status = AliasVisibility.restricted;
+  final List<ModelAlias> aliasModels;
+  List<int> get aliasIds => aliasModels.map((e) => e.id).toList();
+  final bool isPublic;
+  final bool isPrivate;
+  final bool isRestricted;
+  final AliasVisibility visibility;
+  bool get hasAlias => aliasModels.isNotEmpty;
 
-  List<int> get aliasIdList => UnmodifiableListView(_aliasIdList);
-  List<ModelAlias> get aliasModelList => UnmodifiableListView(_aliasModelList);
-  AliasVisibility get status => _status;
-  bool get isPublic => _isPublic;
-  bool get isPrivate => _isPrivate;
-  bool get isRestricted => _isResticted;
-  bool get hasAlias => _aliasIdList.isNotEmpty;
+  Location(
+      {required this.gps,
+      required this.visibility,
+      required this.aliasModels,
+      required this.isPublic,
+      required this.isPrivate,
+      required this.isRestricted});
 
-  Location(this.gps) {
-    List<ModelAlias> aliasList = [];
-    for (var model in ModelAlias.nextAlias(gps: gps)) {
-      if (!model.deleted) {
-        aliasList.add(model);
+  static Future<Location> location(GPS gps) async {
+    /// location defaults
+    List<ModelAlias> models = [];
+    AliasVisibility visibility = AliasVisibility.public;
+    bool isRestricted = false;
+    bool isPrivate = false;
+    bool isPublic = true;
+    try {
+      models.addAll(await ModelAlias.nextAlias(gps: gps));
+
+      for (var model in models) {
+        if (model.visibility == AliasVisibility.restricted) {
+          visibility = AliasVisibility.restricted;
+          isRestricted = true;
+          isPrivate = true;
+          isPublic = false;
+        }
+        if (model.visibility == AliasVisibility.privat) {
+          visibility = AliasVisibility.privat;
+          isRestricted = false;
+          isPrivate = true;
+          isPublic = false;
+        }
       }
+    } catch (e, stk) {
+      logger.error('create location: $e', stk);
     }
-    _aliasModelList.addAll(aliasList);
-    _aliasIdList.addAll(aliasList.map((model) => model.id));
-    for (var model in aliasList) {
-      if (model.status == AliasVisibility.restricted) {
-        _status = AliasVisibility.restricted;
-        _isResticted = true;
-        _isPrivate = true;
-        _isPublic = false;
-        return;
-      }
-      if (model.status == AliasVisibility.privat) {
-        _status = AliasVisibility.privat;
-        _isResticted = false;
-        _isPrivate = true;
-        _isPublic = false;
-        return;
-      }
-    }
-    _status = AliasVisibility.public;
-    _isResticted = false;
-    _isPrivate = false;
-    _isPublic = true;
+    return Location(
+        aliasModels: models,
+        gps: gps,
+        visibility: visibility,
+        isPrivate: isPrivate,
+        isPublic: isPublic,
+        isRestricted: isRestricted);
   }
 }

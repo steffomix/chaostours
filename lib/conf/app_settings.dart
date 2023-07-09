@@ -62,6 +62,8 @@ class AppSettings {
 
   static String version = '0.0.1';
 
+  static const int defaultAliasGroupId = 1;
+
   /// german default short week names
   static const List<String> _weekDaysDefault = [
     '',

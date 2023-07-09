@@ -74,12 +74,10 @@ class AppCalendar {
     }
   }
 
-  Future<Calendar?> getCalendarfromCacheId() async {
+  Future<Calendar?> calendarById(String id) async {
     try {
-      var cache =
-          await Cache.getValue<String>(CacheKeys.calendarSelectedId, '');
       for (var c in calendars) {
-        if (c.id == cache) {
+        if (c.id == id) {
           return c;
         }
       }
@@ -95,20 +93,20 @@ class AppCalendar {
       if (calendars.isNotEmpty) {
         /// get dates
         final berlin = getLocation('Europe/Berlin');
-        var start = TZDateTime.from(tpData.tStart, berlin);
+        var start = TZDateTime.from(tpData.timeStart, berlin);
         var end = start.add(const Duration(minutes: 2));
 
         /// get calendar
-        Calendar? calendar = await getCalendarfromCacheId();
+        Calendar? calendar = await calendarById(tpData.calendarId);
 
         /// get lastEvent
         if (calendar != null) {
           var title =
-              'Ankunft ${tpData.aliasList.isNotEmpty ? tpData.aliasList.first.title : tpData.addressText} - ${start.hour}.${start.minute}';
+              'Ankunft ${tpData.aliasModels.isNotEmpty ? tpData.aliasModels.first.title : tpData.addressText} - ${start.hour}.${start.minute}';
           var location =
               'maps.google.com?q=${tpData.gpslastStatusChange.lat},${tpData.gpslastStatusChange.lon}';
           var description =
-              '${tpData.aliasList.isNotEmpty ? tpData.aliasList.first.title : tpData.addressText}\n'
+              '${tpData.aliasModels.isNotEmpty ? tpData.aliasModels.first.title : tpData.addressText}\n'
               'am ${start.day}.${start.month}.${start.year}\n'
               'um ${start.hour}.${start.minute} - unbekannt)\n\n'
               'Arbeiten: ...\n\n'
@@ -140,11 +138,11 @@ class AppCalendar {
       if (calendars.isNotEmpty) {
         /// get dates
         final berlin = getLocation('Europe/Berlin');
-        var start = TZDateTime.from(tpData.tStart, berlin);
-        var end = TZDateTime.from(tpData.tEnd, berlin);
+        var start = TZDateTime.from(tpData.timeStart, berlin);
+        var end = TZDateTime.from(tpData.timeEnd, berlin);
 
         /// get calendar
-        Calendar? calendar = await getCalendarfromCacheId();
+        Calendar? calendar = await calendarById(tpData.calendarId);
 
         /// get lastEvent
         if (calendar != null) {
@@ -156,11 +154,11 @@ class AppCalendar {
           }
 
           var title =
-              '${tpData.aliasList.isNotEmpty ? tpData.aliasList.first.title : tpData.addressText}; ${tpData.durationText}';
+              '${tpData.aliasModels.isNotEmpty ? tpData.aliasModels.first.title : tpData.addressText}; ${tpData.durationText}';
           var location =
               'maps.google.com?q=${tpData.gpslastStatusChange.lat},${tpData.gpslastStatusChange.lon}';
           var description =
-              '${tpData.aliasList.isNotEmpty ? tpData.aliasList.first.title : tpData.addressText}\n'
+              '${tpData.aliasModels.isNotEmpty ? tpData.aliasModels.first.title : tpData.addressText}\n'
               '${start.day}.${start.month}. - ${tpData.durationText}\n'
               '(${start.hour}.${start.minute} - ${end.hour}.${end.minute})\n\n'
               'Arbeiten:\n${tpData.tasksText}\n\n'
@@ -174,9 +172,7 @@ class AppCalendar {
               location: location,
               description: description);
           String? id = await inserOrUpdate(event);
-          if (tpData.tp != null && events.isEmpty) {
-            tpData.tp!.calendarEventId = '${tpData.calendarId};$id';
-          }
+          tpData.trackpoint.calendarEventId = '$id';
           logger.warn(
               'completed calendar event ID: $id on calendar ${calendar.id}');
           return id;
@@ -186,8 +182,7 @@ class AppCalendar {
       }
     } catch (e, stk) {
       logger.error(
-          'complete/update calendarID:${bridge.selectedCalendarId} eventID:${bridge.lastCalendarEventId}: $e',
-          stk);
+          'complete/update eventID:${bridge.lastCalendarEventId}: $e', stk);
     }
     return null;
   }

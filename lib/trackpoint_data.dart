@@ -17,6 +17,7 @@ limitations under the License.
 import 'package:chaostours/data_bridge.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_alias.dart';
+import 'package:chaostours/model/model_alias_group.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/gps.dart';
@@ -27,28 +28,157 @@ import 'package:chaostours/view/app_widgets.dart';
 
 class TrackPointData {
   static final Logger logger = Logger.logger<TrackPointData>();
-  ModelTrackPoint? tp;
-  late DateTime tStart;
-  late DateTime tEnd;
-  late PendingGps gpslastStatusChange;
-  late int distanceStanding;
-  late int distanceStandingFromBorder;
-  late int standingRadius;
-  late double distanceMoving;
-  List<ModelAlias> aliasList = [];
-  late String aliasText;
-  List<ModelAlias> currentAliasList = [];
-  late String currentAliasText;
-  List<ModelUser> userList = [];
-  late String tasksText;
-  List<ModelTask> taskList = [];
-  late String usersText;
-  late String trackPointNotes;
-  late String durationText;
-  late String addressText;
-  late String notes;
-  String calendarId = '';
-  String calendarEventId = '';
+  ModelTrackPoint trackpoint = ModelTrackPoint.createTrackPoint();
+  final bridge = DataBridge.instance;
+  final GPS gps;
+  final DateTime timeStart;
+  DateTime get timeEnd => DateTime.now();
+  final List<ModelAlias> currentAliasModels;
+  final List<ModelAlias> aliasModels;
+  final List<ModelUser> userModels;
+  final List<ModelTask> taskModels;
+  final String calendarEventId;
+  final String addressText;
+
+  GPS get gpslastStatusChange => bridge.trackPointGpslastStatusChange ?? gps;
+
+  /// defaults to AppSettings.distanceTreshold
+  int get radius {
+    return aliasModels.isEmpty
+        ? AppSettings.distanceTreshold
+        : aliasModels.first.radius;
+  }
+
+  /// defaults to bridge.gpsPoints -> gps
+  GPS get calcGps {
+    return bridge.calcGpsPoints.isNotEmpty
+        ? bridge.calcGpsPoints.first
+        : (bridge.gpsPoints.isEmpty ? gps : bridge.gpsPoints.first);
+  }
+
+  /// distance from radius center
+  int get distanceStanding => bridge.gpsPoints.isEmpty
+      ? 0
+      : GPS
+          .distance(
+              bridge.calcGpsPoints.isNotEmpty
+                  ? bridge.calcGpsPoints.first
+                  : bridge.gpsPoints.first,
+              gps)
+          .round();
+
+  /// inversion of distanceStanding
+  int get distanceStandingFromBorder => (radius - distanceStanding).round();
+
+  /// distance over calcGpsPoints in meter
+  int get distanceMoving {
+    return GPS.distanceOverTrackList(bridge.calcGpsPoints).round();
+  }
+
+  List<int> get aliasIds => aliasModels.map((e) => e.id).toList();
+  List<int> get currentAliasIds => currentAliasModels.map((e) => e.id).toList();
+  List<int> get taskIds => taskModels.map((e) => e.id).toList();
+  List<int> get userIds => userModels.map((e) => e.id).toList();
+
+  String get aliasText => aliasModels.isEmpty
+      ? ' ---'
+      : '--> ${aliasModels.map((e) {
+            return e.title;
+          }).toList().join('\n- ')}';
+  String get currentAliasText => currentAliasModels.isEmpty
+      ? ' ---'
+      : '--> ${currentAliasModels.map((e) {
+            return e.title;
+          }).toList().join('\n- ')}';
+
+  String get tasksText => taskModels.isEmpty
+      ? ' ---'
+      : taskModels
+          .map((e) {
+            return '- ${e.title}';
+          })
+          .toList()
+          .join('\n');
+  String get usersText => userModels.isEmpty
+      ? ' ---'
+      : userModels
+          .map((e) {
+            return '- ${e.title}';
+          })
+          .toList()
+          .join('\n');
+
+  String get trackPointNotes => trackpoint.notes;
+
+  String get durationText => timeElapsed(timeStart, timeEnd, false);
+
+  Duration get duration => timeDifference(timeStart, timeEnd);
+
+  /// defaults to data from DataBridge
+  static Future<TrackPointData> trackPointData(
+      {ModelTrackPoint? trackpoint}) async {
+    final bridge = DataBridge.instance;
+
+    GPS? gps = bridge.calcGpsPoints.isEmpty ? null : bridge.calcGpsPoints.first;
+    gps ??= bridge.gpsPoints.isEmpty ? null : bridge.gpsPoints.first;
+    gps ??= await GPS.gps();
+
+    DateTime tStart = trackpoint?.timeStart ??
+        (bridge.trackPointGpslastStatusChange?.time ??
+            (bridge.gpsPoints.isNotEmpty
+                ? bridge.gpsPoints.last.time
+                : DateTime.now()));
+
+    List<int> aliasIds = trackpoint?.aliasIds ?? bridge.trackPointAliasIdList;
+    List<ModelAlias> aliasModels = await ModelAlias.byIdList(aliasIds);
+
+    List<int> currentAliasIds = bridge.currentAliasIdList;
+    List<ModelAlias> currentAliasModels =
+        await ModelAlias.byIdList(currentAliasIds);
+
+    List<int> taskIds = trackpoint?.taskIds ?? bridge.trackPointTaskIdList;
+    List<ModelTask> taskModels = await ModelTask.byIdList(taskIds);
+
+    List<int> userIds = trackpoint?.userIds ?? bridge.trackPointUserIdList;
+    List<ModelUser> userModels = await ModelUser.byIdList(userIds);
+
+    String addressText = trackpoint?.address ?? bridge.currentAddress;
+
+    String calendarEventId =
+        (trackpoint?.calendarEventId ?? bridge.lastCalendarEventId);
+
+    ModelAliasGroup? aliasGroupModel = await ModelAliasGroup.byId(
+        aliasModels.isNotEmpty
+            ? aliasModels.first.groupId
+            : AppSettings.defaultAliasGroupId);
+
+    var calendarId = aliasGroupModel?.idCalendar ?? '';
+
+    return TrackPointData(
+        gps: gps,
+        timeStart: tStart,
+        aliasModels: aliasModels,
+        currentAliasModels: currentAliasModels,
+        taskModels: taskModels,
+        userModels: userModels,
+        addressText: addressText,
+        calendarEventId: calendarEventId);
+  }
+
+  TrackPointData(
+      {required this.gps,
+      required this.timeStart,
+      required this.aliasModels,
+      required this.currentAliasModels,
+      required this.userModels,
+      required this.taskModels,
+      required this.addressText,
+      required this.calendarEventId,
+      ModelTrackPoint? trackPoint}) {
+    if (trackPoint != null) {
+      trackpoint = trackPoint;
+    }
+  }
 
   /// may fallback to use Cache if id doesn't exist
   static Future<TrackPointData> fromId(int id) async {

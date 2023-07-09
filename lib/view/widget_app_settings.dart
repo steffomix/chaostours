@@ -76,7 +76,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
   Future<void> getCalendarId() async {
     var appCalendar = AppCalendar();
     appCalendar.retrieveCalendars().then((data) async {
-      Calendar? calendar = await appCalendar.getCalendarfromCacheId();
+      Calendar? calendar = await appCalendar.calendarById();
       if (calendar != null) {
         selectedCalendar =
             '#${calendar.id}: ${calendar.name}\n<${calendar.accountName}>';

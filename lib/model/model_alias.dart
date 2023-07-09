@@ -22,10 +22,10 @@ import 'package:flutter/services.dart';
 ///
 import 'package:chaostours/model/model.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
+import 'package:chaostours/model/model_alias_group.dart';
 import 'package:chaostours/database.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/logger.dart';
-import 'package:chaostours/cache.dart';
 import 'package:sqflite/sqflite.dart';
 
 enum AliasVisibility {
@@ -52,6 +52,8 @@ enum AliasVisibility {
 class ModelAlias extends Model {
   static Logger logger = Logger.logger<ModelAlias>();
   int groupId = 1;
+  // lazy loaded group
+  Future<ModelAliasGroup?> get groupModel => ModelAliasGroup.byId(groupId);
   GPS gps;
   int radius = 50;
   DateTime lastVisited;
@@ -69,7 +71,7 @@ class ModelAlias extends Model {
 
   ModelAlias({
     super.id = 0,
-    this.groupId = 0,
+    this.groupId = 1,
     required this.gps,
     this.radius = 50,
     required this.lastVisited,
@@ -266,13 +268,12 @@ class ModelAlias extends Model {
     return count;
   }
 
-  /// if all == false
-  ///   returns only alias within their radius range distance from given gps
-  /// else
-  ///   returns all alias sorted by distance from gps
+  /// <pre> select alias models ordered by row "distance" to given gps
+  /// "distance" contains c² of a² + b²
+  /// which is NOT the distance but serves to compare distances approximately
   ///
-  /// The property sortDistance in meter can be used for user information
-  /// (table.lat - lat)*(table.lat - lat) + (table.lon - lon)*(table.lon - lon)
+  /// (table.lat - gps.lat)*(table.lat - gps.lat) + (table.lon - gps.lon)*(table.lon - gps.lon)
+  /// </pre>
   static Future<List<ModelAlias>> nextAlias(
       {required GPS gps,
       int limit = 1,

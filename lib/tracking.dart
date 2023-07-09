@@ -203,11 +203,11 @@ class _TrackPoint {
           CacheKeys.cacheBackgroundCalcGpsPoints, bridge.calcGpsPoints);
       await Cache.setValue<PendingGps>(CacheKeys.cacheBackgroundLastGps, gps);
 
-      Location gpsLocation = Location(gps);
+      Location gpsLocation = await Location.location(gps);
 
       /// cache alias list
       bridge.currentAliasIdList = await Cache.setValue<List<int>>(
-          CacheKeys.cacheCurrentAliasIdList, gpsLocation.aliasIdList);
+          CacheKeys.cacheCurrentAliasIdList, gpsLocation.aliasIds);
 
       /// remember old status
       oldTrackingStatus = bridge.trackingStatus;
@@ -238,7 +238,7 @@ class _TrackPoint {
                       AppSettings.distanceTreshold;
             } catch (e) {
               if (gpsLocation.hasAlias) {
-                distanceTreshold = gpsLocation.aliasModelList.first.radius;
+                distanceTreshold = gpsLocation.aliasModels.first.radius;
               }
             }
           }
@@ -305,12 +305,12 @@ class _TrackPoint {
                     await ModelAlias.insert(newAlias);
 
                     /// recreate location with new alias
-                    gpsLocation = Location(gps);
+                    gpsLocation = await Location.location(gps);
 
                     /// update cache alias list
                     bridge.currentAliasIdList = await Cache.setValue<List<int>>(
                         CacheKeys.cacheCurrentAliasIdList,
-                        gpsLocation.aliasIdList);
+                        gpsLocation.aliasIds);
 
                     /// change status
                     gps.time = bridge.smoothGpsPoints.last.time;
@@ -372,8 +372,7 @@ class _TrackPoint {
                 gps: gps,
                 timeStart: bridge.trackPointGpsStartStanding?.time ?? gps.time,
                 timeEnd: gps.time,
-                calendarEventId:
-                    '${bridge.selectedCalendarId};${bridge.lastCalendarEventId}',
+                calendarEventId: bridge.lastCalendarEventId,
                 address: bridge.lastStandingAddress,
                 notes: bridge.trackPointUserNotes);
             newTrackPoint.aliasIds = bridge.trackPointAliasIdList;
@@ -382,15 +381,17 @@ class _TrackPoint {
 
             /// complete calendar event from trackpoint data
             /// only if no private or restricted alias is present
-            var tpData = TrackPointData(tp: newTrackPoint);
+            var tpData =
+                await TrackPointData.trackPointData(trackpoint: newTrackPoint);
             if (AppSettings.publishToCalendar &&
                 !gpsLocation.isPrivate &&
                 (!AppSettings.statusStandingRequireAlias ||
                     (AppSettings.statusStandingRequireAlias &&
-                        tpData.aliasList.isNotEmpty))) {
+                        tpData.aliasModels.isNotEmpty))) {
               logger.log('complete calendar event');
-              await AppCalendar()
-                  .completeCalendarEvent(TrackPointData(tp: newTrackPoint));
+              String? eventId =
+                  await AppCalendar().completeCalendarEvent(tpData);
+              newTrackPoint.calendarEventId = eventId ?? '';
             }
 
             /// calendar eventId may have changed
@@ -403,7 +404,7 @@ class _TrackPoint {
 
             /// update alias
             if (gpsLocation.hasAlias) {
-              for (var model in gpsLocation.aliasModelList) {
+              for (var model in gpsLocation.aliasModels) {
                 model.lastVisited = bridge.trackPointGpsStartStanding!.time;
                 model.timesVisited++;
                 await model.update();
@@ -435,7 +436,7 @@ class _TrackPoint {
 
           /// cache alias id list
           bridge.trackPointAliasIdList = await Cache.setValue<List<int>>(
-              CacheKeys.cacheBackgroundAliasIdList, gpsLocation.aliasIdList);
+              CacheKeys.cacheBackgroundAliasIdList, gpsLocation.aliasIds);
 
           /// create calendar entry from cache data
           if (AppSettings.publishToCalendar &&
@@ -444,8 +445,8 @@ class _TrackPoint {
                   (AppSettings.statusStandingRequireAlias &&
                       gpsLocation.hasAlias))) {
             logger.log('create new calendar event');
-            String? id =
-                await AppCalendar().startCalendarEvent(TrackPointData());
+            String? id = await AppCalendar()
+                .startCalendarEvent(await TrackPointData.trackPointData());
 
             /// cache event id
             bridge.lastCalendarEventId = await Cache.setValue<String>(
