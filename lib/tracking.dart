@@ -382,7 +382,7 @@ class _TrackPoint {
             /// complete calendar event from trackpoint data
             /// only if no private or restricted alias is present
             var tpData =
-                await TrackPointData.trackPointData(trackpoint: newTrackPoint);
+                await TrackPointData.trackPointData(trackPoint: newTrackPoint);
             if (AppSettings.publishToCalendar &&
                 !gpsLocation.isPrivate &&
                 (!AppSettings.statusStandingRequireAlias ||

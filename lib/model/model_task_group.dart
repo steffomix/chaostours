@@ -72,6 +72,9 @@ class ModelTaskGroup extends Model {
   }
 
   static Future<List<ModelTaskGroup>> byIdList(List<int> ids) async {
+    if (ids.isEmpty) {
+      return <ModelTaskGroup>[];
+    }
     final rows = await DB.execute<List<Map<String, Object?>>>(
       (Transaction txn) async {
         return await txn.query(TableTaskGroup.table,

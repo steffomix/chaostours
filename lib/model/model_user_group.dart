@@ -70,6 +70,9 @@ class ModelUserGroup extends Model {
   }
 
   static Future<List<ModelUserGroup>> byIdList(List<int> ids) async {
+    if (ids.isEmpty) {
+      return <ModelUserGroup>[];
+    }
     final rows = await DB.execute<List<Map<String, Object?>>>(
       (Transaction txn) async {
         return await txn.query(TableUserGroup.table,

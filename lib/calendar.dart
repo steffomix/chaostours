@@ -172,7 +172,6 @@ class AppCalendar {
               location: location,
               description: description);
           String? id = await inserOrUpdate(event);
-          tpData.trackpoint.calendarEventId = '$id';
           logger.warn(
               'completed calendar event ID: $id on calendar ${calendar.id}');
           return id;

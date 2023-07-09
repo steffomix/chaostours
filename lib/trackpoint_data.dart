@@ -28,13 +28,14 @@ import 'package:chaostours/view/app_widgets.dart';
 
 class TrackPointData {
   static final Logger logger = Logger.logger<TrackPointData>();
-  ModelTrackPoint trackpoint = ModelTrackPoint.createTrackPoint();
+  ModelTrackPoint? trackPoint;
   final bridge = DataBridge.instance;
   final GPS gps;
   final DateTime timeStart;
   DateTime get timeEnd => DateTime.now();
   final List<ModelAlias> currentAliasModels;
   final List<ModelAlias> aliasModels;
+  final ModelAliasGroup? aliasGroupModel;
   final List<ModelUser> userModels;
   final List<ModelTask> taskModels;
   final String calendarEventId;
@@ -108,57 +109,58 @@ class TrackPointData {
           .toList()
           .join('\n');
 
-  String get trackPointNotes => trackpoint.notes;
+  String get trackPointNotes => trackPoint?.notes ?? '';
 
   String get durationText => timeElapsed(timeStart, timeEnd, false);
 
   Duration get duration => timeDifference(timeStart, timeEnd);
 
+  String get calendarId => aliasGroupModel?.idCalendar ?? '';
+
   /// defaults to data from DataBridge
   static Future<TrackPointData> trackPointData(
-      {ModelTrackPoint? trackpoint}) async {
+      {ModelTrackPoint? trackPoint}) async {
     final bridge = DataBridge.instance;
 
     GPS? gps = bridge.calcGpsPoints.isEmpty ? null : bridge.calcGpsPoints.first;
     gps ??= bridge.gpsPoints.isEmpty ? null : bridge.gpsPoints.first;
     gps ??= await GPS.gps();
 
-    DateTime tStart = trackpoint?.timeStart ??
+    DateTime tStart = trackPoint?.timeStart ??
         (bridge.trackPointGpslastStatusChange?.time ??
             (bridge.gpsPoints.isNotEmpty
                 ? bridge.gpsPoints.last.time
                 : DateTime.now()));
 
-    List<int> aliasIds = trackpoint?.aliasIds ?? bridge.trackPointAliasIdList;
+    List<int> aliasIds = trackPoint?.aliasIds ?? bridge.trackPointAliasIdList;
     List<ModelAlias> aliasModels = await ModelAlias.byIdList(aliasIds);
 
     List<int> currentAliasIds = bridge.currentAliasIdList;
     List<ModelAlias> currentAliasModels =
         await ModelAlias.byIdList(currentAliasIds);
 
-    List<int> taskIds = trackpoint?.taskIds ?? bridge.trackPointTaskIdList;
+    List<int> taskIds = trackPoint?.taskIds ?? bridge.trackPointTaskIdList;
     List<ModelTask> taskModels = await ModelTask.byIdList(taskIds);
 
-    List<int> userIds = trackpoint?.userIds ?? bridge.trackPointUserIdList;
+    List<int> userIds = trackPoint?.userIds ?? bridge.trackPointUserIdList;
     List<ModelUser> userModels = await ModelUser.byIdList(userIds);
 
-    String addressText = trackpoint?.address ?? bridge.currentAddress;
+    String addressText = trackPoint?.address ?? bridge.currentAddress;
 
     String calendarEventId =
-        (trackpoint?.calendarEventId ?? bridge.lastCalendarEventId);
+        (trackPoint?.calendarEventId ?? bridge.lastCalendarEventId);
 
     ModelAliasGroup? aliasGroupModel = await ModelAliasGroup.byId(
         aliasModels.isNotEmpty
             ? aliasModels.first.groupId
             : AppSettings.defaultAliasGroupId);
 
-    var calendarId = aliasGroupModel?.idCalendar ?? '';
-
     return TrackPointData(
         gps: gps,
         timeStart: tStart,
         aliasModels: aliasModels,
         currentAliasModels: currentAliasModels,
+        aliasGroupModel: aliasGroupModel,
         taskModels: taskModels,
         userModels: userModels,
         addressText: addressText,
@@ -170,162 +172,10 @@ class TrackPointData {
       required this.timeStart,
       required this.aliasModels,
       required this.currentAliasModels,
+      required this.aliasGroupModel,
       required this.userModels,
       required this.taskModels,
       required this.addressText,
       required this.calendarEventId,
-      ModelTrackPoint? trackPoint}) {
-    if (trackPoint != null) {
-      trackpoint = trackPoint;
-    }
-  }
-
-  /// may fallback to use Cache if id doesn't exist
-  static Future<TrackPointData> fromId(int id) async {
-    var tp = await ModelTrackPoint.byId(id);
-    await tp?.loadAssets();
-    return TrackPointData(tp);
-  }
-
-  static Future<TrackPointData> fromTrackPoint(ModelTrackPoint tp) async {
-    await tp.loadAssets();
-    return TrackPointData(tp);
-  }
-
-  TrackPointData([this.tp]) {
-    DataBridge bridge = DataBridge.instance;
-
-    try {
-      tStart = tp?.timeStart ??
-          (bridge.trackPointGpslastStatusChange?.time ??
-              bridge.gpsPoints.last.time);
-      tEnd = tp?.timeEnd ?? DateTime.now();
-    } catch (e, stk) {
-      logger.error('process dates: $e', stk);
-      rethrow;
-    }
-    try {
-      gpslastStatusChange =
-          bridge.trackPointGpslastStatusChange ?? bridge.gpsPoints.last;
-
-      distanceMoving = bridge.gpsPoints.isEmpty
-          ? 0.0
-          : (GPS.distanceOverTrackList(bridge.gpsPoints) / 10).round() / 100;
-    } catch (e, stk) {
-      logger.error('calculate distance on status moving: $e', stk);
-      rethrow;
-    }
-    try {
-      GPS gps;
-      int radius;
-      if (bridge.trackPointAliasIdList.isNotEmpty) {
-        var alias = ModelAlias.getModel(bridge.trackPointAliasIdList.first);
-        gps = GPS(alias.lat, alias.lon);
-        radius = alias.radius;
-      } else {
-        gps = bridge.trackPointGpsStartStanding!;
-        radius = AppSettings.distanceTreshold;
-      }
-      distanceStanding = bridge.gpsPoints.isEmpty
-          ? 0
-          : GPS
-              .distance(
-                  bridge.calcGpsPoints.isNotEmpty
-                      ? bridge.calcGpsPoints.first
-                      : bridge.gpsPoints.first,
-                  gps)
-              .round();
-      distanceStandingFromBorder = radius - distanceStanding;
-      standingRadius = radius;
-    } catch (e, stk) {
-      logger.error(
-          'unable to calculate distance on status standing, set distance to zero: $e',
-          stk);
-      distanceStanding = 0;
-    }
-    try {
-      var aliasIds = tp?.aliasIds ?? bridge.trackPointAliasIdList;
-      aliasList = aliasIds.map((id) => ModelAlias.getModel(id)).toList();
-      // don't sort alias
-      aliasText = aliasList.isEmpty
-          ? ' ---'
-          : '${aliasList.length == 1 ? '-' : '-->'} ${aliasList.map((e) {
-                return e.title;
-              }).toList().join('\n- ')}';
-    } catch (e, stk) {
-      logger.error('process aliasIds: $e', stk);
-      rethrow;
-    }
-    try {
-      var currentAliasIds = tp?.aliasIds ?? bridge.currentAliasIdList;
-      currentAliasList =
-          currentAliasIds.map((id) => ModelAlias.getModel(id)).toList();
-      // don't sort alias
-      currentAliasText = currentAliasList.isEmpty
-          ? ' ---'
-          : '${currentAliasList.length == 1 ? '-' : '-->'} ${currentAliasList.map((e) {
-                return e.title;
-              }).toList().join('\n- ')}';
-    } catch (e, stk) {
-      logger.error('process aliasIds: $e', stk);
-      rethrow;
-    }
-    try {
-      var taskIds = tp?.taskIds ?? bridge.trackPointTaskIdList;
-      taskList = taskIds.map((id) => ModelTask.getModel(id)).toList();
-      taskList.sort((a, b) => a.sortOrder - b.sortOrder);
-      tasksText = taskList.isEmpty
-          ? ' ---'
-          : taskList
-              .map((e) {
-                return '- ${e.title}';
-              })
-              .toList()
-              .join('\n');
-    } catch (e, stk) {
-      logger.error('process taskIds: $e', stk);
-      rethrow;
-    }
-    try {
-      var userIds = tp?.userIds ?? bridge.trackPointUserIdList;
-      userList = userIds.map((id) => ModelUser.getModel(id)).toList();
-      userList.sort((a, b) => a.sortOrder - b.sortOrder);
-      usersText = userList.isEmpty
-          ? ' ---'
-          : userList
-              .map((e) {
-                return '- ${e.title}';
-              })
-              .toList()
-              .join('\n');
-    } catch (e, stk) {
-      logger.error('process userIds: $e', stk);
-      rethrow;
-    }
-
-    try {
-      trackPointNotes = tp?.notes ?? bridge.trackPointUserNotes;
-      durationText = timeElapsed(tStart, tEnd, false);
-      var addr = tp?.address ?? bridge.currentAddress;
-      addressText = addr.isEmpty ? '---' : addr;
-    } catch (e, stk) {
-      logger.error('process notes: $e', stk);
-      rethrow;
-    }
-    try {
-      /// calendar
-      var calData = (tp?.calendarEventId ??
-              '${bridge.selectedCalendarId};${bridge.lastCalendarEventId}')
-          .split(';');
-      if (calData.isNotEmpty) {
-        calendarId = calData[0];
-      }
-      if (calData.length > 1) {
-        calendarEventId = calData[1];
-      }
-    } catch (e, stk) {
-      logger.error('process calendar: $e', stk);
-      rethrow;
-    }
-  }
+      this.trackPoint});
 }

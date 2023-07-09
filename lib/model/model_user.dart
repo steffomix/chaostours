@@ -78,6 +78,9 @@ class ModelUser extends Model {
   }
 
   static Future<List<ModelUser>> byIdList(List<int> ids) async {
+    if (ids.isEmpty) {
+      return <ModelUser>[];
+    }
     final rows = await DB.execute<List<Map<String, Object?>>>(
       (Transaction txn) async {
         return await txn.query(TableUser.table,

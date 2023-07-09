@@ -361,7 +361,9 @@ class ModelTrackPoint extends Model {
     );
     if (rows.isNotEmpty) {
       try {
-        fromMap(rows.first);
+        var model = fromMap(rows.first);
+        model.loadAssets();
+        return model;
       } catch (e, stk) {
         logger.error('byId: $e', stk);
         return null;
@@ -371,6 +373,9 @@ class ModelTrackPoint extends Model {
   }
 
   static Future<List<ModelTrackPoint>> byIdList(List<int> ids) async {
+    if (ids.isEmpty) {
+      return <ModelTrackPoint>[];
+    }
     final rows = await DB.execute<List<Map<String, Object?>>>(
       (Transaction txn) async {
         return await txn.query(TableTrackPoint.table,
@@ -383,7 +388,9 @@ class ModelTrackPoint extends Model {
     List<ModelTrackPoint> models = [];
     for (var row in rows) {
       try {
-        models.add(fromMap(row));
+        var model = fromMap(row);
+        await model.loadAssets();
+        models.add(model);
       } catch (e, stk) {
         logger.error('byId: $e', stk);
       }
@@ -405,7 +412,9 @@ class ModelTrackPoint extends Model {
     var models = <ModelTrackPoint>[];
     for (var row in rows) {
       try {
-        models.add(fromMap(row));
+        var model = fromMap(row);
+        await model.loadAssets();
+        models.add(model);
       } catch (e, stk) {
         logger.error('select: $e', stk);
       }
@@ -445,7 +454,9 @@ class ModelTrackPoint extends Model {
     );
     for (var row in rows) {
       try {
-        models.add(fromMap(row));
+        var model = fromMap(row);
+        await model.loadAssets();
+        models.add(model);
       } catch (e, stk) {
         logger.error('byAlias select models: $e', stk);
       }
@@ -478,6 +489,7 @@ class ModelTrackPoint extends Model {
     var models = <ModelTrackPoint>[];
     for (var model in rawModels) {
       if (GPS.distance(model.gps, gps) <= radius) {
+        await model.loadAssets();
         models.add(model);
       }
     }
@@ -543,6 +555,8 @@ class ModelTrackPoint extends Model {
     );
     var models = <ModelTrackPoint>[];
     for (var row in rows) {
+      var model = fromMap(row);
+      await model.loadAssets();
       try {
         models.add(fromMap(row));
       } catch (e, stk) {

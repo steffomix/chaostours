@@ -143,9 +143,9 @@ class AppWidgets {
   }
 
   static ListTile trackPointInfo(BuildContext context, ModelTrackPoint tp) {
-    var alias = tp.aliasIds.map((id) => ModelAlias.getModel(id).title);
-    var tasks = tp.taskIds.map((id) => ModelTask.getModel(id).title);
-    var users = tp.userIds.map((id) => ModelUser.getModel(id).title);
+    var alias = tp.aliasModels.map((model) => model.title);
+    var tasks = tp.taskModels.map((model) => model.title);
+    var users = tp.userModels.map((model) => model.title);
     return ListTile(
       title: ListBody(children: [
         Center(
@@ -179,38 +179,54 @@ class AppWidgets {
       required TextEditingController textController,
       required void Function() onUpdate,
       GPS? gps}) {
-    List<ModelTrackPoint> tpList = gps == null
-        ? ModelTrackPoint.search(textController.text)
-        : ModelTrackPoint.search(
-            textController.text, ModelTrackPoint.lastVisited(gps));
-
-    var searchWidget = ListTile(
-        subtitle: Text('Count: ${tpList.length}'),
-        title: AppWidgets.searchWidget(
-          context: context,
-          controller: textController,
-          onChange: (String value) {
-            if (value != textController.text) {
-              textController.text = value;
-              onUpdate();
+    return FutureBuilder<List<ModelTrackPoint>>(
+      future: ModelTrackPoint.search(textController.text),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return AppWidgets.loading('');
+        } else if (snapshot.hasError) {
+          logger.error(
+              'renderTrackPointSearchList ${snapshot.error ?? 'unknow error'}',
+              StackTrace.current);
+          return AppWidgets.loading(
+              'FutureBuilder Error: ${snapshot.error ?? 'unknow error'}');
+        } else {
+          if (snapshot.hasData) {
+            var data = snapshot.data!;
+            int count = data.length;
+            if (data.isEmpty) {
+              return ListView(children: const [
+                Text('\n\nNoch keine Haltepunkte erstellt')
+              ]);
+            } else {
+              var searchWidget = ListTile(
+                  subtitle: Text('Count: ${data.length}'),
+                  title: AppWidgets.searchWidget(
+                    context: context,
+                    controller: textController,
+                    onChange: (String value) {
+                      if (value != textController.text) {
+                        textController.text = value;
+                        onUpdate();
+                      }
+                    },
+                  ));
+              return ListView.builder(
+                  itemCount: data.length + 1,
+                  itemBuilder: (context, index) {
+                    if (index == 0) {
+                      return searchWidget;
+                    }
+                    return AppWidgets.trackPointInfo(context, data[index - 1]);
+                  });
             }
-          },
-        ));
-
-    if (tpList.isEmpty) {
-      return ListView(children: [
-        searchWidget,
-        const Text('\n\nNoch keine Haltepunkte erstellt')
-      ]);
-    }
-    return ListView.builder(
-        itemCount: tpList.length + 1,
-        itemBuilder: (context, index) {
-          if (index == 0) {
-            return searchWidget;
+          } else {
+            logger.warn('renderTrackPointSearchList FutureBuilder no data');
+            return ListView(children: const [Text('\n\nNo Data')]);
           }
-          return AppWidgets.trackPointInfo(context, tpList[index - 1]);
-        });
+        }
+      },
+    );
   }
 }
 

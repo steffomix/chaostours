@@ -121,7 +121,7 @@ class CheckboxController {
   final int idReference;
   String title;
   late bool checked;
-  bool deleted;
+  bool isActive;
   String subtitle;
   bool enabled;
   int group;
@@ -133,7 +133,7 @@ class CheckboxController {
     required this.title,
     this.group = 0,
     this.subtitle = '',
-    this.deleted = false,
+    this.isActive = true,
     this.onToggle,
     this.enabled = true,
   }) {
@@ -164,7 +164,7 @@ Widget createCheckbox(State widget, CheckboxController model) {
   TextStyle style = TextStyle(
       color: model.enabled ? Colors.black : Colors.grey,
       decoration:
-          model.deleted ? TextDecoration.lineThrough : TextDecoration.none);
+          model.isActive ? TextDecoration.none : TextDecoration.lineThrough);
 
   return ListTile(
     subtitle: model.subtitle.trim().isEmpty

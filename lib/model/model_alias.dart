@@ -130,6 +130,9 @@ class ModelAlias extends Model {
 
   ///
   static Future<List<ModelAlias>> byIdList(List<int> ids) async {
+    if (ids.isEmpty) {
+      return <ModelAlias>[];
+    }
     final rows = await DB.execute<List<Map<String, Object?>>>(
       (Transaction txn) async {
         return await txn.query(TableAlias.table,

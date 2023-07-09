@@ -47,6 +47,11 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
   /// editable fields
   List<int> tpTasks = [];
   List<int> tpUsers = [];
+
+  List<ModelAlias> trackPointAliasModels = [];
+
+  List<ModelUser> allUserModels = [];
+  List<ModelTask> allTaskModels = [];
   TextEditingController tpNotes = TextEditingController();
 
   late ModelTrackPoint trackPoint;
@@ -71,14 +76,12 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
 
   /// current trackpoint
   Widget trackPointInfo(BuildContext context) {
-    var aliasList = trackPoint.aliasIds.map((id) => ModelAlias.getModel(id));
-
     return Container(
         padding: const EdgeInsets.all(10),
         child: ListBody(children: [
           Center(
               heightFactor: 2,
-              child: aliasList.isEmpty
+              child: trackPointAliasModels.isEmpty
                   ? TextButton(
                       child: Text('OSM: ${trackPoint.address}'),
                       onPressed: () async {
@@ -89,9 +92,9 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
                     )
                   : TextButton(
                       child: Text(
-                          'Alias: ${aliasList.map((e) => e.title).join('\n- ')}'),
+                          'Alias: ${trackPointAliasModels.map((e) => e.title).join('\n- ')}'),
                       onPressed: () async {
-                        int id = aliasList.first.id;
+                        int id = trackPointAliasModels.first.id;
                         await Navigator.pushNamed(
                             context, AppRoutes.editAlias.route,
                             arguments: id);
@@ -101,19 +104,19 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
         ]));
   }
 
-  List<Widget> taskCheckboxes(context) {
+  List<Widget> taskCheckboxes() {
     var referenceList = tpTasks;
     var checkBoxes = <Widget>[];
-    for (var tp in ModelTask.getAll()) {
-      if (!tp.deleted) {
+    for (var model in allTaskModels) {
+      if (model.isActive) {
         checkBoxes.add(createCheckbox(
             this,
             CheckboxController(
-                idReference: tp.id,
+                idReference: model.id,
                 referenceList: referenceList,
-                deleted: tp.deleted,
-                title: tp.title,
-                subtitle: tp.notes,
+                isActive: model.isActive,
+                title: model.title,
+                subtitle: model.description,
                 onToggle: () {
                   modify();
                 })));
@@ -122,19 +125,19 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
     return checkBoxes;
   }
 
-  List<Widget> userCheckboxes(context) {
+  List<Widget> userCheckboxes() {
     var referenceList = tpUsers;
     var checkBoxes = <Widget>[];
-    for (var tp in ModelUser.getAll()) {
-      if (!tp.deleted) {
+    for (var model in allUserModels) {
+      if (model.isActive) {
         checkBoxes.add(createCheckbox(
             this,
             CheckboxController(
-                idReference: tp.id,
+                idReference: model.id,
                 referenceList: referenceList,
-                deleted: tp.deleted,
-                title: tp.title,
-                subtitle: tp.notes,
+                isActive: model.isActive,
+                title: model.title,
+                subtitle: model.description,
                 onToggle: () {
                   modify();
                 })));
@@ -144,10 +147,10 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
   }
 
   bool dropdownUserIsOpen = false;
-  Widget dropdownUser(context) {
+  Widget dropdownUser() {
     /// render selected users
     List<String> userList = [];
-    for (var item in ModelUser.getAll()) {
+    for (var item in allUserModels) {
       if (tpUsers.contains(item.id)) {
         userList.add(item.title);
       }
@@ -166,7 +169,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
       ),
       !dropdownUserIsOpen
           ? const SizedBox.shrink()
-          : Column(children: userCheckboxes(context))
+          : Column(children: userCheckboxes())
     ];
     return ListBody(children: items);
   }
@@ -175,7 +178,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
   Widget dropdownTasks(context) {
     /// render selected tasks
     List<String> taskList = [];
-    for (var item in ModelTask.getAll()) {
+    for (var item in allTaskModels) {
       if (tpTasks.contains(item.id)) {
         taskList.add(item.title);
       }
@@ -194,7 +197,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
       ),
       !dropdownTasksIsOpen
           ? const SizedBox.shrink()
-          : Column(children: taskCheckboxes(context))
+          : Column(children: taskCheckboxes())
     ];
     return ListBody(children: items);
   }
@@ -240,11 +243,23 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
     try {
       if (!initialized) {
         final id = (ModalRoute.of(context)?.settings.arguments ?? 0) as int;
-        trackPoint = ModelTrackPoint.byId(id);
-        tpTasks = trackPoint.taskIds;
-        tpUsers = trackPoint.userIds;
-        tpNotes.text = trackPoint.notes;
-        initialized = true;
+        ModelTrackPoint.byId(id).then((ModelTrackPoint? trackPoint) async {
+          if (trackPoint != null) {
+            allUserModels = await ModelUser.select();
+            allTaskModels = await ModelTask.select();
+            trackPointAliasModels =
+                await ModelAlias.byIdList(trackPoint.aliasIds);
+            setState(() {
+              tpTasks = trackPoint.taskIds;
+              tpUsers = trackPoint.userIds;
+              tpNotes.text = trackPoint.notes;
+              initialized = true;
+            });
+          }
+        }).onError((error, stackTrace) {
+          logger.error('initialize build $error', stackTrace);
+        });
+        return AppWidgets.loading('');
       }
       Widget divider = AppWidgets.divider();
       body = ListView(children: [
@@ -254,7 +269,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
         divider,
         dropdownTasks(context),
         divider,
-        dropdownUser(context),
+        dropdownUser(),
         divider,
         notes(context),
       ]);
@@ -291,9 +306,9 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
           onTap: (int id) async {
             if (id == 0 && modified.value) {
               trackPoint.notes = tpNotes.text;
-              await ModelTrackPoint.update(trackPoint);
-              await AppCalendar()
-                  .completeCalendarEvent(TrackPointData(tp: trackPoint));
+              await trackPoint.update();
+              await AppCalendar().completeCalendarEvent(
+                  await TrackPointData.trackPointData(trackPoint: trackPoint));
               if (mounted) {
                 Navigator.pop(context);
               }
