@@ -193,7 +193,6 @@ class AppWidgets {
         } else {
           if (snapshot.hasData) {
             var data = snapshot.data!;
-            int count = data.length;
             if (data.isEmpty) {
               return ListView(children: const [
                 Text('\n\nNoch keine Haltepunkte erstellt')

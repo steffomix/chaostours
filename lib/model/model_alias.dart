@@ -107,6 +107,23 @@ class ModelAlias extends Model {
     };
   }
 
+  static Future<int> count() async {
+    return await DB.execute<int>(
+      (Transaction txn) async {
+        const col = 'count';
+        var rows = await txn.query(TableAlias.table,
+            columns: ['count ${TableAlias.primaryKey.column} as $col'],
+            groupBy: TableAlias.primaryKey.column);
+
+        if (rows.isNotEmpty) {
+          return DB.parseInt(rows.first[col], fallback: 0);
+        } else {
+          return 0;
+        }
+      },
+    );
+  }
+
   ///
   static Future<ModelAlias?> byId(int id) async {
     final rows = await DB.execute<List<Map<String, Object?>>>(

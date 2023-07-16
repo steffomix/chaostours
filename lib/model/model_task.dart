@@ -58,6 +58,23 @@ class ModelTask extends Model {
     };
   }
 
+  static Future<int> count() async {
+    return await DB.execute<int>(
+      (Transaction txn) async {
+        const col = 'count';
+        var rows = await txn.query(TableTask.table,
+            columns: ['count ${TableTask.primaryKey.column} as $col'],
+            groupBy: TableTask.primaryKey.column);
+
+        if (rows.isNotEmpty) {
+          return DB.parseInt(rows.first[col], fallback: 0);
+        } else {
+          return 0;
+        }
+      },
+    );
+  }
+
   static Future<ModelTask?> byId(int id) async {
     final rows = await DB.execute<List<Map<String, Object?>>>(
       (Transaction txn) async {

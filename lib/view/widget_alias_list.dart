@@ -21,9 +21,52 @@ import 'package:flutter/material.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/conf/app_colors.dart';
+import 'package:chaostours/model/model.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/gps.dart';
+
+class AsyncViewBuilder {
+  static final Logger logger = Logger.logger<AsyncViewBuilder>();
+  int totalItemCount = 0;
+
+  Widget build<T>(
+      {required BuildContext context,
+      required Future<T> Function() loader,
+      required Widget Function(BuildContext context, T data) widgetBuilder}) {
+    return FutureBuilder<T>(
+      future: loader(),
+      builder: (context, snapshot) {
+        /// connection state
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return AppWidgets.loading('');
+        } else if (snapshot.hasError) {
+          /// on error
+          var msg =
+              'AsyncViewBuilder $T build: ${snapshot.error ?? 'unknown error'}';
+          logger.error(msg, StackTrace.current);
+          return AppWidgets.loading(msg);
+        } else {
+          /// no data
+          if (!snapshot.hasData) {
+            return AppWidgets.loading('No Data');
+          } else {
+            /// final widget return
+            var viewData = snapshot.data;
+            return ListView.builder(
+              itemCount: (viewData as AsyncViewBuilder).totalItemCount,
+              itemBuilder: (context, index) {
+                return widgetBuilder(context, viewData);
+              },
+            );
+          }
+        }
+      },
+    );
+  }
+}
+
+class AliasViewBuilder extends AsyncViewBuilder {}
 
 class WidgetAliasList extends StatefulWidget {
   const WidgetAliasList({super.key});
@@ -51,11 +94,11 @@ class _WidgetAliasList extends State<WidgetAliasList> {
     super.initState();
   }
 
-  Widget title(BuildContext context, ModelAlias alias) {
+  Widget title(ModelAlias model) {
     var lines =
-        (alias.title.length / 50).round() + (alias.title.split('\n').length);
-    int dur = DateTime.now().difference(alias.lastVisited).inDays;
-    int count = ModelTrackPoint.countAlias(alias.id);
+        (model.title.length / 50).round() + (model.title.split('\n').length);
+    int dur = DateTime.now().difference(model.lastVisited).inDays;
+    int count = ModelTrackPoint.countAlias(model.id);
     return ListTile(
         subtitle:
             Text('${count}x, ${count == 0 ? 'noch nie' : 'vor $dur Tage'}'),
@@ -65,17 +108,17 @@ class _WidgetAliasList extends State<WidgetAliasList> {
                 hintText: 'Alias Bezeichnung', border: InputBorder.none),
             minLines: lines,
             maxLines: lines + 2,
-            controller: TextEditingController(text: alias.title),
+            controller: TextEditingController(text: model.title),
             onChanged: ((value) {
               if (value.isNotEmpty) {
-                alias.title = value;
+                model.title = value;
               }
             })));
   }
 
-  Widget subtitle(BuildContext context, ModelAlias alias) {
+  Widget subtitle(ModelAlias model) {
     var lines =
-        (alias.title.length / 50).round() + (alias.title.split('\n').length);
+        (model.title.length / 50).round() + (model.title.split('\n').length);
     return TextField(
         readOnly: true,
         style: const TextStyle(fontSize: 12),
@@ -83,22 +126,22 @@ class _WidgetAliasList extends State<WidgetAliasList> {
             const InputDecoration(border: InputBorder.none, isDense: true),
         minLines: 1,
         maxLines: lines,
-        controller: TextEditingController(text: alias.notes),
+        controller: TextEditingController(text: model.description),
         onChanged: ((value) {
-          alias.notes = value;
+          model.description = value;
         }));
   }
 
-  Widget btnInfo(BuildContext context, alias) {
+  Widget btnInfo(BuildContext context, ModelAlias model) {
     return IconButton(
       icon: Icon(Icons.info_outline_rounded,
           size: 30,
-          color: alias.deleted
+          color: model.isActive
               ? Colors.black
-              : AppColors.aliasStatusColor(alias.status)),
+              : AppColors.aliasStatusColor(model.visibility)),
       onPressed: () {
         Navigator.pushNamed(context, AppRoutes.listAliasTrackpoints.route,
-                arguments: alias.id)
+                arguments: model.id)
             .then((_) {
           setState(() {});
         });
@@ -106,7 +149,7 @@ class _WidgetAliasList extends State<WidgetAliasList> {
     );
   }
 
-  Widget searchWidget(BuildContext context) {
+  Widget searchWidget() {
     return TextField(
       controller: controller,
       minLines: 1,
@@ -121,10 +164,18 @@ class _WidgetAliasList extends State<WidgetAliasList> {
   }
 
   Widget body(BuildContext context) {
+    return AliasViewBuilder().build<AliasViewBuilder>(
+        context: context,
+        loader: () {},
+        widgetBuilder: (BuildContext context, AliasViewBuilder builder) {
+          builder.totalItemCount;
+        });
+  }
+
+  Widget __body(BuildContext context) {
     var list = <ModelAlias>[];
-    var select = _listMode == 1
-        ? ModelAlias.nextAlias(gps: _gps, all: true)
-        : ModelAlias.lastVisitedAlias(true);
+    var select =
+        _listMode == 1 ? ModelAlias.nextAlias(gps: _gps) : ModelAlias.select();
 
     for (var alias in select) {
       if (search.isEmpty) {
@@ -138,26 +189,24 @@ class _WidgetAliasList extends State<WidgetAliasList> {
     var widgets = <Widget>[];
 
     ///
-    widgets.add(searchWidget(context));
+    widgets.add(searchWidget());
     widgets.add(AppWidgets.divider());
 
     return ListView.builder(
         itemCount: list.length + 1,
         itemBuilder: (BuildContext context, int id) {
           if (id == 0) {
-            return ListBody(
-                children: [searchWidget(context), AppWidgets.divider()]);
+            return ListBody(children: [searchWidget(), AppWidgets.divider()]);
           }
           var alias = list[id - 1];
           return ListBody(children: [
-            alias.notes.trim().isEmpty
+            alias.description.trim().isEmpty
                 ? ListTile(
-                    trailing: btnInfo(context, alias),
-                    title: title(context, alias))
+                    trailing: btnInfo(context, alias), title: title(alias))
                 : ListTile(
                     trailing: btnInfo(context, alias),
-                    title: title(context, alias),
-                    subtitle: subtitle(context, alias),
+                    title: title(alias),
+                    subtitle: subtitle(alias),
                   ),
             AppWidgets.divider()
           ]);

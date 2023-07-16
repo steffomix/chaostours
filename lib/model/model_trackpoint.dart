@@ -126,6 +126,23 @@ class ModelTrackPoint extends Model {
         notes: (map[TableTrackPoint.notes.column] ?? '').toString());
   }
 
+  static Future<int> count() async {
+    return await DB.execute<int>(
+      (Transaction txn) async {
+        const col = 'count';
+        var rows = await txn.query(TableTrackPoint.table,
+            columns: ['count ${TableTrackPoint.primaryKey.column} as $col'],
+            groupBy: TableTrackPoint.primaryKey.column);
+
+        if (rows.isNotEmpty) {
+          return DB.parseInt(rows.first[col], fallback: 0);
+        } else {
+          return 0;
+        }
+      },
+    );
+  }
+
   ///
   /// insert only if Model doesn't have a valid (not null) _id
   /// otherwise writes table to disk

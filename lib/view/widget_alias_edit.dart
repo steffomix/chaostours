@@ -40,12 +40,13 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
   // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetAliasEdit>();
 
-  late ModelAlias alias;
-  bool initialized = false;
+  ModelAlias? _alias;
   ValueNotifier<bool> modified = ValueNotifier<bool>(false);
   TextEditingController addressController = TextEditingController();
   TextEditingController notesController = TextEditingController();
   TextEditingController radiusController = TextEditingController();
+
+  String loadingMsg = '';
 
   @override
   void dispose() {
@@ -58,13 +59,25 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
     final id = ModalRoute.of(context)!.settings.arguments as int;
 
     ///
-    if (!initialized) {
-      alias = ModelAlias.getModel(id).clone();
-      initialized = true;
+    if (_alias == null) {
+      loadingMsg = 'Loading Alias #$id';
+      ModelAlias.byId(id).then(
+        (ModelAlias? model) {
+          if (model != null) {
+            setState(() {
+              _alias = model;
+            });
+          }
+        },
+      ).onError((error, stackTrace) {
+        loadingMsg = 'load alias on initialize build: $error';
+        logger.error(loadingMsg, stackTrace);
+      });
+      return AppWidgets.loading(loadingMsg);
     }
-
+    ModelAlias alias = _alias!;
     addressController.text = alias.title;
-    notesController.text = alias.notes;
+    notesController.text = alias.description;
     radiusController.text = alias.radius.toString();
 
     return AppWidgets.scaffold(context,
@@ -100,9 +113,9 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
               } else if (id == 1) {
                 var gps = await GPS.gps();
                 await GPS.launchGoogleMaps(
-                    gps.lat, gps.lon, alias.lat, alias.lon);
+                    gps.lat, gps.lon, alias.gps.lat, alias.gps.lon);
               } else if (id == 2) {
-                ModelAlias.update(alias).then((_) {
+                alias.update().then((_) {
                   Fluttertoast.showToast(msg: 'Alias updated');
                   Navigator.pop(context);
                 });
@@ -137,16 +150,19 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                         size: 40,
                       ),
                       title: Text(
-                          'Latitude/Breitengrad:\n${alias.lat}\n\nLongitude/Längengrad:\n${alias.lon}')),
+                          'Latitude/Breitengrad:\n${alias.gps.lat}\n\nLongitude/Längengrad:\n${alias.gps.lon}')),
                   onPressed: () {
                     Navigator.pushNamed(context, AppRoutes.osm.route,
                             arguments: alias.id)
                         .then(
                       (value) {
-                        initialized = false;
-                        DataBridge.instance
-                            .reload()
-                            .then((_) => setState(() {}));
+                        ModelAlias.byId(alias.id).then(
+                          (ModelAlias? model) {
+                            setState(() {
+                              _alias = model;
+                            });
+                          },
+                        );
                       },
                     );
                   },
@@ -165,7 +181,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                 controller: notesController,
                 onChanged: (value) {
                   modify();
-                  alias.notes = value.trim();
+                  alias.description = value.trim();
                 },
               )),
 
@@ -215,7 +231,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                     ),
                     leading: Radio<AliasVisibility>(
                         value: AliasVisibility.public,
-                        groupValue: alias.status,
+                        groupValue: alias.visibility,
                         onChanged: (AliasVisibility? val) =>
                             setStatus(context, val))),
                 ListTile(
@@ -231,7 +247,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                     ),
                     leading: Radio<AliasVisibility>(
                         value: AliasVisibility.privat,
-                        groupValue: alias.status,
+                        groupValue: alias.visibility,
                         onChanged: (AliasVisibility? val) =>
                             setStatus(context, val))),
                 ListTile(
@@ -249,7 +265,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                     ),
                     leading: Radio<AliasVisibility>(
                         value: AliasVisibility.restricted,
-                        groupValue: alias.status,
+                        groupValue: alias.visibility,
                         onChanged: (AliasVisibility? val) =>
                             setStatus(context, val)))
               ])),
@@ -263,9 +279,9 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                 softWrap: true,
               ),
               leading: Checkbox(
-                value: alias.deleted,
+                value: alias.isActive,
                 onChanged: (val) {
-                  alias.deleted = val ?? false;
+                  alias.isActive = val ?? false;
                   modify();
                   setState(() {});
                 },
@@ -278,7 +294,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
   }
 
   void setStatus(BuildContext context, AliasVisibility? val) {
-    alias.status = val ?? AliasVisibility.restricted;
+    _alias?.visibility = (val ?? AliasVisibility.restricted);
     modified.value = true;
     setState(() {});
   }
