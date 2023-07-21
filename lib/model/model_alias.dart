@@ -68,6 +68,7 @@ class ModelAlias extends Model {
 
   /// temporary set during search for nearest Alias
   int sortDistance = 0;
+  int trackPointCount = 0;
 
   ModelAlias({
     super.id = 0,
@@ -122,6 +123,23 @@ class ModelAlias extends Model {
         }
       },
     );
+  }
+
+  Future<int> countTrackPoints() async {
+    const col = 'count';
+    var rows = await DB.execute(
+      (Transaction txn) async {
+        return await txn.query(TableTrackPointAlias.table,
+            columns: ['count ${TableTrackPointAlias.idAlias.column} as $col'],
+            where: '$col = ?',
+            whereArgs: [id],
+            groupBy: col);
+      },
+    );
+    if (rows.isNotEmpty) {
+      return DB.parseInt(rows.first[col]);
+    }
+    return 0;
   }
 
   ///

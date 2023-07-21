@@ -26,47 +26,29 @@ import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/gps.dart';
 
-class AsyncViewBuilder {
-  static final Logger logger = Logger.logger<AsyncViewBuilder>();
-  int totalItemCount = 0;
+class _ViewData {
+  final List<ModelAlias> models;
 
-  Widget build<T>(
-      {required BuildContext context,
-      required Future<T> Function() loader,
-      required Widget Function(BuildContext context, T data) widgetBuilder}) {
-    return FutureBuilder<T>(
-      future: loader(),
-      builder: (context, snapshot) {
-        /// connection state
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return AppWidgets.loading('');
-        } else if (snapshot.hasError) {
-          /// on error
-          var msg =
-              'AsyncViewBuilder $T build: ${snapshot.error ?? 'unknown error'}';
-          logger.error(msg, StackTrace.current);
-          return AppWidgets.loading(msg);
-        } else {
-          /// no data
-          if (!snapshot.hasData) {
-            return AppWidgets.loading('No Data');
-          } else {
-            /// final widget return
-            var viewData = snapshot.data;
-            return ListView.builder(
-              itemCount: (viewData as AsyncViewBuilder).totalItemCount,
-              itemBuilder: (context, index) {
-                return widgetBuilder(context, viewData);
-              },
-            );
-          }
-        }
-      },
-    );
+  _ViewData({required this.models});
+
+  static Future<_ViewData> load() async {
+    List<ModelAlias> models = await ModelAlias.select();
+    return _ViewData(models: await _countTrackPoints(models));
+  }
+
+  static Future<_ViewData> search(String search) async {
+    List<ModelAlias> models = await ModelAlias.search(search);
+    return _ViewData(models: await _countTrackPoints(models));
+  }
+
+  static Future<List<ModelAlias>> _countTrackPoints(
+      List<ModelAlias> models) async {
+    for (var model in models) {
+      model.trackPointCount = await model.countTrackPoints();
+    }
+    return models;
   }
 }
-
-class AliasViewBuilder extends AsyncViewBuilder {}
 
 class WidgetAliasList extends StatefulWidget {
   const WidgetAliasList({super.key});
@@ -84,6 +66,8 @@ class _WidgetAliasList extends State<WidgetAliasList> {
   String search = '';
   static TextEditingController controller = TextEditingController();
 
+  List<ModelAlias> aliasModels = [];
+
   @override
   void dispose() {
     super.dispose();
@@ -98,7 +82,7 @@ class _WidgetAliasList extends State<WidgetAliasList> {
     var lines =
         (model.title.length / 50).round() + (model.title.split('\n').length);
     int dur = DateTime.now().difference(model.lastVisited).inDays;
-    int count = ModelTrackPoint.countAlias(model.id);
+    int count = model.trackPointCount;
     return ListTile(
         subtitle:
             Text('${count}x, ${count == 0 ? 'noch nie' : 'vor $dur Tage'}'),
@@ -163,56 +147,6 @@ class _WidgetAliasList extends State<WidgetAliasList> {
     );
   }
 
-  Widget body(BuildContext context) {
-    return AliasViewBuilder().build<AliasViewBuilder>(
-        context: context,
-        loader: () {},
-        widgetBuilder: (BuildContext context, AliasViewBuilder builder) {
-          builder.totalItemCount;
-        });
-  }
-
-  Widget __body(BuildContext context) {
-    var list = <ModelAlias>[];
-    var select =
-        _listMode == 1 ? ModelAlias.nextAlias(gps: _gps) : ModelAlias.select();
-
-    for (var alias in select) {
-      if (search.isEmpty) {
-        list.add(alias);
-      } else if (alias.title.toLowerCase().contains(search.toLowerCase()) ||
-          alias.notes.toLowerCase().contains(search.toLowerCase())) {
-        list.add(alias);
-      }
-    }
-
-    var widgets = <Widget>[];
-
-    ///
-    widgets.add(searchWidget());
-    widgets.add(AppWidgets.divider());
-
-    return ListView.builder(
-        itemCount: list.length + 1,
-        itemBuilder: (BuildContext context, int id) {
-          if (id == 0) {
-            return ListBody(children: [searchWidget(), AppWidgets.divider()]);
-          }
-          var alias = list[id - 1];
-          return ListBody(children: [
-            alias.description.trim().isEmpty
-                ? ListTile(
-                    trailing: btnInfo(context, alias), title: title(alias))
-                : ListTile(
-                    trailing: btnInfo(context, alias),
-                    title: title(alias),
-                    subtitle: subtitle(alias),
-                  ),
-            AppWidgets.divider()
-          ]);
-        });
-  }
-
   int selectedNavBarItem = 0;
   BottomNavigationBar navBar(BuildContext context) {
     return BottomNavigationBar(
@@ -257,8 +191,38 @@ class _WidgetAliasList extends State<WidgetAliasList> {
 
   @override
   Widget build(BuildContext context) {
+    var builder = FutureBuilder<_ViewData>(
+        future: search.isEmpty ? _ViewData.load() : _ViewData.search(search),
+        builder: (BuildContext context, AsyncSnapshot<_ViewData> snapshot) {
+          var data = snapshot.data!;
+          var itemCount = data.models.length;
+          var models = data.models;
+          return AppWidgets.checkSnapshot(snapshot) ??
+              ListView.builder(
+                  itemCount: itemCount + 1,
+                  itemBuilder: ((BuildContext context, int id) {
+                    if (id == 0) {
+                      return ListBody(
+                          children: [searchWidget(), AppWidgets.divider()]);
+                    }
+                    var model = models[id - 1];
+                    return ListBody(children: [
+                      model.description.trim().isEmpty
+                          ? ListTile(
+                              trailing: btnInfo(context, model),
+                              title: title(model))
+                          : ListTile(
+                              trailing: btnInfo(context, model),
+                              title: title(model),
+                              subtitle: subtitle(model),
+                            ),
+                      AppWidgets.divider()
+                    ]);
+                  }));
+        });
+
     return AppWidgets.scaffold(context,
-        body: body(context),
+        body: builder,
         navBar: navBar(context),
         appBar: AppBar(title: const Text('Alias List')));
   }

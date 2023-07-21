@@ -105,6 +105,24 @@ class AppWidgets {
     return scaffold(context, body: loading(info ?? 'Loading...'));
   }
 
+  static Widget? checkSnapshot<T>(AsyncSnapshot<T> snapshot) {
+    if (snapshot.connectionState == ConnectionState.waiting) {
+      return AppWidgets.loading('');
+    } else if (snapshot.hasError) {
+      /// on error
+      var msg =
+          'AsyncViewBuilder $T build: ${snapshot.error ?? 'unknown error'}';
+      logger.error(msg, StackTrace.current);
+      return AppWidgets.loading(msg);
+    } else {
+      /// no data
+      if (!snapshot.hasData) {
+        return AppWidgets.loading('No Data');
+      }
+      return null;
+    }
+  }
+
   static Future<T?> dialog<T>(
       {required BuildContext context,
       required List<Widget> contents,
