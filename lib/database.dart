@@ -111,7 +111,7 @@ class DB {
 class _AppDatabase {
   static final Logger logger = Logger.logger<_AppDatabase>();
 
-  static const dbFile = 'chaostours.sqlite.db';
+  static const dbFile = 'chaostours.sqlite';
   static const dbVersion = 1;
 
   static String? _path;
@@ -143,7 +143,7 @@ class _AppDatabase {
           ]) {
             batch.rawQuery(sql);
           }
-          batch.commit();
+          await batch.commit();
         });
       });
       return db;

@@ -33,7 +33,8 @@ class _ViewData {
 
   static Future<_ViewData> load() async {
     List<ModelAlias> models = await ModelAlias.select();
-    return _ViewData(models: await _countTrackPoints(models));
+    var data = _ViewData(models: await _countTrackPoints(models));
+    return data;
   }
 
   static Future<_ViewData> search(String search) async {

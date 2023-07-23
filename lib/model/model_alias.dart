@@ -124,14 +124,13 @@ class ModelAlias extends Model {
   }
 
   Future<int> countTrackPoints() async {
-    const col = 'count';
+    const col = 'ct';
     var rows = await DB.execute(
       (Transaction txn) async {
         return await txn.query(TableTrackPointAlias.table,
-            columns: ['count ${TableTrackPointAlias.idAlias.column} as $col'],
-            where: '$col = ?',
-            whereArgs: [id],
-            groupBy: col);
+            columns: ['count(${TableTrackPointAlias.idAlias.column}) as $col'],
+            where: '${TableTrackPointAlias.idAlias.column} = ?',
+            whereArgs: [id]);
       },
     );
     if (rows.isNotEmpty) {

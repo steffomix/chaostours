@@ -38,6 +38,18 @@ import 'dart:isolate';
 class AppLoader {
   static Logger logger = Logger.logger<AppLoader>();
 
+  static Future<void> dbToFile() async {
+    var dbPath = await DB.getPath();
+    var downloadDir = io.Directory('/storage/emulated/0/Download');
+    io.File(dbPath).copy('${downloadDir.path}/chaostours.sqlite');
+  }
+
+  static Future<void> fileToDb() async {
+    var dbPath = await DB.getPath();
+    var downloadDir = io.Directory('/storage/emulated/0/Download');
+    io.File('${downloadDir.path}/chaostours.sqlite').copy(dbPath);
+  }
+
   ///
   /// preload recources
   static Future<void> preload() async {
@@ -50,14 +62,8 @@ class AppLoader {
     try {
       // reset background logger
       //await Cache.setValue<List<String>>(CacheKeys.backgroundLogger, []);
-      var path = await DB.getPath();
-      //await DB.deleteDatabase(path);
-      var dir = await io.Directory(
-          '/data/user/0/com.stefanbrinkmann.chaosToursUnlimited/databases'); //DB.getDir();
-      var files = await dir.list().toList();
-
-      var schemata =
-          [...DatabaseSchema.schemata, ...DatabaseSchema.indexes].join('\n\n');
+      //var downloadFiles = await downloadDir.list().toList();
+      await fileToDb();
       await Future.delayed(const Duration(seconds: 1));
       await DB.open();
       Logger.globalLogLevel = LogLevel.verbose;
