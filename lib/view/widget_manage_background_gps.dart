@@ -33,6 +33,12 @@ class WidgetManageBackgroundGps extends StatefulWidget {
 }
 
 class _WidgetManageBackgroundGpsState extends State<WidgetManageBackgroundGps> {
+  @override
+  Widget build(BuildContext context) {
+    return AppWidgets.scaffold(context,
+        body: AppWidgets.loading('Widget under construction'));
+  }
+  /* 
   List<Widget> items = [
     AppWidgets.loading('Checking Background Tracking Status')
   ];
@@ -206,5 +212,5 @@ class _WidgetManageBackgroundGpsState extends State<WidgetManageBackgroundGps> {
             padding: const EdgeInsets.all(5),
             child: ListView(children: [...items])),
         appBar: AppBar(title: const Text('Cache & Backgr. GPS')));
-  }
+  } */
 }

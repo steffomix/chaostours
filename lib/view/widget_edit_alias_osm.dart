@@ -78,6 +78,12 @@ class WidgetOsm extends StatefulWidget {
 }
 
 class _WidgetOsm extends State<WidgetOsm> {
+  @override
+  Widget build(BuildContext context) {
+    return AppWidgets.scaffold(context,
+        body: AppWidgets.loading('Widget under construction'));
+  }
+  /* 
   static final Logger logger = Logger.logger<WidgetOsm>();
 
   /// screen
@@ -554,5 +560,5 @@ class _WidgetOsm extends State<WidgetOsm> {
 
     _initialized = true;
     return body;
-  }
+  } */
 }

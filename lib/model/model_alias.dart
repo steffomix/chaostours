@@ -14,10 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import 'dart:html';
 import 'dart:math';
 import 'package:chaostours/conf/app_settings.dart';
-import 'package:flutter/services.dart';
 
 ///
 import 'package:chaostours/model/model.dart';

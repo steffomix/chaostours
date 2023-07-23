@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-
+import 'dart:io' as io;
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart' as flite;
 
@@ -29,9 +29,21 @@ class DB {
   /// </pre>
   static var execute = _AppDatabase._query;
 
-  static Future<String> getPath = _AppDatabase.getPath();
+  static var getPath = _AppDatabase.getPath;
+
+  static Future<io.Directory> getDir() async {
+    return io.Directory(await flite.getDatabasesPath());
+  }
 
   static bool closeDb = false;
+
+  static Future<void> deleteDatabase(String path) async {
+    flite.deleteDatabase(path);
+  }
+
+  static Future<flite.Database> open() async {
+    return _AppDatabase._getDatabase();
+  }
 
   static int parseInt(Object? value, {int fallback = 0}) {
     if (value is int) {
@@ -99,7 +111,7 @@ class DB {
 class _AppDatabase {
   static final Logger logger = Logger.logger<_AppDatabase>();
 
-  static const dbFile = 'chaostours.sqlite';
+  static const dbFile = 'chaostours.sqlite.db';
   static const dbVersion = 1;
 
   static String? _path;
@@ -107,22 +119,38 @@ class _AppDatabase {
 
   static Future<void> _closeDb() async {
     await _database?.close();
+    _database?.isOpen;
     _database = null;
   }
 
   /// /data/user/0/com..../databases/chaostours.sqlite
   static Future<String> getPath() async {
-    var path = _path ?? await flite.getDatabasesPath();
-    path = join(path, dbFile);
-    logger.log('database path: $path');
-    return path;
+    _path ??= join(await flite.getDatabasesPath(), dbFile);
+    return _path!;
   }
 
   static Future<flite.Database> _getDatabase() async {
-    return _database ??= await flite.openDatabase(await getPath(),
-        version: dbVersion,
-        singleInstance: false,
-        onCreate: (flite.Database db, int version) async {});
+    var path = await getPath();
+    try {
+      var db = _database ??= await flite
+          .openDatabase(path, version: dbVersion, singleInstance: true,
+              onCreate: (flite.Database db, int version) async {
+        await db.transaction((txn) async {
+          var batch = txn.batch();
+          for (var sql in [
+            ...DatabaseSchema.schemata,
+            ...DatabaseSchema.indexes
+          ]) {
+            batch.rawQuery(sql);
+          }
+          batch.commit();
+        });
+      });
+      return db;
+    } catch (e, stk) {
+      logger.error('_getDatabase: $e', stk);
+      rethrow;
+    }
   }
 
   /// ```dart
@@ -134,12 +162,18 @@ class _AppDatabase {
   /// ```
   static Future<T> _query<T>(
       Future<T> Function(flite.Transaction txn) action) async {
-    flite.Database db = await _getDatabase();
-    T result = await db.transaction<T>(action);
-    if (DB.closeDb) {
-      await _closeDb();
+    try {
+      flite.Database db = await _getDatabase();
+
+      T result = await db.transaction<T>(action);
+      if (DB.closeDb) {
+        await _closeDb();
+      }
+      return result;
+    } catch (e, stk) {
+      logger.error('_query:: $e', stk);
+      rethrow;
     }
-    return result;
   }
 }
 
@@ -548,24 +582,18 @@ enum TableAliasGroup {
 
 class DatabaseSchema {
   static final List<String> schemata = [
-    /// trackPoint
     TableTrackPoint.schema,
-    TableTrackPointTask.schema,
     TableTrackPointAlias.schema,
+    TableTrackPointTask.schema,
     TableTrackPointUser.schema,
-
-    /// alias
-    TableAlias.schema,
-    TableAliasGroup.schema,
-    TableAliasTopic.schema,
-
-    /// task
     TableTask.schema,
-    TableTaskGroup.schema,
-
-    /// user
+    TableAlias.schema,
     TableUser.schema,
+    TableTaskGroup.schema,
+    TableAliasGroup.schema,
     TableUserGroup.schema,
+    TableTopic.schema,
+    TableAliasTopic.schema,
   ];
 
   static final List<String> indexes = [

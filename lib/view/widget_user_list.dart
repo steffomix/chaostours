@@ -39,6 +39,12 @@ class WidgetUserList extends StatefulWidget {
 }
 
 class _WidgetUserList extends State<WidgetUserList> {
+  @override
+  Widget build(BuildContext context) {
+    return AppWidgets.scaffold(context,
+        body: AppWidgets.loading('Widget under construction'));
+  }
+  /* 
   // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetUserList>();
 
@@ -348,5 +354,5 @@ class _WidgetUserList extends State<WidgetUserList> {
                 setState(() {});
               }
             }));
-  }
+  } */
 }

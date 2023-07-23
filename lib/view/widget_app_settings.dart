@@ -46,6 +46,12 @@ class WidgetAppSettings extends StatefulWidget {
 }
 
 class _WidgetAppSettings extends State<WidgetAppSettings> {
+  @override
+  Widget build(BuildContext context) {
+    return AppWidgets.scaffold(context,
+        body: AppWidgets.loading('Widget under construction'));
+  }
+  /* 
   static final Logger logger = Logger.logger<WidgetAppSettings>();
 
   bool? statusStandingRequireAlias = AppSettings.statusStandingRequireAlias;
@@ -519,5 +525,5 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
           ///
         ]),
         navBar: null);
-  }
+  } */
 }

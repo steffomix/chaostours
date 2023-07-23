@@ -31,6 +31,12 @@ class WidgetTaskEdit extends StatefulWidget {
 }
 
 class _WidgetTaskEdit extends State<WidgetTaskEdit> {
+  @override
+  Widget build(BuildContext context) {
+    return AppWidgets.scaffold(context,
+        body: AppWidgets.loading('Widget under construction'));
+  }
+  /* 
   // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetTaskEdit>();
 
@@ -149,5 +155,5 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
                 },
               ))
         ]));
-  }
+  } */
 }

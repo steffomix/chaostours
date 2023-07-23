@@ -50,6 +50,16 @@ class AppLoader {
     try {
       // reset background logger
       //await Cache.setValue<List<String>>(CacheKeys.backgroundLogger, []);
+      var path = await DB.getPath();
+      //await DB.deleteDatabase(path);
+      var dir = await io.Directory(
+          '/data/user/0/com.stefanbrinkmann.chaosToursUnlimited/databases'); //DB.getDir();
+      var files = await dir.list().toList();
+
+      var schemata =
+          [...DatabaseSchema.schemata, ...DatabaseSchema.indexes].join('\n\n');
+      await Future.delayed(const Duration(seconds: 1));
+      await DB.open();
       Logger.globalLogLevel = LogLevel.verbose;
       logger.important('start Preload sequence...');
       await webKey();

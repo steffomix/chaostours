@@ -41,6 +41,12 @@ class WidgetImportExport extends StatefulWidget {
 }
 
 class _WidgetImportExport extends State<WidgetImportExport> {
+  /* @override
+  Widget build(BuildContext context) {
+    return AppWidgets.scaffold(context,
+        body: AppWidgets.loading('Widget under construction'));
+  } */
+
   // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetImportExport>();
 
@@ -61,12 +67,12 @@ class _WidgetImportExport extends State<WidgetImportExport> {
   String taskFilename = 'task';
   String aliasFilename = 'alias';
 
-  Future<Map<String, bool>> getFiles(FileManagerController controller) async {
+  Future<Map<String, bool>> getFiles() async {
     Map<String, bool> files = {};
     try {
-      var isRoot = await controller.isRootDirectory();
+      var isRoot = await fileManagerController.isRootDirectory();
 
-      var path = controller.getCurrentPath;
+      var path = fileManagerController.getCurrentPath;
       bool tp = File(join(path, '$trackPointFilename.tsv')).existsSync();
       bool usr = File(join(path, '$userFilename.tsv')).existsSync();
       bool tsk = File(join(path, '$taskFilename.tsv')).existsSync();
@@ -96,7 +102,7 @@ class _WidgetImportExport extends State<WidgetImportExport> {
 
   Future<void> exportSqlite(Directory dir) async {
     try {
-      String path = await AppDatabase.getPath();
+      String path = await DB.getPath();
       File f = File(path);
       await f.copy(join(dir.path, 'db.sqlite'));
     } catch (e, stk) {
@@ -105,7 +111,7 @@ class _WidgetImportExport extends State<WidgetImportExport> {
   }
 
   Future<void> exportDatabaseFiles(
-      FileManagerController controller, Directory dir) async {
+      FileManagerController fileManagerController, Directory dir) async {
     /// export trackPoints
     String tsv;
     String path = join(dir.path, '$trackPointFilename.tsv');
@@ -192,6 +198,7 @@ class _WidgetImportExport extends State<WidgetImportExport> {
   }
 
   Future<void> importDatabaseFiles(BuildContext context, String dir) async {
+    /* 
     List<String> errors = [];
     List<ModelTrackPoint> trackPointModels = [];
     List<ModelAlias> aliasModels = [];
@@ -376,10 +383,10 @@ class _WidgetImportExport extends State<WidgetImportExport> {
           }
         });
       });
-    }
+    } */
   }
 
-  FileManagerController controller = FileManagerController();
+  FileManagerController fileManagerController = FileManagerController();
   @override
   Widget build(BuildContext context) {
     FloatingActionButton? floatingActionButton;
@@ -395,7 +402,7 @@ class _WidgetImportExport extends State<WidgetImportExport> {
     });
 
     return ControlBackButton(
-      controller: controller,
+      controller: fileManagerController,
       child: Scaffold(
           bottomNavigationBar: BottomNavigationBar(
               type: BottomNavigationBarType.fixed,
@@ -433,15 +440,15 @@ class _WidgetImportExport extends State<WidgetImportExport> {
               ],
               onTap: (int id) async {
                 /// export here
-                var dir = controller.getCurrentDirectory;
-                var path = controller.getCurrentPath;
+                var dir = fileManagerController.getCurrentDirectory;
+                var path = fileManagerController.getCurrentPath;
                 var strike =
                     const TextStyle(decoration: TextDecoration.lineThrough);
 
                 /// export database
                 if (id == 0) {
                   if (!isBaseDir.value) {
-                    Map<String, bool> files = await getFiles(controller);
+                    Map<String, bool> files = await getFiles();
                     if (mounted) {
                       showDialog(
                           context: context,
@@ -490,11 +497,12 @@ class _WidgetImportExport extends State<WidgetImportExport> {
                                                 logger.log('export');
                                                 Navigator.pop(context);
                                                 await exportDatabaseFiles(
-                                                    controller, dir);
-                                                controller
+                                                    fileManagerController, dir);
+                                                fileManagerController
                                                     .goToParentDirectory()
                                                     .then((_) {
-                                                  controller.openDirectory(dir);
+                                                  fileManagerController
+                                                      .openDirectory(dir);
                                                 });
                                               },
                                             ),
@@ -519,7 +527,7 @@ class _WidgetImportExport extends State<WidgetImportExport> {
                 /// import database
                 if (id == 2) {
                   if (hasImportFiles.value) {
-                    Map<String, bool> files = await getFiles(controller);
+                    Map<String, bool> files = await getFiles();
                     if (mounted) {
                       showDialog(
                           context: context,
@@ -603,16 +611,16 @@ class _WidgetImportExport extends State<WidgetImportExport> {
               }),
           appBar: appBar(context),
           body: FileManager(
-            controller: controller,
+            controller: fileManagerController,
             builder: (context, snapshot) {
-              controller
+              fileManagerController
                   .isRootDirectory()
                   .then((value) => isBaseDir.value = value);
               Future.microtask(() async {
                 try {
-                  var isRoot = await controller.isRootDirectory();
+                  var isRoot = await fileManagerController.isRootDirectory();
 
-                  var path = controller.getCurrentPath;
+                  var path = fileManagerController.getCurrentPath;
                   bool tp =
                       File(join(path, '$trackPointFilename.tsv')).existsSync();
                   bool usr = File(join(path, '$userFilename.tsv')).existsSync();
@@ -646,7 +654,7 @@ class _WidgetImportExport extends State<WidgetImportExport> {
                       subtitle: subtitle(entity),
                       onTap: () async {
                         if (FileManager.isDirectory(entity)) {
-                          controller.openDirectory(entity);
+                          fileManagerController.openDirectory(entity);
                         }
                       },
                     ),
@@ -676,17 +684,17 @@ class _WidgetImportExport extends State<WidgetImportExport> {
         )
       ],
       title: ValueListenableBuilder<String>(
-        valueListenable: controller.titleNotifier,
+        valueListenable: fileManagerController.titleNotifier,
         builder: (context, title, _) => Text(title),
       ),
       leading: IconButton(
         icon: const Icon(Icons.arrow_back),
         onPressed: () async {
-          controller.isRootDirectory().then((bool isRoot) async {
+          fileManagerController.isRootDirectory().then((bool isRoot) async {
             if (isRoot) {
               AppWidgets.navigate(context, AppRoutes.liveTracking);
             } else {
-              await controller.goToParentDirectory();
+              await fileManagerController.goToParentDirectory();
             }
           });
         },
@@ -716,12 +724,21 @@ class _WidgetImportExport extends State<WidgetImportExport> {
     );
   }
 
+  Future<List<Directory>> DBpath() async {
+    return Future.delayed(
+        const Duration(milliseconds: 10),
+        () async => <Directory>[
+              //Directory('/data/user/0/com.stefanbrinkmann.chaosToursUnlimited'),
+              ...await FileManager.getStorageList()
+            ]);
+  }
+
   Future<void> selectStorage(BuildContext context) async {
     return showDialog(
       context: context,
       builder: (context) => Dialog(
         child: FutureBuilder<List<Directory>>(
-          future: FileManager.getStorageList(),
+          future: DBpath(), //FileManager.getStorageList(),
           builder: (context, snapshot) {
             if (snapshot.hasData) {
               final List<FileSystemEntity> storageList = snapshot.data!;
@@ -735,7 +752,8 @@ class _WidgetImportExport extends State<WidgetImportExport> {
                                 FileManager.basename(e),
                               ),
                               onTap: () {
-                                controller.openDirectory(e);
+                                fileManagerController.openDirectory(Directory(
+                                    '/data/user/0/com.stefanbrinkmann.chaosToursUnlimited'));
                                 Navigator.pop(context);
                               },
                             ))
@@ -765,25 +783,25 @@ class _WidgetImportExport extends State<WidgetImportExport> {
               ListTile(
                   title: const Text("Name"),
                   onTap: () {
-                    controller.sortBy(SortBy.name);
+                    fileManagerController.sortBy(SortBy.name);
                     Navigator.pop(context);
                   }),
               ListTile(
                   title: const Text("Size"),
                   onTap: () {
-                    controller.sortBy(SortBy.size);
+                    fileManagerController.sortBy(SortBy.size);
                     Navigator.pop(context);
                   }),
               ListTile(
                   title: const Text("Date"),
                   onTap: () {
-                    controller.sortBy(SortBy.date);
+                    fileManagerController.sortBy(SortBy.date);
                     Navigator.pop(context);
                   }),
               ListTile(
                   title: const Text("type"),
                   onTap: () {
-                    controller.sortBy(SortBy.type);
+                    fileManagerController.sortBy(SortBy.type);
                     Navigator.pop(context);
                   }),
             ],
@@ -814,10 +832,12 @@ class _WidgetImportExport extends State<WidgetImportExport> {
                     try {
                       // Create Folder
                       await FileManager.createFolder(
-                          controller.getCurrentPath, folderName.text);
+                          fileManagerController.getCurrentPath,
+                          folderName.text);
                       // Open Created Folder
-                      controller.setCurrentPath =
-                          join(controller.getCurrentPath, folderName.text);
+                      fileManagerController.setCurrentPath = join(
+                          fileManagerController.getCurrentPath,
+                          folderName.text);
                     } catch (e) {
                       // ignore
                     }

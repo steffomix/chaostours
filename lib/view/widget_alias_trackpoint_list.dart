@@ -41,6 +41,13 @@ class WidgetAliasTrackpoint extends StatefulWidget {
 }
 
 class _WidgetAliasTrackpoint extends State<WidgetAliasTrackpoint> {
+  @override
+  Widget build(BuildContext context) {
+    return AppWidgets.scaffold(context,
+        body: AppWidgets.loading('Widget under construction'));
+  }
+
+  /* 
   // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetAliasTrackpoint>();
   TextEditingController searchTextController = TextEditingController();
@@ -293,5 +300,5 @@ class _WidgetAliasTrackpoint extends State<WidgetAliasTrackpoint> {
     return AppWidgets.scaffold(context,
         body: _bodyWidget ?? AppWidgets.loadingScreen(context),
         appBar: AppBar(title: const Text('Haltepunkte')));
-  }
+  } */
 }

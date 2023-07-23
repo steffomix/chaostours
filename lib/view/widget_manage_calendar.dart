@@ -33,6 +33,12 @@ class WidgetManageCalendar extends StatefulWidget {
 }
 
 class _WidgetManageCalendarState extends State<WidgetManageCalendar> {
+  @override
+  Widget build(BuildContext context) {
+    return AppWidgets.scaffold(context,
+        body: AppWidgets.loading('Widget under construction'));
+  }
+  /* 
   static final Logger logger = Logger.logger<WidgetManageCalendar>();
   late AppCalendar appCalendar;
 
@@ -90,5 +96,5 @@ class _WidgetManageCalendarState extends State<WidgetManageCalendar> {
     return AppWidgets.scaffold(context,
         body: calendarList(),
         appBar: AppBar(title: const Text('Select Calendar')));
-  }
+  } */
 }

@@ -35,6 +35,12 @@ class WidgetTaskList extends StatefulWidget {
 }
 
 class _WidgetTaskList extends State<WidgetTaskList> {
+  @override
+  Widget build(BuildContext context) {
+    return AppWidgets.scaffold(context,
+        body: AppWidgets.loading('Widget under construction'));
+  }
+  /* 
   // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetTaskList>();
 
@@ -182,5 +188,5 @@ class _WidgetTaskList extends State<WidgetTaskList> {
                 setState(() {});
               }
             }));
-  }
+  } */
 }

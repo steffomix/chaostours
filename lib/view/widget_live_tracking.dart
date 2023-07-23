@@ -61,6 +61,12 @@ class WidgetTrackingPage extends StatefulWidget {
 }
 
 class _WidgetTrackingPage extends State<WidgetTrackingPage> {
+  @override
+  Widget build(BuildContext context) {
+    return AppWidgets.scaffold(context,
+        body: AppWidgets.loading('Widget under construction'));
+  }
+  /* 
   static final Logger logger = Logger.logger<WidgetTrackingPage>();
 
   _DisplayMode displayMode = _DisplayMode.live;
@@ -725,5 +731,5 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                   CacheKeys.cacheBackgroundTrackPointUserNotes, tpNotes.text);
               modify();
             }));
-  }
+  } */
 }
