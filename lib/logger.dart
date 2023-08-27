@@ -81,12 +81,6 @@ class LoggerLog {
 var _print = print;
 
 class Logger {
-  static final Logger _logger = Logger.logger<Logger>();
-
-  static final Logger _exceptionLogger = Logger.logger<Logger>(
-      specialBackgroundLogger: false,
-      specialPrefix: '!!!LoggerException',
-      specialLogLevel: LogLevel.verbose);
   static void print(Object? msg) {
     _print(msg);
   }

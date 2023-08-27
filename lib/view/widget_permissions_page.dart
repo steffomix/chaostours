@@ -138,7 +138,7 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
         trailing: IconButton(
           icon: const Icon(Icons.settings),
           onPressed: () {
-            AppSettings.openLocationSettings(asAnotherTask: false);
+            //AppSettings.openLocationSettings(asAnotherTask: false);
           },
         )));
 
@@ -152,7 +152,7 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
         trailing: IconButton(
           icon: const Icon(Icons.settings),
           onPressed: () {
-            AppSettings.openLocationSettings(asAnotherTask: false);
+            //AppSettings.openLocationSettings(asAnotherTask: false);
           },
         )));
     items.add(ListTile(
@@ -165,7 +165,7 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
         trailing: IconButton(
           icon: const Icon(Icons.settings),
           onPressed: () {
-            AppSettings.openBatteryOptimizationSettings(asAnotherTask: false);
+            //AppSettings.openBatteryOptimizationSettings(asAnotherTask: false);
           },
         )));
     items.add(ListTile(
@@ -193,7 +193,7 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
         trailing: IconButton(
           icon: const Icon(Icons.settings),
           onPressed: () {
-            AppSettings.openNotificationSettings(asAnotherTask: false);
+            //AppSettings.openNotificationSettings(asAnotherTask: false);
           },
         )));
 

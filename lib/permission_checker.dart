@@ -23,12 +23,6 @@ class PermissionChecker {
   static Future<bool> checkAll() async {
     bool permLocation = await Permission.location.isGranted;
     bool permLocationAlways = await Permission.locationAlways.isGranted;
-    bool permIgnoreBattery =
-        await Permission.ignoreBatteryOptimizations.isGranted;
-    bool permManageExternalStorage =
-        await Permission.manageExternalStorage.isGranted;
-    bool permNotification = await Permission.notification.isGranted;
-    bool permCalendar = await Permission.calendar.isGranted;
     permissionsChecked = true;
     if (permLocation &&
             permLocationAlways /*  &&

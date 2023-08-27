@@ -24,7 +24,6 @@ import 'package:chaostours/gps.dart';
 import 'package:chaostours/conf/app_settings.dart';
 import 'package:chaostours/util.dart';
 import 'package:chaostours/logger.dart';
-import 'package:chaostours/view/app_widgets.dart';
 
 class TrackPointData {
   static final Logger logger = Logger.logger<TrackPointData>();

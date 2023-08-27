@@ -18,22 +18,13 @@ import 'package:flutter/services.dart';
 import 'dart:io' as io;
 
 ///
-import 'package:chaostours/model/model_alias.dart';
-import 'package:chaostours/model/model_trackpoint.dart';
-import 'package:chaostours/model/model_task.dart';
-import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/tracking.dart';
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/permission_checker.dart';
 import 'package:chaostours/conf/app_settings.dart';
-import 'package:chaostours/cache.dart';
 import 'package:chaostours/data_bridge.dart';
-import 'package:chaostours/gps.dart';
 import 'package:chaostours/database.dart';
-import 'package:sqflite/sqflite.dart';
-
-import 'dart:isolate';
 
 class AppLoader {
   static Logger logger = Logger.logger<AppLoader>();

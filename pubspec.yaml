@@ -19,7 +19,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.0.0+1
 
 environment:
-  sdk: '>=2.19.4 <3.0.0'
+  sdk: '>=3.0.0 <4.0.0'
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
 # consider running `flutter pub upgrade --major-versions`. Alternatively,
@@ -30,45 +30,30 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # https://github.com/icapps/flutter-background-location-tracker
-  background_location_tracker:
-    path: ../git-packages/flutter-background-location-tracker
-  #
-  # https://github.com/liodali/osm_flutter
-  flutter_osm_plugin:
-    path: ../git-packages/osm_flutter
-
-
-
-  flutter_local_notifications: 13.0.0
-  permission_handler: 10.2.0
-  shared_preferences: 2.0.15
-  path: 1.8.2
-  http: 0.13.5
-  sprintf: 7.0.0
-  vector_math: 2.1.4
-  logger: 1.1.0
-  path_provider: 2.0.13
-  external_path: 1.0.3
-  android_intent_plus: 3.1.6
-  loading_animation_widget: 1.2.0
-  confirm_dialog: 1.0.1
-  app_settings: 4.2.0
-  # receiveCalendar bugfix: https://github.com/builttoroam/device_calendar/issues/99#issuecomment-612449677
-  device_calendar: 4.3.1 
-  #geolocator: 7.4.0 # version 9.x collides with background_location_tracker
-  geolocator: 9.0.2
-  url_launcher: ^6.1.11
+  background_location_tracker: ^1.4.1
+  flutter_osm_plugin: ^0.60.4
+  flutter_local_notifications: ^15.1.1
+  permission_handler: ^10.4.3
+  shared_preferences: ^2.2.0
+  path: ^1.8.3
+  http: ^0.13.5
+  sprintf: ^7.0.0
+  vector_math: ^2.1.4
+  logger: ^1.1.0
+  path_provider: ^2.0.13
+  external_path: ^1.0.3
+  android_intent_plus: ^4.0.2
+  loading_animation_widget: ^1.2.0
+  confirm_dialog: ^1.0.2
+  app_settings: ^5.0.0
+  device_calendar: ^4.3.1 
+  geolocator: ^10.0.0
+  url_launcher: ^6.1.12
   file_manager: ^1.0.2
-  fluttertoast: ^8.2.1
-  sqflite: ^2.2.8+4
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
+  fluttertoast: ^8.2.2
+  sqflite: ^2.3.0
   cupertino_icons: ^1.0.5
   provider: ^6.0.5
-
-dependency_overrides:
-  geolocator_android: 4.1.4
 
 
 dev_dependencies:

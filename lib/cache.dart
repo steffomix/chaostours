@@ -15,11 +15,9 @@ limitations under the License.
 */
 
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:device_calendar/device_calendar.dart';
 
 ///
 import 'package:chaostours/logger.dart';
-import 'package:chaostours/conf/app_settings.dart';
 import 'package:chaostours/conf/osm.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/tracking.dart';
@@ -272,6 +270,7 @@ class Cache {
         case String:
           await prefs.setString(key, value as String);
           break;
+/* 
         case List<String>:
           await prefs.setStringList(key.toString(), value as List<String>);
           break;
@@ -341,6 +340,7 @@ class Cache {
         case Null:
           await prefs.remove(key);
           break;
+           */
         default:
           throw Exception("Unsupported data type $T");
       }
@@ -382,7 +382,7 @@ class Cache {
       switch (T) {
         case String:
           return prefs.getString(key) as T? ?? defaultValue;
-
+/* 
         case List<String>:
           return prefs.getStringList(key) as T? ?? defaultValue;
         case int:
@@ -435,6 +435,7 @@ class Cache {
         case OsmLookupConditions:
           return deserializeOsmLookup(prefs.getString(key)) as T? ??
               defaultValue;
+               */
         default:
           throw Exception("Unsupported data type $T");
       }

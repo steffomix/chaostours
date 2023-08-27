@@ -14,19 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import 'dart:collection';
-
-import 'package:chaostours/conf/app_settings.dart';
 import 'package:chaostours/database.dart';
 import 'package:chaostours/model/model.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_user.dart';
-import 'package:chaostours/tracking.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/logger.dart';
-import 'package:chaostours/cache.dart';
 import 'package:sqflite/sqflite.dart';
 
 class ModelTrackPoint extends Model {

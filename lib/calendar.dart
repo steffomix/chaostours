@@ -15,14 +15,11 @@ limitations under the License.
 */
 
 import 'package:device_calendar/device_calendar.dart';
-import 'package:timezone/timezone.dart';
-import 'package:flutter/services.dart';
 
 ///
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/cache.dart';
 import 'package:chaostours/data_bridge.dart';
-import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/trackpoint_data.dart';
 
 class AppCalendar {

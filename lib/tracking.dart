@@ -29,10 +29,7 @@ import 'dart:math' as math;
 
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_alias.dart';
-import 'package:chaostours/model/model_task.dart';
-import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/calendar.dart';
-import 'package:chaostours/database.dart';
 
 @pragma('vm:entry-point')
 void backgroundCallback() {
