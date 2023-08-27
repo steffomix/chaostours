@@ -54,7 +54,7 @@ class AppLoader {
       // reset background logger
       //await Cache.setValue<List<String>>(CacheKeys.backgroundLogger, []);
       //var downloadFiles = await downloadDir.list().toList();
-      await fileToDb();
+      //await fileToDb();
       await Future.delayed(const Duration(seconds: 1));
       await DB.open();
       Logger.globalLogLevel = LogLevel.verbose;

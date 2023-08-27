@@ -270,14 +270,14 @@ class Cache {
         case String:
           await prefs.setString(key, value as String);
           break;
-/* 
-        case List<String>:
+
+        case const (List<String>):
           await prefs.setStringList(key.toString(), value as List<String>);
           break;
         case int:
           await prefs.setInt(key, value as int);
           break;
-        case List<int>:
+        case const (List<int>):
           await prefs.setStringList(key, serializeIntList(value as List<int>));
           break;
         case bool:
@@ -289,7 +289,7 @@ class Cache {
         case Duration:
           await prefs.setInt(key, serializeDuration(value as Duration));
           break;
-        case List<LoggerLog>:
+        case const (List<LoggerLog>):
           await prefs.setStringList(
               key, serializeLoggerLog(value as List<LoggerLog>));
           break;
@@ -299,13 +299,13 @@ class Cache {
         case GPS:
           await prefs.setString(key, serializeGps(value as GPS));
           break;
-        case List<GPS>:
+        case const (List<GPS>):
           await prefs.setStringList(key, serializeGpsList(value as List<GPS>));
           break;
         case PendingGps:
           await prefs.setString(key, serializePendingGPS(value as PendingGps));
           break;
-        case List<PendingGps>:
+        case const (List<PendingGps>):
           await prefs.setStringList(
               key, serializePendingGpsList(value as List<PendingGps>));
           break;
@@ -317,19 +317,19 @@ class Cache {
           await prefs.setString(
               key, serializeModelTrackPoint(value as ModelTrackPoint));
           break;
-        case List<ModelTrackPoint>:
+        case const (List<ModelTrackPoint>):
           await prefs.setStringList(key,
               serializeModelTrackPointList(value as List<ModelTrackPoint>));
           break;
-        case List<ModelAlias>:
+        case const (List<ModelAlias>):
           await prefs.setStringList(
               key, serializeModelAliasList(value as List<ModelAlias>));
           break;
-        case List<ModelTask>:
+        case const (List<ModelTask>):
           await prefs.setStringList(
               key, serializeModelTaskList(value as List<ModelTask>));
           break;
-        case List<ModelUser>:
+        case const (List<ModelUser>):
           await prefs.setStringList(
               key, serializeModelUserList(value as List<ModelUser>));
           break;
@@ -340,7 +340,7 @@ class Cache {
         case Null:
           await prefs.remove(key);
           break;
-           */
+
         default:
           throw Exception("Unsupported data type $T");
       }
@@ -382,12 +382,12 @@ class Cache {
       switch (T) {
         case String:
           return prefs.getString(key) as T? ?? defaultValue;
-/* 
-        case List<String>:
+
+        case const (List<String>):
           return prefs.getStringList(key) as T? ?? defaultValue;
         case int:
           return prefs.getInt(key) as T? ?? defaultValue;
-        case List<int>:
+        case const (List<int>):
           return deserializeIntList(prefs.getStringList(key)) as T? ??
               defaultValue;
         case bool:
@@ -396,7 +396,7 @@ class Cache {
           return prefs.getDouble(key) as T? ?? defaultValue;
         case Duration:
           return deserializeDuration(prefs.getInt(key)) as T? ?? defaultValue;
-        case List<LoggerLog>:
+        case const (List<LoggerLog>):
           return deserializeLoggerLog(prefs.getStringList(key)) as T? ??
               defaultValue;
         case DateTime:
@@ -404,13 +404,13 @@ class Cache {
               defaultValue;
         case GPS:
           return deserializeGps(prefs.getString(key)) as T? ?? defaultValue;
-        case List<GPS>:
+        case const (List<GPS>):
           return deserializeGpsList(prefs.getStringList(key)) as T? ??
               defaultValue;
         case PendingGps:
           return deserializePendingGps(prefs.getString(key)) as T? ??
               defaultValue;
-        case List<PendingGps>:
+        case const (List<PendingGps>):
           return deserializePendingGpsList(prefs.getStringList(key)) as T? ??
               defaultValue;
         case TrackingStatus:
@@ -419,23 +419,23 @@ class Cache {
         case ModelTrackPoint:
           return deserializeModelTrackPoint(prefs.getString(key)) as T? ??
               defaultValue;
-        case List<ModelTrackPoint>:
+        case const (List<ModelTrackPoint>):
           return deserializeModelTrackPointList(prefs.getStringList(key))
                   as T? ??
               defaultValue;
-        case List<ModelAlias>:
+        case const (List<ModelAlias>):
           return deserializeModelAliasList(prefs.getStringList(key)) as T? ??
               defaultValue;
-        case List<ModelTask>:
+        case const (List<ModelTask>):
           return deserializeModelTaskList(prefs.getStringList(key)) as T? ??
               defaultValue;
-        case List<ModelUser>:
+        case const (List<ModelUser>):
           return deserializeModelUserList(prefs.getStringList(key)) as T? ??
               defaultValue;
         case OsmLookupConditions:
           return deserializeOsmLookup(prefs.getString(key)) as T? ??
               defaultValue;
-               */
+
         default:
           throw Exception("Unsupported data type $T");
       }
