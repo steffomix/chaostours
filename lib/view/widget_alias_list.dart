@@ -21,9 +21,7 @@ import 'package:flutter/material.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/conf/app_colors.dart';
-import 'package:chaostours/model/model.dart';
 import 'package:chaostours/model/model_alias.dart';
-import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/gps.dart';
 
 class _ViewData {

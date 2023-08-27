@@ -14,13 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import 'package:chaostours/data_bridge.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
-import 'package:android_intent_plus/android_intent.dart';
 import 'package:chaostours/gps.dart';
 
 ///

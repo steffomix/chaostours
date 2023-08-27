@@ -16,14 +16,7 @@ limitations under the License.
 
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:flutter/material.dart';
-import 'package:device_calendar/device_calendar.dart';
-import 'package:flutter/services.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 
-///
-import 'package:chaostours/logger.dart';
-import 'package:chaostours/cache.dart';
-import 'package:chaostours/calendar.dart';
 
 class WidgetManageCalendar extends StatefulWidget {
   const WidgetManageCalendar({super.key});

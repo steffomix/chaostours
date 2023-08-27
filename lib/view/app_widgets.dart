@@ -20,7 +20,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 
 ///
 import 'package:chaostours/util.dart' as util;
@@ -30,13 +29,9 @@ import 'package:chaostours/logger.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/conf/app_settings.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
-import 'package:chaostours/model/model_alias.dart';
-import 'package:chaostours/model/model_task.dart';
-import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/conf/app_theme_data.dart';
 import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/conf/app_colors.dart';
-import 'package:chaostours/conf/app_theme_data.dart';
 
 ///
 ///
