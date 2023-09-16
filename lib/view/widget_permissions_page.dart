@@ -23,7 +23,6 @@ import 'package:app_settings/app_settings.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/permission_checker.dart';
-
 //
 
 @override

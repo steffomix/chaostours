@@ -59,6 +59,8 @@ class EventOnAppTick extends EventOn {
   EventOnAppTick();
 }
 
+class EventOnSetState extends EventOn {}
+
 class EventOn {
   static int _nextId = 0;
   int eventId = (_nextId++);

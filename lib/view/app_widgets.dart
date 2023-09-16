@@ -47,7 +47,7 @@ class AppWidgets {
         debugShowCheckedModeBanner: false,
         //themeMode: ThemeMode.system,
         title: 'Chaos Tours',
-        initialRoute: AppRoutes.liveTracking.route,
+        initialRoute: AppRoutes.appInit.route,
         routes: AppRoutes.routes,
         theme: Provider.of<ThemeProvider>(context).themeData);
   }
@@ -100,6 +100,8 @@ class AppWidgets {
     return scaffold(context, body: loading(info ?? 'Loading...'));
   }
 
+  /// check FutureBuilder Snapshots,
+  /// returns null on success
   static Widget? checkSnapshot<T>(AsyncSnapshot<T> snapshot) {
     if (snapshot.connectionState == ConnectionState.waiting) {
       return AppWidgets.loading('');
