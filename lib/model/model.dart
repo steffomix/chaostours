@@ -27,7 +27,7 @@ class Model {
   int id;
   Model({this.id = 0}) {
     if (id <= 0) {
-      throw ('Constructor: id must be > 0');
+      //throw ('Constructor: id must be > 0');
     }
   }
 

@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import 'package:flutter/material.dart';
-import 'package:chaostours/view/app_init.dart';
+import 'package:chaostours/view/welcome.dart';
 import 'package:chaostours/view/widget_live_tracking.dart';
 import 'package:chaostours/view/widget_trackpoints.dart';
 import 'package:chaostours/view/widget_logger_page.dart';

@@ -82,7 +82,7 @@ class _AppInitState extends State<AppInit> {
     }
 
     checkTracking();
-    return granted;
+    return granted && isTracking;
   }
 
   Future<bool> checkTracking() async {
@@ -253,18 +253,19 @@ class _AppInitState extends State<AppInit> {
         body: FutureBuilder<bool>(
           future: checkAllPermissions(),
           builder: (context, snapshot) {
+            Future.delayed(const Duration(milliseconds: 500),
+                () => Navigator.pushNamed(context, AppRoutes.listAlias.route));
             return AppWidgets.checkSnapshot(snapshot) ??
                 ListView(children: (() {
                   renderItems();
                   return [
                     header('ChaosTours main Settings'),
                     divider,
-                    divider,
-                    permissionLocationAlwaysIsGranted
-                        ? header('Background Tracking status')
-                        : empty,
+                    ...permissionLocationAlwaysIsGranted
+                        ? [divider, header('Background Tracking status')]
+                        : [divider],
                     ...trackingItems,
-                    divider,
+                    ...[divider, divider],
                     permissionItemsRequired.isNotEmpty
                         ? header('Required Permissions')
                         : empty,
@@ -279,7 +280,16 @@ class _AppInitState extends State<AppInit> {
                     ...permissionItemsOptional,
                     permissionItemsOptional.isEmpty
                         ? header('All optional Permissions granted')
-                        : empty
+                        : empty,
+                    divider,
+                    Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: ElevatedButton(
+                          child: const Text('Request all Permissions anyway'),
+                          onPressed: () {
+                            requestAllPermissions();
+                          },
+                        ))
                   ];
                 })());
           },

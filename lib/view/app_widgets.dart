@@ -14,22 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import 'package:chaostours/conf/app_color_schemes.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:provider/provider.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
+import 'package:flex_color_scheme/flex_color_scheme.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 ///
 import 'package:chaostours/util.dart' as util;
-import 'package:chaostours/conf/theme_provider.dart';
 
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/conf/app_settings.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
-import 'package:chaostours/conf/app_theme_data.dart';
 import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/conf/app_colors.dart';
 
@@ -44,12 +42,74 @@ class AppWidgets {
 
   static Widget materialApp(BuildContext context) {
     return MaterialApp(
-        debugShowCheckedModeBanner: false,
-        //themeMode: ThemeMode.system,
-        title: 'Chaos Tours',
-        initialRoute: AppRoutes.appInit.route,
-        routes: AppRoutes.routes,
-        theme: Provider.of<ThemeProvider>(context).themeData);
+      debugShowCheckedModeBanner: false,
+      //themeMode: ThemeMode.system,
+      title: 'Chaos Tours',
+      initialRoute: AppRoutes.appInit.route,
+      routes: AppRoutes.routes,
+      // Theme config for FlexColorScheme version 7.3.x. Make sure you use
+// same or higher package version, but still same major version. If you
+// use a lower package version, some properties may not be supported.
+// In that case remove them after copying this theme to your app.
+      theme: FlexThemeData.light(
+        scheme: FlexScheme.mango,
+        surfaceMode: FlexSurfaceMode.levelSurfacesLowScaffold,
+        blendLevel: 7,
+        subThemesData: const FlexSubThemesData(
+          blendOnLevel: 10,
+          blendOnColors: false,
+          useTextTheme: true,
+          useM2StyleDividerInM3: true,
+          textButtonRadius: 5.0,
+          filledButtonRadius: 5.0,
+          elevatedButtonRadius: 5.0,
+          outlinedButtonRadius: 5.0,
+          segmentedButtonRadius: 5.0,
+          fabUseShape: true,
+          fabRadius: 5.0,
+          chipRadius: 5.0,
+          cardRadius: 5.0,
+          alignedDropdown: true,
+          dialogRadius: 5.0,
+          useInputDecoratorThemeInDialogs: true,
+        ),
+        visualDensity: FlexColorScheme.comfortablePlatformDensity,
+        useMaterial3: true,
+        swapLegacyOnMaterial3: true,
+        // To use the Playground font, add GoogleFonts package and uncomment
+        fontFamily: GoogleFonts.notoSans().fontFamily,
+      ),
+      darkTheme: FlexThemeData.dark(
+        scheme: FlexScheme.mango,
+        surfaceMode: FlexSurfaceMode.levelSurfacesLowScaffold,
+        blendLevel: 13,
+        subThemesData: const FlexSubThemesData(
+          blendOnLevel: 20,
+          useTextTheme: true,
+          useM2StyleDividerInM3: true,
+          textButtonRadius: 5.0,
+          filledButtonRadius: 5.0,
+          elevatedButtonRadius: 5.0,
+          outlinedButtonRadius: 5.0,
+          segmentedButtonRadius: 5.0,
+          fabUseShape: true,
+          fabRadius: 5.0,
+          chipRadius: 5.0,
+          cardRadius: 5.0,
+          alignedDropdown: true,
+          dialogRadius: 5.0,
+          useInputDecoratorThemeInDialogs: true,
+        ),
+        visualDensity: FlexColorScheme.comfortablePlatformDensity,
+        useMaterial3: true,
+        swapLegacyOnMaterial3: true,
+        // To use the Playground font, add GoogleFonts package and uncomment
+        fontFamily: GoogleFonts.notoSans().fontFamily,
+      ),
+// If you do not have a themeMode switch, uncomment this line
+// to let the device system mode control the theme mode:
+      themeMode: ThemeMode.light,
+    );
   }
 
   static Future<void> navigate(BuildContext context, AppRoutes route,
@@ -261,7 +321,6 @@ class WidgetDrawer extends StatefulWidget {
 class _WidgetDrawer extends State<WidgetDrawer> {
   @override
   Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     double boxHeight = 45;
     return Drawer(
         child: Container(
@@ -371,14 +430,6 @@ class _WidgetDrawer extends State<WidgetDrawer> {
               SizedBox(
                   height: boxHeight,
                   child: const Center(child: Text('\nColor Scheme'))),
-
-              ///
-              ElevatedButton(
-                  onPressed: () {
-                    AppThemeData.colorScheme = AppColorShemes.mangoMojito.dark;
-                    themeProvider.themeData = AppThemeData.theme;
-                  },
-                  child: const Text('dark theme')),
 
               SizedBox(
                   height: 200,
