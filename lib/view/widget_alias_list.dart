@@ -16,8 +16,11 @@ limitations under the License.
 
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:flutter/material.dart';
+import 'dart:math';
+import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 
 ///
+import 'package:chaostours/view/sliver_header.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/conf/app_colors.dart';
@@ -27,15 +30,22 @@ import 'package:chaostours/gps.dart';
 class _ViewData {
   final List<ModelAlias> models;
 
+  static late GPS gps;
+  static int countAlias = 0;
+
   _ViewData({required this.models});
 
-  static Future<_ViewData> load() async {
-    List<ModelAlias> models = await ModelAlias.select();
+  static Future<_ViewData> load({int offset = 0}) async {
+    //await Future.delayed(Duration(seconds: 2));
+    await _getPageData();
+    countAlias = await ModelAlias.count();
+    List<ModelAlias> models = await ModelAlias.select(offset: offset);
     var data = _ViewData(models: await _countTrackPoints(models));
     return data;
   }
 
   static Future<_ViewData> search(String search) async {
+    await _getPageData();
     List<ModelAlias> models = await ModelAlias.search(search);
     return _ViewData(models: await _countTrackPoints(models));
   }
@@ -46,6 +56,18 @@ class _ViewData {
       model.trackPointCount = await model.countTrackPoints();
     }
     return models;
+  }
+
+  static Future<void> _getPageData() async {
+    gps = await GPS.gps();
+    return Future(() => null);
+  }
+}
+
+class DbRow {
+  String name = "";
+  DbRow(String n) {
+    name = n;
   }
 }
 
@@ -60,20 +82,64 @@ class _WidgetAliasList extends State<WidgetAliasList> {
   // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetAliasList>();
 
+  final List<DbRow> source = List.filled(30, DbRow(""));
+  final PagingController<int, DbRow> _pagingController =
+      PagingController(firstPageKey: 0);
+
+  static const int _limit = 3;
+
+  Future<List<DbRow>> nextPage(int offset, int limit) async {
+    /// await select itemCount
+    int end = min(offset + limit, source.length);
+    if (offset >= source.length) {
+      return <DbRow>[];
+    }
+
+    /// actual select
+    await Future.delayed(const Duration(seconds: 2));
+    return source.sublist(offset, end);
+  }
+
+  Future<void> _fetchPage(int offset) async {
+    try {
+      final newItems = await nextPage(offset, _limit);
+      final isLastPage = newItems.length < _limit;
+      if (isLastPage) {
+        _pagingController.appendLastPage(newItems);
+      } else {
+        final nextPageKey = offset + newItems.length;
+        _pagingController.appendPage(newItems, nextPageKey);
+      }
+    } catch (error) {
+      _pagingController.error = error;
+    }
+  }
+
   int _listMode = 0;
   GPS _gps = GPS(0, 0);
   String search = '';
+
+  late _ViewData _viewData;
   static TextEditingController controller = TextEditingController();
 
   List<ModelAlias> aliasModels = [];
 
   @override
   void dispose() {
+    _pagingController.dispose();
     super.dispose();
   }
 
   @override
   void initState() {
+    for (var i = 0; i < source.length; i++) {
+      source[i] = DbRow("Item ${i + 1}");
+    }
+    _pagingController.addPageRequestListener(
+      (offset) {
+        _fetchPage(offset);
+      },
+    );
     super.initState();
   }
 
@@ -188,12 +254,63 @@ class _WidgetAliasList extends State<WidgetAliasList> {
         });
   }
 
+  ScrollController scrollController = ScrollController();
+
   @override
   Widget build(BuildContext context) {
+    /*
+    var body = PagedListView<int, DbRow>.separated(
+      separatorBuilder: (context, index) => const Divider(),
+      pagingController: _pagingController,
+      builderDelegate: PagedChildBuilderDelegate<DbRow>(
+        itemBuilder: (context, item, index) =>
+            ListTile(leading: Text(item.name)),
+      ),
+    );
+    */
+
+    var body = CustomScrollView(
+      slivers: <Widget>[
+        SliverPersistentHeader(
+            pinned: true,
+            delegate: SliverHeader(
+                widget: Text('Test'),
+                toolBarHeight: 70,
+                closedHeight: 0,
+                openHeight: 0)),
+        PagedSliverList<int, DbRow>.separated(
+          separatorBuilder: (BuildContext context, int i) => const Divider(),
+          pagingController: _pagingController,
+          builderDelegate: PagedChildBuilderDelegate<DbRow>(
+            itemBuilder: (context, item, index) =>
+                Center(child: ListTile(leading: Text(item.name))),
+          ),
+          /*
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            childAspectRatio: 100 / 150,
+            crossAxisSpacing: 10,
+            mainAxisSpacing: 10,
+            crossAxisCount: 3,
+          ),
+          */
+        ),
+      ],
+    );
+    return AppWidgets.scaffold(context,
+        body: body,
+        navBar: navBar(context),
+        appBar: AppBar(title: const Text('Alias List')));
+/* 
     var builder = FutureBuilder<_ViewData>(
         future: search.isEmpty ? _ViewData.load() : _ViewData.search(search),
         builder: (BuildContext context, AsyncSnapshot<_ViewData> snapshot) {
+          if (snapshot.data == null) {
+            return AppWidgets.loading('Loading ...');
+          }
           var data = snapshot.data!;
+          if (data.models.isEmpty) {
+            return AppWidgets.loading('No Data found');
+          }
           var itemCount = data.models.length;
           var models = data.models;
           return AppWidgets.checkSnapshot(snapshot) ??
@@ -219,10 +336,10 @@ class _WidgetAliasList extends State<WidgetAliasList> {
                     ]);
                   }));
         });
-
-    return AppWidgets.scaffold(context,
-        body: builder,
-        navBar: navBar(context),
-        appBar: AppBar(title: const Text('Alias List')));
+ */
   }
+}
+
+class ListItem extends Container {
+  ListItem({super.key});
 }

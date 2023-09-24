@@ -64,7 +64,7 @@ class ModelAliasGroup extends Model {
       (Transaction txn) async {
         const col = 'count';
         var rows = await txn.query(TableAliasGroup.table,
-            columns: ['count ${TableAliasGroup.primaryKey.column} as $col'],
+            columns: ['count(${TableAliasGroup.primaryKey.column}) as $col'],
             groupBy: TableAliasGroup.primaryKey.column);
 
         if (rows.isNotEmpty) {

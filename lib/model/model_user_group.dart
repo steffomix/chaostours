@@ -58,7 +58,7 @@ class ModelUserGroup extends Model {
       (Transaction txn) async {
         const col = 'count';
         var rows = await txn.query(TableUserGroup.table,
-            columns: ['count ${TableUserGroup.primaryKey.column} as $col'],
+            columns: ['count(${TableUserGroup.primaryKey.column}) as $col'],
             groupBy: TableUserGroup.primaryKey.column);
 
         if (rows.isNotEmpty) {

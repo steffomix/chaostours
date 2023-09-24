@@ -126,7 +126,7 @@ class ModelTrackPoint extends Model {
       (Transaction txn) async {
         const col = 'count';
         var rows = await txn.query(TableTrackPoint.table,
-            columns: ['count ${TableTrackPoint.primaryKey.column} as $col'],
+            columns: ['count(${TableTrackPoint.primaryKey.column}) as $col'],
             groupBy: TableTrackPoint.primaryKey.column);
 
         if (rows.isNotEmpty) {

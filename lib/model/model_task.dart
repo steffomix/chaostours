@@ -63,7 +63,7 @@ class ModelTask extends Model {
       (Transaction txn) async {
         const col = 'count';
         var rows = await txn.query(TableTask.table,
-            columns: ['count ${TableTask.primaryKey.column} as $col'],
+            columns: ['count(${TableTask.primaryKey.column}) as $col'],
             groupBy: TableTask.primaryKey.column);
 
         if (rows.isNotEmpty) {

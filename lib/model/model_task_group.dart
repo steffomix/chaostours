@@ -61,7 +61,7 @@ class ModelTaskGroup extends Model {
       (Transaction txn) async {
         const col = 'count';
         var rows = await txn.query(TableTaskGroup.table,
-            columns: ['count ${TableTaskGroup.primaryKey.column} as $col'],
+            columns: ['count(${TableTaskGroup.primaryKey.column}) as $col'],
             groupBy: TableTaskGroup.primaryKey.column);
 
         if (rows.isNotEmpty) {
