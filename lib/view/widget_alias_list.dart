@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/screen.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:flutter/material.dart';
 import 'dart:math';
@@ -27,48 +28,9 @@ import 'package:chaostours/conf/app_colors.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/gps.dart';
 
-class _ViewData {
-  final List<ModelAlias> models;
-
-  static late GPS gps;
-  static int countAlias = 0;
-
-  _ViewData({required this.models});
-
-  static Future<_ViewData> load({int offset = 0}) async {
-    //await Future.delayed(Duration(seconds: 2));
-    await _getPageData();
-    countAlias = await ModelAlias.count();
-    List<ModelAlias> models = await ModelAlias.select(offset: offset);
-    var data = _ViewData(models: await _countTrackPoints(models));
-    return data;
-  }
-
-  static Future<_ViewData> search(String search) async {
-    await _getPageData();
-    List<ModelAlias> models = await ModelAlias.search(search);
-    return _ViewData(models: await _countTrackPoints(models));
-  }
-
-  static Future<List<ModelAlias>> _countTrackPoints(
-      List<ModelAlias> models) async {
-    for (var model in models) {
-      model.trackPointCount = await model.countTrackPoints();
-    }
-    return models;
-  }
-
-  static Future<void> _getPageData() async {
-    gps = await GPS.gps();
-    return Future(() => null);
-  }
-}
-
-class DbRow {
-  String name = "";
-  DbRow(String n) {
-    name = n;
-  }
+enum _DisplayMode {
+  list,
+  nearest;
 }
 
 class WidgetAliasList extends StatefulWidget {
@@ -82,27 +44,32 @@ class _WidgetAliasList extends State<WidgetAliasList> {
   // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetAliasList>();
 
-  final List<DbRow> source = List.filled(30, DbRow(""));
-  final PagingController<int, DbRow> _pagingController =
-      PagingController(firstPageKey: 0);
+  _DisplayMode _displayMode = _DisplayMode.list;
 
+  int _selectedNavBarItem = 0;
+  String _search = "";
+
+  GPS? _gps;
+
+  // height of seasrch field container
+  final double _toolBarHeight = 70;
+  String search = '';
+  static TextEditingController controller = TextEditingController();
+  List<ModelAlias> aliasModels = [];
+
+  // items per page
   static const int _limit = 3;
 
-  Future<List<DbRow>> nextPage(int offset, int limit) async {
-    /// await select itemCount
-    int end = min(offset + limit, source.length);
-    if (offset >= source.length) {
-      return <DbRow>[];
-    }
-
-    /// actual select
-    await Future.delayed(const Duration(seconds: 2));
-    return source.sublist(offset, end);
-  }
+  final PagingController<int, ModelAlias> _pagingController =
+      PagingController(firstPageKey: 0);
 
   Future<void> _fetchPage(int offset) async {
     try {
-      final newItems = await nextPage(offset, _limit);
+      final newItems = await (_search.isEmpty
+          ? _displayMode == _DisplayMode.nearest
+              ? ModelAlias.nextAlias(gps: _gps!, offset: offset, limit: _limit)
+              : ModelAlias.select(offset: offset, limit: _limit)
+          : ModelAlias.search(_search, offset: offset));
       final isLastPage = newItems.length < _limit;
       if (isLastPage) {
         _pagingController.appendLastPage(newItems);
@@ -115,15 +82,6 @@ class _WidgetAliasList extends State<WidgetAliasList> {
     }
   }
 
-  int _listMode = 0;
-  GPS _gps = GPS(0, 0);
-  String search = '';
-
-  late _ViewData _viewData;
-  static TextEditingController controller = TextEditingController();
-
-  List<ModelAlias> aliasModels = [];
-
   @override
   void dispose() {
     _pagingController.dispose();
@@ -132,15 +90,99 @@ class _WidgetAliasList extends State<WidgetAliasList> {
 
   @override
   void initState() {
-    for (var i = 0; i < source.length; i++) {
-      source[i] = DbRow("Item ${i + 1}");
-    }
     _pagingController.addPageRequestListener(
       (offset) {
         _fetchPage(offset);
       },
     );
     super.initState();
+  }
+
+  ///
+  ///
+  ///
+  ///
+  ///
+  ///
+  ///
+  ///
+  ///
+  ///
+  ///
+
+  @override
+  Widget build(BuildContext context) {
+    /*
+    var body = PagedListView<int, DbRow>.separated(
+      separatorBuilder: (context, index) => const Divider(),
+      pagingController: _pagingController,
+      builderDelegate: PagedChildBuilderDelegate<DbRow>(
+        itemBuilder: (context, item, index) =>
+            ListTile(leading: Text(item.name)),
+      ),
+    );
+    */
+
+    var body = CustomScrollView(
+      slivers: <Widget>[
+        SliverPersistentHeader(
+            pinned: true,
+            delegate: SliverHeader(
+                widget: searchWidget(), //Text('Test'),
+                toolBarHeight: _toolBarHeight,
+                closedHeight: 0,
+                openHeight: 0)),
+        PagedSliverList<int, ModelAlias>.separated(
+          separatorBuilder: (BuildContext context, int i) => const Divider(),
+          pagingController: _pagingController,
+          builderDelegate: PagedChildBuilderDelegate<ModelAlias>(
+            itemBuilder: (context, item, index) =>
+                Center(child: ListTile(leading: Text(item.id.toString()))),
+          ),
+        ),
+      ],
+    );
+    return AppWidgets.scaffold(context,
+        body: body,
+        navBar: navBar(context),
+        appBar: AppBar(title: const Text('Alias List')));
+/* 
+    var builder = FutureBuilder<_ViewData>(
+        future: search.isEmpty ? _ViewData.load() : _ViewData.search(search),
+        builder: (BuildContext context, AsyncSnapshot<_ViewData> snapshot) {
+          if (snapshot.data == null) {
+            return AppWidgets.loading('Loading ...');
+          }
+          var data = snapshot.data!;
+          if (data.models.isEmpty) {
+            return AppWidgets.loading('No Data found');
+          }
+          var itemCount = data.models.length;
+          var models = data.models;
+          return AppWidgets.checkSnapshot(snapshot) ??
+              ListView.builder(
+                  itemCount: itemCount + 1,
+                  itemBuilder: ((BuildContext context, int id) {
+                    if (id == 0) {
+                      return ListBody(
+                          children: [searchWidget(), AppWidgets.divider()]);
+                    }
+                    var model = models[id - 1];
+                    return ListBody(children: [
+                      model.description.trim().isEmpty
+                          ? ListTile(
+                              trailing: btnInfo(context, model),
+                              title: title(model))
+                          : ListTile(
+                              trailing: btnInfo(context, model),
+                              title: title(model),
+                              subtitle: subtitle(model),
+                            ),
+                      AppWidgets.divider()
+                    ]);
+                  }));
+        });
+ */
   }
 
   Widget title(ModelAlias model) {
@@ -199,23 +241,39 @@ class _WidgetAliasList extends State<WidgetAliasList> {
   }
 
   Widget searchWidget() {
-    return TextField(
-      controller: controller,
-      minLines: 1,
-      maxLines: 1,
-      decoration: const InputDecoration(
-          icon: Icon(Icons.search, size: 30), border: InputBorder.none),
-      onChanged: (value) {
-        search = value;
-        setState(() {});
-      },
-    );
+    return SizedBox(
+        height: _toolBarHeight,
+        width: Screen(context).width * 0.95,
+        child: Align(
+            alignment: Alignment.center,
+            child: ListTile(
+                trailing: IconButton(
+                  icon: const Icon(Icons.clear),
+                  onPressed: () {},
+                ),
+                title: TextField(
+                  controller: controller,
+                  minLines: 1,
+                  maxLines: 1,
+                  decoration: const InputDecoration(
+                    isDense: true,
+                    //con: Icon(Icons.search, size: 30),
+                    border: OutlineInputBorder(),
+                    labelText: "Search",
+                    contentPadding: EdgeInsets.all(10),
+                  ),
+                  onChanged: (value) {
+                    _search = value;
+                    _displayMode = _DisplayMode.list;
+                    _selectedNavBarItem = 2; // last visited
+                    setState(() {});
+                  },
+                ))));
   }
 
-  int selectedNavBarItem = 0;
   BottomNavigationBar navBar(BuildContext context) {
     return BottomNavigationBar(
-        currentIndex: selectedNavBarItem,
+        currentIndex: _selectedNavBarItem,
         items: const [
           // new on osm
           BottomNavigationBarItem(icon: Icon(Icons.add), label: '*Neu*'),
@@ -226,24 +284,45 @@ class _WidgetAliasList extends State<WidgetAliasList> {
               icon: Icon(Icons.timer), label: 'Zuletzt besucht'),
         ],
         onTap: (int id) {
-          selectedNavBarItem = id;
-          _listMode = id;
+          _selectedNavBarItem = id;
 
           switch (id) {
             /// create
             case 0:
+              GPS.gps().then(
+                (GPS gps) async {
+                  int count = await ModelAlias.count();
+                  await ModelAlias.insert(ModelAlias(
+                      gps: gps,
+                      lastVisited: DateTime.now(),
+                      title: "Alias $count"));
+                  _pagingController.refresh();
+                  setState(() {});
+                },
+              );
+              /*
               Navigator.pushNamed(context, AppRoutes.osm.route, arguments: 0)
                   .then((_) {
                 setState(() {});
               });
+              */
               break;
 
             /// last visited
             case 1:
+              ModelAlias.count().then((value) => print(value));
               GPS.gps().then((GPS gps) {
                 _gps = gps;
+                _displayMode = _DisplayMode.nearest;
+                _pagingController.refresh();
                 setState(() {});
               });
+              break;
+
+            case 2:
+              _displayMode = _DisplayMode.list;
+              _pagingController.refresh();
+              setState(() {});
               break;
 
             /// default view
@@ -253,93 +332,45 @@ class _WidgetAliasList extends State<WidgetAliasList> {
           }
         });
   }
+}
 
-  ScrollController scrollController = ScrollController();
 
-  @override
-  Widget build(BuildContext context) {
-    /*
-    var body = PagedListView<int, DbRow>.separated(
-      separatorBuilder: (context, index) => const Divider(),
-      pagingController: _pagingController,
-      builderDelegate: PagedChildBuilderDelegate<DbRow>(
-        itemBuilder: (context, item, index) =>
-            ListTile(leading: Text(item.name)),
-      ),
-    );
-    */
 
-    var body = CustomScrollView(
-      slivers: <Widget>[
-        SliverPersistentHeader(
-            pinned: true,
-            delegate: SliverHeader(
-                widget: Text('Test'),
-                toolBarHeight: 70,
-                closedHeight: 0,
-                openHeight: 0)),
-        PagedSliverList<int, DbRow>.separated(
-          separatorBuilder: (BuildContext context, int i) => const Divider(),
-          pagingController: _pagingController,
-          builderDelegate: PagedChildBuilderDelegate<DbRow>(
-            itemBuilder: (context, item, index) =>
-                Center(child: ListTile(leading: Text(item.name))),
-          ),
-          /*
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            childAspectRatio: 100 / 150,
-            crossAxisSpacing: 10,
-            mainAxisSpacing: 10,
-            crossAxisCount: 3,
-          ),
-          */
-        ),
-      ],
-    );
-    return AppWidgets.scaffold(context,
-        body: body,
-        navBar: navBar(context),
-        appBar: AppBar(title: const Text('Alias List')));
-/* 
-    var builder = FutureBuilder<_ViewData>(
-        future: search.isEmpty ? _ViewData.load() : _ViewData.search(search),
-        builder: (BuildContext context, AsyncSnapshot<_ViewData> snapshot) {
-          if (snapshot.data == null) {
-            return AppWidgets.loading('Loading ...');
-          }
-          var data = snapshot.data!;
-          if (data.models.isEmpty) {
-            return AppWidgets.loading('No Data found');
-          }
-          var itemCount = data.models.length;
-          var models = data.models;
-          return AppWidgets.checkSnapshot(snapshot) ??
-              ListView.builder(
-                  itemCount: itemCount + 1,
-                  itemBuilder: ((BuildContext context, int id) {
-                    if (id == 0) {
-                      return ListBody(
-                          children: [searchWidget(), AppWidgets.divider()]);
-                    }
-                    var model = models[id - 1];
-                    return ListBody(children: [
-                      model.description.trim().isEmpty
-                          ? ListTile(
-                              trailing: btnInfo(context, model),
-                              title: title(model))
-                          : ListTile(
-                              trailing: btnInfo(context, model),
-                              title: title(model),
-                              subtitle: subtitle(model),
-                            ),
-                      AppWidgets.divider()
-                    ]);
-                  }));
-        });
- */
+/*
+class _ViewData {
+  static int modelCount = 0;
+  final List<ModelAlias> models;
+
+  static late GPS gps;
+
+  _ViewData({required this.models});
+
+  static Future<_ViewData> load({int offset = 0}) async {
+    //await Future.delayed(Duration(seconds: 2));
+    await _getPageData();
+    modelCount = await ModelAlias.count();
+    List<ModelAlias> models = await ModelAlias.select(offset: offset);
+    var data = _ViewData(models: await _countTrackPoints(models));
+    return data;
+  }
+
+  static Future<_ViewData> search(String search) async {
+    await _getPageData();
+    List<ModelAlias> models = await ModelAlias.search(search);
+    return _ViewData(models: await _countTrackPoints(models));
+  }
+
+  static Future<List<ModelAlias>> _countTrackPoints(
+      List<ModelAlias> models) async {
+    for (var model in models) {
+      model.trackPointCount = await model.countTrackPoints();
+    }
+    return models;
+  }
+
+  static Future<void> _getPageData() async {
+    gps = await GPS.gps();
+    return Future(() => null);
   }
 }
-
-class ListItem extends Container {
-  ListItem({super.key});
-}
+*/

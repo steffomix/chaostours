@@ -107,25 +107,22 @@ class ModelAlias extends Model {
   }
 
   static Future<int> count() async {
-    return await DB.execute<int>(
+    const col = 'ct';
+    var rows = await DB.execute<List<Map<String, Object?>>>(
       (Transaction txn) async {
-        const col = 'count';
-        var rows = await txn.query(TableAlias.table,
-            columns: ['count(${TableAlias.primaryKey.column}) as $col'],
-            groupBy: TableAlias.primaryKey.column);
-
-        if (rows.isNotEmpty) {
-          return DB.parseInt(rows.first[col], fallback: 0);
-        } else {
-          return 0;
-        }
+        return await txn.query(TableAlias.table, columns: ['count(*) as $col']);
       },
     );
+    if (rows.isNotEmpty) {
+      return DB.parseInt(rows.first[col], fallback: 0);
+    } else {
+      return 0;
+    }
   }
 
   Future<int> countTrackPoints() async {
     const col = 'ct';
-    var rows = await DB.execute(
+    var rows = await DB.execute<List<Map<String, Object?>>>(
       (Transaction txn) async {
         return await txn.query(TableTrackPointAlias.table,
             columns: ['count(${TableTrackPointAlias.idAlias.column}) as $col'],
@@ -134,7 +131,7 @@ class ModelAlias extends Model {
       },
     );
     if (rows.isNotEmpty) {
-      return DB.parseInt(rows.first[col]);
+      return DB.parseInt(rows.first[col], fallback: 0);
     }
     return 0;
   }
@@ -186,7 +183,8 @@ class ModelAlias extends Model {
   }
 
   /// transforms text into %text%
-  static Future<List<ModelAlias>> search(String text) async {
+  static Future<List<ModelAlias>> search(String text,
+      {int offset = 0, int limit = 50}) async {
     text = '%$text%';
     var rows = await DB.execute<List<Map<String, Object?>>>(
       (txn) async {
@@ -194,6 +192,8 @@ class ModelAlias extends Model {
             columns: TableAlias.columns,
             where:
                 '${TableAlias.title} like ? OR ${TableAlias.description} like ?',
+            offset: offset,
+            limit: limit,
             whereArgs: [text, text]);
       },
     );
@@ -264,7 +264,10 @@ class ModelAlias extends Model {
     var rows =
         await DB.execute<List<Map<String, Object?>>>((Transaction txn) async {
       return await txn.query(TableAlias.table,
-          columns: TableAlias.columns, offset: offset, limit: limit);
+          columns: TableAlias.columns,
+          orderBy: TableAlias.lastVisited.column,
+          offset: offset,
+          limit: limit);
     });
     var models = <ModelAlias>[];
     for (var row in rows) {
