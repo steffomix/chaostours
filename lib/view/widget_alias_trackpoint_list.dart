@@ -48,12 +48,7 @@ class _WidgetAliasTrackpoint extends State<WidgetAliasTrackpoint> {
   int? _aliasId;
   ModelAlias? _modelAlias;
 
-  /// widget parts
-  Widget? _bodyWidget;
-  Widget? _mapWidget;
-  Widget? _searchWidget;
-  Widget? _headerWidget;
-  Widget? _trackPointWidgets;
+  final double _toolBarHeight = 400;
 
   @override
   void initState() {
@@ -84,7 +79,7 @@ class _WidgetAliasTrackpoint extends State<WidgetAliasTrackpoint> {
     }
     return SizedBox(
         width: Screen(context).width,
-        height: 25,
+        height: 50,
         child: IconButton(
             icon: const Icon(Icons.map),
             onPressed: () async {
@@ -182,8 +177,10 @@ class _WidgetAliasTrackpoint extends State<WidgetAliasTrackpoint> {
   }
 
   Widget header() {
-    return Container(
-        padding: const EdgeInsets.only(bottom: 15),
+    return SizedBox(
+        width: Screen(context).width * 0.95,
+        height: _toolBarHeight,
+        //padding: const EdgeInsets.only(bottom: 15),
         child: Column(children: [
           mapWidget(),
           searchWidget(),
@@ -192,7 +189,6 @@ class _WidgetAliasTrackpoint extends State<WidgetAliasTrackpoint> {
         ]));
   }
 
-  final double _toolBarHeight = 200;
   @override
   Widget build(BuildContext context) {
     if (_aliasId == null) {
