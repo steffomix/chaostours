@@ -107,22 +107,23 @@ class ModelAlias extends Model {
   }
 
   static Future<int> count() async {
-    const col = 'ct';
-    var rows = await DB.execute<List<Map<String, Object?>>>(
+    return await DB.execute<int>(
       (Transaction txn) async {
-        return await txn.query(TableAlias.table, columns: ['count(*) as $col']);
+        const col = 'ct';
+        final rows =
+            await txn.query(TableAlias.table, columns: ['count(*) as $col']);
+        if (rows.isNotEmpty) {
+          return DB.parseInt(rows.first[col], fallback: 0);
+        } else {
+          return 0;
+        }
       },
     );
-    if (rows.isNotEmpty) {
-      return DB.parseInt(rows.first[col], fallback: 0);
-    } else {
-      return 0;
-    }
   }
 
   Future<int> countTrackPoints() async {
     const col = 'ct';
-    var rows = await DB.execute<List<Map<String, Object?>>>(
+    final rows = await DB.execute<List<Map<String, Object?>>>(
       (Transaction txn) async {
         return await txn.query(TableTrackPointAlias.table,
             columns: ['count(${TableTrackPointAlias.idAlias.column}) as $col'],
@@ -148,7 +149,9 @@ class ModelAlias extends Model {
     );
     if (rows.isNotEmpty) {
       try {
-        fromMap(rows.first);
+        var alias = fromMap(rows.first);
+        alias.trackPointCount = await ModelTrackPoint.count(alias: alias);
+        return alias;
       } catch (e, stk) {
         logger.error('byId: $e', stk);
         return null;
@@ -260,12 +263,12 @@ class ModelAlias extends Model {
   }
 
   static Future<List<ModelAlias>> select(
-      {int offset = 0, int limit = 50}) async {
+      {int offset = 0, int limit = 50, lastVisited = true}) async {
     var rows =
         await DB.execute<List<Map<String, Object?>>>((Transaction txn) async {
       return await txn.query(TableAlias.table,
           columns: TableAlias.columns,
-          orderBy: TableAlias.lastVisited.column,
+          orderBy: lastVisited ? TableAlias.lastVisited.column : null,
           offset: offset,
           limit: limit);
     });
@@ -316,7 +319,7 @@ class ModelAlias extends Model {
       {required GPS gps,
       int limit = 1,
       int offset = 0,
-      includeInactive = false}) async {
+      includeInactive = true}) async {
     var lat = gps.lat;
     var lon = gps.lon;
     var latCol = TableAlias.latitude.column;

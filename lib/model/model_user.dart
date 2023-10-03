@@ -65,9 +65,9 @@ class ModelUser extends Model {
   static Future<int> count() async {
     return await DB.execute<int>(
       (Transaction txn) async {
-        const col = 'count';
-        var rows = await txn.query(TableUser.table,
-            columns: ['count(${TableUser.primaryKey.column}) as $col'],
+        const col = 'ct';
+        final rows = await txn.query(TableUser.table,
+            columns: ['count(*) as $col'],
             groupBy: TableUser.primaryKey.column);
 
         if (rows.isNotEmpty) {
@@ -121,7 +121,7 @@ class ModelUser extends Model {
   /// transforms text into %text%
   static Future<List<ModelUser>> search(String text) async {
     text = '%$text%';
-    var rows = await DB.execute<List<Map<String, Object?>>>(
+    final rows = await DB.execute<List<Map<String, Object?>>>(
       (txn) async {
         return await txn.query(TableUser.table,
             where:
@@ -129,7 +129,7 @@ class ModelUser extends Model {
             whereArgs: [text, text]);
       },
     );
-    var models = <ModelUser>[];
+    List<ModelUser> models = [];
     for (var row in rows) {
       try {
         models.add(fromMap(row));

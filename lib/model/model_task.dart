@@ -61,9 +61,9 @@ class ModelTask extends Model {
   static Future<int> count() async {
     return await DB.execute<int>(
       (Transaction txn) async {
-        const col = 'count';
-        var rows = await txn.query(TableTask.table,
-            columns: ['count(${TableTask.primaryKey.column}) as $col'],
+        const col = 'ct';
+        final rows = await txn.query(TableTask.table,
+            columns: ['count(*) as $col'],
             groupBy: TableTask.primaryKey.column);
 
         if (rows.isNotEmpty) {

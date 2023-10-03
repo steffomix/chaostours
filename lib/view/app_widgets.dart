@@ -310,6 +310,51 @@ class AppWidgets {
 ///
 ///
 ///
+///
+
+class SliverHeader extends SliverPersistentHeaderDelegate {
+  Widget widget;
+  double toolBarHeight;
+  //toolBarHeight Included in both
+  double closedHeight;
+  double openHeight;
+
+  SliverHeader({
+    required this.widget,
+    required this.toolBarHeight,
+    this.closedHeight = 0,
+    this.openHeight = 0,
+  });
+
+  @override
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return Container(
+      color: Theme.of(context).canvasColor,
+      height: toolBarHeight + openHeight,
+      child: FittedBox(
+        fit: BoxFit.none,
+        child: widget,
+      ),
+    );
+  }
+
+  @override
+  double get maxExtent => toolBarHeight + openHeight;
+
+  @override
+  double get minExtent => toolBarHeight + closedHeight;
+
+  @override
+  bool shouldRebuild(SliverPersistentHeaderDelegate oldDelegate) => true;
+}
+
+///
+///
+///
+///
+///
+///
 
 class WidgetDrawer extends StatefulWidget {
   const WidgetDrawer({super.key});

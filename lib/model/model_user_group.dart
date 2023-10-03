@@ -56,9 +56,9 @@ class ModelUserGroup extends Model {
   static Future<int> count() async {
     return await DB.execute<int>(
       (Transaction txn) async {
-        const col = 'count';
-        var rows = await txn.query(TableUserGroup.table,
-            columns: ['count(${TableUserGroup.primaryKey.column}) as $col'],
+        const col = 'ct';
+        final rows = await txn.query(TableUserGroup.table,
+            columns: ['count(*) as $col'],
             groupBy: TableUserGroup.primaryKey.column);
 
         if (rows.isNotEmpty) {

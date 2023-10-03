@@ -121,13 +121,20 @@ class ModelTrackPoint extends Model {
         notes: (map[TableTrackPoint.notes.column] ?? '').toString());
   }
 
-  static Future<int> count() async {
+  static Future<int> count({ModelAlias? alias}) async {
     return await DB.execute<int>(
       (Transaction txn) async {
-        const col = 'count';
-        var rows = await txn.query(TableTrackPoint.table,
-            columns: ['count(${TableTrackPoint.primaryKey.column}) as $col'],
-            groupBy: TableTrackPoint.primaryKey.column);
+        const col = 'ct';
+        List<Map<String, Object?>> rows;
+        if (alias == null) {
+          rows = await txn
+              .query(TableTrackPoint.table, columns: ['count(*) as $col']);
+        } else {
+          rows = await txn.query(TableTrackPointAlias.table,
+              columns: ['count(*) as $col'],
+              where: "${TableTrackPointAlias.idAlias} = ?",
+              whereArgs: [alias.id]);
+        }
 
         if (rows.isNotEmpty) {
           return DB.parseInt(rows.first[col], fallback: 0);
@@ -434,13 +441,16 @@ class ModelTrackPoint extends Model {
     return models;
   }
 
-  static Future<List<ModelTrackPoint>> byAlias(ModelAlias alias) async {
+  static Future<List<ModelTrackPoint>> byAlias(ModelAlias alias,
+      {int offset = 0, int limit = 50}) async {
     var rows = await DB.execute<List<Map<String, Object?>>>(
       (Transaction txn) async {
         return await txn.query(TableTrackPointAlias.table,
             columns: TableTrackPointAlias.columns,
             where: '${TableTrackPointAlias.idAlias} = ?',
-            whereArgs: [alias.id]);
+            whereArgs: [alias.id],
+            offset: offset,
+            limit: limit);
       },
     );
     var ids = <int>[];
