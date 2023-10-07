@@ -38,17 +38,17 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
   // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetAliasEdit>();
 
-  ModelAlias? _alias;
-  ValueNotifier<bool> modified = ValueNotifier<bool>(false);
-  TextEditingController addressController = TextEditingController();
-  TextEditingController notesController = TextEditingController();
-  TextEditingController radiusController = TextEditingController();
+  ModelAlias? _modelAlias;
+  final _aliasModified = ValueNotifier<bool>(false);
+  final _addressController = TextEditingController();
+  final _notesController = TextEditingController();
+  final _radiusController = TextEditingController();
 
   String loadingMsg = '';
 
   @override
   void dispose() {
-    modified.dispose();
+    _aliasModified.dispose();
     super.dispose();
   }
 
@@ -56,27 +56,19 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
   Widget build(BuildContext context) {
     final id = ModalRoute.of(context)!.settings.arguments as int;
 
-    ///
-    if (_alias == null) {
-      loadingMsg = 'Loading Alias #$id';
-      ModelAlias.byId(id).then(
-        (ModelAlias? model) {
-          if (model != null) {
-            setState(() {
-              _alias = model;
-            });
-          }
-        },
-      ).onError((error, stackTrace) {
-        loadingMsg = 'load alias on initialize build: $error';
-        logger.error(loadingMsg, stackTrace);
-      });
-      return AppWidgets.loading(loadingMsg);
-    }
-    ModelAlias alias = _alias!;
-    addressController.text = alias.title;
-    notesController.text = alias.description;
-    radiusController.text = alias.radius.toString();
+    return FutureBuilder<ModelAlias?>(
+      future: ModelAlias.byId(id),
+      builder: (context, snapshot) {
+        return AppWidgets.checkSnapshot(snapshot) ?? body(snapshot.data!);
+      },
+    );
+  }
+
+  Widget body(ModelAlias alias) {
+    _modelAlias = alias;
+    _addressController.text = alias.title;
+    _notesController.text = alias.description;
+    _radiusController.text = alias.radius.toString();
 
     return AppWidgets.scaffold(context,
         navBar: BottomNavigationBar(
@@ -89,11 +81,11 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
               // 0 alphabethic
               BottomNavigationBarItem(
                   icon: ValueListenableBuilder(
-                      valueListenable: modified,
+                      valueListenable: _aliasModified,
                       builder: ((context, value, child) {
                         return Icon(Icons.done,
                             size: 30,
-                            color: modified.value == true
+                            color: _aliasModified.value == true
                                 ? AppColors.green.color
                                 : AppColors.white54.color);
                       })),
@@ -133,7 +125,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                 }),
                 maxLines: 3,
                 minLines: 3,
-                controller: addressController,
+                controller: _addressController,
               )),
 
           /// gps
@@ -157,7 +149,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                         ModelAlias.byId(alias.id).then(
                           (ModelAlias? model) {
                             setState(() {
-                              _alias = model;
+                              _modelAlias = model;
                             });
                           },
                         );
@@ -176,7 +168,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                 decoration: const InputDecoration(label: Text('Notizen')),
                 maxLines: null,
                 minLines: 3,
-                controller: notesController,
+                controller: _notesController,
                 onChanged: (value) {
                   modify();
                   alias.description = value.trim();
@@ -203,7 +195,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                 }),
                 maxLines: 1, //
                 minLines: 1,
-                controller: radiusController,
+                controller: _radiusController,
               )),
 
           /// type
@@ -288,12 +280,12 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
   }
 
   void modify() {
-    modified.value = true;
+    _aliasModified.value = true;
   }
 
   void setStatus(BuildContext context, AliasVisibility? val) {
-    _alias?.visibility = (val ?? AliasVisibility.restricted);
-    modified.value = true;
+    _modelAlias?.visibility = (val ?? AliasVisibility.restricted);
+    _aliasModified.value = true;
     setState(() {});
   }
 }

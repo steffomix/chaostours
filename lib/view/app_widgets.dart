@@ -150,8 +150,9 @@ class AppWidgets {
   static Widget loading(String info) {
     return Center(
         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-      LoadingAnimationWidget.staggeredDotsWave(
-          color: AppColors.black.color, size: 30),
+      const SizedBox(width: 30, height: 30, child: CircularProgressIndicator()),
+      /*LoadingAnimationWidget.staggeredDotsWave(
+          color: AppColors.black.color, size: 30),*/
       Text(info)
     ]));
   }

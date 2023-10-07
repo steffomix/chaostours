@@ -126,6 +126,7 @@ class Cache {
   factory Cache() => _instance ??= Cache._();
   static Cache get instance => _instance ??= Cache._();
 
+  /// reload SharedPreferences
   static Future<void> reload() async {
     await (await SharedPreferences.getInstance()).reload();
   }

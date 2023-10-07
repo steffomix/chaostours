@@ -83,19 +83,17 @@ class DataBridge {
   /// save foreground, load background and fire event
   static bool _serviceRunning = false;
   void stopService() => _serviceRunning = false;
-  startService() {
+  void startService() {
     if (!_serviceRunning) {
       _serviceRunning = true;
       Future.microtask(() async {
         while (_serviceRunning) {
           try {
-            await Cache.reload();
             var status = trackingStatus.name;
             await loadCache();
             if (status != trackingStatus.name) {
               // trackingstatus has changed
               // reload data
-              await Cache.reload();
               EventManager.fire<EventOnTrackingStatusChanged>(
                   EventOnTrackingStatusChanged());
             }
@@ -114,7 +112,7 @@ class DataBridge {
     }
   }
 
-  /// loaded by foreground and background
+  /// loaded by foreground and background from Shared preferences
   Future<void> loadCache([GPS? gps]) async {
     try {
       gps ??= await GPS.gps();

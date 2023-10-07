@@ -15,11 +15,24 @@ limitations under the License.
 */
 
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:http/http.dart' as http;
+import 'package:flutter/services.dart';
+import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
 
 ///
+import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/logger.dart';
+import 'package:chaostours/gps.dart';
+import 'package:chaostours/address.dart' as addr;
+import 'package:chaostours/conf/app_settings.dart';
+import 'package:chaostours/screen.dart';
+import 'package:chaostours/data_bridge.dart';
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/view/app_widgets.dart';
+import 'package:chaostours/osm_tools.dart';
+import 'package:chaostours/model/model_alias.dart';
 
 class OsmSearchResult {
   final double lat;
@@ -64,12 +77,13 @@ class WidgetOsm extends StatefulWidget {
 }
 
 class _WidgetOsm extends State<WidgetOsm> {
+  /*
   @override
   Widget build(BuildContext context) {
     return AppWidgets.scaffold(context,
         body: AppWidgets.loading('Widget under construction'));
   }
-  /* 
+  */
   static final Logger logger = Logger.logger<WidgetOsm>();
 
   /// screen
@@ -80,27 +94,17 @@ class _WidgetOsm extends State<WidgetOsm> {
 
   /// alias id
   int _id = 0;
-  late ModelAlias _alias;
-
-  /// _controller
-  late MapController _controller;
-
-  late OSMFlutter osm;
-
-  /// init - prevent init sequence in build called twice
-  bool _initialized = false;
+  ModelAlias? _modelAlias;
 
   /// map _controller position
-  late GPS _gps;
+  GPS? _gps;
 
   /// search textfield
-  final ValueNotifier<String> _address = ValueNotifier<String>('');
+  final ValueNotifier<String> _addressNotifier = ValueNotifier<String>('');
   final ValueNotifier<bool> _loading = ValueNotifier<bool>(false);
 
   bool debugPaintPointersEnabled = true;
 
-  /// draw circles
-  bool _widgetActive = false;
   int circleId = 0;
 
   /// search
@@ -111,15 +115,11 @@ class _WidgetOsm extends State<WidgetOsm> {
   DateTime _lastSearch = DateTime.now();
 
   ///searchResult
-  late Screen _screen;
   final List<OsmSearchResult> searchResultList = [];
 
   @override
   void initState() {
-    _id = 0;
-    _initialized = false;
     super.initState();
-    EventManager.listen<EventOnOsmIsLoading>(onOsmLoad);
     DataBridge.instance.loadCache().then((_) {
       if (mounted) {
         setState(() {});
@@ -127,17 +127,11 @@ class _WidgetOsm extends State<WidgetOsm> {
     });
   }
 
-  void onOsmLoad(EventOnOsmIsLoading e) {
-    drawCircles();
-  }
-
   @override
   void dispose() {
-    EventManager.remove<EventOnOsmIsLoading>(onOsmLoad);
-    _widgetActive = false;
-    _address.dispose();
-    _controller.removeAllCircle();
-    _controller.dispose();
+    _addressNotifier.dispose();
+    mapController.removeAllCircle();
+    mapController.dispose();
     super.dispose();
   }
 
@@ -208,7 +202,7 @@ class _WidgetOsm extends State<WidgetOsm> {
     setState(() {});
   }
 
-  Widget infoBox(context) {
+  Widget infoBox() {
     var boxContent = Column(children: [
       ListTile(
 
@@ -224,6 +218,10 @@ class _WidgetOsm extends State<WidgetOsm> {
           /// search text field
           title: TextField(
               controller: textController,
+              decoration: InputDecoration(
+                  labelStyle: TextStyle(color: Theme.of(context).hintColor),
+                  label: const Text(
+                      'Search order: Country, City, Street, House number')),
               onChanged: (val) {
                 searchTextChanged = true;
                 _searchText = val;
@@ -239,16 +237,16 @@ class _WidgetOsm extends State<WidgetOsm> {
 
               /// on pressed move to location
               onPressed: () {
-                _controller
+                mapController
                     .getCurrentPositionAdvancedPositionPicker()
                     .then((loc) {
-                  _gps = GPS(loc.latitude, loc.longitude);
-                  _controller
+                  final gps = GPS(loc.latitude, loc.longitude);
+                  mapController
                       .goToLocation(
-                          GeoPoint(latitude: _gps.lat, longitude: _gps.lon))
+                          GeoPoint(latitude: gps.lat, longitude: gps.lon))
                       .then((_) {
-                    addr.Address(_gps).lookupAddress().then((address) {
-                      _address.value = address.toString();
+                    addr.Address(gps).lookupAddress().then((address) {
+                      _addressNotifier.value = address.toString();
                     }).onError((error, stackTrace) {
                       logger.error(error.toString(), stackTrace);
                     });
@@ -260,22 +258,23 @@ class _WidgetOsm extends State<WidgetOsm> {
 
           /// _address value
           title: ValueListenableBuilder(
-              valueListenable: _address,
+              valueListenable: _addressNotifier,
               builder: (context, value, child) => Text(
-                    _address.value,
+                    _addressNotifier.value,
                     maxLines: 3,
                   )),
           leading: IconButton(
               icon: const Icon(Icons.copy, size: 20),
               onPressed: () async {
-                await Clipboard.setData(ClipboardData(text: _address.value));
+                await Clipboard.setData(
+                    ClipboardData(text: _addressNotifier.value));
               })
           //subtitle: Text('GPS: $_gps'),
           )
     ]);
 
     return SizedBox(
-        height: 140,
+        height: 160,
         width: 1000,
         child: Container(
             alignment: Alignment.center,
@@ -287,7 +286,7 @@ class _WidgetOsm extends State<WidgetOsm> {
 
   List<Widget> searchResultWidgetList = [];
 
-  Widget searchResultContainer(context) {
+  Widget searchResultContainer() {
     if (searchResultList.isEmpty && _loading.value == false) {
       return const SizedBox.shrink();
     }
@@ -304,7 +303,7 @@ class _WidgetOsm extends State<WidgetOsm> {
                   searchResultList.clear();
                   setState(() {});
                   _gps = GPS(item.lat, item.lon);
-                  _controller.goToLocation(
+                  mapController.goToLocation(
                       GeoPoint(latitude: item.lat, longitude: item.lon));
                 }),
             title: Text(item.address),
@@ -320,11 +319,12 @@ class _WidgetOsm extends State<WidgetOsm> {
     }
 
     ///
+    final screen = Screen(context);
     return Positioned(
-        top: 140,
+        top: 170,
         left: 10,
-        width: _screen.width - 20,
-        height: _screen.newHeight - 240 - 20,
+        width: screen.width * 0.95,
+        height: screen.newHeight * 0.7,
         child: Container(
             color: const Color.fromARGB(108, 255, 255, 255),
             child: ListView(children: [
@@ -350,7 +350,7 @@ class _WidgetOsm extends State<WidgetOsm> {
   }
 
   launchGoogleMaps() {
-    _controller.getCurrentPositionAdvancedPositionPicker().then((p) async {
+    mapController.getCurrentPositionAdvancedPositionPicker().then((p) async {
       var gps = await GPS.gps();
       var lat = gps.lat;
       var lon = gps.lon;
@@ -376,19 +376,25 @@ class _WidgetOsm extends State<WidgetOsm> {
         ],
         onTap: (int buttonId) {
           /// get current position
-          var future = _controller.getCurrentPositionAdvancedPositionPicker();
+          var future = mapController.getCurrentPositionAdvancedPositionPicker();
           future.then((pos) async {
             switch (buttonId) {
               case 0:
                 if (_id > 0) {
+                  if (_modelAlias == null) {
+                    return;
+                  }
                   logger.log('save/update id: $_id');
-                  ModelAlias alias = _alias; //ModelAlias.getAlias(_id);
-                  alias.lat = pos.latitude;
-                  alias.lon = pos.longitude;
-
-                  ModelAlias.update(_alias);
-                  Navigator.pop(context);
-                  Fluttertoast.showToast(msg: 'Alias location updated');
+                  ModelAlias alias = _modelAlias!; //ModelAlias.getAlias(_id);
+                  alias.gps = GPS(pos.latitude, pos.longitude);
+                  alias.update().then(
+                    (_) {
+                      if (mounted) {
+                        Navigator.pop(context);
+                      }
+                      Fluttertoast.showToast(msg: 'Alias location updated');
+                    },
+                  );
                 } else {
                   /// create alias
                   String address =
@@ -397,11 +403,9 @@ class _WidgetOsm extends State<WidgetOsm> {
                           .toString();
 
                   ModelAlias alias = ModelAlias(
-                      lat: pos.latitude,
-                      lon: pos.longitude,
+                      gps: GPS(pos.latitude, pos.longitude),
                       title: address,
-                      notes: '',
-                      deleted: false,
+                      description: '',
                       radius: AppSettings.distanceTreshold,
                       lastVisited: DateTime.now());
 
@@ -424,17 +428,19 @@ class _WidgetOsm extends State<WidgetOsm> {
                 break;
               case 2:
                 // search for alias
-                _controller
+                mapController
                     .getCurrentPositionAdvancedPositionPicker()
                     .then((GeoPoint pos) {
-                  List<ModelAlias> list = ModelAlias.nextAlias(
-                      gps: GPS(pos.latitude, pos.longitude));
-                  if (list.isNotEmpty) {
-                    Navigator.pushNamed(
-                        context, AppRoutes.listAliasTrackpoints.route,
-                        arguments: list.first.id);
-                  }
+                  ModelAlias.nextAlias(gps: GPS(pos.latitude, pos.longitude))
+                      .then((List<ModelAlias> models) {
+                    if (models.isNotEmpty && mounted) {
+                      Navigator.pushNamed(
+                          context, AppRoutes.listAliasTrackpoints.route,
+                          arguments: models.first.id);
+                    }
+                  });
                 });
+
                 break;
               default:
 
@@ -448,16 +454,41 @@ class _WidgetOsm extends State<WidgetOsm> {
         });
   }
 
-  Widget centerAim(context) {
-    double iconsize = 20;
-    return Positioned(
-        left: _screen.width / 2 - iconsize / 2 + 1,
-        top: (_screen.height - 130) / 2 - iconsize / 2 - 5,
-        child: Icon(Icons.add_circle_outline_outlined, size: iconsize));
+  /// _controller
+  MapController? _mapController;
+  MapController get mapController {
+    return _mapController ??= _gps == null
+        ? MapController(
+            initMapWithUserPosition:
+                const UserTrackingOption(unFollowUser: false))
+        : MapController(
+            initPosition: GeoPoint(latitude: _gps!.lat, longitude: _gps!.lon));
   }
 
-  Future<void> drawCircles() async {
-    await osmTools.renderAlias(_controller);
+  OSMOption? _osmOption;
+  OSMFlutter? _osmFlutter;
+  OSMFlutter get osmFlutter {
+    return _osmFlutter ??= OSMFlutter(
+      onMapIsReady: (bool ready) {
+        _mapController?.removeAllCircle().then(
+              (value) => osmTools.renderAlias(mapController),
+            );
+      },
+      osmOption: _osmOption ??= const OSMOption(
+        showDefaultInfoWindow: true,
+        showZoomController: true,
+        isPicker: true,
+        zoomOption: ZoomOption(
+          initZoom: 17,
+          minZoomLevel: 8,
+          maxZoomLevel: 19,
+          stepZoom: 1.0,
+        ),
+      ),
+      mapIsLoading: AppWidgets.loading('Loading Map'),
+      //androidHotReloadSupport: true,
+      controller: mapController,
+    );
   }
 
   ///
@@ -465,86 +496,36 @@ class _WidgetOsm extends State<WidgetOsm> {
   ///
   @override
   Widget build(BuildContext context) {
-    _screen = Screen(context);
+    int? id = ModalRoute.of(context)?.settings.arguments as int?;
 
-    if (!_initialized) {
-      _id = ModalRoute.of(context)?.settings.arguments as int? ?? 0;
-      if (_id > 0) {
-        var alias = ModelAlias.getModel(_id);
-        _alias = alias.clone();
-        _gps = GPS(alias.lat, alias.lon);
-        _address.value = alias.title;
-        _controller = MapController(
-            initMapWithUserPosition: false,
-            initPosition: (GeoPoint(latitude: _gps.lat, longitude: _gps.lon)));
-
-        _controller.listenerMapLongTapping.addListener(() {
-          _controller.selectAdvancedPositionPicker().then((GeoPoint pos) {});
-        });
-        osm = OSMFlutter(
-          mapIsLoading: const WidgetMapIsLoading(),
-          androidHotReloadSupport: true,
-          controller: _controller,
-          isPicker: true,
-          initZoom: 17,
-          minZoomLevel: 8,
-          maxZoomLevel: 19,
-          stepZoom: 1.0,
-        );
-        Future.delayed(const Duration(milliseconds: 1000), () async {
-          await _controller
-              .goToLocation(GeoPoint(latitude: _gps.lat, longitude: _gps.lon))
-              .then((_) async {
-            await _controller.setZoom(zoomLevel: 17).then((_) {
-              //Future.delayed(const Duration(seconds: 3), drawCircles);
-            });
-          });
-        });
-      } else {
-        if (GPS.lastGps == null) {
-          GPS.gps().then((GPS gps) {
-            _gps = gps;
+    if (id != null && _modelAlias == null) {
+      _id = id;
+      ModelAlias.byId(_id).then(
+        (ModelAlias? model) {
+          if (model == null) {
+            /*Future.delayed(const Duration(milliseconds: 100),
+                () => Navigator.pop(context));*/
+          } else {
+            _modelAlias = model;
+            _gps = model.gps;
+            _addressNotifier.value = model.title;
             if (mounted) {
               setState(() {});
             }
-          });
-          _controller = MapController(initMapWithUserPosition: true);
-        } else {
-          _gps = GPS.lastGps!;
-          _controller = MapController(
-              initMapWithUserPosition: false,
-              initPosition:
-                  (GeoPoint(latitude: _gps.lat, longitude: _gps.lon)));
-        }
-        osm = OSMFlutter(
-          mapIsLoading: const WidgetMapIsLoading(),
-          androidHotReloadSupport: true,
-          controller: _controller,
-          isPicker: true,
-          initZoom: 17,
-          minZoomLevel: 8,
-          maxZoomLevel: 19,
-          stepZoom: 1.0,
-        );
-      }
+          }
+        },
+      ).onError((error, stackTrace) {
+        print('loading error');
+      });
+      return AppWidgets.scaffold(context,
+          appBar: AppBar(title: const Text('OSM & Alias')),
+          body: AppWidgets.loading('Loading Alias'));
     } else {
-      Future.delayed(const Duration(seconds: 2), drawCircles);
+      return AppWidgets.scaffold(context,
+          appBar: AppBar(title: const Text('OSM & Alias')),
+          body:
+              Stack(children: [osmFlutter, searchResultContainer(), infoBox()]),
+          navBar: navBar(context));
     }
-    var body = AppWidgets.scaffold(context,
-        appBar: AppBar(title: const Text('OSM & Alias')),
-        body: Stack(children: [
-          osm,
-          centerAim(context),
-          searchResultContainer(context),
-          infoBox(context)
-        ]),
-        navBar: navBar(context));
-
-    if (!_initialized) {
-      SizeChangedLayoutNotifier(child: body);
-    }
-
-    _initialized = true;
-    return body;
-  } */
+  }
 }

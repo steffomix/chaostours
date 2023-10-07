@@ -230,8 +230,7 @@ class _WidgetAliasList extends State<WidgetAliasList> {
           switch (id) {
             /// create
             case 0:
-              Navigator.pushNamed(context, AppRoutes.osm.route, arguments: 0)
-                  .then((_) {
+              Navigator.pushNamed(context, AppRoutes.osm.route).then((_) {
                 setState(() {});
               });
 

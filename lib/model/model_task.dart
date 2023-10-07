@@ -91,6 +91,9 @@ class ModelTask extends Model {
   }
 
   static Future<List<ModelTask>> byIdList(List<int> ids) async {
+    if (ids.isEmpty) {
+      return <ModelTask>[];
+    }
     final rows = await DB.execute<List<Map<String, Object?>>>(
       (Transaction txn) async {
         return await txn.query(TableTask.table,

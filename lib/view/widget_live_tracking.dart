@@ -14,10 +14,29 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/Location.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 //
+import 'package:chaostours/logger.dart';
+import 'package:chaostours/conf/app_routes.dart';
+import 'package:chaostours/view/widget_disposed.dart';
+import 'package:chaostours/event_manager.dart';
+import 'package:chaostours/cache.dart';
+import 'package:chaostours/data_bridge.dart';
+import 'package:chaostours/tracking.dart';
+import 'package:chaostours/util.dart';
+import 'package:chaostours/model/model_alias.dart';
+import 'package:chaostours/model/model_task.dart';
+import 'package:chaostours/model/model_user.dart';
+import 'package:chaostours/trackpoint_data.dart';
 //
 import 'package:chaostours/view/app_widgets.dart';
+import 'package:chaostours/address.dart' as addr;
+import 'package:chaostours/gps.dart';
+import 'package:chaostours/conf/app_settings.dart';
+import 'package:chaostours/osm_tools.dart';
 
 enum _DisplayMode {
   /// shows gps list
@@ -40,29 +59,32 @@ class WidgetTrackingPage extends StatefulWidget {
   State<WidgetTrackingPage> createState() => _WidgetTrackingPage();
 }
 
+///
+///
+///
+///
+
 class _WidgetTrackingPage extends State<WidgetTrackingPage> {
-  @override
-  Widget build(BuildContext context) {
-    return AppWidgets.scaffold(context,
-        body: AppWidgets.loading('Widget under construction'));
-  }
-  /* 
   static final Logger logger = Logger.logger<WidgetTrackingPage>();
 
   _DisplayMode displayMode = _DisplayMode.live;
   static int _bottomBarIndex = 0;
 
-  TrackPointData? trackPointData;
-  Location? location;
+  GPS? _gps;
+  TrackPointData? _trackPointData;
+  Location? _location;
+  bool _initialized = false;
 
   final DataBridge bridge = DataBridge.instance;
 
+  final List<ModelTask> taskModels = [];
+  final List<ModelUser> userModels = [];
+
   /// osm
-  osm.MapController mapController = osm.MapController();
   final osmTools = OsmTools();
 
   double? _mapZoom;
-  osm.GeoPoint? _geoPoint;
+  GeoPoint? _geoPoint;
 
   /// editable fields
   TextEditingController tpNotes =
@@ -75,33 +97,40 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     }
   }
 
-  @override
-  void deactivate() {
-    super.deactivate();
-  }
-
-  @override
-  void activate() {
-    super.activate();
-  }
-
   ///
   @override
   void initState() {
     bridge.startService();
-    updateAliasList();
     EventManager.listen<EventOnAppTick>(onTick);
     EventManager.listen<EventOnWidgetDisposed>(onOsmReady);
     EventManager.listen<EventOnCacheLoaded>(onCacheLoaded);
     EventManager.listen<EventOnTrackingStatusChanged>(onTrackingStatusChanged);
-    super.initState();
+
+    ///
+    /// initialize
+    ///
+    reload();
+
     Future.microtask(() async {
-      await bridge.reload();
-      await bridge.loadCache();
-      if (mounted && displayMode == _DisplayMode.live) {
-        setState(() {});
-      }
+      userModels.clear();
+      userModels.addAll(await ModelUser.select());
+      taskModels.clear();
+      taskModels.addAll(await ModelTask.select());
     });
+
+    super.initState();
+  }
+
+  Future<void> reload() async {
+    _gps = await GPS.gps();
+    await bridge.loadCache();
+    await updateAliasList();
+    _trackPointData = await TrackPointData.trackPointData();
+    _location = await Location.location(_gps!);
+    _initialized = true;
+    if (mounted && displayMode != _DisplayMode.gps) {
+      setState(() {});
+    }
   }
 
   ///
@@ -120,7 +149,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       if (bridge.calcGpsPoints.isNotEmpty) {
         bridge.currentAliasIdList = await Cache.setValue<List<int>>(
             CacheKeys.cacheCurrentAliasIdList,
-            ModelAlias.nextAlias(gps: bridge.calcGpsPoints.first)
+            (await ModelAlias.nextAlias(gps: bridge.calcGpsPoints.first))
                 .map((e) => e.id)
                 .toList());
         if (displayMode == _DisplayMode.live && mounted) {
@@ -140,8 +169,9 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   }
 
   ///
-  void onCacheLoaded(EventOnCacheLoaded e) {
+  Future<void> onCacheLoaded(EventOnCacheLoaded e) async {
     logger.log('onCacheLoaded');
+    await reload();
     if (displayMode == _DisplayMode.gps) {
       onOsmReady(EventOnWidgetDisposed());
     }
@@ -154,27 +184,46 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     }
   }
 
-  /// init OSM Map
-  Widget renderOSM(BuildContext context) {
-    var map = osm.OSMFlutter(
-      mapIsLoading: const WidgetDisposed(),
-      androidHotReloadSupport: true,
-      controller: mapController,
-      isPicker: true,
-      initZoom: _mapZoom ?? 17,
-      minZoomLevel: 7,
-      maxZoomLevel: 19,
-      stepZoom: 1.0,
-    );
+  /// _controller
+  MapController? _mapController;
+  MapController get mapController {
+    return MapController(
+        initMapWithUserPosition: const UserTrackingOption(unFollowUser: false));
+  }
 
-    return map;
+  OSMOption? _osmOption;
+  OSMFlutter? _osmFlutter;
+  OSMFlutter get osmFlutter {
+    return _osmFlutter ??= OSMFlutter(
+      onMapIsReady: (bool ready) {
+        _mapController?.removeAllCircle().then(
+              (value) => osmTools.renderAlias(mapController),
+            );
+      },
+      osmOption: _osmOption ??= const OSMOption(
+        showDefaultInfoWindow: true,
+        showZoomController: true,
+        isPicker: true,
+        zoomOption: ZoomOption(
+          initZoom: 17,
+          minZoomLevel: 8,
+          maxZoomLevel: 19,
+          stepZoom: 1.0,
+        ),
+      ),
+      mapIsLoading: AppWidgets.loading('Loading Map'),
+      //androidHotReloadSupport: true,
+      controller: mapController,
+    );
   }
 
   /// render gpsPoints on OSM Map
   Future<void> onOsmReady(EventOnWidgetDisposed e) async {
+    print('#### skip osmReady() ###');
+    /*
     osmTools.renderAlias(mapController).then((_) {
       if (_geoPoint != null) {
-        var p = osm.GeoPoint(
+        var p = GeoPoint(
             latitude: _geoPoint!.latitude, longitude: _geoPoint!.longitude);
         _geoPoint = null;
         Future.delayed(const Duration(milliseconds: 100), () {
@@ -189,12 +238,17 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         });
       }
     });
+    */
   }
 
   ///
   @override
   Widget build(BuildContext context) {
-    Widget body = AppWidgets.loading('Waiting for GPS Signal');
+    Widget body = AppWidgets.loading('Waiting for GPS...');
+    if (!_initialized) {
+      return AppWidgets.scaffold(context,
+          body: body, appBar: AppBar(title: const Text('Live Tracking')));
+    }
     try {
       /// nothing checked at this point
       if (bridge.gpsPoints.isNotEmpty) {
@@ -223,15 +277,15 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
           /// tasks mode
           case _DisplayMode.gps:
-            body = renderOSM(context);
+            body = osmFlutter;
             break;
 
           /// recent mode
           default:
             if (bridge.trackingStatus == TrackingStatus.moving) {
-              body = renderTrackPointMoving(context);
+              body = renderTrackPointMoving();
             } else if (bridge.trackingStatus == TrackingStatus.standing) {
-              body = renderTrackPointStanding(context);
+              body = renderTrackPointStanding();
             } else {
               body = AppWidgets.loading('Waiting for Tracking Status');
             }
@@ -277,13 +331,11 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                           .getCurrentPositionAdvancedPositionPicker();
                       GPS gps = GPS(geoPoint.latitude, geoPoint.longitude);
                       String address =
-                          (await Address(gps).lookupAddress()).toString();
+                          (await addr.Address(gps).lookupAddress()).toString();
                       ModelAlias alias = ModelAlias(
                           title: address,
-                          lat: gps.lat,
-                          lon: gps.lon,
-                          deleted: false,
-                          notes: '',
+                          gps: gps,
+                          description: '',
                           lastVisited: DateTime.now(),
                           radius: AppSettings.distanceTreshold);
                       await ModelAlias.insert(alias);
@@ -306,7 +358,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                 _geoPoint = await mapController
                     .getCurrentPositionAdvancedPositionPicker();
                 _mapZoom = await mapController.getZoom();
-                List<ModelAlias> aliasList = ModelAlias.nextAlias(
+                List<ModelAlias> aliasList = await ModelAlias.nextAlias(
                     gps: GPS(_geoPoint!.latitude, _geoPoint!.longitude));
                 if (aliasList.isNotEmpty) {
                   if (mounted) {
@@ -370,15 +422,21 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   }
 
   ///
-  Widget renderTrackPointMoving(BuildContext context) {
-    TrackPointData tp = TrackPointData();
-    Location location = Location(bridge.calcGpsPoints.first);
+  Widget renderTrackPointMoving() {
+    if (_trackPointData == null) {
+      return AppWidgets.loading('Waiting for Trackpoint Data');
+    }
+    TrackPointData tp = _trackPointData!;
+    if (_location == null) {
+      return AppWidgets.loading('Waiting for GPS');
+    }
+    Location location = _location!;
     Widget divider = AppWidgets.divider();
     Widget body =
         Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Center(
-          child: Text('\n${AppSettings.weekDays[tp.tStart.weekday]}. den'
-              ' ${tp.tStart.day}.${tp.tStart.month}.${tp.tStart.year}')),
+          child: Text('\n${AppSettings.weekDays[tp.timeStart.weekday]}. den'
+              ' ${tp.timeStart.day}.${tp.timeStart.month}.${tp.timeStart.year}')),
       const Center(
           heightFactor: 2,
           child:
@@ -394,7 +452,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
               style: const TextStyle(letterSpacing: 2, fontSize: 15))),
       Center(
           child: Text(
-              '${tp.tStart.hour}:${tp.tStart.minute} - ${tp.tEnd.hour}:${tp.tEnd.minute}')),
+              '${tp.timeStart.hour}:${tp.timeStart.minute} - ${tp.timeEnd.hour}:${tp.timeEnd.minute}')),
     ]);
     List<Widget> items = [
       divider,
@@ -402,7 +460,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         style: ButtonStyle(
             padding:
                 MaterialStateProperty.all<EdgeInsets>(const EdgeInsets.all(0))),
-        child: Text('ALIAS: (${location.status.name})\n${tp.currentAliasText}'),
+        child: Text(
+            'ALIAS: (${location.visibility.name})\n${tp.currentAliasText}'),
         onPressed: () async {
           if (bridge.gpsPoints.isNotEmpty) {
             var gps = bridge.gpsPoints.first;
@@ -427,9 +486,9 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         onPressed: () async {
           if (bridge.gpsPoints.isNotEmpty) {
             var gps = bridge.gpsPoints.first;
-            var addr = (await Address(gps).lookupAddress()).toString();
+            var address = (await addr.Address(gps).lookupAddress()).toString();
             bridge.currentAddress = await Cache.setValue<String>(
-                CacheKeys.cacheBackgroundAddress, addr);
+                CacheKeys.cacheBackgroundAddress, address);
             if (mounted) {
               setState(() {});
             }
@@ -470,15 +529,21 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   }
 
   ///
-  Widget renderTrackPointStanding(BuildContext context) {
-    TrackPointData tp = TrackPointData();
+  Widget renderTrackPointStanding() {
+    if (_trackPointData == null) {
+      return AppWidgets.loading('Waiting for Trackpoint Data');
+    }
+    TrackPointData tp = _trackPointData!;
+    if (_location == null) {
+      return AppWidgets.loading('Waiting for GPS');
+    }
+    Location location = _location!;
     Widget divider = AppWidgets.divider();
-    Location location = Location(bridge.calcGpsPoints.first);
     Widget body =
         Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Center(
-          child: Text('\n${AppSettings.weekDays[tp.tStart.weekday]}. den'
-              ' ${tp.tStart.day}.${tp.tStart.month}.${tp.tStart.year}')),
+          child: Text('\n${AppSettings.weekDays[tp.timeStart.weekday]}. den'
+              ' ${tp.timeStart.day}.${tp.timeStart.month}.${tp.timeStart.year}')),
       const Center(
           heightFactor: 2,
           child:
@@ -486,11 +551,10 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       Center(child: Text(tp.durationText)),
       Center(
           child: Text(
-              '${tp.tStart.hour}:${tp.tStart.minute} - ${tp.tEnd.hour}:${tp.tEnd.minute}')),
+              '${tp.timeStart.hour}:${tp.timeStart.minute} - ${tp.timeEnd.hour}:${tp.timeEnd.minute}')),
       Center(
           heightFactor: 1.5,
-          child: Text(
-              'Distanz: ${tp.distanceStanding} / ${tp.standingRadius} m',
+          child: Text('Distanz: ${tp.distanceStanding} / ${tp.radius} m',
               style: const TextStyle(letterSpacing: 2, fontSize: 15))),
     ]);
     List<Widget> items = [
@@ -502,11 +566,12 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
             alignment: Alignment.centerLeft,
             padding: MaterialStateProperty.all<EdgeInsets>(
                 const EdgeInsets.fromLTRB(30, 0, 20, 0))),
-        child: Text('ALIAS (${location.status.name}):\n${tp.currentAliasText}'),
+        child: Text(
+            'ALIAS (${location.visibility.name}):\n${tp.currentAliasText}'),
         onPressed: () async {
           if (bridge.calcGpsPoints.isNotEmpty) {
             bridge.currentAliasIdList = await Cache.setValue<List<int>>(
-                CacheKeys.cacheCurrentAliasIdList, location.aliasIdList);
+                CacheKeys.cacheCurrentAliasIdList, location.aliasIds);
             await Cache.reload();
             if (mounted) {
               setState(() {});
@@ -526,9 +591,9 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         onPressed: () async {
           if (bridge.gpsPoints.isNotEmpty) {
             var gps = bridge.gpsPoints.first;
-            var addr = (await Address(gps).lookupAddress()).toString();
+            var address = (await addr.Address(gps).lookupAddress()).toString();
             bridge.currentAddress = await Cache.setValue<String>(
-                CacheKeys.cacheBackgroundAddress, addr);
+                CacheKeys.cacheBackgroundAddress, address);
             if (mounted) {
               setState(() {});
             }
@@ -536,11 +601,11 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         },
       ),
       divider,
-      dropdownTasks(context),
+      dropdownTasks(),
       divider,
       dropdownUser(),
       divider,
-      userNotes(context),
+      userNotes(),
     ];
 
     return ListView(children: [
@@ -577,16 +642,16 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   List<Widget> taskCheckboxes() {
     var referenceList = DataBridge.instance.trackPointTaskIdList;
     var checkBoxes = <Widget>[];
-    for (var model in ModelTask.getAll()) {
-      if (!model.deleted) {
+    for (var model in taskModels) {
+      if (model.isActive) {
         checkBoxes.add(createCheckbox(
             this,
             CheckboxController(
                 idReference: model.id,
                 referenceList: referenceList,
-                deleted: model.deleted,
+                isActive: model.isActive,
                 title: model.title,
-                subtitle: model.notes,
+                subtitle: model.description,
                 onToggle: () async {
                   bridge.trackPointTaskIdList = await Cache.setValue<List<int>>(
                       CacheKeys.cacheBackgroundTaskIdList,
@@ -602,16 +667,16 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   List<Widget> userCheckboxes() {
     var referenceList = DataBridge.instance.trackPointUserIdList;
     var checkBoxes = <Widget>[];
-    for (var model in ModelUser.getAll()) {
-      if (!model.deleted) {
+    for (var model in userModels) {
+      if (model.isActive) {
         checkBoxes.add(createCheckbox(
             this,
             CheckboxController(
                 idReference: model.id,
                 referenceList: referenceList,
-                deleted: model.deleted,
+                isActive: model.isActive,
                 title: model.title,
-                subtitle: model.notes,
+                subtitle: model.description,
                 onToggle: () async {
                   bridge.trackPointUserIdList = await Cache.setValue<List<int>>(
                       CacheKeys.cacheBackgroundUserIdList,
@@ -629,7 +694,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     /// render selected users
 
     List<ModelUser> userModels = [];
-    for (var model in ModelUser.getAll()) {
+    for (var model in userModels) {
       if (DataBridge.instance.trackPointUserIdList.contains(model.id)) {
         userModels.add(model);
       }
@@ -659,10 +724,10 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
   ///
   bool dropdownTasksIsOpen = false;
-  Widget dropdownTasks(context) {
+  Widget dropdownTasks() {
     /// render selected tasks
     List<ModelTask> taskModels = [];
-    for (var item in ModelTask.getAll()) {
+    for (var item in taskModels) {
       if (DataBridge.instance.trackPointTaskIdList.contains(item.id)) {
         taskModels.add(item);
       }
@@ -679,9 +744,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         child: ListTile(
           trailing: const Icon(Icons.menu),
           title: Text(dropdownTasksIsOpen ? '' : 'Arbeiten:$tasks'),
-          subtitle: !dropdownTasksIsOpen
-              ? null
-              : Column(children: taskCheckboxes(context)),
+          subtitle:
+              !dropdownTasksIsOpen ? null : Column(children: taskCheckboxes()),
         ),
         onPressed: () {
           dropdownTasksIsOpen = !dropdownTasksIsOpen;
@@ -694,7 +758,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   }
 
   ///
-  Widget userNotes(BuildContext context) {
+  Widget userNotes() {
     return Container(
         padding: const EdgeInsets.all(10),
         child: TextField(
@@ -711,5 +775,5 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                   CacheKeys.cacheBackgroundTrackPointUserNotes, tpNotes.text);
               modify();
             }));
-  } */
+  }
 }

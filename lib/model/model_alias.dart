@@ -170,7 +170,7 @@ class ModelAlias extends Model {
         return await txn.query(TableAlias.table,
             columns: TableAlias.columns,
             where:
-                '${TableAlias.primaryKey.column} in IN (${List.filled(ids.length, '?').join(',')})',
+                '${TableAlias.primaryKey.column} IN (${List.filled(ids.length, '?').join(',')})',
             whereArgs: ids);
       },
     );
