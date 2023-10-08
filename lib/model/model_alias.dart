@@ -309,58 +309,63 @@ class ModelAlias extends Model {
     return count;
   }
 
-  /// <pre> select alias models ordered by row "distance" to given gps
-  /// "distance" contains c² of a² + b²
-  /// which is NOT the distance but serves to compare distances approximately
-  ///
-  /// (table.lat - gps.lat)*(table.lat - gps.lat) + (table.lon - gps.lon)*(table.lon - gps.lon)
+  /// <pre>
+  /// select alias of an area in meters and sort the result by distance.
+  /// Does not work with paging
   /// </pre>
   static Future<List<ModelAlias>> nextAlias(
       {required GPS gps,
-      int limit = 1,
-      int offset = 0,
-      includeInactive = true}) async {
-    var lat = gps.lat;
-    var lon = gps.lon;
+      includeInactive = true,
+      int area = 1000,
+      int softLimit = 0}) async {
+    var area = GpsArea.calculateArea(
+        latitude: gps.lat, longitude: gps.lon, distance: 1000);
     var latCol = TableAlias.latitude.column;
     var lonCol = TableAlias.longitude.column;
-    var mathSql =
-        '($latCol - $lat)*($latCol - $lat) + ($lonCol - $lon)*($latCol - $lon)';
-    var mathCol = 'distance';
+    var whereArea =
+        ' $latCol > ? AND $latCol < ? AND $lonCol > ? AND $lonCol < ? ';
     var isActiveCol = 'isActive';
     var rows = await DB.execute((txn) async {
       if (!includeInactive) {
         return await txn.rawQuery('''
-SELECT ${TableAlias.columns.join(', ')}, ${TableAliasGroup.isActive} AS $isActiveCol, $mathSql AS $mathCol FROM ${TableAlias.table}
+SELECT ${TableAlias.columns.join(', ')}, ${TableAliasGroup.isActive} AS $isActiveCol  FROM ${TableAlias.table}
 LEFT JOIN ${TableAliasGroup.table} ON ${TableAlias.idAliasGroup} = ${TableAliasGroup.primaryKey}
-WHERE $mathCol <= ? AND $isActiveCol = ?
-ORDER BY $mathCol
-LIMIT ?,?
+WHERE $isActiveCol = ? AND $whereArea
           ''', [
-          AppSettings.distanceTreshold * AppSettings.distanceTreshold,
           DB.boolToInt(includeInactive),
-          limit,
-          offset
+          area.latMin,
+          area.latMax,
+          area.lonMin,
+          area.lonMax
         ]);
       } else {
         return await txn.query(TableAlias.table,
-            columns: [...TableAlias.columns, '$mathSql as $mathCol'],
-            where: '$mathCol <= ?',
+            columns: TableAlias.columns,
+            where: whereArea,
             whereArgs: [
-              AppSettings.distanceTreshold * AppSettings.distanceTreshold
-            ],
-            orderBy: '$mathCol ASC',
-            limit: limit,
-            offset: offset);
+              area.latMin,
+              area.latMax,
+              area.lonMin,
+              area.lonMax,
+            ]);
       }
     });
     var models = <ModelAlias>[];
     for (var row in rows) {
       try {
-        models.add(fromMap(row));
+        var model = fromMap(row);
+        model.sortDistance = GPS.distance(gps, model.gps).round();
+        models.add(model);
       } catch (e, stk) {
         logger.error('nextAlias fromMap $e', stk);
       }
+    }
+    if (models.isNotEmpty) {
+      models.sort((a, b) => a.sortDistance.compareTo(b.sortDistance));
+    }
+
+    if (softLimit > 0 && models.length >= softLimit) {
+      return models.sublist(0, softLimit);
     }
     return models;
   }

@@ -103,15 +103,11 @@ class _WidgetOsm extends State<WidgetOsm> {
   final ValueNotifier<String> _addressNotifier = ValueNotifier<String>('');
   final ValueNotifier<bool> _loading = ValueNotifier<bool>(false);
 
-  bool debugPaintPointersEnabled = true;
-
-  int circleId = 0;
-
   /// search
   String _searchText = '';
-  bool searchTextChanged = true;
-  TextEditingController textController = TextEditingController(text: '');
-  Duration _searchDelay = const Duration(milliseconds: 1200);
+  bool _searchTextChanged = true;
+  final _textController = TextEditingController(text: '');
+  final _searchDelay = const Duration(milliseconds: 1200);
   DateTime _lastSearch = DateTime.now();
 
   ///searchResult
@@ -197,7 +193,7 @@ class _WidgetOsm extends State<WidgetOsm> {
     });
 
     _lastSearch = time;
-    searchTextChanged = false;
+    _searchTextChanged = false;
     _loading.value = true;
     setState(() {});
   }
@@ -210,20 +206,20 @@ class _WidgetOsm extends State<WidgetOsm> {
           trailing: IconButton(
               icon: const Icon(Icons.search, size: 40),
               onPressed: () {
-                if (searchTextChanged) {
+                if (_searchTextChanged) {
                   lookupGps();
                 }
               }),
 
           /// search text field
           title: TextField(
-              controller: textController,
+              controller: _textController,
               decoration: InputDecoration(
                   labelStyle: TextStyle(color: Theme.of(context).hintColor),
                   label: const Text(
                       'Search order: Country, City, Street, House number')),
               onChanged: (val) {
-                searchTextChanged = true;
+                _searchTextChanged = true;
                 _searchText = val;
                 lookupGps(val);
               })),
@@ -470,7 +466,7 @@ class _WidgetOsm extends State<WidgetOsm> {
   OSMFlutter get osmFlutter {
     return _osmFlutter ??= OSMFlutter(
       onMapIsReady: (bool ready) {
-        _mapController?.removeAllCircle().then(
+        mapController.removeAllCircle().then(
               (value) => osmTools.renderAlias(mapController),
             );
       },
@@ -515,7 +511,7 @@ class _WidgetOsm extends State<WidgetOsm> {
           }
         },
       ).onError((error, stackTrace) {
-        print('loading error');
+        logger.error(error, stackTrace);
       });
       return AppWidgets.scaffold(context,
           appBar: AppBar(title: const Text('OSM & Alias')),

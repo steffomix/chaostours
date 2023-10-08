@@ -14,9 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import 'package:chaostours/view/app_widgets.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
+import 'package:chaostours/logger.dart';
+import 'package:chaostours/view/app_widgets.dart';
+import 'package:chaostours/conf/app_colors.dart';
+import 'package:chaostours/model/model_task.dart';
 
 class WidgetTaskEdit extends StatefulWidget {
   const WidgetTaskEdit({super.key});
@@ -26,12 +30,6 @@ class WidgetTaskEdit extends StatefulWidget {
 }
 
 class _WidgetTaskEdit extends State<WidgetTaskEdit> {
-  @override
-  Widget build(BuildContext context) {
-    return AppWidgets.scaffold(context,
-        body: AppWidgets.loading('Widget under construction'));
-  }
-  /* 
   // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetTaskEdit>();
 
@@ -39,9 +37,10 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
   //TextEditingController nameController = TextEditingController();
   //TextEditingController notesController = TextEditingController();
 
-  late ModelTask task;
-  int taskId = 0;
+  ModelTask? _model;
+  int? _id;
   bool _initialized = false;
+
   @override
   void dispose() {
     super.dispose();
@@ -53,16 +52,36 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
 
   @override
   Widget build(BuildContext context) {
+    _id = ModalRoute.of(context)?.settings.arguments as int?;
+    Widget? body;
+    if (_id == null) {
+      _model = ModelTask();
+      _id = _model!.id;
+      _initialized = true;
+    } else if (!_initialized) {
+      ModelTask.byId(_id!).then((ModelTask? model) {
+        if (model == null && mounted) {
+          Navigator.pop(context);
+        }
+        _model = model!;
+        _id = model.id;
+        _initialized = true;
+        if (mounted) {
+          setState(() => {});
+        }
+      });
+      body = AppWidgets.loading('Loading task...');
+    }
+/*
     if (!_initialized) {
-      taskId = (ModalRoute.of(context)?.settings.arguments ?? 0) as int;
-      if (taskId > 0) {
-        task = ModelTask.getModel(taskId).clone();
+      if (_id > 0) {
+        _model = ModelTask.getModel(_id).clone();
       } else {
-        task = ModelTask(title: '', notes: '', deleted: false);
+        _model = ModelTask(title: '', notes: '', deleted: false);
       }
       _initialized = true;
     }
-
+*/
     return AppWidgets.scaffold(context,
         appBar: AppBar(title: const Text('Aufgabe bearbeiten')),
         navBar: BottomNavigationBar(
@@ -85,17 +104,18 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
                   icon: Icon(Icons.cancel), label: 'Abbrechen'),
             ],
             onTap: (int tapId) {
+              var model = _model!;
               if (tapId == 0 && modified.value) {
-                if (taskId == 0) {
-                  ModelTask.insert(task).then((id) {
-                    if (task.title.trim().isEmpty) {
-                      task.title = '#$id';
+                if (_id == 0) {
+                  ModelTask.insert(model).then((id) {
+                    if (model.title.trim().isEmpty) {
+                      model.title = '#$id';
                     }
                     Navigator.pop(context);
                     Fluttertoast.showToast(msg: 'Task created');
                   });
                 } else {
-                  ModelTask.update(task).then((_) {
+                  model.update().then((_) {
                     Navigator.pop(context);
                     Fluttertoast.showToast(msg: 'Task updated');
                   });
@@ -104,51 +124,55 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
                 Navigator.pop(context);
               }
             }),
-        body: ListView(children: [
-          /// taskname
-          Container(
-              padding: const EdgeInsets.all(10),
-              child: TextField(
-                decoration: const InputDecoration(label: Text('Arbeit')),
-                onChanged: ((value) {
-                  task.title = value;
-                  modify();
-                }),
-                maxLines: 1,
-                minLines: 1,
-                controller: TextEditingController(text: task.title),
-              )),
+        body: body ?? renderBody());
+  }
 
-          /// notes
-          Container(
-              padding: const EdgeInsets.all(10),
-              child: TextField(
-                decoration: const InputDecoration(label: Text('Notizen')),
-                maxLines: null,
-                minLines: 3,
-                controller: TextEditingController(text: task.notes),
-                onChanged: (val) {
-                  task.notes = val;
-                  modify();
-                },
-              )),
+  Widget renderBody() {
+    return ListView(children: [
+      /// taskname
+      Container(
+          padding: const EdgeInsets.all(10),
+          child: TextField(
+            decoration: const InputDecoration(label: Text('Arbeit')),
+            onChanged: ((value) {
+              _model?.title = value;
+              modify();
+            }),
+            maxLines: 1,
+            minLines: 1,
+            controller: TextEditingController(text: _model?.title),
+          )),
 
-          /// deleted
-          ListTile(
-              title: const Text('Deaktiviert'),
-              subtitle: const Text(
-                'Definiert ob diese Arbeit sichtbar ist. '
-                '\nBereits zugewiesene Arbeiten bleiben grundsätzlich sichtbar.',
-                softWrap: true,
-              ),
-              leading: Checkbox(
-                value: task.deleted,
-                onChanged: (val) {
-                  task.deleted = val ?? false;
-                  modify();
-                  setState(() {});
-                },
-              ))
-        ]));
-  } */
+      /// notes
+      Container(
+          padding: const EdgeInsets.all(10),
+          child: TextField(
+            decoration: const InputDecoration(label: Text('Notizen')),
+            maxLines: null,
+            minLines: 3,
+            controller: TextEditingController(text: _model?.description),
+            onChanged: (val) {
+              _model?.description = val;
+              modify();
+            },
+          )),
+
+      /// deleted
+      ListTile(
+          title: const Text('Deaktiviert'),
+          subtitle: const Text(
+            'Definiert ob diese Arbeit sichtbar ist. '
+            '\nBereits zugewiesene Arbeiten bleiben grundsätzlich sichtbar.',
+            softWrap: true,
+          ),
+          leading: Checkbox(
+            value: _model?.isActive,
+            onChanged: (val) {
+              _model?.isActive = val ?? false;
+              modify();
+              setState(() {});
+            },
+          ))
+    ]);
+  }
 }

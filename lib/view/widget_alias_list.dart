@@ -55,7 +55,7 @@ class _WidgetAliasList extends State<WidgetAliasList> {
   final TextEditingController _searchTextController = TextEditingController();
 
   // items per page
-  static const int _limit = 3;
+  static const int _limit = 30;
 
   final PagingController<int, ModelAlias> _pagingController =
       PagingController(firstPageKey: 0);
@@ -75,14 +75,14 @@ class _WidgetAliasList extends State<WidgetAliasList> {
           break;
 
         case _DisplayMode.nearest:
-          newItems.addAll(await ModelAlias.nextAlias(
-              gps: _gps!, offset: offset, limit: _limit));
+          newItems.addAll(await ModelAlias.nextAlias(gps: _gps!, area: 10000));
           break;
 
         default:
         //
       }
-      final isLastPage = newItems.length < _limit;
+      final isLastPage =
+          newItems.length < _limit || _displayMode == _DisplayMode.nearest;
       if (isLastPage) {
         _pagingController.appendLastPage(newItems);
       } else {
@@ -145,7 +145,7 @@ class _WidgetAliasList extends State<WidgetAliasList> {
     int count = model.trackPointCount;
     return ListTile(
         subtitle: Text(
-            'Besucht: ${count}x, ${count == 0 ? 'noch nie' : 'vor $dur Tage'}'),
+            '#${model.sortDistance} Besucht: ${count}x, ${count == 0 ? 'noch nie' : 'vor $dur Tage'}'),
         title: Text(model.title));
   }
 
@@ -231,6 +231,7 @@ class _WidgetAliasList extends State<WidgetAliasList> {
             /// create
             case 0:
               Navigator.pushNamed(context, AppRoutes.osm.route).then((_) {
+                _pagingController.refresh();
                 setState(() {});
               });
 
