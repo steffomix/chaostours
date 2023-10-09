@@ -1,3 +1,4 @@
+import 'package:chaostours/conf/app_settings.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/model/model_alias.dart';
@@ -30,7 +31,8 @@ class Location {
     bool isPrivate = false;
     bool isPublic = true;
     try {
-      models.addAll(await ModelAlias.nextAlias(gps: gps));
+      models.addAll(await ModelAlias.nextAlias(
+          gps: gps, area: AppSettings.distanceTreshold));
 
       for (var model in models) {
         if (model.visibility == AliasVisibility.restricted) {

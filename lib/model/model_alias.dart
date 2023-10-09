@@ -15,7 +15,6 @@ limitations under the License.
 */
 
 import 'dart:math';
-import 'package:chaostours/conf/app_settings.dart';
 
 ///
 import 'package:chaostours/model/model.dart';
@@ -31,19 +30,24 @@ enum AliasVisibility {
   privat(2),
   restricted(3);
 
+  static final Logger logger = Logger.logger<AliasVisibility>();
   final int value;
   const AliasVisibility(this.value);
+  static final int _saveId = AliasVisibility.restricted.value;
 
   static AliasVisibility byId(Object? value) {
     int id = DB.parseInt(value, fallback: 3);
-    id = max(1, min(3, id));
-    return byValue(id);
+    int idChecked = max(1, min(3, id));
+    return byValue(idChecked == id ? idChecked : _saveId);
   }
 
   static AliasVisibility byValue(int id) {
-    AliasVisibility status =
-        AliasVisibility.values.firstWhere((status) => status.value == id);
-    return status;
+    try {
+      return AliasVisibility.values.firstWhere((status) => status.value == id);
+    } catch (e, stk) {
+      logger.error('invalid value $id: $e', stk);
+      return AliasVisibility.restricted;
+    }
   }
 }
 
@@ -126,7 +130,7 @@ class ModelAlias extends Model {
     final rows = await DB.execute<List<Map<String, Object?>>>(
       (Transaction txn) async {
         return await txn.query(TableTrackPointAlias.table,
-            columns: ['count(${TableTrackPointAlias.idAlias.column}) as $col'],
+            columns: ['count(*) as $col'],
             where: '${TableTrackPointAlias.idAlias.column} = ?',
             whereArgs: [id]);
       },
@@ -318,6 +322,7 @@ class ModelAlias extends Model {
       includeInactive = true,
       int area = 1000,
       int softLimit = 0}) async {
+    //return <ModelAlias>[];
     var area = GpsArea.calculateArea(
         latitude: gps.lat, longitude: gps.lon, distance: 1000);
     var latCol = TableAlias.latitude.column;

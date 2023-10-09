@@ -17,7 +17,6 @@ limitations under the License.
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -29,7 +28,6 @@ import 'package:chaostours/gps.dart';
 import 'package:chaostours/conf/app_settings.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/conf/app_routes.dart';
-import 'package:chaostours/conf/app_colors.dart';
 
 ///
 ///
@@ -45,12 +43,12 @@ class AppWidgets {
       debugShowCheckedModeBanner: false,
       //themeMode: ThemeMode.system,
       title: 'Chaos Tours',
-      initialRoute: AppRoutes.appInit.route,
+      initialRoute: AppRoutes.welcome.route,
       routes: AppRoutes.routes,
       // Theme config for FlexColorScheme version 7.3.x. Make sure you use
-// same or higher package version, but still same major version. If you
-// use a lower package version, some properties may not be supported.
-// In that case remove them after copying this theme to your app.
+      // same or higher package version, but still same major version. If you
+      // use a lower package version, some properties may not be supported.
+      // In that case remove them after copying this theme to your app.
       theme: FlexThemeData.light(
         scheme: FlexScheme.mango,
         surfaceMode: FlexSurfaceMode.levelSurfacesLowScaffold,

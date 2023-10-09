@@ -109,7 +109,7 @@ class DB {
 }
 
 class _AppDatabase {
-  static final Logger logger = Logger.logger<_AppDatabase>();
+  static final Logger logger = Logger.logger<DB>();
 
   static const dbFile = 'chaostours.sqlite';
   static const dbVersion = 1;

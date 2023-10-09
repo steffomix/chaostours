@@ -58,7 +58,7 @@ enum AppRoutes {
   // osm
   osm('/osm'),
   // system
-  appInit('/appInit'),
+  welcome('/appInit'),
   logger('/logger'),
   permissions('/permissions'),
   importExport('/importexport'),
@@ -95,7 +95,7 @@ enum AppRoutes {
       AppRoutes.osm.route: (context) => const WidgetOsm(),
 
       /// system config routes
-      AppRoutes.appInit.route: (context) => const AppInit(),
+      AppRoutes.welcome.route: (context) => const Welcome(),
       AppRoutes.logger.route: (context) => const WidgetLoggerPage(),
       AppRoutes.permissions.route: (context) => const WidgetPermissionsPage(),
       AppRoutes.importExport.route: (context) => const WidgetImportExport(),

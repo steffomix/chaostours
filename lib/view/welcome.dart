@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/app_loader.dart';
 import 'package:chaostours/conf/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -23,15 +24,17 @@ import 'package:chaostours/view/app_widgets.dart';
 //import 'package:chaostours/logger.dart';
 import 'package:chaostours/tracking.dart';
 
-class AppInit extends StatefulWidget {
-  const AppInit({super.key});
+class Welcome extends StatefulWidget {
+  const Welcome({super.key});
 
   @override
-  State<AppInit> createState() => _AppInitState();
+  State<Welcome> createState() => _WelcomeState();
 }
 
-class _AppInitState extends State<AppInit> {
+class _WelcomeState extends State<Welcome> {
   //static final Logger logger = Logger.logger<AppInit>();
+
+  bool preloadSuccess = false;
 
   List<Widget> permissionItemsRequired = [];
   List<Widget> permissionItemsOptional = [];
@@ -81,16 +84,13 @@ class _AppInitState extends State<AppInit> {
       // ignore
     }
 
-    checkTracking();
-    return granted && isTracking;
-  }
-
-  Future<bool> checkTracking() async {
+    preloadSuccess = await AppLoader.preload;
     try {
-      return (isTracking = await BackgroundTracking.isTracking());
+      isTracking = await BackgroundTracking.isTracking();
     } catch (e) {
-      return false;
+      isTracking = false;
     }
+    return granted && isTracking;
   }
 
   @override
@@ -253,9 +253,24 @@ class _AppInitState extends State<AppInit> {
         body: FutureBuilder<bool>(
           future: checkAllPermissions(),
           builder: (context, snapshot) {
-            Future.delayed(const Duration(milliseconds: 500),
-                () => Navigator.pushNamed(context, AppRoutes.listAlias.route));
-            return AppWidgets.checkSnapshot(snapshot) ??
+            Widget? loading = AppWidgets.checkSnapshot(snapshot);
+            if (loading == null) {
+              final permissionsOk = snapshot.data!;
+              if (!preloadSuccess) {
+                Future.delayed(const Duration(seconds: 2),
+                    () => Navigator.pushNamed(context, AppRoutes.logger.route));
+                return AppWidgets.loading('Initialization Failure...');
+              } else {
+                if (permissionsOk) {
+                  Future.delayed(
+                      const Duration(milliseconds: 500),
+                      () => Navigator.pushNamed(
+                          context, AppRoutes.liveTracking.route));
+                }
+              }
+            }
+
+            return loading ??
                 ListView(children: (() {
                   renderItems();
                   return [

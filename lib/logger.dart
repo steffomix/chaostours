@@ -237,6 +237,12 @@ class Logger {
     }
   }
 
+  static Future<void> clearLogs() async {
+    _loggerLogs.clear();
+    await Cache.setValue<List<LoggerLog>>(CacheKeys.backgroundLogger, []);
+    await Cache.clear();
+  }
+
 /*
   ///
   /// example widget renderer

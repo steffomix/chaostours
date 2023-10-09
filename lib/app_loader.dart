@@ -21,13 +21,16 @@ import 'dart:io' as io;
 import 'package:chaostours/tracking.dart';
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/logger.dart';
-import 'package:chaostours/permission_checker.dart';
+import 'package:chaostours/ticker.dart';
 import 'package:chaostours/conf/app_settings.dart';
 import 'package:chaostours/data_bridge.dart';
 import 'package:chaostours/database.dart';
 
 class AppLoader {
   static Logger logger = Logger.logger<AppLoader>();
+
+  static Future<bool> get preload => _preload ??= _preloadApp();
+  static Future<bool>? _preload;
 
   static Future<void> dbToFile() async {
     var dbPath = await DB.getPath();
@@ -43,38 +46,50 @@ class AppLoader {
 
   ///
   /// preload recources
-  static Future<void> preload() async {
+  static Future<bool> _preloadApp() async {
     try {
-      //await AppDatabase.deleteDb();
-    } catch (e) {
-      logger.warn(e);
-    }
-
-    try {
+      await Logger.clearLogs();
       // reset background logger
       //await Cache.setValue<List<String>>(CacheKeys.backgroundLogger, []);
       //var downloadFiles = await downloadDir.list().toList();
       //await fileToDb();
-      await Future.delayed(const Duration(seconds: 1));
-      await DB.open();
       Logger.globalLogLevel = LogLevel.verbose;
       logger.important('start Preload sequence...');
+      //await DB.deleteDatabase(await DB.getPath());
+      logger.log('open Database...');
+      await DB.open();
+      logger.log('Database opened');
+      logger.log('get WEB SSL key from assets');
       await webKey();
-      await DataBridge.instance.reload();
-      await AppSettings.loadSettings();
-      await AppSettings.saveSettings();
-      await DataBridge.instance.loadCache();
 
       //
-      await BackgroundTracking.initialize();
-      if (await PermissionChecker.checkLocation() &&
-          AppSettings.backgroundTrackingEnabled) {
-        await BackgroundTracking.startTracking();
+      if (AppSettings.backgroundTrackingEnabled) {
+        try {
+          logger.log('initialize background tracking');
+          await BackgroundTracking.initialize();
+        } catch (e, stk) {
+          logger.error('initialize background tracking', stk);
+        }
+        try {
+          logger.log('start background tracking');
+          await BackgroundTracking.startTracking();
+        } catch (e, stk) {
+          logger.error('start background tracking', stk);
+        }
       }
-      ticks();
+
+      logger.log('start app tick');
+      Ticker.startAppTick();
+
+      logger.log('start databridge');
+      DataBridge.instance.startService();
     } catch (e, stk) {
-      logger.error('preload $e', stk);
+      logger.fatal('preload $e', stk);
+      return false;
     }
+
+    logger.important('Preload sequence finished without errors');
+    return true;
   }
 
   ///
@@ -87,24 +102,5 @@ class AppLoader {
     io.SecurityContext.defaultContext
         .setTrustedCertificatesBytes(data.buffer.asUint8List());
     logger.log('SSL Key loaded');
-  }
-
-  static Future<void> ticks() async {
-    DataBridge.instance.startService();
-    _appTick();
-  }
-
-  static Future<void> _appTick() async {
-    var dur = const Duration(seconds: 1);
-    while (true) {
-      try {
-        EventManager.fire<EventOnAppTick>(EventOnAppTick());
-        AppSettings.appTicks++;
-      } catch (e, stk) {
-        logger.error(
-            'appTick ${DateTime.now().toIso8601String()} failed: $e', stk);
-      }
-      await Future.delayed(dur);
-    }
   }
 }

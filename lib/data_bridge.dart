@@ -87,6 +87,11 @@ class DataBridge {
     if (!_serviceRunning) {
       _serviceRunning = true;
       Future.microtask(() async {
+        await DataBridge.instance.reload();
+        await AppSettings.loadSettings();
+        await AppSettings.saveSettings();
+        await DataBridge.instance.loadCache();
+
         while (_serviceRunning) {
           try {
             var status = trackingStatus.name;

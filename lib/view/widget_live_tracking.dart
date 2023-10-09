@@ -19,12 +19,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 //
+import 'package:chaostours/tracking.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/cache.dart';
 import 'package:chaostours/data_bridge.dart';
-import 'package:chaostours/tracking.dart';
 import 'package:chaostours/util.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_task.dart';
@@ -72,7 +72,9 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   GPS? _gps;
   TrackPointData? _trackPointData;
   Location? _location;
-  bool _initialized = false;
+  bool get initialized {
+    return _gps != null && _trackPointData != null && _location != null;
+  }
 
   final DataBridge _bridge = DataBridge.instance;
 
@@ -89,13 +91,22 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
   void modify() {
     if (mounted) {
+      render();
+    }
+  }
+
+  void render() {
+    if (mounted) {
       setState(() {});
+    } else {
+      logger.warn('setState - not mounted');
     }
   }
 
   ///
   @override
   void initState() {
+    GPS.gps().then((GPS gps) => track(gps));
     _bridge.startService();
     EventManager.listen<EventOnAppTick>(onTick);
     EventManager.listen<EventOnCacheLoaded>(onCacheLoaded);
@@ -111,20 +122,22 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       _userModels.addAll(await ModelUser.select());
       _taskModels.clear();
       _taskModels.addAll(await ModelTask.select());
+      render();
     });
 
     super.initState();
   }
 
   Future<void> reload() async {
-    _gps = await GPS.gps();
-    await _bridge.loadCache();
-    await updateAliasList();
-    _trackPointData = await TrackPointData.trackPointData();
-    _location = await Location.location(_gps!);
-    _initialized = true;
-    if (mounted && _displayMode != _DisplayMode.gps) {
-      setState(() {});
+    try {
+      _gps = await GPS.gps();
+      await _bridge.loadCache();
+      await updateAliasList();
+      _trackPointData = await TrackPointData.trackPointData();
+      _location = await Location.location(_gps!);
+      render();
+    } catch (e, stk) {
+      logger.error('reload: $e', stk);
     }
   }
 
@@ -147,8 +160,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                     gps: _bridge.calcGpsPoints.first, softLimit: 3))
                 .map((e) => e.id)
                 .toList());
-        if (_displayMode == _DisplayMode.live && mounted) {
-          setState(() {});
+        if (_displayMode == _DisplayMode.live) {
+          render();
         }
       }
     } catch (e, stk) {
@@ -159,20 +172,19 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   void onTrackingStatusChanged(EventOnTrackingStatusChanged e) {
     _tpNotes.text = DataBridge.instance.trackPointUserNotes;
     if (_displayMode != _DisplayMode.gps) {
-      setState(() {});
+      render();
     }
   }
 
   ///
   Future<void> onCacheLoaded(EventOnCacheLoaded e) async {
-    logger.log('onCacheLoaded');
     await reload();
   }
 
   ///
   void onTick(EventOnAppTick tick) {
-    if (mounted && _displayMode != _DisplayMode.gps) {
-      setState(() {});
+    if (_displayMode != _DisplayMode.gps) {
+      render();
     }
   }
 
@@ -213,51 +225,49 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   @override
   Widget build(BuildContext context) {
     Widget body = AppWidgets.loading('Waiting for GPS...');
-    if (!_initialized) {
+    if (!initialized) {
       return AppWidgets.scaffold(context,
           body: body, appBar: AppBar(title: const Text('Live Tracking')));
     }
     try {
       /// nothing checked at this point
-      if (_bridge.gpsPoints.isNotEmpty) {
-        switch (_displayMode) {
-          case _DisplayMode.recentTrackPoints:
-            body = AppWidgets.renderTrackPointSearchList(
-                context: context,
-                textController: _tpSearch,
-                onUpdate: () {
-                  setState(() {});
-                });
-            break;
+      switch (_displayMode) {
+        case _DisplayMode.recentTrackPoints:
+          body = AppWidgets.renderTrackPointSearchList(
+              context: context,
+              textController: _tpSearch,
+              onUpdate: () {
+                render();
+              });
+          break;
 
-          /// last visited mode
-          case _DisplayMode.lastVisited:
-            GPS gps = _bridge.calcGpsPoints.first;
-            body = AppWidgets.renderTrackPointSearchList(
-                context: context,
-                textController: _tpSearch,
-                onUpdate: () {
-                  setState(() {});
-                },
-                gps: gps);
+        /// last visited mode
+        case _DisplayMode.lastVisited:
+          GPS gps = _bridge.calcGpsPoints.first;
+          body = AppWidgets.renderTrackPointSearchList(
+              context: context,
+              textController: _tpSearch,
+              onUpdate: () {
+                render();
+              },
+              gps: gps);
 
-            break;
+          break;
 
-          /// tasks mode
-          case _DisplayMode.gps:
-            body = osmFlutter;
-            break;
+        /// tasks mode
+        case _DisplayMode.gps:
+          body = osmFlutter;
+          break;
 
-          /// recent mode
-          default:
-            if (_bridge.trackingStatus == TrackingStatus.moving) {
-              body = renderTrackPointMoving();
-            } else if (_bridge.trackingStatus == TrackingStatus.standing) {
-              body = renderTrackPointStanding();
-            } else {
-              body = AppWidgets.loading('Waiting for Tracking Status');
-            }
-        }
+        /// recent mode
+        default:
+          if (_bridge.trackingStatus == TrackingStatus.moving) {
+            body = renderTrackPointMoving();
+          } else if (_bridge.trackingStatus == TrackingStatus.standing) {
+            body = renderTrackPointStanding();
+          } else {
+            body = AppWidgets.loading('Waiting for Tracking Status');
+          }
       }
     } catch (e, stk) {
       logger.error('::build error: $e', stk);
@@ -308,9 +318,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                           radius: AppSettings.distanceTreshold);
                       await ModelAlias.insert(alias);
                       Future.delayed(const Duration(milliseconds: 100), () {
-                        if (mounted) {
-                          setState(() {});
-                        }
+                        render();
                       });
                     },
                   ),
@@ -333,9 +341,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                             arguments: aliasList.first.id)
                         .then(
                       (value) {
-                        if (mounted) {
-                          setState(() {});
-                        }
+                        render();
                       },
                     );
                   }
@@ -382,8 +388,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                 _displayMode = _DisplayMode.live;
             }
             _bottomBarIndex = id;
-            setState(() {});
-            //logger.log('BottomNavBar tapped but no method connected');
+            render();
           });
     }
   }
@@ -395,7 +400,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     }
     TrackPointData tp = _trackPointData!;
     if (_location == null) {
-      return AppWidgets.loading('Waiting for GPS');
+      return AppWidgets.loading('Waiting for Location Data');
     }
     Location location = _location!;
     Widget divider = AppWidgets.divider();
@@ -438,9 +443,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                     .map((e) => e.id)
                     .toList());
             await Cache.reload();
-            if (mounted) {
-              setState(() {});
-            }
+            render();
           }
         },
       ),
@@ -456,9 +459,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
             var address = (await addr.Address(gps).lookupAddress()).toString();
             _bridge.currentAddress = await Cache.setValue<String>(
                 CacheKeys.cacheBackgroundAddress, address);
-            if (mounted) {
-              setState(() {});
-            }
+            render();
           }
         },
       ),
@@ -482,9 +483,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                   _bridge.triggeredTrackingStatus = await Cache.setValue(
                       CacheKeys.cacheTriggerTrackingStatus,
                       TrackingStatus.standing);
-                  if (mounted) {
-                    setState(() {});
-                  }
+                  render();
                 }),
             Container(
                 padding: const EdgeInsets.fromLTRB(8, 35, 0, 0),
@@ -502,7 +501,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     }
     TrackPointData tp = _trackPointData!;
     if (_location == null) {
-      return AppWidgets.loading('Waiting for GPS');
+      return AppWidgets.loading('Waiting for Location Data');
     }
     Location location = _location!;
     Widget divider = AppWidgets.divider();
@@ -540,9 +539,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
             _bridge.currentAliasIdList = await Cache.setValue<List<int>>(
                 CacheKeys.cacheCurrentAliasIdList, location.aliasIds);
             await Cache.reload();
-            if (mounted) {
-              setState(() {});
-            }
+            render();
           }
         },
       ),
@@ -561,9 +558,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
             var address = (await addr.Address(gps).lookupAddress()).toString();
             _bridge.currentAddress = await Cache.setValue<String>(
                 CacheKeys.cacheBackgroundAddress, address);
-            if (mounted) {
-              setState(() {});
-            }
+            render();
           }
         },
       ),
@@ -593,9 +588,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                   _bridge.triggeredTrackingStatus = await Cache.setValue(
                       CacheKeys.cacheTriggerTrackingStatus,
                       TrackingStatus.moving);
-                  if (mounted) {
-                    setState(() {});
-                  }
+                  render();
                 }),
             Container(
                 padding: const EdgeInsets.fromLTRB(4, 35, 0, 0),
@@ -684,7 +677,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         ),
         onPressed: () {
           dropdownUserIsOpen = !dropdownUserIsOpen;
-          setState(() {});
+          render();
         },
       ),
     ];
@@ -719,7 +712,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         ),
         onPressed: () {
           dropdownTasksIsOpen = !dropdownTasksIsOpen;
-          setState(() {});
+          render();
         },
       ),
     ];

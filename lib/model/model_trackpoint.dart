@@ -83,13 +83,12 @@ class ModelTrackPoint extends Model {
 
   static Future<int> countAlias(int id) async {
     var table = TableTrackPointAlias.table;
-    var idAlias = TableTrackPointAlias.idAlias;
     var idTrackPoint = TableTrackPointAlias.idTrackPoint;
-    var field = 'count';
+    var field = 'ct';
     var res =
         await DB.execute<List<Map<String, Object?>>>((Transaction txn) async {
       return await txn.query(table,
-          columns: ['COUNT(${idAlias.column}) AS $field'],
+          columns: ['count(*) AS $field'],
           where: ' $idTrackPoint = ?',
           whereArgs: [id]);
     });
