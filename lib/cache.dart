@@ -26,6 +26,7 @@ import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_user.dart';
+import 'package:sqflite/sqflite.dart';
 
 /*
 enum JsonKeys {
@@ -56,6 +57,9 @@ enum CacheKeys {
   /// logger
   backgroundLogger(List<LoggerLog>),
 
+  // background task
+  backgroundLastTick(DateTime),
+
   /// persistent logs
   errorLogs(List<LoggerLog>),
 
@@ -71,9 +75,9 @@ enum CacheKeys {
   cacheCurrentAliasIdList(List<int>),
 
   /// saved only on special events
-  cacheEventBackgroundGpsStartMoving(PendingGps),
-  cacheEventBackgroundGpsStartStanding(PendingGps),
-  cacheEventBackgroundGpsLastStatusChange(PendingGps),
+  cacheEventBackgroundGpsStartMoving(GPS),
+  cacheEventBackgroundGpsStartStanding(GPS),
+  cacheEventBackgroundGpsLastStatusChange(GPS),
 
   /// cache background to forground
   cacheBackgroundTrackingStatus(TrackingStatus),
@@ -81,10 +85,10 @@ enum CacheKeys {
   cacheBackgroundUserIdList(List<int>),
   cacheBackgroundTaskIdList(List<int>),
   cacheBackgroundTrackPointUserNotes(String),
-  cacheBackgroundLastGps(PendingGps),
-  cacheBackgroundGpsPoints(List<PendingGps>),
-  cacheBackgroundSmoothGpsPoints(List<PendingGps>),
-  cacheBackgroundCalcGpsPoints(List<PendingGps>),
+  cacheBackgroundLastGps(GPS),
+  cacheBackgroundGpsPoints(List<GPS>),
+  cacheBackgroundSmoothGpsPoints(List<GPS>),
+  cacheBackgroundCalcGpsPoints(List<GPS>),
   cacheBackgroundAddress(String),
   cacheBackgroundLastStandingAddress(String),
 
@@ -160,14 +164,8 @@ class Cache {
       seconds == null ? null : Duration(seconds: seconds);
 
   /// pending gps list
-  static List<String> serializePendingGpsList(List<PendingGps> gpsList) {
-    return gpsList.map((e) => e.toSharedString()).toList();
-  }
-
-  static List<PendingGps>? deserializePendingGpsList(List<String>? list) {
-    return list == null
-        ? []
-        : list.map((e) => PendingGps.toSharedObject(e)).toList();
+  static List<String> serializePendingGpsList(List<GPS> gpsList) {
+    return gpsList.map((e) => e.toString()).toList();
   }
 
   /// gps list
@@ -178,11 +176,6 @@ class Cache {
   static List<GPS>? deserializeGpsList(List<String>? list) {
     return list == null ? [] : list.map((e) => GPS.toObject(e)).toList();
   }
-
-  /// pending GPS
-  static String serializePendingGPS(PendingGps gps) => gps.toSharedString();
-  static GPS? deserializePendingGps(String? gps) =>
-      gps == null ? null : PendingGps.toSharedObject(gps);
 
   /// GPS
   static String serializeGps(GPS gps) => gps.toString();
@@ -304,13 +297,6 @@ class Cache {
         case const (List<GPS>):
           await prefs.setStringList(key, serializeGpsList(value as List<GPS>));
           break;
-        case PendingGps:
-          await prefs.setString(key, serializePendingGPS(value as PendingGps));
-          break;
-        case const (List<PendingGps>):
-          await prefs.setStringList(
-              key, serializePendingGpsList(value as List<PendingGps>));
-          break;
         case TrackingStatus:
           await prefs.setString(
               key, serializeTrackingStatus(value as TrackingStatus));
@@ -408,12 +394,6 @@ class Cache {
           return deserializeGps(prefs.getString(key)) as T? ?? defaultValue;
         case const (List<GPS>):
           return deserializeGpsList(prefs.getStringList(key)) as T? ??
-              defaultValue;
-        case PendingGps:
-          return deserializePendingGps(prefs.getString(key)) as T? ??
-              defaultValue;
-        case const (List<PendingGps>):
-          return deserializePendingGpsList(prefs.getStringList(key)) as T? ??
               defaultValue;
         case TrackingStatus:
           return deserializeTrackingStatus(prefs.getString(key)) as T? ??

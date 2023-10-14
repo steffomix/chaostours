@@ -1,5 +1,3 @@
-// ignore_for_file: unnecessary_getters_setters
-
 /*
 Copyright 2023 Stefan Brinkmann <st.brinkmann@gmail.com>
 
@@ -104,7 +102,7 @@ class AppSettings {
   /// currently only used on live tracking page.
   /// Looks for new background data.
   static const Duration _backgroundLookupDurationDefault =
-      Duration(seconds: 10);
+      Duration(seconds: 15);
   static Duration _backgroundLookupDuration = _backgroundLookupDurationDefault;
   static Duration get backgroundLookupDuration => _backgroundLookupDuration;
   static AppSettingLimits backgroundLookupDurationLimits = AppSettingLimits(

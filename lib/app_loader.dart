@@ -32,6 +32,7 @@ class AppLoader {
   static Future<bool> get preload => _preload ??= _preloadApp();
   static Future<bool>? _preload;
 
+  // /data/user/0/com.stefanbrinkmann.chaosToursUnlimited/shared_prefs/FlutterSharedPreferences.xml
   static Future<void> dbToFile() async {
     var dbDir = await DB.getDBDir();
     var downloadDir = io.Directory('/storage/emulated/0/Download');

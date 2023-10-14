@@ -21,6 +21,7 @@ import 'package:chaostours/address.dart';
 import 'package:chaostours/tracking.dart';
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/conf/app_settings.dart';
+import 'package:chaostours/util.dart';
 
 class DataBridge {
   static final AppLogger logger = AppLogger.logger<DataBridge>();
@@ -45,14 +46,14 @@ class DataBridge {
   ///
   /// backround values
   ///
-  PendingGps? lastGps;
+  GPS? lastGps;
   // gps list from between trackpoints
-  PendingGps? trackPointGpsStartMoving;
-  PendingGps? trackPointGpsStartStanding;
-  PendingGps? trackPointGpslastStatusChange;
-  List<PendingGps> gpsPoints = [];
-  List<PendingGps> smoothGpsPoints = [];
-  List<PendingGps> calcGpsPoints = [];
+  GPS? trackPointGpsStartMoving;
+  GPS? trackPointGpsStartStanding;
+  GPS? trackPointGpslastStatusChange;
+  List<GPS> gpsPoints = [];
+  List<GPS> smoothGpsPoints = [];
+  List<GPS> calcGpsPoints = [];
   // ignore: prefer_final_fields
   TrackingStatus trackingStatus = TrackingStatus.none;
 
@@ -87,6 +88,7 @@ class DataBridge {
   void startService() {
     if (!_serviceRunning) {
       _serviceRunning = true;
+
       Future.microtask(() async {
         await DataBridge.instance.reload();
         await AppSettings.loadSettings();
@@ -94,6 +96,32 @@ class DataBridge {
         await DataBridge.instance.loadCache();
 
         while (_serviceRunning) {
+          if (AppSettings.backgroundTrackingEnabled) {
+            try {
+              var now = DateTime.now();
+              var lastTick = await Cache.getValue<DateTime>(
+                  CacheKeys.backgroundLastTick, now);
+              if (lastTick == now) {
+                logger.warn('No Background Tick recognized');
+              } else {
+                var dur = duration(now, lastTick);
+                if (dur.inSeconds >
+                    AppSettings.backgroundLookupDuration.inSeconds * 3) {
+                  logger.warn(
+                      'No successful Background GPS since ${dur.inSeconds} seconds. Try to restart Background GPS');
+                  await BackgroundTracking.stopTracking();
+                  await Future.delayed(const Duration(seconds: 1),
+                      () => BackgroundTracking.startTracking());
+                } else {
+                  logger.log(
+                      'last BackGround GPS before ${dur.inSeconds} seconds at ${AppSettings.backgroundLookupDuration.inSeconds}seconds interval');
+                }
+              }
+            } catch (e, stk) {
+              logger.error('check background is running $e', stk);
+            }
+          }
+
           try {
             var status = trackingStatus.name;
             await loadCache();
@@ -140,13 +168,13 @@ class DataBridge {
           CacheKeys.cacheTriggerTrackingStatus, TrackingStatus.none);
 
       /// gps tracking
-      lastGps = await Cache.getValue<PendingGps>(
-          CacheKeys.cacheBackgroundLastGps, PendingGps(gps.lat, gps.lon));
-      gpsPoints = await Cache.getValue<List<PendingGps>>(
+      lastGps = await Cache.getValue<GPS>(
+          CacheKeys.cacheBackgroundLastGps, GPS(gps.lat, gps.lon));
+      gpsPoints = await Cache.getValue<List<GPS>>(
           CacheKeys.cacheBackgroundGpsPoints, []);
-      smoothGpsPoints = await Cache.getValue<List<PendingGps>>(
+      smoothGpsPoints = await Cache.getValue<List<GPS>>(
           CacheKeys.cacheBackgroundSmoothGpsPoints, []);
-      calcGpsPoints = await Cache.getValue<List<PendingGps>>(
+      calcGpsPoints = await Cache.getValue<List<GPS>>(
           CacheKeys.cacheBackgroundCalcGpsPoints, []);
 
       /// alias list
@@ -156,15 +184,14 @@ class DataBridge {
           CacheKeys.cacheCurrentAliasIdList, []);
 
       /// status events
-      trackPointGpsStartMoving = await Cache.getValue<PendingGps>(
-          CacheKeys.cacheEventBackgroundGpsStartMoving,
-          PendingGps(gps.lat, gps.lon));
-      trackPointGpsStartStanding = await Cache.getValue<PendingGps>(
+      trackPointGpsStartMoving = await Cache.getValue<GPS>(
+          CacheKeys.cacheEventBackgroundGpsStartMoving, GPS(gps.lat, gps.lon));
+      trackPointGpsStartStanding = await Cache.getValue<GPS>(
           CacheKeys.cacheEventBackgroundGpsStartStanding,
-          PendingGps(gps.lat, gps.lon));
-      trackPointGpslastStatusChange = await Cache.getValue<PendingGps>(
+          GPS(gps.lat, gps.lon));
+      trackPointGpslastStatusChange = await Cache.getValue<GPS>(
           CacheKeys.cacheEventBackgroundGpsLastStatusChange,
-          PendingGps(gps.lat, gps.lon));
+          GPS(gps.lat, gps.lon));
 
       /// user data
       trackPointUserIdList = await Cache.getValue<List<int>>(

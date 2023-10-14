@@ -17,8 +17,6 @@ import 'package:flutter/material.dart';
 
 ///
 import 'package:chaostours/app_logger.dart';
-import 'package:chaostours/app_loader.dart';
-import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/view/app_widgets.dart';
 
 void main() async {

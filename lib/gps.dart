@@ -138,43 +138,6 @@ class GpsArea {
   }
 }
 
-class PendingGps extends GPS {
-  PendingGps(super.lat, super.lon);
-
-  /// creates gps trackPoint with timestamp
-  String toSharedString() {
-    return <String>[super.toString(), time.toIso8601String()].join(';');
-  }
-
-  /// inverse of GPS.toSharedString()
-  ///
-  /// "lat,lon;time.toIso8601String()"
-  static PendingGps toSharedObject(String row) {
-    List<String> parts = row.split(';');
-
-    List<String> p = parts[0].split(',');
-
-    double lat = double.parse(p[0]);
-    double lon = double.parse(p[1]);
-
-    PendingGps gps = PendingGps(lat, lon);
-    gps.time = DateTime.parse(parts[1]);
-    return gps;
-  }
-
-  static PendingGps average(List<PendingGps> gpsList) {
-    int count = 0;
-    double lat = 0;
-    double lon = 0;
-    for (var gps in gpsList) {
-      lat += gps.lat;
-      lon += gps.lon;
-      count++;
-    }
-    return PendingGps(lat / count, lon / count);
-  }
-}
-
 class GPS {
   static AppLogger logger = AppLogger.logger<GPS>();
 

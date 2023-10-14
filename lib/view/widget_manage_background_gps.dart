@@ -172,10 +172,9 @@ class _WidgetManageBackgroundGpsState extends State<WidgetManageBackgroundGps> {
       Text('Status change triggered: ${bridge.triggeredTrackingStatus.name}'),
       AppWidgets.divider(),
       Text(
-          'Gps status standing: ${bridge.trackPointGpsStartStanding?.toSharedString()}'),
+          'Gps status standing: ${bridge.trackPointGpsStartStanding?.toString()}'),
       AppWidgets.divider(),
-      Text(
-          'Gps status moving: ${bridge.trackPointGpsStartMoving?.toSharedString()}'),
+      Text('Gps status moving: ${bridge.trackPointGpsStartMoving?.toString()}'),
       AppWidgets.divider(),
       Text('Alias IDs: ${bridge.trackPointAliasIdList.join(',')}'),
       AppWidgets.divider(),
@@ -186,16 +185,16 @@ class _WidgetManageBackgroundGpsState extends State<WidgetManageBackgroundGps> {
       Text('User notes: ${bridge.trackPointUserNotes}'),
       AppWidgets.divider(),
       Text(
-          'Last Status Change:\n ${bridge.trackPointGpsStartMoving?.toSharedString()}'),
+          'Last Status Change:\n ${bridge.trackPointGpsStartMoving?.toString()}'),
       AppWidgets.divider(),
       Text(
-          'Status calculation GPS Positions (${bridge.calcGpsPoints.length}):\n ${bridge.calcGpsPoints.map((e) => e.toSharedString()).join('\n')}'),
+          'Status calculation GPS Positions (${bridge.calcGpsPoints.length}):\n ${bridge.calcGpsPoints.map((e) => e.toString()).join('\n')}'),
       AppWidgets.divider(),
       Text(
-          'Smoothed GPS Positions (${bridge.smoothGpsPoints.length}):\n ${bridge.smoothGpsPoints.map((e) => e.toSharedString()).join('\n')}'),
+          'Smoothed GPS Positions (${bridge.smoothGpsPoints.length}):\n ${bridge.smoothGpsPoints.map((e) => e.toString()).join('\n')}'),
       AppWidgets.divider(),
       Text(
-          'All GPS Points (${bridge.gpsPoints.length}):\n${bridge.gpsPoints.map((e) => e.toSharedString()).join('\n')}')
+          'All GPS Points (${bridge.gpsPoints.length}):\n${bridge.gpsPoints.map((e) => e.toString()).join('\n')}')
     ];
     setState(() {});
   }

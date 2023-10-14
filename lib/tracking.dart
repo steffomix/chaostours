@@ -27,10 +27,10 @@ import 'package:chaostours/cache.dart';
 import 'package:chaostours/data_bridge.dart';
 import 'package:chaostours/Location.dart';
 import 'package:chaostours/conf/osm.dart';
-
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/calendar.dart';
+import 'package:chaostours/util.dart';
 
 @pragma('vm:entry-point')
 void backgroundCallback() {
@@ -52,7 +52,7 @@ class BackgroundTracking {
 
   static AndroidConfig _androidConfig() {
     return AndroidConfig(
-        channelName: 'Chaos Tours Background Tracking',
+        channelName: 'Chaos Tours Unlimited Background Tracking',
         notificationBody:
             'Background Tracking running, tap to open Chaos Tours App.',
         notificationIcon: 'drawable/explore',
@@ -125,7 +125,7 @@ class _TrackPoint {
   Future<void> track({required double lat, required double lon}) async {
     try {
       /// create gpsPoint
-      PendingGps gps = PendingGps(lat, lon);
+      GPS gps = GPS(lat, lon);
 
       /// reload shared preferences
       await Cache.reload();
@@ -147,11 +147,11 @@ class _TrackPoint {
       if (bridge.trackingStatus == TrackingStatus.none) {
         /// initialize basic events if not set
         /// this must be done before loading last session
-        bridge.trackPointGpsStartMoving = await Cache.setValue<PendingGps>(
+        bridge.trackPointGpsStartMoving = await Cache.setValue<GPS>(
             CacheKeys.cacheEventBackgroundGpsStartMoving, gps);
-        bridge.trackPointGpsStartStanding = await Cache.setValue<PendingGps>(
+        bridge.trackPointGpsStartStanding = await Cache.setValue<GPS>(
             CacheKeys.cacheEventBackgroundGpsStartStanding, gps);
-        bridge.trackPointGpslastStatusChange = await Cache.setValue<PendingGps>(
+        bridge.trackPointGpslastStatusChange = await Cache.setValue<GPS>(
             CacheKeys.cacheEventBackgroundGpsLastStatusChange, gps);
 
         /// app start, no status yet
@@ -171,7 +171,7 @@ class _TrackPoint {
       if (bridge.gpsPoints.length != maxGpsPoints) {
         /// prefill gpsPoints
         while (bridge.gpsPoints.length < maxGpsPoints) {
-          var gpsFiller = PendingGps(gps.lat, gps.lon);
+          var gpsFiller = GPS(gps.lat, gps.lon);
           gpsFiller.time =
               bridge.gpsPoints.last.time.add(AppSettings.trackPointInterval);
           bridge.gpsPoints.add(gpsFiller);
@@ -198,13 +198,13 @@ class _TrackPoint {
       gps = bridge.calcGpsPoints.first;
 
       /// all gps points calculated, save them
-      await Cache.setValue<List<PendingGps>>(
+      await Cache.setValue<List<GPS>>(
           CacheKeys.cacheBackgroundGpsPoints, bridge.gpsPoints);
-      await Cache.setValue<List<PendingGps>>(
+      await Cache.setValue<List<GPS>>(
           CacheKeys.cacheBackgroundSmoothGpsPoints, bridge.smoothGpsPoints);
-      await Cache.setValue<List<PendingGps>>(
+      await Cache.setValue<List<GPS>>(
           CacheKeys.cacheBackgroundCalcGpsPoints, bridge.calcGpsPoints);
-      await Cache.setValue<PendingGps>(CacheKeys.cacheBackgroundLastGps, gps);
+      await Cache.setValue<GPS>(CacheKeys.cacheBackgroundLastGps, gps);
 
       Location gpsLocation = await Location.location(gps);
 
@@ -248,7 +248,7 @@ class _TrackPoint {
             }
           }
 
-          PendingGps calculatedLocation =
+          GPS calculatedLocation =
               bridge.trackPointGpsStartStanding ?? bridge.calcGpsPoints.last;
           bool startedMoving = true;
 
@@ -293,7 +293,7 @@ class _TrackPoint {
                         : '';
 
                     /// realign gps
-                    gps = PendingGps.average(bridge.smoothGpsPoints);
+                    gps = GPS.average(bridge.smoothGpsPoints);
                     gps.time = DateTime.now();
 
                     /// create alias
@@ -464,23 +464,26 @@ class _TrackPoint {
     } catch (e, stk) {
       logger.error('processing background gps: $e', stk);
     }
+
+    await Cache.setValue<DateTime>(
+        CacheKeys.backgroundLastTick, DateTime.now());
   }
 
-  Future<void> cacheNewStatusStanding(PendingGps gps) async {
+  Future<void> cacheNewStatusStanding(GPS gps) async {
     bridge.trackingStatus = await Cache.setValue<TrackingStatus>(
         CacheKeys.cacheBackgroundTrackingStatus, TrackingStatus.standing);
-    bridge.trackPointGpsStartStanding = await Cache.setValue<PendingGps>(
+    bridge.trackPointGpsStartStanding = await Cache.setValue<GPS>(
         CacheKeys.cacheEventBackgroundGpsStartStanding, gps);
-    bridge.trackPointGpslastStatusChange = await Cache.setValue<PendingGps>(
+    bridge.trackPointGpslastStatusChange = await Cache.setValue<GPS>(
         CacheKeys.cacheEventBackgroundGpsLastStatusChange, gps);
   }
 
-  Future<void> cacheNewStatusMoving(PendingGps gps) async {
+  Future<void> cacheNewStatusMoving(GPS gps) async {
     bridge.trackingStatus = await Cache.setValue<TrackingStatus>(
         CacheKeys.cacheBackgroundTrackingStatus, TrackingStatus.moving);
-    bridge.trackPointGpsStartMoving = await Cache.setValue<PendingGps>(
+    bridge.trackPointGpsStartMoving = await Cache.setValue<GPS>(
         CacheKeys.cacheEventBackgroundGpsStartMoving, gps);
-    bridge.trackPointGpslastStatusChange = await Cache.setValue<PendingGps>(
+    bridge.trackPointGpslastStatusChange = await Cache.setValue<GPS>(
         CacheKeys.cacheEventBackgroundGpsLastStatusChange, gps);
   }
 
@@ -503,8 +506,8 @@ class _TrackPoint {
     int range = bridge.gpsPoints.length - smooth;
     while (index < range) {
       try {
-        var averageGps = PendingGps.average(
-            bridge.gpsPoints.getRange(index, index + smooth).toList());
+        var averageGps = GPS
+            .average(bridge.gpsPoints.getRange(index, index + smooth).toList());
         averageGps.time = bridge.gpsPoints[index].time;
         bridge.smoothGpsPoints.add(averageGps);
       } catch (e, stk) {
@@ -525,7 +528,7 @@ class _TrackPoint {
       bridge.calcGpsPoints.addAll(bridge.smoothGpsPoints.getRange(0, p));
     }
     if (bridge.smoothGpsPoints.length > 1) {
-      List<PendingGps> gpsList = [];
+      List<GPS> gpsList = [];
       bool fullTresholdRange = false;
 
       /// most recent gps time in ms
