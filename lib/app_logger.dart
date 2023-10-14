@@ -80,7 +80,7 @@ class LoggerLog {
 
 var _print = print;
 
-class Logger {
+class AppLogger {
   static void print(Object? msg) {
     _print(msg);
   }
@@ -114,7 +114,7 @@ class Logger {
   bool backGroundLogger = globalBackgroundLogger;
   LogLevel logLevel = globalLogLevel;
 
-  static final Map<String, Logger> _loggerRegister = {};
+  static final Map<String, AppLogger> _loggerRegister = {};
 
   bool loggerEnabled = true;
 
@@ -132,11 +132,11 @@ class Logger {
   }
 
   /// constructor
-  static Logger logger<T>(
+  static AppLogger logger<T>(
       {String? specialPrefix,
       bool? specialBackgroundLogger,
       LogLevel? specialLogLevel}) {
-    Logger l = Logger();
+    AppLogger l = AppLogger();
     l.prefix = specialPrefix ?? globalPrefix;
     l.backGroundLogger = specialBackgroundLogger ?? globalBackgroundLogger;
     l.logLevel = specialLogLevel ?? globalLogLevel;
@@ -152,7 +152,7 @@ class Logger {
   /// MyClass{
   ///   static final Logger logger = Logger.logger<MyClass>();
   /// ```
-  Logger();
+  AppLogger();
 
   Future<void> verbose(Object? msg) => Future.microtask(
       () async => await _log(LogLevel.verbose, msg.toString()));

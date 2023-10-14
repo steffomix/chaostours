@@ -21,11 +21,11 @@ import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/util.dart' as util;
-import 'package:chaostours/logger.dart';
+import 'package:chaostours/app_logger.dart';
 import 'package:sqflite/sqflite.dart';
 
 class ModelTrackPoint extends Model {
-  static Logger logger = Logger.logger<ModelTrackPoint>();
+  static AppLogger logger = AppLogger.logger<ModelTrackPoint>();
 
   GPS gps;
 

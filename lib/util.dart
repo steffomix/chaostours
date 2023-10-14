@@ -119,50 +119,43 @@ String formatDate(DateTime t, [bool short = true]) {
 /// ```
 class CheckboxController {
   final int idReference;
-  String title;
-  late bool checked;
+  final List<int> referenceList;
   bool isActive;
+  bool checked;
+  String title;
   String subtitle;
-  bool enabled;
   int group;
-  VoidCallback? onToggle;
-  List<int> referenceList;
+  Function(bool?) onToggle;
   CheckboxController({
     required this.idReference,
     required this.referenceList,
     required this.title,
+    this.checked = false,
     this.group = 0,
     this.subtitle = '',
     this.isActive = true,
-    this.onToggle,
-    this.enabled = true,
+    required this.onToggle,
   }) {
     checked = referenceList.contains(idReference);
   }
   void toggle() {
-    if (enabled) checked = !checked;
+    if (!isActive) {
+      return;
+    }
+    checked = !checked;
     if (checked) {
       if (!referenceList.contains(idReference)) referenceList.add(idReference);
     } else {
       referenceList.removeWhere((i) => i == idReference);
     }
-  }
-
-  void enable(bool state) => enabled = state;
-  bool get isEnabled => enabled;
-  VoidCallback? handler() {
-    if (enabled) {
-      toggle();
-      onToggle?.call();
-    }
-    return null;
+    onToggle(checked);
   }
 }
 
 /// render multiple checkboxes
 Widget createCheckbox(State widget, CheckboxController model) {
   TextStyle style = TextStyle(
-      color: model.enabled ? Colors.black : Colors.grey,
+      color: model.isActive ? Colors.black : Colors.grey,
       decoration:
           model.isActive ? TextDecoration.none : TextDecoration.lineThrough);
 
@@ -174,22 +167,6 @@ Widget createCheckbox(State widget, CheckboxController model) {
       model.title,
       style: style,
     ),
-    leading: Checkbox(
-      value: model.checked,
-      onChanged: (_) {
-        widget.setState(
-          () {
-            model.handler()?.call();
-          },
-        );
-      },
-    ),
-    onTap: () {
-      widget.setState(
-        () {
-          model.handler()?.call();
-        },
-      );
-    },
+    leading: Checkbox(value: model.checked, onChanged: model.onToggle),
   );
 }

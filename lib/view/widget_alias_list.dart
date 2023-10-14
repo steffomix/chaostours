@@ -20,7 +20,7 @@ import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 ///
 import 'package:chaostours/screen.dart';
 import 'package:chaostours/view/app_widgets.dart';
-import 'package:chaostours/logger.dart';
+import 'package:chaostours/app_logger.dart';
 import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/conf/app_colors.dart';
 import 'package:chaostours/model/model_alias.dart';
@@ -41,7 +41,7 @@ class WidgetAliasList extends StatefulWidget {
 
 class _WidgetAliasList extends State<WidgetAliasList> {
   // ignore: unused_field
-  static final Logger logger = Logger.logger<WidgetAliasList>();
+  static final AppLogger logger = AppLogger.logger<WidgetAliasList>();
 
   _DisplayMode _displayMode = _DisplayMode.list;
 

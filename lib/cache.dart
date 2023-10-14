@@ -17,7 +17,7 @@ limitations under the License.
 import 'package:shared_preferences/shared_preferences.dart';
 
 ///
-import 'package:chaostours/logger.dart';
+import 'package:chaostours/app_logger.dart';
 import 'package:chaostours/conf/osm.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/tracking.dart';
@@ -99,6 +99,7 @@ enum CacheKeys {
   ///
   calendarLastEventId(String),
   calendarPublishStatusEnabled(bool),
+  calendarSelectedId(String),
 
   /// globals
   globalsWeekDays(List<String>),
@@ -119,7 +120,7 @@ enum CacheKeys {
 }
 
 class Cache {
-  static final Logger logger = Logger.logger<Cache>();
+  static final AppLogger logger = AppLogger.logger<Cache>();
 
   Cache._();
   static Cache? _instance;

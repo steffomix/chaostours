@@ -17,7 +17,7 @@ limitations under the License.
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'package:chaostours/logger.dart';
+import 'package:chaostours/app_logger.dart';
 import 'package:chaostours/util.dart';
 import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/conf/app_settings.dart';
@@ -38,7 +38,7 @@ class WidgetAliasTrackpoint extends StatefulWidget {
 
 class _WidgetAliasTrackpoint extends State<WidgetAliasTrackpoint> {
   // ignore: unused_field
-  static final Logger logger = Logger.logger<WidgetAliasTrackpoint>();
+  static final AppLogger logger = AppLogger.logger<WidgetAliasTrackpoint>();
 
   final TextEditingController _searchTextController = TextEditingController();
   final PagingController<int, ModelTrackPoint> _pagingController =

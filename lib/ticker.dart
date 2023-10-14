@@ -15,10 +15,10 @@ limitations under the License.
 */
 
 import 'package:chaostours/event_manager.dart';
-import 'package:chaostours/logger.dart';
+import 'package:chaostours/app_logger.dart';
 
 class Ticker {
-  static final Logger logger = Logger.logger<Ticker>();
+  static final AppLogger logger = AppLogger.logger<Ticker>();
 
   static int _appTick = 0;
   static get appTick => _appTick;

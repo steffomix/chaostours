@@ -16,7 +16,7 @@ limitations under the License.
 import 'package:flutter/material.dart';
 
 ///
-import 'package:chaostours/logger.dart';
+import 'package:chaostours/app_logger.dart';
 import 'package:chaostours/app_loader.dart';
 import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/view/app_widgets.dart';
@@ -27,7 +27,7 @@ void main() async {
 }
 
 class MyApp extends StatelessWidget {
-  static final Logger logger = Logger.logger<MyApp>();
+  static final AppLogger logger = AppLogger.logger<MyApp>();
   const MyApp({super.key});
 
   @override

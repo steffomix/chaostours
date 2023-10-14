@@ -22,7 +22,7 @@ import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_alias_group.dart';
 import 'package:chaostours/database.dart';
 import 'package:chaostours/gps.dart';
-import 'package:chaostours/logger.dart';
+import 'package:chaostours/app_logger.dart';
 import 'package:sqflite/sqflite.dart';
 
 enum AliasVisibility {
@@ -30,7 +30,7 @@ enum AliasVisibility {
   privat(2),
   restricted(3);
 
-  static final Logger logger = Logger.logger<AliasVisibility>();
+  static final AppLogger logger = AppLogger.logger<AliasVisibility>();
   final int value;
   const AliasVisibility(this.value);
   static final int _saveId = AliasVisibility.restricted.value;
@@ -52,7 +52,7 @@ enum AliasVisibility {
 }
 
 class ModelAlias extends Model {
-  static Logger logger = Logger.logger<ModelAlias>();
+  static AppLogger logger = AppLogger.logger<ModelAlias>();
   int groupId = 1;
   // lazy loaded group
   Future<ModelAliasGroup?> get groupModel => ModelAliasGroup.byId(groupId);
@@ -74,12 +74,13 @@ class ModelAlias extends Model {
 
   ModelAlias({
     super.id = 0,
-    this.groupId = 1,
     required this.gps,
-    this.radius = 50,
     required this.lastVisited,
-    this.timesVisited = 0,
     required this.title,
+    this.visibility = AliasVisibility.restricted,
+    this.groupId = 1,
+    this.radius = 50,
+    this.timesVisited = 0,
     this.description = '',
   });
 
@@ -90,6 +91,7 @@ class ModelAlias extends Model {
         gps: GPS(DB.parseDouble(map[TableAlias.latitude.column]),
             DB.parseDouble(map[TableAlias.longitude.column])),
         radius: DB.parseInt(map[TableAlias.radius.column], fallback: 10),
+        visibility: AliasVisibility.byId(map[TableAlias.visibility.column]),
         lastVisited: DB.intToTime(map[TableAlias.lastVisited.column]),
         timesVisited: DB.parseInt(map[TableAlias.timesVisited.column]),
         title: DB.parseString(map[TableAlias.title.column]),
@@ -103,6 +105,7 @@ class ModelAlias extends Model {
       TableAlias.latitude.column: gps.lat,
       TableAlias.longitude.column: gps.lon,
       TableAlias.radius.column: radius,
+      TableAlias.visibility.column: visibility.value,
       TableAlias.lastVisited.column: DB.timeToInt(lastVisited),
       TableAlias.timesVisited.column: timesVisited,
       TableAlias.title.column: title,

@@ -15,10 +15,10 @@ limitations under the License.
 */
 
 import 'package:permission_handler/permission_handler.dart';
-import 'package:chaostours/logger.dart';
+import 'package:chaostours/app_logger.dart';
 
 class Permissions {
-  static Logger logger = Logger.logger<Permissions>();
+  static AppLogger logger = AppLogger.logger<Permissions>();
   static Permissions? _instance;
   Permissions._() {
     try {

@@ -18,7 +18,7 @@ import 'package:flutter/material.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 
 ///
-import 'package:chaostours/logger.dart';
+import 'package:chaostours/app_logger.dart';
 import 'package:chaostours/screen.dart';
 import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/view/app_widgets.dart';
@@ -38,7 +38,7 @@ class WidgetTaskList extends StatefulWidget {
 
 class _WidgetTaskList extends State<WidgetTaskList> {
   // ignore: unused_field
-  static final Logger logger = Logger.logger<WidgetTaskList>();
+  static final AppLogger logger = AppLogger.logger<WidgetTaskList>();
 
   bool showDeleted = false;
   String search = '';

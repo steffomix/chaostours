@@ -23,7 +23,7 @@ import 'package:google_fonts/google_fonts.dart';
 ///
 import 'package:chaostours/util.dart' as util;
 
-import 'package:chaostours/logger.dart';
+import 'package:chaostours/app_logger.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/conf/app_settings.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
@@ -36,7 +36,7 @@ import 'package:chaostours/conf/app_routes.dart';
 ///
 ///
 class AppWidgets {
-  static final Logger logger = Logger.logger<AppWidgets>();
+  static final AppLogger logger = AppLogger.logger<AppWidgets>();
 
   static Widget materialApp(BuildContext context) {
     return MaterialApp(

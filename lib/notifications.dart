@@ -16,10 +16,10 @@ limitations under the License.
 
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 //
-import 'package:chaostours/logger.dart';
+import 'package:chaostours/app_logger.dart';
 
 class Notifications {
-  static Logger logger = Logger.logger<Notifications>();
+  static AppLogger logger = AppLogger.logger<Notifications>();
   static Notifications? _instance;
   Notifications._() {
     _initialize();

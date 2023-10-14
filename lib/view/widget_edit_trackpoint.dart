@@ -27,7 +27,7 @@ import 'package:chaostours/trackpoint_data.dart';
 import 'package:chaostours/calendar.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/util.dart';
-import 'package:chaostours/logger.dart';
+import 'package:chaostours/app_logger.dart';
 import 'package:chaostours/screen.dart';
 import 'package:chaostours/gps.dart';
 
@@ -42,7 +42,7 @@ class WidgetEditTrackPoint extends StatefulWidget {
 }
 
 class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
-  Logger logger = Logger.logger<WidgetEditTrackPoint>();
+  AppLogger logger = AppLogger.logger<WidgetEditTrackPoint>();
 
   /// editable fields
   List<int> tpTasks = [];
@@ -117,7 +117,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
                 isActive: model.isActive,
                 title: model.title,
                 subtitle: model.description,
-                onToggle: () {
+                onToggle: (bool? checked) {
                   modify();
                 })));
       }
@@ -138,7 +138,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
                 isActive: model.isActive,
                 title: model.title,
                 subtitle: model.description,
-                onToggle: () {
+                onToggle: (bool? checked) {
                   modify();
                 })));
       }
@@ -273,7 +273,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
         divider,
         notes(context),
       ]);
-    } catch (e, stk) {
+    } catch (e) {
       body = AppWidgets.loading('No valid ID found');
       Future.delayed(const Duration(milliseconds: 500), () {
         Navigator.pop(context);

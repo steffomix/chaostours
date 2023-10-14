@@ -23,10 +23,10 @@ import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/conf/app_settings.dart';
 import 'package:chaostours/util.dart';
-import 'package:chaostours/logger.dart';
+import 'package:chaostours/app_logger.dart';
 
 class TrackPointData {
-  static final Logger logger = Logger.logger<TrackPointData>();
+  static final AppLogger logger = AppLogger.logger<TrackPointData>();
   ModelTrackPoint? trackPoint;
   final bridge = DataBridge.instance;
   final GPS gps;

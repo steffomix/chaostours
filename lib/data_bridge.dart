@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import 'package:chaostours/cache.dart';
-import 'package:chaostours/logger.dart';
+import 'package:chaostours/app_logger.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/address.dart';
 import 'package:chaostours/tracking.dart';
@@ -23,7 +23,7 @@ import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/conf/app_settings.dart';
 
 class DataBridge {
-  static final Logger logger = Logger.logger<DataBridge>();
+  static final AppLogger logger = AppLogger.logger<DataBridge>();
 
   DataBridge._();
   static DataBridge? _instance;
@@ -40,6 +40,7 @@ class DataBridge {
   }
 
   String lastCalendarEventId = '';
+  String selectedCalendarId = '';
 
   ///
   /// backround values
@@ -107,10 +108,11 @@ class DataBridge {
             logger.error('service execution: $e', stk);
           }
           try {
-            await Logger.getBackgroundLogs();
+            await AppLogger.getBackgroundLogs();
           } catch (e, stk) {
             logger.error('getBackgroundLogs: $e', stk);
           }
+
           await Future.delayed(AppSettings.backgroundLookupDuration);
         }
       });
@@ -175,6 +177,8 @@ class DataBridge {
       /// calendar
       lastCalendarEventId =
           await Cache.getValue<String>(CacheKeys.calendarLastEventId, '');
+      selectedCalendarId =
+          await Cache.getValue<String>(CacheKeys.calendarSelectedId, '');
     } catch (e, stk) {
       logger.error('loadBackgroundSession: $e', stk);
     }

@@ -17,13 +17,13 @@ limitations under the License.
 import 'package:device_calendar/device_calendar.dart';
 
 ///
-import 'package:chaostours/logger.dart';
+import 'package:chaostours/app_logger.dart';
 import 'package:chaostours/cache.dart';
 import 'package:chaostours/data_bridge.dart';
 import 'package:chaostours/trackpoint_data.dart';
 
 class AppCalendar {
-  static final Logger logger = Logger.logger<AppCalendar>();
+  static final AppLogger logger = AppLogger.logger<AppCalendar>();
 
   final DeviceCalendarPlugin _deviceCalendarPlugin = DeviceCalendarPlugin();
   final List<Calendar> calendars = [];
@@ -41,7 +41,7 @@ class AppCalendar {
     return events.data ?? <Event>[];
   }
 
-  Future<void> retrieveCalendars() async {
+  Future<void> _retrieveCalendars() async {
     try {
       var permissionsGranted = await _deviceCalendarPlugin.hasPermissions();
       if (permissionsGranted.isSuccess &&
@@ -64,14 +64,18 @@ class AppCalendar {
         DataBridge.instance.trackPointUserNotes = await Cache.setValue<String>(
             CacheKeys.cacheBackgroundTrackPointUserNotes, err.join('\n\n'));
       }
-      calendars.clear();
-      calendars.addAll(calendarsResult.data as List<Calendar>);
+      var data = calendarsResult.data;
+      if (data != null) {
+        calendars.clear();
+        calendars.addAll(data);
+      }
     } catch (e, stk) {
       logger.error('retrieve calendars: $e', stk);
     }
   }
 
   Future<Calendar?> calendarById(String id) async {
+    await _retrieveCalendars();
     try {
       for (var c in calendars) {
         if (c.id == id) {
@@ -86,7 +90,7 @@ class AppCalendar {
 
   Future<String?> startCalendarEvent(TrackPointData tpData) async {
     try {
-      await retrieveCalendars();
+      await _retrieveCalendars();
       if (calendars.isNotEmpty) {
         /// get dates
         final berlin = getLocation('Europe/Berlin');
@@ -131,7 +135,7 @@ class AppCalendar {
 
   Future<String?> completeCalendarEvent(TrackPointData tpData) async {
     try {
-      await retrieveCalendars();
+      await _retrieveCalendars();
       if (calendars.isNotEmpty) {
         /// get dates
         final berlin = getLocation('Europe/Berlin');

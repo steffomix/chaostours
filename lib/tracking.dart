@@ -15,9 +15,11 @@ limitations under the License.
 */
 
 import 'package:background_location_tracker/background_location_tracker.dart';
+import 'dart:math' as math;
 
 ///
-import 'package:chaostours/logger.dart';
+import 'package:chaostours/app_logger.dart';
+import 'package:chaostours/database.dart';
 import 'package:chaostours/trackpoint_data.dart';
 import 'package:chaostours/conf/app_settings.dart';
 import 'package:chaostours/gps.dart';
@@ -25,7 +27,6 @@ import 'package:chaostours/cache.dart';
 import 'package:chaostours/data_bridge.dart';
 import 'package:chaostours/Location.dart';
 import 'package:chaostours/conf/osm.dart';
-import 'dart:math' as math;
 
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_alias.dart';
@@ -35,9 +36,10 @@ import 'package:chaostours/calendar.dart';
 void backgroundCallback() {
   BackgroundLocationTrackerManager.handleBackgroundUpdated(
       (BackgroundLocationUpdateData data) async {
-    Logger.globalBackgroundLogger = true;
-    Logger.globalLogLevel = LogLevel.verbose;
-    Logger.globalPrefix = '~~';
+    AppLogger.globalBackgroundLogger = true;
+    AppLogger.globalLogLevel = LogLevel.verbose;
+    AppLogger.globalPrefix = '~~';
+    await DB.openDatabase(create: false);
     await _TrackPoint().track(lat: data.lat, lon: data.lon);
 
     // wait before shutdown task
@@ -110,7 +112,7 @@ enum TrackingStatus {
 }
 
 class _TrackPoint {
-  final Logger logger = Logger.logger<_TrackPoint>();
+  final AppLogger logger = AppLogger.logger<_TrackPoint>();
 
   static _TrackPoint? _instance;
   _TrackPoint._();
@@ -240,6 +242,8 @@ class _TrackPoint {
             } catch (e) {
               if (gpsLocation.hasAlias) {
                 distanceTreshold = gpsLocation.aliasModels.first.radius;
+              } else {
+                distanceTreshold = AppSettings.distanceTreshold;
               }
             }
           }
@@ -302,7 +306,7 @@ class _TrackPoint {
                         description:
                             'Auto created Alias\nat address:\n"$address"\n\nat date/time: ${gps.time.toIso8601String()}',
                         radius: AppSettings.distanceTreshold);
-                    logger.log('auto create new alias');
+                    logger.warn('auto create new alias');
                     await ModelAlias.insert(newAlias);
 
                     /// recreate location with new alias
@@ -397,6 +401,7 @@ class _TrackPoint {
 
             /// calendar eventId may have changed
             /// save after completing calendar event
+
             await ModelTrackPoint.insert(newTrackPoint);
 
             /// reset calendarEvent ID

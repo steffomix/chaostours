@@ -1,10 +1,10 @@
 import 'package:chaostours/conf/app_settings.dart';
 import 'package:chaostours/gps.dart';
-import 'package:chaostours/logger.dart';
+import 'package:chaostours/app_logger.dart';
 import 'package:chaostours/model/model_alias.dart';
 
 class Location {
-  static final Logger logger = Logger.logger<Location>();
+  static final AppLogger logger = AppLogger.logger<Location>();
   final GPS gps;
 
   final List<ModelAlias> aliasModels;

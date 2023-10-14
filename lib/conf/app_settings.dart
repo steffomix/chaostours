@@ -17,7 +17,7 @@ limitations under the License.
 */
 
 // ignore_for_file: prefer_const_constructors
-import 'package:chaostours/logger.dart';
+import 'package:chaostours/app_logger.dart';
 import 'package:chaostours/cache.dart';
 import 'package:chaostours/conf/osm.dart';
 
@@ -58,7 +58,7 @@ class AppSettingLimits {
 
 class AppSettings {
   static int appTicks = 0;
-  static final Logger logger = Logger.logger<AppSettings>();
+  static final AppLogger logger = AppLogger.logger<AppSettings>();
 
   static String version = '0.0.1';
 

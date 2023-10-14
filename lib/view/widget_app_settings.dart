@@ -14,9 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/conf/osm.dart';
+import 'package:device_calendar/device_calendar.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
+///
+import 'package:chaostours/app_logger.dart';
+import 'package:chaostours/conf/app_routes.dart';
+import 'package:chaostours/conf/app_colors.dart';
+import 'package:chaostours/calendar.dart';
 import 'package:chaostours/view/app_widgets.dart';
+import 'package:chaostours/conf/app_settings.dart';
+import 'package:chaostours/cache.dart';
+import 'package:chaostours/data_bridge.dart';
 
 enum AliasRequired {
   yes(true),
@@ -35,13 +46,7 @@ class WidgetAppSettings extends StatefulWidget {
 }
 
 class _WidgetAppSettings extends State<WidgetAppSettings> {
-  @override
-  Widget build(BuildContext context) {
-    return AppWidgets.scaffold(context,
-        body: AppWidgets.loading('Widget under construction'));
-  }
-  /* 
-  static final Logger logger = Logger.logger<WidgetAppSettings>();
+  static final AppLogger logger = AppLogger.logger<WidgetAppSettings>();
 
   bool? statusStandingRequireAlias = AppSettings.statusStandingRequireAlias;
   bool? backgroundTrackingEnabled = AppSettings.backgroundTrackingEnabled;
@@ -70,16 +75,15 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
 
   Future<void> getCalendarId() async {
     var appCalendar = AppCalendar();
-    appCalendar.retrieveCalendars().then((data) async {
-      Calendar? calendar = await appCalendar.calendarById();
-      if (calendar != null) {
-        selectedCalendar =
-            '#${calendar.id}: ${calendar.name}\n<${calendar.accountName}>';
-      }
-      if (mounted) {
-        setState(() {});
-      }
-    });
+    var id = await Cache.getValue(CacheKeys.calendarSelectedId, '');
+    Calendar? calendar = await appCalendar.calendarById(id);
+    if (calendar != null) {
+      selectedCalendar =
+          '#${calendar.id}: ${calendar.name}\n<${calendar.accountName}>';
+    }
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
@@ -514,5 +518,5 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
           ///
         ]),
         navBar: null);
-  } */
+  }
 }

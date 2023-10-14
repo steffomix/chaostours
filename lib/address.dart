@@ -18,7 +18,7 @@ import 'gps.dart';
 import 'package:http/http.dart' as http;
 import 'package:sprintf/sprintf.dart' show sprintf;
 //
-import 'package:chaostours/logger.dart';
+import 'package:chaostours/app_logger.dart';
 
 ///
 ///<addressparts>
@@ -55,7 +55,7 @@ enum OsmTags {
 }
 
 class Address {
-  static Logger logger = Logger.logger<Address>();
+  static AppLogger logger = AppLogger.logger<Address>();
   final GPS _gps;
   final DateTime _time = DateTime.now();
   bool _loaded = false;

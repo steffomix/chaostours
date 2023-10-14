@@ -18,7 +18,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_osm_plugin/flutter_osm_plugin.dart' as osm;
 
 ///
-import 'package:chaostours/logger.dart';
+import 'package:chaostours/app_logger.dart';
 import 'package:chaostours/conf/app_colors.dart';
 import 'package:chaostours/data_bridge.dart';
 import 'package:chaostours/tracking.dart';
@@ -27,7 +27,7 @@ import 'package:chaostours/model/model_alias_group.dart';
 import 'package:chaostours/gps.dart';
 
 class OsmTools {
-  static final Logger logger = Logger.logger<OsmTools>();
+  static final AppLogger logger = AppLogger.logger<OsmTools>();
 
   static final bridge = DataBridge();
   static int circleId = 0;

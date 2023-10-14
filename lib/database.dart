@@ -18,31 +18,71 @@ import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart' as flite;
 
 ///
-import 'package:chaostours/logger.dart';
+import 'package:chaostours/app_logger.dart';
 
 class DB {
-  /// <pre>
-  /// var result = await query<T>((Transaction txn) async {
-  ///   return await txn...;
-  /// });
-  ///
-  /// </pre>
-  static var execute = _AppDatabase._query;
+  static final AppLogger logger = AppLogger.logger<DB>();
 
-  static var getPath = _AppDatabase.getPath;
+  static const dbVersion = 1;
+  static const dbFile = 'chaostours_$dbVersion.sqlite';
+  static String? _dbFullPath;
+  static flite.Database? _database;
 
-  static Future<io.Directory> getDir() async {
+  static Future<io.Directory> getDBDir() async {
     return io.Directory(await flite.getDatabasesPath());
   }
 
-  static bool closeDb = false;
-
-  static Future<void> deleteDatabase(String path) async {
-    flite.deleteDatabase(path);
+  /// /data/user/0/com..../databases/chaostours.sqlite
+  static Future<String> getDBFilePath() async {
+    _dbFullPath ??= join(await flite.getDatabasesPath(), dbFile);
+    return _dbFullPath!;
   }
 
-  static Future<flite.Database> open() async {
-    return _AppDatabase._getDatabase();
+  static Future<void> openDatabase({bool create = false}) async {
+    try {
+      var path = await getDBFilePath();
+      _database ??= await flite.openDatabase(path,
+          version: dbVersion,
+          singleInstance: false,
+          onCreate: !create
+              ? null
+              : (flite.Database db, int version) async {
+                  await db.transaction((txn) async {
+                    var batch = txn.batch();
+                    for (var sql in [
+                      ...DatabaseSchema.schemata,
+                      ...DatabaseSchema.indexes
+                    ]) {
+                      batch.rawQuery(sql);
+                    }
+                    await batch.commit();
+                  });
+                });
+    } catch (e, stk) {
+      logger.error('openDatabase: $e', stk);
+      rethrow;
+    }
+  }
+
+  /// <pre>
+  /// // example
+  ///
+  /// var rows = await DB.execute<List<Map<String, Object?>>>((Transaction txn) async {
+  ///    return await txn.query(...);
+  ///  });
+  /// </pre>
+  static Future<T> execute<T>(
+      Future<T> Function(flite.Transaction txn) action) async {
+    try {
+      if (_database == null) {
+        throw 'no database set';
+      }
+      T result = await _database!.transaction<T>(action);
+      return result;
+    } catch (e, stk) {
+      logger.error('DB::execute $e', stk);
+      rethrow;
+    }
   }
 
   static int parseInt(Object? value, {int fallback = 0}) {
@@ -107,9 +147,8 @@ class DB {
     return DateTime.fromMillisecondsSinceEpoch(parseInt(i) * 1000);
   }
 }
-
+/*
 class _AppDatabase {
-  static final Logger logger = Logger.logger<DB>();
 
   static const dbFile = 'chaostours.sqlite';
   static const dbVersion = 1;
@@ -133,7 +172,7 @@ class _AppDatabase {
     var path = await getPath();
     try {
       var db = _database ??= await flite
-          .openDatabase(path, version: dbVersion, singleInstance: true,
+          .openDatabase(path, version: dbVersion, singleInstance: false,
               onCreate: (flite.Database db, int version) async {
         await db.transaction((txn) async {
           var batch = txn.batch();
@@ -176,7 +215,7 @@ class _AppDatabase {
     }
   }
 }
-
+*/
 ///
 ///
 ///

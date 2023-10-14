@@ -15,12 +15,12 @@ limitations under the License.
 */
 
 import 'package:chaostours/database.dart';
-import 'package:chaostours/logger.dart';
+import 'package:chaostours/app_logger.dart';
 import 'package:chaostours/model/model.dart';
 import 'package:sqflite/sqflite.dart';
 
 class ModelUserGroup extends Model {
-  static final Logger logger = Logger.logger<ModelUserGroup>();
+  static final AppLogger logger = AppLogger.logger<ModelUserGroup>();
 
   bool isActive = true;
   int sortOrder = 0;

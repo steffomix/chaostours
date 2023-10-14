@@ -17,12 +17,12 @@ limitations under the License.
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 
 import 'package:chaostours/gps.dart';
+import 'package:chaostours/address.dart';
 
 ///
-import 'package:chaostours/logger.dart';
+import 'package:chaostours/app_logger.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/conf/app_colors.dart';
@@ -36,256 +36,285 @@ class WidgetAliasEdit extends StatefulWidget {
 
 class _WidgetAliasEdit extends State<WidgetAliasEdit> {
   // ignore: unused_field
-  static final Logger logger = Logger.logger<WidgetAliasEdit>();
+  static final AppLogger logger = AppLogger.logger<WidgetAliasEdit>();
 
   ModelAlias? _modelAlias;
-  final _aliasModified = ValueNotifier<bool>(false);
   final _addressController = TextEditingController();
   final _notesController = TextEditingController();
   final _radiusController = TextEditingController();
+
+  void initialize(ModelAlias model) {
+    _modelAlias = model;
+    _addressController.text = model.title;
+    _notesController.text = model.description;
+    _radiusController.text = model.radius.toString();
+  }
 
   String loadingMsg = '';
 
   @override
   void dispose() {
-    _aliasModified.dispose();
     super.dispose();
+  }
+
+  Future<ModelAlias> createAlias() async {
+    var gps = await GPS.gps();
+    var address = (await Address(gps).lookupAddress()).toString();
+    var model =
+        ModelAlias(gps: gps, lastVisited: DateTime.now(), title: address);
+    await ModelAlias.insert(model);
+    return model;
+  }
+
+  Future<ModelAlias?> loadAlias(int? id) async {
+    if (id == null) {
+      return await createAlias();
+    }
+    var model = await ModelAlias.byId(id);
+    if (model == null) {
+      if (mounted) {
+        Navigator.pop(context);
+      }
+    }
+    return model;
   }
 
   @override
   Widget build(BuildContext context) {
-    final id = ModalRoute.of(context)!.settings.arguments as int;
+    int? id = ModalRoute.of(context)?.settings.arguments as int?;
 
     return FutureBuilder<ModelAlias?>(
-      future: ModelAlias.byId(id),
+      future: loadAlias(id),
       builder: (context, snapshot) {
-        return AppWidgets.checkSnapshot(snapshot) ?? body(snapshot.data!);
+        Widget? loading = AppWidgets.checkSnapshot(snapshot);
+        if (loading == null) {
+          var model = snapshot.data!;
+          initialize(model);
+          _modelAlias = model;
+          _addressController.text = model.title;
+          _notesController.text = model.description;
+          _radiusController.text = model.radius.toString();
+          return scaffold(body(model));
+        } else {
+          return AppWidgets.scaffold(context,
+              body: AppWidgets.loading('Loading Alias...'));
+        }
       },
     );
   }
 
-  Widget body(ModelAlias alias) {
-    _modelAlias = alias;
-    _addressController.text = alias.title;
-    _notesController.text = alias.description;
-    _radiusController.text = alias.radius.toString();
-
+  Widget scaffold(Widget body) {
     return AppWidgets.scaffold(context,
         navBar: BottomNavigationBar(
             type: BottomNavigationBarType.fixed,
-            items: [
-              const BottomNavigationBarItem(
-                  icon: Icon(Icons.add), label: 'Neu'),
-              const BottomNavigationBarItem(
-                  icon: Icon(Icons.map), label: 'Route'),
-              // 0 alphabethic
+            items: const [
+              BottomNavigationBarItem(icon: Icon(Icons.add), label: 'Neu'),
+              BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Route'),
               BottomNavigationBarItem(
-                  icon: ValueListenableBuilder(
-                      valueListenable: _aliasModified,
-                      builder: ((context, value, child) {
-                        return Icon(Icons.done,
-                            size: 30,
-                            color: _aliasModified.value == true
-                                ? AppColors.green.color
-                                : AppColors.white54.color);
-                      })),
-                  label: 'Speichern'),
-              // 1 nearest
-              const BottomNavigationBarItem(
                   icon: Icon(Icons.cancel), label: 'Abbrechen'),
             ],
             onTap: (int id) async {
               if (id == 0) {
-                Navigator.pushNamed(context, AppRoutes.osm.route, arguments: 0)
-                    .then((_) {
-                  setState(() {});
+                Navigator.pushNamed(context, AppRoutes.osm.route).then((_) {
+                  render();
                 });
               } else if (id == 1) {
                 var gps = await GPS.gps();
-                await GPS.launchGoogleMaps(
-                    gps.lat, gps.lon, alias.gps.lat, alias.gps.lon);
+                await GPS.launchGoogleMaps(gps.lat, gps.lon,
+                    _modelAlias!.gps.lat, _modelAlias!.gps.lon);
               } else if (id == 2) {
-                alias.update().then((_) {
-                  Fluttertoast.showToast(msg: 'Alias updated');
-                  Navigator.pop(context);
-                });
-              } else if (id == 3) {
                 Navigator.pop(context);
               }
             }),
-        body: ListView(children: [
-          /// aliasname
-          Container(
-              padding: const EdgeInsets.all(10),
-              child: TextField(
-                decoration: const InputDecoration(label: Text('Alias/Adresse')),
-                onChanged: ((value) {
-                  alias.title = value;
-                  modify();
-                }),
-                maxLines: 3,
-                minLines: 3,
-                controller: _addressController,
-              )),
+        body: body);
+  }
 
-          /// gps
-          Column(children: [
-            const Text('Alias GPS Koordinaten', softWrap: true),
-            Container(
-                padding: const EdgeInsets.all(10),
-                child: ElevatedButton(
-                  child: ListTile(
-                      leading: const Icon(
-                        Icons.near_me,
-                        size: 40,
-                      ),
-                      title: Text(
-                          'Latitude/Breitengrad:\n${alias.gps.lat}\n\nLongitude/Längengrad:\n${alias.gps.lon}')),
-                  onPressed: () {
-                    Navigator.pushNamed(context, AppRoutes.osm.route,
-                            arguments: alias.id)
-                        .then(
-                      (value) {
-                        ModelAlias.byId(alias.id).then(
-                          (ModelAlias? model) {
-                            setState(() {
-                              _modelAlias = model;
-                            });
-                          },
-                        );
+  Widget body(ModelAlias alias) {
+    return ListView(children: [
+      /// aliasname
+      Container(
+          padding: const EdgeInsets.all(10),
+          child: TextField(
+            decoration: const InputDecoration(label: Text('Alias/Adresse')),
+            onChanged: ((value) {
+              alias.title = value;
+              alias.update();
+            }),
+            maxLines: 3,
+            minLines: 3,
+            controller: _addressController,
+          )),
+
+      /// gps
+      Column(children: [
+        const Text('Alias GPS Koordinaten', softWrap: true),
+        Container(
+            padding: const EdgeInsets.all(10),
+            child: ElevatedButton(
+              child: ListTile(
+                  leading: const Icon(
+                    Icons.near_me,
+                    size: 40,
+                  ),
+                  title: Text(
+                      'Latitude/Breitengrad:\n${alias.gps.lat}\n\nLongitude/Längengrad:\n${alias.gps.lon}')),
+              onPressed: () {
+                Navigator.pushNamed(context, AppRoutes.osm.route,
+                        arguments: alias.id)
+                    .then(
+                  (value) {
+                    ModelAlias.byId(alias.id).then(
+                      (ModelAlias? model) {
+                        setState(() {
+                          _modelAlias = model;
+                        });
                       },
                     );
                   },
-                ))
-          ]),
-          AppWidgets.divider(),
+                );
+              },
+            ))
+      ]),
+      AppWidgets.divider(),
 
-          /// notes
-          Container(
-              padding: const EdgeInsets.all(10),
-              child: TextField(
-                keyboardType: TextInputType.multiline,
-                decoration: const InputDecoration(label: Text('Notizen')),
-                maxLines: null,
-                minLines: 3,
-                controller: _notesController,
-                onChanged: (value) {
-                  modify();
-                  alias.description = value.trim();
-                },
-              )),
+      /// notes
+      Container(
+          padding: const EdgeInsets.all(10),
+          child: TextField(
+            keyboardType: TextInputType.multiline,
+            decoration: const InputDecoration(label: Text('Notizen')),
+            maxLines: null,
+            minLines: 3,
+            controller: _notesController,
+            onChanged: (value) {
+              alias.description = value.trim();
+              alias.update();
+            },
+          )),
 
-          /// radius
-          Container(
-              padding: const EdgeInsets.all(10),
-              child: TextField(
-                keyboardType: TextInputType.number,
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp('[0-9]')),
-                ],
-                decoration: const InputDecoration(
-                    label: Text('Gültigkeitsbereich (Radius) in meter.')),
-                onChanged: ((value) {
-                  try {
-                    alias.radius = int.parse(value);
-                    modify();
-                  } catch (e) {
-                    //
-                  }
-                }),
-                maxLines: 1, //
-                minLines: 1,
-                controller: _radiusController,
-              )),
+      /// radius
+      Container(
+          padding: const EdgeInsets.all(10),
+          child: TextField(
+            keyboardType: TextInputType.number,
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp('[0-9]')),
+            ],
+            decoration: const InputDecoration(
+                label: Text('Gültigkeitsbereich (Radius) in meter.')),
+            onChanged: ((value) {
+              try {
+                alias.radius = int.parse(value);
+                alias.update();
+              } catch (e) {
+                //
+              }
+            }),
+            maxLines: 1, //
+            minLines: 1,
+            controller: _radiusController,
+          )),
 
-          /// type
-          Container(
-              padding: const EdgeInsets.all(10),
-              child: Column(children: [
-                const ListTile(
-                  title: Text('Typ'),
-                  subtitle: Text(
-                    'Definiert ob und wie Haltepunkte verarbeitet werden.',
-                    softWrap: true,
-                  ),
-                ),
-                ListTile(
-                    title: Text('Öffentlich',
-                        style: TextStyle(
-                          backgroundColor: AppColors.aliasPublic.color,
-                        )),
-                    subtitle: const Text(
-                      'Ereignisse die diesen Ort betreffen können gespeichert und '
-                      'z.B. automatisch in einem privaten oder öffentlichen Kalender publiziert werden.',
-                      softWrap: true,
-                    ),
-                    leading: Radio<AliasVisibility>(
-                        value: AliasVisibility.public,
-                        groupValue: alias.visibility,
-                        onChanged: (AliasVisibility? val) =>
-                            setStatus(context, val))),
-                ListTile(
-                    title: Text('Privat',
-                        style: TextStyle(
-                          backgroundColor: AppColors.aliasPrivate.color,
-                        )),
-                    subtitle: const Text(
-                      'Ereignisse die diesen Ort betreffen verlassen ihr Gerät nicht, '
-                      'es sei denn sie exportieren z.B. die Datenbank, machen Screenshots etc. '
-                      'und geben die Informationen selst an Dritte weiter.',
-                      softWrap: true,
-                    ),
-                    leading: Radio<AliasVisibility>(
-                        value: AliasVisibility.privat,
-                        groupValue: alias.visibility,
-                        onChanged: (AliasVisibility? val) =>
-                            setStatus(context, val))),
-                ListTile(
-                    title: Text('Geheim',
-                        style: TextStyle(
-                          backgroundColor: AppColors.aliasRestricted.color,
-                        )),
-                    subtitle: const Text(
-                      'An diesem Ort werden keine Haltepunkte aufgezeichnent, als wäre das Gerät ausgeschaltet. '
-                      'Das bedeutet, wenn Sie diesen Ort erreichen, halten und wieder losfahren, '
-                      'fehlt die gesamte Aufzeichnung vom losfahren zu diesem Ort bis zum erreichen des nächsten Ortes. '
-                      'Die daraus resultierende Aufzeichnung erweckt den Eindruck, als hätten sie sich von Ort A, '
-                      'über Ort B(geheim) nach Ort C über einen bisher unbekannten Subraum transportiert.',
-                      softWrap: true,
-                    ),
-                    leading: Radio<AliasVisibility>(
-                        value: AliasVisibility.restricted,
-                        groupValue: alias.visibility,
-                        onChanged: (AliasVisibility? val) =>
-                            setStatus(context, val)))
-              ])),
-          AppWidgets.divider(),
-
-          /// deleted
-          ListTile(
-              title: const Text('Deaktiviert / gelöscht'),
-              subtitle: const Text(
-                'Wenn deaktiviert bzw. gelöscht, wird dieser Alias behandelt wie ein "gelöschter" Fakebook Account.',
+      /// type
+      Container(
+          padding: const EdgeInsets.all(10),
+          child: Column(children: [
+            const ListTile(
+              title: Text('Typ'),
+              subtitle: Text(
+                'Definiert ob und wie Haltepunkte verarbeitet werden.',
                 softWrap: true,
               ),
-              leading: Checkbox(
-                value: alias.isActive,
-                onChanged: (val) {
-                  alias.isActive = val ?? false;
-                  modify();
-                  setState(() {});
-                },
-              ))
-        ]));
+            ),
+            ListTile(
+                title: Text('Öffentlich',
+                    style: TextStyle(
+                      backgroundColor: AppColors.aliasPublic.color,
+                    )),
+                subtitle: const Text(
+                  'Ereignisse die diesen Ort betreffen können gespeichert und '
+                  'z.B. automatisch in einem privaten oder öffentlichen Kalender publiziert werden.',
+                  softWrap: true,
+                ),
+                leading: Radio<AliasVisibility>(
+                    value: AliasVisibility.public,
+                    groupValue: alias.visibility,
+                    onChanged: (AliasVisibility? val) {
+                      setStatus(context, val);
+                      alias.update();
+                    })),
+            ListTile(
+                title: Text('Privat',
+                    style: TextStyle(
+                      backgroundColor: AppColors.aliasPrivate.color,
+                    )),
+                subtitle: const Text(
+                  'Ereignisse die diesen Ort betreffen verlassen ihr Gerät nicht, '
+                  'es sei denn sie exportieren z.B. die Datenbank, machen Screenshots etc. '
+                  'und geben die Informationen selst an Dritte weiter.',
+                  softWrap: true,
+                ),
+                leading: Radio<AliasVisibility>(
+                    value: AliasVisibility.privat,
+                    groupValue: alias.visibility,
+                    onChanged: (AliasVisibility? val) {
+                      setStatus(context, val);
+                      alias.update();
+                    })),
+            ListTile(
+                title: Text('Geheim',
+                    style: TextStyle(
+                      backgroundColor: AppColors.aliasRestricted.color,
+                    )),
+                subtitle: const Text(
+                  'An diesem Ort werden keine Haltepunkte aufgezeichnent, als wäre das Gerät ausgeschaltet. '
+                  'Das bedeutet, wenn Sie diesen Ort erreichen, halten und wieder losfahren, '
+                  'fehlt die gesamte Aufzeichnung vom losfahren zu diesem Ort bis zum erreichen des nächsten Ortes. '
+                  'Die daraus resultierende Aufzeichnung erweckt den Eindruck, als hätten sie sich von Ort A, '
+                  'über Ort B(geheim) nach Ort C über einen bisher unbekannten Subraum transportiert.',
+                  softWrap: true,
+                ),
+                leading: Radio<AliasVisibility>(
+                    value: AliasVisibility.restricted,
+                    groupValue: alias.visibility,
+                    onChanged: (AliasVisibility? val) {
+                      setStatus(context, val);
+                      alias.update();
+                    }))
+          ])),
+      AppWidgets.divider(),
+
+      /// deleted
+      ListTile(
+          title: const Text('Deaktiviert / gelöscht'),
+          subtitle: const Text(
+            'Wenn deaktiviert bzw. gelöscht, wird dieser Alias behandelt wie ein "gelöschter" Fakebook Account.',
+            softWrap: true,
+          ),
+          leading: Checkbox(
+            value: alias.isActive,
+            onChanged: (val) {
+              alias.isActive = val ?? false;
+              setState(() {});
+              alias.update();
+              render();
+            },
+          ))
+    ]);
   }
 
-  void modify() {
-    _aliasModified.value = true;
+  void render() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   void setStatus(BuildContext context, AliasVisibility? val) {
     _modelAlias?.visibility = (val ?? AliasVisibility.restricted);
-    _aliasModified.value = true;
-    setState(() {});
+    _modelAlias?.update().then(
+      (value) {
+        render();
+      },
+    );
   }
 }

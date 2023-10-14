@@ -27,7 +27,7 @@ import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_user.dart';
-import 'package:chaostours/logger.dart';
+import 'package:chaostours/app_logger.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:path/path.dart';
 import 'package:chaostours/cache.dart';
@@ -48,7 +48,7 @@ class _WidgetImportExport extends State<WidgetImportExport> {
   } */
 
   // ignore: unused_field
-  static final Logger logger = Logger.logger<WidgetImportExport>();
+  static final AppLogger logger = AppLogger.logger<WidgetImportExport>();
 
   @override
   void dispose() {
@@ -102,7 +102,7 @@ class _WidgetImportExport extends State<WidgetImportExport> {
 
   Future<void> exportSqlite(Directory dir) async {
     try {
-      String path = await DB.getPath();
+      String path = await DB.getDBFilePath();
       File f = File(path);
       await f.copy(join(dir.path, 'db.sqlite'));
     } catch (e, stk) {

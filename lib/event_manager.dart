@@ -17,7 +17,7 @@ limitations under the License.
 import 'package:flutter/material.dart';
 import 'dart:collection';
 //
-import 'package:chaostours/logger.dart';
+import 'package:chaostours/app_logger.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/cache.dart';
@@ -79,7 +79,7 @@ class EventManagerException implements Exception {
 }
 
 class EventManager {
-  static Logger logger = Logger.logger<EventManager>();
+  static AppLogger logger = AppLogger.logger<EventManager>();
   static final List<Set<dynamic>> _register = [];
 
   static bool listen<T>(Function(T) fn) {
@@ -101,7 +101,7 @@ class EventManager {
     int s = t.second;
     int ms = t.millisecond;
 
-    String prefix = Logger.globalPrefix;
+    String prefix = AppLogger.globalPrefix;
     Map<dynamic Function(T), dynamic> results = {};
 
     /// copy list to prevent modification during iteration
@@ -115,7 +115,7 @@ class EventManager {
         }
       } catch (e) {
         results[fn] = EventManagerException(e.toString());
-        Logger.print(
+        AppLogger.print(
             '$prefix $m:$s.$ms EventManager failed on ${T.toString()}: $debugMessage: ${e.toString()}');
       }
     }

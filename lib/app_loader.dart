@@ -20,44 +20,44 @@ import 'dart:io' as io;
 ///
 import 'package:chaostours/tracking.dart';
 import 'package:chaostours/event_manager.dart';
-import 'package:chaostours/logger.dart';
+import 'package:chaostours/app_logger.dart';
 import 'package:chaostours/ticker.dart';
 import 'package:chaostours/conf/app_settings.dart';
 import 'package:chaostours/data_bridge.dart';
 import 'package:chaostours/database.dart';
 
 class AppLoader {
-  static Logger logger = Logger.logger<AppLoader>();
+  static AppLogger logger = AppLogger.logger<AppLoader>();
 
   static Future<bool> get preload => _preload ??= _preloadApp();
   static Future<bool>? _preload;
 
   static Future<void> dbToFile() async {
-    var dbPath = await DB.getPath();
+    var dbDir = await DB.getDBDir();
     var downloadDir = io.Directory('/storage/emulated/0/Download');
-    io.File(dbPath).copy('${downloadDir.path}/chaostours.sqlite');
+    io.File(dbDir.path).copy('${downloadDir.path}/${DB.dbFile}');
   }
 
   static Future<void> fileToDb() async {
-    var dbPath = await DB.getPath();
+    var dbDir = await DB.getDBDir();
     var downloadDir = io.Directory('/storage/emulated/0/Download');
-    io.File('${downloadDir.path}/chaostours.sqlite').copy(dbPath);
+    io.File('${downloadDir.path}/${DB.dbFile}').copy(dbDir.path);
   }
 
   ///
   /// preload recources
   static Future<bool> _preloadApp() async {
     try {
-      await Logger.clearLogs();
+      await AppLogger.clearLogs();
       // reset background logger
       //await Cache.setValue<List<String>>(CacheKeys.backgroundLogger, []);
       //var downloadFiles = await downloadDir.list().toList();
       //await fileToDb();
-      Logger.globalLogLevel = LogLevel.verbose;
+      AppLogger.globalLogLevel = LogLevel.verbose;
       logger.important('start Preload sequence...');
       //await DB.deleteDatabase(await DB.getPath());
       logger.log('open Database...');
-      await DB.open();
+      await DB.openDatabase(create: true);
       logger.log('Database opened');
       logger.log('get WEB SSL key from assets');
       await webKey();

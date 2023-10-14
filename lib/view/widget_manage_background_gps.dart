@@ -18,6 +18,12 @@ import 'package:flutter/material.dart';
 
 ///
 import 'package:chaostours/view/app_widgets.dart';
+import 'package:chaostours/cache.dart';
+import 'package:chaostours/conf/app_settings.dart';
+import 'package:chaostours/tracking.dart';
+import 'package:chaostours/data_bridge.dart';
+import 'package:chaostours/event_manager.dart';
+import 'package:chaostours/calendar.dart';
 
 class WidgetManageBackgroundGps extends StatefulWidget {
   const WidgetManageBackgroundGps({Key? key}) : super(key: key);
@@ -28,12 +34,6 @@ class WidgetManageBackgroundGps extends StatefulWidget {
 }
 
 class _WidgetManageBackgroundGpsState extends State<WidgetManageBackgroundGps> {
-  @override
-  Widget build(BuildContext context) {
-    return AppWidgets.scaffold(context,
-        body: AppWidgets.loading('Widget under construction'));
-  }
-  /* 
   List<Widget> items = [
     AppWidgets.loading('Checking Background Tracking Status')
   ];
@@ -207,5 +207,5 @@ class _WidgetManageBackgroundGpsState extends State<WidgetManageBackgroundGps> {
             padding: const EdgeInsets.all(5),
             child: ListView(children: [...items])),
         appBar: AppBar(title: const Text('Cache & Backgr. GPS')));
-  } */
+  }
 }

@@ -18,7 +18,7 @@ import 'package:flutter/material.dart';
 
 ///
 import 'package:chaostours/event_manager.dart';
-import 'package:chaostours/logger.dart';
+import 'package:chaostours/app_logger.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/conf/app_settings.dart';
 import 'package:chaostours/cache.dart';

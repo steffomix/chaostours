@@ -15,13 +15,13 @@ limitations under the License.
 */
 
 import 'package:chaostours/database.dart';
-import 'package:chaostours/logger.dart';
+import 'package:chaostours/app_logger.dart';
 import 'package:chaostours/model/model.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:sqflite/sqflite.dart';
 
 class ModelTaskGroup extends Model {
-  static final Logger logger = Logger.logger<ModelTaskGroup>();
+  static final AppLogger logger = AppLogger.logger<ModelTaskGroup>();
 
   bool isActive = true;
   AliasVisibility visibility = AliasVisibility.public;
