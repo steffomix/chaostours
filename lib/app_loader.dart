@@ -24,7 +24,7 @@ import 'package:chaostours/app_logger.dart';
 import 'package:chaostours/ticker.dart';
 import 'package:chaostours/conf/app_settings.dart';
 import 'package:chaostours/data_bridge.dart';
-import 'package:chaostours/database.dart';
+import 'package:chaostours/app_database.dart';
 
 class AppLoader {
   static AppLogger logger = AppLogger.logger<AppLoader>();

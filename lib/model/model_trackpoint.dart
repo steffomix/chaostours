@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import 'package:chaostours/database.dart';
+import 'package:chaostours/app_database.dart';
 import 'package:chaostours/model/model.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_alias.dart';

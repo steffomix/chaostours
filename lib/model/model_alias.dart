@@ -20,7 +20,7 @@ import 'dart:math';
 import 'package:chaostours/model/model.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_alias_group.dart';
-import 'package:chaostours/database.dart';
+import 'package:chaostours/app_database.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/app_logger.dart';
 import 'package:sqflite/sqflite.dart';

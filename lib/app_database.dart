@@ -43,7 +43,7 @@ class DB {
       var path = await getDBFilePath();
       _database ??= await flite.openDatabase(path,
           version: dbVersion,
-          singleInstance: false,
+          singleInstance: true,
           onCreate: !create
               ? null
               : (flite.Database db, int version) async {

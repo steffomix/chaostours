@@ -31,7 +31,7 @@ import 'package:chaostours/app_logger.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:path/path.dart';
 import 'package:chaostours/cache.dart';
-import 'package:chaostours/database.dart';
+import 'package:chaostours/app_database.dart';
 
 class WidgetImportExport extends StatefulWidget {
   const WidgetImportExport({super.key});

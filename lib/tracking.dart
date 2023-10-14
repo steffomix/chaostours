@@ -19,7 +19,7 @@ import 'dart:math' as math;
 
 ///
 import 'package:chaostours/app_logger.dart';
-import 'package:chaostours/database.dart';
+import 'package:chaostours/app_database.dart';
 import 'package:chaostours/trackpoint_data.dart';
 import 'package:chaostours/conf/app_settings.dart';
 import 'package:chaostours/gps.dart';
