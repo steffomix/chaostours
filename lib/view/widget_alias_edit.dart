@@ -22,7 +22,7 @@ import 'package:chaostours/gps.dart';
 import 'package:chaostours/address.dart';
 
 ///
-import 'package:chaostours/app_logger.dart';
+import 'package:chaostours/logger.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/conf/app_colors.dart';
@@ -36,7 +36,7 @@ class WidgetAliasEdit extends StatefulWidget {
 
 class _WidgetAliasEdit extends State<WidgetAliasEdit> {
   // ignore: unused_field
-  static final AppLogger logger = AppLogger.logger<WidgetAliasEdit>();
+  static final Logger logger = Logger.logger<WidgetAliasEdit>();
 
   ModelAlias? _modelAlias;
   final _addressController = TextEditingController();

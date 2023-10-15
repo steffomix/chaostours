@@ -23,7 +23,7 @@ import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
 
 ///
 import 'package:chaostours/conf/app_routes.dart';
-import 'package:chaostours/app_logger.dart';
+import 'package:chaostours/logger.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/address.dart' as addr;
 import 'package:chaostours/conf/app_settings.dart';
@@ -53,7 +53,7 @@ class WidgetMapIsLoading extends StatefulWidget {
 class EventOnOsmIsLoading {}
 
 class _WidgetMapIsLoading extends State<WidgetMapIsLoading> {
-  static final AppLogger logger = AppLogger.logger<WidgetMapIsLoading>();
+  static final Logger logger = Logger.logger<WidgetMapIsLoading>();
 
   @override
   void dispose() {
@@ -84,7 +84,7 @@ class _WidgetOsm extends State<WidgetOsm> {
         body: AppWidgets.loading('Widget under construction'));
   }
   */
-  static final AppLogger logger = AppLogger.logger<WidgetOsm>();
+  static final Logger logger = Logger.logger<WidgetOsm>();
 
   /// screen
   //late SizeChangedLayoutNotifier screenListener;

@@ -27,11 +27,11 @@ import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_user.dart';
-import 'package:chaostours/app_logger.dart';
+import 'package:chaostours/logger.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:path/path.dart';
 import 'package:chaostours/cache.dart';
-import 'package:chaostours/app_database.dart';
+import 'package:chaostours/database.dart';
 
 class WidgetImportExport extends StatefulWidget {
   const WidgetImportExport({super.key});
@@ -48,7 +48,7 @@ class _WidgetImportExport extends State<WidgetImportExport> {
   } */
 
   // ignore: unused_field
-  static final AppLogger logger = AppLogger.logger<WidgetImportExport>();
+  static final Logger logger = Logger.logger<WidgetImportExport>();
 
   @override
   void dispose() {

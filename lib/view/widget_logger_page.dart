@@ -18,10 +18,10 @@ import 'package:flutter/material.dart';
 
 ///
 import 'package:chaostours/event_manager.dart';
-import 'package:chaostours/app_logger.dart';
+import 'package:chaostours/logger.dart';
 import 'package:chaostours/view/app_widgets.dart';
-import 'package:chaostours/conf/app_settings.dart';
 import 'package:chaostours/cache.dart';
+import 'package:chaostours/ticker.dart';
 
 class WidgetLoggerPage extends StatefulWidget {
   const WidgetLoggerPage({super.key});
@@ -31,9 +31,7 @@ class WidgetLoggerPage extends StatefulWidget {
 }
 
 class _WidgetLoggerPage extends State<WidgetLoggerPage> {
-  static List<Widget> logs = [];
   static List<LoggerLog> errorLogs = [];
-  static int counter = 0;
 
   @override
   void dispose() {
@@ -49,7 +47,6 @@ class _WidgetLoggerPage extends State<WidgetLoggerPage> {
 
   Future<void> onTick(EventOnAppTick event) async {
     errorLogs = await Cache.getValue<List<LoggerLog>>(CacheKeys.errorLogs, []);
-    counter++;
     if (mounted) {
       setState(() {});
     }
@@ -61,7 +58,7 @@ class _WidgetLoggerPage extends State<WidgetLoggerPage> {
       itemCount: errorLogs.length + 1,
       itemBuilder: (context, index) {
         if (index == 0) {
-          return Text('Ticks: ${AppSettings.appTicks}');
+          return Text('Ticks: ${Ticker.appTick}');
         }
         var e = errorLogs[index - 1];
         return renderLog(e);
@@ -82,7 +79,7 @@ class _WidgetLoggerPage extends State<WidgetLoggerPage> {
     var t = log.time;
     String time = '${t.hour}:${t.minute}:${t.second}::${t.millisecond}';
     String msg =
-        '${log.prefix}$time ::${log.level.name} <${log.loggerName}>:: ${log.msg}';
+        '${log.realm.prefix}$time ::${log.level.name} <${log.loggerName}>:: ${log.msg}';
 
     switch (log.level) {
       case LogLevel.verbose:

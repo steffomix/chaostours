@@ -19,15 +19,14 @@ import 'dart:io' as io;
 
 ///
 import 'package:chaostours/tracking.dart';
-import 'package:chaostours/event_manager.dart';
-import 'package:chaostours/app_logger.dart';
+import 'package:chaostours/logger.dart';
 import 'package:chaostours/ticker.dart';
 import 'package:chaostours/conf/app_settings.dart';
 import 'package:chaostours/data_bridge.dart';
-import 'package:chaostours/app_database.dart';
+import 'package:chaostours/database.dart';
 
 class AppLoader {
-  static AppLogger logger = AppLogger.logger<AppLoader>();
+  static Logger logger = Logger.logger<AppLoader>();
 
   static Future<bool> get preload => _preload ??= _preloadApp();
   static Future<bool>? _preload;
@@ -49,12 +48,12 @@ class AppLoader {
   /// preload recources
   static Future<bool> _preloadApp() async {
     try {
-      await AppLogger.clearLogs();
+      await Logger.clearLogs();
       // reset background logger
       //await Cache.setValue<List<String>>(CacheKeys.backgroundLogger, []);
       //var downloadFiles = await downloadDir.list().toList();
       //await fileToDb();
-      AppLogger.globalLogLevel = LogLevel.verbose;
+      Logger.globalLogLevel = LogLevel.verbose;
       logger.important('start Preload sequence...');
       //await DB.deleteDatabase(await DB.getPath());
       logger.log('open Database...');

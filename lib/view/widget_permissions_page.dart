@@ -20,7 +20,7 @@ import 'package:chaostours/tracking.dart';
 import 'package:flutter/material.dart';
 import 'package:app_settings/app_settings.dart';
 //
-import 'package:chaostours/app_logger.dart';
+import 'package:chaostours/logger.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/permission_checker.dart';
 //
@@ -33,7 +33,7 @@ class WidgetPermissionsPage extends StatefulWidget {
 }
 
 class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
-  AppLogger logger = AppLogger.logger<WidgetPermissionsPage>();
+  Logger logger = Logger.logger<WidgetPermissionsPage>();
   Widget widgetPermissions = AppWidgets.loading('');
   BuildContext? _context;
   List<Widget> items = [];

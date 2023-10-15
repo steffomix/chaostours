@@ -23,7 +23,7 @@ import 'package:permission_handler/permission_handler.dart';
 
 //
 import 'package:chaostours/conf/app_settings.dart';
-import 'package:chaostours/app_logger.dart';
+import 'package:chaostours/logger.dart';
 
 const earthRadius = 6378137.0;
 
@@ -139,7 +139,7 @@ class GpsArea {
 }
 
 class GPS {
-  static AppLogger logger = AppLogger.logger<GPS>();
+  static Logger logger = Logger.logger<GPS>();
 
   static GPS? lastGps;
   static int _nextId = 0;

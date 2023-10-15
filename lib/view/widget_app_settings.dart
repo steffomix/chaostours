@@ -20,7 +20,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 ///
-import 'package:chaostours/app_logger.dart';
+import 'package:chaostours/logger.dart';
 import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/conf/app_colors.dart';
 import 'package:chaostours/calendar.dart';
@@ -46,7 +46,7 @@ class WidgetAppSettings extends StatefulWidget {
 }
 
 class _WidgetAppSettings extends State<WidgetAppSettings> {
-  static final AppLogger logger = AppLogger.logger<WidgetAppSettings>();
+  static final Logger logger = Logger.logger<WidgetAppSettings>();
 
   bool? statusStandingRequireAlias = AppSettings.statusStandingRequireAlias;
   bool? backgroundTrackingEnabled = AppSettings.backgroundTrackingEnabled;

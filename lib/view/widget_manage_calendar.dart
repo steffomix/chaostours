@@ -19,7 +19,7 @@ import 'package:flutter/material.dart';
 import 'package:device_calendar/device_calendar.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
-import 'package:chaostours/app_logger.dart';
+import 'package:chaostours/logger.dart';
 import 'package:chaostours/cache.dart';
 import 'package:chaostours/calendar.dart';
 
@@ -31,7 +31,7 @@ class WidgetManageCalendar extends StatefulWidget {
 }
 
 class _WidgetManageCalendarState extends State<WidgetManageCalendar> {
-  static final AppLogger logger = AppLogger.logger<WidgetManageCalendar>();
+  static final Logger logger = Logger.logger<WidgetManageCalendar>();
 
   AppCalendar appCalendar = AppCalendar();
   Calendar? selectedCalendar;

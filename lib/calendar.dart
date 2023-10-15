@@ -17,13 +17,13 @@ limitations under the License.
 import 'package:device_calendar/device_calendar.dart';
 
 ///
-import 'package:chaostours/app_logger.dart';
+import 'package:chaostours/logger.dart';
 import 'package:chaostours/cache.dart';
 import 'package:chaostours/data_bridge.dart';
 import 'package:chaostours/trackpoint_data.dart';
 
 class AppCalendar {
-  static final AppLogger logger = AppLogger.logger<AppCalendar>();
+  static final Logger logger = Logger.logger<AppCalendar>();
 
   final DeviceCalendarPlugin _deviceCalendarPlugin = DeviceCalendarPlugin();
   final List<Calendar> calendars = [];

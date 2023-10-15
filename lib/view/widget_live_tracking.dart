@@ -20,7 +20,7 @@ import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 //
 import 'package:chaostours/tracking.dart';
-import 'package:chaostours/app_logger.dart';
+import 'package:chaostours/logger.dart';
 import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/cache.dart';
@@ -64,7 +64,7 @@ class WidgetTrackingPage extends StatefulWidget {
 ///
 
 class _WidgetTrackingPage extends State<WidgetTrackingPage> {
-  static final AppLogger logger = AppLogger.logger<WidgetTrackingPage>();
+  static final Logger logger = Logger.logger<WidgetTrackingPage>();
 
   _DisplayMode _displayMode = _DisplayMode.live;
   static int _bottomBarIndex = 0;

@@ -18,10 +18,10 @@ import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart' as flite;
 
 ///
-import 'package:chaostours/app_logger.dart';
+import 'package:chaostours/logger.dart';
 
 class DB {
-  static final AppLogger logger = AppLogger.logger<DB>();
+  static final Logger logger = Logger.logger<DB>();
 
   static const dbVersion = 1;
   static const dbFile = 'chaostours_$dbVersion.sqlite';
@@ -36,6 +36,18 @@ class DB {
   static Future<String> getDBFilePath() async {
     _dbFullPath ??= join(await flite.getDatabasesPath(), dbFile);
     return _dbFullPath!;
+  }
+
+  static Future<void> dbToFile() async {
+    var dbDir = await DB.getDBDir();
+    var downloadDir = io.Directory('/storage/emulated/0/Download');
+    io.File(dbDir.path).copy('${downloadDir.path}/${DB.dbFile}');
+  }
+
+  static Future<void> fileToDb() async {
+    var dbDir = await DB.getDBDir();
+    var downloadDir = io.Directory('/storage/emulated/0/Download');
+    io.File('${downloadDir.path}/${DB.dbFile}').copy(dbDir.path);
   }
 
   static Future<void> openDatabase({bool create = false}) async {

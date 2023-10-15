@@ -17,7 +17,7 @@ limitations under the License.
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
-import 'package:chaostours/app_logger.dart';
+import 'package:chaostours/logger.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/conf/app_colors.dart';
 import 'package:chaostours/model/model_task.dart';
@@ -31,7 +31,7 @@ class WidgetTaskEdit extends StatefulWidget {
 
 class _WidgetTaskEdit extends State<WidgetTaskEdit> {
   // ignore: unused_field
-  static final AppLogger logger = AppLogger.logger<WidgetTaskEdit>();
+  static final Logger logger = Logger.logger<WidgetTaskEdit>();
 
   ValueNotifier<bool> modified = ValueNotifier<bool>(false);
   //TextEditingController nameController = TextEditingController();

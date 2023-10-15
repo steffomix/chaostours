@@ -17,7 +17,7 @@ limitations under the License.
 import 'package:shared_preferences/shared_preferences.dart';
 
 ///
-import 'package:chaostours/app_logger.dart';
+import 'package:chaostours/logger.dart';
 import 'package:chaostours/conf/osm.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/tracking.dart';
@@ -26,24 +26,6 @@ import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_user.dart';
-import 'package:sqflite/sqflite.dart';
-
-/*
-enum JsonKeys {
-  // background status and messages
-  bgStatus,
-  bgLastStatusChange,
-  bgLastGps,
-  bgGpsPoints,
-  bgSmoothGpsPoints,
-  bgCalcGpsPoints,
-  bgAddress,
-  // forground messages for background
-  fgTriggerStatus,
-  fgTrackPointUpdates,
-  fgActiveTrackPoint;
-}
-*/
 
 class CacheKeyDump {
   int? number;
@@ -124,7 +106,10 @@ enum CacheKeys {
 }
 
 class Cache {
-  static final AppLogger logger = AppLogger.logger<Cache>();
+  static final Logger logger = Logger.logger<Cache>();
+
+  static const String path =
+      '/data/user/0/com.stefanbrinkmann.chaosToursUnlimited/shared_prefs/FlutterSharedPreferences.xml';
 
   Cache._();
   static Cache? _instance;

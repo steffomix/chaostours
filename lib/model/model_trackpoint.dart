@@ -14,18 +14,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import 'package:chaostours/app_database.dart';
+import 'package:chaostours/database.dart';
 import 'package:chaostours/model/model.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/util.dart' as util;
-import 'package:chaostours/app_logger.dart';
+import 'package:chaostours/logger.dart';
 import 'package:sqflite/sqflite.dart';
 
 class ModelTrackPoint extends Model {
-  static AppLogger logger = AppLogger.logger<ModelTrackPoint>();
+  static Logger logger = Logger.logger<ModelTrackPoint>();
 
   GPS gps;
 

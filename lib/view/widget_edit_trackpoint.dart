@@ -27,7 +27,7 @@ import 'package:chaostours/trackpoint_data.dart';
 import 'package:chaostours/calendar.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/util.dart';
-import 'package:chaostours/app_logger.dart';
+import 'package:chaostours/logger.dart';
 import 'package:chaostours/screen.dart';
 import 'package:chaostours/gps.dart';
 
@@ -42,7 +42,7 @@ class WidgetEditTrackPoint extends StatefulWidget {
 }
 
 class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
-  AppLogger logger = AppLogger.logger<WidgetEditTrackPoint>();
+  Logger logger = Logger.logger<WidgetEditTrackPoint>();
 
   /// editable fields
   List<int> tpTasks = [];

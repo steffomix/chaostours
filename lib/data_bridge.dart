@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import 'package:chaostours/cache.dart';
-import 'package:chaostours/app_logger.dart';
+import 'package:chaostours/logger.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/address.dart';
 import 'package:chaostours/tracking.dart';
@@ -24,7 +24,7 @@ import 'package:chaostours/conf/app_settings.dart';
 import 'package:chaostours/util.dart';
 
 class DataBridge {
-  static final AppLogger logger = AppLogger.logger<DataBridge>();
+  static final Logger logger = Logger.logger<DataBridge>();
 
   DataBridge._();
   static DataBridge? _instance;
@@ -136,7 +136,7 @@ class DataBridge {
             logger.error('service execution: $e', stk);
           }
           try {
-            await AppLogger.getBackgroundLogs();
+            await Logger.getBackgroundLogs();
           } catch (e, stk) {
             logger.error('getBackgroundLogs: $e', stk);
           }

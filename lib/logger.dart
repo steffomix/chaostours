@@ -30,17 +30,35 @@ enum LogLevel {
   const LogLevel(this.level);
 }
 
+enum LoggerRealm {
+  background('~~'),
+  foreground('##'),
+  unknown('???');
+
+  final String prefix;
+  const LoggerRealm(this.prefix);
+
+  static LoggerRealm byPrefix(String prefix) {
+    for (var realm in LoggerRealm.values) {
+      if (realm.prefix == prefix) {
+        return realm;
+      }
+    }
+    return LoggerRealm.unknown;
+  }
+}
+
 class LoggerLog {
   DateTime time = DateTime.now();
   //final Logger logger;
-  final String prefix;
+  final LoggerRealm realm;
   final String loggerName;
   final LogLevel level;
   final String msg;
   final String? stackTrace;
   LoggerLog(
       { //required this.logger,
-      required this.prefix,
+      required this.realm,
       required this.loggerName,
       required this.level,
       required this.msg,
@@ -50,7 +68,7 @@ class LoggerLog {
   String toString() {
     return [
       Uri.encodeFull(DateTime.now().toIso8601String()),
-      Uri.encodeFull(prefix),
+      Uri.encodeFull(realm.prefix),
       Uri.encodeFull(loggerName),
       Uri.encodeFull(level.name),
       Uri.encodeFull(msg),
@@ -62,13 +80,13 @@ class LoggerLog {
   static LoggerLog toObject(String log) {
     List<String> p = log.split('\t');
     DateTime time = DateTime.parse(Uri.decodeFull(p[0]));
-    String prefix = Uri.decodeFull(p[1]);
+    String realm = Uri.decodeFull(p[1]);
     String loggerName = Uri.decodeFull(p[2]);
     LogLevel level = LogLevel.values.byName(Uri.decodeFull(p[3]));
     String msg = Uri.decodeFull(p[4]);
     String stackTrace = Uri.decodeFull(p[5]);
     var loggerLog = LoggerLog(
-        prefix: prefix,
+        realm: LoggerRealm.byPrefix(realm),
         loggerName: loggerName,
         level: level,
         msg: msg,
@@ -80,7 +98,7 @@ class LoggerLog {
 
 var _print = print;
 
-class AppLogger {
+class Logger {
   static void print(Object? msg) {
     _print(msg);
   }
@@ -106,15 +124,15 @@ class AppLogger {
   /// backgroundLogger does not render widgets or render from Shared,
   /// but renders only to Shared
   /// To be different from background logger
-  static String globalPrefix = '##';
+  static LoggerRealm defaultRealm = LoggerRealm.foreground;
   static bool globalBackgroundLogger = false;
   static LogLevel globalLogLevel = LogLevel.verbose;
 
-  String prefix = globalPrefix;
+  LoggerRealm realm = defaultRealm;
   bool backGroundLogger = globalBackgroundLogger;
   LogLevel logLevel = globalLogLevel;
 
-  static final Map<String, AppLogger> _loggerRegister = {};
+  static final Map<String, Logger> _loggerRegister = {};
 
   bool loggerEnabled = true;
 
@@ -132,12 +150,12 @@ class AppLogger {
   }
 
   /// constructor
-  static AppLogger logger<T>(
-      {String? specialPrefix,
+  static Logger logger<T>(
+      {LoggerRealm? realm,
       bool? specialBackgroundLogger,
       LogLevel? specialLogLevel}) {
-    AppLogger l = AppLogger();
-    l.prefix = specialPrefix ?? globalPrefix;
+    Logger l = Logger();
+    l.realm = realm ?? defaultRealm;
     l.backGroundLogger = specialBackgroundLogger ?? globalBackgroundLogger;
     l.logLevel = specialLogLevel ?? globalLogLevel;
     String n = T.toString();
@@ -152,7 +170,7 @@ class AppLogger {
   /// MyClass{
   ///   static final Logger logger = Logger.logger<MyClass>();
   /// ```
-  AppLogger();
+  Logger();
 
   Future<void> verbose(Object? msg) => Future.microtask(
       () async => await _log(LogLevel.verbose, msg.toString()));
@@ -179,10 +197,10 @@ class AppLogger {
     if (level.level >= logLevel.level && loggerEnabled) {
       try {
         print(
-            '$prefix ${composeMessage(_loggerName, level, msg, stackTrace)}'); // ignore: avoid_print
+            '${realm.prefix} ${composeMessage(_loggerName, level, msg, stackTrace)}'); // ignore: avoid_print
 
         LoggerLog log = LoggerLog(
-            prefix: prefix,
+            realm: realm,
             loggerName: loggerId,
             level: level,
             msg: msg,

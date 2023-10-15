@@ -20,9 +20,9 @@ import 'dart:math';
 import 'package:chaostours/model/model.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_alias_group.dart';
-import 'package:chaostours/app_database.dart';
+import 'package:chaostours/database.dart';
 import 'package:chaostours/gps.dart';
-import 'package:chaostours/app_logger.dart';
+import 'package:chaostours/logger.dart';
 import 'package:sqflite/sqflite.dart';
 
 enum AliasVisibility {
@@ -30,7 +30,7 @@ enum AliasVisibility {
   privat(2),
   restricted(3);
 
-  static final AppLogger logger = AppLogger.logger<AliasVisibility>();
+  static final Logger logger = Logger.logger<AliasVisibility>();
   final int value;
   const AliasVisibility(this.value);
   static final int _saveId = AliasVisibility.restricted.value;
@@ -52,7 +52,7 @@ enum AliasVisibility {
 }
 
 class ModelAlias extends Model {
-  static AppLogger logger = AppLogger.logger<ModelAlias>();
+  static Logger logger = Logger.logger<ModelAlias>();
   int groupId = 1;
   // lazy loaded group
   Future<ModelAliasGroup?> get groupModel => ModelAliasGroup.byId(groupId);

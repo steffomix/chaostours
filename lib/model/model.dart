@@ -15,13 +15,13 @@ limitations under the License.
 */
 import 'dart:convert';
 
-import 'package:chaostours/app_logger.dart';
+import 'package:chaostours/logger.dart';
 
 var decode = Uri.decodeFull; // util.base64Codec().decode;
 var encode = Uri.encodeFull;
 
 class Model {
-  static final AppLogger logger = AppLogger.logger<Model>();
+  static final Logger logger = Logger.logger<Model>();
   static const String lineSep = '\n';
 
   int id;

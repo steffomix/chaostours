@@ -18,8 +18,8 @@ import 'package:background_location_tracker/background_location_tracker.dart';
 import 'dart:math' as math;
 
 ///
-import 'package:chaostours/app_logger.dart';
-import 'package:chaostours/app_database.dart';
+import 'package:chaostours/logger.dart';
+import 'package:chaostours/database.dart';
 import 'package:chaostours/trackpoint_data.dart';
 import 'package:chaostours/conf/app_settings.dart';
 import 'package:chaostours/gps.dart';
@@ -30,15 +30,14 @@ import 'package:chaostours/conf/osm.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/calendar.dart';
-import 'package:chaostours/util.dart';
 
 @pragma('vm:entry-point')
 void backgroundCallback() {
   BackgroundLocationTrackerManager.handleBackgroundUpdated(
       (BackgroundLocationUpdateData data) async {
-    AppLogger.globalBackgroundLogger = true;
-    AppLogger.globalLogLevel = LogLevel.verbose;
-    AppLogger.globalPrefix = '~~';
+    Logger.globalBackgroundLogger = true;
+    Logger.globalLogLevel = LogLevel.verbose;
+    Logger.defaultRealm = LoggerRealm.background;
     await DB.openDatabase(create: false);
     await _TrackPoint().track(lat: data.lat, lon: data.lon);
 
@@ -112,7 +111,7 @@ enum TrackingStatus {
 }
 
 class _TrackPoint {
-  final AppLogger logger = AppLogger.logger<_TrackPoint>();
+  final Logger logger = Logger.logger<_TrackPoint>();
 
   static _TrackPoint? _instance;
   _TrackPoint._();
