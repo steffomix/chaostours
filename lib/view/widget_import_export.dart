@@ -68,7 +68,7 @@ class _WidgetImportExport extends State<WidgetImportExport> {
   String aliasFilename = 'alias';
 
   Future<Map<String, bool>> getFiles() async {
-    Map<String, bool> files = {};
+    //Map<String, bool> files = {};
     try {
       var isRoot = await fileManagerController.isRootDirectory();
 
@@ -724,7 +724,7 @@ class _WidgetImportExport extends State<WidgetImportExport> {
     );
   }
 
-  Future<List<Directory>> DBpath() async {
+  Future<List<Directory>> dbPath() async {
     return Future.delayed(
         const Duration(milliseconds: 10),
         () async => <Directory>[
@@ -738,7 +738,7 @@ class _WidgetImportExport extends State<WidgetImportExport> {
       context: context,
       builder: (context) => Dialog(
         child: FutureBuilder<List<Directory>>(
-          future: DBpath(), //FileManager.getStorageList(),
+          future: dbPath(), //FileManager.getStorageList(),
           builder: (context, snapshot) {
             if (snapshot.hasData) {
               final List<FileSystemEntity> storageList = snapshot.data!;

@@ -23,7 +23,7 @@ import 'package:chaostours/conf/app_settings.dart';
 import 'package:chaostours/tracking.dart';
 import 'package:chaostours/data_bridge.dart';
 import 'package:chaostours/event_manager.dart';
-import 'package:chaostours/calendar.dart';
+//import 'package:chaostours/calendar.dart';
 
 class WidgetManageBackgroundGps extends StatefulWidget {
   const WidgetManageBackgroundGps({Key? key}) : super(key: key);

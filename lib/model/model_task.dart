@@ -115,14 +115,17 @@ class ModelTask extends Model {
   }
 
   /// transforms text into %text%
-  static Future<List<ModelTask>> search(String text) async {
+  static Future<List<ModelTask>> search(String text,
+      {int limit = 50, int offset = 0}) async {
     text = '%$text%';
     var rows = await DB.execute<List<Map<String, Object?>>>(
       (txn) async {
         return await txn.query(TableTask.table,
             where:
                 '${TableTask.title} like ? OR ${TableTask.description} like ?',
-            whereArgs: [text, text]);
+            whereArgs: [text, text],
+            limit: limit,
+            offset: offset);
       },
     );
     var models = <ModelTask>[];
@@ -144,7 +147,7 @@ class ModelTask extends Model {
             columns: TableTask.columns,
             limit: limit,
             offset: offset,
-            orderBy: TableTask.primaryKey.column);
+            orderBy: '${TableTask.isActive.column}, ${TableTask.title.column}');
       },
     );
     List<ModelTask> models = [];

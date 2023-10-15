@@ -16,6 +16,7 @@ limitations under the License.
 
 import 'package:flutter/material.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 ///
 import 'package:chaostours/logger.dart';
@@ -40,17 +41,12 @@ class _WidgetTaskList extends State<WidgetTaskList> {
   // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetTaskList>();
 
-  bool showDeleted = false;
-  String search = '';
-  TextEditingController controller = TextEditingController();
-  _DisplayMode displayMode = _DisplayMode.list;
-
-  int _selectedNavBarItem = 0;
+  final _showDeleted = ValueNotifier<bool>(false);
+  final _textController = TextEditingController();
+  _DisplayMode _displayMode = _DisplayMode.list;
 
   // height of seasrch field container
   final double _toolBarHeight = 70;
-
-  final TextEditingController _searchTextController = TextEditingController();
 
   // items per page
   static const int _limit = 30;
@@ -60,19 +56,29 @@ class _WidgetTaskList extends State<WidgetTaskList> {
 
   @override
   void initState() {
+    _showDeleted.addListener(render);
     _pagingController.addPageRequestListener(_fetchPage);
     super.initState();
   }
 
   @override
   void dispose() {
+    _showDeleted.dispose();
     _pagingController.dispose();
     super.dispose();
   }
 
+  void render() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
   void _fetchPage(int offset) async {
-    List<ModelTask> newItems =
-        await ModelTask.select(limit: _limit, offset: offset);
+    var text = _textController.text;
+    List<ModelTask> newItems = await (text.isEmpty
+        ? ModelTask.select(limit: _limit, offset: offset)
+        : ModelTask.search(text, limit: _limit, offset: offset));
 
     if (newItems.length < _limit) {
       _pagingController.appendLastPage(newItems);
@@ -81,34 +87,28 @@ class _WidgetTaskList extends State<WidgetTaskList> {
     }
   }
 
-  Widget taskWidget(ModelTask task) {
+  Widget modelWidget(ModelTask model) {
     return ListBody(children: [
       ListTile(
-          title: Text(task.title,
+          title: Text(model.title,
               style: TextStyle(
-                  decoration: !task.isActive
-                      ? TextDecoration.lineThrough
-                      : TextDecoration.none)),
-          subtitle: TextField(
-              controller: TextEditingController(text: task.description),
-              style: const TextStyle(fontSize: 12),
-              enabled: false,
-              readOnly: true,
-              minLines: 1,
-              maxLines: 5,
-              decoration: const InputDecoration(border: InputBorder.none)),
+                  decoration: model.isActive
+                      ? TextDecoration.none
+                      : TextDecoration.lineThrough)),
+          subtitle: Text(
+            model.description,
+            style: TextStyle(color: Theme.of(context).hintColor),
+          ),
           trailing: IconButton(
               icon: const Icon(Icons.edit),
               onPressed: () {
                 Navigator.pushNamed(context, AppRoutes.editTasks.route,
-                        arguments: task.id)
+                        arguments: model.id)
                     .then((_) {
-                  if (mounted) {
-                    setState(() {});
-                  }
+                  _pagingController.refresh();
+                  render();
                 });
-              })),
-      AppWidgets.divider()
+              }))
     ]);
   }
 
@@ -119,13 +119,13 @@ class _WidgetTaskList extends State<WidgetTaskList> {
         child: Align(
             alignment: Alignment.center,
             child: TextField(
-              controller: controller,
+              controller: _textController,
               minLines: 1,
               maxLines: 1,
               decoration: const InputDecoration(
                   icon: Icon(Icons.search, size: 30), border: InputBorder.none),
               onChanged: (value) {
-                search = value;
+                _pagingController.refresh();
                 setState(() {});
               },
             )));
@@ -183,33 +183,20 @@ class _WidgetTaskList extends State<WidgetTaskList> {
         pagingController: _pagingController,
         builderDelegate: PagedChildBuilderDelegate<ModelTask>(
           itemBuilder: (context, model, index) {
-            if (displayMode == _DisplayMode.sort) {
+            if (_displayMode == _DisplayMode.sort) {
               if (_pagingController.itemList == null) {
-                return AppWidgets.loading('Waiting for Tasks');
+                return AppWidgets.loading('Waiting for Tasks...');
               }
               var list = _pagingController.itemList!;
               return sortWidget(list, index);
             } else {
-              return taskWidget(model);
+              return modelWidget(model);
             }
           },
         ),
       ),
     ]);
-/*
-    List<Widget> tasks = [];
-    for (var item in ModelTask.getAll()) {
-      if (!showDeleted && item.deleted) {
-        continue;
-      }
-      if (search.trim().isNotEmpty &&
-          (item.title.contains(search) || item.notes.contains(search))) {
-        tasks.add(taskWidget(context, item));
-      } else {
-        tasks.add(taskWidget(context, item));
-      }
-    }
-*/
+
     return AppWidgets.scaffold(context,
         body: body,
         appBar: AppBar(title: const Text('Aufgaben Liste')),
@@ -218,29 +205,42 @@ class _WidgetTaskList extends State<WidgetTaskList> {
             items: [
               const BottomNavigationBarItem(
                   icon: Icon(Icons.add), label: 'Neu'),
-              displayMode == _DisplayMode.list
+              _displayMode == _DisplayMode.list
                   ? const BottomNavigationBarItem(
                       icon: Icon(Icons.sort), label: 'Sortieren')
                   : const BottomNavigationBarItem(
                       icon: Icon(Icons.list), label: 'Liste'),
               BottomNavigationBarItem(
-                  icon: Icon(showDeleted || displayMode == _DisplayMode.sort
-                      ? Icons.delete
-                      : Icons.remove_red_eye),
-                  label: showDeleted || displayMode == _DisplayMode.sort
+                  icon: Icon(
+                      _showDeleted.value || _displayMode == _DisplayMode.sort
+                          ? Icons.visibility_off
+                          : Icons.visibility),
+                  label: _showDeleted.value || _displayMode == _DisplayMode.sort
                       ? 'Verb. Gel.'
-                      : 'Zeige Gel.'),
+                      : 'Zeige Gel.')
             ],
             onTap: (int id) {
               if (id == 0) {
-                Navigator.pushNamed(context, AppRoutes.editTasks.route);
+                ModelTask.insert(ModelTask()).then(
+                  (model) {
+                    Fluttertoast.showToast(msg: 'Item #${model.id} created');
+                    Navigator.pushNamed(context, AppRoutes.editTasks.route,
+                            arguments: model.id)
+                        .then(
+                      (value) {
+                        _pagingController.refresh();
+                        render();
+                      },
+                    );
+                  },
+                );
               }
               if (id == 2) {
-                showDeleted = !showDeleted;
+                _showDeleted.value = !_showDeleted.value;
                 setState(() {});
               }
               if (id == 1) {
-                displayMode = displayMode == _DisplayMode.list
+                _displayMode = _displayMode == _DisplayMode.list
                     ? _DisplayMode.sort
                     : _DisplayMode.list;
                 setState(() {});

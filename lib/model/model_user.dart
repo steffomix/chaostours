@@ -119,14 +119,17 @@ class ModelUser extends Model {
   }
 
   /// transforms text into %text%
-  static Future<List<ModelUser>> search(String text) async {
+  static Future<List<ModelUser>> search(String text,
+      {int limit = 50, int offset = 0}) async {
     text = '%$text%';
     final rows = await DB.execute<List<Map<String, Object?>>>(
       (txn) async {
         return await txn.query(TableUser.table,
             where:
                 '${TableUser.title} like ? OR ${TableUser.description} like ?',
-            whereArgs: [text, text]);
+            whereArgs: [text, text],
+            limit: limit,
+            offset: offset);
       },
     );
     List<ModelUser> models = [];

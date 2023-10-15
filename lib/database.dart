@@ -138,6 +138,8 @@ class DB {
   static bool parseBool(Object? value, {bool fallback = false}) {
     if (value is bool) {
       return value;
+    } else if (value is int) {
+      return value > 0;
     } else if (value is String) {
       try {
         return int.parse(value.toString()) > 0;
@@ -159,82 +161,6 @@ class DB {
     return DateTime.fromMillisecondsSinceEpoch(parseInt(i) * 1000);
   }
 }
-/*
-class _AppDatabase {
-
-  static const dbFile = 'chaostours.sqlite';
-  static const dbVersion = 1;
-
-  static String? _path;
-  static flite.Database? _database;
-
-  static Future<void> _closeDb() async {
-    await _database?.close();
-    _database?.isOpen;
-    _database = null;
-  }
-
-  /// /data/user/0/com..../databases/chaostours.sqlite
-  static Future<String> getPath() async {
-    _path ??= join(await flite.getDatabasesPath(), dbFile);
-    return _path!;
-  }
-
-  static Future<flite.Database> _getDatabase() async {
-    var path = await getPath();
-    try {
-      var db = _database ??= await flite
-          .openDatabase(path, version: dbVersion, singleInstance: false,
-              onCreate: (flite.Database db, int version) async {
-        await db.transaction((txn) async {
-          var batch = txn.batch();
-          for (var sql in [
-            ...DatabaseSchema.schemata,
-            ...DatabaseSchema.indexes
-          ]) {
-            batch.rawQuery(sql);
-          }
-          await batch.commit();
-        });
-      });
-      return db;
-    } catch (e, stk) {
-      logger.error('_getDatabase: $e', stk);
-      rethrow;
-    }
-  }
-
-  /// ```dart
-  /// var result = await query<ExpectedType>((Transaction txn){
-  ///   ExpectedType result await txn...;
-  ///   return result;
-  /// });
-  ///
-  /// ```
-  static Future<T> _query<T>(
-      Future<T> Function(flite.Transaction txn) action) async {
-    try {
-      flite.Database db = await _getDatabase();
-
-      T result = await db.transaction<T>(action);
-      if (DB.closeDb) {
-        await _closeDb();
-      }
-      return result;
-    } catch (e, stk) {
-      logger.error('_query:: $e', stk);
-      rethrow;
-    }
-  }
-}
-*/
-///
-///
-///
-/// schemata
-///
-///
-///
 
 enum TableTrackPoint {
   id('id'),

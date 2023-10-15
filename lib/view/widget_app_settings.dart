@@ -142,7 +142,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                 if (limits.isValid(int.parse(value ?? ''))) {
                   return null;
                 }
-              } catch (e, stk) {
+              } catch (e) {
                 //
               }
               return 'Invalid Value';

@@ -113,8 +113,7 @@ class DataBridge {
                   await Future.delayed(const Duration(seconds: 1),
                       () => BackgroundTracking.startTracking());
                 } else {
-                  logger.log(
-                      'last BackGround GPS before ${dur.inSeconds} seconds at ${AppSettings.backgroundLookupDuration.inSeconds}seconds interval');
+                  //logger.log('last BackGround GPS before ${dur.inSeconds} seconds at ${AppSettings.backgroundLookupDuration.inSeconds} seconds interval');
                 }
               }
             } catch (e, stk) {

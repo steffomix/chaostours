@@ -15,11 +15,9 @@ limitations under the License.
 */
 
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/view/app_widgets.dart';
-import 'package:chaostours/conf/app_colors.dart';
 import 'package:chaostours/model/model_task.dart';
 
 class WidgetTaskEdit extends StatefulWidget {
@@ -30,101 +28,41 @@ class WidgetTaskEdit extends StatefulWidget {
 }
 
 class _WidgetTaskEdit extends State<WidgetTaskEdit> {
-  // ignore: unused_field
-  static final Logger logger = Logger.logger<WidgetTaskEdit>();
-
-  ValueNotifier<bool> modified = ValueNotifier<bool>(false);
-  //TextEditingController nameController = TextEditingController();
-  //TextEditingController notesController = TextEditingController();
+  //static final Logger logger = Logger.logger<WidgetTaskEdit>();
 
   ModelTask? _model;
   int? _id;
-  bool _initialized = false;
 
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
-  void modify() {
-    modified.value = true;
+  void render() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    _id = ModalRoute.of(context)?.settings.arguments as int?;
-    Widget? body;
+    _id ??= ModalRoute.of(context)?.settings.arguments as int?;
+    Widget body = AppWidgets.loading('Loading task...');
     if (_id == null) {
-      _model = ModelTask();
-      _id = _model!.id;
-      _initialized = true;
-    } else if (!_initialized) {
+      Future.microtask(() => Navigator.pop(context));
+    } else if (_model == null) {
       ModelTask.byId(_id!).then((ModelTask? model) {
-        if (model == null && mounted) {
+        if (model == null) {
           Navigator.pop(context);
         }
         _model = model!;
         _id = model.id;
-        _initialized = true;
-        if (mounted) {
-          setState(() => {});
-        }
+        render();
       });
-      body = AppWidgets.loading('Loading task...');
+    } else {
+      body = renderBody();
     }
-/*
-    if (!_initialized) {
-      if (_id > 0) {
-        _model = ModelTask.getModel(_id).clone();
-      } else {
-        _model = ModelTask(title: '', notes: '', deleted: false);
-      }
-      _initialized = true;
-    }
-*/
-    return AppWidgets.scaffold(context,
-        appBar: AppBar(title: const Text('Aufgabe bearbeiten')),
-        navBar: BottomNavigationBar(
-            type: BottomNavigationBarType.fixed,
-            items: [
-              // 0 alphabethic
-              BottomNavigationBarItem(
-                  icon: ValueListenableBuilder(
-                      valueListenable: modified,
-                      builder: ((context, value, child) {
-                        return Icon(Icons.done,
-                            size: 30,
-                            color: modified.value == true
-                                ? AppColors.green.color
-                                : AppColors.white54.color);
-                      })),
-                  label: 'Speichern'),
-              // 1 nearest
-              const BottomNavigationBarItem(
-                  icon: Icon(Icons.cancel), label: 'Abbrechen'),
-            ],
-            onTap: (int tapId) {
-              var model = _model!;
-              if (tapId == 0 && modified.value) {
-                if (_id == 0) {
-                  ModelTask.insert(model).then((id) {
-                    if (model.title.trim().isEmpty) {
-                      model.title = '#$id';
-                    }
-                    Navigator.pop(context);
-                    Fluttertoast.showToast(msg: 'Task created');
-                  });
-                } else {
-                  model.update().then((_) {
-                    Navigator.pop(context);
-                    Fluttertoast.showToast(msg: 'Task updated');
-                  });
-                }
-              } else if (tapId == 1) {
-                Navigator.pop(context);
-              }
-            }),
-        body: body ?? renderBody());
+
+    return AppWidgets.scaffold(
+      context,
+      body: body,
+      appBar: AppBar(title: const Text('Aufgabe bearbeiten')),
+    );
   }
 
   Widget renderBody() {
@@ -136,10 +74,10 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
             decoration: const InputDecoration(label: Text('Arbeit')),
             onChanged: ((value) {
               _model?.title = value;
-              modify();
+              _model?.update();
             }),
-            maxLines: 1,
             minLines: 1,
+            maxLines: 5,
             controller: TextEditingController(text: _model?.title),
           )),
 
@@ -149,28 +87,30 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
           child: TextField(
             decoration: const InputDecoration(label: Text('Notizen')),
             maxLines: null,
-            minLines: 3,
+            minLines: 5,
             controller: TextEditingController(text: _model?.description),
             onChanged: (val) {
               _model?.description = val;
-              modify();
+              _model?.update();
             },
           )),
 
       /// deleted
       ListTile(
-          title: const Text('Deaktiviert'),
+          title: const Text('Aktiviert'),
           subtitle: const Text(
-            'Definiert ob diese Arbeit sichtbar ist. '
-            '\nBereits zugewiesene Arbeiten bleiben grundsätzlich sichtbar.',
+            'Definiert ob diese Arbeit auswählbar ist.',
             softWrap: true,
           ),
           leading: Checkbox(
-            value: _model?.isActive,
+            value: _model?.isActive ?? false,
             onChanged: (val) {
               _model?.isActive = val ?? false;
-              modify();
-              setState(() {});
+              _model?.update().then(
+                (value) {
+                  render();
+                },
+              );
             },
           ))
     ]);
