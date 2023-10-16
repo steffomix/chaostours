@@ -16,7 +16,7 @@ limitations under the License.
 
 import 'package:flutter/material.dart';
 
-import 'package:chaostours/logger.dart';
+//import 'package:chaostours/logger.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/model/model_task.dart';
 

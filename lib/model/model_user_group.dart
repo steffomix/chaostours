@@ -21,15 +21,15 @@ import 'package:sqflite/sqflite.dart';
 
 class ModelUserGroup extends Model {
   static final Logger logger = Logger.logger<ModelUserGroup>();
-
+  int _id = 0;
+  int get id => _id;
   bool isActive = true;
   int sortOrder = 0;
   String title = '';
   String description = '';
 
   ModelUserGroup(
-      {super.id = 0,
-      this.isActive = true,
+      {this.isActive = true,
       this.sortOrder = 0,
       this.title = '',
       this.description = ''});
@@ -45,12 +45,13 @@ class ModelUserGroup extends Model {
   }
 
   static ModelUserGroup fromMap(Map<String, Object?> map) {
-    return ModelUserGroup(
-        id: DB.parseInt(map[TableUserGroup.primaryKey.column]),
+    var model = ModelUserGroup(
         isActive: DB.parseBool(map[TableUserGroup.isActive.column]),
         sortOrder: DB.parseInt(map[TableUserGroup.sortOrder.column]),
         title: DB.parseString(map[TableUserGroup.title.column]),
         description: DB.parseString(map[TableUserGroup.description.column]));
+    model._id = DB.parseInt(map[TableUserGroup.primaryKey.column]);
+    return model;
   }
 
   static Future<int> count() async {
@@ -162,7 +163,7 @@ class ModelUserGroup extends Model {
         return await txn.insert(TableUserGroup.table, map);
       },
     );
-    model.id = id;
+    model._id = id;
     return model;
   }
 

@@ -16,13 +16,14 @@ limitations under the License.
 
 //
 import 'package:chaostours/database.dart';
-import 'package:chaostours/model/model.dart';
 import 'package:chaostours/logger.dart';
 import 'package:sqflite/sqflite.dart';
 
-class ModelUser extends Model {
+class ModelUser {
   static Logger logger = Logger.logger<ModelUser>();
 
+  int _id = 0;
+  int get id => _id;
   int groupId = 1;
   int sortOrder = 0;
   bool isActive = true;
@@ -32,8 +33,7 @@ class ModelUser extends Model {
   String address = '';
 
   ModelUser(
-      {super.id = 0,
-      this.groupId = 1,
+      {this.groupId = 1,
       this.sortOrder = 0,
       this.isActive = true,
       this.title = '',
@@ -42,13 +42,14 @@ class ModelUser extends Model {
       this.address = ''});
 
   static ModelUser fromMap(Map<String, Object?> map) {
-    return ModelUser(
-        id: DB.parseInt(map[TableUser.primaryKey.column]),
+    var model = ModelUser(
         groupId: DB.parseInt(map[TableUser.idUserGroup.column], fallback: 1),
         isActive: DB.parseBool(map[TableUser.isActive.column]),
         sortOrder: DB.parseInt(map[TableUser.sortOrder.column]),
         title: DB.parseString(map[TableUser.title.column]),
         description: DB.parseString(map[TableUser.description.column]));
+    model._id = DB.parseInt(map[TableUser.primaryKey.column]);
+    return model;
   }
 
   Map<String, Object?> toMap() {
@@ -120,14 +121,17 @@ class ModelUser extends Model {
 
   /// transforms text into %text%
   static Future<List<ModelUser>> search(String text,
-      {int limit = 50, int offset = 0}) async {
+      {int limit = 50, int offset = 0, selectDeleted = true}) async {
     text = '%$text%';
     final rows = await DB.execute<List<Map<String, Object?>>>(
       (txn) async {
         return await txn.query(TableUser.table,
-            where:
-                '${TableUser.title} like ? OR ${TableUser.description} like ?',
-            whereArgs: [text, text],
+            where: selectDeleted
+                ? '${TableUser.title} like ? OR ${TableUser.description} like ?'
+                : '(${TableUser.title} like ? OR ${TableUser.description} like ?) AND ${TableUser.isActive.column} = ?',
+            whereArgs:
+                selectDeleted ? [text, text] : [text, text, DB.boolToInt(true)],
+            orderBy: '${TableUser.isActive.column}, ${TableUser.title.column}',
             limit: limit,
             offset: offset);
       },
@@ -144,14 +148,23 @@ class ModelUser extends Model {
   }
 
   static Future<List<ModelUser>> select(
-      {int limit = 50, int offset = 0}) async {
+      {int limit = 50,
+      int offset = 0,
+      bool selectDeleted = true,
+      bool useSortOrder = false}) async {
     final rows = await DB.execute<List<Map<String, Object?>>>(
       (Transaction txn) async {
-        return await txn.query(TableUser.table,
-            columns: TableUser.columns,
-            limit: limit,
-            offset: offset,
-            orderBy: TableUser.primaryKey.column);
+        return await txn.query(
+          TableUser.table,
+          columns: TableUser.columns,
+          where: selectDeleted ? null : '${TableUser.isActive.column} = ?',
+          whereArgs: selectDeleted ? null : [DB.boolToInt(true)],
+          orderBy: useSortOrder
+              ? TableUser.sortOrder.column
+              : '${TableUser.isActive.column}, ${TableUser.title.column}',
+          limit: limit,
+          offset: offset,
+        );
       },
     );
     List<ModelUser> models = [];
@@ -174,7 +187,7 @@ class ModelUser extends Model {
         return await txn.insert(TableUser.table, map);
       },
     );
-    model.id = id;
+    model._id = id;
     return model;
   }
 

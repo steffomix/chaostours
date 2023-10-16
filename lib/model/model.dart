@@ -24,13 +24,6 @@ class Model {
   static final Logger logger = Logger.logger<Model>();
   static const String lineSep = '\n';
 
-  int id;
-  Model({this.id = 0}) {
-    if (id <= 0) {
-      //throw ('Constructor: id must be > 0');
-    }
-  }
-
   static String toJson(Map<String, Object?> map) => jsonEncode(map);
   static Map<String, Object?> fromJson(String json) {
     var obj = jsonDecode(json);

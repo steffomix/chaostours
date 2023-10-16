@@ -405,8 +405,18 @@ class _WidgetOsm extends State<WidgetOsm> {
                       radius: AppSettings.distanceTreshold,
                       lastVisited: DateTime.now());
 
-                  ModelAlias.insert(alias).then((_) {
-                    Navigator.pop(context);
+                  ModelAlias.insert(alias).then((model) {
+                    //Navigator.pop(context);
+                    Future.microtask(() async {
+                      Navigator.pushNamed(context, AppRoutes.editAlias.route,
+                              arguments: model.id)
+                          .then((value) {
+                        Navigator.pop(context);
+
+                        Navigator.pushNamed(context, AppRoutes.osm.route,
+                            arguments: model.id);
+                      });
+                    });
                     Fluttertoast.showToast(msg: 'Alias created');
                   }).onError((error, stackTrace) {
                     logger.error(error.toString(), stackTrace);
@@ -466,9 +476,7 @@ class _WidgetOsm extends State<WidgetOsm> {
   OSMFlutter get osmFlutter {
     return _osmFlutter ??= OSMFlutter(
       onMapIsReady: (bool ready) {
-        mapController.removeAllCircle().then(
-              (value) => osmTools.renderAlias(mapController),
-            );
+        osmTools.renderAlias(mapController);
       },
       osmOption: _osmOption ??= const OSMOption(
         showDefaultInfoWindow: true,

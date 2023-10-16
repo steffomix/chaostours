@@ -31,7 +31,7 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
   // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetUserEdit>();
 
-  int? _id = 0;
+  int? _id;
   ModelUser? _model;
 
   @override
@@ -67,7 +67,7 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
     return AppWidgets.scaffold(
       context,
       body: body,
-      appBar: AppBar(title: const Text('Aufgabe bearbeiten')),
+      appBar: AppBar(title: const Text('Person bearbeiten')),
     );
   }
 
@@ -77,7 +77,7 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
       Container(
           padding: const EdgeInsets.all(10),
           child: TextField(
-            decoration: const InputDecoration(label: Text('Arbeit')),
+            decoration: const InputDecoration(label: Text('Person')),
             onChanged: ((value) {
               _model?.title = value;
               _model?.update();
@@ -105,7 +105,7 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
       ListTile(
           title: const Text('Aktiviert'),
           subtitle: const Text(
-            'Definiert ob diese Arbeit auswählbar ist.',
+            'Definiert ob diese Person auswählbar ist.',
             softWrap: true,
           ),
           leading: Checkbox(

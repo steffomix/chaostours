@@ -22,7 +22,8 @@ import 'package:sqflite/sqflite.dart';
 
 class ModelAliasGroup extends Model {
   static final Logger logger = Logger.logger<ModelAliasGroup>();
-
+  int _id = 0;
+  int get id => _id;
   bool isActive = true;
   String idCalendar = '';
   AliasVisibility visibility = AliasVisibility.public;
@@ -30,8 +31,7 @@ class ModelAliasGroup extends Model {
   String description = '';
 
   ModelAliasGroup(
-      {super.id = 0,
-      this.idCalendar = '',
+      {this.idCalendar = '',
       this.isActive = true,
       this.visibility = AliasVisibility.public,
       this.title = '',
@@ -49,14 +49,15 @@ class ModelAliasGroup extends Model {
   }
 
   static ModelAliasGroup fromMap(Map<String, Object?> map) {
-    return ModelAliasGroup(
-        id: DB.parseInt(map[TableAliasGroup.primaryKey.column]),
+    var model = ModelAliasGroup(
         idCalendar: DB.parseString(map[TableAliasGroup.idCalendar.column]),
         isActive: DB.parseBool(map[TableAliasGroup.isActive.column]),
         visibility:
             AliasVisibility.byId(map[TableAliasGroup.visibility.column]),
         title: DB.parseString(map[TableAliasGroup.title.column]),
         description: DB.parseString(map[TableAliasGroup.description.column]));
+    model._id = DB.parseInt(map[TableAliasGroup.primaryKey.column]);
+    return model;
   }
 
   static Future<int> count() async {
@@ -165,7 +166,7 @@ class ModelAliasGroup extends Model {
         return await txn.insert(TableAliasGroup.table, map);
       },
     );
-    model.id = id;
+    model._id = id;
     return model;
   }
 

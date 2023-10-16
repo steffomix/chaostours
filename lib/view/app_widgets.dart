@@ -488,7 +488,9 @@ class _WidgetDrawer extends State<WidgetDrawer> {
                             try {
                               launchUrl(Uri.parse(
                                   'https://www.apache.org/licenses/LICENSE-2.0.html'));
-                            } catch (e) {}
+                            } catch (e) {
+                              //
+                            }
                           }))),
             ])));
   }

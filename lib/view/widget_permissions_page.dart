@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 /*
 Copyright 2023 Stefan Brinkmann <st.brinkmann@gmail.com>
 
@@ -14,15 +16,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import 'dart:async';
+import 'package:permission_handler/permission_handler.dart';
 
 import 'package:chaostours/tracking.dart';
 import 'package:flutter/material.dart';
-import 'package:app_settings/app_settings.dart';
 //
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/view/app_widgets.dart';
-import 'package:chaostours/permission_checker.dart';
 //
 
 @override
@@ -35,7 +35,7 @@ class WidgetPermissionsPage extends StatefulWidget {
 class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
   Logger logger = Logger.logger<WidgetPermissionsPage>();
   Widget widgetPermissions = AppWidgets.loading('');
-  BuildContext? _context;
+  //BuildContext? _context;
   List<Widget> items = [];
 
   bool permLocation = false;
@@ -55,6 +55,51 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
   @override
   void dispose() {
     super.dispose();
+  }
+
+  Future<bool> checkAll() async {
+    if (!(await Permission.location.isGranted)) {
+      return false;
+    }
+    if (!(await Permission.locationAlways.isGranted)) {
+      return false;
+    }
+    if (!(await Permission.ignoreBatteryOptimizations.isGranted)) {
+      return false;
+    }
+    if (!(await Permission.storage.isGranted)) {
+      return false;
+    }
+    if (!(await Permission.manageExternalStorage.isGranted)) {
+      return false;
+    }
+    if (!(await Permission.notification.isGranted)) {
+      return false;
+    }
+    try {
+      if (!(await Permission.calendar.isGranted)) {
+        return false;
+      }
+    } catch (e) {
+      if (!(await Permission.calendarFullAccess.isGranted)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  Future<void> requestAll() async {
+    await Permission.location.request();
+    await Permission.locationAlways.request();
+    await Permission.ignoreBatteryOptimizations.request();
+    await Permission.storage.request();
+    await Permission.manageExternalStorage.request();
+    await Permission.notification.request();
+    try {
+      await Permission.calendar.request();
+    } catch (e) {
+      await Permission.calendarFullAccess.request();
+    }
   }
 
   void updatePermissionsInfo(String info) {
@@ -119,13 +164,23 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
               });
             },
             child: const Text('Repeat Check Permissions'))));
-    if (!await PermissionChecker.checkAll()) {
+    if (!await checkAll()) {
       items.add(Center(
           child: ElevatedButton(
-              onPressed: () {
-                PermissionChecker.requestAll();
+              onPressed: () async {
+                await Permission.location.request();
+                await Permission.locationAlways.request();
+                await Permission.ignoreBatteryOptimizations.request();
+                await Permission.storage.request();
+                await Permission.manageExternalStorage.request();
+                await Permission.notification.request();
+                try {
+                  await Permission.calendar.request();
+                } catch (e) {
+                  await Permission.calendarFullAccess.request();
+                }
               },
-              child: const Text('Request Permissions'))));
+              child: const Text('Request all Permissions'))));
     }
     items.add(ListTile(
         leading: permLocation
@@ -137,7 +192,7 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
         trailing: IconButton(
           icon: const Icon(Icons.settings),
           onPressed: () {
-            //AppSettings.openLocationSettings(asAnotherTask: false);
+            Permission.location.request();
           },
         )));
 
@@ -151,7 +206,7 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
         trailing: IconButton(
           icon: const Icon(Icons.settings),
           onPressed: () {
-            //AppSettings.openLocationSettings(asAnotherTask: false);
+            Permission.locationAlways.request();
           },
         )));
     items.add(ListTile(
@@ -164,7 +219,7 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
         trailing: IconButton(
           icon: const Icon(Icons.settings),
           onPressed: () {
-            //AppSettings.openBatteryOptimizationSettings(asAnotherTask: false);
+            Permission.ignoreBatteryOptimizations.request();
           },
         )));
     items.add(ListTile(
@@ -178,7 +233,7 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
         trailing: IconButton(
           icon: const Icon(Icons.settings),
           onPressed: () {
-            AppSettings.openAppSettings(asAnotherTask: false);
+            Permission.manageExternalStorage.request();
           },
         )));
 
@@ -192,7 +247,7 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
         trailing: IconButton(
           icon: const Icon(Icons.settings),
           onPressed: () {
-            //AppSettings.openNotificationSettings(asAnotherTask: false);
+            Permission.notification.request();
           },
         )));
 
@@ -205,8 +260,12 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
             'Wird benötigt, wenn sie Statusereignisse in ihren Kalender eintragen lassen wollen.'),
         trailing: IconButton(
           icon: const Icon(Icons.settings),
-          onPressed: () {
-            AppSettings.openAppSettings(asAnotherTask: false);
+          onPressed: () async {
+            try {
+              await Permission.calendar.request();
+            } catch (e) {
+              await Permission.calendarFullAccess.request();
+            }
           },
         )));
   }
@@ -222,46 +281,54 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
           updatePermissionsInfo('Check Permission GPS Loation');
         }));
     await Future.delayed(wait);
-    permLocation = await PermissionChecker.checkLocation();
+    permLocation = await Permission.location.isGranted;
 
     Future.microtask(() => setState(() {
           updatePermissionsInfo('Check Permission GPS Loation Always');
         }));
     await Future.delayed(wait);
-    permLocationAlways = await PermissionChecker.checkLocationAlways();
+    permLocationAlways = await Permission.locationAlways.isGranted;
 
     Future.microtask(() => setState(() {
           updatePermissionsInfo(
               'Check Permission Ignore Battery Optimizations');
         }));
     await Future.delayed(wait);
-    permIgnoreBattery =
-        await PermissionChecker.checkIgnoreBatteryOptimizations();
+    permIgnoreBattery = await Permission.ignoreBatteryOptimizations.isGranted;
+
+    Future.microtask(() => setState(() {
+          updatePermissionsInfo('Check Permission general Storage access');
+        }));
+    await Future.delayed(wait);
+    permManageExternalStorage = await Permission.storage.isGranted;
 
     Future.microtask(() => setState(() {
           updatePermissionsInfo('Check Permission Manage External Storage');
         }));
     await Future.delayed(wait);
     permManageExternalStorage =
-        await PermissionChecker.checkManageExternalStorage();
+        await Permission.manageExternalStorage.isGranted;
 
     Future.microtask(() => setState(() {
           updatePermissionsInfo('Check Permission Notification');
         }));
     await Future.delayed(wait);
-    permNotification = await PermissionChecker.checkNotification();
+    permNotification = await Permission.notification.isGranted;
 
     Future.microtask(() => setState(() {
           updatePermissionsInfo('Check Permission Manage Calendar');
         }));
     await Future.delayed(wait);
-    permCalendar = await PermissionChecker.checkCalendar();
+    try {
+      permCalendar = await Permission.calendar.isGranted;
+    } catch (e) {
+      permCalendar = await Permission.calendarFullAccess.isGranted;
+    }
     renderBody();
   }
 
   @override
   Widget build(BuildContext context) {
-    _context = context;
     return AppWidgets.scaffold(context,
         body: widgetPermissions,
         appBar: AppBar(title: const Text('Permissions')));

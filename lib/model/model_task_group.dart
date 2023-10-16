@@ -22,7 +22,8 @@ import 'package:sqflite/sqflite.dart';
 
 class ModelTaskGroup extends Model {
   static final Logger logger = Logger.logger<ModelTaskGroup>();
-
+  int _id = 0;
+  int get id => _id;
   bool isActive = true;
   AliasVisibility visibility = AliasVisibility.public;
   int sortOrder = 0;
@@ -30,8 +31,7 @@ class ModelTaskGroup extends Model {
   String description = '';
 
   ModelTaskGroup(
-      {super.id = 0,
-      this.isActive = true,
+      {this.isActive = true,
       this.visibility = AliasVisibility.public,
       this.sortOrder = 0,
       this.title = '',
@@ -48,12 +48,13 @@ class ModelTaskGroup extends Model {
   }
 
   static ModelTaskGroup fromMap(Map<String, Object?> map) {
-    return ModelTaskGroup(
-        id: DB.parseInt(map[TableTaskGroup.primaryKey.column]),
+    var model = ModelTaskGroup(
         isActive: DB.parseBool(map[TableTaskGroup.isActive.column]),
         sortOrder: DB.parseInt(map[TableTaskGroup.sortOrder.column]),
         title: DB.parseString(map[TableTaskGroup.title.column]),
         description: DB.parseString(map[TableTaskGroup.description.column]));
+    model._id = DB.parseInt(map[TableTaskGroup.primaryKey.column]);
+    return model;
   }
 
   static Future<int> count() async {
@@ -165,7 +166,7 @@ class ModelTaskGroup extends Model {
         return await txn.insert(TableTaskGroup.table, map);
       },
     );
-    model.id = id;
+    model._id = id;
     return model;
   }
 

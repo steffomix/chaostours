@@ -31,9 +31,9 @@ dependencies:
     sdk: flutter
 
   background_location_tracker: ^1.4.1
-  flutter_osm_plugin: ^0.60.4
+  flutter_osm_plugin: ^0.60.5
   flutter_local_notifications: ^15.1.1
-  permission_handler: ^10.4.3
+  permission_handler: ^10.2.0
   shared_preferences: ^2.2.0
   path: ^1.8.3
   http: ^0.13.5

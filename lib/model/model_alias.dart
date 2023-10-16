@@ -53,6 +53,8 @@ enum AliasVisibility {
 
 class ModelAlias extends Model {
   static Logger logger = Logger.logger<ModelAlias>();
+  int _id = 0;
+  int get id => _id;
   int groupId = 1;
   // lazy loaded group
   Future<ModelAliasGroup?> get groupModel => ModelAliasGroup.byId(groupId);
@@ -73,7 +75,6 @@ class ModelAlias extends Model {
   int trackPointCount = 0;
 
   ModelAlias({
-    super.id = 0,
     required this.gps,
     required this.lastVisited,
     required this.title,
@@ -85,8 +86,7 @@ class ModelAlias extends Model {
   });
 
   static ModelAlias fromMap(Map<String, Object?> map) {
-    return ModelAlias(
-        id: DB.parseInt(map[TableAlias.primaryKey.column]),
+    var model = ModelAlias(
         groupId: DB.parseInt(map[TableAlias.idAliasGroup.column], fallback: 1),
         gps: GPS(DB.parseDouble(map[TableAlias.latitude.column]),
             DB.parseDouble(map[TableAlias.longitude.column])),
@@ -96,6 +96,8 @@ class ModelAlias extends Model {
         timesVisited: DB.parseInt(map[TableAlias.timesVisited.column]),
         title: DB.parseString(map[TableAlias.title.column]),
         description: DB.parseString(map[TableAlias.description.column]));
+    model._id = DB.parseInt(map[TableAlias.primaryKey.column]);
+    return model;
   }
 
   Map<String, Object?> toMap() {
@@ -298,7 +300,7 @@ class ModelAlias extends Model {
         return await txn.insert(TableAlias.table, map);
       },
     );
-    model.id = id;
+    model._id = id;
     return model;
   }
 

@@ -23,6 +23,8 @@ import 'package:sqflite/sqflite.dart';
 class ModelTask extends Model {
   static Logger logger = Logger.logger<ModelTask>();
 
+  int _id = 0;
+  int get id => _id;
   int groupId = 1;
   int sortOrder = 0;
   bool isActive = true;
@@ -30,21 +32,21 @@ class ModelTask extends Model {
   String description = '';
 
   ModelTask(
-      {super.id = 0,
-      this.groupId = 1,
+      {this.groupId = 1,
       this.sortOrder = 0,
       this.isActive = true,
       this.title = '',
       this.description = ''});
 
   static ModelTask fromMap(Map<String, Object?> map) {
-    return ModelTask(
-        id: DB.parseInt(map[TableTask.primaryKey.column]),
+    var model = ModelTask(
         groupId: DB.parseInt(map[TableTask.idTaskGroup.column], fallback: 1),
         isActive: DB.parseBool(map[TableTask.isActive.column]),
         sortOrder: DB.parseInt(map[TableTask.sortOrder.column]),
         title: DB.parseString(map[TableTask.title.column]),
         description: DB.parseString(map[TableTask.description.column]));
+    model._id = DB.parseInt(map[TableTask.primaryKey.column]);
+    return model;
   }
 
   Map<String, Object?> toMap() {
@@ -116,14 +118,17 @@ class ModelTask extends Model {
 
   /// transforms text into %text%
   static Future<List<ModelTask>> search(String text,
-      {int limit = 50, int offset = 0}) async {
+      {int limit = 50, int offset = 0, bool selectDeleted = true}) async {
     text = '%$text%';
     var rows = await DB.execute<List<Map<String, Object?>>>(
       (txn) async {
         return await txn.query(TableTask.table,
-            where:
-                '${TableTask.title} like ? OR ${TableTask.description} like ?',
-            whereArgs: [text, text],
+            where: selectDeleted
+                ? '${TableTask.title} like ? OR ${TableTask.description} like ?'
+                : '(${TableTask.title} like ? OR ${TableTask.description} like ?) AND ${TableTask.isActive.column} = ?',
+            whereArgs:
+                selectDeleted ? [text, text] : [text, text, DB.boolToInt(true)],
+            orderBy: '${TableTask.isActive.column}, ${TableTask.title.column}',
             limit: limit,
             offset: offset);
       },
@@ -140,14 +145,21 @@ class ModelTask extends Model {
   }
 
   static Future<List<ModelTask>> select(
-      {int limit = 50, int offset = 0}) async {
+      {int limit = 50,
+      int offset = 0,
+      selectDeleted = true,
+      bool useSortOrder = false}) async {
     final rows = await DB.execute<List<Map<String, Object?>>>(
       (Transaction txn) async {
         return await txn.query(TableTask.table,
             columns: TableTask.columns,
+            where: selectDeleted ? null : '${TableTask.isActive.column} = ?',
+            whereArgs: selectDeleted ? null : [DB.boolToInt(true)],
+            orderBy: useSortOrder
+                ? TableTask.sortOrder.column
+                : '${TableTask.isActive.column}, ${TableTask.title.column}',
             limit: limit,
-            offset: offset,
-            orderBy: '${TableTask.isActive.column}, ${TableTask.title.column}');
+            offset: offset);
       },
     );
     List<ModelTask> models = [];
@@ -165,12 +177,14 @@ class ModelTask extends Model {
   static Future<ModelTask> insert(ModelTask model) async {
     var map = model.toMap();
     map.removeWhere((key, value) => key == TableTask.primaryKey.column);
+    int ct = await count();
+    model.sortOrder = ct + 1;
     int id = await DB.execute<int>(
       (Transaction txn) async {
         return await txn.insert(TableTask.table, map);
       },
     );
-    model.id = id;
+    model._id = id;
     return model;
   }
 

@@ -27,6 +27,8 @@ import 'package:sqflite/sqflite.dart';
 class ModelTrackPoint extends Model {
   static Logger logger = Logger.logger<ModelTrackPoint>();
 
+  int _id = 0;
+  int get id => _id;
   GPS gps;
 
   DateTime timeStart;
@@ -56,8 +58,7 @@ class ModelTrackPoint extends Model {
   int sortDistance = 0;
 
   ModelTrackPoint(
-      {super.id,
-      required this.timeStart,
+      {required this.timeStart,
       required this.timeEnd,
       required this.gps,
       this.address = '',
@@ -68,12 +69,7 @@ class ModelTrackPoint extends Model {
     return util.timeElapsed(timeStart, timeEnd);
   }
 
-  ModelTrackPoint clone() {
-    var model = ModelTrackPoint(
-        id: id, gps: gps, timeStart: timeStart, timeEnd: timeEnd);
-    model.address = address;
-    return model;
-  }
+  ModelTrackPoint clone() => fromMap(toMap());
 
   /// creates an empty trackpoint with GPS(0,0)
   static ModelTrackPoint createTrackPoint() {
@@ -109,8 +105,7 @@ class ModelTrackPoint extends Model {
   }
 
   static ModelTrackPoint fromMap(Map<String, Object?> map) {
-    return ModelTrackPoint(
-        id: DB.parseInt(map[TableTrackPoint.primaryKey.column]),
+    var model = ModelTrackPoint(
         gps: GPS(DB.parseDouble(map[TableTrackPoint.latitude.column]),
             DB.parseDouble(map[TableTrackPoint.longitude.column])),
         timeStart:
@@ -118,6 +113,8 @@ class ModelTrackPoint extends Model {
         timeEnd: DB.intToTime(DB.parseInt(map[TableTrackPoint.timeEnd.column])),
         address: (map[TableTrackPoint.address.column] ?? '').toString(),
         notes: (map[TableTrackPoint.notes.column] ?? '').toString());
+    model._id = DB.parseInt(map[TableTrackPoint.primaryKey.column]);
+    return model;
   }
 
   static Future<int> count({ModelAlias? alias}) async {
@@ -185,7 +182,7 @@ class ModelTrackPoint extends Model {
       }
       return count;
     });
-    model.id = id;
+    model._id = id;
     return model;
   }
 

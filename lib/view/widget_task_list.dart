@@ -41,7 +41,7 @@ class _WidgetTaskList extends State<WidgetTaskList> {
   // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetTaskList>();
 
-  final _showDeleted = ValueNotifier<bool>(false);
+  final _selectDeleted = ValueNotifier<bool>(false);
   final _textController = TextEditingController();
   _DisplayMode _displayMode = _DisplayMode.list;
 
@@ -56,14 +56,14 @@ class _WidgetTaskList extends State<WidgetTaskList> {
 
   @override
   void initState() {
-    _showDeleted.addListener(render);
+    _selectDeleted.addListener(render);
     _pagingController.addPageRequestListener(_fetchPage);
     super.initState();
   }
 
   @override
   void dispose() {
-    _showDeleted.dispose();
+    _selectDeleted.dispose();
     _pagingController.dispose();
     super.dispose();
   }
@@ -76,9 +76,18 @@ class _WidgetTaskList extends State<WidgetTaskList> {
 
   void _fetchPage(int offset) async {
     var text = _textController.text;
-    List<ModelTask> newItems = await (text.isEmpty
-        ? ModelTask.select(limit: _limit, offset: offset)
-        : ModelTask.search(text, limit: _limit, offset: offset));
+    List<ModelTask> newItems =
+        await (text.isEmpty || _displayMode == _DisplayMode.sort
+            ? ModelTask.select(
+                limit: _limit,
+                offset: offset,
+                selectDeleted:
+                    _selectDeleted.value || _displayMode == _DisplayMode.sort,
+                useSortOrder: _displayMode == _DisplayMode.sort)
+            : ModelTask.search(text,
+                limit: _limit,
+                offset: offset,
+                selectDeleted: _selectDeleted.value));
 
     if (newItems.length < _limit) {
       _pagingController.appendLastPage(newItems);
@@ -126,7 +135,7 @@ class _WidgetTaskList extends State<WidgetTaskList> {
                   icon: Icon(Icons.search, size: 30), border: InputBorder.none),
               onChanged: (value) {
                 _pagingController.refresh();
-                setState(() {});
+                render();
               },
             )));
   }
@@ -143,7 +152,7 @@ class _WidgetTaskList extends State<WidgetTaskList> {
               }
               model.update().then((_) {
                 models[index + 1].update().then(
-                      (value) => setState(() {}),
+                      (value) => render(),
                     );
               });
             }),
@@ -156,7 +165,7 @@ class _WidgetTaskList extends State<WidgetTaskList> {
             }
             model.update().then((_) {
               models[index - 1].update().then(
-                    (value) => setState(() {}),
+                    (value) => render(),
                   );
             });
           },
@@ -212,38 +221,51 @@ class _WidgetTaskList extends State<WidgetTaskList> {
                       icon: Icon(Icons.list), label: 'Liste'),
               BottomNavigationBarItem(
                   icon: Icon(
-                      _showDeleted.value || _displayMode == _DisplayMode.sort
+                      _selectDeleted.value || _displayMode == _DisplayMode.sort
                           ? Icons.visibility_off
                           : Icons.visibility),
-                  label: _showDeleted.value || _displayMode == _DisplayMode.sort
-                      ? 'Verb. Gel.'
-                      : 'Zeige Gel.')
+                  label:
+                      _selectDeleted.value || _displayMode == _DisplayMode.sort
+                          ? 'Verb. Gel.'
+                          : 'Zeige Gel.')
             ],
             onTap: (int id) {
-              if (id == 0) {
-                ModelTask.insert(ModelTask()).then(
-                  (model) {
-                    Fluttertoast.showToast(msg: 'Item #${model.id} created');
-                    Navigator.pushNamed(context, AppRoutes.editTasks.route,
-                            arguments: model.id)
-                        .then(
-                      (value) {
-                        _pagingController.refresh();
-                        render();
-                      },
-                    );
-                  },
-                );
-              }
-              if (id == 2) {
-                _showDeleted.value = !_showDeleted.value;
-                setState(() {});
-              }
-              if (id == 1) {
-                _displayMode = _displayMode == _DisplayMode.list
-                    ? _DisplayMode.sort
-                    : _DisplayMode.list;
-                setState(() {});
+              switch (id) {
+                case 0:
+                  ModelTask.insert(ModelTask()).then(
+                    (model) {
+                      Fluttertoast.showToast(msg: 'Item #${model.id} created');
+                      Navigator.pushNamed(context, AppRoutes.editTasks.route,
+                              arguments: model.id)
+                          .then(
+                        (value) {
+                          _pagingController.refresh();
+                          render();
+                        },
+                      );
+                    },
+                  );
+                  break;
+
+                case 1:
+                  _displayMode = _displayMode == _DisplayMode.list
+                      ? _DisplayMode.sort
+                      : _DisplayMode.list;
+                  _pagingController.refresh();
+                  render();
+                  break;
+
+                case 2:
+                  if (_displayMode == _DisplayMode.list) {
+                    _selectDeleted.value = !_selectDeleted.value;
+                  } else {
+                    _selectDeleted.value = true;
+                  }
+                  _pagingController.refresh();
+                  render();
+                  break;
+                default:
+                //
               }
             }));
   }
