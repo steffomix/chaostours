@@ -130,19 +130,21 @@ class CheckboxController {
     required this.idReference,
     required this.referenceList,
     required this.title,
+    required this.onToggle,
     this.checked = false,
     this.group = 0,
     this.subtitle = '',
     this.isActive = true,
-    required this.onToggle,
   }) {
     checked = referenceList.contains(idReference);
   }
-  void toggle() {
+
+  /// this method is called from CheckBox
+  void toggle(bool? state) {
     if (!isActive) {
       return;
     }
-    checked = !checked;
+    checked = state ?? false;
     if (checked) {
       if (!referenceList.contains(idReference)) referenceList.add(idReference);
     } else {
@@ -150,23 +152,23 @@ class CheckboxController {
     }
     onToggle(checked);
   }
-}
 
-/// render multiple checkboxes
-Widget createCheckbox(State widget, CheckboxController model) {
-  TextStyle style = TextStyle(
-      color: model.isActive ? Colors.black : Colors.grey,
-      decoration:
-          model.isActive ? TextDecoration.none : TextDecoration.lineThrough);
+  /// render multiple checkboxes
+  static Widget createCheckbox(CheckboxController model) {
+    TextStyle style = TextStyle(
+        color: model.isActive ? Colors.black : Colors.grey,
+        decoration:
+            model.isActive ? TextDecoration.none : TextDecoration.lineThrough);
 
-  return ListTile(
-    subtitle: model.subtitle.trim().isEmpty
-        ? null
-        : Text(model.subtitle, style: const TextStyle(color: Colors.grey)),
-    title: Text(
-      model.title,
-      style: style,
-    ),
-    leading: Checkbox(value: model.checked, onChanged: model.onToggle),
-  );
+    return ListTile(
+      subtitle: model.subtitle.trim().isEmpty
+          ? null
+          : Text(model.subtitle, style: const TextStyle(color: Colors.grey)),
+      title: Text(
+        model.title,
+        style: style,
+      ),
+      leading: Checkbox(value: model.checked, onChanged: model.toggle),
+    );
+  }
 }

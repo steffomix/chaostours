@@ -50,10 +50,6 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
 
   bool? statusStandingRequireAlias = AppSettings.statusStandingRequireAlias;
   bool? backgroundTrackingEnabled = AppSettings.backgroundTrackingEnabled;
-  bool _test = true;
-  bool get test => _test;
-
-  set test(bool v) => _test = v;
 
   TextEditingController txAutocreateAlias = TextEditingController();
   TextEditingController txTrackPointInterval = TextEditingController();

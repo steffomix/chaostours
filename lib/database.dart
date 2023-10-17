@@ -85,13 +85,14 @@ class DB {
   /// </pre>
   static Future<T> execute<T>(
       Future<T> Function(flite.Transaction txn) action) async {
+    var stk = StackTrace.current;
     try {
       if (_database == null) {
         throw 'no database set';
       }
       T result = await _database!.transaction<T>(action);
       return result;
-    } catch (e, stk) {
+    } catch (e) {
       logger.error('DB::execute $e', stk);
       rethrow;
     }
@@ -554,6 +555,16 @@ enum TableAliasGroup {
   @override
   String toString() {
     return '$table.$column';
+  }
+}
+
+class TableFields {
+  final String table;
+  final List<String> _columns = [];
+  List<String> get columns => List.unmodifiable(_columns);
+
+  TableFields(this.table, List<String> cols) {
+    _columns.addAll(cols);
   }
 }
 

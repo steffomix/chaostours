@@ -16,11 +16,10 @@ limitations under the License.
 
 import 'package:chaostours/database.dart';
 import 'package:chaostours/logger.dart';
-import 'package:chaostours/model/model.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:sqflite/sqflite.dart';
 
-class ModelTaskGroup extends Model {
+class ModelTaskGroup {
   static final Logger logger = Logger.logger<ModelTaskGroup>();
   int _id = 0;
   int get id => _id;
@@ -98,7 +97,7 @@ class ModelTaskGroup extends Model {
         return await txn.query(TableTaskGroup.table,
             columns: TableTaskGroup.columns,
             where:
-                '${TableTaskGroup.primaryKey.column} IN ${List.filled(ids.length, '?').join('?')}',
+                '${TableTaskGroup.primaryKey.column} IN ${List.filled(ids.length, '?').join(', ')}',
             whereArgs: ids);
       },
     );

@@ -17,7 +17,6 @@ limitations under the License.
 import 'dart:math';
 
 ///
-import 'package:chaostours/model/model.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_alias_group.dart';
 import 'package:chaostours/database.dart';
@@ -51,7 +50,7 @@ enum AliasVisibility {
   }
 }
 
-class ModelAlias extends Model {
+class ModelAlias {
   static Logger logger = Logger.logger<ModelAlias>();
   int _id = 0;
   int get id => _id;
@@ -179,7 +178,7 @@ class ModelAlias extends Model {
         return await txn.query(TableAlias.table,
             columns: TableAlias.columns,
             where:
-                '${TableAlias.primaryKey.column} IN (${List.filled(ids.length, '?').join(',')})',
+                '${TableAlias.primaryKey.column} IN (${List.filled(ids.length, '?').join(', ')})',
             whereArgs: ids);
       },
     );

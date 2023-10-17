@@ -25,7 +25,7 @@ import 'package:chaostours/conf/app_settings.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/cache.dart';
 import 'package:chaostours/data_bridge.dart';
-import 'package:chaostours/Location.dart';
+import 'package:chaostours/location.dart';
 import 'package:chaostours/conf/osm.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_alias.dart';

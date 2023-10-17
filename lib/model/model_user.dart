@@ -104,7 +104,7 @@ class ModelUser {
         return await txn.query(TableUser.table,
             columns: TableUser.columns,
             where:
-                '${TableUser.primaryKey.column} IN ${List.filled(ids.length, '?').join('?')}',
+                '${TableUser.primaryKey.column} IN ${List.filled(ids.length, '?').join(', ')}',
             whereArgs: ids);
       },
     );

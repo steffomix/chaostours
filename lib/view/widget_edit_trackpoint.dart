@@ -109,17 +109,15 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
     var checkBoxes = <Widget>[];
     for (var model in allTaskModels) {
       if (model.isActive) {
-        checkBoxes.add(createCheckbox(
-            this,
-            CheckboxController(
-                idReference: model.id,
-                referenceList: referenceList,
-                isActive: model.isActive,
-                title: model.title,
-                subtitle: model.description,
-                onToggle: (bool? checked) {
-                  modify();
-                })));
+        checkBoxes.add(CheckboxController.createCheckbox(CheckboxController(
+            idReference: model.id,
+            referenceList: referenceList,
+            isActive: model.isActive,
+            title: model.title,
+            subtitle: model.description,
+            onToggle: (bool? checked) {
+              modify();
+            })));
       }
     }
     return checkBoxes;
@@ -130,17 +128,15 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
     var checkBoxes = <Widget>[];
     for (var model in allUserModels) {
       if (model.isActive) {
-        checkBoxes.add(createCheckbox(
-            this,
-            CheckboxController(
-                idReference: model.id,
-                referenceList: referenceList,
-                isActive: model.isActive,
-                title: model.title,
-                subtitle: model.description,
-                onToggle: (bool? checked) {
-                  modify();
-                })));
+        checkBoxes.add(CheckboxController.createCheckbox(CheckboxController(
+            idReference: model.id,
+            referenceList: referenceList,
+            isActive: model.isActive,
+            title: model.title,
+            subtitle: model.description,
+            onToggle: (bool? checked) {
+              modify();
+            })));
       }
     }
     return checkBoxes;

@@ -15,7 +15,6 @@ limitations under the License.
 */
 
 import 'package:chaostours/database.dart';
-import 'package:chaostours/model/model.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_user.dart';
@@ -24,7 +23,7 @@ import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/logger.dart';
 import 'package:sqflite/sqflite.dart';
 
-class ModelTrackPoint extends Model {
+class ModelTrackPoint {
   static Logger logger = Logger.logger<ModelTrackPoint>();
 
   int _id = 0;
@@ -522,7 +521,7 @@ class ModelTrackPoint extends Model {
         return await txn.query(TableTrackPointAlias.table,
             columns: ['${TableTrackPointAlias.idTrackPoint} as $idcol'],
             where:
-                '${TableTrackPointAlias.idAlias.column} IN (${List.filled(aliasModels.length, '?')})',
+                '${TableTrackPointAlias.idAlias.column} IN (${List.filled(aliasModels.length, '?').join(', ')})',
             whereArgs: aliasModels.map((e) => e.id).toList());
       },
     );
@@ -534,7 +533,7 @@ class ModelTrackPoint extends Model {
         return await txn.query(TableTrackPointTask.table,
             columns: ['${TableTrackPointTask.idTrackPoint} as $idcol'],
             where:
-                '${TableTrackPointTask.idTask.column} IN (${List.filled(taskModels.length, '?')})',
+                '${TableTrackPointTask.idTask.column} IN (${List.filled(taskModels.length, '?').join(', ')})',
             whereArgs: taskModels.map((e) => e.id).toList());
       },
     );
@@ -546,7 +545,7 @@ class ModelTrackPoint extends Model {
         return await txn.query(TableTrackPointUser.table,
             columns: ['${TableTrackPointUser.idTrackPoint} as $idcol'],
             where:
-                '${TableTrackPointUser.idUser.column} IN (${List.filled(userModels.length, '?')})',
+                '${TableTrackPointUser.idUser.column} IN (${List.filled(userModels.length, '?').join(', ')})',
             whereArgs: userModels.map((e) => e.id).toList());
       },
     );

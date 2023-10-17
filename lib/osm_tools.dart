@@ -44,7 +44,7 @@ class OsmTools {
             centerPoint:
                 osm.GeoPoint(latitude: alias.gps.lat, longitude: alias.gps.lon),
             radius: alias.radius.toDouble(),
-            color: Color.fromARGB(72, 0, 0, 0),
+            color: const Color.fromARGB(72, 0, 0, 0),
             strokeWidth: 10,
           ));
         } else {

@@ -16,11 +16,10 @@ limitations under the License.
 
 //
 import 'package:chaostours/database.dart';
-import 'package:chaostours/model/model.dart';
 import 'package:chaostours/logger.dart';
 import 'package:sqflite/sqflite.dart';
 
-class ModelTask extends Model {
+class ModelTask {
   static Logger logger = Logger.logger<ModelTask>();
 
   int _id = 0;
@@ -101,7 +100,7 @@ class ModelTask extends Model {
         return await txn.query(TableTask.table,
             columns: TableTask.columns,
             where:
-                '${TableTask.primaryKey.column} IN ${List.filled(ids.length, '?').join('?')}',
+                '${TableTask.primaryKey.column} IN ${List.filled(ids.length, '?').join(', ')}',
             whereArgs: ids);
       },
     );

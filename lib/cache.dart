@@ -310,6 +310,7 @@ class Cache {
           await prefs.setString(
               key, serializeOsmLookup(value as OsmLookupConditions));
           break;
+        // ignore: prefer_void_to_null
         case Null:
           await prefs.remove(key);
           break;

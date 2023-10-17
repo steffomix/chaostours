@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import 'package:chaostours/Location.dart';
+import 'package:chaostours/location.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -88,12 +88,6 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   final _tpNotes =
       TextEditingController(text: DataBridge.instance.trackPointUserNotes);
   final _tpSearch = TextEditingController();
-
-  void modify() {
-    if (mounted) {
-      render();
-    }
-  }
 
   void render() {
     if (mounted) {
@@ -605,24 +599,19 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     var checkBoxes = <Widget>[];
     for (var model in _taskModels) {
       if (model.isActive) {
-        checkBoxes.add(createCheckbox(
-            this,
-            CheckboxController(
-                idReference: model.id,
-                referenceList: referenceList,
-                isActive: model.isActive,
-                title: model.title,
-                subtitle: model.description,
-                onToggle: (bool? checked) {
-                  Cache.setValue<List<int>>(CacheKeys.cacheBackgroundTaskIdList,
-                          DataBridge.instance.trackPointTaskIdList)
-                      .then(
-                    (value) {
-                      _bridge.trackPointTaskIdList = value;
-                      modify();
-                    },
-                  );
-                })));
+        checkBoxes.add(CheckboxController.createCheckbox(CheckboxController(
+            idReference: model.id,
+            referenceList: referenceList,
+            isActive: model.isActive,
+            title: model.title,
+            subtitle: model.description,
+            onToggle: (bool? checked) async {
+              var ck = await Cache.setValue<List<int>>(
+                  CacheKeys.cacheBackgroundTaskIdList,
+                  DataBridge.instance.trackPointTaskIdList);
+              _bridge.trackPointTaskIdList = ck;
+              render();
+            })));
       }
     }
     return checkBoxes;
@@ -634,25 +623,19 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     var checkBoxes = <Widget>[];
     for (var model in _userModels) {
       if (model.isActive) {
-        checkBoxes.add(createCheckbox(
-            this,
-            CheckboxController(
-                idReference: model.id,
-                referenceList: referenceList,
-                isActive: model.isActive,
-                title: model.title,
-                subtitle: model.description,
-                onToggle: (bool? checked) {
-                  Cache.setValue<List<int>>(CacheKeys.cacheBackgroundUserIdList,
-                          DataBridge.instance.trackPointUserIdList)
-                      .then(
-                    (value) {
-                      _bridge.trackPointUserIdList = value;
-                      modify();
-                    },
-                  );
-                  modify();
-                })));
+        checkBoxes.add(CheckboxController.createCheckbox(CheckboxController(
+            idReference: model.id,
+            referenceList: referenceList,
+            isActive: model.isActive,
+            title: model.title,
+            subtitle: model.description,
+            onToggle: (bool? checked) async {
+              var ck = await Cache.setValue<List<int>>(
+                  CacheKeys.cacheBackgroundUserIdList,
+                  DataBridge.instance.trackPointUserIdList);
+              _bridge.trackPointUserIdList = ck;
+              render();
+            })));
       }
     }
     return checkBoxes;
@@ -743,7 +726,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
             onChanged: (String? s) async {
               _bridge.trackPointUserNotes = await Cache.setValue<String>(
                   CacheKeys.cacheBackgroundTrackPointUserNotes, _tpNotes.text);
-              modify();
+              render();
             }));
   }
 }
