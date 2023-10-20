@@ -584,6 +584,21 @@ class DatabaseSchema {
     TableAliasTopic.schema,
   ];
 
+  static final List<TableFields> tables = List.unmodifiable([
+    TableFields(TableAlias.table, TableAlias.columns),
+    TableFields(TableTrackPoint.table, TableTrackPoint.columns),
+    TableFields(TableTrackPointAlias.table, TableTrackPoint.columns),
+    TableFields(TableTrackPointTask.table, TableTrackPointTask.columns),
+    TableFields(TableTrackPointUser.table, TableTrackPointUser.columns),
+    TableFields(TableTask.table, TableTask.columns),
+    TableFields(TableUser.table, TableUser.columns),
+    TableFields(TableTaskGroup.table, TableTaskGroup.columns),
+    TableFields(TableAliasGroup.table, TableAliasGroup.columns),
+    TableFields(TableUserGroup.table, TableUserGroup.columns),
+    TableFields(TableTopic.table, TableTopic.columns),
+    TableFields(TableAliasTopic.table, TableAliasTopic.columns)
+  ]);
+
   static final List<String> indexes = [
     '''
 CREATE INDEX IF NOT EXISTS "${TableTrackPoint.table}_gps" ON "${TableTrackPoint.table}" (

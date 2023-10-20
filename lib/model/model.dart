@@ -26,21 +26,6 @@ class Model {
   static final Logger logger = Logger.logger<Model>();
   static const String lineSep = '\n';
 
-  static final List<TableFields> tables = List.unmodifiable([
-    TableFields(TableTrackPoint.table, TableTrackPoint.columns),
-    TableFields(TableTrackPointAlias.table, TableTrackPoint.columns),
-    TableFields(TableTrackPointTask.table, TableTrackPointTask.columns),
-    TableFields(TableTrackPointUser.table, TableTrackPointUser.columns),
-    TableFields(TableTask.table, TableTask.columns),
-    TableFields(TableAlias.table, TableAlias.columns),
-    TableFields(TableUser.table, TableUser.columns),
-    TableFields(TableTaskGroup.table, TableTaskGroup.columns),
-    TableFields(TableAliasGroup.table, TableAliasGroup.columns),
-    TableFields(TableUserGroup.table, TableUserGroup.columns),
-    TableFields(TableTopic.table, TableTopic.columns),
-    TableFields(TableAliasTopic.table, TableAliasTopic.columns)
-  ]);
-
   static String toJson(Map<String, Object?> map) => jsonEncode(map);
   static Map<String, Object?> fromJson(String json) {
     var obj = jsonDecode(json);
@@ -61,5 +46,17 @@ class Model {
       return await txn.query(table.table,
           columns: table.columns, limit: limit, offset: offset);
     });
+  }
+
+  static Future<int> count(TableFields table) async {
+    var col = 'ct';
+    var rows = await DB.execute((Transaction txn) async {
+      return await txn.query(table.table,
+          columns: ['count(*) AS $col'], limit: 1);
+    });
+    if (rows.isNotEmpty) {
+      return DB.parseInt(rows.first[col]);
+    }
+    return 0;
   }
 }

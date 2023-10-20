@@ -110,12 +110,13 @@ class DataBridge {
                   logger.warn(
                       'No successful Background GPS since ${dur.inSeconds} seconds. Try to restart Background GPS');
                   await BackgroundTracking.stopTracking();
-                  await Future.delayed(const Duration(seconds: 1),
+                  Future.delayed(const Duration(seconds: 1),
                       () => BackgroundTracking.startTracking());
                 } else {
                   //logger.log('last BackGround GPS before ${dur.inSeconds} seconds at ${AppSettings.backgroundLookupDuration.inSeconds} seconds interval');
                 }
               }
+              Cache.setValue<DateTime>(CacheKeys.backgroundLastTick, now);
             } catch (e, stk) {
               logger.error('check background is running $e', stk);
             }

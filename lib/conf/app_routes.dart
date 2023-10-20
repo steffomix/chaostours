@@ -33,6 +33,7 @@ import 'package:chaostours/view/widget_import_export.dart';
 import 'package:chaostours/view/widget_app_settings.dart';
 import 'package:chaostours/view/widget_manage_background_gps.dart';
 import 'package:chaostours/view/widget_manage_calendar.dart';
+import 'package:chaostours/view/database_explorer.dart';
 
 /// use value instead of name to get the right
 enum AppRoutes {
@@ -61,7 +62,8 @@ enum AppRoutes {
   welcome('/appInit'),
   logger('/logger'),
   permissions('/permissions'),
-  importExport('/importexport'),
+  importExport('/importExport'),
+  databaseExplorer('/databaseExplorer'),
   appSettings('/appsettings'),
   backgroundGps('/manageBackgroundGps');
 
@@ -99,6 +101,8 @@ enum AppRoutes {
       AppRoutes.logger.route: (context) => const WidgetLoggerPage(),
       AppRoutes.permissions.route: (context) => const WidgetPermissionsPage(),
       AppRoutes.importExport.route: (context) => const WidgetImportExport(),
+      AppRoutes.databaseExplorer.route: (context) =>
+          const WidgetDatabaseExplorer(),
       AppRoutes.appSettings.route: (context) => const WidgetAppSettings(),
       AppRoutes.backgroundGps.route: (context) =>
           const WidgetManageBackgroundGps()

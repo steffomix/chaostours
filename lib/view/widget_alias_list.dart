@@ -134,6 +134,7 @@ class _WidgetAliasList extends State<WidgetAliasList> {
         ),
       ],
     );
+
     return AppWidgets.scaffold(context,
         body: body,
         navBar: navBar(context),

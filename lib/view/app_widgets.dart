@@ -471,6 +471,13 @@ class _WidgetDrawer extends State<WidgetDrawer> {
                   },
                   child: const Text('Export / Import')),
 
+              ///
+              ElevatedButton(
+                  onPressed: () {
+                    AppWidgets.navigate(context, AppRoutes.databaseExplorer);
+                  },
+                  child: const Text('Database Explorer')),
+
               SizedBox(
                   height: boxHeight,
                   child: const Center(child: Text('\nColor Scheme'))),
