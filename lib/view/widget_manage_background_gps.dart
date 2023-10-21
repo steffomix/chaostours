@@ -165,7 +165,7 @@ class _WidgetManageBackgroundGpsState extends State<WidgetManageBackgroundGps> {
       AppWidgets.divider(),
       Text('Selected Calendar ID: ${bridge.selectedCalendarId}'),
       AppWidgets.divider(),
-      Text('Last Calendar Event ID: ${bridge.lastCalendarEventId}'),
+      Text('Last Calendar Event ID: ${bridge.lastCalendarEventIds}'),
       AppWidgets.divider(),
       Text('Current Tracking Status: ${bridge.trackingStatus.name}'),
       AppWidgets.divider(),

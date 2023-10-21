@@ -66,20 +66,6 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
   @override
   void initState() {
     super.initState();
-    getCalendarId();
-  }
-
-  Future<void> getCalendarId() async {
-    var appCalendar = AppCalendar();
-    var id = await Cache.getValue(CacheKeys.calendarSelectedId, '');
-    Calendar? calendar = await appCalendar.calendarById(id);
-    if (calendar != null) {
-      selectedCalendar =
-          '#${calendar.id}: ${calendar.name}\n<${calendar.accountName}>';
-    }
-    if (mounted) {
-      setState(() {});
-    }
   }
 
   @override
@@ -415,7 +401,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
               child: Text('\n\n\nKalender',
                   style: TextStyle(fontWeight: FontWeight.bold))),
           AppWidgets.divider(),
-
+/*
           Container(
               padding: const EdgeInsets.all(5),
               child: ListTile(
@@ -458,6 +444,8 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                       )))),
 
           AppWidgets.divider(),
+
+          */
           const Center(
               child: Text('\n\n\nGPS',
                   style: TextStyle(fontWeight: FontWeight.bold))),

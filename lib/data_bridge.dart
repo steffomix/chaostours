@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 import 'package:chaostours/cache.dart';
+import 'package:chaostours/calendar.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/address.dart';
@@ -40,7 +41,8 @@ class DataBridge {
         CacheKeys.cacheTriggerTrackingStatus, status);
   }
 
-  String lastCalendarEventId = '';
+  // list of serialized CalendarEventId
+  List<CalendarEventId> lastCalendarEventIds = [];
   String selectedCalendarId = '';
 
   ///
@@ -202,10 +204,8 @@ class DataBridge {
           CacheKeys.cacheBackgroundTrackPointUserNotes, '');
 
       /// calendar
-      lastCalendarEventId =
-          await Cache.getValue<String>(CacheKeys.calendarLastEventId, '');
-      selectedCalendarId =
-          await Cache.getValue<String>(CacheKeys.calendarSelectedId, '');
+      lastCalendarEventIds = await Cache.getValue<List<CalendarEventId>>(
+          CacheKeys.calendarLastEventIds, []);
     } catch (e, stk) {
       logger.error('loadBackgroundSession: $e', stk);
     }

@@ -426,8 +426,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         style: ButtonStyle(
             padding:
                 MaterialStateProperty.all<EdgeInsets>(const EdgeInsets.all(0))),
-        child: Text(
-            'ALIAS: (${location.visibility.name})\n${tp.currentAliasText}'),
+        child: Text('ALIAS: (${location.visibility.name})\n${tp.aliasText}'),
         onPressed: () async {
           if (_bridge.gpsPoints.isNotEmpty) {
             var gps = _bridge.gpsPoints.first;
@@ -526,8 +525,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
             alignment: Alignment.centerLeft,
             padding: MaterialStateProperty.all<EdgeInsets>(
                 const EdgeInsets.fromLTRB(30, 0, 20, 0))),
-        child: Text(
-            'ALIAS (${location.visibility.name}):\n${tp.currentAliasText}'),
+        child: Text('ALIAS (${location.visibility.name}):\n${tp.aliasText}'),
         onPressed: () async {
           if (_bridge.calcGpsPoints.isNotEmpty) {
             _bridge.currentAliasIdList = await Cache.setValue<List<int>>(

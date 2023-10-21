@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/calendar.dart';
 import 'package:chaostours/database.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_alias.dart';
@@ -47,7 +48,7 @@ class ModelTrackPoint {
   ///
   String address = '';
   String notes = '';
-  String calendarEventId = ''; // calendarId;calendarEventId
+  List<CalendarEventId> calendarEventIds = []; // calendarId;calendarEventId
 
   /// real ID<br>
   /// Is set only once during save to disk
@@ -62,7 +63,7 @@ class ModelTrackPoint {
       required this.gps,
       this.address = '',
       this.notes = '',
-      this.calendarEventId = ''});
+      this.calendarEventIds = const []});
 
   String timeElapsed() {
     return util.timeElapsed(timeStart, timeEnd);

@@ -42,8 +42,8 @@ class _WidgetManageCalendarState extends State<WidgetManageCalendar> {
   }
 
   Future<List<Calendar>> loadCalendars() async {
-    var id = await Cache.getValue(CacheKeys.calendarSelectedId, '');
-    selectedCalendar = await appCalendar.calendarById(id);
+    //var id = await Cache.getValue(CacheKeys.calendarSelectedId, '');
+    //selectedCalendar = await appCalendar.calendarById(id);
     return await appCalendar.loadCalendars();
   }
 
@@ -102,9 +102,11 @@ class _WidgetManageCalendarState extends State<WidgetManageCalendar> {
                         title: Text(cal.name ?? 'Calendar $index'),
                         subtitle: Text(cal.accountName ?? 'Unknown account'),
                         onTap: (() async {
+                          /*
                           await Cache.setValue<String>(
                               CacheKeys.calendarSelectedId, cal.id ?? '');
                           selectedCalendar = cal;
+                          */
                           Fluttertoast.showToast(msg: 'Calendar selected');
                           if (mounted) {
                             setState(() {});

@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/calendar.dart';
 import 'package:chaostours/data_bridge.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_alias.dart';
@@ -32,12 +33,11 @@ class TrackPointData {
   final GPS gps;
   final DateTime timeStart;
   DateTime get timeEnd => DateTime.now();
-  final List<ModelAlias> currentAliasModels;
   final List<ModelAlias> aliasModels;
-  final ModelAliasGroup? aliasGroupModel;
+  final List<ModelAliasGroup> aliasGroupModels;
   final List<ModelUser> userModels;
   final List<ModelTask> taskModels;
-  final String calendarEventId;
+  final List<CalendarEventId> calendarEventIds;
   final String addressText;
 
   GPS get gpslastStatusChange => bridge.trackPointGpslastStatusChange ?? gps;
@@ -76,18 +76,12 @@ class TrackPointData {
   }
 
   List<int> get aliasIds => aliasModels.map((e) => e.id).toList();
-  List<int> get currentAliasIds => currentAliasModels.map((e) => e.id).toList();
   List<int> get taskIds => taskModels.map((e) => e.id).toList();
   List<int> get userIds => userModels.map((e) => e.id).toList();
 
   String get aliasText => aliasModels.isEmpty
       ? ' ---'
       : '--> ${aliasModels.map((e) {
-            return e.title;
-          }).toList().join('\n- ')}';
-  String get currentAliasText => currentAliasModels.isEmpty
-      ? ' ---'
-      : '--> ${currentAliasModels.map((e) {
             return e.title;
           }).toList().join('\n- ')}';
 
@@ -114,7 +108,13 @@ class TrackPointData {
 
   Duration get duration => timeDifference(timeStart, timeEnd);
 
-  String get calendarId => aliasGroupModel?.idCalendar ?? '';
+  List<CalendarEventId> get calendarIds {
+    var list = <CalendarEventId>[];
+    for (var model in aliasGroupModels) {
+      list.add(CalendarEventId(calendarId: model.idCalendar));
+    }
+    return list;
+  }
 
   /// defaults to data from DataBridge
   static Future<TrackPointData> trackPointData(
@@ -134,10 +134,6 @@ class TrackPointData {
     List<int> aliasIds = trackPoint?.aliasIds ?? bridge.trackPointAliasIdList;
     List<ModelAlias> aliasModels = await ModelAlias.byIdList(aliasIds);
 
-    List<int> currentAliasIds = bridge.currentAliasIdList;
-    List<ModelAlias> currentAliasModels =
-        await ModelAlias.byIdList(currentAliasIds);
-
     List<int> taskIds = trackPoint?.taskIds ?? bridge.trackPointTaskIdList;
     List<ModelTask> taskModels = await ModelTask.byIdList(taskIds);
 
@@ -146,35 +142,35 @@ class TrackPointData {
 
     String addressText = trackPoint?.address ?? bridge.currentAddress;
 
-    String calendarEventId =
-        (trackPoint?.calendarEventId ?? bridge.lastCalendarEventId);
+    List<CalendarEventId> calendarEventIds =
+        (trackPoint?.calendarEventIds ?? bridge.lastCalendarEventIds);
 
-    ModelAliasGroup? aliasGroupModel = await ModelAliasGroup.byId(
-        aliasModels.isNotEmpty
-            ? aliasModels.first.groupId
-            : AppSettings.defaultAliasGroupId);
+    List<ModelAliasGroup> aliasGroupModels =
+        await ModelAliasGroup.byIdList(aliasModels
+            .map(
+              (e) => e.groupId,
+            )
+            .toList());
 
     return TrackPointData(
         gps: gps,
         timeStart: tStart,
         aliasModels: aliasModels,
-        currentAliasModels: currentAliasModels,
-        aliasGroupModel: aliasGroupModel,
+        aliasGroupModels: aliasGroupModels,
         taskModels: taskModels,
         userModels: userModels,
         addressText: addressText,
-        calendarEventId: calendarEventId);
+        calendarEventIds: calendarEventIds);
   }
 
   TrackPointData(
       {required this.gps,
       required this.timeStart,
       required this.aliasModels,
-      required this.currentAliasModels,
-      required this.aliasGroupModel,
+      required this.aliasGroupModels,
       required this.userModels,
       required this.taskModels,
       required this.addressText,
-      required this.calendarEventId,
+      required this.calendarEventIds,
       this.trackPoint});
 }

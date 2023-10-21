@@ -63,7 +63,8 @@ class DB {
                     var batch = txn.batch();
                     for (var sql in [
                       ...DatabaseSchema.schemata,
-                      ...DatabaseSchema.indexes
+                      ...DatabaseSchema.indexes,
+                      ...DatabaseSchema.inserts
                     ]) {
                       batch.rawQuery(sql);
                     }
@@ -85,17 +86,19 @@ class DB {
   /// </pre>
   static Future<T> execute<T>(
       Future<T> Function(flite.Transaction txn) action) async {
-    var stk = StackTrace.current;
-    try {
-      if (_database == null) {
-        throw 'no database set';
-      }
-      T result = await _database!.transaction<T>(action);
-      return result;
-    } catch (e) {
+    // var stk = StackTrace.current;
+    //try {
+    if (_database == null) {
+      throw 'no database set';
+    }
+    T result = await _database!.transaction<T>(action);
+    return result;
+    /*
+    } catch (e, stk2) {
       logger.error('DB::execute: $e', stk);
       rethrow;
     }
+    */
   }
 
   static int parseInt(Object? value, {int fallback = 0}) {
@@ -214,7 +217,7 @@ enum TableTrackPointAlias {
   final String column;
   const TableTrackPointAlias(this.column);
 
-  static String get schema => '''CREATE TABLE IF NOT EXISTS "trackpoint_alias" (
+  static String get schema => '''CREATE TABLE IF NOT EXISTS "$table" (
 	"${idTrackPoint.column}"	INTEGER NOT NULL,
 	"${idAlias.column}"	INTEGER NOT NULL
 );''';
@@ -237,7 +240,7 @@ enum TableTrackPointTask {
   final String column;
   const TableTrackPointTask(this.column);
 
-  static String get schema => '''CREATE TABLE IF NOT EXISTS "trackpoint_task" (
+  static String get schema => '''CREATE TABLE IF NOT EXISTS "$table" (
 	"${idTrackPoint.column}"	INTEGER NOT NULL,
 	"${idTask.column}"	INTEGER NOT NULL
 );''';
@@ -260,9 +263,78 @@ enum TableTrackPointUser {
   final String column;
   const TableTrackPointUser(this.column);
 
-  static String get schema => '''CREATE TABLE IF NOT EXISTS "trackpoint_user" (
+  static String get schema => '''CREATE TABLE IF NOT EXISTS "$table" (
 	"${idTrackPoint.column}"	INTEGER NOT NULL,
 	"${idUser.column}"	INTEGER NOT NULL
+);''';
+
+  @override
+  String toString() {
+    return '$table.$column';
+  }
+}
+
+enum TableAliasAliasGroup {
+  idAlias('id_alias'),
+  idAliasGroup('id_alias_group');
+
+  static const String table = 'alias_alias_group';
+
+  static List<String> get columns =>
+      TableAliasAliasGroup.values.map((e) => e.toString()).toList();
+
+  final String column;
+  const TableAliasAliasGroup(this.column);
+
+  static String get schema => '''CREATE TABLE IF NOT EXISTS "$table" (
+	"${idAlias.column}"	INTEGER NOT NULL,
+	"${idAliasGroup.column}"	INTEGER NOT NULL
+);''';
+
+  @override
+  String toString() {
+    return '$table.$column';
+  }
+}
+
+enum TableUserUserGroup {
+  idUser('id_user'),
+  idUserGroup('id_user_group');
+
+  static const String table = 'user_user_group';
+
+  static List<String> get columns =>
+      TableUserUserGroup.values.map((e) => e.toString()).toList();
+
+  final String column;
+  const TableUserUserGroup(this.column);
+
+  static String get schema => '''CREATE TABLE IF NOT EXISTS "$table" (
+	"${idUser.column}"	INTEGER NOT NULL,
+	"${idUserGroup.column}"	INTEGER NOT NULL
+);''';
+
+  @override
+  String toString() {
+    return '$table.$column';
+  }
+}
+
+enum TableTaskTaskGroup {
+  idTask('id_task'),
+  idTaskGroup('id_task_group');
+
+  static const String table = 'task_task_group';
+
+  static List<String> get columns =>
+      TableTaskTaskGroup.values.map((e) => e.toString()).toList();
+
+  final String column;
+  const TableTaskTaskGroup(this.column);
+
+  static String get schema => '''CREATE TABLE IF NOT EXISTS "$table" (
+	"${idTask.column}"	INTEGER NOT NULL,
+	"${idTaskGroup.column}"	INTEGER NOT NULL
 );''';
 
   @override
@@ -398,7 +470,6 @@ enum TableUser {
 enum TableTaskGroup {
   id('id'),
   isActive('active'),
-  visibility('visibility'),
   sortOrder('sort'),
   title('title'),
   description('description');
@@ -418,7 +489,6 @@ enum TableTaskGroup {
   static String get schema => '''CREATE TABLE IF NOT EXISTS "$table" (
 	"${primaryKey.column}"	INTEGER NOT NULL,
 	"${isActive.column}"	INTEGER,
-	"${visibility.column}"	INTEGER,
 	"${sortOrder.column}"	INTEGER,
 	"${title.column}"	TEXT NOT NULL,
 	"${description.column}"	TEXT,
@@ -560,18 +630,26 @@ enum TableAliasGroup {
 
 class TableFields {
   static final List<TableFields> tables = List.unmodifiable([
+    // alias
     TableFields(TableAlias.table, TableAlias.columns),
+    TableFields(TableAliasAliasGroup.table, TableAliasAliasGroup.columns),
+    TableFields(TableAliasGroup.table, TableAliasGroup.columns),
+    // alias topic
+    TableFields(TableTopic.table, TableTopic.columns),
+    TableFields(TableAliasTopic.table, TableAliasTopic.columns),
+    // trackpoint
     TableFields(TableTrackPoint.table, TableTrackPoint.columns),
     TableFields(TableTrackPointAlias.table, TableTrackPointAlias.columns),
     TableFields(TableTrackPointTask.table, TableTrackPointTask.columns),
     TableFields(TableTrackPointUser.table, TableTrackPointUser.columns),
+    // task
     TableFields(TableTask.table, TableTask.columns),
-    TableFields(TableUser.table, TableUser.columns),
+    TableFields(TableTaskTaskGroup.table, TableTaskTaskGroup.columns),
     TableFields(TableTaskGroup.table, TableTaskGroup.columns),
-    TableFields(TableAliasGroup.table, TableAliasGroup.columns),
+    // user
+    TableFields(TableUser.table, TableUser.columns),
+    TableFields(TableUserUserGroup.table, TableUserUserGroup.columns),
     TableFields(TableUserGroup.table, TableUserGroup.columns),
-    TableFields(TableTopic.table, TableTopic.columns),
-    TableFields(TableAliasTopic.table, TableAliasTopic.columns)
   ]);
   final String table;
   final List<String> _columns = [];
@@ -596,284 +674,47 @@ class DatabaseSchema {
     TableUserGroup.schema,
     TableTopic.schema,
     TableAliasTopic.schema,
+    TableAliasAliasGroup.schema,
+    TableUserUserGroup.schema,
+    TableTaskTaskGroup.schema
   ];
 
   static final List<String> indexes = [
     '''
+CREATE INDEX IF NOT EXISTS "${TableTrackPointAlias.table}_index" ON "${TableTrackPointAlias.table}" (
+	"${TableTrackPointAlias.idAlias}"	ASC,
+	"${TableTrackPointAlias.idTrackPoint}" ASC
+);''',
+    '''
 CREATE INDEX IF NOT EXISTS "${TableTrackPoint.table}_gps" ON "${TableTrackPoint.table}" (
 	"${TableTrackPoint.latitude}"	ASC,
-	"${TableTrackPoint.longitude}"	ASC
+	"${TableTrackPoint.longitude}" ASC
 );''',
     '''
 CREATE INDEX IF NOT EXISTS "${TableAlias.table}_gps" ON "${TableAlias.table}" (
-	"${TableAlias.latitude}"	ASC,
+	"${TableAlias.latitude}" ASC,
 	"${TableAlias.longitude}"	ASC
+)''',
+    '''
+CREATE INDEX IF NOT EXISTS "${TableAliasAliasGroup.table}_index" ON "${TableAliasAliasGroup.table}" (
+	"${TableAliasAliasGroup.idAliasGroup}" ASC,
+	"${TableAliasAliasGroup.idAlias}"	ASC
+)''',
+    '''
+CREATE INDEX IF NOT EXISTS "${TableUserUserGroup.table}_index" ON "${TableUserUserGroup.table}" (
+	"${TableUserUserGroup.idUserGroup}" ASC,
+	"${TableUserUserGroup.idUser}"	ASC
+)''',
+    '''
+CREATE INDEX IF NOT EXISTS "${TableTaskTaskGroup.table}_index" ON "${TableTaskTaskGroup.table}" (
+	"${TableTaskTaskGroup.idTaskGroup}" ASC,
+	"${TableTaskTaskGroup.idTask}"	ASC
 )'''
   ];
 
   static final List<String> inserts = [
     '''INSERT INTO "${TableTaskGroup.table}" VALUES (1,1,1,"Default Taskgroup",NULL)''',
     '''INSERT INTO "${TableUserGroup.table}" VALUES (1,1,1,"Default Usergroup",NULL)''',
-    '''INSERT INTO "${TableAliasGroup.table}" VALUES (1,1,1,"Default Aliasgroup",NULL)''',
+    '''INSERT INTO "${TableAliasGroup.table}" VALUES (1,"",1,1,"Default Aliasgroup",NULL)''',
   ];
 }
-
-List<String> dbSchemaVersion1 = [
-  '''
-CREATE TABLE IF NOT EXISTS "trackpoint" (
-	"id"	INTEGER NOT NULL,
-	"latitude"	NUMERIC NOT NULL,
-	"longitude"	NUMERIC NOT NULL,
-	"datetime_start"	TEXT NOT NULL,
-	"datetime_end"	TEXT NOT NULL,
-	"address"	TEXT,
-	PRIMARY KEY("id" AUTOINCREMENT)
-)''',
-  '''
-CREATE TABLE IF NOT EXISTS "trackpoint_alias" (
-	"id_trackpoint"	INTEGER NOT NULL,
-	"id_alias"	INTEGER NOT NULL
-)''',
-  '''
-CREATE TABLE IF NOT EXISTS "trackpoint_task" (
-	"id_trackpoint"	INTEGER NOT NULL,
-	"id_task"	INTEGER NOT NULL
-)''',
-  '''
-CREATE TABLE IF NOT EXISTS "trackpoint_user" (
-	"id_trackpoint"	INTEGER NOT NULL,
-	"id_user"	INTEGER NOT NULL
-)''',
-  '''
-CREATE TABLE IF NOT EXISTS "task" (
-	"id"	INTEGER NOT NULL,
-	"id_task_group"	INTEGER NOT NULL DEFAULT 1,
-	"active"	INTEGER DEFAULT 1,
-	"sort"	INTEGER DEFAULT 1,
-	"title"	TEXT NOT NULL,
-	"description"	TEXT NOT NULL,
-	PRIMARY KEY("id" AUTOINCREMENT)
-)''',
-  '''
-CREATE TABLE IF NOT EXISTS "alias" (
-	"id"	INTEGER NOT NULL,
-	"id_alias_group"	INTEGER NOT NULL,
-	"active"	INTEGER,
-	"visibilty"	INTEGER,
-	"latitude"	NUMERIC NOT NULL,
-	"longitude"	NUMERIC NOT NULL,
-	"title"	TEXT NOT NULL,
-	"description"	TEXT,
-	PRIMARY KEY("id" AUTOINCREMENT)
-)''',
-  '''
-CREATE TABLE IF NOT EXISTS "user" (
-	"id"	INTEGER NOT NULL,
-	"id_user_group"	INTEGER NOT NULL,
-	"active"	INTEGER,
-	"sort"	INTEGER,
-	"phone"	TEXT,
-	"address"	TEXT,
-	"title"	TEXT NOT NULL,
-	"description"	TEXT,
-	PRIMARY KEY("id" AUTOINCREMENT)
-)''',
-  '''
-CREATE TABLE IF NOT EXISTS "task_group" (
-	"id"	INTEGER NOT NULL,
-	"active"	INTEGER,
-	"sort"	INTEGER,
-	"title"	INTEGER,
-	"description"	INTEGER,
-	PRIMARY KEY("id" AUTOINCREMENT)
-)''',
-  '''
-CREATE TABLE IF NOT EXISTS "user_group" (
-	"id"	INTEGER NOT NULL,
-	"active"	INTEGER,
-	"sort"	INTEGER,
-	"title"	TEXT NOT NULL,
-	"description"	TEXT,
-	PRIMARY KEY("id" AUTOINCREMENT)
-)''',
-  '''
-CREATE TABLE IF NOT EXISTS "alias_topic" (
-	"id_alias"	INTEGER,
-	"id_topic"	INTEGER
-)''',
-  '''
-CREATE TABLE IF NOT EXISTS "topic" (
-	"id"	INTEGER NOT NULL,
-	"sort"	INTEGER,
-	"title"	TEXT NOT NULL UNIQUE,
-	"description"	INTEGER,
-	PRIMARY KEY("id" AUTOINCREMENT)
-)''',
-  '''
-CREATE TABLE IF NOT EXISTS "alias_group" (
-	"id"	INTEGER NOT NULL,
-	"active"	INTEGER,
-	"visibility"	INTEGER,
-	"title"	TEXT NOT NULL,
-	"description"	TEXT,
-	PRIMARY KEY("id" AUTOINCREMENT)
-)''',
-  '''
-INSERT INTO "task_group" VALUES (1,1,1,"Default Taskgroup",NULL)''',
-  '''
-INSERT INTO "user_group" VALUES (1,1,1,"Default Usergroup",NULL)''',
-  '''
-INSERT INTO "alias_group" VALUES (1,1,1,"Default Aliasgroup",NULL)''',
-  '''
-CREATE INDEX IF NOT EXISTS "trackpoint_latitude_longitude" ON "trackpoint" (
-	"latitude"	ASC,
-	"longitude"	ASC
-)''',
-  '''
-CREATE INDEX IF NOT EXISTS "alias_latitude_longitude" ON "alias" (
-	"latitude"	ASC,
-	"longitude"	ASC
-)'''
-];
-
-/*
-
-/// old tsv to sql
-
-Future<String> trackpointToSql() async {
-  await Cache.reload();
-  await ModelTrackPoint.open();
-  List<String> sql = [];
-  for (var model in ModelTrackPoint.getAll()) {
-    var id = model.id.toString();
-    var lat = model.gps.lat.toString();
-    var lon = model.gps.lon.toString();
-    var start =
-        (model.timeStart.millisecondsSinceEpoch / 1000).round().toString();
-    var end = (model.timeEnd.millisecondsSinceEpoch / 1000).round().toString();
-    var address = model.address.replaceAll(RegExp('"'), '""');
-    sql.add('("${<String>[id, lat, lon, start, end, address].join('","')}")');
-  }
-
-  return 'INSERT INTO "trackpoint" VALUES ${sql.join(',\n')};';
-}
-
-Future<String> aliasToSql() async {
-  await Cache.reload();
-  await ModelAlias.open();
-  List<String> sql = [];
-  for (var model in ModelAlias.getAll()) {
-    var id = model.id.toString();
-    var group = '0';
-    var active = !model.deleted ? '1' : '0';
-    var status = '0';
-    var lat = model.lat.toString();
-    var lon = model.lon.toString();
-    var title = model.title.replaceAll(RegExp('"'), '""');
-    var description = model.notes.replaceAll(RegExp('"'), '""');
-    sql.add('("${<String>[
-      id,
-      group,
-      active,
-      status,
-      lat,
-      lon,
-      title,
-      description
-    ].join('","')}")');
-  }
-  return 'INSERT INTO "alias" VALUES ${sql.join(',\n')};';
-}
-
-Future<String> userToSql() async {
-  await Cache.reload();
-  await ModelUser.open();
-  List<String> sql = [];
-  for (var model in ModelUser.getAll()) {
-    var id = model.id.toString();
-    var group = '1';
-    var active = !model.deleted ? '1' : '0';
-    var sort = model.sortOrder.toString();
-    var phone = '';
-    var address = '';
-    var title = model.title.replaceAll(RegExp('"'), '""');
-    var description = model.notes.replaceAll(RegExp('"'), '""');
-
-    sql.add('("${<String>[
-      id,
-      group,
-      active,
-      sort,
-      phone,
-      address,
-      title,
-      description
-    ].join('","')}")');
-  }
-  return 'INSERT INTO "user" VALUES ${sql.join(',\n')};';
-}
-
-Future<String> taskToSql() async {
-  await Cache.reload();
-  await ModelTask.open();
-  List<String> sql = [];
-  for (var model in ModelTask.getAll()) {
-    var id = model.id.toString();
-    var group = '1';
-    var active = !model.deleted ? '1' : '0';
-    var sort = model.sortOrder.toString();
-    var title = model.title.replaceAll(RegExp('"'), '""');
-    var description = model.notes.replaceAll(RegExp('"'), '""');
-
-    sql.add('("${<String>[
-      id,
-      group,
-      active,
-      sort,
-      title,
-      description
-    ].join('","')}")');
-  }
-  return 'INSERT INTO "task" VALUES ${sql.join(',\n')};';
-}
-
-Future<String> trackPointAliasToSql() async {
-  await Cache.reload();
-  await ModelTrackPoint.open();
-  List<String> sql = [];
-  for (var model in ModelTrackPoint.getAll()) {
-    var tp = model.id;
-    for (var id in model.idAlias) {
-      sql.add('($tp,$id)');
-    }
-  }
-  return 'INSERT INTO "trackpoint_alias" VALUES ${sql.join(',\n')};';
-}
-
-Future<String> trackPointTaskToSql() async {
-  await Cache.reload();
-  await ModelTrackPoint.open();
-  List<String> sql = [];
-  for (var model in ModelTrackPoint.getAll()) {
-    var tp = model.id;
-    for (var id in model.idTask) {
-      sql.add('($tp,$id)');
-    }
-  }
-  return 'INSERT INTO "trackpoint_task" VALUES ${sql.join(',\n')};';
-}
-
-Future<String> trackPointUserToSql() async {
-  await Cache.reload();
-  await ModelTrackPoint.open();
-  List<String> sql = [];
-  for (var model in ModelTrackPoint.getAll()) {
-    var tp = model.id;
-    for (var id in model.idUser) {
-      sql.add('($tp,$id)');
-    }
-  }
-  return 'INSERT INTO "trackpoint_user" VALUES ${sql.join(',\n')};';
-}
-
-*/

@@ -376,7 +376,7 @@ class _TrackPoint {
                 gps: gps,
                 timeStart: bridge.trackPointGpsStartStanding?.time ?? gps.time,
                 timeEnd: gps.time,
-                calendarEventId: bridge.lastCalendarEventId,
+                calendarEventIds: bridge.lastCalendarEventIds,
                 address: bridge.lastStandingAddress,
                 notes: bridge.trackPointUserNotes);
             newTrackPoint.aliasIds = bridge.trackPointAliasIdList;
@@ -392,10 +392,11 @@ class _TrackPoint {
                 (!AppSettings.statusStandingRequireAlias ||
                     (AppSettings.statusStandingRequireAlias &&
                         tpData.aliasModels.isNotEmpty))) {
-              logger.log('complete calendar event');
-              String? eventId =
-                  await AppCalendar().completeCalendarEvent(tpData);
-              newTrackPoint.calendarEventId = eventId ?? '';
+              try {
+                await AppCalendar().completeCalendarEvent(tpData);
+              } catch (e, stk) {
+                logger.error('completeCalendarEvent; $e', stk);
+              }
             }
 
             /// calendar eventId may have changed
@@ -404,8 +405,9 @@ class _TrackPoint {
             await ModelTrackPoint.insert(newTrackPoint);
 
             /// reset calendarEvent ID
-            bridge.lastCalendarEventId =
-                await Cache.setValue<String>(CacheKeys.calendarLastEventId, '');
+            bridge.lastCalendarEventIds =
+                await Cache.setValue<List<CalendarEventId>>(
+                    CacheKeys.calendarLastEventIds, []);
 
             /// update alias
             if (gpsLocation.hasAlias) {
@@ -450,12 +452,12 @@ class _TrackPoint {
                   (AppSettings.statusStandingRequireAlias &&
                       gpsLocation.hasAlias))) {
             logger.log('create new calendar event');
-            String? id = await AppCalendar()
-                .startCalendarEvent(await TrackPointData.trackPointData());
-
-            /// cache event id
-            bridge.lastCalendarEventId = await Cache.setValue<String>(
-                CacheKeys.calendarLastEventId, id ?? '');
+            try {
+              await AppCalendar()
+                  .startCalendarEvent(await TrackPointData.trackPointData());
+            } catch (e, stk) {
+              logger.error('startCalendarEvent: $e', stk);
+            }
           }
           logger.log('tracking status STANDING finished');
         }

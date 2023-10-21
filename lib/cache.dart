@@ -21,6 +21,7 @@ import 'package:chaostours/logger.dart';
 import 'package:chaostours/conf/osm.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/tracking.dart';
+import 'package:chaostours/calendar.dart';
 import 'package:chaostours/model/model.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_alias.dart';
@@ -83,9 +84,8 @@ enum CacheKeys {
   /// eventCalendar
   /// "id\tname\taccount"
   ///
-  calendarLastEventId(String),
+  calendarLastEventIds(List<CalendarEventId>),
   calendarPublishStatusEnabled(bool),
-  calendarSelectedId(String),
 
   /// globals
   globalsWeekDays(List<String>),
@@ -148,10 +148,11 @@ class Cache {
   static Duration? deserializeDuration(int? seconds) =>
       seconds == null ? null : Duration(seconds: seconds);
 
-  /// pending gps list
-  static List<String> serializePendingGpsList(List<GPS> gpsList) {
-    return gpsList.map((e) => e.toString()).toList();
-  }
+  /// CalendarEventId
+  static List<String> serializeCalendarEventId(List<CalendarEventId> ids) =>
+      ids.map((e) => e.toString()).toList();
+  static List<CalendarEventId> deserializeCalendarEventId(List<String>? ids) =>
+      ids == null ? [] : ids.map((s) => CalendarEventId.toObject(s)).toList();
 
   /// gps list
   static List<String> serializeGpsList(List<GPS> gpsList) {
@@ -269,6 +270,10 @@ class Cache {
         case Duration:
           await prefs.setInt(key, serializeDuration(value as Duration));
           break;
+        case const (List<CalendarEventId>):
+          await prefs.setStringList(
+              key, serializeCalendarEventId(value as List<CalendarEventId>));
+          break;
         case const (List<LoggerLog>):
           await prefs.setStringList(
               key, serializeLoggerLog(value as List<LoggerLog>));
@@ -375,6 +380,9 @@ class Cache {
               defaultValue;
         case DateTime:
           return deserializeDateTime(prefs.getString(key)) as T? ??
+              defaultValue;
+        case const (List<CalendarEventId>):
+          return deserializeCalendarEventId(prefs.getStringList(key)) as T? ??
               defaultValue;
         case GPS:
           return deserializeGps(prefs.getString(key)) as T? ?? defaultValue;

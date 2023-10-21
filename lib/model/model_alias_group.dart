@@ -97,7 +97,7 @@ class ModelAliasGroup {
         return await txn.query(TableAliasGroup.table,
             columns: TableAliasGroup.columns,
             where:
-                '${TableAliasGroup.primaryKey.column} IN ${List.filled(ids.length, '?').join(', ')}',
+                '${TableAliasGroup.primaryKey.column} IN (${List.filled(ids.length, '?').join(', ')})',
             whereArgs: ids);
       },
     );

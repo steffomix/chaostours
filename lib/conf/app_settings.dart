@@ -75,6 +75,8 @@ class AppSettings {
 
   static List<String> weekDays = _weekDaysDefault;
 
+  static String timeZone = 'Europe/Berlin';
+
   /// user edit settings.
   /// All setting names must match enum AppSettings values in app_settings.dart
   /// if backgroundTracking is enabled and starts automatic
