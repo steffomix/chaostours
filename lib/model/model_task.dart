@@ -200,6 +200,15 @@ class ModelTask {
     return count;
   }
 
+  static Future<void> resetSortOrder() async {
+    await DB.execute(
+      (Transaction txn) async {
+        await txn.rawQuery(
+            'UPDATE ${TableTask.table} SET ${TableTask.sortOrder.column} = ${TableTask.primaryKey.column} WHERE 1');
+      },
+    );
+  }
+
   ModelTask clone() {
     return fromMap(toMap());
   }

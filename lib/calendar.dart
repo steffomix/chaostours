@@ -26,7 +26,6 @@ class AppCalendar {
   static final Logger logger = Logger.logger<AppCalendar>();
 
   final DeviceCalendarPlugin _deviceCalendarPlugin = DeviceCalendarPlugin();
-  final List<Calendar> calendars = [];
   final bridge = DataBridge.instance;
 
   Future<String?> inserOrUpdate(Event e) async {
@@ -41,7 +40,8 @@ class AppCalendar {
     return events.data ?? <Event>[];
   }
 
-  Future<void> _retrieveCalendars() async {
+  Future<List<Calendar>> loadCalendars() async {
+    var calendars = <Calendar>[];
     try {
       var permissionsGranted = await _deviceCalendarPlugin.hasPermissions();
       if (permissionsGranted.isSuccess &&
@@ -51,7 +51,9 @@ class AppCalendar {
         if (!permissionsGranted.isSuccess ||
             permissionsGranted.data == null ||
             permissionsGranted.data == false) {
-          return;
+          var msg = 'No Calendar access permission granted by User';
+          logger.fatal(msg, StackTrace.current);
+          throw msg;
         }
       }
 
@@ -66,16 +68,17 @@ class AppCalendar {
       }
       var data = calendarsResult.data;
       if (data != null) {
-        calendars.clear();
         calendars.addAll(data);
       }
     } catch (e, stk) {
       logger.error('retrieve calendars: $e', stk);
     }
+
+    return calendars;
   }
 
   Future<Calendar?> calendarById(String id) async {
-    await _retrieveCalendars();
+    var calendars = await loadCalendars();
     try {
       for (var c in calendars) {
         if (c.id == id) {
@@ -90,7 +93,7 @@ class AppCalendar {
 
   Future<String?> startCalendarEvent(TrackPointData tpData) async {
     try {
-      await _retrieveCalendars();
+      var calendars = await loadCalendars();
       if (calendars.isNotEmpty) {
         /// get dates
         final berlin = getLocation('Europe/Berlin');
@@ -135,7 +138,7 @@ class AppCalendar {
 
   Future<String?> completeCalendarEvent(TrackPointData tpData) async {
     try {
-      await _retrieveCalendars();
+      var calendars = await loadCalendars();
       if (calendars.isNotEmpty) {
         /// get dates
         final berlin = getLocation('Europe/Berlin');

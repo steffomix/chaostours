@@ -57,6 +57,7 @@ class _WidgetUserList extends State<WidgetUserList> {
   void initState() {
     _selectDeleted.addListener(render);
     _pagingController.addPageRequestListener(_fetchPage);
+    // ModelUser.resetSortOrder();
     super.initState();
   }
 
@@ -147,38 +148,24 @@ class _WidgetUserList extends State<WidgetUserList> {
             onPressed: () async {
               if (index < models.length - 1) {
                 models[index + 1].sortOrder--;
-                await models[index + 1].update();
                 model.sortOrder++;
                 await model.update();
+                await models[index + 1].update();
                 _pagingController.refresh();
                 render();
               }
-              model.update().then((_) {
-                models[index + 1].update().then(
-                      (value) => render(),
-                    );
-              });
             }),
         trailing: IconButton(
           icon: const Icon(Icons.arrow_upward),
           onPressed: () async {
             if (index > 0) {
-              try {
-                models[index - 1].sortOrder++;
-                await models[index - 1].update();
-                model.sortOrder--;
-                await model.update();
-                _pagingController.refresh();
-                render();
-              } catch (e) {
-                logger.warn('sort index out of bounds');
-              }
+              models[index - 1].sortOrder++;
+              model.sortOrder--;
+              await model.update();
+              await models[index - 1].update();
+              _pagingController.refresh();
+              render();
             }
-            model.update().then((_) {
-              models[index - 1].update().then(
-                    (value) => render(),
-                  );
-            });
           },
         ),
         title: Text(model.title,
@@ -223,8 +210,11 @@ class _WidgetUserList extends State<WidgetUserList> {
         navBar: BottomNavigationBar(
             type: BottomNavigationBarType.fixed,
             items: [
-              const BottomNavigationBarItem(
-                  icon: Icon(Icons.add), label: 'Neu'),
+              _displayMode == _DisplayMode.list
+                  ? const BottomNavigationBarItem(
+                      icon: Icon(Icons.add), label: 'Neu')
+                  : const BottomNavigationBarItem(
+                      icon: Icon(Icons.clear), label: 'Reset'),
               _displayMode == _DisplayMode.list
                   ? const BottomNavigationBarItem(
                       icon: Icon(Icons.sort), label: 'Sortieren')
@@ -243,19 +233,27 @@ class _WidgetUserList extends State<WidgetUserList> {
             onTap: (int id) {
               switch (id) {
                 case 0:
-                  ModelUser.insert(ModelUser()).then(
-                    (model) {
-                      Fluttertoast.showToast(msg: 'Item #${model.id} created');
-                      Navigator.pushNamed(context, AppRoutes.editUser.route,
-                              arguments: model.id)
-                          .then(
-                        (value) {
-                          _pagingController.refresh();
-                          render();
-                        },
-                      );
-                    },
-                  );
+                  if (_displayMode == _DisplayMode.sort) {
+                    ModelUser.resetSortOrder().then((value) {
+                      _pagingController.refresh();
+                      render();
+                    });
+                  } else {
+                    ModelUser.insert(ModelUser()).then(
+                      (model) {
+                        Fluttertoast.showToast(
+                            msg: 'Item #${model.id} created');
+                        Navigator.pushNamed(context, AppRoutes.editUser.route,
+                                arguments: model.id)
+                            .then(
+                          (value) {
+                            _pagingController.refresh();
+                            render();
+                          },
+                        );
+                      },
+                    );
+                  }
                   break;
 
                 case 1:

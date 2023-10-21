@@ -147,8 +147,9 @@ class ModelTrackPoint {
   static Future<ModelTrackPoint> insert(ModelTrackPoint model) async {
     var map = model.toMap();
     map.removeWhere((key, value) => key == TableTrackPoint.primaryKey.column);
-    int id = await DB.execute<int>((Transaction txn) async {
-      int count = await txn.insert(TableTrackPoint.table, map);
+    await DB.execute<int>((Transaction txn) async {
+      int newId = await txn.insert(TableTrackPoint.table, map);
+      model._id = newId;
       for (var id in model.aliasIds) {
         try {
           await txn.insert(TableTrackPointAlias.table, {
@@ -179,9 +180,8 @@ class ModelTrackPoint {
           logger.error('insert idUser: $e', stk);
         }
       }
-      return count;
+      return newId;
     });
-    model._id = id;
     return model;
   }
 

@@ -41,18 +41,46 @@ class Model {
   }
 
   static Future<List<Map<String, Object?>>> select(TableFields table,
-      {int limit = 50, int offset = 0}) async {
+      {int limit = 50, int offset = 0, String search = ''}) async {
     return await DB.execute((Transaction txn) async {
-      return await txn.query(table.table,
-          columns: table.columns, limit: limit, offset: offset);
+      if (search.isEmpty) {
+        return await txn.query(table.table,
+            columns: table.columns, limit: limit, offset: offset);
+      } else {
+        var args = List.filled(table.columns.length, '%$search%');
+        var where = <String>[];
+        for (var col in table.columns) {
+          where.add(' $col LIKE ? ');
+        }
+
+        return await txn.query(table.table,
+            columns: table.columns,
+            where: where.join(' OR '),
+            whereArgs: args,
+            limit: limit,
+            offset: offset);
+      }
     });
   }
 
-  static Future<int> count(TableFields table) async {
+  static Future<int> count(TableFields table, {String search = ''}) async {
     var col = 'ct';
     var rows = await DB.execute((Transaction txn) async {
-      return await txn.query(table.table,
-          columns: ['count(*) AS $col'], limit: 1);
+      if (search.isEmpty) {
+        return await txn.query(table.table,
+            columns: ['count(*) AS $col'], limit: 1);
+      } else {
+        var args = List.filled(table.columns.length, '%$search%');
+        var where = <String>[];
+        for (var col in table.columns) {
+          where.add(' $col LIKE ? ');
+        }
+        return await txn.query(table.table,
+            columns: ['count(*) AS $col'],
+            where: where.join(' OR '),
+            whereArgs: args,
+            limit: 1);
+      }
     });
     if (rows.isNotEmpty) {
       return DB.parseInt(rows.first[col]);

@@ -48,17 +48,23 @@ class AppLoader {
   /// preload recources
   static Future<bool> _preloadApp() async {
     try {
-      await Logger.clearLogs();
-      // reset background logger
-      //await Cache.setValue<List<String>>(CacheKeys.backgroundLogger, []);
-      //var downloadFiles = await downloadDir.list().toList();
-      //await fileToDb();
       Logger.globalLogLevel = LogLevel.verbose;
       logger.important('start Preload sequence...');
-      //await DB.deleteDatabase(await DB.getPath());
+
+      //
+      logger.log('load app settings');
+      await AppSettings.loadSettings();
+
+      //
+      logger.log('clear error logs');
+      await Logger.clearLogs();
+
+      //
       logger.log('open Database...');
       await DB.openDatabase(create: true);
       logger.log('Database opened');
+
+      //
       logger.log('get WEB SSL key from assets');
       await webKey();
 

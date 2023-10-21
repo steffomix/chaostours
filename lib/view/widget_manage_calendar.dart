@@ -41,14 +41,13 @@ class _WidgetManageCalendarState extends State<WidgetManageCalendar> {
     super.initState();
   }
 
-  Future<void> loadCalendar() async {
+  Future<List<Calendar>> loadCalendars() async {
     var id = await Cache.getValue(CacheKeys.calendarSelectedId, '');
     selectedCalendar = await appCalendar.calendarById(id);
-    if (mounted) {
-      setState(() {});
-    }
+    return await appCalendar.loadCalendars();
   }
 
+/*
   Widget calendarList() {
     List<Widget> tiles = [
       const Center(
@@ -79,17 +78,17 @@ class _WidgetManageCalendarState extends State<WidgetManageCalendar> {
     }
     return ListView(children: tiles);
   }
-
+*/
   @override
   Widget build(BuildContext context) {
     return AppWidgets.scaffold(context,
-        body: FutureBuilder(
-          future: loadCalendar(),
+        body: FutureBuilder<List<Calendar>>(
+          future: loadCalendars(),
           builder: (context, snapshot) {
             return AppWidgets.checkSnapshot(snapshot) ??
                 ListView.separated(
                   separatorBuilder: (context, index) => AppWidgets.divider(),
-                  itemCount: appCalendar.calendars.length + 1,
+                  itemCount: snapshot.data!.length + 1,
                   itemBuilder: (context, index) {
                     if (index == 0) {
                       return ListTile(
@@ -98,7 +97,7 @@ class _WidgetManageCalendarState extends State<WidgetManageCalendar> {
                             '${selectedCalendar?.name ?? ' --- '}\n${selectedCalendar?.accountName ?? ''}'),
                       );
                     } else {
-                      var cal = appCalendar.calendars[index - 1];
+                      var cal = snapshot.data![index - 1];
                       return ListTile(
                         title: Text(cal.name ?? 'Calendar $index'),
                         subtitle: Text(cal.accountName ?? 'Unknown account'),

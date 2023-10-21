@@ -182,6 +182,8 @@ class ModelUser {
   static Future<ModelUser> insert(ModelUser model) async {
     var map = model.toMap();
     map.removeWhere((key, value) => key == TableUser.primaryKey.column);
+    int ct = await count();
+    model.sortOrder = ct + 1;
     int id = await DB.execute<int>(
       (Transaction txn) async {
         return await txn.insert(TableUser.table, map);
@@ -202,6 +204,15 @@ class ModelUser {
       },
     );
     return count;
+  }
+
+  static Future<void> resetSortOrder() async {
+    await DB.execute(
+      (Transaction txn) async {
+        await txn.rawQuery(
+            'UPDATE ${TableUser.table} SET ${TableUser.sortOrder.column} = ${TableUser.primaryKey.column} WHERE 1');
+      },
+    );
   }
 
   ModelUser clone() {

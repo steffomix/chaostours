@@ -35,25 +35,23 @@ typedef ModelRow = Map<String, Object?>;
 class _DatabaseExplorer extends State<WidgetDatabaseExplorer> {
   static final Logger logger = Logger.logger<WidgetDatabaseExplorer>();
 
-  static TableFields _table = DatabaseSchema.tables[0];
+  static TableFields _table = TableFields.tables[0];
 
   final _scrollView = ScrollView();
+  final _searchController = TextEditingController();
   final GlobalKey _bodyKey = GlobalKey();
 
   // dataTable data
   final _dataTableHeader = <DataColumn>[];
-  final _dataTableRows = <DataRow>[];
+  final _dataRows = <DataRow>[];
   // default body
   Widget _body = AppWidgets.loading('No _body yet created...');
 
-  // already loaded data
-  final _loadedData = <Map<String, Object?>>[];
-  int? _rowsTotal;
   // chunks to load
   static const int _limit = 50;
   // offset of loading from database
   int get _offset {
-    return _loadedData.length;
+    return _dataRows.length;
   }
 
   // data loader
@@ -84,34 +82,48 @@ class _DatabaseExplorer extends State<WidgetDatabaseExplorer> {
     }
   }
 
+  void reset() {
+    _dataRows.clear();
+    render();
+    loadRows();
+  }
+
   Future<void> loadRows() async {
-    logger.log('attempt to load rows');
     try {
       if (_isLoadingData) {
-        logger.log('attempt to load rows bounced: currently loading');
+        // remember request
         _hadLoadRequest = true;
         return;
       }
-      Future.microtask(() => _isLoadingData = true);
-      logger.log('loading rows...');
-      _rowsTotal ??= await Model.count(_table);
-      if (_rowsTotal != null && (_rowsTotal ?? 0) <= _loadedData.length) {
-        logger.log('all Data loaded');
+
+      _isLoadingData = true;
+      // check if all is loaded
+
+      logger.log('load count');
+      var count = await Model.count(_table, search: _searchController.text);
+      if (count <= _dataRows.length) {
+        _isLoadingData = false;
         return;
       }
-      var rows = await Model.select(_table, offset: _offset, limit: _limit);
-      logger.log('${rows.length} rows loaded');
-      for (var row in rows) {
-        _loadedData.add(row);
-        _dataTableRows.add(renderRow(row));
-      }
+
+      logger.log('load rows');
+      // load next chunk of data
+      var rows = await Model.select(_table,
+          offset: _offset, limit: _limit, search: _searchController.text);
       _isLoadingData = false;
+
+      // render data
+      for (var row in rows) {
+        _dataRows.add(renderRow(row));
+      }
       if (_hadLoadRequest) {
-        loadRows();
         _hadLoadRequest = false;
+        logger.log('exec load rquest');
+        loadRows();
       }
       render();
     } catch (e, stk) {
+      _isLoadingData = false;
       logger.error('load rows: $e', stk);
     }
   }
@@ -144,11 +156,11 @@ class _DatabaseExplorer extends State<WidgetDatabaseExplorer> {
         //dataRowMinHeight: 200,
         //dataRowMaxHeight: 400,
         columns: _dataTableHeader,
-        rows: _dataTableRows);
+        rows: _dataRows);
   }
 
   List<DropdownMenuEntry<TableFields>> renderTableList() {
-    var tables = DatabaseSchema.tables;
+    var tables = TableFields.tables;
     var list = <DropdownMenuEntry<TableFields>>[];
     for (var table in tables) {
       var item =
@@ -189,13 +201,30 @@ class _DatabaseExplorer extends State<WidgetDatabaseExplorer> {
                       initialSelection: _table,
                       dropdownMenuEntries: tableList,
                       onSelected: (value) {
-                        _table = value ?? DatabaseSchema.tables[0];
+                        _table = value ?? TableFields.tables[0];
                         Future.microtask(() => AppWidgets.navigate(
                             context, AppRoutes.databaseExplorer));
                       },
-                    ))
+                    )),
               ],
             ),
+            SizedBox(
+                width: 400,
+                child: ListTile(
+                    leading: const Icon(Icons.search),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () {
+                        _searchController.text = '';
+                        reset();
+                      },
+                    ),
+                    title: TextField(
+                      controller: _searchController,
+                      onChanged: (value) {
+                        reset();
+                      },
+                    ))),
             table
           ],
         ));

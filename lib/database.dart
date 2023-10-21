@@ -55,7 +55,7 @@ class DB {
       var path = await getDBFilePath();
       _database ??= await flite.openDatabase(path,
           version: dbVersion,
-          singleInstance: true,
+          singleInstance: false,
           onCreate: !create
               ? null
               : (flite.Database db, int version) async {
@@ -93,7 +93,7 @@ class DB {
       T result = await _database!.transaction<T>(action);
       return result;
     } catch (e) {
-      logger.error('DB::execute $e', stk);
+      logger.error('DB::execute: $e', stk);
       rethrow;
     }
   }
@@ -559,6 +559,20 @@ enum TableAliasGroup {
 }
 
 class TableFields {
+  static final List<TableFields> tables = List.unmodifiable([
+    TableFields(TableAlias.table, TableAlias.columns),
+    TableFields(TableTrackPoint.table, TableTrackPoint.columns),
+    TableFields(TableTrackPointAlias.table, TableTrackPointAlias.columns),
+    TableFields(TableTrackPointTask.table, TableTrackPointTask.columns),
+    TableFields(TableTrackPointUser.table, TableTrackPointUser.columns),
+    TableFields(TableTask.table, TableTask.columns),
+    TableFields(TableUser.table, TableUser.columns),
+    TableFields(TableTaskGroup.table, TableTaskGroup.columns),
+    TableFields(TableAliasGroup.table, TableAliasGroup.columns),
+    TableFields(TableUserGroup.table, TableUserGroup.columns),
+    TableFields(TableTopic.table, TableTopic.columns),
+    TableFields(TableAliasTopic.table, TableAliasTopic.columns)
+  ]);
   final String table;
   final List<String> _columns = [];
   List<String> get columns => List.unmodifiable(_columns);
@@ -583,21 +597,6 @@ class DatabaseSchema {
     TableTopic.schema,
     TableAliasTopic.schema,
   ];
-
-  static final List<TableFields> tables = List.unmodifiable([
-    TableFields(TableAlias.table, TableAlias.columns),
-    TableFields(TableTrackPoint.table, TableTrackPoint.columns),
-    TableFields(TableTrackPointAlias.table, TableTrackPoint.columns),
-    TableFields(TableTrackPointTask.table, TableTrackPointTask.columns),
-    TableFields(TableTrackPointUser.table, TableTrackPointUser.columns),
-    TableFields(TableTask.table, TableTask.columns),
-    TableFields(TableUser.table, TableUser.columns),
-    TableFields(TableTaskGroup.table, TableTaskGroup.columns),
-    TableFields(TableAliasGroup.table, TableAliasGroup.columns),
-    TableFields(TableUserGroup.table, TableUserGroup.columns),
-    TableFields(TableTopic.table, TableTopic.columns),
-    TableFields(TableAliasTopic.table, TableAliasTopic.columns)
-  ]);
 
   static final List<String> indexes = [
     '''
