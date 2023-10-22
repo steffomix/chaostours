@@ -378,4 +378,52 @@ WHERE $isActiveCol = ? AND $whereArea
     }
     return models;
   }
+
+  Future<List<ModelAliasGroup>> groups() async {
+    final links = await DB.execute<List<Map<String, Object?>>>((txn) async {
+      return await txn.query(TableAliasAliasGroup.table,
+          where: '${TableAliasAliasGroup.idAlias.column} = ?', whereArgs: [id]);
+    });
+    if (links.isEmpty) {
+      return <ModelAliasGroup>[];
+    }
+    var groupIds = <int>[];
+    for (var link in links) {
+      groupIds.add(DB.parseInt(link[TableAliasAliasGroup.idAliasGroup.column]));
+    }
+    final rows = await ModelAliasGroup.byIdList(groupIds);
+    return rows;
+  }
+
+  Future<int> addGroup(ModelAliasGroup group) async {
+    return await DB.execute<int>((txn) async {
+      try {
+        var c = await txn.insert(TableAliasAliasGroup.table, {
+          TableAliasAliasGroup.idAlias.column: id,
+          TableAliasAliasGroup.idAliasGroup.column: group.id
+        });
+        return c;
+      } catch (e) {
+        logger.warn('addGroup: $e');
+        return 0;
+      }
+    });
+  }
+
+  Future<int> removeGroup(ModelAliasGroup group) async {
+    return await DB.execute<int>((txn) async {
+      try {
+        var c = await txn.delete(
+          TableAliasAliasGroup.table,
+          where:
+              '${TableAliasAliasGroup.idAlias.column} = ? AND ${TableAliasAliasGroup.idAliasGroup.column} = ?',
+          whereArgs: [id, group.id],
+        );
+        return c;
+      } catch (e) {
+        logger.warn('addGroup: $e');
+        return 0;
+      }
+    });
+  }
 }

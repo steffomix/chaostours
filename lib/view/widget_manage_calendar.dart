@@ -14,13 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import 'package:chaostours/view/app_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:device_calendar/device_calendar.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
-//import 'package:chaostours/logger.dart';
-import 'package:chaostours/cache.dart';
+///
+import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/calendar.dart';
 
 class WidgetManageCalendar extends StatefulWidget {
@@ -33,7 +32,6 @@ class WidgetManageCalendar extends StatefulWidget {
 class _WidgetManageCalendarState extends State<WidgetManageCalendar> {
   //static final Logger logger = Logger.logger<WidgetManageCalendar>();
 
-  AppCalendar appCalendar = AppCalendar();
   Calendar? selectedCalendar;
 
   @override
@@ -41,84 +39,63 @@ class _WidgetManageCalendarState extends State<WidgetManageCalendar> {
     super.initState();
   }
 
-  Future<List<Calendar>> loadCalendars() async {
-    //var id = await Cache.getValue(CacheKeys.calendarSelectedId, '');
-    //selectedCalendar = await appCalendar.calendarById(id);
-    return await appCalendar.loadCalendars();
-  }
-
-/*
-  Widget calendarList() {
-    List<Widget> tiles = [
-      const Center(
-          child: Text('Selected Calendar',
-              style: TextStyle(fontWeight: FontWeight.bold))),
-      ListTile(
-        title: Text(selectedCalendar?.name ?? ' --- '),
-        subtitle: Text(selectedCalendar?.accountName ?? ''),
-      ),
-      AppWidgets.divider()
-    ];
-    var i = 1;
-    for (var cal in appCalendar.calendars) {
-      tiles.add(ListTile(
-        title: Text(cal.name ?? 'Calendar $i'),
-        subtitle: Text(cal.accountName ?? 'Unknown account'),
-        onTap: (() async {
-          await Cache.setValue<String>(
-              CacheKeys.calendarSelectedId, cal.id ?? '');
-          selectedCalendar = cal;
-          Fluttertoast.showToast(msg: 'Calendar selected');
-          if (mounted) {
-            setState(() {});
-            Navigator.pop(context);
-          }
-        }),
-      ));
-    }
-    return ListView(children: tiles);
-  }
-*/
   @override
   Widget build(BuildContext context) {
     return AppWidgets.scaffold(context,
         body: FutureBuilder<List<Calendar>>(
-          future: loadCalendars(),
+          future: AppCalendar().loadCalendars(),
           builder: (context, snapshot) {
             return AppWidgets.checkSnapshot(snapshot) ??
-                ListView.separated(
-                  separatorBuilder: (context, index) => AppWidgets.divider(),
-                  itemCount: snapshot.data!.length + 1,
-                  itemBuilder: (context, index) {
-                    if (index == 0) {
-                      return ListTile(
-                        title: const Text('Selected Calendar:'),
-                        subtitle: Text(
-                            '${selectedCalendar?.name ?? ' --- '}\n${selectedCalendar?.accountName ?? ''}'),
-                      );
-                    } else {
-                      var cal = snapshot.data![index - 1];
-                      return ListTile(
-                        title: Text(cal.name ?? 'Calendar $index'),
-                        subtitle: Text(cal.accountName ?? 'Unknown account'),
-                        onTap: (() async {
-                          /*
-                          await Cache.setValue<String>(
-                              CacheKeys.calendarSelectedId, cal.id ?? '');
-                          selectedCalendar = cal;
-                          */
-                          Fluttertoast.showToast(msg: 'Calendar selected');
-                          if (mounted) {
-                            setState(() {});
-                            Navigator.pop(context);
-                          }
-                        }),
-                      );
-                    }
-                  },
-                );
+                AppWidgets.calendarSelector(
+                    calendars: snapshot.data,
+                    context: context,
+                    onSelect: (Calendar cal) async {
+                      Fluttertoast.showToast(msg: 'Calendar selected');
+                      if (mounted) {
+                        setState(() {});
+                        Navigator.pop(context);
+                      }
+                    });
           },
         ),
         appBar: AppBar(title: const Text('Select Calendar')));
+  }
+
+  Widget calendarSelector(
+      {required BuildContext context,
+      required void Function(Calendar cal) onSelect,
+      Calendar? selectedCalendar}) {
+    return FutureBuilder<List<Calendar>>(
+      future: AppCalendar().loadCalendars(),
+      builder: (context, snapshot) {
+        return AppWidgets.checkSnapshot(snapshot) ??
+            ListView.separated(
+              separatorBuilder: (context, index) => AppWidgets.divider(),
+              itemCount: snapshot.data!.length + 1,
+              itemBuilder: (context, index) {
+                if (index == 0) {
+                  return ListTile(
+                    title: const Text('Selected Calendar:'),
+                    subtitle: Text(
+                        '${selectedCalendar?.name ?? ' --- '}\n${selectedCalendar?.accountName ?? ''}'),
+                  );
+                } else {
+                  var cal = snapshot.data![index - 1];
+                  return ListTile(
+                    title: Text(cal.name ?? 'Calendar $index'),
+                    subtitle: Text(cal.accountName ?? 'Unknown account'),
+                    onTap: (() async {
+                      Fluttertoast.showToast(msg: 'Calendar selected');
+                      if (mounted) {
+                        setState(() {});
+                        Navigator.pop(context);
+                      }
+                    }),
+                  );
+                }
+              },
+            );
+      },
+    );
   }
 }

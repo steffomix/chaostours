@@ -125,12 +125,12 @@ class CheckboxController {
   String title;
   String subtitle;
   int group;
-  Function(bool?) onToggle;
+  Function(bool?)? onToggle;
   CheckboxController({
     required this.idReference,
     required this.referenceList,
-    required this.title,
-    required this.onToggle,
+    this.title = '',
+    this.onToggle,
     this.checked = false,
     this.group = 0,
     this.subtitle = '',
@@ -150,7 +150,7 @@ class CheckboxController {
     } else {
       referenceList.removeWhere((i) => i == idReference);
     }
-    onToggle(checked);
+    onToggle?.call(checked);
   }
 
   /// render multiple checkboxes

@@ -24,6 +24,7 @@ import 'package:chaostours/address.dart';
 ///
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/model/model_alias.dart';
+import 'package:chaostours/model/model_alias_group.dart';
 import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/conf/app_colors.dart';
 
@@ -42,6 +43,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
   final _addressController = TextEditingController();
   final _notesController = TextEditingController();
   final _radiusController = TextEditingController();
+  List<ModelAliasGroup> _groups = [];
 
   void initialize(ModelAlias model) {
     _modelAlias = model;
@@ -76,6 +78,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
         Navigator.pop(context);
       }
     }
+    _groups = await model?.groups() ?? [];
     return model;
   }
 
@@ -145,38 +148,6 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
             controller: _addressController,
           )),
 
-      /// gps
-      Column(children: [
-        const Text('Alias GPS Koordinaten', softWrap: true),
-        Container(
-            padding: const EdgeInsets.all(10),
-            child: ElevatedButton(
-              child: ListTile(
-                  leading: const Icon(
-                    Icons.near_me,
-                    size: 40,
-                  ),
-                  title: Text(
-                      'Latitude/Breitengrad:\n${alias.gps.lat}\n\nLongitude/Längengrad:\n${alias.gps.lon}')),
-              onPressed: () {
-                Navigator.pushNamed(context, AppRoutes.osm.route,
-                        arguments: alias.id)
-                    .then(
-                  (value) {
-                    ModelAlias.byId(alias.id).then(
-                      (ModelAlias? model) {
-                        setState(() {
-                          _modelAlias = model;
-                        });
-                      },
-                    );
-                  },
-                );
-              },
-            ))
-      ]),
-      AppWidgets.divider(),
-
       /// notes
       Container(
           padding: const EdgeInsets.all(10),
@@ -191,6 +162,63 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
               alias.update();
             },
           )),
+      AppWidgets.divider(),
+
+      ElevatedButton(
+        child: Column(children: [
+          const Text('GPS'),
+          ListTile(
+              leading: const Icon(
+                Icons.near_me,
+                size: 40,
+              ),
+              title: Text('Latitude/Breitengrad:\n${alias.gps.lat}\n\n'
+                  'Longitude/Längengrad:\n${alias.gps.lon}'))
+        ]),
+        onPressed: () {
+          Navigator.pushNamed(context, AppRoutes.osm.route, arguments: alias.id)
+              .then(
+            (value) {
+              ModelAlias.byId(alias.id).then(
+                (ModelAlias? model) {
+                  setState(() {
+                    _modelAlias = model;
+                  });
+                },
+              );
+            },
+          );
+        },
+      ),
+      AppWidgets.divider(),
+
+      Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          child: ElevatedButton(
+              child: Column(children: [
+                const Text('Groups', style: TextStyle(height: 2)),
+                ..._groups.map(
+                  (model) {
+                    return ListTile(
+                      title: Text(
+                        model.title,
+                      ),
+                      subtitle: Text(model.description),
+                    );
+                  },
+                ).toList()
+              ]),
+              onPressed: () {
+                Navigator.pushNamed(context, AppRoutes.listAliasGroup.route,
+                        arguments: _modelAlias?.id)
+                    .then(
+                  (value) {
+                    render();
+                  },
+                );
+              })),
+
+      AppWidgets.divider(),
 
       /// radius
       Container(
@@ -214,6 +242,8 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
             minLines: 1,
             controller: _radiusController,
           )),
+
+      AppWidgets.divider(),
 
       /// type
       Container(
@@ -241,7 +271,6 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                     groupValue: alias.visibility,
                     onChanged: (AliasVisibility? val) {
                       setStatus(context, val);
-                      alias.update();
                     })),
             ListTile(
                 title: Text('Privat',
@@ -259,7 +288,6 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                     groupValue: alias.visibility,
                     onChanged: (AliasVisibility? val) {
                       setStatus(context, val);
-                      alias.update();
                     })),
             ListTile(
                 title: Text('Geheim',
@@ -279,7 +307,6 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                     groupValue: alias.visibility,
                     onChanged: (AliasVisibility? val) {
                       setStatus(context, val);
-                      alias.update();
                     }))
           ])),
       AppWidgets.divider(),

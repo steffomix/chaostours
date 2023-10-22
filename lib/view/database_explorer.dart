@@ -19,6 +19,7 @@ import 'package:flutter/material.dart';
 
 import 'package:chaostours/database.dart';
 import 'package:chaostours/screen.dart';
+import 'package:chaostours/scroll_controller.dart';
 import 'package:chaostours/model/model.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/logger.dart';
@@ -37,7 +38,7 @@ class _DatabaseExplorer extends State<WidgetDatabaseExplorer> {
 
   static TableFields _table = TableFields.tables[0];
 
-  final _scrollView = ScrollView();
+  final _scrollView = ScrollEdgeController();
   final _searchController = TextEditingController();
   final GlobalKey _bodyKey = GlobalKey();
 
@@ -184,7 +185,7 @@ class _DatabaseExplorer extends State<WidgetDatabaseExplorer> {
       }
     });
 
-    _body = _scrollView.render(
+    _body = _scrollView.renderDouble(
         context,
         Wrap(
           spacing: 5,
@@ -229,74 +230,5 @@ class _DatabaseExplorer extends State<WidgetDatabaseExplorer> {
           ],
         ));
     return AppWidgets.scaffold(context, body: _body);
-  }
-}
-
-typedef SingleScrollListener = void Function(ScrollController ctrl);
-typedef DoubleScrollListener = void Function(
-    {required ScrollController vertical, required ScrollController horizontal});
-
-class ScrollView {
-  final Logger logger = Logger.logger<ScrollView>();
-  final _vertical = ScrollController();
-  final _horizontal = ScrollController();
-  SingleScrollListener? onTop;
-  SingleScrollListener? onBottom;
-  SingleScrollListener? onLeft;
-  SingleScrollListener? onRight;
-  DoubleScrollListener? onScroll;
-
-  void _verticalListener() {
-    onScroll?.call(vertical: _vertical, horizontal: _horizontal);
-    if (_vertical.offset >= _vertical.position.maxScrollExtent &&
-        !_vertical.position.outOfRange) {
-      onBottom?.call(_vertical);
-      logger.log("scrolled to bottom");
-    }
-    if (_vertical.offset <= _vertical.position.minScrollExtent &&
-        !_vertical.position.outOfRange) {
-      onTop?.call(_vertical);
-      logger.log("scrolled to top");
-    }
-  }
-
-  void _horizontalListener() {
-    onScroll?.call(vertical: _horizontal, horizontal: _horizontal);
-    if (_horizontal.offset >= _horizontal.position.maxScrollExtent &&
-        !_horizontal.position.outOfRange) {
-      onLeft?.call(_horizontal);
-      logger.log("scrolled to right");
-    }
-    if (_horizontal.offset <= _horizontal.position.minScrollExtent &&
-        !_horizontal.position.outOfRange) {
-      onRight?.call(_horizontal);
-      logger.log("scrolled to left");
-    }
-  }
-
-  // ignore: empty_constructor_bodies
-  ScrollView(
-      {this.onTop, this.onBottom, this.onLeft, this.onRight, this.onScroll}) {
-    _vertical.addListener(_verticalListener);
-    _horizontal.addListener(_horizontalListener);
-  }
-
-  void dispose() {
-    _vertical.dispose();
-    _horizontal.dispose();
-  }
-
-  Widget render(BuildContext context, Widget child) {
-    return Scrollbar(
-        controller: _vertical,
-        child: SingleChildScrollView(
-            controller: _vertical,
-            scrollDirection: Axis.vertical,
-            child: Scrollbar(
-                controller: _horizontal,
-                child: SingleChildScrollView(
-                    controller: _horizontal,
-                    scrollDirection: Axis.horizontal,
-                    child: child))));
   }
 }

@@ -113,14 +113,17 @@ class ModelAliasGroup {
   }
 
   /// transforms text into %text%
-  static Future<List<ModelAliasGroup>> search(String text) async {
+  static Future<List<ModelAliasGroup>> search(String text,
+      {int offset = 0, int limit = 50}) async {
     text = '%$text%';
     var rows = await DB.execute<List<Map<String, Object?>>>(
       (txn) async {
         return await txn.query(TableAliasGroup.table,
             where:
                 '${TableAliasGroup.title} like ? OR ${TableAliasGroup.description} like ?',
-            whereArgs: [text, text]);
+            whereArgs: [text, text],
+            offset: offset,
+            limit: limit);
       },
     );
     var models = <ModelAliasGroup>[];
@@ -180,6 +183,23 @@ class ModelAliasGroup {
       },
     );
     return count;
+  }
+
+  Future<List<ModelAlias>> children() async {
+    final links = await DB.execute<List<Map<String, Object?>>>((txn) async {
+      return await txn.query(TableAliasAliasGroup.table,
+          where: '${TableAliasAliasGroup.idAliasGroup.column} = ?',
+          whereArgs: [id]);
+    });
+    if (links.isEmpty) {
+      return <ModelAlias>[];
+    }
+    var groupIds = <int>[];
+    for (var link in links) {
+      groupIds.add(DB.parseInt(link[TableAliasAliasGroup.idAlias.column]));
+    }
+    final rows = await ModelAlias.byIdList(groupIds);
+    return rows;
   }
 
   ModelAliasGroup clone() {

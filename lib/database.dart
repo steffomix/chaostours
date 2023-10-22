@@ -715,6 +715,6 @@ CREATE INDEX IF NOT EXISTS "${TableTaskTaskGroup.table}_index" ON "${TableTaskTa
   static final List<String> inserts = [
     '''INSERT INTO "${TableTaskGroup.table}" VALUES (1,1,1,"Default Taskgroup",NULL)''',
     '''INSERT INTO "${TableUserGroup.table}" VALUES (1,1,1,"Default Usergroup",NULL)''',
-    '''INSERT INTO "${TableAliasGroup.table}" VALUES (1,"",1,1,"Default Aliasgroup",NULL)''',
+    '''INSERT INTO "${TableAliasGroup.table}" VALUES (1,NULL,1,1,"Default Aliasgroup",NULL)''',
   ];
 }

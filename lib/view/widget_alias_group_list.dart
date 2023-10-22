@@ -22,82 +22,60 @@ import 'package:chaostours/screen.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/conf/app_routes.dart';
-import 'package:chaostours/conf/app_colors.dart';
+import 'package:chaostours/model/model_alias_group.dart';
 import 'package:chaostours/model/model_alias.dart';
-import 'package:chaostours/gps.dart';
-/*
-class _Model {
-  final ModelAlias model;
-  String get title => model.title;
-  String get desciption => model.description;
-  bool get isActive => model.isActive;
-  String get calendarId => model.calendarId;
-  GPS get gps => model.gps;
-  int get groupId => model.groupId;
-  DateTime get lastVisited => model.lastVisited;
-  int get timesVisited => model.timesVisited;
-  int get radius => model.radius;
-
-  _Model({required this.model});
-}*/
+import 'package:chaostours/util.dart';
 
 enum _DisplayMode {
   list,
-  search,
-  nearest;
+  search;
 }
 
-class WidgetAliasList extends StatefulWidget {
-  const WidgetAliasList({super.key});
+class WidgetAliasGroupList extends StatefulWidget {
+  const WidgetAliasGroupList({super.key});
 
   @override
-  State<WidgetAliasList> createState() => _WidgetAliasList();
+  State<WidgetAliasGroupList> createState() => _WidgetAliasGroupList();
 }
 
-class _WidgetAliasList extends State<WidgetAliasList> {
+class _WidgetAliasGroupList extends State<WidgetAliasGroupList> {
   // ignore: unused_field
-  static final Logger logger = Logger.logger<WidgetAliasList>();
+  static final Logger logger = Logger.logger<WidgetAliasGroupList>();
 
   _DisplayMode _displayMode = _DisplayMode.list;
-
   int _selectedNavBarItem = 0;
 
-  GPS? _gps;
-
-  // height of seasrch field container
+  // height of search field container
   final double _toolBarHeight = 70;
-
   final TextEditingController _searchTextController = TextEditingController();
 
+  int? _id;
+  ModelAlias? _modelAlias;
+  List<ModelAliasGroup>? _groups;
+  List<int> _groupIds = [];
   // items per page
   static const int _limit = 30;
 
-  final PagingController<int, ModelAlias> _pagingController =
+  final PagingController<int, ModelAliasGroup> _pagingController =
       PagingController(firstPageKey: 0);
+
+  Future<void> loadGroups(bool reset) async {
+    if (_id != null && (_groups == null || reset == true)) {
+      _modelAlias = await ModelAlias.byId(_id!);
+      _groups = await _modelAlias?.groups() ?? [];
+      _groupIds = _groups!.map((e) => e.id).toList();
+    }
+  }
 
   Future<void> _fetchPage(int offset) async {
     try {
-      List<ModelAlias> newItems = [];
-      switch (_displayMode) {
-        case _DisplayMode.list:
-          newItems
-              .addAll(await ModelAlias.select(offset: offset, limit: _limit));
-          break;
+      await loadGroups(false);
+      final newItems = _displayMode == _DisplayMode.list
+          ? await ModelAliasGroup.select(offset: offset, limit: _limit)
+          : await ModelAliasGroup.search(_searchTextController.text,
+              offset: offset, limit: _limit);
 
-        case _DisplayMode.search:
-          newItems.addAll(await ModelAlias.search(_searchTextController.text,
-              offset: offset, limit: _limit));
-          break;
-
-        case _DisplayMode.nearest:
-          newItems.addAll(await ModelAlias.nextAlias(gps: _gps!, area: 10000));
-          break;
-
-        default:
-        //
-      }
-      final isLastPage =
-          newItems.length < _limit || _displayMode == _DisplayMode.nearest;
+      final isLastPage = newItems.length < _limit;
       if (isLastPage) {
         _pagingController.appendLastPage(newItems);
       } else {
@@ -120,8 +98,17 @@ class _WidgetAliasList extends State<WidgetAliasList> {
     super.initState();
   }
 
+  void render() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    // load possible Item ID
+    _id = ModalRoute.of(context)?.settings.arguments as int?;
+
     var body = CustomScrollView(
       slivers: <Widget>[
         /// Pinned header
@@ -134,18 +121,18 @@ class _WidgetAliasList extends State<WidgetAliasList> {
                 openHeight: 0)),
 
         /// Items List
-        PagedSliverList<int, ModelAlias>.separated(
+        PagedSliverList<int, ModelAliasGroup>.separated(
           separatorBuilder: (BuildContext context, int i) => const Divider(),
           pagingController: _pagingController,
-          builderDelegate: PagedChildBuilderDelegate<ModelAlias>(
-            itemBuilder: (context, model, index) => model.description.isEmpty
-                ? ListTile(trailing: btnInfo(model), title: title(model))
-                : ListTile(
-                    trailing: btnInfo(model),
-                    title: title(model),
-                    subtitle: subtitle(model),
-                  ),
-          ),
+          builderDelegate: PagedChildBuilderDelegate<ModelAliasGroup>(
+              itemBuilder: (context, model, index) {
+            return ListTile(
+              leading: edit(model),
+              trailing: checkBox(model),
+              title: title(model),
+              subtitle: subtitle(model),
+            );
+          }),
         ),
       ],
     );
@@ -156,16 +143,14 @@ class _WidgetAliasList extends State<WidgetAliasList> {
         appBar: AppBar(title: const Text('Alias List')));
   }
 
-  Widget title(ModelAlias model) {
-    int dur = DateTime.now().difference(model.lastVisited).inDays;
-    int count = model.trackPointCount;
+  Widget title(ModelAliasGroup model) {
     return ListTile(
-        subtitle: Text(
-            '#${model.sortDistance} Besucht: ${count}x, ${count == 0 ? 'noch nie' : 'vor $dur Tage'}'),
-        title: Text(model.title));
+      title: Text(model.title),
+      subtitle: Text(model.description),
+    );
   }
 
-  Widget subtitle(ModelAlias model) {
+  Widget subtitle(ModelAliasGroup model) {
     return Padding(
         padding: const EdgeInsets.only(left: 30),
         child: Text(model.description,
@@ -173,19 +158,40 @@ class _WidgetAliasList extends State<WidgetAliasList> {
                 TextStyle(fontSize: 12, color: Theme.of(context).hintColor)));
   }
 
-  Widget btnInfo(ModelAlias model) {
+  Widget checkBox(ModelAliasGroup model) {
+    var controller = CheckboxController(
+      idReference: model.id,
+      referenceList: _groupIds,
+      onToggle: (bool? checked) async {
+        bool add = checked ?? false;
+        if (add) {
+          await _modelAlias?.addGroup(model);
+        } else {
+          await _modelAlias?.removeGroup(model);
+        }
+        await loadGroups(true);
+        _pagingController.refresh();
+        render();
+      },
+    );
+    return Checkbox(
+      value: controller.checked,
+      onChanged: controller.onToggle,
+    );
+  }
+
+  Widget edit(ModelAliasGroup model) {
     return IconButton(
-      icon: Icon(Icons.info_outline_rounded,
-          size: 30,
-          color: model.isActive
-              ? Colors.black
-              : AppColors.aliasStatusColor(model.visibility)),
+      icon: const Icon(Icons.edit),
       onPressed: () {
-        Navigator.pushNamed(context, AppRoutes.listAliasTrackpoints.route,
+        Navigator.pushNamed(context, AppRoutes.editAliasGroup.route,
                 arguments: model.id)
-            .then((_) {
-          setState(() {});
-        });
+            .then(
+          (value) {
+            _pagingController.refresh();
+            render();
+          },
+        );
       },
     );
   }
@@ -202,7 +208,6 @@ class _WidgetAliasList extends State<WidgetAliasList> {
                   onPressed: () {
                     _searchTextController.text = "";
                     _displayMode = _DisplayMode.list;
-                    _selectedNavBarItem = 2; // last visited
                     _pagingController.refresh();
                     setState(() {});
                   },
@@ -221,7 +226,6 @@ class _WidgetAliasList extends State<WidgetAliasList> {
                   onChanged: (value) {
                     _displayMode =
                         value.isEmpty ? _DisplayMode.list : _DisplayMode.search;
-                    _selectedNavBarItem = 2; // last visited
                     _pagingController.refresh();
                     setState(() {});
                   },
@@ -233,40 +237,36 @@ class _WidgetAliasList extends State<WidgetAliasList> {
         currentIndex: _selectedNavBarItem,
         items: const [
           // new on osm
-          BottomNavigationBarItem(icon: Icon(Icons.add), label: '*Neu*'),
-          // 2 nearest
-          BottomNavigationBarItem(icon: Icon(Icons.near_me), label: 'In Nähe'),
-          // 1 alphabethic
           BottomNavigationBarItem(
-              icon: Icon(Icons.timer), label: 'Zuletzt besucht'),
+              icon: Icon(Icons.add), label: 'Create new Group'),
+          // 2 nearest
+          BottomNavigationBarItem(icon: Icon(Icons.near_me), label: 'Back'),
         ],
-        onTap: (int id) {
+        onTap: (int id) async {
           _selectedNavBarItem = id;
 
           switch (id) {
             /// create
             case 0:
-              Navigator.pushNamed(context, AppRoutes.osm.route).then((_) {
-                _pagingController.refresh();
-                setState(() {});
-              });
+              var count = await ModelAliasGroup.count();
+              var model = ModelAliasGroup(title: '#${count + 1}');
+              model = await ModelAliasGroup.insert(model);
+              if (mounted) {
+                Navigator.pushNamed(context, AppRoutes.editAliasGroup.route,
+                        arguments: model.id)
+                    .then((_) {
+                  _pagingController.refresh();
+                  setState(() {});
+                });
+              }
 
               break;
 
             /// last visited
             case 1:
-              GPS.gps().then((GPS gps) {
-                _gps = gps;
-                _displayMode = _DisplayMode.nearest;
-                _pagingController.refresh();
-                setState(() {});
-              });
-              break;
-
-            case 2:
-              _displayMode = _DisplayMode.list;
-              _pagingController.refresh();
-              setState(() {});
+              if (mounted) {
+                Navigator.pop(context);
+              }
               break;
 
             /// default view

@@ -22,11 +22,13 @@ import 'package:chaostours/view/widget_logger_page.dart';
 import 'package:chaostours/view/widget_permissions_page.dart';
 import 'package:chaostours/view/widget_edit_trackpoint.dart';
 import 'package:chaostours/view/widget_user_list.dart';
-import 'package:chaostours/view/widget_task_list.dart';
-import 'package:chaostours/view/widget_alias_list.dart';
-import 'package:chaostours/view/widget_task_edit.dart';
 import 'package:chaostours/view/widget_user_edit.dart';
+import 'package:chaostours/view/widget_task_list.dart';
+import 'package:chaostours/view/widget_task_edit.dart';
+import 'package:chaostours/view/widget_alias_list.dart';
 import 'package:chaostours/view/widget_alias_edit.dart';
+import 'package:chaostours/view/widget_alias_group_edit.dart';
+import 'package:chaostours/view/widget_alias_group_list.dart';
 import 'package:chaostours/view/widget_alias_trackpoint_list.dart';
 import 'package:chaostours/view/widget_edit_alias_osm.dart';
 import 'package:chaostours/view/widget_import_export.dart';
@@ -50,6 +52,16 @@ enum AppRoutes {
   listAlias('/listAlias'),
   listAliasTrackpoints('/listAlias/listAliasTrackpoints'),
   editAlias('/listAlias/listAliasTrackpoints/editAlias'),
+  // alias group
+  listAliasGroup('/listAliasGroup'),
+  editAliasGroup('/listAliasGroup/editAliasGroup'),
+  // alias group
+  listUserGroup('/listAliasGroup'),
+  editUsersGroup('/listAliasGroup/editAliasGroup'),
+  // alias group
+  listTaskGroup('/listAliasGroup'),
+  editTaskGroup('/listAliasGroup/editAliasGroup'),
+
   // user
   listUsers('/listUsers'),
   editUser('/listUsers/editUser'),
@@ -91,6 +103,10 @@ enum AppRoutes {
       AppRoutes.editAlias.route: (context) => const WidgetAliasEdit(),
       AppRoutes.listAliasTrackpoints.route: (context) =>
           const WidgetAliasTrackpoint(),
+      // aliasGroup
+      AppRoutes.listAliasGroup.route: (context) => const WidgetAliasGroupList(),
+      AppRoutes.editAliasGroup.route: (context) => const WidgetAliasGroupEdit(),
+
       // trackPoint events
       AppRoutes.selectCalendar.route: (context) => const WidgetManageCalendar(),
       // osm

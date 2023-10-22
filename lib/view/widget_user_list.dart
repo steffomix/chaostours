@@ -212,14 +212,14 @@ class _WidgetUserList extends State<WidgetUserList> {
             items: [
               _displayMode == _DisplayMode.list
                   ? const BottomNavigationBarItem(
-                      icon: Icon(Icons.add), label: 'Neu')
+                      icon: Icon(Icons.add), label: 'Create new User')
                   : const BottomNavigationBarItem(
-                      icon: Icon(Icons.clear), label: 'Reset'),
+                      icon: Icon(Icons.clear), label: 'Reset Sort Order'),
               _displayMode == _DisplayMode.list
                   ? const BottomNavigationBarItem(
-                      icon: Icon(Icons.sort), label: 'Sortieren')
+                      icon: Icon(Icons.sort), label: 'Sort Items')
                   : const BottomNavigationBarItem(
-                      icon: Icon(Icons.list), label: 'Liste'),
+                      icon: Icon(Icons.list), label: 'List Items'),
               BottomNavigationBarItem(
                   icon: Icon(
                       !_selectDeleted.value || _displayMode == _DisplayMode.sort
@@ -227,8 +227,8 @@ class _WidgetUserList extends State<WidgetUserList> {
                           : Icons.visibility),
                   label:
                       _selectDeleted.value || _displayMode == _DisplayMode.sort
-                          ? 'Zeige Gel.'
-                          : 'Verberge Gel.')
+                          ? 'Show Deleted'
+                          : 'Hide Deleted')
             ],
             onTap: (int id) {
               switch (id) {

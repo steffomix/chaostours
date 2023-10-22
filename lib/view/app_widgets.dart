@@ -19,10 +19,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:device_calendar/device_calendar.dart';
 
 ///
 import 'package:chaostours/util.dart' as util;
-
+import 'package:chaostours/calendar.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/conf/app_settings.dart';
@@ -301,6 +302,44 @@ class AppWidgets {
       },
     );
   }
+
+  /// loads calendars if not provided
+  static Widget calendarSelector(
+      {required BuildContext context,
+      required void Function(Calendar cal) onSelect,
+      Calendar? selectedCalendar,
+      List<Calendar>? calendars}) {
+    return FutureBuilder<List<Calendar>>(
+      future: calendars == null
+          ? AppCalendar().loadCalendars()
+          : Future.value(calendars),
+      builder: (context, snapshot) {
+        return AppWidgets.checkSnapshot(snapshot) ??
+            ListView.separated(
+              separatorBuilder: (context, index) => AppWidgets.divider(),
+              itemCount: snapshot.data!.length + 1,
+              itemBuilder: (context, index) {
+                if (index == 0) {
+                  return ListTile(
+                    title: const Text('Selected Calendar:'),
+                    subtitle: Text(
+                        '${selectedCalendar?.name ?? ' --- '}\n${selectedCalendar?.accountName ?? ''}'),
+                  );
+                } else {
+                  var cal = snapshot.data![index - 1];
+                  return ListTile(
+                    title: Text(cal.name ?? 'Calendar $index'),
+                    subtitle: Text(cal.accountName ?? 'Unknown account'),
+                    onTap: (() async {
+                      onSelect(cal);
+                    }),
+                  );
+                }
+              },
+            );
+      },
+    );
+  }
 }
 
 ///
@@ -412,6 +451,13 @@ class _WidgetDrawer extends State<WidgetDrawer> {
                     AppWidgets.navigate(context, AppRoutes.listAlias);
                   },
                   child: const Text('Orte (Alias)')),
+
+              ///
+              ElevatedButton(
+                  onPressed: () {
+                    AppWidgets.navigate(context, AppRoutes.listAliasGroup);
+                  },
+                  child: const Text('Groups & Calendars')),
 
               SizedBox(
                   height: boxHeight,

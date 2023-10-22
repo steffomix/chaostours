@@ -213,14 +213,14 @@ class _WidgetTaskList extends State<WidgetTaskList> {
             items: [
               _displayMode == _DisplayMode.list
                   ? const BottomNavigationBarItem(
-                      icon: Icon(Icons.add), label: 'Neu')
+                      icon: Icon(Icons.add), label: 'Create new Task')
                   : const BottomNavigationBarItem(
-                      icon: Icon(Icons.clear), label: 'Reset'),
+                      icon: Icon(Icons.clear), label: 'Reset Sort Order'),
               _displayMode == _DisplayMode.list
                   ? const BottomNavigationBarItem(
-                      icon: Icon(Icons.sort), label: 'Sortieren')
+                      icon: Icon(Icons.sort), label: 'Sort Items')
                   : const BottomNavigationBarItem(
-                      icon: Icon(Icons.list), label: 'Liste'),
+                      icon: Icon(Icons.list), label: 'List Items'),
               BottomNavigationBarItem(
                   icon: Icon(
                       _selectDeleted.value || _displayMode == _DisplayMode.sort
@@ -228,8 +228,8 @@ class _WidgetTaskList extends State<WidgetTaskList> {
                           : Icons.visibility),
                   label:
                       _selectDeleted.value || _displayMode == _DisplayMode.sort
-                          ? 'Verb. Gel.'
-                          : 'Zeige Gel.')
+                          ? 'Hide Deleted'
+                          : 'Show Deleted')
             ],
             onTap: (int id) {
               switch (id) {
