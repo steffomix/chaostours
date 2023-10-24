@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import 'package:chaostours/conf/app_routes.dart';
 import 'package:flutter/material.dart';
 
 import 'package:chaostours/database.dart';
@@ -39,10 +38,9 @@ class _DatabaseExplorer extends State<WidgetDatabaseExplorer> {
   TableFields _table = TableFields.tables[0];
 
   final _searchController = TextEditingController();
-  final GlobalKey _bodyKey = GlobalKey();
 
   //final _loader = Loader(key: GlobalKey());
-  final _scrollView = ScrollEdgeController();
+  final _scrollView = ScrollEdgeController(key: GlobalKey());
 
   // dataTable data
   final _dataTableHeader = <DataColumn>[];
@@ -69,7 +67,7 @@ class _DatabaseExplorer extends State<WidgetDatabaseExplorer> {
     super.initState();
   }
 
-  void onBottom(ScrollController c) {
+  Future<void> onBottom() async {
     loadRows();
   }
 
@@ -165,7 +163,6 @@ class _DatabaseExplorer extends State<WidgetDatabaseExplorer> {
   }
 
   List<DropdownMenuEntry<TableFields>> renderTableList() {
-    var tables = TableFields.tables;
     var list = <DropdownMenuEntry<TableFields>>[];
     var i = 1;
     for (var table in TableFields.tables) {
@@ -179,8 +176,8 @@ class _DatabaseExplorer extends State<WidgetDatabaseExplorer> {
 
   @override
   Widget build(BuildContext context) {
-    Future.microtask(() {
-      var size = _bodyKey.currentContext?.size;
+    Future.delayed(const Duration(milliseconds: 100), () {
+      var size = _scrollView.key.currentContext?.size;
       if (size != null) {
         if (size.height < Screen(context).height) {
           Future.delayed(const Duration(milliseconds: 200), loadRows);
@@ -193,7 +190,7 @@ class _DatabaseExplorer extends State<WidgetDatabaseExplorer> {
         Wrap(
           spacing: 5,
           direction: Axis.vertical,
-          key: _bodyKey,
+          key: _scrollView.key,
           children: [
             Row(
               children: [

@@ -1,14 +1,14 @@
 /*
 Copyright 2023 Stefan Brinkmann <st.brinkmann@gmail.com>
 
-Licensed under the Apache License, Version 2.0 (the "License");
+Licensed under the Apache License, Version 2.0 (the License);
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
     http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
+distributed under the License is distributed on an AS IS BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
@@ -187,15 +187,15 @@ enum TableTrackPoint {
   final String column;
   const TableTrackPoint(this.column);
 
-  static String get schema => '''CREATE TABLE IF NOT EXISTS "$table" (
-	"${primaryKey.column}"	INTEGER NOT NULL,
-	"${latitude.column}"	NUMERIC NOT NULL,
-	"${longitude.column}"	NUMERIC NOT NULL,
-	"${timeStart.column}"	TEXT NOT NULL,
-	"${timeEnd.column}"	TEXT NOT NULL,
-	"${address.column}"	TEXT,
-	"${notes.column}"	TEXT,
-	PRIMARY KEY("${primaryKey.column}" AUTOINCREMENT)
+  static String get schema => '''CREATE TABLE IF NOT EXISTS $table (
+	${primaryKey.column}	INTEGER NOT NULL,
+	${latitude.column}	NUMERIC NOT NULL,
+	${longitude.column}	NUMERIC NOT NULL,
+	${timeStart.column}	TEXT NOT NULL,
+	${timeEnd.column}	TEXT NOT NULL,
+	${address.column}	TEXT,
+	${notes.column}	TEXT,
+	PRIMARY KEY(${primaryKey.column} AUTOINCREMENT)
   );;
 ''';
 
@@ -217,9 +217,9 @@ enum TableTrackPointAlias {
   final String column;
   const TableTrackPointAlias(this.column);
 
-  static String get schema => '''CREATE TABLE IF NOT EXISTS "$table" (
-	"${idTrackPoint.column}"	INTEGER NOT NULL,
-	"${idAlias.column}"	INTEGER NOT NULL
+  static String get schema => '''CREATE TABLE IF NOT EXISTS $table (
+	${idTrackPoint.column}	INTEGER NOT NULL,
+	${idAlias.column}	INTEGER NOT NULL
 );''';
 
   @override
@@ -240,9 +240,9 @@ enum TableTrackPointTask {
   final String column;
   const TableTrackPointTask(this.column);
 
-  static String get schema => '''CREATE TABLE IF NOT EXISTS "$table" (
-	"${idTrackPoint.column}"	INTEGER NOT NULL,
-	"${idTask.column}"	INTEGER NOT NULL
+  static String get schema => '''CREATE TABLE IF NOT EXISTS $table (
+	${idTrackPoint.column}	INTEGER NOT NULL,
+	${idTask.column}	INTEGER NOT NULL
 );''';
 
   @override
@@ -263,9 +263,9 @@ enum TableTrackPointUser {
   final String column;
   const TableTrackPointUser(this.column);
 
-  static String get schema => '''CREATE TABLE IF NOT EXISTS "$table" (
-	"${idTrackPoint.column}"	INTEGER NOT NULL,
-	"${idUser.column}"	INTEGER NOT NULL
+  static String get schema => '''CREATE TABLE IF NOT EXISTS $table (
+	${idTrackPoint.column}	INTEGER NOT NULL,
+	${idUser.column}	INTEGER NOT NULL
 );''';
 
   @override
@@ -286,9 +286,9 @@ enum TableAliasAliasGroup {
   final String column;
   const TableAliasAliasGroup(this.column);
 
-  static String get schema => '''CREATE TABLE IF NOT EXISTS "$table" (
-	"${idAlias.column}"	INTEGER NOT NULL,
-	"${idAliasGroup.column}"	INTEGER NOT NULL
+  static String get schema => '''CREATE TABLE IF NOT EXISTS $table (
+	${idAlias.column}	INTEGER NOT NULL,
+	${idAliasGroup.column}	INTEGER NOT NULL
 );''';
 
   @override
@@ -309,9 +309,9 @@ enum TableUserUserGroup {
   final String column;
   const TableUserUserGroup(this.column);
 
-  static String get schema => '''CREATE TABLE IF NOT EXISTS "$table" (
-	"${idUser.column}"	INTEGER NOT NULL,
-	"${idUserGroup.column}"	INTEGER NOT NULL
+  static String get schema => '''CREATE TABLE IF NOT EXISTS $table (
+	${idUser.column}	INTEGER NOT NULL,
+	${idUserGroup.column}	INTEGER NOT NULL
 );''';
 
   @override
@@ -332,9 +332,9 @@ enum TableTaskTaskGroup {
   final String column;
   const TableTaskTaskGroup(this.column);
 
-  static String get schema => '''CREATE TABLE IF NOT EXISTS "$table" (
-	"${idTask.column}"	INTEGER NOT NULL,
-	"${idTaskGroup.column}"	INTEGER NOT NULL
+  static String get schema => '''CREATE TABLE IF NOT EXISTS $table (
+	${idTask.column}	INTEGER NOT NULL,
+	${idTaskGroup.column}	INTEGER NOT NULL
 );''';
 
   @override
@@ -363,14 +363,14 @@ enum TableTask {
   final String column;
   const TableTask(this.column);
 
-  static String get schema => '''CREATE TABLE IF NOT EXISTS "$table" (
-	"${primaryKey.column}"	INTEGER NOT NULL,
-	"${idTaskGroup.column}"	INTEGER NOT NULL DEFAULT 1,
-	"${isActive.column}"	INTEGER DEFAULT 1,
-	"${sortOrder.column}"	INTEGER DEFAULT 1,
-	"${title.column}"	TEXT NOT NULL,
-	"${description.column}"	TEXT,
-	PRIMARY KEY("${primaryKey.column}" AUTOINCREMENT)
+  static String get schema => '''CREATE TABLE IF NOT EXISTS $table (
+	${primaryKey.column}	INTEGER NOT NULL,
+	${idTaskGroup.column}	INTEGER NOT NULL DEFAULT 1,
+	${isActive.column}	INTEGER DEFAULT 1,
+	${sortOrder.column}	INTEGER DEFAULT 1,
+	${title.column}	TEXT NOT NULL,
+	${description.column}	TEXT,
+	PRIMARY KEY(${primaryKey.column} AUTOINCREMENT)
 );''';
 
   @override
@@ -405,20 +405,20 @@ enum TableAlias {
   final String column;
   const TableAlias(this.column);
 
-  static String get schema => '''CREATE TABLE IF NOT EXISTS "$table" (
-	"${primaryKey.column}"	INTEGER NOT NULL,
-	"${idAliasGroup.column}"	INTEGER NOT NULL DEFAULT 1,
-	"${isActive.column}"	INTEGER,
-  "${calendarId.column}" TEXT,
-  "${radius.column}" INTEGER,
-	"${visibility.column}"	INTEGER,
-	"${latitude.column}"	NUMERIC NOT NULL,
-	"${longitude.column}"	NUMERIC NOT NULL,
-	"${lastVisited.column}"	TEXT,
-	"${timesVisited.column}"	INTEGER,
-	"${title.column}"	TEXT NOT NULL,
-	"${description.column}"	TEXT,
-	PRIMARY KEY("${primaryKey.column}" AUTOINCREMENT)
+  static String get schema => '''CREATE TABLE IF NOT EXISTS $table (
+	${primaryKey.column}	INTEGER NOT NULL,
+	${idAliasGroup.column}	INTEGER NOT NULL DEFAULT 1,
+	${isActive.column}	INTEGER,
+  ${calendarId.column} TEXT,
+  ${radius.column} INTEGER,
+	${visibility.column}	INTEGER,
+	${latitude.column}	NUMERIC NOT NULL,
+	${longitude.column}	NUMERIC NOT NULL,
+	${lastVisited.column}	TEXT,
+	${timesVisited.column}	INTEGER,
+	${title.column}	TEXT NOT NULL,
+	${description.column}	TEXT,
+	PRIMARY KEY(${primaryKey.column} AUTOINCREMENT)
 );''';
 
   @override
@@ -449,16 +449,16 @@ enum TableUser {
   final String column;
   const TableUser(this.column);
 
-  static String get schema => '''CREATE TABLE IF NOT EXISTS "$table" (
-	"${primaryKey.column}"	INTEGER NOT NULL,
-	"${idUserGroup.column}"	INTEGER NOT NULL,
-	"${isActive.column}"	INTEGER,
-	"${sortOrder.column}"	INTEGER,
-	"${phone.column}"	TEXT,
-	"${address.column}"	TEXT,
-	"${title.column}"	TEXT NOT NULL,
-	"${description.column}"	TEXT,
-	PRIMARY KEY("${primaryKey.column}" AUTOINCREMENT)
+  static String get schema => '''CREATE TABLE IF NOT EXISTS $table (
+	${primaryKey.column}	INTEGER NOT NULL,
+	${idUserGroup.column}	INTEGER NOT NULL,
+	${isActive.column}	INTEGER,
+	${sortOrder.column}	INTEGER,
+	${phone.column}	TEXT,
+	${address.column}	TEXT,
+	${title.column}	TEXT NOT NULL,
+	${description.column}	TEXT,
+	PRIMARY KEY(${primaryKey.column} AUTOINCREMENT)
 );''';
 
   @override
@@ -486,13 +486,13 @@ enum TableTaskGroup {
   final String column;
   const TableTaskGroup(this.column);
 
-  static String get schema => '''CREATE TABLE IF NOT EXISTS "$table" (
-	"${primaryKey.column}"	INTEGER NOT NULL,
-	"${isActive.column}"	INTEGER,
-	"${sortOrder.column}"	INTEGER,
-	"${title.column}"	TEXT NOT NULL,
-	"${description.column}"	TEXT,
-	PRIMARY KEY("${primaryKey.column}" AUTOINCREMENT)
+  static String get schema => '''CREATE TABLE IF NOT EXISTS $table (
+	${primaryKey.column}	INTEGER NOT NULL,
+	${isActive.column}	INTEGER,
+	${sortOrder.column}	INTEGER,
+	${title.column}	TEXT NOT NULL,
+	${description.column}	TEXT,
+	PRIMARY KEY(${primaryKey.column} AUTOINCREMENT)
 );''';
 
   @override
@@ -520,13 +520,13 @@ enum TableUserGroup {
   final String column;
   const TableUserGroup(this.column);
 
-  static String get schema => '''CREATE TABLE IF NOT EXISTS "$table" (
-	"${primaryKey.column}"	INTEGER NOT NULL,
-	"${isActive.column}"	INTEGER,
-	"${sortOrder.column}"	INTEGER,
-	"${title.column}"	TEXT NOT NULL,
-	"${description.column}"	TEXT,
-	PRIMARY KEY("${primaryKey.column}" AUTOINCREMENT)
+  static String get schema => '''CREATE TABLE IF NOT EXISTS $table (
+	${primaryKey.column}	INTEGER NOT NULL,
+	${isActive.column}	INTEGER,
+	${sortOrder.column}	INTEGER,
+	${title.column}	TEXT NOT NULL,
+	${description.column}	TEXT,
+	PRIMARY KEY(${primaryKey.column} AUTOINCREMENT)
 );''';
 
   @override
@@ -547,9 +547,9 @@ enum TableAliasTopic {
   static List<String> get columns =>
       TableAliasTopic.values.map((e) => e.toString()).toList();
 
-  static String get schema => '''CREATE TABLE IF NOT EXISTS "$table" (
-	"${idAlias.column}"	INTEGER,
-	"${idTopic.column}"	INTEGER
+  static String get schema => '''CREATE TABLE IF NOT EXISTS $table (
+	${idAlias.column}	INTEGER,
+	${idTopic.column}	INTEGER
 );''';
 
   @override
@@ -577,13 +577,13 @@ enum TableTopic {
   final String column;
   const TableTopic(this.column);
 
-  static String get schema => '''CREATE TABLE IF NOT EXISTS "$table" (
-	"${primaryKey.column}"	INTEGER NOT NULL,
-	"${isActive.column}"	INTEGER,
-	"${sortOrder.column}"	INTEGER,
-	"${title.column}"	TEXT NOT NULL,
-	"${description.column}"	TEXT,
-	PRIMARY KEY("${primaryKey.column}" AUTOINCREMENT)
+  static String get schema => '''CREATE TABLE IF NOT EXISTS $table (
+	${primaryKey.column}	INTEGER NOT NULL,
+	${isActive.column}	INTEGER,
+	${sortOrder.column}	INTEGER,
+	${title.column}	TEXT NOT NULL,
+	${description.column}	TEXT,
+	PRIMARY KEY(${primaryKey.column} AUTOINCREMENT)
 );''';
 
   @override
@@ -612,14 +612,14 @@ enum TableAliasGroup {
   final String column;
   const TableAliasGroup(this.column);
 
-  static String get schema => '''CREATE TABLE IF NOT EXISTS "$table" (
-	"${primaryKey.column}"	INTEGER NOT NULL,
-	"${idCalendar.column}"	TEXT,
-	"${isActive.column}"	INTEGER,
-	"${visibility.column}"	INTEGER,
-	"${title.column}"	TEXT NOT NULL,
-	"${description.column}"	TEXT,
-	PRIMARY KEY("${primaryKey.column}" AUTOINCREMENT)
+  static String get schema => '''CREATE TABLE IF NOT EXISTS $table (
+	${primaryKey.column}	INTEGER NOT NULL,
+	${idCalendar.column}	TEXT,
+	${isActive.column}	INTEGER,
+	${visibility.column}	INTEGER,
+	${title.column}	TEXT NOT NULL,
+	${description.column}	TEXT,
+	PRIMARY KEY(${primaryKey.column} AUTOINCREMENT)
 );''';
 
   @override
@@ -681,40 +681,81 @@ class DatabaseSchema {
 
   static final List<String> indexes = [
     '''
-CREATE INDEX IF NOT EXISTS "${TableTrackPointAlias.table}_index" ON "${TableTrackPointAlias.table}" (
-	"${TableTrackPointAlias.idAlias}"	ASC,
-	"${TableTrackPointAlias.idTrackPoint}" ASC
+CREATE INDEX IF NOT EXISTS ${TableTrackPointAlias.table}_index ON ${TableTrackPointAlias.table} (
+	${TableTrackPointAlias.idAlias.column}	ASC,
+	${TableTrackPointAlias.idTrackPoint.column} ASC
 );''',
     '''
-CREATE INDEX IF NOT EXISTS "${TableTrackPoint.table}_gps" ON "${TableTrackPoint.table}" (
-	"${TableTrackPoint.latitude}"	ASC,
-	"${TableTrackPoint.longitude}" ASC
+CREATE INDEX IF NOT EXISTS ${TableTrackPoint.table}_gps ON ${TableTrackPoint.table} (
+	${TableTrackPoint.latitude.column}	ASC,
+	${TableTrackPoint.longitude.column} ASC
 );''',
     '''
-CREATE INDEX IF NOT EXISTS "${TableAlias.table}_gps" ON "${TableAlias.table}" (
-	"${TableAlias.latitude}" ASC,
-	"${TableAlias.longitude}"	ASC
+CREATE INDEX IF NOT EXISTS ${TableAlias.table}_gps ON ${TableAlias.table} (
+	${TableAlias.latitude.column} ASC,
+	${TableAlias.longitude.column}	ASC
 )''',
     '''
-CREATE INDEX IF NOT EXISTS "${TableAliasAliasGroup.table}_index" ON "${TableAliasAliasGroup.table}" (
-	"${TableAliasAliasGroup.idAliasGroup}" ASC,
-	"${TableAliasAliasGroup.idAlias}"	ASC
+CREATE INDEX IF NOT EXISTS ${TableAliasAliasGroup.table}_index ON ${TableAliasAliasGroup.table} (
+	${TableAliasAliasGroup.idAliasGroup.column} ASC,
+	${TableAliasAliasGroup.idAlias.column}	ASC
 )''',
     '''
-CREATE INDEX IF NOT EXISTS "${TableUserUserGroup.table}_index" ON "${TableUserUserGroup.table}" (
-	"${TableUserUserGroup.idUserGroup}" ASC,
-	"${TableUserUserGroup.idUser}"	ASC
+CREATE INDEX IF NOT EXISTS ${TableUserUserGroup.table}_index ON ${TableUserUserGroup.table} (
+	${TableUserUserGroup.idUserGroup.column} ASC,
+	${TableUserUserGroup.idUser.column}	ASC
 )''',
     '''
-CREATE INDEX IF NOT EXISTS "${TableTaskTaskGroup.table}_index" ON "${TableTaskTaskGroup.table}" (
-	"${TableTaskTaskGroup.idTaskGroup}" ASC,
-	"${TableTaskTaskGroup.idTask}"	ASC
+CREATE INDEX IF NOT EXISTS ${TableTaskTaskGroup.table}_index ON ${TableTaskTaskGroup.table} (
+	${TableTaskTaskGroup.idTaskGroup.column} ASC,
+	${TableTaskTaskGroup.idTask.column}	ASC
 )'''
   ];
 
   static final List<String> inserts = [
-    '''INSERT INTO "${TableTaskGroup.table}" VALUES (1,1,1,"Default Taskgroup",NULL)''',
-    '''INSERT INTO "${TableUserGroup.table}" VALUES (1,1,1,"Default Usergroup",NULL)''',
-    '''INSERT INTO "${TableAliasGroup.table}" VALUES (1,NULL,1,1,"Default Aliasgroup",NULL)''',
+    '''INSERT INTO ${TableTaskGroup.table} VALUES (1,1,1,"Default Taskgroup",NULL)''',
+    '''INSERT INTO ${TableUserGroup.table} VALUES (1,1,1,"Default Usergroup",NULL)''',
+    '''INSERT INTO ${TableAliasGroup.table} VALUES (1,NULL,1,1,"Default Aliasgroup",NULL)''',
   ];
+
+/*
+  static final List<String> indexes = [
+    '''
+CREATE INDEX IF NOT EXISTS ${TableTrackPointAlias.table}_index ON ${TableTrackPointAlias.table} (
+	${TableTrackPointAlias.idAlias}	ASC,
+	${TableTrackPointAlias.idTrackPoint} ASC
+);''',
+    '''
+CREATE INDEX IF NOT EXISTS ${TableTrackPoint.table}_gps ON ${TableTrackPoint.table} (
+	${TableTrackPoint.latitude}	ASC,
+	${TableTrackPoint.longitude} ASC
+);''',
+    '''
+CREATE INDEX IF NOT EXISTS ${TableAlias.table}_gps ON ${TableAlias.table} (
+	${TableAlias.latitude} ASC,
+	${TableAlias.longitude}	ASC
+)''',
+    '''
+CREATE INDEX IF NOT EXISTS ${TableAliasAliasGroup.table}_index ON ${TableAliasAliasGroup.table} (
+	${TableAliasAliasGroup.idAliasGroup} ASC,
+	${TableAliasAliasGroup.idAlias}	ASC
+)''',
+    '''
+CREATE INDEX IF NOT EXISTS ${TableUserUserGroup.table}_index ON ${TableUserUserGroup.table} (
+	${TableUserUserGroup.idUserGroup} ASC,
+	${TableUserUserGroup.idUser}	ASC
+)''',
+    '''
+CREATE INDEX IF NOT EXISTS ${TableTaskTaskGroup.table}_index ON ${TableTaskTaskGroup.table} (
+	${TableTaskTaskGroup.idTaskGroup} ASC,
+	${TableTaskTaskGroup.idTask}	ASC
+)'''
+  ];
+
+  static final List<String> inserts = [
+    '''INSERT INTO ${TableTaskGroup.table} VALUES (1,1,1,Default Taskgroup,NULL)''',
+    '''INSERT INTO ${TableUserGroup.table} VALUES (1,1,1,Default Usergroup,NULL)''',
+    '''INSERT INTO ${TableAliasGroup.table} VALUES (1,NULL,1,1,Default Aliasgroup,NULL)''',
+  ];
+  */
 }

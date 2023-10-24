@@ -16,173 +16,200 @@ limitations under the License.
 
 import 'package:flutter/material.dart';
 import 'package:chaostours/logger.dart';
-import 'package:chaostours/screen.dart';
-
-typedef SingleScrollListener = void Function(ScrollController ctrl);
-typedef DoubleScrollListener = void Function(
-    {required ScrollController vertical, required ScrollController horizontal});
 
 class ScrollEdgeController {
   final Logger logger = Logger.logger<ScrollEdgeController>();
-  final _vertical = ScrollController();
-  final _horizontal = ScrollController();
-  SingleScrollListener? onTop;
-  SingleScrollListener? onBottom;
-  SingleScrollListener? onLeft;
-  SingleScrollListener? onRight;
-  DoubleScrollListener? onScroll;
+  final scrollControllerVertical = ScrollController();
+  final scrollControllerHorizontal = ScrollController();
+  Future<void> Function()? onTop;
+  Future<void> Function()? onBottom;
+  Future<void> Function()? onLeft;
+  Future<void> Function()? onRight;
+  Future<void> Function()? onScroll;
+
+  final GlobalKey key;
 
   // ignore: empty_constructor_bodies
   ScrollEdgeController(
-      {this.onTop, this.onBottom, this.onLeft, this.onRight, this.onScroll}) {
-    _vertical.addListener(_verticalListener);
-    _horizontal.addListener(_horizontalListener);
+      {required this.key,
+      this.onTop,
+      this.onBottom,
+      this.onLeft,
+      this.onRight,
+      this.onScroll}) {
+    scrollControllerVertical.addListener(_verticalListener);
+    scrollControllerHorizontal.addListener(_horizontalListener);
   }
 
   void _verticalListener() {
-    onScroll?.call(vertical: _vertical, horizontal: _horizontal);
-    if (_vertical.offset >= _vertical.position.maxScrollExtent &&
-        !_vertical.position.outOfRange) {
-      onBottom?.call(_vertical);
+    onScroll?.call();
+    if (scrollControllerVertical.offset >=
+            scrollControllerVertical.position.maxScrollExtent &&
+        !scrollControllerVertical.position.outOfRange) {
+      onBottom?.call();
       logger.log("scrolled to bottom");
     }
-    if (_vertical.offset <= _vertical.position.minScrollExtent &&
-        !_vertical.position.outOfRange) {
-      onTop?.call(_vertical);
+    if (scrollControllerVertical.offset <=
+            scrollControllerVertical.position.minScrollExtent &&
+        !scrollControllerVertical.position.outOfRange) {
+      onTop?.call();
       logger.log("scrolled to top");
     }
   }
 
   void _horizontalListener() {
-    onScroll?.call(vertical: _horizontal, horizontal: _horizontal);
-    if (_horizontal.offset >= _horizontal.position.maxScrollExtent &&
-        !_horizontal.position.outOfRange) {
-      onLeft?.call(_horizontal);
+    onScroll?.call();
+    if (scrollControllerHorizontal.offset >=
+            scrollControllerHorizontal.position.maxScrollExtent &&
+        !scrollControllerHorizontal.position.outOfRange) {
+      onLeft?.call();
       logger.log("scrolled to right");
     }
-    if (_horizontal.offset <= _horizontal.position.minScrollExtent &&
-        !_horizontal.position.outOfRange) {
-      onRight?.call(_horizontal);
+    if (scrollControllerHorizontal.offset <=
+            scrollControllerHorizontal.position.minScrollExtent &&
+        !scrollControllerHorizontal.position.outOfRange) {
+      onRight?.call();
       logger.log("scrolled to left");
     }
   }
 
   void dispose() {
-    _vertical.dispose();
-    _horizontal.dispose();
+    scrollControllerVertical.dispose();
+    scrollControllerHorizontal.dispose();
   }
 
   Widget renderDouble(BuildContext context, Widget child) {
     return Scrollbar(
-        controller: _vertical,
+        controller: scrollControllerVertical,
         child: SingleChildScrollView(
-            controller: _vertical,
+            controller: scrollControllerVertical,
             scrollDirection: Axis.vertical,
             child: Scrollbar(
-                controller: _horizontal,
+                controller: scrollControllerHorizontal,
                 child: SingleChildScrollView(
-                    controller: _horizontal,
+                    controller: scrollControllerHorizontal,
                     scrollDirection: Axis.horizontal,
                     child: child))));
   }
 
-  Widget renderSingle(BuildContext context, Widget child, Axis axis) {
-    var listener = axis == Axis.vertical ? _vertical : _horizontal;
+  Widget renderSingle(
+      {required BuildContext context,
+      required Widget child,
+      required Axis axis}) {
+    var listener = axis == Axis.vertical
+        ? scrollControllerVertical
+        : scrollControllerHorizontal;
     return Scrollbar(
         controller: listener,
         child: SingleChildScrollView(
             controller: listener, scrollDirection: axis, child: child));
   }
-}
 
-class Loader {
-  static final Logger logger = Logger.logger<Loader>();
-  final GlobalKey key;
-
-  Loader({required this.key});
-
-  Future<void> checkSize(
-      {required Screen screen,
+  // measure height against GlobalKey widget
+  Future<bool> measure(
+      {required double height,
+      Duration? delay,
       Future<void> Function()? onSizeIsSmaller,
       Future<void> Function()? onSizeIsSame,
       Future<void> Function()? onSizeIsBigger,
       Future<void> Function()? onSizeNotReady}) async {
-    var size = key.currentContext?.size;
-    if (size != null) {
-      if (size.height < screen.height) {
-        await onSizeIsSmaller?.call();
-      } else if (size.height > screen.height) {
-        await onSizeIsBigger?.call();
-      } else if (size.height == screen.height) {
-        await onSizeIsSame?.call();
+    if (delay != null) {
+      await Future.delayed(delay);
+    }
+    try {
+      var size = key.currentContext?.size;
+      if (size != null) {
+        if (size.height < height) {
+          await onSizeIsSmaller?.call();
+        } else if (size.height > height) {
+          await onSizeIsBigger?.call();
+        } else if (size.height == height) {
+          await onSizeIsSame?.call();
+        }
+        return true;
+      } else {
+        await onSizeNotReady?.call();
       }
-    } else {
+    } catch (e) {
       await onSizeNotReady?.call();
     }
+    return false;
   }
+}
 
+class Loader {
+  static final Logger logger = Logger.logger<Loader>();
+
+  // List of loaded items
   List<dynamic>? _loaded;
-  int? _total;
+  // offset of next load and count of already loaded items
+  int get offset => _loaded?.length ?? 0;
+  // fixed public list of loaded items
+  List<T> loaded<T>() => List.unmodifiable((_loaded ?? <T>[]) as List<T>);
 
-  int get countLoaded => _loaded?.length ?? 0;
-  bool _loading = false;
-  bool _hadLoadRequest = false;
+  int limit = 20;
+  //
   bool _finished = false;
+  bool get finished => _finished;
+  //
+  bool _loading = false;
+  bool get loading => _loading;
+  //
+  bool _hadLoadRequest = false;
+  bool get hadLoadRequest => _hadLoadRequest;
+
+  Loader({int limit = 20});
 
   Future<void> resetLoader() async {
     _loaded = null;
-    _total = null;
     _loading = false;
     _hadLoadRequest = false;
     _finished = false;
   }
 
-  List<T> getLoaded<T>() {
-    return List.unmodifiable((_loaded ?? <T>[]) as List<T>);
-  }
-
-  Future<List<T>> loadNext<T>(
+  Future<List<T>> load<T>(
+      //
       {required Future<List<T>> Function(
               {required int offset, required int limit})
-          load,
-      Future<int> Function()? count,
-      required int limit}) async {
-    logger.log('loadNext, $countLoaded loaded');
-    if (_finished ||
-        (_total != null && _loaded != null && _total! <= _loaded!.length)) {
+          fnLoad,
+      //
+      Future<int> Function()? fnCount}) async {
+    // check if finished
+    if (_finished) {
+      logger.warn('load already finished');
       return <T>[];
     }
 
-    /// remember request
+    /// remember request only
     if (_loading) {
       _hadLoadRequest = true;
       return <T>[];
     }
+    // start loading
     _loading = true;
-    var loaded = await _load(load: load, count: count, limit: limit);
+    var loaded = await _load(load: fnLoad, count: fnCount);
     if (_hadLoadRequest) {
-      loaded.addAll(await _load(load: load, count: count, limit: limit));
+      loaded.addAll(await _load(load: fnLoad, count: fnCount));
     }
     _hadLoadRequest = false;
     _loading = false;
-    logger.log('loadNext finished, $countLoaded loaded');
+    //
+    logger.log('${loaded.length} new items loaded');
     return loaded;
   }
 
-  Future<List<T>> _load<T>(
-      {required Future<List<T>> Function(
-              {required int offset, required int limit})
-          load,
-      Future<int> Function()? count,
-      required int limit}) async {
-    logger.log('_load, , $countLoaded loaded');
-    _total = await count?.call();
+  Future<List<T>> _load<T>({
+    required Future<List<T>> Function({required int offset, required int limit})
+        load,
+    Future<int> Function()? count,
+  }) async {
+    int total = await count?.call() ?? 0;
     _loaded ??= <T>[];
     var loaded = await load(offset: _loaded!.length, limit: limit);
     _loaded!.addAll(loaded);
-    _finished = count == null && loaded.length < limit;
-
-    logger.log('_load finished, $countLoaded loaded');
+    _finished = (count == null && loaded.length < limit) ||
+        (count != null && _loaded!.length >= total);
+    logger.log('loading finished');
     return loaded;
   }
 }

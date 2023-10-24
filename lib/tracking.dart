@@ -34,11 +34,15 @@ import 'package:chaostours/model/model_alias.dart';
 void backgroundCallback() {
   BackgroundLocationTrackerManager.handleBackgroundUpdated(
       (BackgroundLocationUpdateData data) async {
-    Logger.globalBackgroundLogger = true;
-    Logger.globalLogLevel = LogLevel.verbose;
-    Logger.defaultRealm = LoggerRealm.background;
-    await DB.openDatabase(create: false);
-    await _TrackPoint().track(lat: data.lat, lon: data.lon);
+    try {
+      Logger.globalBackgroundLogger = true;
+      Logger.globalLogLevel = LogLevel.verbose;
+      Logger.defaultRealm = LoggerRealm.background;
+      await DB.openDatabase(create: false);
+      await _TrackPoint().track(lat: data.lat, lon: data.lon);
+    } catch (e, stk) {
+      Logger.logger<BackgroundLocationTrackerManager>().error(e, stk);
+    }
 
     // wait before shutdown task
     await Future.delayed(const Duration(seconds: 1));

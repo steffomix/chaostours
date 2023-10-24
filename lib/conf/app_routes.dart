@@ -37,6 +37,8 @@ import 'package:chaostours/view/widget_manage_background_gps.dart';
 import 'package:chaostours/view/widget_manage_calendar.dart';
 import 'package:chaostours/view/widget_database_explorer.dart';
 
+import 'package:chaostours/view/_widget_test_async_loader.dart';
+
 /// use value instead of name to get the right
 enum AppRoutes {
   /// appStart
@@ -89,7 +91,8 @@ enum AppRoutes {
 
       /// add/edit items routes
       // trackpoint
-      AppRoutes.liveTracking.route: (context) => const WidgetTrackingPage(),
+      AppRoutes.liveTracking.route: (context) =>
+          const BaseWidget(), // WidgetTrackingPage(),
       AppRoutes.trackpoints.route: (context) => const WidgetTrackPoints(),
       AppRoutes.editTrackPoint.route: (context) => const WidgetEditTrackPoint(),
       // user

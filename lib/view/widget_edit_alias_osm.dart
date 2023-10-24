@@ -320,7 +320,7 @@ class _WidgetOsm extends State<WidgetOsm> {
         top: 170,
         left: 10,
         width: screen.width * 0.95,
-        height: screen.newHeight * 0.7,
+        height: screen.height * 0.7,
         child: Container(
             color: const Color.fromARGB(108, 255, 255, 255),
             child: ListView(children: [
