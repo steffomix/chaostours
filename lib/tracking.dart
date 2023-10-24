@@ -19,17 +19,16 @@ import 'dart:math' as math;
 
 ///
 import 'package:chaostours/logger.dart';
-import 'package:chaostours/database.dart';
-import 'package:chaostours/trackpoint_data.dart';
 import 'package:chaostours/conf/app_settings.dart';
+import 'package:chaostours/trackpoint_data.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/cache.dart';
 import 'package:chaostours/data_bridge.dart';
 import 'package:chaostours/location.dart';
-import 'package:chaostours/conf/osm.dart';
+import 'package:chaostours/calendar.dart';
+import 'package:chaostours/database.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_alias.dart';
-import 'package:chaostours/calendar.dart';
 
 @pragma('vm:entry-point')
 void backgroundCallback() {

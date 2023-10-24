@@ -57,9 +57,8 @@ class ModelUserGroup {
     return await DB.execute<int>(
       (Transaction txn) async {
         const col = 'ct';
-        final rows = await txn.query(TableUserGroup.table,
-            columns: ['count(*) as $col'],
-            groupBy: TableUserGroup.primaryKey.column);
+        final rows = await txn
+            .query(TableUserGroup.table, columns: ['count(*) as $col']);
 
         if (rows.isNotEmpty) {
           return DB.parseInt(rows.first[col], fallback: 0);

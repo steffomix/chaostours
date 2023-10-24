@@ -120,6 +120,12 @@ class _WidgetAliasList extends State<WidgetAliasList> {
     super.initState();
   }
 
+  void render() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     var body = CustomScrollView(
@@ -233,22 +239,23 @@ class _WidgetAliasList extends State<WidgetAliasList> {
         currentIndex: _selectedNavBarItem,
         items: const [
           // new on osm
-          BottomNavigationBarItem(icon: Icon(Icons.add), label: '*Neu*'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.add), label: 'Create new Alias'),
           // 2 nearest
-          BottomNavigationBarItem(icon: Icon(Icons.near_me), label: 'In Nähe'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.near_me), label: 'Nearby Aliases'),
           // 1 alphabethic
           BottomNavigationBarItem(
-              icon: Icon(Icons.timer), label: 'Zuletzt besucht'),
+              icon: Icon(Icons.timer), label: 'Last visited'),
         ],
         onTap: (int id) {
           _selectedNavBarItem = id;
-
           switch (id) {
             /// create
             case 0:
               Navigator.pushNamed(context, AppRoutes.osm.route).then((_) {
                 _pagingController.refresh();
-                setState(() {});
+                render();
               });
 
               break;
@@ -259,14 +266,14 @@ class _WidgetAliasList extends State<WidgetAliasList> {
                 _gps = gps;
                 _displayMode = _DisplayMode.nearest;
                 _pagingController.refresh();
-                setState(() {});
+                render();
               });
               break;
 
             case 2:
               _displayMode = _DisplayMode.list;
               _pagingController.refresh();
-              setState(() {});
+              render();
               break;
 
             /// default view

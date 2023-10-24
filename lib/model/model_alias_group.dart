@@ -63,9 +63,8 @@ class ModelAliasGroup {
     return await DB.execute<int>(
       (Transaction txn) async {
         const col = 'ct';
-        final rows = await txn.query(TableAliasGroup.table,
-            columns: ['count(*) as $col'],
-            groupBy: TableAliasGroup.primaryKey.column);
+        final rows = await txn
+            .query(TableAliasGroup.table, columns: ['count(*) as $col']);
 
         if (rows.isNotEmpty) {
           return DB.parseInt(rows.first[col], fallback: 0);

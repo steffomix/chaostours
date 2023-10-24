@@ -18,7 +18,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 ///
-import 'package:chaostours/conf/osm.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/conf/app_colors.dart';
 import 'package:chaostours/view/app_widgets.dart';

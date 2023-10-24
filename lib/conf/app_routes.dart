@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import 'package:flutter/material.dart';
-import 'package:chaostours/view/welcome.dart';
+import 'package:chaostours/view/widget_welcome.dart';
 import 'package:chaostours/view/widget_live_tracking.dart';
 import 'package:chaostours/view/widget_trackpoints.dart';
 import 'package:chaostours/view/widget_logger_page.dart';
@@ -35,7 +35,7 @@ import 'package:chaostours/view/widget_import_export.dart';
 import 'package:chaostours/view/widget_app_settings.dart';
 import 'package:chaostours/view/widget_manage_background_gps.dart';
 import 'package:chaostours/view/widget_manage_calendar.dart';
-import 'package:chaostours/view/database_explorer.dart';
+import 'package:chaostours/view/widget_database_explorer.dart';
 
 /// use value instead of name to get the right
 enum AppRoutes {

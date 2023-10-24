@@ -121,7 +121,7 @@ class _WidgetUserList extends State<WidgetUserList> {
     ]);
   }
 
-  Widget searchWidget() {
+  Widget searcHeaderhWidget() {
     return SizedBox(
         height: _toolBarHeight,
         width: Screen(context).width * 0.95,
@@ -181,7 +181,7 @@ class _WidgetUserList extends State<WidgetUserList> {
       SliverPersistentHeader(
           pinned: true,
           delegate: SliverHeader(
-              widget: searchWidget(), //Text('Test'),
+              widget: searcHeaderhWidget(), //Text('Test'),
               toolBarHeight: _toolBarHeight,
               closedHeight: 0,
               openHeight: 0)),
@@ -230,7 +230,7 @@ class _WidgetUserList extends State<WidgetUserList> {
                           ? 'Show Deleted'
                           : 'Hide Deleted')
             ],
-            onTap: (int id) {
+            onTap: (int id) async {
               switch (id) {
                 case 0:
                   if (_displayMode == _DisplayMode.sort) {
@@ -239,20 +239,20 @@ class _WidgetUserList extends State<WidgetUserList> {
                       render();
                     });
                   } else {
-                    ModelUser.insert(ModelUser()).then(
-                      (model) {
-                        Fluttertoast.showToast(
-                            msg: 'Item #${model.id} created');
-                        Navigator.pushNamed(context, AppRoutes.editUser.route,
-                                arguments: model.id)
-                            .then(
-                          (value) {
-                            _pagingController.refresh();
-                            render();
-                          },
-                        );
-                      },
-                    );
+                    var count = (await ModelUser.count()) + 1;
+                    var model =
+                        await ModelUser.insert(ModelUser(title: '#$count'));
+                    Fluttertoast.showToast(msg: 'Item #${model.id} created');
+                    if (mounted) {
+                      Navigator.pushNamed(context, AppRoutes.editUser.route,
+                              arguments: model.id)
+                          .then(
+                        (value) {
+                          _pagingController.refresh();
+                          render();
+                        },
+                      );
+                    }
                   }
                   break;
 

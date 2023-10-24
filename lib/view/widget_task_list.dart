@@ -231,7 +231,7 @@ class _WidgetTaskList extends State<WidgetTaskList> {
                           ? 'Hide Deleted'
                           : 'Show Deleted')
             ],
-            onTap: (int id) {
+            onTap: (int id) async {
               switch (id) {
                 case 0:
                   if (_displayMode == _DisplayMode.sort) {
@@ -240,20 +240,20 @@ class _WidgetTaskList extends State<WidgetTaskList> {
                       render();
                     });
                   } else {
-                    ModelTask.insert(ModelTask()).then(
-                      (model) {
-                        Fluttertoast.showToast(
-                            msg: 'Item #${model.id} created');
-                        Navigator.pushNamed(context, AppRoutes.editTasks.route,
-                                arguments: model.id)
-                            .then(
-                          (value) {
-                            _pagingController.refresh();
-                            render();
-                          },
-                        );
-                      },
-                    );
+                    var count = (await ModelTask.count()) + 1;
+                    var model =
+                        await ModelTask.insert(ModelTask(title: '#$count'));
+                    Fluttertoast.showToast(msg: 'Item #${model.id} created');
+                    if (mounted) {
+                      Navigator.pushNamed(context, AppRoutes.editTasks.route,
+                              arguments: model.id)
+                          .then(
+                        (value) {
+                          _pagingController.refresh();
+                          render();
+                        },
+                      );
+                    }
                   }
                   break;
 

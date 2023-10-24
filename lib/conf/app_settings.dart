@@ -17,7 +17,8 @@ limitations under the License.
 // ignore_for_file: prefer_const_constructors
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/cache.dart';
-import 'package:chaostours/conf/osm.dart';
+
+enum OsmLookupConditions { never, onStatus, always }
 
 enum SettingUnits {
   second(1),

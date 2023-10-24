@@ -59,17 +59,20 @@ class _WidgetAliasGroupList extends State<WidgetAliasGroupList> {
   final PagingController<int, ModelAliasGroup> _pagingController =
       PagingController(firstPageKey: 0);
 
-  Future<void> loadGroups(bool reset) async {
+  Future<void> loadGroups({bool reset = false}) async {
     if (_id != null && (_groups == null || reset == true)) {
+      /// load model from navigator param id
       _modelAlias = await ModelAlias.byId(_id!);
+      // load groups from model
       _groups = await _modelAlias?.groups() ?? [];
+      // extract ids for checkboxes
       _groupIds = _groups!.map((e) => e.id).toList();
     }
   }
 
   Future<void> _fetchPage(int offset) async {
     try {
-      await loadGroups(false);
+      await loadGroups();
       final newItems = _displayMode == _DisplayMode.list
           ? await ModelAliasGroup.select(offset: offset, limit: _limit)
           : await ModelAliasGroup.search(_searchTextController.text,
@@ -169,7 +172,7 @@ class _WidgetAliasGroupList extends State<WidgetAliasGroupList> {
         } else {
           await _modelAlias?.removeGroup(model);
         }
-        await loadGroups(true);
+        await loadGroups(reset: true);
         _pagingController.refresh();
         render();
       },

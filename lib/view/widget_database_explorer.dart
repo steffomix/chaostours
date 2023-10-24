@@ -36,11 +36,13 @@ typedef ModelRow = Map<String, Object?>;
 class _DatabaseExplorer extends State<WidgetDatabaseExplorer> {
   static final Logger logger = Logger.logger<WidgetDatabaseExplorer>();
 
-  static TableFields _table = TableFields.tables[0];
+  TableFields _table = TableFields.tables[0];
 
-  final _scrollView = ScrollEdgeController();
   final _searchController = TextEditingController();
   final GlobalKey _bodyKey = GlobalKey();
+
+  //final _loader = Loader(key: GlobalKey());
+  final _scrollView = ScrollEdgeController();
 
   // dataTable data
   final _dataTableHeader = <DataColumn>[];
@@ -85,6 +87,7 @@ class _DatabaseExplorer extends State<WidgetDatabaseExplorer> {
 
   void reset() {
     _dataRows.clear();
+    renderTableHeader();
     render();
     loadRows();
   }
@@ -144,6 +147,7 @@ class _DatabaseExplorer extends State<WidgetDatabaseExplorer> {
   }
 
   void renderTableHeader() {
+    _dataTableHeader.clear();
     var cells = <DataCell>[];
     for (var c in _table.columns) {
       var parts = c.split('.');
@@ -163,23 +167,22 @@ class _DatabaseExplorer extends State<WidgetDatabaseExplorer> {
   List<DropdownMenuEntry<TableFields>> renderTableList() {
     var tables = TableFields.tables;
     var list = <DropdownMenuEntry<TableFields>>[];
-    for (var table in tables) {
-      var item =
-          DropdownMenuEntry<TableFields>(value: table, label: table.table);
+    var i = 1;
+    for (var table in TableFields.tables) {
+      var item = DropdownMenuEntry<TableFields>(
+          value: table, label: '#$i ${table.table}');
       list.add(item);
+      i++;
     }
     return list;
   }
 
   @override
   Widget build(BuildContext context) {
-    var sc = Screen(context);
-    var tableList = renderTableList();
-    var table = renderTable();
     Future.microtask(() {
       var size = _bodyKey.currentContext?.size;
       if (size != null) {
-        if (size.height < sc.height) {
+        if (size.height < Screen(context).height) {
           Future.delayed(const Duration(milliseconds: 200), loadRows);
         }
       }
@@ -199,12 +202,24 @@ class _DatabaseExplorer extends State<WidgetDatabaseExplorer> {
                 Padding(
                     padding: const EdgeInsets.only(left: 20),
                     child: DropdownMenu<TableFields>(
+                      enableSearch: true,
+                      trailingIcon: const Icon(Icons.arrow_left_outlined),
+                      selectedTrailingIcon: const Icon(Icons.arrow_left),
                       initialSelection: _table,
-                      dropdownMenuEntries: tableList,
+                      dropdownMenuEntries: renderTableList(),
                       onSelected: (value) {
-                        _table = value ?? TableFields.tables[0];
-                        Future.microtask(() => AppWidgets.navigate(
-                            context, AppRoutes.databaseExplorer));
+                        if (value == null) {
+                          return;
+                        }
+                        _table = value;
+                        Future.delayed(
+                            const Duration(milliseconds: 100), reset);
+                        /*
+                        Future.delayed(
+                            const Duration(milliseconds: 100),
+                            () => AppWidgets.navigate(
+                                context, AppRoutes.databaseExplorer));
+                                */
                       },
                     )),
               ],
@@ -226,7 +241,7 @@ class _DatabaseExplorer extends State<WidgetDatabaseExplorer> {
                         reset();
                       },
                     ))),
-            table
+            renderTable()
           ],
         ));
     return AppWidgets.scaffold(context, body: _body);

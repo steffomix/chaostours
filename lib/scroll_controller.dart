@@ -16,6 +16,7 @@ limitations under the License.
 
 import 'package:flutter/material.dart';
 import 'package:chaostours/logger.dart';
+import 'package:chaostours/screen.dart';
 
 typedef SingleScrollListener = void Function(ScrollController ctrl);
 typedef DoubleScrollListener = void Function(
@@ -30,66 +31,6 @@ class ScrollEdgeController {
   SingleScrollListener? onLeft;
   SingleScrollListener? onRight;
   DoubleScrollListener? onScroll;
-
-  List<dynamic>? _loaded;
-  int? _total;
-  int get countLoaded => _loaded?.length ?? 0;
-  bool _loading = false;
-  bool _hadLoadRequest = false;
-  bool _finished = false;
-
-  Future<void> resetLoader() async {
-    _loaded = null;
-    _total = null;
-    _loading = false;
-    _hadLoadRequest = false;
-    _finished = false;
-  }
-
-  List<T> getLoaded<T>() {
-    return List.unmodifiable((_loaded ?? <T>[]) as List<T>);
-  }
-
-  Future<List<T>> loadNext<T>(
-      {required Future<List<T>> Function(
-              {required int offset, required int limit})
-          load,
-      Future<int> Function()? count,
-      required int limit}) async {
-    if (_finished ||
-        (_total != null && _loaded != null && _total! <= _loaded!.length)) {
-      return <T>[];
-    }
-
-    /// remember request
-    if (_loading) {
-      _hadLoadRequest = true;
-      return <T>[];
-    }
-    _loading = true;
-    var loaded = await _load(load: load, count: count, limit: limit);
-    if (_hadLoadRequest) {
-      loaded.addAll(await _load(load: load, count: count, limit: limit));
-    }
-    _hadLoadRequest = false;
-    _loading = false;
-
-    return loaded;
-  }
-
-  Future<List<T>> _load<T>(
-      {required Future<List<T>> Function(
-              {required int offset, required int limit})
-          load,
-      Future<int> Function()? count,
-      required int limit}) async {
-    _total = await count?.call();
-    _loaded ??= <T>[];
-    var loaded = await load(offset: _loaded!.length, limit: limit);
-    _loaded!.addAll(loaded);
-    _finished = count == null && loaded.length < limit;
-    return loaded;
-  }
 
   // ignore: empty_constructor_bodies
   ScrollEdgeController(
@@ -151,5 +92,97 @@ class ScrollEdgeController {
         controller: listener,
         child: SingleChildScrollView(
             controller: listener, scrollDirection: axis, child: child));
+  }
+}
+
+class Loader {
+  static final Logger logger = Logger.logger<Loader>();
+  final GlobalKey key;
+
+  Loader({required this.key});
+
+  Future<void> checkSize(
+      {required Screen screen,
+      Future<void> Function()? onSizeIsSmaller,
+      Future<void> Function()? onSizeIsSame,
+      Future<void> Function()? onSizeIsBigger,
+      Future<void> Function()? onSizeNotReady}) async {
+    var size = key.currentContext?.size;
+    if (size != null) {
+      if (size.height < screen.height) {
+        await onSizeIsSmaller?.call();
+      } else if (size.height > screen.height) {
+        await onSizeIsBigger?.call();
+      } else if (size.height == screen.height) {
+        await onSizeIsSame?.call();
+      }
+    } else {
+      await onSizeNotReady?.call();
+    }
+  }
+
+  List<dynamic>? _loaded;
+  int? _total;
+
+  int get countLoaded => _loaded?.length ?? 0;
+  bool _loading = false;
+  bool _hadLoadRequest = false;
+  bool _finished = false;
+
+  Future<void> resetLoader() async {
+    _loaded = null;
+    _total = null;
+    _loading = false;
+    _hadLoadRequest = false;
+    _finished = false;
+  }
+
+  List<T> getLoaded<T>() {
+    return List.unmodifiable((_loaded ?? <T>[]) as List<T>);
+  }
+
+  Future<List<T>> loadNext<T>(
+      {required Future<List<T>> Function(
+              {required int offset, required int limit})
+          load,
+      Future<int> Function()? count,
+      required int limit}) async {
+    logger.log('loadNext, $countLoaded loaded');
+    if (_finished ||
+        (_total != null && _loaded != null && _total! <= _loaded!.length)) {
+      return <T>[];
+    }
+
+    /// remember request
+    if (_loading) {
+      _hadLoadRequest = true;
+      return <T>[];
+    }
+    _loading = true;
+    var loaded = await _load(load: load, count: count, limit: limit);
+    if (_hadLoadRequest) {
+      loaded.addAll(await _load(load: load, count: count, limit: limit));
+    }
+    _hadLoadRequest = false;
+    _loading = false;
+    logger.log('loadNext finished, $countLoaded loaded');
+    return loaded;
+  }
+
+  Future<List<T>> _load<T>(
+      {required Future<List<T>> Function(
+              {required int offset, required int limit})
+          load,
+      Future<int> Function()? count,
+      required int limit}) async {
+    logger.log('_load, , $countLoaded loaded');
+    _total = await count?.call();
+    _loaded ??= <T>[];
+    var loaded = await load(offset: _loaded!.length, limit: limit);
+    _loaded!.addAll(loaded);
+    _finished = count == null && loaded.length < limit;
+
+    logger.log('_load finished, $countLoaded loaded');
+    return loaded;
   }
 }

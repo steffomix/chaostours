@@ -18,7 +18,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 ///
 import 'package:chaostours/logger.dart';
-import 'package:chaostours/conf/osm.dart';
+import 'package:chaostours/conf/app_settings.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/tracking.dart';
 import 'package:chaostours/calendar.dart';

@@ -63,9 +63,8 @@ class ModelTask {
     return await DB.execute<int>(
       (Transaction txn) async {
         const col = 'ct';
-        final rows = await txn.query(TableTask.table,
-            columns: ['count(*) as $col'],
-            groupBy: TableTask.primaryKey.column);
+        final rows =
+            await txn.query(TableTask.table, columns: ['count(*) as $col']);
 
         if (rows.isNotEmpty) {
           return DB.parseInt(rows.first[col], fallback: 0);

@@ -112,10 +112,14 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     reload();
 
     Future.microtask(() async {
-      _userModels.clear();
-      _userModels.addAll(await ModelUser.select());
-      _taskModels.clear();
-      _taskModels.addAll(await ModelTask.select());
+      try {
+        _userModels.clear();
+        _userModels.addAll(await ModelUser.select());
+        _taskModels.clear();
+        _taskModels.addAll(await ModelTask.select());
+      } catch (e) {
+        logger.warn(e);
+      }
       render();
     });
 

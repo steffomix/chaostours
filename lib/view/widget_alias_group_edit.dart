@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import 'package:chaostours/view/database_explorer.dart';
+import 'package:chaostours/view/widget_database_explorer.dart';
 import 'package:flutter/material.dart';
 import 'package:device_calendar/device_calendar.dart';
 
