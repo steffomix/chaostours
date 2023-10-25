@@ -92,7 +92,7 @@ enum AppRoutes {
       /// add/edit items routes
       // trackpoint
       AppRoutes.liveTracking.route: (context) =>
-          const BaseWidget(), // WidgetTrackingPage(),
+          const HomeWidget(), // const BaseWidget(), // WidgetTrackingPage(),
       AppRoutes.trackpoints.route: (context) => const WidgetTrackPoints(),
       AppRoutes.editTrackPoint.route: (context) => const WidgetEditTrackPoint(),
       // user

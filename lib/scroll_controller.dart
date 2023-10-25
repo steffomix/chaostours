@@ -17,8 +17,9 @@ limitations under the License.
 import 'package:flutter/material.dart';
 import 'package:chaostours/logger.dart';
 
-class ScrollEdgeController {
-  final Logger logger = Logger.logger<ScrollEdgeController>();
+class ScrollContainer {
+  GlobalKey key = GlobalKey();
+  final Logger logger = Logger.logger<ScrollContainer>();
   final scrollControllerVertical = ScrollController();
   final scrollControllerHorizontal = ScrollController();
   Future<void> Function()? onTop;
@@ -27,16 +28,9 @@ class ScrollEdgeController {
   Future<void> Function()? onRight;
   Future<void> Function()? onScroll;
 
-  final GlobalKey key;
-
   // ignore: empty_constructor_bodies
-  ScrollEdgeController(
-      {required this.key,
-      this.onTop,
-      this.onBottom,
-      this.onLeft,
-      this.onRight,
-      this.onScroll}) {
+  ScrollContainer(
+      {this.onTop, this.onBottom, this.onLeft, this.onRight, this.onScroll}) {
     scrollControllerVertical.addListener(_verticalListener);
     scrollControllerHorizontal.addListener(_horizontalListener);
   }
@@ -78,7 +72,7 @@ class ScrollEdgeController {
     scrollControllerHorizontal.dispose();
   }
 
-  Widget renderDouble(BuildContext context, Widget child) {
+  Widget renderDouble({required BuildContext context, required Widget child}) {
     return Scrollbar(
         controller: scrollControllerVertical,
         child: SingleChildScrollView(
@@ -89,7 +83,7 @@ class ScrollEdgeController {
                 child: SingleChildScrollView(
                     controller: scrollControllerHorizontal,
                     scrollDirection: Axis.horizontal,
-                    child: child))));
+                    child: Container(key: key, child: child)))));
   }
 
   Widget renderSingle(
@@ -102,38 +96,30 @@ class ScrollEdgeController {
     return Scrollbar(
         controller: listener,
         child: SingleChildScrollView(
-            controller: listener, scrollDirection: axis, child: child));
+            controller: listener,
+            scrollDirection: axis,
+            child: Container(key: key, child: child)));
   }
 
-  // measure height against GlobalKey widget
-  Future<bool> measure(
-      {required double height,
-      Duration? delay,
-      Future<void> Function()? onSizeIsSmaller,
-      Future<void> Function()? onSizeIsSame,
-      Future<void> Function()? onSizeIsBigger,
-      Future<void> Function()? onSizeNotReady}) async {
+  /// measure how much bigger the parent is than the child,
+  /// so that the resulting Size may contain negative values
+  Future<Size?> measure({
+    Duration? delay,
+    Size? parentSize,
+    Size? childSize,
+  }) async {
     if (delay != null) {
       await Future.delayed(delay);
     }
-    try {
-      var size = key.currentContext?.size;
-      if (size != null) {
-        if (size.height < height) {
-          await onSizeIsSmaller?.call();
-        } else if (size.height > height) {
-          await onSizeIsBigger?.call();
-        } else if (size.height == height) {
-          await onSizeIsSame?.call();
-        }
-        return true;
-      } else {
-        await onSizeNotReady?.call();
-      }
-    } catch (e) {
-      await onSizeNotReady?.call();
+    if (childSize == null || parentSize == null) {
+      return null;
     }
-    return false;
+    try {
+      return Size(parentSize.width - childSize.width,
+          parentSize.height - childSize.height);
+    } catch (e) {
+      return null;
+    }
   }
 }
 
@@ -145,9 +131,8 @@ class Loader {
   // offset of next load and count of already loaded items
   int get offset => _loaded?.length ?? 0;
   // fixed public list of loaded items
-  List<T> loaded<T>() => List.unmodifiable((_loaded ?? <T>[]) as List<T>);
+  List<dynamic> loaded() => List.unmodifiable(_loaded ?? []);
 
-  int limit = 20;
   //
   bool _finished = false;
   bool get finished => _finished;
@@ -158,7 +143,7 @@ class Loader {
   bool _hadLoadRequest = false;
   bool get hadLoadRequest => _hadLoadRequest;
 
-  Loader({int limit = 20});
+  Loader();
 
   Future<void> resetLoader() async {
     _loaded = null;
@@ -167,48 +152,55 @@ class Loader {
     _finished = false;
   }
 
-  Future<List<T>> load<T>(
+  Future<List<dynamic>> load(
       //
-      {required Future<List<T>> Function(
+      {required Future<List<dynamic>> Function(
               {required int offset, required int limit})
           fnLoad,
+      int limit = 20,
       //
       Future<int> Function()? fnCount}) async {
+    logger.log('load');
     // check if finished
     if (_finished) {
       logger.warn('load already finished');
-      return <T>[];
+      return [];
     }
 
     /// remember request only
     if (_loading) {
       _hadLoadRequest = true;
-      return <T>[];
+      return [];
     }
     // start loading
     _loading = true;
-    var loaded = await _load(load: fnLoad, count: fnCount);
+    var loaded = await _load(fnLoad: fnLoad, fnCount: fnCount, limit: limit);
     if (_hadLoadRequest) {
-      loaded.addAll(await _load(load: fnLoad, count: fnCount));
+      loaded
+          .addAll(await _load(fnLoad: fnLoad, fnCount: fnCount, limit: limit));
     }
+    logger.log('${loaded.length}x loaded');
     _hadLoadRequest = false;
     _loading = false;
+
     //
     logger.log('${loaded.length} new items loaded');
     return loaded;
   }
 
-  Future<List<T>> _load<T>({
-    required Future<List<T>> Function({required int offset, required int limit})
-        load,
-    Future<int> Function()? count,
+  Future<List<dynamic>> _load({
+    required Future<List<dynamic>> Function(
+            {required int offset, required int limit})
+        fnLoad,
+    int limit = 20,
+    Future<int> Function()? fnCount,
   }) async {
-    int total = await count?.call() ?? 0;
-    _loaded ??= <T>[];
-    var loaded = await load(offset: _loaded!.length, limit: limit);
+    int total = await fnCount?.call() ?? 0;
+    _loaded ??= <dynamic>[];
+    var loaded = await fnLoad(offset: _loaded!.length, limit: limit);
     _loaded!.addAll(loaded);
-    _finished = (count == null && loaded.length < limit) ||
-        (count != null && _loaded!.length >= total);
+    _finished = (fnCount == null && loaded.length < limit) ||
+        (fnCount != null && _loaded!.length >= total);
     logger.log('loading finished');
     return loaded;
   }

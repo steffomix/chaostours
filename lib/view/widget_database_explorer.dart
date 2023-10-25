@@ -17,7 +17,6 @@ limitations under the License.
 import 'package:flutter/material.dart';
 
 import 'package:chaostours/database.dart';
-import 'package:chaostours/screen.dart';
 import 'package:chaostours/scroll_controller.dart';
 import 'package:chaostours/model/model.dart';
 import 'package:chaostours/view/app_widgets.dart';
@@ -40,7 +39,8 @@ class _DatabaseExplorer extends State<WidgetDatabaseExplorer> {
   final _searchController = TextEditingController();
 
   //final _loader = Loader(key: GlobalKey());
-  final _scrollView = ScrollEdgeController(key: GlobalKey());
+  final _key = GlobalKey(debugLabel: 'mainBody');
+  final _scroller = ScrollContainer();
 
   // dataTable data
   final _dataTableHeader = <DataColumn>[];
@@ -62,8 +62,7 @@ class _DatabaseExplorer extends State<WidgetDatabaseExplorer> {
   @override
   void initState() {
     renderTableHeader();
-    loadRows();
-    _scrollView.onBottom = onBottom;
+    _scroller.onBottom = onBottom;
     super.initState();
   }
 
@@ -73,7 +72,7 @@ class _DatabaseExplorer extends State<WidgetDatabaseExplorer> {
 
   @override
   void dispose() {
-    _scrollView.dispose();
+    _scroller.dispose();
     super.dispose();
   }
 
@@ -176,21 +175,12 @@ class _DatabaseExplorer extends State<WidgetDatabaseExplorer> {
 
   @override
   Widget build(BuildContext context) {
-    Future.delayed(const Duration(milliseconds: 100), () {
-      var size = _scrollView.key.currentContext?.size;
-      if (size != null) {
-        if (size.height < Screen(context).height) {
-          Future.delayed(const Duration(milliseconds: 200), loadRows);
-        }
-      }
-    });
-
-    _body = _scrollView.renderDouble(
-        context,
-        Wrap(
+    _body = _scroller.renderDouble(
+        context: context,
+        child: Wrap(
           spacing: 5,
           direction: Axis.vertical,
-          key: _scrollView.key,
+          key: _key,
           children: [
             Row(
               children: [
@@ -241,6 +231,20 @@ class _DatabaseExplorer extends State<WidgetDatabaseExplorer> {
             renderTable()
           ],
         ));
+
+    Future.microtask(() {
+      _scroller
+          .measure(
+              parentSize: context.size,
+              childSize: _scroller.key.currentContext?.size)
+          .then(
+        (size) {
+          if ((size?.height ?? 0) > 0) {
+            loadRows();
+          }
+        },
+      );
+    });
     return AppWidgets.scaffold(context, body: _body);
   }
 }

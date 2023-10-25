@@ -119,7 +119,7 @@ class AppWidgets {
     Navigator.pushNamed(context, route.route, arguments: arguments);
   }
 
-  static Widget scaffold(BuildContext context,
+  static Scaffold scaffold(BuildContext context,
       {required Widget body, BottomNavigationBar? navBar, AppBar? appBar}) {
     return Scaffold(
       appBar: appBar ?? _appBar(context),
