@@ -17,6 +17,12 @@ limitations under the License.
 import 'package:flutter/material.dart';
 import 'package:chaostours/logger.dart';
 
+enum ScrollContainerDirection {
+  vertical,
+  horizontal,
+  both;
+}
+
 class ScrollContainer {
   GlobalKey key = GlobalKey();
   final Logger logger = Logger.logger<ScrollContainer>();
@@ -72,6 +78,24 @@ class ScrollContainer {
     scrollControllerHorizontal.dispose();
   }
 
+  Widget render(
+      {required BuildContext context,
+      required Widget child,
+      required ScrollContainerDirection direction}) {
+    switch (direction) {
+      case ScrollContainerDirection.horizontal:
+        return renderSingle(
+            context: context, child: child, axis: Axis.horizontal);
+
+      case ScrollContainerDirection.vertical:
+        return renderSingle(
+            context: context, child: child, axis: Axis.vertical);
+
+      default:
+        return renderDouble(context: context, child: child);
+    }
+  }
+
   Widget renderDouble({required BuildContext context, required Widget child}) {
     return Scrollbar(
         controller: scrollControllerVertical,
@@ -120,88 +144,5 @@ class ScrollContainer {
     } catch (e) {
       return null;
     }
-  }
-}
-
-class Loader {
-  static final Logger logger = Logger.logger<Loader>();
-
-  // List of loaded items
-  List<dynamic>? _loaded;
-  // offset of next load and count of already loaded items
-  int get offset => _loaded?.length ?? 0;
-  // fixed public list of loaded items
-  List<dynamic> loaded() => List.unmodifiable(_loaded ?? []);
-
-  //
-  bool _finished = false;
-  bool get finished => _finished;
-  //
-  bool _loading = false;
-  bool get loading => _loading;
-  //
-  bool _hadLoadRequest = false;
-  bool get hadLoadRequest => _hadLoadRequest;
-
-  Loader();
-
-  Future<void> resetLoader() async {
-    _loaded = null;
-    _loading = false;
-    _hadLoadRequest = false;
-    _finished = false;
-  }
-
-  Future<List<dynamic>> load(
-      //
-      {required Future<List<dynamic>> Function(
-              {required int offset, required int limit})
-          fnLoad,
-      int limit = 20,
-      //
-      Future<int> Function()? fnCount}) async {
-    logger.log('load');
-    // check if finished
-    if (_finished) {
-      logger.warn('load already finished');
-      return [];
-    }
-
-    /// remember request only
-    if (_loading) {
-      _hadLoadRequest = true;
-      return [];
-    }
-    // start loading
-    _loading = true;
-    var loaded = await _load(fnLoad: fnLoad, fnCount: fnCount, limit: limit);
-    if (_hadLoadRequest) {
-      loaded
-          .addAll(await _load(fnLoad: fnLoad, fnCount: fnCount, limit: limit));
-    }
-    logger.log('${loaded.length}x loaded');
-    _hadLoadRequest = false;
-    _loading = false;
-
-    //
-    logger.log('${loaded.length} new items loaded');
-    return loaded;
-  }
-
-  Future<List<dynamic>> _load({
-    required Future<List<dynamic>> Function(
-            {required int offset, required int limit})
-        fnLoad,
-    int limit = 20,
-    Future<int> Function()? fnCount,
-  }) async {
-    int total = await fnCount?.call() ?? 0;
-    _loaded ??= <dynamic>[];
-    var loaded = await fnLoad(offset: _loaded!.length, limit: limit);
-    _loaded!.addAll(loaded);
-    _finished = (fnCount == null && loaded.length < limit) ||
-        (fnCount != null && _loaded!.length >= total);
-    logger.log('loading finished');
-    return loaded;
   }
 }

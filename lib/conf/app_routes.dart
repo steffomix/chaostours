@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/view/widget_alias_group_alias_list.dart';
 import 'package:flutter/material.dart';
 import 'package:chaostours/view/widget_welcome.dart';
 import 'package:chaostours/view/widget_live_tracking.dart';
@@ -37,7 +38,7 @@ import 'package:chaostours/view/widget_manage_background_gps.dart';
 import 'package:chaostours/view/widget_manage_calendar.dart';
 import 'package:chaostours/view/widget_database_explorer.dart';
 
-import 'package:chaostours/view/_widget_test_async_loader.dart';
+//import 'package:chaostours/view/_widget_test_async_loader.dart';
 
 /// use value instead of name to get the right
 enum AppRoutes {
@@ -63,6 +64,7 @@ enum AppRoutes {
   // alias group
   listTaskGroup('/listAliasGroup'),
   editTaskGroup('/listAliasGroup/editAliasGroup'),
+  aliasGroupAliasList('/listAliasGroup/editAliasGroupAliasList'),
 
   // user
   listUsers('/listUsers'),
@@ -91,8 +93,7 @@ enum AppRoutes {
 
       /// add/edit items routes
       // trackpoint
-      AppRoutes.liveTracking.route: (context) =>
-          const HomeWidget(), // const BaseWidget(), // WidgetTrackingPage(),
+      AppRoutes.liveTracking.route: (context) => const WidgetTrackingPage(),
       AppRoutes.trackpoints.route: (context) => const WidgetTrackPoints(),
       AppRoutes.editTrackPoint.route: (context) => const WidgetEditTrackPoint(),
       // user
@@ -106,9 +107,12 @@ enum AppRoutes {
       AppRoutes.editAlias.route: (context) => const WidgetAliasEdit(),
       AppRoutes.listAliasTrackpoints.route: (context) =>
           const WidgetAliasTrackpoint(),
+
       // aliasGroup
       AppRoutes.listAliasGroup.route: (context) => const WidgetAliasGroupList(),
       AppRoutes.editAliasGroup.route: (context) => const WidgetAliasGroupEdit(),
+      AppRoutes.aliasGroupAliasList.route: (context) =>
+          const WidgetAliasGroupAliasList(),
 
       // trackPoint events
       AppRoutes.selectCalendar.route: (context) => const WidgetManageCalendar(),

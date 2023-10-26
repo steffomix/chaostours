@@ -184,11 +184,13 @@ class ModelAliasGroup {
     return count;
   }
 
-  Future<List<ModelAlias>> children() async {
+  Future<List<ModelAlias>> children({int offset = 0, int limit = 20}) async {
     final links = await DB.execute<List<Map<String, Object?>>>((txn) async {
       return await txn.query(TableAliasAliasGroup.table,
           where: '${TableAliasAliasGroup.idAliasGroup.column} = ?',
-          whereArgs: [id]);
+          whereArgs: [id],
+          offset: offset,
+          limit: limit);
     });
     if (links.isEmpty) {
       return <ModelAlias>[];

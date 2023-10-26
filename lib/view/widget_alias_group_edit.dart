@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import 'package:chaostours/view/widget_database_explorer.dart';
 import 'package:flutter/material.dart';
 import 'package:device_calendar/device_calendar.dart';
 
@@ -209,6 +208,18 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
               aliasGroup.update().then((value) => render());
             },
           )),
+
+      AppWidgets.divider(),
+
+      ElevatedButton(
+        child: const Text('Show Aliases from this group'),
+        onPressed: () => Navigator.pushNamed(
+                context, AppRoutes.aliasGroupAliasList.route,
+                arguments: _modelAlias?.id)
+            .then((value) {
+          render();
+        }),
+      )
     ]);
   }
 }

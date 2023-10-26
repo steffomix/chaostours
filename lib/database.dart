@@ -59,17 +59,28 @@ class DB {
           onCreate: !create
               ? null
               : (flite.Database db, int version) async {
-                  await db.transaction((txn) async {
-                    var batch = txn.batch();
-                    for (var sql in [
-                      ...DatabaseSchema.schemata,
-                      ...DatabaseSchema.indexes,
-                      ...DatabaseSchema.inserts
-                    ]) {
-                      batch.rawQuery(sql);
-                    }
-                    await batch.commit();
-                  });
+                  try {
+                    await db.transaction((txn) async {
+                      try {
+                        var batch = txn.batch();
+                        for (var sql in [
+                          ...DatabaseSchema.schemata,
+                          ...DatabaseSchema.indexes,
+                          ...DatabaseSchema.inserts
+                        ]) {
+                          batch.rawQuery(sql);
+                        }
+                        await batch.commit();
+                      } catch (e, stk) {
+                        logger.fatal(
+                            'Execute Batch create Database failed: $e', stk);
+                        rethrow;
+                      }
+                    });
+                  } catch (e, stk) {
+                    logger.fatal('Create Database failed; $e', stk);
+                    rethrow;
+                  }
                 });
     } catch (e, stk) {
       logger.error('openDatabase: $e', stk);
@@ -87,18 +98,16 @@ class DB {
   static Future<T> execute<T>(
       Future<T> Function(flite.Transaction txn) action) async {
     // var stk = StackTrace.current;
-    //try {
-    if (_database == null) {
-      throw 'no database set';
-    }
-    T result = await _database!.transaction<T>(action);
-    return result;
-    /*
-    } catch (e, stk2) {
+    try {
+      if (_database == null) {
+        throw 'no database set';
+      }
+      T result = await _database!.transaction<T>(action);
+      return result;
+    } catch (e, stk) {
       logger.error('DB::execute: $e', stk);
       rethrow;
     }
-    */
   }
 
   static int parseInt(Object? value, {int fallback = 0}) {
