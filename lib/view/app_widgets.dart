@@ -120,8 +120,14 @@ class AppWidgets {
   }
 
   static Scaffold scaffold(BuildContext context,
-      {required Widget body, BottomNavigationBar? navBar, AppBar? appBar}) {
+      {required Widget body,
+      BottomNavigationBar? navBar,
+      AppBar? appBar,
+      Widget? button}) {
     return Scaffold(
+      floatingActionButton: button,
+      floatingActionButtonLocation:
+          button == null ? null : FloatingActionButtonLocation.centerDocked,
       appBar: appBar ?? _appBar(context),
       drawer: const WidgetDrawer(),
       body: body,
@@ -131,6 +137,20 @@ class AppWidgets {
 
   static AppBar _appBar(BuildContext context) {
     return AppBar(title: const Text('ChaosTours'));
+  }
+
+  static Widget bottomButton(
+      {required BuildContext context,
+      required Icon icon,
+      required void Function() onPressed}) {
+    return MaterialButton(
+      onPressed: onPressed,
+      color: Theme.of(context).bottomNavigationBarTheme.backgroundColor,
+      padding: const EdgeInsets.all(10),
+      shape: const CircleBorder(),
+      //textColor: Colors.white,
+      child: icon,
+    );
   }
 
   static Widget divider({Color color = Colors.blueGrey}) {
@@ -186,14 +206,15 @@ class AppWidgets {
       required List<Widget> buttons}) {
     var dialog = showDialog<T>(
         context: context,
-        builder: (context) {
+        builder: (contextDialog) {
           return Dialog(
               child: Padding(
-                  padding: const EdgeInsets.all(10),
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
                   child: Column(mainAxisSize: MainAxisSize.min, children: [
                     ...contents,
-                    Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    Wrap(
+                        spacing: 40,
+                        direction: Axis.horizontal,
                         children: buttons)
                   ])));
         });

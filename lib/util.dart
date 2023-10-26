@@ -125,7 +125,7 @@ class CheckboxController {
   String title;
   String subtitle;
   int group;
-  Function(bool?)? onToggle;
+  Function(bool? toggle)? onToggle;
   CheckboxController({
     required this.idReference,
     required this.referenceList,

@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/util.dart';
 import 'package:flutter/material.dart';
 
 ///
@@ -22,6 +23,7 @@ import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/view/app_base_widget.dart';
 import 'package:chaostours/model/model_alias_group.dart';
 import 'package:chaostours/model/model_alias.dart';
+import 'package:chaostours/util.dart';
 
 class WidgetAliasGroupAliasList extends BaseWidget {
   const WidgetAliasGroupAliasList({Key? key}) : super(key: key);
@@ -36,6 +38,7 @@ class _WidgetAliasGroupAliasList
   //static final Logger logger = Logger.logger<WidgetAliasGroupAliasList>();
 
   final List<Widget> loadedItems = [];
+  final _searchController = TextEditingController();
 
   @override
   int loaderLimit() => 20;
@@ -51,11 +54,13 @@ class _WidgetAliasGroupAliasList
   void resetLoader() {
     loadedItems.clear();
     super.resetLoader();
+    render();
   }
 
   @override
   Future<int> loadWidgets({required int offset, int limit = 20}) async {
-    var rows = await _model?.children(offset: offset, limit: limit);
+    var rows = await _model?.children(
+        offset: offset, limit: limit, search: _searchController.text);
     if (rows != null) {
       loadedItems.addAll(rows.map((e) => renderRow(e)));
     }
@@ -69,6 +74,21 @@ class _WidgetAliasGroupAliasList
         title: Text(_model?.title ?? 'no Model'),
         subtitle: Text(_model?.description ?? ''),
       ),
+      ListTile(
+          leading: const Icon(Icons.search),
+          title: TextField(
+            controller: _searchController,
+            onChanged: (value) {
+              resetLoader();
+            },
+          ),
+          trailing: IconButton(
+            icon: const Icon(Icons.cancel),
+            onPressed: () {
+              _searchController.text = '';
+              resetLoader();
+            },
+          )),
       AppWidgets.divider()
     ];
   }
@@ -82,12 +102,43 @@ class _WidgetAliasGroupAliasList
         .toList();
   }
 
-  @override
-  Scaffold renderScaffold(Widget body) {
-    return AppWidgets.scaffold(context, body: body);
+  Widget renderRow(ModelAlias model) {
+    return CheckboxController.createCheckbox(CheckboxController(
+      idReference: model.id,
+      referenceList: [model.id],
+      checked: true,
+      title: model.title,
+      subtitle: model.description,
+      onToggle: (toggle) async {
+        AppWidgets.dialog(context: context, contents: const [
+          Text(
+              'Warning!\nOn this Page you can only remove Items from this group. To add this Item again, you will need to find it on the alias list.')
+        ], buttons: [
+          TextButton(
+            child: const Text('Cancel'),
+            onPressed: () => Navigator.pop(context),
+          ),
+          TextButton(
+            child: const Text('Remove anyway'),
+            onPressed: () async {
+              Navigator.pop(context);
+              await model.removeGroup(_model!);
+              resetLoader();
+            },
+          )
+        ]);
+      },
+    ));
   }
 
-  Widget renderRow(ModelAlias model) {
-    return ListTile(title: Text(model.title));
+  @override
+  Scaffold renderScaffold(Widget body) {
+    return AppWidgets.scaffold(
+      context,
+      appBar: AppBar(
+        title: const Text('Aliases from:'),
+      ),
+      body: body,
+    );
   }
 }

@@ -111,7 +111,6 @@ class ModelAliasGroup {
     return models;
   }
 
-  /// transforms text into %text%
   static Future<List<ModelAliasGroup>> search(String text,
       {int offset = 0, int limit = 50}) async {
     text = '%$text%';
@@ -137,7 +136,7 @@ class ModelAliasGroup {
   }
 
   static Future<List<ModelAliasGroup>> select(
-      {int limit = 50, int offset = 0}) async {
+      {int offset = 0, int limit = 50}) async {
     final rows = await DB.execute<List<Map<String, Object?>>>(
       (Transaction txn) async {
         return await txn.query(TableAliasGroup.table,
@@ -158,7 +157,6 @@ class ModelAliasGroup {
     return models;
   }
 
-  /// returns task id
   static Future<ModelAliasGroup> insert(ModelAliasGroup model) async {
     var map = model.toMap();
     map.removeWhere((key, value) => key == TableAliasGroup.primaryKey.column);
@@ -184,23 +182,28 @@ class ModelAliasGroup {
     return count;
   }
 
-  Future<List<ModelAlias>> children({int offset = 0, int limit = 20}) async {
-    final links = await DB.execute<List<Map<String, Object?>>>((txn) async {
-      return await txn.query(TableAliasAliasGroup.table,
-          where: '${TableAliasAliasGroup.idAliasGroup.column} = ?',
-          whereArgs: [id],
-          offset: offset,
-          limit: limit);
+  Future<List<ModelAlias>> children(
+      {int offset = 0, int limit = 20, String search = ''}) async {
+    final rows = await DB.execute<List<Map<String, Object?>>>((txn) async {
+      List<Object?> args = [];
+      if (search.isNotEmpty) {
+        var fields = [TableAlias.title, TableAlias.description];
+        args.addAll(List.filled(fields.length, '%$search%'));
+        search = ' AND (${fields.map(
+              (e) => ' $e LIKE ? ',
+            ).join(' OR ')})';
+      }
+      var q =
+          '''SELECT ${TableAlias.columns.join(', ')} FROM ${TableAliasAliasGroup.table}
+LEFT JOIN ${TableAlias.table} ON ${TableAliasAliasGroup.idAlias} = ${TableAlias.primaryKey}
+WHERE ${TableAliasAliasGroup.idAliasGroup} = ? $search
+ORDER BY ${TableAlias.title}
+LIMIT ?
+OFFSET ?  
+''';
+      return await txn.rawQuery(q, [id, ...args, limit, offset]);
     });
-    if (links.isEmpty) {
-      return <ModelAlias>[];
-    }
-    var groupIds = <int>[];
-    for (var link in links) {
-      groupIds.add(DB.parseInt(link[TableAliasAliasGroup.idAlias.column]));
-    }
-    final rows = await ModelAlias.byIdList(groupIds);
-    return rows;
+    return rows.map((e) => ModelAlias.fromMap(e)).toList();
   }
 
   ModelAliasGroup clone() {

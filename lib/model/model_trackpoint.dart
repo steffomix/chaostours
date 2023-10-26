@@ -141,10 +141,6 @@ class ModelTrackPoint {
     );
   }
 
-  ///
-  /// insert only if Model doesn't have a valid (not null) _id
-  /// otherwise writes table to disk
-  ///
   static Future<ModelTrackPoint> insert(ModelTrackPoint model) async {
     var map = model.toMap();
     map.removeWhere((key, value) => key == TableTrackPoint.primaryKey.column);
@@ -186,7 +182,6 @@ class ModelTrackPoint {
     return model;
   }
 
-  ///
   Future<int> update() async {
     if (id <= 0) {
       throw ('update model has no id');
@@ -214,7 +209,6 @@ class ModelTrackPoint {
     }
   }
 
-  /// ignores dupliate errors but logs a warning
   Future<bool> addAlias(ModelAlias m) async {
     return await _addAsset(
         table: TableTrackPointAlias.table,
@@ -223,7 +217,6 @@ class ModelTrackPoint {
         idForeign: m.id);
   }
 
-  /// ignores dupliate errors but logs a warning
   Future<bool> addTask(ModelTask m) async {
     return await _addAsset(
         table: TableTrackPointTask.table,
@@ -232,7 +225,6 @@ class ModelTrackPoint {
         idForeign: m.id);
   }
 
-  /// ignores dupliate errors but logs a warning
   Future<bool> addUser(ModelUser m) async {
     return await _addAsset(
         table: TableTrackPointUser.table,
@@ -254,7 +246,6 @@ class ModelTrackPoint {
     return i > 0;
   }
 
-  /// ignores dupliate errors but logs a warning
   Future<bool> removeAlias(ModelAlias m) async {
     return await _removeAsset(
         table: TableTrackPointAlias.table,
@@ -263,7 +254,6 @@ class ModelTrackPoint {
         idForeign: m.id);
   }
 
-  /// ignores dupliate errors but logs a warning
   Future<bool> removeTask(ModelTask m) async {
     return await _removeAsset(
         table: TableTrackPointTask.table,
@@ -272,7 +262,6 @@ class ModelTrackPoint {
         idForeign: m.id);
   }
 
-  /// ignores dupliate errors but logs a warning
   Future<bool> removeUser(ModelUser m) async {
     return await _removeAsset(
         table: TableTrackPointUser.table,

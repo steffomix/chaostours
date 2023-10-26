@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 import 'package:chaostours/database.dart';
+import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/logger.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -152,7 +153,6 @@ class ModelUserGroup {
     return models;
   }
 
-  /// returns task id
   static Future<ModelUserGroup> insert(ModelUserGroup model) async {
     var map = model.toMap();
     map.removeWhere((key, value) => key == TableUserGroup.primaryKey.column);
@@ -176,6 +176,30 @@ class ModelUserGroup {
       },
     );
     return count;
+  }
+
+  Future<List<ModelUser>> children(
+      {int offset = 0, int limit = 20, String search = ''}) async {
+    final rows = await DB.execute<List<Map<String, Object?>>>((txn) async {
+      List<Object?> args = [];
+      if (search.isNotEmpty) {
+        var fields = [TableUser.title, TableUser.description];
+        args.addAll(List.filled(fields.length, '%$search%'));
+        search = ' AND (${fields.map(
+              (e) => ' $e LIKE ? ',
+            ).join(' OR ')})';
+      }
+      var q =
+          '''SELECT ${TableUser.columns.join(', ')} FROM ${TableUserUserGroup.table}
+LEFT JOIN ${TableUser.table} ON ${TableUserUserGroup.idUser} = ${TableUser.primaryKey}
+WHERE ${TableUserUserGroup.idUserGroup} = ? $search
+ORDER BY ${TableUser.title}
+LIMIT ?
+OFFSET ?  
+''';
+      return await txn.rawQuery(q, [id, ...args, limit, offset]);
+    });
+    return rows.map((e) => ModelUser.fromMap(e)).toList();
   }
 
   ModelUserGroup clone() {
