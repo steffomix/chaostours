@@ -27,11 +27,11 @@ class Loader {
   int defaultLimit;
 
   //
-  bool _finished = false;
-  bool get finished => _finished;
+  bool _isFinished = false;
+  bool get isFinished => _isFinished;
   //
-  bool _loading = false;
-  bool get loading => _loading;
+  bool _isLoading = false;
+  bool get isLoading => _isLoading;
   //
   bool _hadLoadRequest = false;
   bool get hadLoadRequest => _hadLoadRequest;
@@ -39,10 +39,13 @@ class Loader {
   Loader({this.defaultLimit = 20});
 
   Future<void> resetLoader() async {
+    while (_isLoading) {
+      await Future.delayed(const Duration(milliseconds: 100));
+    }
     _loadedTotal = null;
-    _loading = false;
+    _isLoading = false;
     _hadLoadRequest = false;
-    _finished = false;
+    _isFinished = false;
   }
 
   Future<int> load(
@@ -52,18 +55,18 @@ class Loader {
       int? limit}) async {
     logger.log('load');
     // check if finished
-    if (_finished) {
+    if (_isFinished) {
       logger.warn('load already finished');
       return 0;
     }
 
     /// remember request only
-    if (_loading) {
+    if (_isLoading) {
       _hadLoadRequest = true;
       return 0;
     }
     // start loading
-    _loading = true;
+    _isLoading = true;
     var countLoaded = 0;
     try {
       countLoaded = await _load(
@@ -75,12 +78,12 @@ class Loader {
     } catch (e, stk) {
       logger.error('load, finish loading $e', stk);
       _hadLoadRequest = false;
-      _finished = true;
+      _isFinished = true;
       rethrow;
     }
     logger.log('${countLoaded}x loaded');
     _hadLoadRequest = false;
-    _loading = false;
+    _isLoading = false;
 
     //
     logger.log('$countLoaded new items loaded');
@@ -96,9 +99,9 @@ class Loader {
     int? dbCount = await fnCount?.call();
     final countLoaded = (await fnLoad(offset: _loadedTotal ?? 0, limit: limit));
     _loadedTotal = (_loadedTotal ?? 0) + countLoaded;
-    _finished = (dbCount == null && countLoaded < limit) ||
+    _isFinished = (dbCount == null && countLoaded < limit) ||
         (dbCount != null && _loadedTotal! >= dbCount);
-    if (_finished) {
+    if (_isFinished) {
       logger.log('loading finished');
     }
     return countLoaded;

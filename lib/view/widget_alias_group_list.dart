@@ -15,135 +15,68 @@ limitations under the License.
 */
 
 import 'package:flutter/material.dart';
-import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 
 ///
-import 'package:chaostours/screen.dart';
 import 'package:chaostours/view/app_widgets.dart';
+import 'package:chaostours/view/app_base_widget.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/model/model_alias_group.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/util.dart';
 
-enum _DisplayMode {
-  list,
-  search;
-}
-
-class WidgetAliasGroupList extends StatefulWidget {
+class WidgetAliasGroupList extends BaseWidget {
   const WidgetAliasGroupList({super.key});
 
   @override
   State<WidgetAliasGroupList> createState() => _WidgetAliasGroupList();
 }
 
-class _WidgetAliasGroupList extends State<WidgetAliasGroupList> {
+class _WidgetAliasGroupList extends BaseWidgetState<WidgetAliasGroupList> {
   // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetAliasGroupList>();
 
-  _DisplayMode _displayMode = _DisplayMode.list;
   int _selectedNavBarItem = 0;
 
-  // height of search field container
-  final double _toolBarHeight = 70;
   final TextEditingController _searchTextController = TextEditingController();
 
-  int? _id;
   ModelAlias? _modelAlias;
-  List<ModelAliasGroup>? _groups;
-  List<int> _groupIds = [];
+  List<int>? _groupIds;
   // items per page
-  static const int _limit = 30;
+  int getLimit() => 30;
 
-  final PagingController<int, ModelAliasGroup> _pagingController =
-      PagingController(firstPageKey: 0);
-
-  Future<void> loadGroups({bool reset = false}) async {
-    if (_id != null && (_groups == null || reset == true)) {
-      /// load model from navigator param id
-      _modelAlias = await ModelAlias.byId(_id!);
-      // load groups from model
-      _groups = await _modelAlias?.groups() ?? [];
-      // extract ids for checkboxes
-      _groupIds = _groups!.map((e) => e.id).toList();
-    }
-  }
-
-  Future<void> _fetchPage(int offset) async {
-    try {
-      await loadGroups();
-      final newItems = _displayMode == _DisplayMode.list
-          ? await ModelAliasGroup.select(offset: offset, limit: _limit)
-          : await ModelAliasGroup.search(_searchTextController.text,
-              offset: offset, limit: _limit);
-
-      final isLastPage = newItems.length < _limit;
-      if (isLastPage) {
-        _pagingController.appendLastPage(newItems);
-      } else {
-        _pagingController.appendPage(newItems, offset + newItems.length);
-      }
-    } catch (error) {
-      _pagingController.error = error;
-    }
+  @override
+  Future<void> initialize(BuildContext context, Object? args) async {
+    _modelAlias = await ModelAlias.byId(args as int);
   }
 
   @override
-  void dispose() {
-    _pagingController.dispose();
-    super.dispose();
+  Future<int> load({required int offset, int limit = 20}) async {
+    _groupIds ??= await _modelAlias?.groupsIds() ?? [];
+
+    var newItems = _searchTextController.text.isEmpty
+        ? await ModelAliasGroup.select(limit: limit, offset: offset)
+        : await ModelAliasGroup.search(_searchTextController.text,
+            limit: limit, offset: offset);
+
+    loadedWidgets.addAll(newItems.map((e) => renderRow(e)).toList());
+    return newItems.length;
   }
 
   @override
-  void initState() {
-    _pagingController.addPageRequestListener(_fetchPage);
-    super.initState();
+  Future<void> resetLoader() async {
+    await super.resetLoader();
+    loadedWidgets.clear();
+    render();
   }
 
-  void render() {
-    if (mounted) {
-      setState(() {});
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // load possible Item ID
-    _id = ModalRoute.of(context)?.settings.arguments as int?;
-
-    var body = CustomScrollView(
-      slivers: <Widget>[
-        /// Pinned header
-        SliverPersistentHeader(
-            pinned: true,
-            delegate: SliverHeader(
-                widget: searchWidget(), //Text('Test'),
-                toolBarHeight: _toolBarHeight,
-                closedHeight: 0,
-                openHeight: 0)),
-
-        /// Items List
-        PagedSliverList<int, ModelAliasGroup>.separated(
-          separatorBuilder: (BuildContext context, int i) => const Divider(),
-          pagingController: _pagingController,
-          builderDelegate: PagedChildBuilderDelegate<ModelAliasGroup>(
-              itemBuilder: (context, model, index) {
-            return ListTile(
-              leading: edit(model),
-              trailing: checkBox(model),
-              title: title(model),
-              subtitle: subtitle(model),
-            );
-          }),
-        ),
-      ],
+  Widget renderRow(ModelAliasGroup model) {
+    return ListTile(
+      leading: editButton(model),
+      trailing: checkBox(model),
+      title: title(model),
+      subtitle: subtitle(model),
     );
-
-    return AppWidgets.scaffold(context,
-        body: body,
-        navBar: navBar(context),
-        appBar: AppBar(title: const Text('Alias List')));
   }
 
   Widget title(ModelAliasGroup model) {
@@ -162,9 +95,23 @@ class _WidgetAliasGroupList extends State<WidgetAliasGroupList> {
   }
 
   Widget checkBox(ModelAliasGroup model) {
+    AppWidgets.checkbox(
+      idReference: _modelAlias?.id ?? 0,
+      referenceList: _groupIds ?? [],
+      onToggle: (toggle) async {
+        bool add = toggle ?? false;
+        if (add) {
+          await _modelAlias?.addGroup(model);
+        } else {
+          await _modelAlias?.removeGroup(model);
+        }
+        resetLoader();
+      },
+    );
+
     var controller = CheckboxController(
       idReference: model.id,
-      referenceList: _groupIds,
+      referenceList: _groupIds ?? [],
       onToggle: (bool? checked) async {
         bool add = checked ?? false;
         if (add) {
@@ -172,9 +119,7 @@ class _WidgetAliasGroupList extends State<WidgetAliasGroupList> {
         } else {
           await _modelAlias?.removeGroup(model);
         }
-        await loadGroups(reset: true);
-        _pagingController.refresh();
-        render();
+        resetLoader();
       },
     );
     return Checkbox(
@@ -183,7 +128,7 @@ class _WidgetAliasGroupList extends State<WidgetAliasGroupList> {
     );
   }
 
-  Widget edit(ModelAliasGroup model) {
+  Widget editButton(ModelAliasGroup model) {
     return IconButton(
       icon: const Icon(Icons.edit),
       onPressed: () {
@@ -191,48 +136,40 @@ class _WidgetAliasGroupList extends State<WidgetAliasGroupList> {
                 arguments: model.id)
             .then(
           (value) {
-            _pagingController.refresh();
-            render();
+            resetLoader();
           },
         );
       },
     );
   }
 
-  Widget searchWidget() {
-    return SizedBox(
-        height: _toolBarHeight,
-        width: Screen(context).width * 0.95,
-        child: Align(
-            alignment: Alignment.center,
-            child: ListTile(
-                trailing: IconButton(
-                  icon: const Icon(Icons.clear),
-                  onPressed: () {
-                    _searchTextController.text = "";
-                    _displayMode = _DisplayMode.list;
-                    _pagingController.refresh();
-                    setState(() {});
-                  },
-                ),
-                title: TextField(
-                  controller: _searchTextController,
-                  minLines: 1,
-                  maxLines: 1,
-                  decoration: const InputDecoration(
-                    isDense: true,
-                    //con: Icon(Icons.search, size: 30),
-                    border: OutlineInputBorder(),
-                    labelText: "Search",
-                    contentPadding: EdgeInsets.all(10),
-                  ),
-                  onChanged: (value) {
-                    _displayMode =
-                        value.isEmpty ? _DisplayMode.list : _DisplayMode.search;
-                    _pagingController.refresh();
-                    setState(() {});
-                  },
-                ))));
+  @override
+  List<Widget> renderHeader(BoxConstraints constrains) {
+    return [
+      ListTile(
+          trailing: IconButton(
+            icon: const Icon(Icons.clear),
+            onPressed: () {
+              _searchTextController.text = "";
+              resetLoader();
+            },
+          ),
+          title: TextField(
+            controller: _searchTextController,
+            minLines: 1,
+            maxLines: 1,
+            decoration: const InputDecoration(
+              isDense: true,
+              //con: Icon(Icons.search, size: 30),
+              border: OutlineInputBorder(),
+              labelText: "Search",
+              contentPadding: EdgeInsets.all(10),
+            ),
+            onChanged: (value) {
+              resetLoader();
+            },
+          ))
+    ];
   }
 
   BottomNavigationBar navBar(BuildContext context) {
@@ -258,8 +195,7 @@ class _WidgetAliasGroupList extends State<WidgetAliasGroupList> {
                 Navigator.pushNamed(context, AppRoutes.editAliasGroup.route,
                         arguments: model.id)
                     .then((_) {
-                  _pagingController.refresh();
-                  setState(() {});
+                  resetLoader();
                 });
               }
 

@@ -51,14 +51,14 @@ class _WidgetAliasGroupAliasList
   }
 
   @override
-  void resetLoader() {
+  Future<void> resetLoader() async {
+    await super.resetLoader();
     loadedItems.clear();
-    super.resetLoader();
     render();
   }
 
   @override
-  Future<int> loadWidgets({required int offset, int limit = 20}) async {
+  Future<int> load({required int offset, int limit = 20}) async {
     var rows = await _model?.children(
         offset: offset, limit: limit, search: _searchController.text);
     if (rows != null) {
@@ -103,7 +103,7 @@ class _WidgetAliasGroupAliasList
   }
 
   Widget renderRow(ModelAlias model) {
-    return CheckboxController.createCheckbox(CheckboxController(
+    return AppWidgets.checkboxListTile(CheckboxController(
       idReference: model.id,
       referenceList: [model.id],
       checked: true,

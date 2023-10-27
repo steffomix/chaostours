@@ -78,7 +78,8 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
         Navigator.pop(context);
       }
     }
-    _groups = await model?.groups() ?? [];
+    var ids = (await model?.groupsIds()) ?? [];
+    _groups = ids.isEmpty ? [] : await ModelAliasGroup.byIdList(ids);
     return model;
   }
 

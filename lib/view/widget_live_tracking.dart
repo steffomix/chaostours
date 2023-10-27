@@ -601,7 +601,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     var checkBoxes = <Widget>[];
     for (var model in _taskModels) {
       if (model.isActive) {
-        checkBoxes.add(CheckboxController.createCheckbox(CheckboxController(
+        checkBoxes.add(AppWidgets.checkboxListTile(CheckboxController(
             idReference: model.id,
             referenceList: referenceList,
             isActive: model.isActive,
@@ -625,7 +625,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     var checkBoxes = <Widget>[];
     for (var model in _userModels) {
       if (model.isActive) {
-        checkBoxes.add(CheckboxController.createCheckbox(CheckboxController(
+        checkBoxes.add(AppWidgets.checkboxListTile(CheckboxController(
             idReference: model.id,
             referenceList: referenceList,
             isActive: model.isActive,

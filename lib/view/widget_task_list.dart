@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/view/app_base_widget.dart';
 import 'package:flutter/material.dart';
-import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 ///
@@ -30,14 +30,14 @@ enum _DisplayMode {
   sort;
 }
 
-class WidgetTaskList extends StatefulWidget {
+class WidgetTaskList extends BaseWidget {
   const WidgetTaskList({super.key});
 
   @override
   State<WidgetTaskList> createState() => _WidgetTaskList();
 }
 
-class _WidgetTaskList extends State<WidgetTaskList> {
+class _WidgetTaskList extends BaseWidgetState<WidgetTaskList> {
   // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetTaskList>();
 
@@ -51,13 +51,9 @@ class _WidgetTaskList extends State<WidgetTaskList> {
   // items per page
   static const int _limit = 30;
 
-  final PagingController<int, ModelTask> _pagingController =
-      PagingController(firstPageKey: 0);
-
   @override
   void initState() {
     _selectDeleted.addListener(render);
-    _pagingController.addPageRequestListener(_fetchPage);
     // ModelTask.resetSortOrder();
     super.initState();
   }
@@ -65,14 +61,7 @@ class _WidgetTaskList extends State<WidgetTaskList> {
   @override
   void dispose() {
     _selectDeleted.dispose();
-    _pagingController.dispose();
     super.dispose();
-  }
-
-  void render() {
-    if (mounted) {
-      setState(() {});
-    }
   }
 
   void _fetchPage(int offset) async {
@@ -91,9 +80,9 @@ class _WidgetTaskList extends State<WidgetTaskList> {
                 selectDeleted: _selectDeleted.value));
 
     if (newItems.length < _limit) {
-      _pagingController.appendLastPage(newItems);
+      // _pagingController.appendLastPage(newItems);
     } else {
-      _pagingController.appendPage(newItems, offset + newItems.length);
+      // _pagingController.appendPage(newItems, offset + newItems.length);
     }
   }
 
@@ -115,7 +104,7 @@ class _WidgetTaskList extends State<WidgetTaskList> {
                 Navigator.pushNamed(context, AppRoutes.editTasks.route,
                         arguments: model.id)
                     .then((_) {
-                  _pagingController.refresh();
+                  // _pagingController.refresh();
                   render();
                 });
               }))
@@ -135,7 +124,7 @@ class _WidgetTaskList extends State<WidgetTaskList> {
               decoration: const InputDecoration(
                   icon: Icon(Icons.search, size: 30), border: InputBorder.none),
               onChanged: (value) {
-                _pagingController.refresh();
+                // _pagingController.refresh();
                 render();
               },
             )));
@@ -152,7 +141,7 @@ class _WidgetTaskList extends State<WidgetTaskList> {
                 model.sortOrder++;
                 await model.update();
                 await models[index + 1].update();
-                _pagingController.refresh();
+                // _pagingController.refresh();
                 render();
               }
             }),
@@ -164,7 +153,7 @@ class _WidgetTaskList extends State<WidgetTaskList> {
               model.sortOrder--;
               await model.update();
               await models[index - 1].update();
-              _pagingController.refresh();
+              // _pagingController.refresh();
               render();
             }
           },
@@ -175,7 +164,7 @@ class _WidgetTaskList extends State<WidgetTaskList> {
                 : null),
         subtitle: Text(model.description));
   }
-
+/*
   @override
   Widget build(BuildContext context) {
     var body = CustomScrollView(slivers: <Widget>[
@@ -188,14 +177,14 @@ class _WidgetTaskList extends State<WidgetTaskList> {
               openHeight: 0)),
       PagedSliverList<int, ModelTask>.separated(
         separatorBuilder: (BuildContext context, int i) => const Divider(),
-        pagingController: _pagingController,
+        pagingController: // _pagingController,
         builderDelegate: PagedChildBuilderDelegate<ModelTask>(
           itemBuilder: (context, model, index) {
             if (_displayMode == _DisplayMode.sort) {
-              if (_pagingController.itemList == null) {
+              if (// _pagingController.itemList == null) {
                 return AppWidgets.loading('Waiting for Tasks...');
               }
-              var list = _pagingController.itemList!;
+              var list = // _pagingController.itemList!;
               return sortWidget(list, index);
             } else {
               return modelWidget(model);
@@ -236,7 +225,7 @@ class _WidgetTaskList extends State<WidgetTaskList> {
                 case 0:
                   if (_displayMode == _DisplayMode.sort) {
                     ModelTask.resetSortOrder().then((value) {
-                      _pagingController.refresh();
+                      // _pagingController.refresh();
                       render();
                     });
                   } else {
@@ -249,7 +238,7 @@ class _WidgetTaskList extends State<WidgetTaskList> {
                               arguments: model.id)
                           .then(
                         (value) {
-                          _pagingController.refresh();
+                          // _pagingController.refresh();
                           render();
                         },
                       );
@@ -261,7 +250,7 @@ class _WidgetTaskList extends State<WidgetTaskList> {
                   _displayMode = _displayMode == _DisplayMode.list
                       ? _DisplayMode.sort
                       : _DisplayMode.list;
-                  _pagingController.refresh();
+                  // _pagingController.refresh();
                   render();
                   break;
 
@@ -271,7 +260,7 @@ class _WidgetTaskList extends State<WidgetTaskList> {
                   } else {
                     _selectDeleted.value = true;
                   }
-                  _pagingController.refresh();
+                  // _pagingController.refresh();
                   render();
                   break;
                 default:
@@ -279,4 +268,5 @@ class _WidgetTaskList extends State<WidgetTaskList> {
               }
             }));
   }
+  */
 }

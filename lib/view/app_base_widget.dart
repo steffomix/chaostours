@@ -25,10 +25,10 @@ typedef DbRow = Map<String, Object?>;
 
 abstract class BaseWidgetPattern {
   @mustCallSuper
-  void resetLoader();
+  Future<void> resetLoader();
   int loaderLimit() => 20;
   void initialize(BuildContext context, Object? args);
-  Future<int> loadWidgets({required int offset, int limit = 20});
+  Future<int> load({required int offset, int limit = 20});
   Future<int?> loadCount();
   List<Widget> renderHeader(BoxConstraints constraints);
   List<Widget> renderBody(BoxConstraints constraints);
@@ -63,7 +63,7 @@ class BaseWidgetState<T extends BaseWidget> extends State<T>
 
     super.initState();
     //_load();
-    scrollContainer.onBottom = load;
+    scrollContainer.onBottom = _load;
   }
 
   Future<void> render({void Function()? fn}) async {
@@ -114,9 +114,9 @@ class BaseWidgetState<T extends BaseWidget> extends State<T>
     );
   }
 
-  Future<void> load() async {
+  Future<void> _load() async {
     await widgetLoader.load(
-        fnLoad: loadWidgets, fnCount: loadCount, limit: loaderLimit());
+        fnLoad: load, fnCount: loadCount, limit: loaderLimit());
     render();
   }
 
@@ -130,8 +130,8 @@ class BaseWidgetState<T extends BaseWidget> extends State<T>
           : Size(pSize.width - cSize.width, pSize.height - cSize.height);
 
       if ((size?.height ?? 0) > 0) {
-        if (!widgetLoader.finished) {
-          load();
+        if (!widgetLoader.isFinished) {
+          _load();
         }
       }
     } catch (e) {
@@ -165,7 +165,7 @@ class BaseWidgetState<T extends BaseWidget> extends State<T>
           children: [
             SizedBox(height: _headerHeight ?? 50, width: constraints.maxWidth),
             ...renderBody(constraints),
-            !widgetLoader.finished ? AppWidgets.loading('') : AppWidgets.empty
+            !widgetLoader.isFinished ? AppWidgets.loading('') : AppWidgets.empty
           ],
         ),
         direction: scrollDirection);
@@ -177,13 +177,15 @@ class BaseWidgetState<T extends BaseWidget> extends State<T>
 
   @override
   @mustCallSuper
-  void resetLoader() => widgetLoader.resetLoader();
+  Future<void> resetLoader() async {
+    await widgetLoader.resetLoader();
+  }
 
   @override
   int loaderLimit() => 20;
 
   @override
-  Future<int> loadWidgets({required int offset, int limit = 7}) async {
+  Future<int> load({required int offset, int limit = 7}) async {
     return 1;
   }
 

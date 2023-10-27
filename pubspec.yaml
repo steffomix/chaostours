@@ -56,8 +56,6 @@ dependencies:
   provider: ^6.0.5
   flex_color_scheme: ^7.3.1
   google_fonts: ^4.0.4
-  infinite_scroll_pagination: ^4.0.0
-  data_table_2: ^2.5.8
 
 
 dev_dependencies:

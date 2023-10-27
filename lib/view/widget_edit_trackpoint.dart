@@ -109,7 +109,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
     var checkBoxes = <Widget>[];
     for (var model in allTaskModels) {
       if (model.isActive) {
-        checkBoxes.add(CheckboxController.createCheckbox(CheckboxController(
+        checkBoxes.add(AppWidgets.checkboxListTile(CheckboxController(
             idReference: model.id,
             referenceList: referenceList,
             isActive: model.isActive,
@@ -128,7 +128,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
     var checkBoxes = <Widget>[];
     for (var model in allUserModels) {
       if (model.isActive) {
-        checkBoxes.add(CheckboxController.createCheckbox(CheckboxController(
+        checkBoxes.add(AppWidgets.checkboxListTile(CheckboxController(
             idReference: model.id,
             referenceList: referenceList,
             isActive: model.isActive,

@@ -49,7 +49,7 @@ class _WidgetDatabaseExplorer extends BaseWidgetState<WidgetDatabaseExplorer>
   final List<DataRow> loadedItems = [];
 
   @override
-  Future<int> loadWidgets({required int offset, int limit = 20}) async {
+  Future<int> load({required int offset, int limit = 20}) async {
     final rows = (await Model.select(_table,
         limit: limit, offset: offset, search: _searchController.text));
 
@@ -60,9 +60,10 @@ class _WidgetDatabaseExplorer extends BaseWidgetState<WidgetDatabaseExplorer>
   }
 
   @override
-  void resetLoader() {
+  Future<void> resetLoader() async {
+    await super.resetLoader();
     loadedItems.clear();
-    super.resetLoader();
+    render();
   }
 
   List<DataColumn> renderTableHeader() {
@@ -108,7 +109,6 @@ class _WidgetDatabaseExplorer extends BaseWidgetState<WidgetDatabaseExplorer>
                 _table = value;
                 Future.delayed(const Duration(milliseconds: 100), () {
                   resetLoader();
-                  render();
                 });
                 /*
                         Future.delayed(
@@ -132,7 +132,6 @@ class _WidgetDatabaseExplorer extends BaseWidgetState<WidgetDatabaseExplorer>
             controller: _searchController,
             onChanged: (value) {
               resetLoader();
-              render();
             },
           )),
       AppWidgets.divider()

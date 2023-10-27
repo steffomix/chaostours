@@ -15,31 +15,15 @@ limitations under the License.
 */
 
 import 'package:flutter/material.dart';
-import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 
 ///
-import 'package:chaostours/screen.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/conf/app_colors.dart';
 import 'package:chaostours/model/model_alias.dart';
+import 'package:chaostours/view/app_base_widget.dart';
 import 'package:chaostours/gps.dart';
-/*
-class _Model {
-  final ModelAlias model;
-  String get title => model.title;
-  String get desciption => model.description;
-  bool get isActive => model.isActive;
-  String get calendarId => model.calendarId;
-  GPS get gps => model.gps;
-  int get groupId => model.groupId;
-  DateTime get lastVisited => model.lastVisited;
-  int get timesVisited => model.timesVisited;
-  int get radius => model.radius;
-
-  _Model({required this.model});
-}*/
 
 enum _DisplayMode {
   list,
@@ -47,14 +31,15 @@ enum _DisplayMode {
   nearest;
 }
 
-class WidgetAliasList extends StatefulWidget {
+class WidgetAliasList extends BaseWidget {
   const WidgetAliasList({super.key});
 
   @override
   State<WidgetAliasList> createState() => _WidgetAliasList();
 }
 
-class _WidgetAliasList extends State<WidgetAliasList> {
+class _WidgetAliasList extends BaseWidgetState<WidgetAliasList>
+    implements BaseWidgetPattern {
   // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetAliasList>();
 
@@ -62,107 +47,49 @@ class _WidgetAliasList extends State<WidgetAliasList> {
 
   int _selectedNavBarItem = 0;
 
-  GPS? _gps;
+  List<Widget> _loadedItems = [];
 
-  // height of seasrch field container
-  final double _toolBarHeight = 70;
+  GPS? _gps;
 
   final TextEditingController _searchTextController = TextEditingController();
 
   // items per page
-  static const int _limit = 30;
+  @override
+  int loaderLimit() => 20;
 
-  final PagingController<int, ModelAlias> _pagingController =
-      PagingController(firstPageKey: 0);
+  @override
+  Future<void> resetLoader() async {
+    await super.resetLoader();
+    _loadedItems = [];
+    render();
+  }
 
-  Future<void> _fetchPage(int offset) async {
-    try {
-      List<ModelAlias> newItems = [];
-      switch (_displayMode) {
-        case _DisplayMode.list:
-          newItems
-              .addAll(await ModelAlias.select(offset: offset, limit: _limit));
-          break;
+  @override
+  Future<int> load({required int offset, int limit = 20}) async {
+    List<ModelAlias> newItems = [];
+    switch (_displayMode) {
+      case _DisplayMode.list:
+        newItems.addAll(await ModelAlias.select(offset: offset, limit: limit));
+        break;
 
-        case _DisplayMode.search:
-          newItems.addAll(await ModelAlias.search(_searchTextController.text,
-              offset: offset, limit: _limit));
-          break;
+      case _DisplayMode.search:
+        newItems.addAll(await ModelAlias.search(_searchTextController.text,
+            offset: offset, limit: limit));
+        break;
 
-        case _DisplayMode.nearest:
-          newItems.addAll(await ModelAlias.nextAlias(gps: _gps!, area: 10000));
-          break;
+      case _DisplayMode.nearest:
+        newItems.addAll(await ModelAlias.nextAlias(
+            gps: _gps ??= (await GPS.gps()), area: 10000));
+        break;
 
-        default:
-        //
-      }
-      final isLastPage =
-          newItems.length < _limit || _displayMode == _DisplayMode.nearest;
-      if (isLastPage) {
-        _pagingController.appendLastPage(newItems);
-      } else {
-        _pagingController.appendPage(newItems, offset + newItems.length);
-      }
-    } catch (error) {
-      _pagingController.error = error;
+      default:
+        return 0;
     }
+    _loadedItems.addAll(newItems.map((e) => renderItem(e)).toList());
+    return newItems.length;
   }
 
-  @override
-  void dispose() {
-    _pagingController.dispose();
-    super.dispose();
-  }
-
-  @override
-  void initState() {
-    _pagingController.addPageRequestListener(_fetchPage);
-    super.initState();
-  }
-
-  void render() {
-    if (mounted) {
-      setState(() {});
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    var body = CustomScrollView(
-      slivers: <Widget>[
-        /// Pinned header
-        SliverPersistentHeader(
-            pinned: true,
-            delegate: SliverHeader(
-                widget: searchWidget(), //Text('Test'),
-                toolBarHeight: _toolBarHeight,
-                closedHeight: 0,
-                openHeight: 0)),
-
-        /// Items List
-        PagedSliverList<int, ModelAlias>.separated(
-          separatorBuilder: (BuildContext context, int i) => const Divider(),
-          pagingController: _pagingController,
-          builderDelegate: PagedChildBuilderDelegate<ModelAlias>(
-            itemBuilder: (context, model, index) => model.description.isEmpty
-                ? ListTile(trailing: btnInfo(model), title: title(model))
-                : ListTile(
-                    trailing: btnInfo(model),
-                    title: title(model),
-                    subtitle: subtitle(model),
-                  ),
-          ),
-        ),
-      ],
-    );
-
-    return AppWidgets.scaffold(context,
-        body: body,
-        navBar: navBar(context),
-        appBar: AppBar(title: const Text('Alias List')));
-  }
-
-  Widget title(ModelAlias model) {
+  Widget itemTitle(ModelAlias model) {
     int dur = DateTime.now().difference(model.lastVisited).inDays;
     int count = model.trackPointCount;
     return ListTile(
@@ -171,7 +98,7 @@ class _WidgetAliasList extends State<WidgetAliasList> {
         title: Text(model.title));
   }
 
-  Widget subtitle(ModelAlias model) {
+  Widget itemSubtitle(ModelAlias model) {
     return Padding(
         padding: const EdgeInsets.only(left: 30),
         child: Text(model.description,
@@ -179,7 +106,7 @@ class _WidgetAliasList extends State<WidgetAliasList> {
                 TextStyle(fontSize: 12, color: Theme.of(context).hintColor)));
   }
 
-  Widget btnInfo(ModelAlias model) {
+  Widget itemInfo(ModelAlias model) {
     return IconButton(
       icon: Icon(Icons.info_outline_rounded,
           size: 30,
@@ -196,42 +123,60 @@ class _WidgetAliasList extends State<WidgetAliasList> {
     );
   }
 
-  Widget searchWidget() {
-    return SizedBox(
-        height: _toolBarHeight,
-        width: Screen(context).width * 0.95,
-        child: Align(
-            alignment: Alignment.center,
-            child: ListTile(
-                trailing: IconButton(
-                  icon: const Icon(Icons.clear),
-                  onPressed: () {
-                    _searchTextController.text = "";
-                    _displayMode = _DisplayMode.list;
-                    _selectedNavBarItem = 2; // last visited
-                    _pagingController.refresh();
-                    setState(() {});
-                  },
-                ),
-                title: TextField(
-                  controller: _searchTextController,
-                  minLines: 1,
-                  maxLines: 1,
-                  decoration: const InputDecoration(
-                    isDense: true,
-                    //con: Icon(Icons.search, size: 30),
-                    border: OutlineInputBorder(),
-                    labelText: "Search",
-                    contentPadding: EdgeInsets.all(10),
-                  ),
-                  onChanged: (value) {
-                    _displayMode =
-                        value.isEmpty ? _DisplayMode.list : _DisplayMode.search;
-                    _selectedNavBarItem = 2; // last visited
-                    _pagingController.refresh();
-                    setState(() {});
-                  },
-                ))));
+  Widget renderItem(ModelAlias model) {
+    return model.description.isEmpty
+        ? ListTile(trailing: itemInfo(model), title: itemTitle(model))
+        : ListTile(
+            trailing: itemInfo(model),
+            title: itemTitle(model),
+            subtitle: itemSubtitle(model),
+          );
+  }
+
+  @override
+  List<Widget> renderBody(BoxConstraints constraints) {
+    return _loadedItems
+        .map((e) => SizedBox(width: constraints.maxWidth, child: e))
+        .toList();
+  }
+
+  @override
+  Scaffold renderScaffold(Widget body) {
+    return AppWidgets.scaffold(context, body: body, navBar: navBar(context));
+  }
+
+  @override
+  List<Widget> renderHeader(BoxConstraints constraints) {
+    return [
+      ListTile(
+          trailing: IconButton(
+            icon: const Icon(Icons.clear),
+            onPressed: () {
+              _searchTextController.text = "";
+              _displayMode = _DisplayMode.list;
+              _selectedNavBarItem = 2; // last visited
+              resetLoader();
+            },
+          ),
+          title: TextField(
+            controller: _searchTextController,
+            minLines: 1,
+            maxLines: 1,
+            decoration: const InputDecoration(
+              isDense: true,
+              //con: Icon(Icons.search, size: 30),
+              border: OutlineInputBorder(),
+              labelText: "Search",
+              contentPadding: EdgeInsets.all(10),
+            ),
+            onChanged: (value) {
+              _displayMode =
+                  value.isEmpty ? _DisplayMode.list : _DisplayMode.search;
+              _selectedNavBarItem = 2; // last visited
+              resetLoader();
+            },
+          ))
+    ];
   }
 
   BottomNavigationBar navBar(BuildContext context) {
@@ -254,8 +199,7 @@ class _WidgetAliasList extends State<WidgetAliasList> {
             /// create
             case 0:
               Navigator.pushNamed(context, AppRoutes.osm.route).then((_) {
-                _pagingController.refresh();
-                render();
+                resetLoader();
               });
 
               break;
@@ -265,15 +209,13 @@ class _WidgetAliasList extends State<WidgetAliasList> {
               GPS.gps().then((GPS gps) {
                 _gps = gps;
                 _displayMode = _DisplayMode.nearest;
-                _pagingController.refresh();
-                render();
+                resetLoader();
               });
               break;
 
             case 2:
               _displayMode = _DisplayMode.list;
-              _pagingController.refresh();
-              render();
+              resetLoader();
               break;
 
             /// default view

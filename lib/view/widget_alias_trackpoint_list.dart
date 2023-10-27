@@ -27,7 +27,6 @@ import 'package:chaostours/gps.dart';
 import 'package:chaostours/screen.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
-import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 
 class WidgetAliasTrackpoint extends StatefulWidget {
   const WidgetAliasTrackpoint({super.key});
@@ -41,8 +40,6 @@ class _WidgetAliasTrackpoint extends State<WidgetAliasTrackpoint> {
   static final Logger logger = Logger.logger<WidgetAliasTrackpoint>();
 
   final TextEditingController _searchTextController = TextEditingController();
-  final PagingController<int, ModelTrackPoint> _pagingController =
-      PagingController(firstPageKey: 0);
   final int _limit = 20;
 
   int? _aliasId;
@@ -52,25 +49,12 @@ class _WidgetAliasTrackpoint extends State<WidgetAliasTrackpoint> {
 
   @override
   void initState() {
-    _pagingController.addPageRequestListener(_fetchPage);
     super.initState();
   }
 
   @override
   void dispose() {
     super.dispose();
-  }
-
-  Future<void> _fetchPage(int offset) async {
-    if (_modelAlias == null) {
-      return;
-    }
-    final alias = _modelAlias!;
-    final newItems =
-        await ModelTrackPoint.byAlias(alias, offset: offset, limit: _limit);
-    newItems.length < _limit
-        ? _pagingController.appendLastPage(newItems)
-        : _pagingController.appendPage(newItems, offset + newItems.length);
   }
 
   Widget mapWidget() {
@@ -214,6 +198,8 @@ class _WidgetAliasTrackpoint extends State<WidgetAliasTrackpoint> {
         }
 
         _modelAlias = snapshot.data!;
+        return AppWidgets.loading('');
+        /*
         return CustomScrollView(
           slivers: <Widget>[
             /// Pinned header
@@ -235,6 +221,7 @@ class _WidgetAliasTrackpoint extends State<WidgetAliasTrackpoint> {
             ),
           ],
         );
+        */
       },
     );
 

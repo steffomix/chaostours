@@ -29,6 +29,20 @@ import 'package:chaostours/gps.dart';
 import 'package:chaostours/conf/app_settings.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/conf/app_routes.dart';
+import 'package:sprintf/sprintf.dart';
+
+class Translate {
+  //static final Logger logger = Logger.logger<Translate>();
+  // static Map<String, List<Object?>> _t = {};
+  static translate(String s, [List<Object?>? p]) {
+    s = '§$s';
+    return p == null ? s : sprintf(s, p);
+  }
+}
+
+String translate(String s, [List<Object?>? p]) {
+  return Translate.translate(s, p);
+}
 
 ///
 ///
@@ -136,7 +150,7 @@ class AppWidgets {
   }
 
   static AppBar _appBar(BuildContext context) {
-    return AppBar(title: const Text('ChaosTours'));
+    return AppBar(title: Text(translate('ChaosTours')));
   }
 
   static Widget bottomButton(
@@ -170,14 +184,12 @@ class AppWidgets {
     return Center(
         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
       const SizedBox(width: 30, height: 30, child: CircularProgressIndicator()),
-      /*LoadingAnimationWidget.staggeredDotsWave(
-          color: AppColors.black.color, size: 30),*/
       Text(info)
     ]));
   }
 
   static Widget loadingScreen(BuildContext context, [String? info]) {
-    return scaffold(context, body: loading(info ?? 'Loading...'));
+    return scaffold(context, body: loading(info ?? translate('Loading...')));
   }
 
   /// check FutureBuilder Snapshots,
@@ -198,6 +210,19 @@ class AppWidgets {
       }
       return null;
     }
+  }
+
+  static Widget checkboxListTile(util.CheckboxController controller) =>
+      util.CheckboxController.createCheckboxListTile(controller);
+
+  static Widget checkbox(
+      {required int idReference,
+      required List<int> referenceList,
+      required Function(bool? toggle) onToggle}) {
+    return util.CheckboxController.createCheckbox(util.CheckboxController(
+        idReference: idReference,
+        referenceList: referenceList,
+        onToggle: onToggle));
   }
 
   static Future<T?> dialog<T>(
@@ -252,12 +277,12 @@ class AppWidgets {
         Center(child: Text(AppWidgets.timeInfo(tp.timeStart, tp.timeEnd))),
         divider(),
         Text(
-            'Arbeiten:${tasks.isEmpty ? ' -' : '\n   - ${tasks.join('\n   - ')}'}'),
+            'Tasks:${tasks.isEmpty ? ' -' : '\n   - ${tasks.join('\n   - ')}'}'),
         divider(),
         Text(
-            'Personal:${users.isEmpty ? ' -' : '\n   - ${users.join('\n   - ')}'}'),
+            'Users:${users.isEmpty ? ' -' : '\n   - ${users.join('\n   - ')}'}'),
         divider(),
-        const Text('Notizen:'),
+        const Text('Notes:'),
         Text(tp.notes),
       ]),
       leading: IconButton(

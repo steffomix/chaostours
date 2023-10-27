@@ -379,20 +379,20 @@ WHERE $isActiveCol = ? AND $whereArea
     return models;
   }
 
-  Future<List<ModelAliasGroup>> groups() async {
-    final links = await DB.execute<List<Map<String, Object?>>>((txn) async {
+  /// select ALL groups from this alias for checkbox selection.
+  /// Even if there is only the group id needed the groups
+  Future<List<int>> groupsIds() async {
+    var col = TableAliasAliasGroup.idAliasGroup.column;
+    final ids = await DB.execute<List<Map<String, Object?>>>((txn) async {
       return await txn.query(TableAliasAliasGroup.table,
-          where: '${TableAliasAliasGroup.idAlias.column} = ?', whereArgs: [id]);
+          columns: [col],
+          where: '${TableAliasAliasGroup.idAlias.column} = ?',
+          whereArgs: [id]);
     });
-    if (links.isEmpty) {
-      return <ModelAliasGroup>[];
+    if (ids.isEmpty) {
+      return <int>[];
     }
-    var groupIds = <int>[];
-    for (var link in links) {
-      groupIds.add(DB.parseInt(link[TableAliasAliasGroup.idAliasGroup.column]));
-    }
-    final rows = await ModelAliasGroup.byIdList(groupIds);
-    return rows;
+    return ids.map((e) => DB.parseInt(e[col])).toList();
   }
 
   Future<int> addGroup(ModelAliasGroup group) async {

@@ -124,7 +124,6 @@ class CheckboxController {
   bool checked;
   String title;
   String subtitle;
-  int group;
   Function(bool? toggle)? onToggle;
   CheckboxController({
     required this.idReference,
@@ -132,7 +131,6 @@ class CheckboxController {
     this.title = '',
     this.onToggle,
     this.checked = false,
-    this.group = 0,
     this.subtitle = '',
     this.isActive = true,
   }) {
@@ -146,7 +144,9 @@ class CheckboxController {
     }
     checked = state ?? false;
     if (checked) {
-      if (!referenceList.contains(idReference)) referenceList.add(idReference);
+      if (!referenceList.contains(idReference)) {
+        referenceList.add(idReference);
+      }
     } else {
       referenceList.removeWhere((i) => i == idReference);
     }
@@ -154,7 +154,7 @@ class CheckboxController {
   }
 
   /// render multiple checkboxes
-  static Widget createCheckbox(CheckboxController model) {
+  static Widget createCheckboxListTile(CheckboxController model) {
     TextStyle style = TextStyle(
         color: model.isActive ? Colors.black : Colors.grey,
         decoration:
@@ -170,5 +170,9 @@ class CheckboxController {
       ),
       leading: Checkbox(value: model.checked, onChanged: model.toggle),
     );
+  }
+
+  static Widget createCheckbox(CheckboxController model) {
+    return Checkbox(value: model.checked, onChanged: model.toggle);
   }
 }

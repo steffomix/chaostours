@@ -40,13 +40,13 @@ class _WidgetPattern extends BaseWidgetState<WidgetPattern>
   Future<void> initialize(BuildContext context, Object? args) async {}
 
   @override
-  void resetLoader() {
+  Future<void> resetLoader() async {
+    await super.resetLoader();
     loadedItems.clear();
-    super.resetLoader();
   }
 
   @override
-  Future<int> loadWidgets({required int offset, int limit = 5}) async {
+  Future<int> load({required int offset, int limit = 5}) async {
     loadedItems.add(Text('${loadedItems.length + 1}x not implemented'));
     return 1;
   }

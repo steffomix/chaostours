@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/view/app_base_widget.dart';
 import 'package:flutter/material.dart';
-import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 import 'package:chaostours/logger.dart';
@@ -29,14 +29,14 @@ enum _DisplayMode {
   sort;
 }
 
-class WidgetUserList extends StatefulWidget {
+class WidgetUserList extends BaseWidget {
   const WidgetUserList({super.key});
 
   @override
   State<WidgetUserList> createState() => _WidgetUserList();
 }
 
-class _WidgetUserList extends State<WidgetUserList> {
+class _WidgetUserList extends BaseWidgetState<WidgetUserList> {
   // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetUserList>();
 
@@ -50,13 +50,10 @@ class _WidgetUserList extends State<WidgetUserList> {
   // items per page
   static const int _limit = 30;
 
-  final PagingController<int, ModelUser> _pagingController =
-      PagingController(firstPageKey: 0);
-
   @override
   void initState() {
     _selectDeleted.addListener(render);
-    _pagingController.addPageRequestListener(_fetchPage);
+    // _pagingController.addPageRequestListener(_fetchPage);
     // ModelUser.resetSortOrder();
     super.initState();
   }
@@ -64,14 +61,8 @@ class _WidgetUserList extends State<WidgetUserList> {
   @override
   void dispose() {
     _selectDeleted.dispose();
-    _pagingController.dispose();
+    // _pagingController.dispose();
     super.dispose();
-  }
-
-  void render() {
-    if (mounted) {
-      setState(() {});
-    }
   }
 
   void _fetchPage(int offset) async {
@@ -90,9 +81,9 @@ class _WidgetUserList extends State<WidgetUserList> {
                 selectDeleted: _selectDeleted.value));
 
     if (newItems.length < _limit) {
-      _pagingController.appendLastPage(newItems);
+      // _pagingController.appendLastPage(newItems);
     } else {
-      _pagingController.appendPage(newItems, offset + newItems.length);
+      // _pagingController.appendPage(newItems, offset + newItems.length);
     }
   }
 
@@ -114,7 +105,7 @@ class _WidgetUserList extends State<WidgetUserList> {
                 Navigator.pushNamed(context, AppRoutes.editUser.route,
                         arguments: model.id)
                     .then((_) {
-                  _pagingController.refresh();
+                  // _pagingController.refresh();
                   render();
                 });
               }))
@@ -134,7 +125,7 @@ class _WidgetUserList extends State<WidgetUserList> {
               decoration: const InputDecoration(
                   icon: Icon(Icons.search, size: 30), border: InputBorder.none),
               onChanged: (value) {
-                _pagingController.refresh();
+                // _pagingController.refresh();
                 render();
               },
             )));
@@ -151,7 +142,7 @@ class _WidgetUserList extends State<WidgetUserList> {
                 model.sortOrder++;
                 await model.update();
                 await models[index + 1].update();
-                _pagingController.refresh();
+                // _pagingController.refresh();
                 render();
               }
             }),
@@ -163,7 +154,7 @@ class _WidgetUserList extends State<WidgetUserList> {
               model.sortOrder--;
               await model.update();
               await models[index - 1].update();
-              _pagingController.refresh();
+              // _pagingController.refresh();
               render();
             }
           },
@@ -174,7 +165,7 @@ class _WidgetUserList extends State<WidgetUserList> {
                 : null),
         subtitle: Text(model.description));
   }
-
+/*
   @override
   Widget build(BuildContext context) {
     var body = CustomScrollView(slivers: <Widget>[
@@ -187,14 +178,14 @@ class _WidgetUserList extends State<WidgetUserList> {
               openHeight: 0)),
       PagedSliverList<int, ModelUser>.separated(
         separatorBuilder: (BuildContext context, int i) => const Divider(),
-        pagingController: _pagingController,
+        pagingController: // _pagingController,
         builderDelegate: PagedChildBuilderDelegate<ModelUser>(
           itemBuilder: (context, model, index) {
             if (_displayMode == _DisplayMode.sort) {
-              if (_pagingController.itemList == null) {
+              if (// _pagingController.itemList == null) {
                 return AppWidgets.loading('Waiting for Users...');
               }
-              var list = _pagingController.itemList!;
+              var list = // _pagingController.itemList!;
               return sortWidget(list, index);
             } else {
               return modelWidget(model);
@@ -235,7 +226,7 @@ class _WidgetUserList extends State<WidgetUserList> {
                 case 0:
                   if (_displayMode == _DisplayMode.sort) {
                     ModelUser.resetSortOrder().then((value) {
-                      _pagingController.refresh();
+                      // _pagingController.refresh();
                       render();
                     });
                   } else {
@@ -248,7 +239,7 @@ class _WidgetUserList extends State<WidgetUserList> {
                               arguments: model.id)
                           .then(
                         (value) {
-                          _pagingController.refresh();
+                          // _pagingController.refresh();
                           render();
                         },
                       );
@@ -260,7 +251,7 @@ class _WidgetUserList extends State<WidgetUserList> {
                   _displayMode = _displayMode == _DisplayMode.list
                       ? _DisplayMode.sort
                       : _DisplayMode.list;
-                  _pagingController.refresh();
+                  // _pagingController.refresh();
                   render();
                   break;
 
@@ -270,7 +261,7 @@ class _WidgetUserList extends State<WidgetUserList> {
                   } else {
                     _selectDeleted.value = true;
                   }
-                  _pagingController.refresh();
+                  // _pagingController.refresh();
                   render();
                   break;
                 default:
@@ -278,4 +269,5 @@ class _WidgetUserList extends State<WidgetUserList> {
               }
             }));
   }
+  */
 }
