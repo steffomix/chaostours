@@ -14,29 +14,30 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import 'package:chaostours/view/widget_alias_group_alias_list.dart';
+import 'package:chaostours/view/alias/widget_aliases_from_alias-group_list.dart';
 import 'package:flutter/material.dart';
 import 'package:chaostours/view/widget_welcome.dart';
-import 'package:chaostours/view/widget_live_tracking.dart';
-import 'package:chaostours/view/widget_trackpoints.dart';
-import 'package:chaostours/view/widget_logger_page.dart';
-import 'package:chaostours/view/widget_permissions_page.dart';
-import 'package:chaostours/view/widget_edit_trackpoint.dart';
-import 'package:chaostours/view/widget_user_list.dart';
-import 'package:chaostours/view/widget_user_edit.dart';
-import 'package:chaostours/view/widget_task_list.dart';
-import 'package:chaostours/view/widget_task_edit.dart';
-import 'package:chaostours/view/widget_alias_list.dart';
-import 'package:chaostours/view/widget_alias_edit.dart';
-import 'package:chaostours/view/widget_alias_group_edit.dart';
-import 'package:chaostours/view/widget_alias_group_list.dart';
-import 'package:chaostours/view/widget_alias_trackpoint_list.dart';
-import 'package:chaostours/view/widget_edit_alias_osm.dart';
-import 'package:chaostours/view/widget_import_export.dart';
-import 'package:chaostours/view/widget_app_settings.dart';
-import 'package:chaostours/view/widget_manage_background_gps.dart';
+import 'package:chaostours/view/trackpoint/widget_live_tracking.dart';
+import 'package:chaostours/view/trackpoint/widget_trackpoints.dart';
+import 'package:chaostours/view/system/widget_logger_page.dart';
+import 'package:chaostours/view/system/widget_permissions_page.dart';
+import 'package:chaostours/view/trackpoint/widget_edit_trackpoint.dart';
+import 'package:chaostours/view/user/widget_user_list.dart';
+import 'package:chaostours/view/user/widget_user_edit.dart';
+import 'package:chaostours/view/task/widget_task_list.dart';
+import 'package:chaostours/view/task/widget_task_edit.dart';
+import 'package:chaostours/view/alias/widget_alias_list.dart';
+import 'package:chaostours/view/alias/widget_alias_edit.dart';
+import 'package:chaostours/view/alias/widget_alias-group_edit.dart';
+import 'package:chaostours/view/alias/widget_alias-group_list.dart';
+import 'package:chaostours/view/alias/widget_alias-groups_from_alias_list.dart';
+import 'package:chaostours/view/trackpoint/widget_trackpoints_from_Alias_list.dart';
+import 'package:chaostours/view/alias/widget_edit_alias_osm.dart';
+import 'package:chaostours/view/system/widget_import_export.dart';
+import 'package:chaostours/view/system/widget_app_settings.dart';
+import 'package:chaostours/view/system/widget_manage_background_gps.dart';
 import 'package:chaostours/view/widget_manage_calendar.dart';
-import 'package:chaostours/view/widget_database_explorer.dart';
+import 'package:chaostours/view/system/widget_database_explorer.dart';
 
 //import 'package:chaostours/view/_widget_test_async_loader.dart';
 
@@ -52,19 +53,20 @@ enum AppRoutes {
   editTasks('/listTasks/editTasks'),
   createTask('/listTasks/createTask'),
   // alias
-  listAlias('/listAlias'),
-  listAliasTrackpoints('/listAlias/listAliasTrackpoints'),
+  aliasList('/listAlias'),
   editAlias('/listAlias/listAliasTrackpoints/editAlias'),
+  trackpointsFromAliasList('/listAlias/listAliasTrackpoints'),
   // alias group
-  listAliasGroup('/listAliasGroup'),
-  editAliasGroup('/listAliasGroup/editAliasGroup'),
+  aliasGroupsFromAliasList('/listAliasGroup'),
+  aliasesFromAliasGroupList('/listAliasGroup/editAliasGroupAliasList'),
+  aliasGroupEdit('/listAliasGroup/editAliasGroup'),
+  aliasGroupList('/listAliasGroup/listAliasGroup'),
   // alias group
   listUserGroup('/listAliasGroup'),
   editUsersGroup('/listAliasGroup/editAliasGroup'),
   // alias group
   listTaskGroup('/listAliasGroup'),
   editTaskGroup('/listAliasGroup/editAliasGroup'),
-  aliasGroupAliasList('/listAliasGroup/editAliasGroupAliasList'),
 
   // user
   listUsers('/listUsers'),
@@ -103,16 +105,18 @@ enum AppRoutes {
       AppRoutes.listTasks.route: (context) => const WidgetTaskList(),
       AppRoutes.editTasks.route: (context) => const WidgetTaskEdit(),
       // alias
-      AppRoutes.listAlias.route: (context) => const WidgetAliasList(),
+      AppRoutes.aliasList.route: (context) => const WidgetAliasList(),
       AppRoutes.editAlias.route: (context) => const WidgetAliasEdit(),
-      AppRoutes.listAliasTrackpoints.route: (context) =>
+      AppRoutes.trackpointsFromAliasList.route: (context) =>
           const WidgetAliasTrackpoint(),
 
       // aliasGroup
-      AppRoutes.listAliasGroup.route: (context) => const WidgetAliasGroupList(),
-      AppRoutes.editAliasGroup.route: (context) => const WidgetAliasGroupEdit(),
-      AppRoutes.aliasGroupAliasList.route: (context) =>
-          const WidgetAliasGroupAliasList(),
+      AppRoutes.aliasGroupList.route: (context) => const WidgetAliasGroupList(),
+      AppRoutes.aliasGroupsFromAliasList.route: (context) =>
+          const WidgetAliasGroupsFromAliasList(),
+      AppRoutes.aliasGroupEdit.route: (context) => const WidgetAliasGroupEdit(),
+      AppRoutes.aliasesFromAliasGroupList.route: (context) =>
+          const WidgetAliasesFromAliasGroupList(),
 
       // trackPoint events
       AppRoutes.selectCalendar.route: (context) => const WidgetManageCalendar(),

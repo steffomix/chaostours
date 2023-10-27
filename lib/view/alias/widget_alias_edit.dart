@@ -210,7 +210,8 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                 ).toList()
               ]),
               onPressed: () {
-                Navigator.pushNamed(context, AppRoutes.listAliasGroup.route,
+                Navigator.pushNamed(
+                        context, AppRoutes.aliasGroupsFromAliasList.route,
                         arguments: _modelAlias?.id)
                     .then(
                   (value) {

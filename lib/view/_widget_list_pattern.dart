@@ -46,7 +46,7 @@ class _WidgetPattern extends BaseWidgetState<WidgetPattern>
   }
 
   @override
-  Future<int> load({required int offset, int limit = 5}) async {
+  Future<int> loadItems({required int offset, int limit = 5}) async {
     loadedItems.add(Text('${loadedItems.length + 1}x not implemented'));
     return 1;
   }

@@ -441,7 +441,7 @@ class _WidgetOsm extends State<WidgetOsm> {
                       .then((List<ModelAlias> models) {
                     if (models.isNotEmpty && mounted) {
                       Navigator.pushNamed(
-                          context, AppRoutes.listAliasTrackpoints.route,
+                          context, AppRoutes.trackpointsFromAliasList.route,
                           arguments: models.first.id);
                     }
                   });

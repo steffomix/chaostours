@@ -103,6 +103,7 @@ class DB {
         throw 'no database set';
       }
       T result = await _database!.transaction<T>(action);
+      logger.log('${T.toString()} loaded');
       return result;
     } catch (e, stk) {
       logger.error('DB::execute: $e', stk);

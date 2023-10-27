@@ -385,7 +385,7 @@ class ModelTrackPoint {
         return await txn.query(TableTrackPoint.table,
             columns: TableTrackPoint.columns,
             where:
-                '${TableTrackPoint.primaryKey.column} in IN (${List.filled(ids.length, '?').join(',')})',
+                '${TableTrackPoint.primaryKey.column} IN (${List.filled(ids.length, '?').join(',')})',
             whereArgs: ids);
       },
     );

@@ -65,7 +65,7 @@ class _WidgetAliasList extends BaseWidgetState<WidgetAliasList>
   }
 
   @override
-  Future<int> load({required int offset, int limit = 20}) async {
+  Future<int> loadItems({required int offset, int limit = 20}) async {
     List<ModelAlias> newItems = [];
     switch (_displayMode) {
       case _DisplayMode.list:
@@ -114,7 +114,7 @@ class _WidgetAliasList extends BaseWidgetState<WidgetAliasList>
               ? Colors.black
               : AppColors.aliasStatusColor(model.visibility)),
       onPressed: () {
-        Navigator.pushNamed(context, AppRoutes.listAliasTrackpoints.route,
+        Navigator.pushNamed(context, AppRoutes.trackpointsFromAliasList.route,
                 arguments: model.id)
             .then((_) {
           setState(() {});

@@ -25,15 +25,15 @@ import 'package:chaostours/model/model_alias_group.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/util.dart';
 
-class WidgetAliasGroupAliasList extends BaseWidget {
-  const WidgetAliasGroupAliasList({Key? key}) : super(key: key);
+class WidgetAliasesFromAliasGroupList extends BaseWidget {
+  const WidgetAliasesFromAliasGroupList({Key? key}) : super(key: key);
   @override
-  State<WidgetAliasGroupAliasList> createState() =>
+  State<WidgetAliasesFromAliasGroupList> createState() =>
       _WidgetAliasGroupAliasList();
 }
 
 class _WidgetAliasGroupAliasList
-    extends BaseWidgetState<WidgetAliasGroupAliasList>
+    extends BaseWidgetState<WidgetAliasesFromAliasGroupList>
     implements BaseWidgetPattern {
   //static final Logger logger = Logger.logger<WidgetAliasGroupAliasList>();
 
@@ -58,7 +58,7 @@ class _WidgetAliasGroupAliasList
   }
 
   @override
-  Future<int> load({required int offset, int limit = 20}) async {
+  Future<int> loadItems({required int offset, int limit = 20}) async {
     var rows = await _model?.children(
         offset: offset, limit: limit, search: _searchController.text);
     if (rows != null) {

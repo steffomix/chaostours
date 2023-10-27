@@ -53,7 +53,6 @@ class Loader {
           fnLoad,
       Future<int?> Function()? fnCount,
       int? limit}) async {
-    logger.log('load');
     // check if finished
     if (_isFinished) {
       logger.warn('load already finished');
@@ -67,26 +66,28 @@ class Loader {
     }
     // start loading
     _isLoading = true;
-    var countLoaded = 0;
+    int countLoaded = 0;
+
     try {
-      countLoaded = await _load(
+      var count = await _load(
           fnLoad: fnLoad, fnCount: fnCount, limit: limit ?? defaultLimit);
-      if (_hadLoadRequest) {
-        countLoaded += (await _load(
+      countLoaded += count;
+      logger.log('$count loaded');
+
+      if (_hadLoadRequest && !_isFinished) {
+        var count = (await _load(
             fnLoad: fnLoad, fnCount: fnCount, limit: limit ?? defaultLimit));
+        logger.log('$count loaded from request during load');
+        countLoaded += count;
       }
     } catch (e, stk) {
-      logger.error('load, finish loading $e', stk);
+      logger.error('load: $e', stk);
       _hadLoadRequest = false;
       _isFinished = true;
       rethrow;
     }
-    logger.log('${countLoaded}x loaded');
     _hadLoadRequest = false;
     _isLoading = false;
-
-    //
-    logger.log('$countLoaded new items loaded');
     return countLoaded;
   }
 
@@ -97,13 +98,14 @@ class Loader {
     Future<int?> Function()? fnCount,
   }) async {
     int? dbCount = await fnCount?.call();
+
     final countLoaded = (await fnLoad(offset: _loadedTotal ?? 0, limit: limit));
+
     _loadedTotal = (_loadedTotal ?? 0) + countLoaded;
+
     _isFinished = (dbCount == null && countLoaded < limit) ||
         (dbCount != null && _loadedTotal! >= dbCount);
-    if (_isFinished) {
-      logger.log('loading finished');
-    }
+
     return countLoaded;
   }
 }

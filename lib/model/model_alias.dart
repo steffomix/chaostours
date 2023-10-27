@@ -220,14 +220,17 @@ class ModelAlias {
   }
 
   /// find trackpoints by aliasId
-  Future<List<ModelTrackPoint>> trackpoints() async {
+  Future<List<ModelTrackPoint>> trackpoints(
+      {int offset = 0, int limit = 20}) async {
     const idCol = 'id';
     var rows =
         await DB.execute<List<Map<String, Object?>>>((Transaction txn) async {
       return await txn.query(TableTrackPointAlias.table,
           columns: ['${TableTrackPointAlias.idTrackPoint.column} as $idCol'],
           where: '${TableTrackPointAlias.idAlias.column} = ?',
-          whereArgs: [id]);
+          whereArgs: [id],
+          limit: limit,
+          offset: offset);
     });
     List<int> ids = [];
     for (var row in rows) {

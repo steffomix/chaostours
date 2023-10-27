@@ -494,14 +494,14 @@ class _WidgetDrawer extends State<WidgetDrawer> {
               ///
               ElevatedButton(
                   onPressed: () {
-                    AppWidgets.navigate(context, AppRoutes.listAlias);
+                    AppWidgets.navigate(context, AppRoutes.aliasList);
                   },
                   child: const Text('Orte (Alias)')),
 
               ///
               ElevatedButton(
                   onPressed: () {
-                    AppWidgets.navigate(context, AppRoutes.listAliasGroup);
+                    AppWidgets.navigate(context, AppRoutes.aliasGroupList);
                   },
                   child: const Text('Groups & Calendars')),
 

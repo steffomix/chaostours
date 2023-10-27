@@ -25,21 +25,23 @@ import 'package:chaostours/model/model_alias_group.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/util.dart';
 
-class WidgetAliasGroupList extends BaseWidget {
-  const WidgetAliasGroupList({super.key});
+class WidgetAliasGroupsFromAliasList extends BaseWidget {
+  const WidgetAliasGroupsFromAliasList({super.key});
 
   @override
-  State<WidgetAliasGroupList> createState() => _WidgetAliasGroupList();
+  State<WidgetAliasGroupsFromAliasList> createState() =>
+      _WidgetAliasGroupsFromAliasList();
 }
 
-class _WidgetAliasGroupList extends BaseWidgetState<WidgetAliasGroupList> {
+class _WidgetAliasGroupsFromAliasList
+    extends BaseWidgetState<WidgetAliasGroupsFromAliasList> {
   // ignore: unused_field
-  static final Logger logger = Logger.logger<WidgetAliasGroupList>();
+  static final Logger logger = Logger.logger<WidgetAliasGroupsFromAliasList>();
 
   int _selectedNavBarItem = 0;
 
   final TextEditingController _searchTextController = TextEditingController();
-
+  final List<Widget> _loadedWidgets = [];
   ModelAlias? _modelAlias;
   List<int>? _groupIds;
   // items per page
@@ -51,7 +53,7 @@ class _WidgetAliasGroupList extends BaseWidgetState<WidgetAliasGroupList> {
   }
 
   @override
-  Future<int> load({required int offset, int limit = 20}) async {
+  Future<int> loadItems({required int offset, int limit = 20}) async {
     _groupIds ??= await _modelAlias?.groupsIds() ?? [];
 
     var newItems = _searchTextController.text.isEmpty
@@ -59,14 +61,14 @@ class _WidgetAliasGroupList extends BaseWidgetState<WidgetAliasGroupList> {
         : await ModelAliasGroup.search(_searchTextController.text,
             limit: limit, offset: offset);
 
-    loadedWidgets.addAll(newItems.map((e) => renderRow(e)).toList());
+    _loadedWidgets.addAll(newItems.map((e) => renderRow(e)).toList());
     return newItems.length;
   }
 
   @override
   Future<void> resetLoader() async {
     await super.resetLoader();
-    loadedWidgets.clear();
+    _loadedWidgets.clear();
     render();
   }
 
@@ -132,7 +134,7 @@ class _WidgetAliasGroupList extends BaseWidgetState<WidgetAliasGroupList> {
     return IconButton(
       icon: const Icon(Icons.edit),
       onPressed: () {
-        Navigator.pushNamed(context, AppRoutes.editAliasGroup.route,
+        Navigator.pushNamed(context, AppRoutes.aliasGroupEdit.route,
                 arguments: model.id)
             .then(
           (value) {
@@ -141,6 +143,13 @@ class _WidgetAliasGroupList extends BaseWidgetState<WidgetAliasGroupList> {
         );
       },
     );
+  }
+
+  @override
+  List<Widget> renderBody(BoxConstraints constrains) {
+    return _loadedWidgets
+        .map((e) => SizedBox(width: constrains.maxWidth, child: e))
+        .toList();
   }
 
   @override
@@ -192,7 +201,7 @@ class _WidgetAliasGroupList extends BaseWidgetState<WidgetAliasGroupList> {
               var model = ModelAliasGroup(title: '#${count + 1}');
               model = await ModelAliasGroup.insert(model);
               if (mounted) {
-                Navigator.pushNamed(context, AppRoutes.editAliasGroup.route,
+                Navigator.pushNamed(context, AppRoutes.aliasGroupEdit.route,
                         arguments: model.id)
                     .then((_) {
                   resetLoader();

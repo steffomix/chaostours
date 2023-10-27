@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/view/app_base_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -28,36 +29,74 @@ import 'package:chaostours/screen.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 
-class WidgetAliasTrackpoint extends StatefulWidget {
+class WidgetAliasTrackpoint extends BaseWidget {
   const WidgetAliasTrackpoint({super.key});
 
   @override
   State<WidgetAliasTrackpoint> createState() => _WidgetAliasTrackpoint();
 }
 
-class _WidgetAliasTrackpoint extends State<WidgetAliasTrackpoint> {
+class _WidgetAliasTrackpoint extends BaseWidgetState<WidgetAliasTrackpoint> {
   // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetAliasTrackpoint>();
 
   final TextEditingController _searchTextController = TextEditingController();
-  final int _limit = 20;
 
-  int? _aliasId;
   ModelAlias? _modelAlias;
-
-  final double _toolBarHeight = 400;
+  final List<Widget> _loadedWidgets = [];
 
   @override
-  void initState() {
-    super.initState();
+  Future<void> initialize(BuildContext context, Object? args) async {
+    int id = args as int;
+    _modelAlias = await ModelAlias.byId(id);
   }
 
   @override
-  void dispose() {
-    super.dispose();
+  Future<void> resetLoader() async {
+    await super.resetLoader();
+    _loadedWidgets.clear();
+    render();
   }
 
-  Widget mapWidget() {
+  @override
+  Future<int> loadItems({required int offset, int limit = 20}) async {
+    List<ModelTrackPoint> newItems = await _modelAlias?.trackpoints() ?? [];
+    _loadedWidgets.addAll(newItems.map(
+      (e) => renderTrackPoint(e),
+    ));
+    return newItems.length;
+  }
+
+  @override
+  List<Widget> renderHeader(BoxConstraints constraints) {
+    return [
+      renderMapIcon(),
+      renderSearchWidget(),
+      renderAliasWidget(),
+      AppWidgets.divider()
+    ];
+  }
+
+  @override
+  List<Widget> renderBody(BoxConstraints constraints) {
+    return _loadedWidgets
+        .map(
+          (e) => SizedBox(width: constraints.maxWidth, child: e),
+        )
+        .toList();
+  }
+
+  @override
+  Scaffold renderScaffold(Widget body) {
+    return AppWidgets.scaffold(context, body: body);
+  }
+
+  ///
+  ///
+  ///
+  ///
+
+  Widget renderMapIcon() {
     if (_modelAlias == null) {
       return AppWidgets.empty;
     }
@@ -76,7 +115,7 @@ class _WidgetAliasTrackpoint extends State<WidgetAliasTrackpoint> {
             }));
   }
 
-  Widget searchWidget() {
+  Widget renderSearchWidget() {
     return TextField(
         controller: _searchTextController,
         minLines: 1,
@@ -84,12 +123,12 @@ class _WidgetAliasTrackpoint extends State<WidgetAliasTrackpoint> {
         decoration: const InputDecoration(
             icon: Icon(Icons.search, size: 30), border: InputBorder.none),
         onChanged: (value) {
-          setState(() {});
+          resetLoader();
         });
   }
 
   /// alias header
-  Widget aliasWidget() {
+  Widget renderAliasWidget() {
     var alias = _modelAlias!;
     return ListTile(
         title: Text('#${alias.id} ${alias.title}'),
@@ -109,7 +148,7 @@ class _WidgetAliasTrackpoint extends State<WidgetAliasTrackpoint> {
         ));
   }
 
-  Widget trackPoint(ModelTrackPoint tp) {
+  Widget renderTrackPoint(ModelTrackPoint tp) {
     var date = '${AppSettings.weekDays[tp.timeStart.weekday]}. '
         '${tp.timeStart.day}.${tp.timeStart.month}.${tp.timeStart.year}';
     var dur = timeElapsed(tp.timeStart, tp.timeEnd, false);
@@ -160,19 +199,7 @@ class _WidgetAliasTrackpoint extends State<WidgetAliasTrackpoint> {
     return Column(children: widgets);
   }
 
-  Widget header() {
-    return SizedBox(
-        width: Screen(context).width * 0.95,
-        height: _toolBarHeight,
-        //padding: const EdgeInsets.only(bottom: 15),
-        child: Column(children: [
-          mapWidget(),
-          searchWidget(),
-          aliasWidget(),
-          AppWidgets.divider()
-        ]));
-  }
-
+/*
   @override
   Widget build(BuildContext context) {
     if (_aliasId == null) {
@@ -228,7 +255,7 @@ class _WidgetAliasTrackpoint extends State<WidgetAliasTrackpoint> {
     return AppWidgets.scaffold(context,
         body: body, appBar: AppBar(title: const Text('Haltepunkte')));
   }
-
+*/
 /*
   Future<Widget?> body(BuildContext context) async {
     _modelAlias = await ModelAlias.getModel(_idAlias);

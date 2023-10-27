@@ -129,7 +129,7 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
             ],
             onTap: (int id) async {
               if (id == 0) {
-                Navigator.pushNamed(context, AppRoutes.editAliasGroup.route)
+                Navigator.pushNamed(context, AppRoutes.aliasGroupEdit.route)
                     .then((_) {
                   render();
                 });
@@ -214,7 +214,7 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
       ElevatedButton(
         child: const Text('Show Aliases from this group'),
         onPressed: () => Navigator.pushNamed(
-                context, AppRoutes.aliasGroupAliasList.route,
+                context, AppRoutes.aliasesFromAliasGroupList.route,
                 arguments: _modelAlias?.id)
             .then((value) {
           render();

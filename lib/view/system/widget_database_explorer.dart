@@ -49,7 +49,7 @@ class _WidgetDatabaseExplorer extends BaseWidgetState<WidgetDatabaseExplorer>
   final List<DataRow> loadedItems = [];
 
   @override
-  Future<int> load({required int offset, int limit = 20}) async {
+  Future<int> loadItems({required int offset, int limit = 20}) async {
     final rows = (await Model.select(_table,
         limit: limit, offset: offset, search: _searchController.text));
 
