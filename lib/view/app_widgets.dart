@@ -247,6 +247,33 @@ class AppWidgets {
     return dialog;
   }
 
+  static Widget searchTile(
+      {required BuildContext context,
+      required TextEditingController textController,
+      required void Function(String text) onChange}) {
+    return ListTile(
+        //leading: const Icon(Icons.search),
+        trailing: IconButton(
+          icon: const Icon(Icons.clear),
+          onPressed: () {
+            textController.text = '';
+            onChange('');
+          },
+        ),
+        title: TextField(
+          controller: textController,
+          minLines: 1,
+          maxLines: 1,
+          decoration: const InputDecoration(
+            isDense: true,
+            label: Icon(Icons.search),
+          ),
+          onChanged: (value) {
+            onChange(value);
+          },
+        ));
+  }
+
   static Widget searchWidget(
       {required BuildContext context,
       required TextEditingController controller,

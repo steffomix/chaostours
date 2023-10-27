@@ -22,13 +22,6 @@ import 'package:chaostours/logger.dart';
 import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/model/model_alias_group.dart';
 import 'package:chaostours/view/app_base_widget.dart';
-import 'package:chaostours/gps.dart';
-
-enum _DisplayMode {
-  list,
-  search,
-  nearest;
-}
 
 class WidgetAliasGroupList extends BaseWidget {
   const WidgetAliasGroupList({super.key});
@@ -42,13 +35,9 @@ class _WidgetAliasGroupList extends BaseWidgetState<WidgetAliasGroupList>
   // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetAliasGroupList>();
 
-  _DisplayMode _displayMode = _DisplayMode.list;
-
   int _selectedNavBarItem = 0;
 
   List<Widget> _loadedItems = [];
-
-  GPS? _gps;
 
   final TextEditingController _searchTextController = TextEditingController();
 
@@ -101,34 +90,12 @@ class _WidgetAliasGroupList extends BaseWidgetState<WidgetAliasGroupList>
   @override
   List<Widget> renderHeader(BoxConstraints constraints) {
     return [
-      ListTile(
-          trailing: IconButton(
-            icon: const Icon(Icons.clear),
-            onPressed: () {
-              _searchTextController.text = "";
-              _displayMode = _DisplayMode.list;
-              _selectedNavBarItem = 2; // last visited
-              resetLoader();
-            },
-          ),
-          title: TextField(
-            controller: _searchTextController,
-            minLines: 1,
-            maxLines: 1,
-            decoration: const InputDecoration(
-              isDense: true,
-              //con: Icon(Icons.search, size: 30),
-              border: OutlineInputBorder(),
-              labelText: "Search",
-              contentPadding: EdgeInsets.all(10),
-            ),
-            onChanged: (value) {
-              _displayMode =
-                  value.isEmpty ? _DisplayMode.list : _DisplayMode.search;
-              _selectedNavBarItem = 2; // last visited
-              resetLoader();
-            },
-          ))
+      AppWidgets.searchTile(
+          context: context,
+          textController: _searchTextController,
+          onChange: (String text) {
+            resetLoader();
+          })
     ];
   }
 
@@ -138,43 +105,48 @@ class _WidgetAliasGroupList extends BaseWidgetState<WidgetAliasGroupList>
         items: const [
           // new on osm
           BottomNavigationBarItem(
-              icon: Icon(Icons.add), label: 'Create new Alias'),
-          // 2 nearest
-          BottomNavigationBarItem(
-              icon: Icon(Icons.near_me), label: 'Nearby Aliases'),
+              icon: Icon(Icons.add), label: 'Create new Group'),
           // 1 alphabethic
-          BottomNavigationBarItem(
-              icon: Icon(Icons.timer), label: 'Last visited'),
+          BottomNavigationBarItem(icon: Icon(Icons.cancel), label: 'Cancel'),
         ],
         onTap: (int id) {
           _selectedNavBarItem = id;
           switch (id) {
             /// create
             case 0:
-              Navigator.pushNamed(context, AppRoutes.osm.route).then((_) {
-                resetLoader();
-              });
-
+              AppWidgets.dialog(context: context, contents: [
+                const Text('Create new Group?')
+              ], buttons: [
+                TextButton(
+                  child: const Text('Cancel'),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                TextButton(
+                  child: const Text('Yes'),
+                  onPressed: () async {
+                    var count = await ModelAliasGroup.count();
+                    var model = await ModelAliasGroup.insert(
+                        ModelAliasGroup(title: '#${count + 1}'));
+                    if (mounted) {
+                      Navigator.pushNamed(
+                              context, AppRoutes.aliasGroupEdit.route,
+                              arguments: model.id)
+                          .then((value) {
+                        Navigator.pop(context);
+                        resetLoader();
+                      });
+                    }
+                  },
+                )
+              ]);
               break;
-
-            /// last visited
+            // return
             case 1:
-              GPS.gps().then((GPS gps) {
-                _gps = gps;
-                _displayMode = _DisplayMode.nearest;
-                resetLoader();
-              });
+              Navigator.pop(context);
               break;
 
-            case 2:
-              _displayMode = _DisplayMode.list;
-              resetLoader();
-              break;
-
-            /// default view
             default:
-              setState(() {});
-            //
+              resetLoader();
           }
         });
   }

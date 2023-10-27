@@ -69,12 +69,7 @@ class _WidgetAliasTrackpoint extends BaseWidgetState<WidgetAliasTrackpoint> {
 
   @override
   List<Widget> renderHeader(BoxConstraints constraints) {
-    return [
-      renderMapIcon(),
-      renderSearchWidget(),
-      renderAliasWidget(),
-      AppWidgets.divider()
-    ];
+    return [renderMapIcon(), renderAliasWidget(), renderSearchWidget()];
   }
 
   @override
@@ -116,13 +111,10 @@ class _WidgetAliasTrackpoint extends BaseWidgetState<WidgetAliasTrackpoint> {
   }
 
   Widget renderSearchWidget() {
-    return TextField(
-        controller: _searchTextController,
-        minLines: 1,
-        maxLines: 1,
-        decoration: const InputDecoration(
-            icon: Icon(Icons.search, size: 30), border: InputBorder.none),
-        onChanged: (value) {
+    return AppWidgets.searchTile(
+        context: context,
+        textController: _searchTextController,
+        onChange: (String text) {
           resetLoader();
         });
   }
@@ -198,140 +190,4 @@ class _WidgetAliasTrackpoint extends BaseWidgetState<WidgetAliasTrackpoint> {
     widgets.add(AppWidgets.divider());
     return Column(children: widgets);
   }
-
-/*
-  @override
-  Widget build(BuildContext context) {
-    if (_aliasId == null) {
-      try {
-        _aliasId = ModalRoute.of(context)!.settings.arguments as int;
-        if (_aliasId! < 1) {
-          throw "Invalid Alias ID #$_aliasId";
-        }
-      } catch (e, stk) {
-        logger.error(e, stk);
-        Future.delayed(
-            const Duration(milliseconds: 10), () => Navigator.pop(context));
-        return AppWidgets.empty;
-      }
-    }
-
-    var body = FutureBuilder<ModelAlias?>(
-      future: ModelAlias.byId(_aliasId!),
-      builder: (context, snapshot) {
-        var check = AppWidgets.checkSnapshot<ModelAlias?>(snapshot);
-        if (check != null) {
-          return check;
-        }
-
-        _modelAlias = snapshot.data!;
-        return AppWidgets.loading('');
-        /*
-        return CustomScrollView(
-          slivers: <Widget>[
-            /// Pinned header
-            SliverPersistentHeader(
-                pinned: true,
-                delegate: SliverHeader(
-                    widget: header(),
-                    toolBarHeight: _toolBarHeight,
-                    closedHeight: 0,
-                    openHeight: 0)),
-
-            /// Items List
-            PagedSliverList<int, ModelTrackPoint>.separated(
-              separatorBuilder: (BuildContext context, int i) =>
-                  const Divider(),
-              pagingController: _pagingController,
-              builderDelegate: PagedChildBuilderDelegate<ModelTrackPoint>(
-                  itemBuilder: (context, model, index) => trackPoint(model)),
-            ),
-          ],
-        );
-        */
-      },
-    );
-
-    return AppWidgets.scaffold(context,
-        body: body, appBar: AppBar(title: const Text('Haltepunkte')));
-  }
-*/
-/*
-  Future<Widget?> body(BuildContext context) async {
-    _modelAlias = await ModelAlias.getModel(_idAlias);
-
-    _searchWidget = searchWidget();
-    if (mounted) {
-      _mapWidget = await mapWidget(context);
-
-      if (_searchTextController.text.trim().isEmpty) {
-        _trackPointModels = ModelTrackPoint.byAlias(_idAlias);
-      } else {
-        _trackPointModels.clear();
-
-        /// pre-search idUser and idTask
-        List<int> hasTask = [];
-        List<int> hasUser = [];
-        for (var item in ModelTask.getAll()) {
-          if (item.title.toLowerCase().contains(_searchText)) {
-            hasTask.add(item.id);
-          }
-        }
-        for (var item in await ModelUser.getAll()) {
-          if (item.title.toLowerCase().contains(_searchText)) {
-            hasUser.add(item.id);
-          }
-        }
-
-        /// begin search
-        for (var item in ModelTrackPoint.byAlias(_idAlias)) {
-          var found = false;
-          if (item.notes.toLowerCase().contains(_searchText)) {
-            _trackPointModels.add(item);
-            continue;
-          }
-          for (var id in hasTask) {
-            if (item.idTask.contains(id)) {
-              _trackPointModels.add(item);
-              found = true;
-              break;
-            }
-          }
-          if (!found) {
-            for (var id in hasUser) {
-              if (item.idUser.contains(id)) {
-                _trackPointModels.add(item);
-                break;
-              }
-            }
-          }
-        }
-      }
-      if (_trackPointModels.isEmpty) {
-        return ListView(
-          children: [
-            _headerWidget ?? AppWidgets.empty,
-            Container(
-                padding: const EdgeInsets.all(30),
-                child: const Center(
-                    child: Text(
-                        'Für diesen Ort wurden noch keine Haltepunkte aufgezeichnet.',
-                        softWrap: true,
-                        style: TextStyle(fontSize: 15))))
-          ],
-        );
-      }
-      return ListView.builder(
-          itemCount: _trackPointModels.length + 1,
-          itemBuilder: (context, id) {
-            if (id == 0) {
-              return _headerWidget ?? AppWidgets.empty;
-            } else {
-              return trackPoint(context, _trackPointModels[id - 1]);
-            }
-          });
-    }
-    return null;
-  }
-*/
 }

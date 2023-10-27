@@ -16,13 +16,11 @@ limitations under the License.
 
 import 'package:chaostours/view/app_base_widget.dart';
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 
 ///
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/screen.dart';
 import 'package:chaostours/conf/app_routes.dart';
-import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/model/model_task.dart';
 
 enum _DisplayMode {
@@ -164,109 +162,4 @@ class _WidgetTaskList extends BaseWidgetState<WidgetTaskList> {
                 : null),
         subtitle: Text(model.description));
   }
-/*
-  @override
-  Widget build(BuildContext context) {
-    var body = CustomScrollView(slivers: <Widget>[
-      SliverPersistentHeader(
-          pinned: true,
-          delegate: SliverHeader(
-              widget: searchWidget(), //Text('Test'),
-              toolBarHeight: _toolBarHeight,
-              closedHeight: 0,
-              openHeight: 0)),
-      PagedSliverList<int, ModelTask>.separated(
-        separatorBuilder: (BuildContext context, int i) => const Divider(),
-        pagingController: // _pagingController,
-        builderDelegate: PagedChildBuilderDelegate<ModelTask>(
-          itemBuilder: (context, model, index) {
-            if (_displayMode == _DisplayMode.sort) {
-              if (// _pagingController.itemList == null) {
-                return AppWidgets.loading('Waiting for Tasks...');
-              }
-              var list = // _pagingController.itemList!;
-              return sortWidget(list, index);
-            } else {
-              return modelWidget(model);
-            }
-          },
-        ),
-      ),
-    ]);
-
-    return AppWidgets.scaffold(context,
-        body: body,
-        appBar: AppBar(title: const Text('Aufgaben Liste')),
-        navBar: BottomNavigationBar(
-            type: BottomNavigationBarType.fixed,
-            items: [
-              _displayMode == _DisplayMode.list
-                  ? const BottomNavigationBarItem(
-                      icon: Icon(Icons.add), label: 'Create new Task')
-                  : const BottomNavigationBarItem(
-                      icon: Icon(Icons.clear), label: 'Reset Sort Order'),
-              _displayMode == _DisplayMode.list
-                  ? const BottomNavigationBarItem(
-                      icon: Icon(Icons.sort), label: 'Sort Items')
-                  : const BottomNavigationBarItem(
-                      icon: Icon(Icons.list), label: 'List Items'),
-              BottomNavigationBarItem(
-                  icon: Icon(
-                      _selectDeleted.value || _displayMode == _DisplayMode.sort
-                          ? Icons.visibility_off
-                          : Icons.visibility),
-                  label:
-                      _selectDeleted.value || _displayMode == _DisplayMode.sort
-                          ? 'Hide Deleted'
-                          : 'Show Deleted')
-            ],
-            onTap: (int id) async {
-              switch (id) {
-                case 0:
-                  if (_displayMode == _DisplayMode.sort) {
-                    ModelTask.resetSortOrder().then((value) {
-                      // _pagingController.refresh();
-                      render();
-                    });
-                  } else {
-                    var count = (await ModelTask.count()) + 1;
-                    var model =
-                        await ModelTask.insert(ModelTask(title: '#$count'));
-                    Fluttertoast.showToast(msg: 'Item #${model.id} created');
-                    if (mounted) {
-                      Navigator.pushNamed(context, AppRoutes.editTasks.route,
-                              arguments: model.id)
-                          .then(
-                        (value) {
-                          // _pagingController.refresh();
-                          render();
-                        },
-                      );
-                    }
-                  }
-                  break;
-
-                case 1:
-                  _displayMode = _displayMode == _DisplayMode.list
-                      ? _DisplayMode.sort
-                      : _DisplayMode.list;
-                  // _pagingController.refresh();
-                  render();
-                  break;
-
-                case 2:
-                  if (_displayMode == _DisplayMode.list) {
-                    _selectDeleted.value = !_selectDeleted.value;
-                  } else {
-                    _selectDeleted.value = true;
-                  }
-                  // _pagingController.refresh();
-                  render();
-                  break;
-                default:
-                //
-              }
-            }));
-  }
-  */
 }

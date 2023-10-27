@@ -119,21 +119,12 @@ class _WidgetDatabaseExplorer extends BaseWidgetState<WidgetDatabaseExplorer>
               },
             ))
       ]),
-      ListTile(
-          leading: const Icon(Icons.search),
-          trailing: IconButton(
-            icon: const Icon(Icons.clear),
-            onPressed: () {
-              _searchController.text = '';
-              resetLoader();
-            },
-          ),
-          title: TextField(
-            controller: _searchController,
-            onChanged: (value) {
-              resetLoader();
-            },
-          )),
+      AppWidgets.searchTile(
+          context: context,
+          textController: _searchController,
+          onChange: (String text) {
+            resetLoader();
+          }),
       AppWidgets.divider()
     ];
   }

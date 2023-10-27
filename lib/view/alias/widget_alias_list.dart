@@ -148,34 +148,12 @@ class _WidgetAliasList extends BaseWidgetState<WidgetAliasList>
   @override
   List<Widget> renderHeader(BoxConstraints constraints) {
     return [
-      ListTile(
-          trailing: IconButton(
-            icon: const Icon(Icons.clear),
-            onPressed: () {
-              _searchTextController.text = "";
-              _displayMode = _DisplayMode.list;
-              _selectedNavBarItem = 2; // last visited
-              resetLoader();
-            },
-          ),
-          title: TextField(
-            controller: _searchTextController,
-            minLines: 1,
-            maxLines: 1,
-            decoration: const InputDecoration(
-              isDense: true,
-              //con: Icon(Icons.search, size: 30),
-              border: OutlineInputBorder(),
-              labelText: "Search",
-              contentPadding: EdgeInsets.all(10),
-            ),
-            onChanged: (value) {
-              _displayMode =
-                  value.isEmpty ? _DisplayMode.list : _DisplayMode.search;
-              _selectedNavBarItem = 2; // last visited
-              resetLoader();
-            },
-          ))
+      AppWidgets.searchTile(
+          context: context,
+          textController: _searchTextController,
+          onChange: (String text) {
+            resetLoader();
+          })
     ];
   }
 

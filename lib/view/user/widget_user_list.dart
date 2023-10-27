@@ -14,14 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import 'package:chaostours/view/app_base_widget.dart';
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/screen.dart';
+import 'package:chaostours/view/app_base_widget.dart';
 import 'package:chaostours/conf/app_routes.dart';
-import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/model/model_User.dart';
 
 enum _DisplayMode {

@@ -155,29 +155,12 @@ class _WidgetAliasGroupsFromAliasList
   @override
   List<Widget> renderHeader(BoxConstraints constrains) {
     return [
-      ListTile(
-          trailing: IconButton(
-            icon: const Icon(Icons.clear),
-            onPressed: () {
-              _searchTextController.text = "";
-              resetLoader();
-            },
-          ),
-          title: TextField(
-            controller: _searchTextController,
-            minLines: 1,
-            maxLines: 1,
-            decoration: const InputDecoration(
-              isDense: true,
-              //con: Icon(Icons.search, size: 30),
-              border: OutlineInputBorder(),
-              labelText: "Search",
-              contentPadding: EdgeInsets.all(10),
-            ),
-            onChanged: (value) {
-              resetLoader();
-            },
-          ))
+      AppWidgets.searchTile(
+          context: context,
+          textController: _searchTextController,
+          onChange: (String text) {
+            resetLoader();
+          })
     ];
   }
 

@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import 'package:chaostours/util.dart';
 import 'package:flutter/material.dart';
 
 ///
@@ -74,21 +73,12 @@ class _WidgetAliasGroupAliasList
         title: Text(_model?.title ?? 'no Model'),
         subtitle: Text(_model?.description ?? ''),
       ),
-      ListTile(
-          leading: const Icon(Icons.search),
-          title: TextField(
-            controller: _searchController,
-            onChanged: (value) {
-              resetLoader();
-            },
-          ),
-          trailing: IconButton(
-            icon: const Icon(Icons.cancel),
-            onPressed: () {
-              _searchController.text = '';
-              resetLoader();
-            },
-          )),
+      AppWidgets.searchTile(
+          context: context,
+          textController: _searchController,
+          onChange: (String text) {
+            resetLoader();
+          }),
       AppWidgets.divider()
     ];
   }
