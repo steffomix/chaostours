@@ -503,9 +503,9 @@ class ModelTrackPoint {
     return models;
   }
 
-  static Future<List<ModelTrackPoint>> search(String text) async {
+  static Future<List<ModelTrackPoint>> search(String search) async {
     const idcol = 'id';
-    var aliasModels = await ModelAlias.search(text);
+    var aliasModels = await ModelAlias.select(search: search);
     var aliasIdRows = await DB.execute<List<Map<String, Object?>>>(
       (Transaction txn) async {
         return await txn.query(TableTrackPointAlias.table,
@@ -517,7 +517,7 @@ class ModelTrackPoint {
     );
 
     ///
-    var taskModels = await ModelTask.search(text);
+    var taskModels = await ModelTask.select(search: search);
     var taskIdRows = await DB.execute<List<Map<String, Object?>>>(
       (Transaction txn) async {
         return await txn.query(TableTrackPointTask.table,
@@ -529,7 +529,7 @@ class ModelTrackPoint {
     );
 
     ///
-    var userModels = await ModelUser.search(text);
+    var userModels = await ModelUser.select(search: search);
     var userIdRows = await DB.execute<List<Map<String, Object?>>>(
       (Transaction txn) async {
         return await txn.query(TableTrackPointUser.table,

@@ -42,24 +42,21 @@ class _WidgetAliasGroupsFromAliasList
 
   final TextEditingController _searchTextController = TextEditingController();
   final List<Widget> _loadedWidgets = [];
-  ModelAlias? _modelAlias;
-  List<int>? _groupIds;
+  ModelAlias? _model;
+  List<int>? _ids;
   // items per page
   int getLimit() => 30;
 
   @override
   Future<void> initialize(BuildContext context, Object? args) async {
-    _modelAlias = await ModelAlias.byId(args as int);
+    _model = await ModelAlias.byId(args as int);
+    _ids ??= await _model?.groupsIds() ?? [];
   }
 
   @override
   Future<int> loadItems({required int offset, int limit = 20}) async {
-    _groupIds ??= await _modelAlias?.groupsIds() ?? [];
-
-    var newItems = _searchTextController.text.isEmpty
-        ? await ModelAliasGroup.select(limit: limit, offset: offset)
-        : await ModelAliasGroup.search(_searchTextController.text,
-            limit: limit, offset: offset);
+    var newItems = await ModelAliasGroup.select(
+        limit: limit, offset: offset, search: _searchTextController.text);
 
     _loadedWidgets.addAll(newItems.map((e) => renderRow(e)).toList());
     return newItems.length;
@@ -96,37 +93,24 @@ class _WidgetAliasGroupsFromAliasList
                 TextStyle(fontSize: 12, color: Theme.of(context).hintColor)));
   }
 
+  @override
+  Scaffold renderScaffold(Widget body) {
+    return AppWidgets.scaffold(context, body: body, title: 'Groups from Alias');
+  }
+
   Widget checkBox(ModelAliasGroup model) {
-    AppWidgets.checkbox(
-      idReference: _modelAlias?.id ?? 0,
-      referenceList: _groupIds ?? [],
+    return AppWidgets.checkbox(
+      idReference: model.id,
+      referenceList: _ids ?? [],
       onToggle: (toggle) async {
         bool add = toggle ?? false;
         if (add) {
-          await _modelAlias?.addGroup(model);
+          await _model?.addGroup(model);
         } else {
-          await _modelAlias?.removeGroup(model);
+          await _model?.removeGroup(model);
         }
         resetLoader();
       },
-    );
-
-    var controller = CheckboxController(
-      idReference: model.id,
-      referenceList: _groupIds ?? [],
-      onToggle: (bool? checked) async {
-        bool add = checked ?? false;
-        if (add) {
-          await _modelAlias?.addGroup(model);
-        } else {
-          await _modelAlias?.removeGroup(model);
-        }
-        resetLoader();
-      },
-    );
-    return Checkbox(
-      value: controller.checked,
-      onChanged: controller.onToggle,
     );
   }
 

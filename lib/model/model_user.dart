@@ -119,8 +119,8 @@ class ModelUser {
   }
 
   /// transforms text into %text%
-  static Future<List<ModelUser>> search(String text,
-      {int limit = 50, int offset = 0, selectDeleted = true}) async {
+  static Future<List<ModelUser>> _search(String text,
+      {int offset = 0, int limit = 50, selectDeleted = true}) async {
     text = '%$text%';
     final rows = await DB.execute<List<Map<String, Object?>>>(
       (txn) async {
@@ -147,10 +147,15 @@ class ModelUser {
   }
 
   static Future<List<ModelUser>> select(
-      {int limit = 50,
-      int offset = 0,
+      {int offset = 0,
+      int limit = 50,
       bool selectDeleted = true,
-      bool useSortOrder = false}) async {
+      bool useSortOrder = false,
+      String search = ''}) async {
+    if (search.isNotEmpty) {
+      return await ModelUser._search(search, offset: offset, limit: limit);
+    }
+
     final rows = await DB.execute<List<Map<String, Object?>>>(
       (Transaction txn) async {
         return await txn.query(

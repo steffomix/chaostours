@@ -67,23 +67,12 @@ class _WidgetAliasList extends BaseWidgetState<WidgetAliasList>
   @override
   Future<int> loadItems({required int offset, int limit = 20}) async {
     List<ModelAlias> newItems = [];
-    switch (_displayMode) {
-      case _DisplayMode.list:
-        newItems.addAll(await ModelAlias.select(offset: offset, limit: limit));
-        break;
-
-      case _DisplayMode.search:
-        newItems.addAll(await ModelAlias.search(_searchTextController.text,
-            offset: offset, limit: limit));
-        break;
-
-      case _DisplayMode.nearest:
-        newItems.addAll(await ModelAlias.nextAlias(
-            gps: _gps ??= (await GPS.gps()), area: 10000));
-        break;
-
-      default:
-        return 0;
+    if (_displayMode == _DisplayMode.nearest) {
+      newItems.addAll(await ModelAlias.nextAlias(
+          gps: _gps ??= (await GPS.gps()), area: 10000));
+    } else {
+      newItems.addAll(await ModelAlias.select(
+          offset: offset, limit: limit, search: _searchTextController.text));
     }
     _loadedItems.addAll(newItems.map((e) => renderItem(e)).toList());
     return newItems.length;
@@ -142,7 +131,8 @@ class _WidgetAliasList extends BaseWidgetState<WidgetAliasList>
 
   @override
   Scaffold renderScaffold(Widget body) {
-    return AppWidgets.scaffold(context, body: body, navBar: navBar(context));
+    return AppWidgets.scaffold(context,
+        body: body, navBar: navBar(context), title: 'Aliases');
   }
 
   @override

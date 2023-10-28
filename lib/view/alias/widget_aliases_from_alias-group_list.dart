@@ -15,67 +15,151 @@ limitations under the License.
 */
 
 import 'package:flutter/material.dart';
+import 'package:device_calendar/device_calendar.dart';
 
 ///
-// import 'package:chaostours/logger.dart';
+import 'package:chaostours/logger.dart';
+import 'package:chaostours/calendar.dart';
+import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/view/app_base_widget.dart';
 import 'package:chaostours/model/model_alias_group.dart';
 import 'package:chaostours/model/model_alias.dart';
-import 'package:chaostours/util.dart';
+
+typedef CalendarEntry = Map<String?, Calendar>;
 
 class WidgetAliasesFromAliasGroupList extends BaseWidget {
   const WidgetAliasesFromAliasGroupList({Key? key}) : super(key: key);
   @override
   State<WidgetAliasesFromAliasGroupList> createState() =>
-      _WidgetAliasGroupAliasList();
+      _WidgetAliasesFromAliasGroupList();
 }
 
-class _WidgetAliasGroupAliasList
+class _WidgetAliasesFromAliasGroupList
     extends BaseWidgetState<WidgetAliasesFromAliasGroupList>
     implements BaseWidgetPattern {
-  //static final Logger logger = Logger.logger<WidgetAliasGroupAliasList>();
+  static final Logger logger = Logger.logger<WidgetAliasesFromAliasGroupList>();
 
-  final List<Widget> loadedItems = [];
-  final _searchController = TextEditingController();
+  int _selectedNavBarItem = 0;
+  final CalendarEntry _calendars = {};
 
-  @override
-  int loaderLimit() => 20;
-
+  final TextEditingController _searchTextController = TextEditingController();
+  final List<Widget> _loadedWidgets = [];
   ModelAliasGroup? _model;
+  List<int>? _ids;
+  // items per page
+  int getLimit() => 30;
 
   @override
   Future<void> initialize(BuildContext context, Object? args) async {
     _model = await ModelAliasGroup.byId(args as int);
+    _ids ??= await _model?.aliasIds() ?? [];
+    try {
+      var cals = (await AppCalendar().loadCalendars());
+      for (var c in cals) {
+        _calendars.addEntries({c.id: c}.entries);
+      }
+      //cals.map((e) => _calendars.addEntries({e.id: e}.entries));
+      print(_calendars.toString());
+    } catch (e) {
+      logger.warn('maybe no calendar permission granted: $e');
+    }
+  }
+
+  @override
+  Future<int> loadItems({required int offset, int limit = 20}) async {
+    var newItems = await ModelAlias.select(
+        limit: limit, offset: offset, search: _searchTextController.text);
+
+    _loadedWidgets.addAll(newItems.map((e) => renderRow(e)).toList());
+    return newItems.length;
   }
 
   @override
   Future<void> resetLoader() async {
     await super.resetLoader();
-    loadedItems.clear();
+    _loadedWidgets.clear();
     render();
   }
 
-  @override
-  Future<int> loadItems({required int offset, int limit = 20}) async {
-    var rows = await _model?.children(
-        offset: offset, limit: limit, search: _searchController.text);
-    if (rows != null) {
-      loadedItems.addAll(rows.map((e) => renderRow(e)));
-    }
-    return rows?.length ?? 0;
+  Widget renderRow(ModelAlias model) {
+    return ListTile(
+      leading: editButton(model),
+      trailing: checkBox(model),
+      title: title(model),
+      subtitle: subtitle(model),
+    );
+  }
+
+  Widget title(ModelAlias model) {
+    return ListTile(
+      title: Text(model.title),
+      subtitle: Text(model.description),
+    );
+  }
+
+  Widget subtitle(ModelAlias model) {
+    return Padding(
+        padding: const EdgeInsets.only(left: 30),
+        child: Text(model.description,
+            style:
+                TextStyle(fontSize: 12, color: Theme.of(context).hintColor)));
+  }
+
+  Widget checkBox(ModelAlias model) {
+    return AppWidgets.checkbox(
+      idReference: _model?.id ?? 0,
+      referenceList: _ids ?? [],
+      onToggle: (toggle) async {
+        bool add = toggle ?? false;
+        try {
+          if (add) {
+            await model.addGroup(_model!);
+          } else {
+            await model.removeGroup(_model!);
+          }
+          resetLoader();
+        } catch (e, stk) {
+          logger.error('checkbox _model is NULL; $e', stk);
+        }
+      },
+    );
+  }
+
+  Widget editButton(ModelAlias model) {
+    return IconButton(
+      icon: const Icon(Icons.edit),
+      onPressed: () {
+        Navigator.pushNamed(context, AppRoutes.editAlias.route,
+                arguments: model.id)
+            .then(
+          (value) {
+            resetLoader();
+          },
+        );
+      },
+    );
   }
 
   @override
-  List<Widget> renderHeader(BoxConstraints constraints) {
-    return <Widget>[
+  List<Widget> renderBody(BoxConstraints constrains) {
+    return _loadedWidgets
+        .map((e) => SizedBox(width: constrains.maxWidth, child: e))
+        .toList();
+  }
+
+  @override
+  List<Widget> renderHeader(BoxConstraints constrains) {
+    return [
       ListTile(
-        title: Text(_model?.title ?? 'no Model'),
-        subtitle: Text(_model?.description ?? ''),
+        title: Text(_model?.title ?? ''),
+        subtitle: Text(_model?.description ?? '',
+            style: TextStyle(color: Theme.of(context).hintColor)),
       ),
+      AppWidgets.calendar(_calendars[_model?.idCalendar]),
       AppWidgets.searchTile(
           context: context,
-          textController: _searchController,
+          textController: _searchTextController,
           onChange: (String text) {
             resetLoader();
           }),
@@ -84,51 +168,52 @@ class _WidgetAliasGroupAliasList
   }
 
   @override
-  List<Widget> renderBody(BoxConstraints constraints) {
-    return loadedItems
-        .map(
-          (e) => SizedBox(width: constraints.maxWidth, child: e),
-        )
-        .toList();
-  }
-
-  Widget renderRow(ModelAlias model) {
-    return AppWidgets.checkboxListTile(CheckboxController(
-      idReference: model.id,
-      referenceList: [model.id],
-      checked: true,
-      title: model.title,
-      subtitle: model.description,
-      onToggle: (toggle) async {
-        AppWidgets.dialog(context: context, contents: const [
-          Text(
-              'Warning!\nOn this Page you can only remove Items from this group. To add this Item again, you will need to find it on the alias list.')
-        ], buttons: [
-          TextButton(
-            child: const Text('Cancel'),
-            onPressed: () => Navigator.pop(context),
-          ),
-          TextButton(
-            child: const Text('Remove anyway'),
-            onPressed: () async {
-              Navigator.pop(context);
-              await model.removeGroup(_model!);
-              resetLoader();
-            },
-          )
-        ]);
-      },
-    ));
-  }
-
-  @override
   Scaffold renderScaffold(Widget body) {
-    return AppWidgets.scaffold(
-      context,
-      appBar: AppBar(
-        title: const Text('Aliases from:'),
-      ),
-      body: body,
-    );
+    return AppWidgets.scaffold(context,
+        body: body, navBar: navBar(), title: 'Aliases from Group');
+  }
+
+  BottomNavigationBar navBar() {
+    return BottomNavigationBar(
+        currentIndex: _selectedNavBarItem,
+        items: const [
+          // new on osm
+          BottomNavigationBarItem(
+              icon: Icon(Icons.add), label: 'Create new Group'),
+          // 2 nearest
+          BottomNavigationBarItem(icon: Icon(Icons.near_me), label: 'Back'),
+        ],
+        onTap: (int id) async {
+          _selectedNavBarItem = id;
+
+          switch (id) {
+            /// create
+            case 0:
+              var count = await ModelAliasGroup.count();
+              var model = ModelAliasGroup(title: '#${count + 1}');
+              model = await ModelAliasGroup.insert(model);
+              if (mounted) {
+                Navigator.pushNamed(context, AppRoutes.aliasGroupEdit.route,
+                        arguments: model.id)
+                    .then((_) {
+                  resetLoader();
+                });
+              }
+
+              break;
+
+            /// last visited
+            case 1:
+              if (mounted) {
+                Navigator.pop(context);
+              }
+              break;
+
+            /// default view
+            default:
+              setState(() {});
+            //
+          }
+        });
   }
 }

@@ -194,7 +194,7 @@ class ModelAlias {
   }
 
   /// transforms text into %text%
-  static Future<List<ModelAlias>> search(String text,
+  static Future<List<ModelAlias>> _search(String text,
       {int offset = 0, int limit = 50}) async {
     text = '%$text%';
     var rows = await DB.execute<List<Map<String, Object?>>>(
@@ -274,7 +274,13 @@ class ModelAlias {
   }
 
   static Future<List<ModelAlias>> select(
-      {int offset = 0, int limit = 50, lastVisited = true}) async {
+      {int offset = 0,
+      int limit = 50,
+      lastVisited = true,
+      String search = ''}) async {
+    if (search.isNotEmpty) {
+      return await ModelAlias._search(search, offset: offset, limit: limit);
+    }
     var rows =
         await DB.execute<List<Map<String, Object?>>>((Transaction txn) async {
       return await txn.query(TableAlias.table,

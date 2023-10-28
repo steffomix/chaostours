@@ -15,13 +15,17 @@ limitations under the License.
 */
 
 import 'package:flutter/material.dart';
+import 'package:device_calendar/device_calendar.dart';
 
 ///
 import 'package:chaostours/view/app_widgets.dart';
+import 'package:chaostours/calendar.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/model/model_alias_group.dart';
 import 'package:chaostours/view/app_base_widget.dart';
+
+typedef CalendarEntry = Map<String?, Calendar>;
 
 class WidgetAliasGroupList extends BaseWidget {
   const WidgetAliasGroupList({super.key});
@@ -36,6 +40,7 @@ class _WidgetAliasGroupList extends BaseWidgetState<WidgetAliasGroupList>
   static final Logger logger = Logger.logger<WidgetAliasGroupList>();
 
   int _selectedNavBarItem = 0;
+  final CalendarEntry _calendars = {};
 
   List<Widget> _loadedItems = [];
 
@@ -53,26 +58,43 @@ class _WidgetAliasGroupList extends BaseWidgetState<WidgetAliasGroupList>
   }
 
   @override
+  Future<void> initialize(BuildContext context, Object? args) async {
+    try {
+      var cals = (await AppCalendar().loadCalendars());
+      for (var c in cals) {
+        _calendars.addEntries({c.id: c}.entries);
+      }
+    } catch (e) {
+      logger.warn('maybe no calendar permission granted: $e');
+    }
+  }
+
+  @override
   Future<int> loadItems({required int offset, int limit = 20}) async {
-    List<ModelAliasGroup> newItems = _searchTextController.text.isEmpty
-        ? await ModelAliasGroup.select(offset: offset, limit: limit)
-        : await ModelAliasGroup.search(_searchTextController.text,
-            offset: offset, limit: limit);
+    List<ModelAliasGroup> newItems = await ModelAliasGroup.select(
+        offset: offset, limit: limit, search: _searchTextController.text);
 
     _loadedItems.addAll(newItems.map((e) => renderItem(e)).toList());
     return newItems.length;
   }
 
   Widget renderItem(ModelAliasGroup model) {
-    return ListTile(
-        title: Text(model.title),
-        subtitle: Text(model.description),
-        trailing: IconButton(
-            icon: const Icon(Icons.edit),
-            onPressed: () {
-              Navigator.pushNamed(context, AppRoutes.aliasGroupEdit.route,
-                  arguments: model.id);
-            }));
+    return Column(children: [
+      ListTile(
+          title: Text(model.title),
+          subtitle: Text(model.description),
+          trailing: IconButton(
+              icon: const Icon(Icons.edit),
+              onPressed: () {
+                Navigator.pushNamed(context, AppRoutes.aliasGroupEdit.route,
+                        arguments: model.id)
+                    .then(
+                  (value) => resetLoader(),
+                );
+              })),
+      AppWidgets.calendar(_calendars[model.idCalendar]),
+      AppWidgets.divider()
+    ]);
   }
 
   @override

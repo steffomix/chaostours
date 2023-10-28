@@ -135,6 +135,7 @@ class AppWidgets {
 
   static Scaffold scaffold(BuildContext context,
       {required Widget body,
+      String? title,
       BottomNavigationBar? navBar,
       AppBar? appBar,
       Widget? button}) {
@@ -142,15 +143,15 @@ class AppWidgets {
       floatingActionButton: button,
       floatingActionButtonLocation:
           button == null ? null : FloatingActionButtonLocation.centerDocked,
-      appBar: appBar ?? _appBar(context),
+      appBar: appBar ?? _appBar(context, title: title),
       drawer: const WidgetDrawer(),
       body: body,
       bottomNavigationBar: navBar,
     );
   }
 
-  static AppBar _appBar(BuildContext context) {
-    return AppBar(title: Text(translate('ChaosTours')));
+  static AppBar _appBar(BuildContext context, {String? title}) {
+    return AppBar(title: Text(translate(title ?? 'ChaosTours')));
   }
 
   static Widget bottomButton(
@@ -172,6 +173,13 @@ class AppWidgets {
   }
 
   static const Widget empty = SizedBox.shrink();
+
+  static Widget calendar(Calendar? calendar) {
+    if (calendar == null) {
+      return const SizedBox.shrink();
+    }
+    return Text('${calendar.name} - ${calendar.accountName}');
+  }
 
   static String timeInfo(DateTime timeStart, DateTime timeEnd) {
     var day = '${AppSettings.weekDays[timeStart.weekday]}. den'

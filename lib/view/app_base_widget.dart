@@ -60,7 +60,7 @@ class BaseWidgetState<T extends BaseWidget> extends State<T>
 
   Future<void> render({void Function()? fn}) async {
     if (mounted) {
-      super.setState(fn ?? () {});
+      Future.microtask(() => super.setState(fn ?? () {}));
     }
   }
 
@@ -105,11 +105,9 @@ class BaseWidgetState<T extends BaseWidget> extends State<T>
   }
 
   Future<void> _load() async {
-    int loaded = await widgetLoader.load(
+    await widgetLoader.load(
         fnLoad: loadItems, fnCount: loadCount, limit: loaderLimit());
-    if (loaded > 0) {
-      render();
-    }
+    render();
   }
 
   Future<void> _measureBody(BoxConstraints constrains) async {

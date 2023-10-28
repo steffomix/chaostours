@@ -111,7 +111,7 @@ class ModelAliasGroup {
     return models;
   }
 
-  static Future<List<ModelAliasGroup>> search(String text,
+  static Future<List<ModelAliasGroup>> _search(String text,
       {int offset = 0, int limit = 50}) async {
     text = '%$text%';
     var rows = await DB.execute<List<Map<String, Object?>>>(
@@ -136,7 +136,11 @@ class ModelAliasGroup {
   }
 
   static Future<List<ModelAliasGroup>> select(
-      {int offset = 0, int limit = 50}) async {
+      {int offset = 0, int limit = 50, String search = ''}) async {
+    if (search.isNotEmpty) {
+      return await ModelAliasGroup._search(search,
+          offset: offset, limit: limit);
+    }
     final rows = await DB.execute<List<Map<String, Object?>>>(
       (Transaction txn) async {
         return await txn.query(TableAliasGroup.table,
@@ -180,6 +184,22 @@ class ModelAliasGroup {
       },
     );
     return count;
+  }
+
+  /// select ALL groups from this alias for checkbox selection.
+  /// Even if there is only the group id needed the groups
+  Future<List<int>> aliasIds() async {
+    var col = TableAliasAliasGroup.idAlias.column;
+    final ids = await DB.execute<List<Map<String, Object?>>>((txn) async {
+      return await txn.query(TableAliasAliasGroup.table,
+          columns: [col],
+          where: '${TableAliasAliasGroup.idAliasGroup.column} = ?',
+          whereArgs: [id]);
+    });
+    if (ids.isEmpty) {
+      return <int>[];
+    }
+    return ids.map((e) => DB.parseInt(e[col])).toList();
   }
 
   Future<List<ModelAlias>> children(

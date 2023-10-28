@@ -109,8 +109,7 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
               _modelAlias?.idCalendar = cal.id ?? '';
               _modelAlias?.update().then(
                 (value) {
-                  Navigator.pop(context);
-
+                  _displayMode = _DisplayMode.editGroup;
                   render();
                 },
               );
@@ -120,6 +119,7 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
 
   Widget scaffold(Widget body) {
     return AppWidgets.scaffold(context,
+        title: 'Edit Alias Group',
         navBar: BottomNavigationBar(
             type: BottomNavigationBarType.fixed,
             items: const [
@@ -140,7 +140,7 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
         body: body);
   }
 
-  Widget editGroup(ModelAliasGroup aliasGroup) {
+  Widget editGroup(ModelAliasGroup model) {
     return ListView(children: [
       /// aliasname
       Container(
@@ -148,8 +148,8 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
           child: TextField(
             decoration: const InputDecoration(label: Text('Alias Group Name')),
             onChanged: ((value) {
-              aliasGroup.title = value;
-              aliasGroup.update();
+              model.title = value;
+              model.update();
             }),
             maxLines: 3,
             minLines: 3,
@@ -167,8 +167,8 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
             minLines: 3,
             controller: _notesController,
             onChanged: (value) {
-              aliasGroup.description = value.trim();
-              aliasGroup.update();
+              model.description = value.trim();
+              model.update();
             },
           )),
       AppWidgets.divider(),
@@ -176,21 +176,25 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
       /// calendar
       Column(children: [
         const Text('Calendar', softWrap: true),
-        Container(
-            padding: const EdgeInsets.all(10),
-            child: ElevatedButton(
-              child: ListTile(
-                  leading: const Icon(
-                    Icons.calendar_month,
-                    size: 40,
-                  ),
-                  title: Text(
-                      '${_calendar?.name ?? '-'}\n${_calendar?.accountName ?? ''}')),
-              onPressed: () {
-                _displayMode = _DisplayMode.selectCalendar;
-                render();
-              },
-            ))
+        Column(mainAxisSize: MainAxisSize.min, children: [
+          ListTile(
+              leading: IconButton(
+                  icon: const Icon(Icons.delete),
+                  onPressed: () async {
+                    model.idCalendar = '';
+                    await model.update();
+                    render();
+                  }),
+              trailing: IconButton(
+                icon: const Icon(Icons.edit),
+                onPressed: () {
+                  _displayMode = _DisplayMode.selectCalendar;
+                  render();
+                },
+              ),
+              title: Text(
+                  '${_calendar?.name ?? '-'}\n${_calendar?.accountName ?? ''}')),
+        ])
       ]),
       AppWidgets.divider(),
 
@@ -202,10 +206,10 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
             softWrap: true,
           ),
           leading: Checkbox(
-            value: aliasGroup.isActive,
+            value: model.isActive,
             onChanged: (val) {
-              aliasGroup.isActive = val ?? false;
-              aliasGroup.update().then((value) => render());
+              model.isActive = val ?? false;
+              model.update().then((value) => render());
             },
           )),
 
