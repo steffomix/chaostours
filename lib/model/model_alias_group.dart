@@ -136,7 +136,10 @@ class ModelAliasGroup {
   }
 
   static Future<List<ModelAliasGroup>> select(
-      {int offset = 0, int limit = 50, String search = ''}) async {
+      {int offset = 0,
+      int limit = 50,
+      bool activated = true,
+      String search = ''}) async {
     if (search.isNotEmpty) {
       return await ModelAliasGroup._search(search,
           offset: offset, limit: limit);
@@ -145,9 +148,11 @@ class ModelAliasGroup {
       (Transaction txn) async {
         return await txn.query(TableAliasGroup.table,
             columns: TableAliasGroup.columns,
+            where: '${TableAliasGroup.isActive.column} = ?',
+            whereArgs: [activated],
             limit: limit,
             offset: offset,
-            orderBy: TableAliasGroup.primaryKey.column);
+            orderBy: TableAliasGroup.title.column);
       },
     );
     List<ModelAliasGroup> models = [];

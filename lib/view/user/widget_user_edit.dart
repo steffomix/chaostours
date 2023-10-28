@@ -48,7 +48,7 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
   @override
   Widget build(BuildContext context) {
     _id ??= ModalRoute.of(context)?.settings.arguments as int?;
-    Widget body = AppWidgets.loading('Loading task...');
+    Widget body = AppWidgets.loading('Loading user...');
     if (_id == null) {
       Future.microtask(() => Navigator.pop(context));
     } else if (_model == null) {
@@ -67,7 +67,7 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
     return AppWidgets.scaffold(
       context,
       body: body,
-      appBar: AppBar(title: const Text('Person bearbeiten')),
+      appBar: AppBar(title: const Text('Edit User')),
     );
   }
 
@@ -77,7 +77,7 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
       Container(
           padding: const EdgeInsets.all(10),
           child: TextField(
-            decoration: const InputDecoration(label: Text('Person')),
+            decoration: const InputDecoration(label: Text('User')),
             onChanged: ((value) {
               _model?.title = value;
               _model?.update();
@@ -91,7 +91,7 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
       Container(
           padding: const EdgeInsets.all(10),
           child: TextField(
-            decoration: const InputDecoration(label: Text('Notizen')),
+            decoration: const InputDecoration(label: Text('Notes')),
             maxLines: null,
             minLines: 5,
             controller: TextEditingController(text: _model?.description),
@@ -103,9 +103,9 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
 
       /// deleted
       ListTile(
-          title: const Text('Aktiviert'),
+          title: const Text('Active'),
           subtitle: const Text(
-            'Definiert ob diese Person auswählbar ist.',
+            'Defines if this User is visible and used or not.',
             softWrap: true,
           ),
           leading: Checkbox(

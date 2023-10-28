@@ -67,7 +67,7 @@ class ModelAlias {
 
   /// group values
   AliasVisibility visibility = AliasVisibility.restricted;
-  bool isActive = false;
+  bool isActive = true;
 
   /// temporary set during search for nearest Alias
   int sortDistance = 0;
@@ -77,6 +77,7 @@ class ModelAlias {
     required this.gps,
     required this.lastVisited,
     required this.title,
+    this.isActive = true,
     this.visibility = AliasVisibility.restricted,
     this.groupId = 1,
     this.radius = 50,
@@ -87,6 +88,8 @@ class ModelAlias {
   static ModelAlias fromMap(Map<String, Object?> map) {
     var model = ModelAlias(
         groupId: DB.parseInt(map[TableAlias.idAliasGroup.column], fallback: 1),
+        isActive: DB.parseBool(map[TableAlias.isActive.column],
+            fallback: DB.parseBool(true)),
         gps: GPS(DB.parseDouble(map[TableAlias.latitude.column]),
             DB.parseDouble(map[TableAlias.longitude.column])),
         radius: DB.parseInt(map[TableAlias.radius.column], fallback: 10),
@@ -103,6 +106,7 @@ class ModelAlias {
     return <String, Object?>{
       TableAlias.primaryKey.column: id,
       TableAlias.idAliasGroup.column: groupId,
+      TableAlias.isActive.column: DB.boolToInt(isActive),
       TableAlias.latitude.column: gps.lat,
       TableAlias.longitude.column: gps.lon,
       TableAlias.radius.column: radius,
@@ -276,6 +280,7 @@ class ModelAlias {
   static Future<List<ModelAlias>> select(
       {int offset = 0,
       int limit = 50,
+      bool activated = true,
       lastVisited = true,
       String search = ''}) async {
     if (search.isNotEmpty) {
@@ -285,7 +290,11 @@ class ModelAlias {
         await DB.execute<List<Map<String, Object?>>>((Transaction txn) async {
       return await txn.query(TableAlias.table,
           columns: TableAlias.columns,
-          orderBy: lastVisited ? TableAlias.lastVisited.column : null,
+          where: '${TableAlias.isActive.column} = ?',
+          whereArgs: [DB.boolToInt(activated)],
+          orderBy: lastVisited
+              ? '${TableAlias.lastVisited.column} DESC'
+              : '${TableAlias.title.column} ASC',
           offset: offset,
           limit: limit);
     });

@@ -356,6 +356,59 @@ class _WidgetOsm extends State<WidgetOsm> {
     });
   }
 
+  Future<void> createAlias() async {
+    var pos = await mapController.getCurrentPositionAdvancedPositionPicker();
+    if (!mounted) {
+      return;
+    }
+    AppWidgets.dialog(context: context, contents: [
+      const Text('Create new Alias on current Position?')
+    ], buttons: [
+      TextButton(
+        child: const Text('Cancel'),
+        onPressed: () => Navigator.pop(context),
+      ),
+      TextButton(
+        child: const Text('Yes'),
+        onPressed: () async {
+          if (_id > 0) {
+            if (_modelAlias == null) {
+              return;
+            }
+            ModelAlias alias = _modelAlias!;
+            alias.gps = GPS(pos.latitude, pos.longitude);
+            await alias.update();
+            Fluttertoast.showToast(msg: 'Alias location updated');
+            if (mounted) {
+              Navigator.pop(context);
+            }
+          } else {
+            /// create alias
+            String address =
+                (await addr.Address(GPS(pos.latitude, pos.longitude))
+                        .lookupAddress())
+                    .toString();
+
+            ModelAlias alias = ModelAlias(
+                gps: GPS(pos.latitude, pos.longitude),
+                title: address,
+                description: '',
+                radius: AppSettings.distanceTreshold,
+                lastVisited: DateTime.now());
+
+            var model = await ModelAlias.insert(alias);
+            Fluttertoast.showToast(msg: 'Alias created');
+            if (mounted) {
+              Navigator.pop(context);
+              Navigator.pushNamed(context, AppRoutes.editAlias.route,
+                  arguments: model.id);
+            }
+          }
+        },
+      )
+    ]);
+  }
+
   BottomNavigationBar navBar(context) {
     return BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
@@ -370,93 +423,43 @@ class _WidgetOsm extends State<WidgetOsm> {
           const BottomNavigationBarItem(
               icon: Icon(Icons.cancel), label: 'Abbrechen'),
         ],
-        onTap: (int buttonId) {
+        onTap: (int buttonId) async {
           /// get current position
-          var future = mapController.getCurrentPositionAdvancedPositionPicker();
-          future.then((pos) async {
-            switch (buttonId) {
-              case 0:
-                if (_id > 0) {
-                  if (_modelAlias == null) {
-                    return;
+          switch (buttonId) {
+            case 0:
+              createAlias();
+              break;
+            case 1:
+              logger.log('launch google maps');
+              if (GPS.lastGps != null) {
+                launchGoogleMaps();
+              } else {
+                GPS.gps().then((_) => launchGoogleMaps());
+              }
+
+              break;
+            case 2:
+              // search for alias
+              mapController
+                  .getCurrentPositionAdvancedPositionPicker()
+                  .then((GeoPoint pos) {
+                ModelAlias.nextAlias(gps: GPS(pos.latitude, pos.longitude))
+                    .then((List<ModelAlias> models) {
+                  if (models.isNotEmpty && mounted) {
+                    Navigator.pushNamed(
+                        context, AppRoutes.trackpointsFromAliasList.route,
+                        arguments: models.first.id);
                   }
-                  logger.log('save/update id: $_id');
-                  ModelAlias alias = _modelAlias!; //ModelAlias.getAlias(_id);
-                  alias.gps = GPS(pos.latitude, pos.longitude);
-                  alias.update().then(
-                    (_) {
-                      if (mounted) {
-                        Navigator.pop(context);
-                      }
-                      Fluttertoast.showToast(msg: 'Alias location updated');
-                    },
-                  );
-                } else {
-                  /// create alias
-                  String address =
-                      (await addr.Address(GPS(pos.latitude, pos.longitude))
-                              .lookupAddress())
-                          .toString();
-
-                  ModelAlias alias = ModelAlias(
-                      gps: GPS(pos.latitude, pos.longitude),
-                      title: address,
-                      description: '',
-                      radius: AppSettings.distanceTreshold,
-                      lastVisited: DateTime.now());
-
-                  ModelAlias.insert(alias).then((model) {
-                    //Navigator.pop(context);
-                    Future.microtask(() async {
-                      Navigator.pushNamed(context, AppRoutes.editAlias.route,
-                              arguments: model.id)
-                          .then((value) {
-                        Navigator.pop(context);
-
-                        Navigator.pushNamed(context, AppRoutes.osm.route,
-                            arguments: model.id);
-                      });
-                    });
-                    Fluttertoast.showToast(msg: 'Alias created');
-                  }).onError((error, stackTrace) {
-                    logger.error(error.toString(), stackTrace);
-                  });
-                }
-                break;
-              case 1:
-                logger.log('launch google maps');
-                if (GPS.lastGps != null) {
-                  launchGoogleMaps();
-                } else {
-                  GPS.gps().then((_) => launchGoogleMaps());
-                }
-
-                break;
-              case 2:
-                // search for alias
-                mapController
-                    .getCurrentPositionAdvancedPositionPicker()
-                    .then((GeoPoint pos) {
-                  ModelAlias.nextAlias(gps: GPS(pos.latitude, pos.longitude))
-                      .then((List<ModelAlias> models) {
-                    if (models.isNotEmpty && mounted) {
-                      Navigator.pushNamed(
-                          context, AppRoutes.trackpointsFromAliasList.route,
-                          arguments: models.first.id);
-                    }
-                  });
                 });
+              });
 
-                break;
-              default:
+              break;
+            default:
 
-                /// return to previous
-                logger.log('return to last view');
-                Navigator.pop(context);
-            }
-          }).onError((error, stackTrace) {
-            logger.error(error.toString(), stackTrace);
-          });
+              /// return to previous
+              logger.log('return to last view');
+              Navigator.pop(context);
+          }
         });
   }
 

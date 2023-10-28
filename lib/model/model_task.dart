@@ -146,7 +146,7 @@ class ModelTask {
       {int offset = 0,
       int limit = 50,
       bool useSortOrder = false,
-      bool selectDeleted = false,
+      bool activated = true,
       String search = ''}) async {
     if (search.isNotEmpty) {
       return await ModelTask._search(search, offset: offset, limit: limit);
@@ -156,11 +156,9 @@ class ModelTask {
       (Transaction txn) async {
         return await txn.query(TableTask.table,
             columns: TableTask.columns,
-            where: selectDeleted ? null : '${TableTask.isActive.column} = ?',
-            whereArgs: selectDeleted ? null : [DB.boolToInt(true)],
-            orderBy: useSortOrder
-                ? TableTask.sortOrder.column
-                : '${TableTask.isActive.column}, ${TableTask.title.column}',
+            where: '${TableTask.isActive.column} = ?',
+            whereArgs: [activated],
+            orderBy: TableTask.title.column,
             limit: limit,
             offset: offset);
       },

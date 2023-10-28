@@ -41,37 +41,29 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
 
   @override
   Widget build(BuildContext context) {
-    _id ??= ModalRoute.of(context)?.settings.arguments as int?;
-    Widget body = AppWidgets.loading('Loading task...');
-    if (_id == null) {
-      Future.microtask(() => Navigator.pop(context));
-    } else if (_model == null) {
-      ModelTask.byId(_id!).then((ModelTask? model) {
-        if (model == null) {
-          Navigator.pop(context);
-        }
-        _model = model!;
-        _id = model.id;
-        render();
-      });
-    } else {
-      body = renderBody();
-    }
+    final id = ModalRoute.of(context)?.settings.arguments as int?;
 
-    return AppWidgets.scaffold(
-      context,
-      body: body,
-      appBar: AppBar(title: const Text('Aufgabe bearbeiten')),
+    return FutureBuilder<ModelTask?>(
+      future: ModelTask.byId(id ?? 0),
+      builder: (context, snapshot) {
+        return AppWidgets.checkSnapshot(snapshot) ??
+            AppWidgets.scaffold(
+              context,
+              body: renderBody(snapshot.data!),
+              appBar: AppBar(title: const Text('Edit Task')),
+            );
+      },
     );
   }
 
-  Widget renderBody() {
+  Widget renderBody(ModelTask model) {
+    _model = model;
     return ListView(children: [
       /// taskname
       Container(
           padding: const EdgeInsets.all(10),
           child: TextField(
-            decoration: const InputDecoration(label: Text('Arbeit')),
+            decoration: const InputDecoration(label: Text('Task')),
             onChanged: ((value) {
               _model?.title = value;
               _model?.update();
@@ -85,7 +77,7 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
       Container(
           padding: const EdgeInsets.all(10),
           child: TextField(
-            decoration: const InputDecoration(label: Text('Notizen')),
+            decoration: const InputDecoration(label: Text('Notes')),
             maxLines: null,
             minLines: 5,
             controller: TextEditingController(text: _model?.description),
@@ -97,11 +89,9 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
 
       /// deleted
       ListTile(
-          title: const Text('Aktiviert'),
-          subtitle: const Text(
-            'Definiert ob diese Arbeit auswählbar ist.',
-            softWrap: true,
-          ),
+          title: const Text('Active'),
+          subtitle:
+              const Text('Defines if this Task is visible and used or not.'),
           leading: Checkbox(
             value: _model?.isActive ?? false,
             onChanged: (val) {

@@ -20,10 +20,8 @@ import 'package:flutter/material.dart';
 
 ///
 import 'package:chaostours/logger.dart';
-import 'package:chaostours/screen.dart';
 import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/model/model_task.dart';
-import 'package:chaostours/view/app_base_widget.dart';
 
 class WidgetTaskList extends BaseWidget {
   const WidgetTaskList({super.key});
@@ -36,7 +34,7 @@ class _WidgetTaskList extends BaseWidgetState<WidgetTaskList> {
   // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetTaskList>();
 
-  final _selectDeleted = ValueNotifier<bool>(false);
+  bool _showActivated = true;
   final _textController = TextEditingController();
 
   final List<Widget> _loadedItems = [];
@@ -48,6 +46,7 @@ class _WidgetTaskList extends BaseWidgetState<WidgetTaskList> {
   Future<void> resetLoader() async {
     await super.resetLoader();
     _loadedItems.clear();
+    render();
   }
 
   @override
@@ -55,7 +54,7 @@ class _WidgetTaskList extends BaseWidgetState<WidgetTaskList> {
     List<ModelTask> newItems = await ModelTask.select(
         limit: limit,
         offset: offset,
-        selectDeleted: _selectDeleted.value,
+        activated: _showActivated,
         search: _textController.text);
 
     _loadedItems.addAll(newItems.map((e) => renderListItem(e)).toList());
@@ -67,6 +66,73 @@ class _WidgetTaskList extends BaseWidgetState<WidgetTaskList> {
     return _loadedItems
         .map((e) => SizedBox(width: constraints.maxWidth, child: e))
         .toList();
+  }
+
+  @override
+  List<Widget> renderHeader(BoxConstraints constraints) {
+    return [
+      AppWidgets.searchTile(
+          context: context,
+          textController: _textController,
+          onChange: (search) {
+            resetLoader();
+          })
+    ];
+  }
+
+  @override
+  Scaffold renderScaffold(Widget body) {
+    return AppWidgets.scaffold(context,
+        body: body, title: 'Tasks', navBar: navBar());
+  }
+
+  BottomNavigationBar navBar() {
+    return BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        items: [
+          const BottomNavigationBarItem(
+              icon: Icon(Icons.add), label: 'Create new Task'),
+          _showActivated
+              ? const BottomNavigationBarItem(
+                  icon: Icon(Icons.delete), label: 'Show Deleted')
+              : const BottomNavigationBarItem(
+                  icon: Icon(Icons.visibility), label: 'Show Active'),
+          const BottomNavigationBarItem(
+              icon: Icon(Icons.cancel), label: 'Cancel'),
+        ],
+        onTap: (int id) async {
+          if (id == 0) {
+            AppWidgets.dialog(context: context, contents: [
+              const Text('Create new Task?')
+            ], buttons: [
+              TextButton(
+                child: const Text('Cancel'),
+                onPressed: () => Navigator.pop(context),
+              ),
+              TextButton(
+                child: const Text('Yes'),
+                onPressed: () async {
+                  var count = await ModelTask.count();
+                  var model =
+                      await ModelTask.insert(ModelTask(title: '#${count + 1}'));
+                  if (mounted) {
+                    Navigator.pushNamed(context, AppRoutes.editTasks.route,
+                            arguments: model.id)
+                        .then((value) {
+                      Navigator.pop(context);
+                      resetLoader();
+                    });
+                  }
+                },
+              )
+            ]);
+          } else if (id == 1) {
+            _showActivated = !_showActivated;
+            resetLoader();
+          } else {
+            Navigator.pop(context);
+          }
+        });
   }
 
   Widget renderListItem(ModelTask model) {
@@ -82,22 +148,10 @@ class _WidgetTaskList extends BaseWidgetState<WidgetTaskList> {
         ),
         trailing: IconButton(
             icon: const Icon(Icons.edit),
-            onPressed: () {
-              Navigator.pushNamed(context, AppRoutes.editTasks.route,
-                      arguments: model.id)
-                  .then((_) {
-                // _pagingController.refresh();
-                render();
-              });
+            onPressed: () async {
+              await Navigator.pushNamed(context, AppRoutes.editTasks.route,
+                  arguments: model.id);
+              resetLoader();
             }));
-  }
-
-  Widget searchWidget() {
-    return AppWidgets.searchTile(
-        context: context,
-        textController: _textController,
-        onChange: (v) {
-          resetLoader();
-        });
   }
 }

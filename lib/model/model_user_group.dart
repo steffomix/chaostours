@@ -133,7 +133,10 @@ class ModelUserGroup {
   }
 
   static Future<List<ModelUserGroup>> select(
-      {int offset = 0, int limit = 50, String search = ''}) async {
+      {int offset = 0,
+      int limit = 50,
+      bool activated = true,
+      String search = ''}) async {
     if (search.isNotEmpty) {
       return await ModelUserGroup._search(search, offset: offset, limit: limit);
     }
@@ -142,6 +145,8 @@ class ModelUserGroup {
       (Transaction txn) async {
         return await txn.query(TableUserGroup.table,
             columns: TableUserGroup.columns,
+            where: '${TableUserGroup.isActive.column} = ?',
+            whereArgs: [activated],
             limit: limit,
             offset: offset,
             orderBy: TableUserGroup.primaryKey.column);

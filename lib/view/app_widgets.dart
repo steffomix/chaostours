@@ -135,11 +135,13 @@ class AppWidgets {
 
   static Scaffold scaffold(BuildContext context,
       {required Widget body,
+      GlobalKey? key,
       String? title,
       BottomNavigationBar? navBar,
       AppBar? appBar,
       Widget? button}) {
     return Scaffold(
+      key: key,
       floatingActionButton: button,
       floatingActionButtonLocation:
           button == null ? null : FloatingActionButtonLocation.centerDocked,

@@ -20,15 +20,13 @@ import 'package:flutter/material.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/conf/app_routes.dart';
-import 'package:chaostours/conf/app_colors.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/view/app_base_widget.dart';
 import 'package:chaostours/gps.dart';
 
 enum _DisplayMode {
   list,
-  search,
-  nearest;
+  nearest,
 }
 
 class WidgetAliasList extends BaseWidget {
@@ -45,7 +43,10 @@ class _WidgetAliasList extends BaseWidgetState<WidgetAliasList>
 
   _DisplayMode _displayMode = _DisplayMode.list;
 
-  int _selectedNavBarItem = 0;
+  int _selectedNavBarItem = 1;
+
+  bool _showActivated = true;
+  bool _lastVisited = false;
 
   List<Widget> _loadedItems = [];
 
@@ -72,7 +73,11 @@ class _WidgetAliasList extends BaseWidgetState<WidgetAliasList>
           gps: _gps ??= (await GPS.gps()), area: 10000));
     } else {
       newItems.addAll(await ModelAlias.select(
-          offset: offset, limit: limit, search: _searchTextController.text));
+          offset: offset,
+          limit: limit,
+          activated: _showActivated,
+          lastVisited: _lastVisited,
+          search: _searchTextController.text));
     }
     _loadedItems.addAll(newItems.map((e) => renderItem(e)).toList());
     return newItems.length;
@@ -83,7 +88,7 @@ class _WidgetAliasList extends BaseWidgetState<WidgetAliasList>
     int count = model.trackPointCount;
     return ListTile(
         subtitle: Text(
-            '#${model.sortDistance} Besucht: ${count}x, ${count == 0 ? 'noch nie' : 'vor $dur Tage'}'),
+            'Visited: ${count}x, ${count == 0 ? 'Never' : 'before $dur days.'}'),
         title: Text(model.title));
   }
 
@@ -95,31 +100,38 @@ class _WidgetAliasList extends BaseWidgetState<WidgetAliasList>
                 TextStyle(fontSize: 12, color: Theme.of(context).hintColor)));
   }
 
-  Widget itemInfo(ModelAlias model) {
+  Widget showTrackpoints(ModelAlias model) {
     return IconButton(
-      icon: Icon(Icons.info_outline_rounded,
-          size: 30,
-          color: model.isActive
-              ? Colors.black
-              : AppColors.aliasStatusColor(model.visibility)),
+      icon: const Icon(Icons.list),
       onPressed: () {
         Navigator.pushNamed(context, AppRoutes.trackpointsFromAliasList.route,
                 arguments: model.id)
             .then((_) {
-          setState(() {});
+          render();
+        });
+      },
+    );
+  }
+
+  Widget edit(ModelAlias model) {
+    return IconButton(
+      icon: const Icon(Icons.edit),
+      onPressed: () {
+        Navigator.pushNamed(context, AppRoutes.editAlias.route,
+                arguments: model.id)
+            .then((_) {
+          render();
         });
       },
     );
   }
 
   Widget renderItem(ModelAlias model) {
-    return model.description.isEmpty
-        ? ListTile(trailing: itemInfo(model), title: itemTitle(model))
-        : ListTile(
-            trailing: itemInfo(model),
-            title: itemTitle(model),
-            subtitle: itemSubtitle(model),
-          );
+    return ListTile(
+        leading: showTrackpoints(model),
+        title: itemTitle(model),
+        subtitle: itemSubtitle(model),
+        trailing: edit(model));
   }
 
   @override
@@ -150,44 +162,77 @@ class _WidgetAliasList extends BaseWidgetState<WidgetAliasList>
   BottomNavigationBar navBar(BuildContext context) {
     return BottomNavigationBar(
         currentIndex: _selectedNavBarItem,
-        items: const [
-          // new on osm
-          BottomNavigationBarItem(
+        items: [
+          // 0
+          const BottomNavigationBarItem(
               icon: Icon(Icons.add), label: 'Create new Alias'),
-          // 2 nearest
-          BottomNavigationBarItem(
-              icon: Icon(Icons.near_me), label: 'Nearby Aliases'),
-          // 1 alphabethic
-          BottomNavigationBarItem(
-              icon: Icon(Icons.timer), label: 'Last visited'),
+          // 1
+          _lastVisited
+              ? const BottomNavigationBarItem(
+                  icon: Icon(Icons.timer), label: 'Last visited')
+              : const BottomNavigationBarItem(
+                  icon: Icon(Icons.list), label: 'List'),
+          // 2
+          const BottomNavigationBarItem(
+              icon: Icon(Icons.near_me), label: 'Nearest'),
+          // 3
+          _showActivated
+              ? const BottomNavigationBarItem(
+                  icon: Icon(Icons.delete), label: 'Show Deactivated')
+              : const BottomNavigationBarItem(
+                  icon: Icon(Icons.visibility), label: 'Show Active'),
+          // 2
+          const BottomNavigationBarItem(
+              icon: Icon(Icons.cancel), label: 'Cancel'),
         ],
         onTap: (int id) {
           _selectedNavBarItem = id;
           switch (id) {
             /// create
             case 0:
+              _displayMode = _DisplayMode.list;
+              _showActivated = true;
               Navigator.pushNamed(context, AppRoutes.osm.route).then((_) {
                 resetLoader();
+                _selectedNavBarItem = 1;
               });
 
               break;
 
-            /// last visited
+            /// list / last visited
             case 1:
-              GPS.gps().then((GPS gps) {
-                _gps = gps;
-                _displayMode = _DisplayMode.nearest;
-                resetLoader();
-              });
-              break;
-
-            case 2:
               _displayMode = _DisplayMode.list;
+              _showActivated = true;
+              _lastVisited = !_lastVisited;
+              _selectedNavBarItem = 1;
               resetLoader();
               break;
 
-            /// default view
+            /// nearby
+            case 2:
+              GPS.gps().then((GPS gps) {
+                _gps = gps;
+                _showActivated = true;
+                _displayMode = _DisplayMode.nearest;
+                _selectedNavBarItem = 2;
+                resetLoader();
+              });
+              break;
+
+            /// trash
+            case 3:
+              _showActivated = !_showActivated;
+              _displayMode = _DisplayMode.list;
+              _selectedNavBarItem = 3;
+              resetLoader();
+              break;
+
+            /// return
+            case 4:
+              Navigator.pop(context);
+
             default:
+              _displayMode = _DisplayMode.list;
               setState(() {});
             //
           }

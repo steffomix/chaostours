@@ -189,16 +189,16 @@ class BaseWidgetState<T extends BaseWidget> extends State<T>
   /// render widget with height of headerHeight and width of contraints.maxWidth
   @override
   List<Widget> renderHeader(BoxConstraints constraints) {
-    return [const SizedBox.shrink()];
+    return const [SizedBox.shrink()];
   }
 
   @override
   List<Widget> renderBody(BoxConstraints constraints) {
-    return [const SizedBox.shrink()];
+    return const [SizedBox.shrink()];
   }
 
   @override
   Scaffold renderScaffold(Widget body) {
-    return Scaffold(body: body);
+    return const Scaffold(body: Center(child: Text('Not Implementd')));
   }
 }

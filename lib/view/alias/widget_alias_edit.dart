@@ -38,6 +38,7 @@ class WidgetAliasEdit extends StatefulWidget {
 class _WidgetAliasEdit extends State<WidgetAliasEdit> {
   // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetAliasEdit>();
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
 
   ModelAlias? _modelAlias;
   final _addressController = TextEditingController();
@@ -94,10 +95,6 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
         if (loading == null) {
           var model = snapshot.data!;
           initialize(model);
-          _modelAlias = model;
-          _addressController.text = model.title;
-          _notesController.text = model.description;
-          _radiusController.text = model.radius.toString();
           return scaffold(body(model));
         } else {
           return AppWidgets.scaffold(context,
@@ -109,6 +106,8 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
 
   Widget scaffold(Widget body) {
     return AppWidgets.scaffold(context,
+        key: _scaffoldKey,
+        title: 'Edit Alias',
         navBar: BottomNavigationBar(
             type: BottomNavigationBarType.fixed,
             items: const [
@@ -139,7 +138,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
       Container(
           padding: const EdgeInsets.all(10),
           child: TextField(
-            decoration: const InputDecoration(label: Text('Alias/Adresse')),
+            decoration: const InputDecoration(label: Text('Alias/Address')),
             onChanged: ((value) {
               alias.title = value;
               alias.update();
@@ -154,7 +153,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
           padding: const EdgeInsets.all(10),
           child: TextField(
             keyboardType: TextInputType.multiline,
-            decoration: const InputDecoration(label: Text('Notizen')),
+            decoration: const InputDecoration(label: Text('Notes')),
             maxLines: null,
             minLines: 3,
             controller: _notesController,
@@ -173,8 +172,8 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                 Icons.near_me,
                 size: 40,
               ),
-              title: Text('Latitude/Breitengrad:\n${alias.gps.lat}\n\n'
-                  'Longitude/Längengrad:\n${alias.gps.lon}'))
+              title: Text('Latitude:\n${alias.gps.lat}\n\n'
+                  'Longitude:\n${alias.gps.lon}'))
         ]),
         onPressed: () {
           Navigator.pushNamed(context, AppRoutes.osm.route, arguments: alias.id)
@@ -230,8 +229,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
             inputFormatters: [
               FilteringTextInputFormatter.allow(RegExp('[0-9]')),
             ],
-            decoration: const InputDecoration(
-                label: Text('Gültigkeitsbereich (Radius) in meter.')),
+            decoration: const InputDecoration(label: Text('Radius in meter.')),
             onChanged: ((value) {
               try {
                 alias.radius = int.parse(value);
@@ -264,10 +262,8 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                       backgroundColor: AppColors.aliasPublic.color,
                     )),
                 subtitle: const Text(
-                  'Ereignisse die diesen Ort betreffen können gespeichert und '
-                  'z.B. automatisch in einem privaten oder öffentlichen Kalender publiziert werden.',
-                  softWrap: true,
-                ),
+                    'Ereignisse die diesen Ort betreffen können gespeichert und '
+                    'z.B. automatisch in einem privaten oder öffentlichen Kalender publiziert werden.'),
                 leading: Radio<AliasVisibility>(
                     value: AliasVisibility.public,
                     groupValue: alias.visibility,
@@ -280,11 +276,9 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                       backgroundColor: AppColors.aliasPrivate.color,
                     )),
                 subtitle: const Text(
-                  'Ereignisse die diesen Ort betreffen verlassen ihr Gerät nicht, '
-                  'es sei denn sie exportieren z.B. die Datenbank, machen Screenshots etc. '
-                  'und geben die Informationen selst an Dritte weiter.',
-                  softWrap: true,
-                ),
+                    'Ereignisse die diesen Ort betreffen verlassen ihr Gerät nicht, '
+                    'es sei denn sie exportieren z.B. die Datenbank, machen Screenshots etc. '
+                    'und geben die Informationen selst an Dritte weiter.'),
                 leading: Radio<AliasVisibility>(
                     value: AliasVisibility.privat,
                     groupValue: alias.visibility,
@@ -297,13 +291,11 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                       backgroundColor: AppColors.aliasRestricted.color,
                     )),
                 subtitle: const Text(
-                  'An diesem Ort werden keine Haltepunkte aufgezeichnent, als wäre das Gerät ausgeschaltet. '
-                  'Das bedeutet, wenn Sie diesen Ort erreichen, halten und wieder losfahren, '
-                  'fehlt die gesamte Aufzeichnung vom losfahren zu diesem Ort bis zum erreichen des nächsten Ortes. '
-                  'Die daraus resultierende Aufzeichnung erweckt den Eindruck, als hätten sie sich von Ort A, '
-                  'über Ort B(geheim) nach Ort C über einen bisher unbekannten Subraum transportiert.',
-                  softWrap: true,
-                ),
+                    'An diesem Ort werden keine Haltepunkte aufgezeichnent, als wäre das Gerät ausgeschaltet. '
+                    'Das bedeutet, wenn Sie diesen Ort erreichen, halten und wieder losfahren, '
+                    'fehlt die gesamte Aufzeichnung vom losfahren zu diesem Ort bis zum erreichen des nächsten Ortes. '
+                    'Die daraus resultierende Aufzeichnung erweckt den Eindruck, als hätten sie sich von Ort A, '
+                    'über Ort B(geheim) nach Ort C über einen bisher unbekannten Subraum transportiert.'),
                 leading: Radio<AliasVisibility>(
                     value: AliasVisibility.restricted,
                     groupValue: alias.visibility,
@@ -315,17 +307,16 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
 
       /// deleted
       ListTile(
-          title: const Text('Deaktiviert / gelöscht'),
+          title: const Text('Aktive'),
           subtitle: const Text(
-            'Wenn deaktiviert bzw. gelöscht, wird dieser Alias behandelt wie ein "gelöschter" Fakebook Account.',
+            'If this Alias is visible and in use.',
             softWrap: true,
           ),
           leading: Checkbox(
             value: alias.isActive,
-            onChanged: (val) {
+            onChanged: (val) async {
               alias.isActive = val ?? false;
-              setState(() {});
-              alias.update();
+              await alias.update();
               render();
             },
           ))

@@ -63,28 +63,6 @@ class _WidgetUserList extends BaseWidgetState<WidgetUserList> {
     super.dispose();
   }
 
-  void _fetchPage(int offset) async {
-    var text = _textController.text;
-    List<ModelUser> newItems =
-        await (text.isEmpty || _displayMode == _DisplayMode.sort
-            ? ModelUser.select(
-                limit: _limit,
-                offset: offset,
-                selectDeleted:
-                    _selectDeleted.value || _displayMode == _DisplayMode.sort,
-                useSortOrder: _displayMode == _DisplayMode.sort)
-            : ModelUser.search(text,
-                limit: _limit,
-                offset: offset,
-                selectDeleted: _selectDeleted.value));
-
-    if (newItems.length < _limit) {
-      // _pagingController.appendLastPage(newItems);
-    } else {
-      // _pagingController.appendPage(newItems, offset + newItems.length);
-    }
-  }
-
   Widget modelWidget(ModelUser model) {
     return ListBody(children: [
       ListTile(

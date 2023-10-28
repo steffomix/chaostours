@@ -149,7 +149,7 @@ class ModelUser {
   static Future<List<ModelUser>> select(
       {int offset = 0,
       int limit = 50,
-      bool selectDeleted = true,
+      bool activated = true,
       bool useSortOrder = false,
       String search = ''}) async {
     if (search.isNotEmpty) {
@@ -161,11 +161,9 @@ class ModelUser {
         return await txn.query(
           TableUser.table,
           columns: TableUser.columns,
-          where: selectDeleted ? null : '${TableUser.isActive.column} = ?',
-          whereArgs: selectDeleted ? null : [DB.boolToInt(true)],
-          orderBy: useSortOrder
-              ? TableUser.sortOrder.column
-              : '${TableUser.isActive.column}, ${TableUser.title.column}',
+          where: '${TableUser.isActive.column} = ?',
+          whereArgs: [activated],
+          orderBy: TableUser.title.column,
           limit: limit,
           offset: offset,
         );
