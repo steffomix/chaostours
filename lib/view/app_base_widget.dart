@@ -87,7 +87,7 @@ class BaseWidgetState<T extends BaseWidget> extends State<T>
       builder: (context, constraints) {
         var header = Container(
             key: _headerKey,
-            color: Theme.of(context).cardColor,
+            color: null, //Theme.of(context).cardColor,
             child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: renderHeader(constraints)));

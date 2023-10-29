@@ -155,15 +155,11 @@ class ModelAliasGroup {
             orderBy: TableAliasGroup.title.column);
       },
     );
-    List<ModelAliasGroup> models = [];
-    for (var row in rows) {
-      try {
-        models.add(fromMap(row));
-      } catch (e, stk) {
-        logger.error('select _fromMap: $e', stk);
-      }
-    }
-    return models;
+    return rows
+        .map(
+          (e) => fromMap(e),
+        )
+        .toList();
   }
 
   static Future<ModelAliasGroup> insert(ModelAliasGroup model) async {

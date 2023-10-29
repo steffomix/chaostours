@@ -156,6 +156,46 @@ class AppWidgets {
     return AppBar(title: Text(translate(title ?? 'ChaosTours')));
   }
 
+  static BottomNavigationBar navBarCreateItem(BuildContext context,
+      {required String name, required void Function() onCreate}) {
+    return BottomNavigationBar(
+        currentIndex: 1,
+        items: [
+          // new on osm
+          BottomNavigationBarItem(
+              icon: const Icon(Icons.add), label: 'Create new $name'),
+          // 1 alphabethic
+          const BottomNavigationBarItem(
+              icon: Icon(Icons.cancel), label: 'Cancel'),
+        ],
+        onTap: (int id) {
+          switch (id) {
+            /// create
+            case 0:
+              AppWidgets.dialog(context: context, contents: [
+                Text('Create new $name?')
+              ], buttons: [
+                TextButton(
+                  child: const Text('Cancel'),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                TextButton(
+                  onPressed: onCreate,
+                  child: const Text('Yes'),
+                )
+              ]);
+              break;
+            // return
+            case 1:
+              Navigator.pop(context);
+              break;
+
+            default:
+            //
+          }
+        });
+  }
+
   static Widget bottomButton(
       {required BuildContext context,
       required Icon icon,
@@ -200,6 +240,10 @@ class AppWidgets {
 
   static Widget loadingScreen(BuildContext context, [String? info]) {
     return scaffold(context, body: loading(info ?? translate('Loading...')));
+  }
+
+  static Widget errorScreen(BuildContext context, [String? info]) {
+    return scaffold(context, body: loading(info ?? translate(info ?? 'ERROR')));
   }
 
   /// check FutureBuilder Snapshots,
@@ -426,6 +470,62 @@ class AppWidgets {
   }
 }
 
+class NavBarWithTrash {
+  bool _showActivated = true;
+  bool get showActivated => _showActivated;
+  BottomNavigationBar navBar(BuildContext context,
+      {required String name,
+      required void Function(BuildContext context) onCreate,
+      required void Function(BuildContext context) onSwitch}) {
+    return BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        items: [
+          BottomNavigationBarItem(
+              icon: const Icon(Icons.add), label: 'Create new $name'),
+          _showActivated
+              ? const BottomNavigationBarItem(
+                  icon: Icon(Icons.delete), label: 'Show Deleted')
+              : const BottomNavigationBarItem(
+                  icon: Icon(Icons.visibility), label: 'Show Active'),
+          const BottomNavigationBarItem(
+              icon: Icon(Icons.cancel), label: 'Cancel'),
+        ],
+        onTap: (int id) async {
+          if (id == 0) {
+            AppWidgets.dialog(context: context, contents: [
+              Text('Create new $name?')
+            ], buttons: [
+              TextButton(
+                child: const Text('Cancel'),
+                onPressed: () => Navigator.pop(context),
+              ),
+              TextButton(
+                  onPressed: () => onCreate(context), child: const Text('Yes')
+                  /*
+                  var count = await ModelTask.count();
+                  var model =
+                      await ModelTask.insert(ModelTask(title: '#${count + 1}'));
+                  if (mounted) {
+                    Navigator.pushNamed(context, AppRoutes.editTask.route,
+                            arguments: model.id)
+                        .then((value) {
+                      Navigator.pop(context);
+                      resetLoader();
+                    });
+                  }
+                  */
+                  )
+            ]);
+          } else if (id == 1) {
+            _showActivated = !_showActivated;
+            onSwitch(context);
+          } else {
+            Navigator.pop(context);
+          }
+        });
+  }
+}
+
 ///
 ///
 ///
@@ -518,28 +618,28 @@ class _WidgetDrawer extends State<WidgetDrawer> {
               ///
               ElevatedButton(
                   onPressed: () {
-                    AppWidgets.navigate(context, AppRoutes.userList);
+                    AppWidgets.navigate(context, AppRoutes.listUser);
                   },
                   child: const Text('Personal')),
 
               ///
               ElevatedButton(
                   onPressed: () {
-                    AppWidgets.navigate(context, AppRoutes.taskList);
+                    AppWidgets.navigate(context, AppRoutes.listTask);
                   },
                   child: const Text('Arbeiten')),
 
               ///
               ElevatedButton(
                   onPressed: () {
-                    AppWidgets.navigate(context, AppRoutes.aliasList);
+                    AppWidgets.navigate(context, AppRoutes.listAlias);
                   },
                   child: const Text('Orte (Alias)')),
 
               ///
               ElevatedButton(
                   onPressed: () {
-                    AppWidgets.navigate(context, AppRoutes.aliasGroupList);
+                    AppWidgets.navigate(context, AppRoutes.listAliasGroup);
                   },
                   child: const Text('Groups & Calendars')),
 

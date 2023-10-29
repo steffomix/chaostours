@@ -115,7 +115,7 @@ class _WidgetUserList extends BaseWidgetState<WidgetUserList> {
                   var model =
                       await ModelUser.insert(ModelUser(title: '#${count + 1}'));
                   if (mounted) {
-                    Navigator.pushNamed(context, AppRoutes.userEdit.route,
+                    Navigator.pushNamed(context, AppRoutes.editUser.route,
                             arguments: model.id)
                         .then((value) {
                       Navigator.pop(context);
@@ -148,7 +148,7 @@ class _WidgetUserList extends BaseWidgetState<WidgetUserList> {
         trailing: IconButton(
             icon: const Icon(Icons.edit),
             onPressed: () async {
-              await Navigator.pushNamed(context, AppRoutes.userEdit.route,
+              await Navigator.pushNamed(context, AppRoutes.editUser.route,
                   arguments: model.id);
               resetLoader();
             }));

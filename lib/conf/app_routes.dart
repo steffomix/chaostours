@@ -53,61 +53,57 @@ import 'package:chaostours/view/trackpoint/widget_edit_trackpoint.dart';
 //
 import 'package:chaostours/view/widget_manage_calendar.dart';
 
-//import 'package:chaostours/view/_widget_test_async_loader.dart';
-
-/// use value instead of name to get the right
 enum AppRoutes {
   // system
-  welcome('/welcome'),
-  logger('/logger'),
-  permissions('/permissions'),
-  importExport('/importExport'),
-  databaseExplorer('/databaseExplorer'),
-  appSettings('/appsettings'),
-  backgroundGps('/backgroundGps'),
+  welcome,
+  logger,
+  permissions,
+  importExport,
+  databaseExplorer,
+  appSettings,
+  backgroundGps,
 
   // trackpoints
-  liveTracking('/liveTracking'),
-  trackpoints('/trackpoints'),
-  editTrackPoint('/editTrackPoint'),
-  trackpointsFromAliasList('/trackpointsFromAliasList'),
+  liveTracking,
+  trackpoints,
+  editTrackPoint,
+  trackpointsFromAliasList,
 
   // alias
-  aliasList('/aliasList'),
-  editAlias('/editAlias'),
+  listAlias,
+  editAlias,
 
   // alias group
-  aliasGroupList('/aliasGroupList'),
-  aliasGroupEdit('/aliasGroupEdit'),
-  aliasGroupsFromAliasList('/aliasGroupsFromAliasList'),
-  aliasesFromAliasGroupList('/aliasesFromAliasGroupList'),
+  listAliasGroup,
+  editAliasGroup,
+  listAliasGroupsFromAlias,
+  listAliasesFromAliasGroup,
 
   // task
-  taskList('/taskList'),
-  taskEdit('/taskEdit'),
+  listTask,
+  editTask,
 
   // task group
-  taskGroupList('/taskGroupList'),
-  taskGroupEdit('/taskGroupEdit'),
-  taskGroupsFromTaskList('/taskGroupsFromTaskList'),
-  tasksFromTaskGroupList('/tasksFromTaskGroupList'),
+  listTaskGroup,
+  editTaskGroup,
+  listTaskGroupsFromTask,
+  listTasksFromTaskGroup,
 
   // user
-  userList('/userList'),
-  userEdit('/userEdit'),
+  listUser,
+  editUser,
 
   // userGroup
-  userGroupList('/userGroupList'),
-  userGroupEdit('/userGroupEdit'),
-  userGroupsFromUserList('/userGroupsFromUserList'),
-  usersFromUserGroupList('/useresFromUserGroupList'),
+  listUserGroup,
+  editUserGroup,
+  listUserGroupsFromUser,
+  listUsersFromUserGroup,
 
   // misc
-  selectCalendar('/selectCalendar'),
-  osm('/osm');
+  selectCalendar,
+  osm;
 
-  final String route;
-  const AppRoutes(this.route);
+  String get route => name.toLowerCase();
 
   static Map<String, Widget Function(BuildContext)>? _routes;
   static get routes {
@@ -129,39 +125,39 @@ enum AppRoutes {
       AppRoutes.editTrackPoint.route: (context) => const WidgetEditTrackPoint(),
 
       // user
-      AppRoutes.userList.route: (context) => const WidgetUserList(),
-      AppRoutes.userEdit.route: (context) => const WidgetUserEdit(),
+      AppRoutes.listUser.route: (context) => const WidgetUserList(),
+      AppRoutes.editUser.route: (context) => const WidgetUserEdit(),
 
       // user group
-      AppRoutes.userGroupList.route: (context) => const WidgetUserGroupList(),
-      AppRoutes.userGroupEdit.route: (context) => const WidgetUserGroupEdit(),
-      AppRoutes.userGroupsFromUserList.route: (context) =>
+      AppRoutes.listUserGroup.route: (context) => const WidgetUserGroupList(),
+      AppRoutes.editUserGroup.route: (context) => const WidgetUserGroupEdit(),
+      AppRoutes.listUserGroupsFromUser.route: (context) =>
           const WidgetUserGroupsFromUserList(),
-      AppRoutes.usersFromUserGroupList.route: (context) =>
+      AppRoutes.listUsersFromUserGroup.route: (context) =>
           const WidgetUsersFromUserGroupList(),
 
       // task
-      AppRoutes.taskList.route: (context) => const WidgetTaskList(),
-      AppRoutes.taskEdit.route: (context) => const WidgetTaskEdit(),
+      AppRoutes.listTask.route: (context) => const WidgetTaskList(),
+      AppRoutes.editTask.route: (context) => const WidgetTaskEdit(),
 
       // task group
-      AppRoutes.taskGroupList.route: (context) => const WidgetTaskGroupList(),
-      AppRoutes.taskGroupEdit.route: (context) => const WidgetTaskGroupEdit(),
-      AppRoutes.taskGroupsFromTaskList.route: (context) =>
+      AppRoutes.listTaskGroup.route: (context) => const WidgetTaskGroupList(),
+      AppRoutes.editTaskGroup.route: (context) => const WidgetTaskGroupEdit(),
+      AppRoutes.listTaskGroupsFromTask.route: (context) =>
           const WidgetTaskGroupsFromTaskList(),
-      AppRoutes.tasksFromTaskGroupList.route: (context) =>
+      AppRoutes.listTasksFromTaskGroup.route: (context) =>
           const WidgetTasksFromTaskGroupList(),
 
       // alias
-      AppRoutes.aliasList.route: (context) => const WidgetAliasList(),
+      AppRoutes.listAlias.route: (context) => const WidgetAliasList(),
       AppRoutes.editAlias.route: (context) => const WidgetAliasEdit(),
 
       // alias group
-      AppRoutes.aliasGroupList.route: (context) => const WidgetAliasGroupList(),
-      AppRoutes.aliasGroupEdit.route: (context) => const WidgetAliasGroupEdit(),
-      AppRoutes.aliasGroupsFromAliasList.route: (context) =>
+      AppRoutes.listAliasGroup.route: (context) => const WidgetAliasGroupList(),
+      AppRoutes.editAliasGroup.route: (context) => const WidgetAliasGroupEdit(),
+      AppRoutes.listAliasGroupsFromAlias.route: (context) =>
           const WidgetAliasGroupsFromAliasList(),
-      AppRoutes.aliasesFromAliasGroupList.route: (context) =>
+      AppRoutes.listAliasesFromAliasGroup.route: (context) =>
           const WidgetAliasesFromAliasGroupList(),
 
       // trackPoint events

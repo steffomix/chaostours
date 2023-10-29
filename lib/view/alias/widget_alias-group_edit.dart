@@ -120,24 +120,18 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
   Widget scaffold(Widget body) {
     return AppWidgets.scaffold(context,
         title: 'Edit Alias Group',
-        navBar: BottomNavigationBar(
-            type: BottomNavigationBarType.fixed,
-            items: const [
-              BottomNavigationBarItem(icon: Icon(Icons.add), label: 'Neu'),
-              BottomNavigationBarItem(
-                  icon: Icon(Icons.cancel), label: 'Abbrechen'),
-            ],
-            onTap: (int id) async {
-              if (id == 0) {
-                Navigator.pushNamed(context, AppRoutes.aliasGroupEdit.route)
-                    .then((_) {
-                  render();
-                });
-              } else if (id == 1) {
-                Navigator.pop(context);
-              }
-            }),
-        body: body);
+        body: body,
+        navBar: AppWidgets.navBarCreateItem(context, name: 'Alias Group',
+            onCreate: () async {
+          var count = (await ModelAliasGroup.count()) + 1;
+          var model =
+              await ModelAliasGroup.insert(ModelAliasGroup(title: '#$count'));
+          if (mounted) {
+            await Navigator.pushNamed(context, AppRoutes.editAliasGroup.route,
+                arguments: model.id);
+            render();
+          }
+        }));
   }
 
   Widget editGroup(ModelAliasGroup model) {
@@ -200,9 +194,9 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
 
       /// deleted
       ListTile(
-          title: const Text('Deaktiviert / gelöscht'),
+          title: const Text('Active'),
           subtitle: const Text(
-            'Wenn deaktiviert bzw. gelöscht, wird dieser Alias behandelt wie ein "gelöschter" Fakebook Account.',
+            'This Group is active and visible',
             softWrap: true,
           ),
           leading: Checkbox(
@@ -218,7 +212,7 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
       ElevatedButton(
         child: const Text('Show Aliases from this group'),
         onPressed: () => Navigator.pushNamed(
-                context, AppRoutes.aliasesFromAliasGroupList.route,
+                context, AppRoutes.listAliasesFromAliasGroup.route,
                 arguments: _modelAlias?.id)
             .then((value) {
           render();

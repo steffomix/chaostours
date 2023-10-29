@@ -39,7 +39,7 @@ class _WidgetAliasGroupList extends BaseWidgetState<WidgetAliasGroupList>
   // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetAliasGroupList>();
 
-  int _selectedNavBarItem = 0;
+  final _navBarBuilder = NavBarWithTrash();
   final CalendarEntry _calendars = {};
 
   List<Widget> _loadedItems = [];
@@ -72,7 +72,10 @@ class _WidgetAliasGroupList extends BaseWidgetState<WidgetAliasGroupList>
   @override
   Future<int> loadItems({required int offset, int limit = 20}) async {
     List<ModelAliasGroup> newItems = await ModelAliasGroup.select(
-        offset: offset, limit: limit, search: _searchTextController.text);
+        offset: offset,
+        limit: limit,
+        search: _searchTextController.text,
+        activated: _navBarBuilder.showActivated);
 
     _loadedItems.addAll(newItems.map((e) => renderItem(e)).toList());
     return newItems.length;
@@ -81,12 +84,17 @@ class _WidgetAliasGroupList extends BaseWidgetState<WidgetAliasGroupList>
   Widget renderItem(ModelAliasGroup model) {
     return Column(children: [
       ListTile(
-          title: Text(model.title),
+          title: Text(
+            model.title,
+            style: _navBarBuilder.showActivated
+                ? null
+                : const TextStyle(decoration: TextDecoration.lineThrough),
+          ),
           subtitle: Text(model.description),
           trailing: IconButton(
               icon: const Icon(Icons.edit),
               onPressed: () {
-                Navigator.pushNamed(context, AppRoutes.aliasGroupEdit.route,
+                Navigator.pushNamed(context, AppRoutes.editAliasGroup.route,
                         arguments: model.id)
                     .then(
                   (value) => resetLoader(),
@@ -106,7 +114,24 @@ class _WidgetAliasGroupList extends BaseWidgetState<WidgetAliasGroupList>
 
   @override
   Scaffold renderScaffold(Widget body) {
-    return AppWidgets.scaffold(context, body: body, navBar: navBar(context));
+    return AppWidgets.scaffold(context,
+        body: body,
+        navBar: _navBarBuilder.navBar(context,
+            name: 'Alias Group',
+            onCreate: (context) async {
+              var count = await ModelAliasGroup.count();
+              var model = await ModelAliasGroup.insert(
+                  ModelAliasGroup(title: '#${count + 1}'));
+              if (mounted) {
+                Navigator.pushNamed(context, AppRoutes.editAliasGroup.route,
+                        arguments: model.id)
+                    .then((value) {
+                  Navigator.pop(context);
+                  resetLoader();
+                });
+              }
+            },
+            onSwitch: (context) => resetLoader()));
   }
 
   @override
@@ -119,57 +144,5 @@ class _WidgetAliasGroupList extends BaseWidgetState<WidgetAliasGroupList>
             resetLoader();
           })
     ];
-  }
-
-  BottomNavigationBar navBar(BuildContext context) {
-    return BottomNavigationBar(
-        currentIndex: _selectedNavBarItem,
-        items: const [
-          // new on osm
-          BottomNavigationBarItem(
-              icon: Icon(Icons.add), label: 'Create new Group'),
-          // 1 alphabethic
-          BottomNavigationBarItem(icon: Icon(Icons.cancel), label: 'Cancel'),
-        ],
-        onTap: (int id) {
-          _selectedNavBarItem = id;
-          switch (id) {
-            /// create
-            case 0:
-              AppWidgets.dialog(context: context, contents: [
-                const Text('Create new Group?')
-              ], buttons: [
-                TextButton(
-                  child: const Text('Cancel'),
-                  onPressed: () => Navigator.pop(context),
-                ),
-                TextButton(
-                  child: const Text('Yes'),
-                  onPressed: () async {
-                    var count = await ModelAliasGroup.count();
-                    var model = await ModelAliasGroup.insert(
-                        ModelAliasGroup(title: '#${count + 1}'));
-                    if (mounted) {
-                      Navigator.pushNamed(
-                              context, AppRoutes.aliasGroupEdit.route,
-                              arguments: model.id)
-                          .then((value) {
-                        Navigator.pop(context);
-                        resetLoader();
-                      });
-                    }
-                  },
-                )
-              ]);
-              break;
-            // return
-            case 1:
-              Navigator.pop(context);
-              break;
-
-            default:
-              resetLoader();
-          }
-        });
   }
 }

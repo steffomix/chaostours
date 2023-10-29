@@ -108,7 +108,7 @@ class _WidgetAliasesFromAliasGroupList
 
   Widget checkBox(ModelAlias model) {
     return AppWidgets.checkbox(
-      idReference: _model?.id ?? 0,
+      idReference: model.id,
       referenceList: _ids ?? [],
       onToggle: (toggle) async {
         bool add = toggle ?? false;
@@ -170,50 +170,12 @@ class _WidgetAliasesFromAliasGroupList
   @override
   Scaffold renderScaffold(Widget body) {
     return AppWidgets.scaffold(context,
-        body: body, navBar: navBar(), title: 'Aliases from Group');
-  }
-
-  BottomNavigationBar navBar() {
-    return BottomNavigationBar(
-        currentIndex: _selectedNavBarItem,
-        items: const [
-          // new on osm
-          BottomNavigationBarItem(
-              icon: Icon(Icons.add), label: 'Create new Group'),
-          // 2 nearest
-          BottomNavigationBarItem(icon: Icon(Icons.near_me), label: 'Back'),
-        ],
-        onTap: (int id) async {
-          _selectedNavBarItem = id;
-
-          switch (id) {
-            /// create
-            case 0:
-              var count = await ModelAliasGroup.count();
-              var model = ModelAliasGroup(title: '#${count + 1}');
-              model = await ModelAliasGroup.insert(model);
-              if (mounted) {
-                Navigator.pushNamed(context, AppRoutes.aliasGroupEdit.route,
-                        arguments: model.id)
-                    .then((_) {
-                  resetLoader();
-                });
-              }
-
-              break;
-
-            /// last visited
-            case 1:
-              if (mounted) {
-                Navigator.pop(context);
-              }
-              break;
-
-            /// default view
-            default:
-              setState(() {});
-            //
-          }
-        });
+        body: body,
+        title: 'Aliases from Group',
+        navBar: AppWidgets.navBarCreateItem(context, name: 'Alias',
+            onCreate: () async {
+          await Navigator.pushNamed(context, AppRoutes.osm.route);
+          render();
+        }));
   }
 }

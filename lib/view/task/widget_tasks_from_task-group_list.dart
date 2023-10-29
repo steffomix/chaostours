@@ -94,7 +94,19 @@ class _WidgetTasksFromTaskGroupList
 
   @override
   Scaffold renderScaffold(Widget body) {
-    return AppWidgets.scaffold(context, body: body, title: 'Groups from Task');
+    return AppWidgets.scaffold(context,
+        body: body,
+        title: 'Tasks from Group',
+        navBar: AppWidgets.navBarCreateItem(context, name: 'Task',
+            onCreate: () async {
+          var count = (await ModelTask.count()) + 1;
+          var model = await ModelTask.insert(ModelTask(title: '#$count'));
+          if (mounted) {
+            await Navigator.pushNamed(context, AppRoutes.editTask.route,
+                arguments: model.id);
+            render();
+          }
+        }));
   }
 
   Widget checkBox(ModelTask model) {
@@ -121,7 +133,7 @@ class _WidgetTasksFromTaskGroupList
     return IconButton(
       icon: const Icon(Icons.edit),
       onPressed: () {
-        Navigator.pushNamed(context, AppRoutes.taskGroupEdit.route,
+        Navigator.pushNamed(context, AppRoutes.editTask.route,
                 arguments: model.id)
             .then(
           (value) {
@@ -149,65 +161,5 @@ class _WidgetTasksFromTaskGroupList
             resetLoader();
           })
     ];
-  }
-
-  BottomNavigationBar navBar(BuildContext context) {
-    return BottomNavigationBar(
-        currentIndex: _selectedNavBarItem,
-        items: const [
-          // new on osm
-          BottomNavigationBarItem(
-              icon: Icon(Icons.add), label: 'Create new Task'),
-          // 2 nearest
-          BottomNavigationBarItem(icon: Icon(Icons.near_me), label: 'Back'),
-        ],
-        onTap: (int id) async {
-          _selectedNavBarItem = id;
-
-          switch (id) {
-            /// create
-            case 0:
-              AppWidgets.dialog(context: context, contents: [
-                const Text('Ceate new Task?')
-              ], buttons: [
-                TextButton(
-                  child: const Text('Cancel'),
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                ),
-                TextButton(
-                  child: const Text('Yes'),
-                  onPressed: () async {
-                    var count = await ModelTask.count();
-                    var model = ModelTask(title: '#${count + 1}');
-                    model = await ModelTask.insert(model);
-                    if (mounted) {
-                      Navigator.pushNamed(
-                              context, AppRoutes.taskGroupEdit.route,
-                              arguments: model.id)
-                          .then((_) {
-                        resetLoader();
-                      });
-                    }
-                  },
-                )
-              ]);
-
-              break;
-
-            /// last visited
-            case 1:
-              if (mounted) {
-                Navigator.pop(context);
-              }
-              break;
-
-            /// default view
-            default:
-              setState(() {});
-            //
-          }
-        });
   }
 }

@@ -108,10 +108,11 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
         navBar: BottomNavigationBar(
             type: BottomNavigationBarType.fixed,
             items: const [
-              BottomNavigationBarItem(icon: Icon(Icons.add), label: 'Neu'),
+              BottomNavigationBarItem(
+                  icon: Icon(Icons.add), label: 'Create new Alias'),
               BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Route'),
               BottomNavigationBarItem(
-                  icon: Icon(Icons.cancel), label: 'Abbrechen'),
+                  icon: Icon(Icons.cancel), label: 'Cancel'),
             ],
             onTap: (int id) async {
               if (id == 0) {
@@ -135,7 +136,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
       Container(
           padding: const EdgeInsets.all(10),
           child: TextField(
-            decoration: const InputDecoration(label: Text('Alias/Address')),
+            decoration: const InputDecoration(label: Text('Alias Address')),
             onChanged: ((value) {
               alias.title = value;
               alias.update();
@@ -208,7 +209,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
               ]),
               onPressed: () {
                 Navigator.pushNamed(
-                        context, AppRoutes.aliasGroupsFromAliasList.route,
+                        context, AppRoutes.listAliasGroupsFromAlias.route,
                         arguments: _modelAlias?.id)
                     .then(
                   (value) {

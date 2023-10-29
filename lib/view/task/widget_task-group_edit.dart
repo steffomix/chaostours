@@ -32,7 +32,7 @@ class WidgetTaskGroupEdit extends StatefulWidget {
 class _WidgetTaskGroupEdit extends State<WidgetTaskGroupEdit> {
   // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetTaskGroupEdit>();
-  ModelTaskGroup? _modelTask;
+  ModelTaskGroup? _model;
   final _titleController = TextEditingController();
   final _notesController = TextEditingController();
 
@@ -47,76 +47,43 @@ class _WidgetTaskGroupEdit extends State<WidgetTaskGroupEdit> {
     }
   }
 
-  Future<ModelTaskGroup> createTaskGroup() async {
-    var count = await ModelTaskGroup.count();
-    var model = ModelTaskGroup(title: '#${count + 1}');
-    await ModelTaskGroup.insert(model);
-    return model;
-  }
-
-  Future<ModelTaskGroup?> loadTaskGroup(int? id) async {
-    if (id == null) {
-      return await createTaskGroup();
-    }
-    var model = await ModelTaskGroup.byId(id);
-    if (model == null) {
-      if (mounted) {
-        Navigator.pop(context);
-      }
-      return null;
-    }
-    return model;
-  }
-
   @override
   Widget build(BuildContext context) {
-    int? id = ModalRoute.of(context)?.settings.arguments as int?;
-
     return FutureBuilder<ModelTaskGroup?>(
-      future: loadTaskGroup(id),
+      initialData: _model,
+      future: ModelTaskGroup.byId(
+          ModalRoute.of(context)?.settings.arguments as int? ?? 0),
       builder: (context, snapshot) {
-        Widget? loading = AppWidgets.checkSnapshot(snapshot);
-        if (loading != null) {
-          return AppWidgets.scaffold(context,
-              body: AppWidgets.loading('Loading Group...'));
-        }
-        var model = snapshot.data!;
-        return body(model);
+        return AppWidgets.checkSnapshot(snapshot) ?? body(snapshot.data!);
       },
     );
   }
 
   Widget body(ModelTaskGroup model) {
-    _modelTask = model;
-    _titleController.text = model.title;
-    _notesController.text = model.description;
-    return scaffold(editGroup(model));
+    _model = model;
+    _titleController.text = _model?.title ?? '';
+    _notesController.text = _model?.description ?? '';
+    return scaffold(renderBody());
   }
 
   Widget scaffold(Widget body) {
     return AppWidgets.scaffold(context,
         title: 'Edit Task Group',
-        navBar: BottomNavigationBar(
-            type: BottomNavigationBarType.fixed,
-            items: const [
-              BottomNavigationBarItem(icon: Icon(Icons.add), label: 'Neu'),
-              BottomNavigationBarItem(
-                  icon: Icon(Icons.cancel), label: 'Abbrechen'),
-            ],
-            onTap: (int id) async {
-              if (id == 0) {
-                Navigator.pushNamed(context, AppRoutes.taskGroupEdit.route)
-                    .then((_) {
-                  render();
-                });
-              } else if (id == 1) {
-                Navigator.pop(context);
-              }
-            }),
-        body: body);
+        body: body,
+        navBar: AppWidgets.navBarCreateItem(context, name: 'Task Group',
+            onCreate: () async {
+          var count = (await ModelTaskGroup.count()) + 1;
+          var model =
+              await ModelTaskGroup.insert(ModelTaskGroup(title: '#$count'));
+          if (mounted) {
+            await Navigator.pushNamed(context, AppRoutes.editTaskGroup.route,
+                arguments: model.id);
+            render();
+          }
+        }));
   }
 
-  Widget editGroup(ModelTaskGroup model) {
+  Widget renderBody() {
     return ListView(children: [
       /// taskname
       Container(
@@ -124,8 +91,8 @@ class _WidgetTaskGroupEdit extends State<WidgetTaskGroupEdit> {
           child: TextField(
             decoration: const InputDecoration(label: Text('Task Group Name')),
             onChanged: ((value) {
-              model.title = value;
-              model.update();
+              _model?.title = value;
+              _model?.update();
             }),
             maxLines: 3,
             minLines: 3,
@@ -143,8 +110,8 @@ class _WidgetTaskGroupEdit extends State<WidgetTaskGroupEdit> {
             minLines: 3,
             controller: _notesController,
             onChanged: (value) {
-              model.description = value.trim();
-              model.update();
+              _model?.description = value.trim();
+              _model?.update();
             },
           )),
       AppWidgets.divider(),
@@ -157,24 +124,23 @@ class _WidgetTaskGroupEdit extends State<WidgetTaskGroupEdit> {
             softWrap: true,
           ),
           leading: Checkbox(
-            value: model.isActive,
+            value: _model?.isActive ?? false,
             onChanged: (val) {
-              model.isActive = val ?? false;
-              model.update().then((value) => render());
+              _model?.isActive = val ?? false;
+              _model?.update().then((value) => render());
             },
           )),
 
       AppWidgets.divider(),
 
       ElevatedButton(
-        child: const Text('Show Tasks from this group'),
-        onPressed: () => Navigator.pushNamed(
-                context, AppRoutes.tasksFromTaskGroupList.route,
-                arguments: _modelTask?.id)
-            .then((value) {
-          render();
-        }),
-      )
+          child: const Text('Show Tasks from this group'),
+          onPressed: () async {
+            await Navigator.pushNamed(
+                context, AppRoutes.listTasksFromTaskGroup.route,
+                arguments: _model?.id);
+            render();
+          }),
     ]);
   }
 }

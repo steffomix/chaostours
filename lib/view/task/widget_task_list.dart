@@ -34,7 +34,7 @@ class _WidgetTaskList extends BaseWidgetState<WidgetTaskList> {
   // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetTaskList>();
 
-  bool _showActivated = true;
+  final _navBarBuilder = NavBarWithTrash();
   final _textController = TextEditingController();
 
   final List<Widget> _loadedItems = [];
@@ -54,7 +54,7 @@ class _WidgetTaskList extends BaseWidgetState<WidgetTaskList> {
     List<ModelTask> newItems = await ModelTask.select(
         limit: limit,
         offset: offset,
-        activated: _showActivated,
+        activated: _navBarBuilder.showActivated,
         search: _textController.text);
 
     _loadedItems.addAll(newItems.map((e) => renderListItem(e)).toList());
@@ -87,52 +87,21 @@ class _WidgetTaskList extends BaseWidgetState<WidgetTaskList> {
   }
 
   BottomNavigationBar navBar() {
-    return BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        items: [
-          const BottomNavigationBarItem(
-              icon: Icon(Icons.add), label: 'Create new Task'),
-          _showActivated
-              ? const BottomNavigationBarItem(
-                  icon: Icon(Icons.delete), label: 'Show Deleted')
-              : const BottomNavigationBarItem(
-                  icon: Icon(Icons.visibility), label: 'Show Active'),
-          const BottomNavigationBarItem(
-              icon: Icon(Icons.cancel), label: 'Cancel'),
-        ],
-        onTap: (int id) async {
-          if (id == 0) {
-            AppWidgets.dialog(context: context, contents: [
-              const Text('Create new Task?')
-            ], buttons: [
-              TextButton(
-                child: const Text('Cancel'),
-                onPressed: () => Navigator.pop(context),
-              ),
-              TextButton(
-                child: const Text('Yes'),
-                onPressed: () async {
-                  var count = await ModelTask.count();
-                  var model =
-                      await ModelTask.insert(ModelTask(title: '#${count + 1}'));
-                  if (mounted) {
-                    Navigator.pushNamed(context, AppRoutes.taskEdit.route,
-                            arguments: model.id)
-                        .then((value) {
-                      Navigator.pop(context);
-                      resetLoader();
-                    });
-                  }
-                },
-              )
-            ]);
-          } else if (id == 1) {
-            _showActivated = !_showActivated;
-            resetLoader();
-          } else {
-            Navigator.pop(context);
+    return _navBarBuilder.navBar(context,
+        name: 'Task',
+        onCreate: (context) async {
+          var count = await ModelTask.count();
+          var model = await ModelTask.insert(ModelTask(title: '#${count + 1}'));
+          if (mounted) {
+            Navigator.pushNamed(context, AppRoutes.editTask.route,
+                    arguments: model.id)
+                .then((value) {
+              Navigator.pop(context);
+              resetLoader();
+            });
           }
-        });
+        },
+        onSwitch: (context) => resetLoader());
   }
 
   Widget renderListItem(ModelTask model) {
@@ -149,7 +118,7 @@ class _WidgetTaskList extends BaseWidgetState<WidgetTaskList> {
         trailing: IconButton(
             icon: const Icon(Icons.edit),
             onPressed: () async {
-              await Navigator.pushNamed(context, AppRoutes.taskEdit.route,
+              await Navigator.pushNamed(context, AppRoutes.editTask.route,
                   arguments: model.id);
               resetLoader();
             }));

@@ -37,8 +37,6 @@ class _WidgetAliasGroupsFromAliasList
   // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetAliasGroupsFromAliasList>();
 
-  int _selectedNavBarItem = 0;
-
   final TextEditingController _searchTextController = TextEditingController();
   final List<Widget> _loadedWidgets = [];
   ModelAlias? _model;
@@ -70,62 +68,53 @@ class _WidgetAliasGroupsFromAliasList
 
   Widget renderRow(ModelAliasGroup model) {
     return ListTile(
-      leading: editButton(model),
-      trailing: checkBox(model),
-      title: title(model),
-      subtitle: subtitle(model),
-    );
-  }
-
-  Widget title(ModelAliasGroup model) {
-    return ListTile(
+      leading: IconButton(
+        icon: const Icon(Icons.edit),
+        onPressed: () {
+          Navigator.pushNamed(context, AppRoutes.editAliasGroup.route,
+                  arguments: model.id)
+              .then(
+            (value) {
+              resetLoader();
+            },
+          );
+        },
+      ),
+      trailing: AppWidgets.checkbox(
+        idReference: model.id,
+        referenceList: _ids ?? [],
+        onToggle: (toggle) async {
+          bool add = toggle ?? false;
+          if (add) {
+            await _model?.addGroup(model);
+          } else {
+            await _model?.removeGroup(model);
+          }
+          resetLoader();
+        },
+      ),
       title: Text(model.title),
-      subtitle: Text(model.description),
+      subtitle: Text(model.description,
+          style: TextStyle(fontSize: 12, color: Theme.of(context).hintColor)),
     );
-  }
-
-  Widget subtitle(ModelAliasGroup model) {
-    return Padding(
-        padding: const EdgeInsets.only(left: 30),
-        child: Text(model.description,
-            style:
-                TextStyle(fontSize: 12, color: Theme.of(context).hintColor)));
   }
 
   @override
   Scaffold renderScaffold(Widget body) {
-    return AppWidgets.scaffold(context, body: body, title: 'Groups from Alias');
-  }
-
-  Widget checkBox(ModelAliasGroup model) {
-    return AppWidgets.checkbox(
-      idReference: model.id,
-      referenceList: _ids ?? [],
-      onToggle: (toggle) async {
-        bool add = toggle ?? false;
-        if (add) {
-          await _model?.addGroup(model);
-        } else {
-          await _model?.removeGroup(model);
-        }
-        resetLoader();
-      },
-    );
-  }
-
-  Widget editButton(ModelAliasGroup model) {
-    return IconButton(
-      icon: const Icon(Icons.edit),
-      onPressed: () {
-        Navigator.pushNamed(context, AppRoutes.aliasGroupEdit.route,
-                arguments: model.id)
-            .then(
-          (value) {
-            resetLoader();
-          },
-        );
-      },
-    );
+    return AppWidgets.scaffold(context,
+        body: body,
+        title: 'Groups from Alias',
+        navBar: AppWidgets.navBarCreateItem(context, name: 'Alias Group',
+            onCreate: () async {
+          var count = (await ModelAliasGroup.count()) + 1;
+          var model =
+              await ModelAliasGroup.insert(ModelAliasGroup(title: '#$count'));
+          if (mounted) {
+            await Navigator.pushNamed(context, AppRoutes.editAliasGroup.route,
+                arguments: model.id);
+            render();
+          }
+        }));
   }
 
   @override
@@ -138,56 +127,18 @@ class _WidgetAliasGroupsFromAliasList
   @override
   List<Widget> renderHeader(BoxConstraints constrains) {
     return [
+      ListTile(
+        title: Text(_model?.title ?? ''),
+        subtitle: Text(_model?.description ?? '',
+            style: TextStyle(color: Theme.of(context).hintColor)),
+      ),
       AppWidgets.searchTile(
           context: context,
           textController: _searchTextController,
           onChange: (String text) {
             resetLoader();
-          })
+          }),
+      AppWidgets.divider()
     ];
-  }
-
-  BottomNavigationBar navBar(BuildContext context) {
-    return BottomNavigationBar(
-        currentIndex: _selectedNavBarItem,
-        items: const [
-          // new on osm
-          BottomNavigationBarItem(
-              icon: Icon(Icons.add), label: 'Create new Group'),
-          // 2 nearest
-          BottomNavigationBarItem(icon: Icon(Icons.near_me), label: 'Back'),
-        ],
-        onTap: (int id) async {
-          _selectedNavBarItem = id;
-
-          switch (id) {
-            /// create
-            case 0:
-              var count = await ModelAliasGroup.count();
-              var model = ModelAliasGroup(title: '#${count + 1}');
-              model = await ModelAliasGroup.insert(model);
-              if (mounted) {
-                Navigator.pushNamed(context, AppRoutes.aliasGroupEdit.route,
-                        arguments: model.id)
-                    .then((_) {
-                  resetLoader();
-                });
-              }
-
-              break;
-
-            /// last visited
-            case 1:
-              if (mounted) {
-                Navigator.pop(context);
-              }
-              break;
-
-            /// default view
-            default:
-              setState(() {});
-            //
-          }
-        });
   }
 }

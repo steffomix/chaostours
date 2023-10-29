@@ -35,8 +35,6 @@ class _WidgetTaskGroupList extends BaseWidgetState<WidgetTaskGroupList>
   // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetTaskGroupList>();
 
-  int _selectedNavBarItem = 0;
-
   List<Widget> _loadedItems = [];
 
   final TextEditingController _searchTextController = TextEditingController();
@@ -69,7 +67,7 @@ class _WidgetTaskGroupList extends BaseWidgetState<WidgetTaskGroupList>
           trailing: IconButton(
               icon: const Icon(Icons.edit),
               onPressed: () {
-                Navigator.pushNamed(context, AppRoutes.aliasGroupEdit.route,
+                Navigator.pushNamed(context, AppRoutes.editTaskGroup.route,
                         arguments: model.id)
                     .then(
                   (value) => resetLoader(),
@@ -88,7 +86,19 @@ class _WidgetTaskGroupList extends BaseWidgetState<WidgetTaskGroupList>
 
   @override
   Scaffold renderScaffold(Widget body) {
-    return AppWidgets.scaffold(context, body: body, navBar: navBar(context));
+    return AppWidgets.scaffold(context,
+        body: body,
+        navBar: AppWidgets.navBarCreateItem(context, name: 'Task Group',
+            onCreate: () async {
+          var count = (await ModelTaskGroup.count()) + 1;
+          var model =
+              await ModelTaskGroup.insert(ModelTaskGroup(title: '#$count'));
+          if (mounted) {
+            await Navigator.pushNamed(context, AppRoutes.editTaskGroup.route,
+                arguments: model.id);
+            render();
+          }
+        }));
   }
 
   @override
@@ -101,57 +111,5 @@ class _WidgetTaskGroupList extends BaseWidgetState<WidgetTaskGroupList>
             resetLoader();
           })
     ];
-  }
-
-  BottomNavigationBar navBar(BuildContext context) {
-    return BottomNavigationBar(
-        currentIndex: _selectedNavBarItem,
-        items: const [
-          // new on osm
-          BottomNavigationBarItem(
-              icon: Icon(Icons.add), label: 'Create new Group'),
-          // 1 alphabethic
-          BottomNavigationBarItem(icon: Icon(Icons.cancel), label: 'Cancel'),
-        ],
-        onTap: (int id) {
-          _selectedNavBarItem = id;
-          switch (id) {
-            /// create
-            case 0:
-              AppWidgets.dialog(context: context, contents: [
-                const Text('Create new Group?')
-              ], buttons: [
-                TextButton(
-                  child: const Text('Cancel'),
-                  onPressed: () => Navigator.pop(context),
-                ),
-                TextButton(
-                  child: const Text('Yes'),
-                  onPressed: () async {
-                    var count = await ModelTaskGroup.count();
-                    var model = await ModelTaskGroup.insert(
-                        ModelTaskGroup(title: '#${count + 1}'));
-                    if (mounted) {
-                      Navigator.pushNamed(
-                              context, AppRoutes.aliasGroupEdit.route,
-                              arguments: model.id)
-                          .then((value) {
-                        Navigator.pop(context);
-                        resetLoader();
-                      });
-                    }
-                  },
-                )
-              ]);
-              break;
-            // return
-            case 1:
-              Navigator.pop(context);
-              break;
-
-            default:
-              resetLoader();
-          }
-        });
   }
 }

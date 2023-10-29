@@ -123,7 +123,7 @@ class _WidgetAliasList extends BaseWidgetState<WidgetAliasList>
         Navigator.pushNamed(context, AppRoutes.editAlias.route,
                 arguments: model.id)
             .then((_) {
-          render();
+          resetLoader();
         });
       },
     );

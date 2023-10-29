@@ -94,7 +94,20 @@ class _WidgetTaskGroupsFromTaskList
 
   @override
   Scaffold renderScaffold(Widget body) {
-    return AppWidgets.scaffold(context, body: body, title: 'Groups from Task');
+    return AppWidgets.scaffold(context,
+        body: body,
+        title: 'Groups from Task',
+        navBar: AppWidgets.navBarCreateItem(context, name: 'Task Group',
+            onCreate: () async {
+          var count = (await ModelTaskGroup.count()) + 1;
+          var model =
+              await ModelTaskGroup.insert(ModelTaskGroup(title: '#$count'));
+          if (mounted) {
+            await Navigator.pushNamed(context, AppRoutes.editTaskGroup.route,
+                arguments: model.id);
+            render();
+          }
+        }));
   }
 
   Widget checkBox(ModelTaskGroup model) {
@@ -116,14 +129,10 @@ class _WidgetTaskGroupsFromTaskList
   Widget editButton(ModelTaskGroup model) {
     return IconButton(
       icon: const Icon(Icons.edit),
-      onPressed: () {
-        Navigator.pushNamed(context, AppRoutes.taskGroupEdit.route,
-                arguments: model.id)
-            .then(
-          (value) {
-            resetLoader();
-          },
-        );
+      onPressed: () async {
+        await Navigator.pushNamed(context, AppRoutes.editTaskGroup.route,
+            arguments: model.id);
+        resetLoader();
       },
     );
   }
@@ -145,49 +154,5 @@ class _WidgetTaskGroupsFromTaskList
             resetLoader();
           })
     ];
-  }
-
-  BottomNavigationBar navBar(BuildContext context) {
-    return BottomNavigationBar(
-        currentIndex: _selectedNavBarItem,
-        items: const [
-          // new on osm
-          BottomNavigationBarItem(
-              icon: Icon(Icons.add), label: 'Create new Group'),
-          // 2 nearest
-          BottomNavigationBarItem(icon: Icon(Icons.near_me), label: 'Back'),
-        ],
-        onTap: (int id) async {
-          _selectedNavBarItem = id;
-
-          switch (id) {
-            /// create
-            case 0:
-              var count = await ModelTaskGroup.count();
-              var model = ModelTaskGroup(title: '#${count + 1}');
-              model = await ModelTaskGroup.insert(model);
-              if (mounted) {
-                Navigator.pushNamed(context, AppRoutes.taskGroupEdit.route,
-                        arguments: model.id)
-                    .then((_) {
-                  resetLoader();
-                });
-              }
-
-              break;
-
-            /// last visited
-            case 1:
-              if (mounted) {
-                Navigator.pop(context);
-              }
-              break;
-
-            /// default view
-            default:
-              setState(() {});
-            //
-          }
-        });
   }
 }

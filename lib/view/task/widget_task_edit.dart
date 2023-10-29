@@ -33,7 +33,7 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
   //static final Logger logger = Logger.logger<WidgetTaskEdit>();
 
   ModelTask? _model;
-  List<ModelTaskGroup> _groups = [];
+  final List<ModelTaskGroup> _groups = [];
 
   void render() {
     if (mounted) {
@@ -41,33 +41,29 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
     }
   }
 
-  Future<ModelTask?> loadTask(int? id) async {
-    var model = await ModelTask.byId(id ?? 0);
-    if (model == null) {
-      if (mounted) {
-        Navigator.pop(context);
-      }
-    }
-    var ids = (await model?.groupIds()) ?? [];
-    _groups = ids.isEmpty ? [] : await ModelTaskGroup.byIdList(ids);
-    return model;
-  }
-
   @override
   Widget build(BuildContext context) {
-    final id = ModalRoute.of(context)?.settings.arguments as int?;
-
     return FutureBuilder<ModelTask?>(
-      future: loadTask(id),
-      builder: (context, snapshot) {
-        return AppWidgets.checkSnapshot(snapshot) ??
-            AppWidgets.scaffold(
-              context,
-              body: renderBody(snapshot.data!),
-              appBar: AppBar(title: const Text('Edit Task')),
-            );
-      },
-    );
+        initialData: _model,
+        future: ModelTask.byId(
+            ModalRoute.of(context)?.settings.arguments as int? ?? 0),
+        builder: (context, snapshot) {
+          return AppWidgets.checkSnapshot(snapshot) ??
+              AppWidgets.scaffold(context,
+                  body: renderBody(snapshot.data!),
+                  navBar: AppWidgets.navBarCreateItem(context, name: 'Task',
+                      onCreate: () async {
+                    var count = (await ModelTask.count()) + 1;
+                    var model =
+                        await ModelTask.insert(ModelTask(title: '#$count'));
+                    if (mounted) {
+                      await Navigator.pushNamed(
+                          context, AppRoutes.editTask.route,
+                          arguments: model.id);
+                      render();
+                    }
+                  }));
+        });
   }
 
   Widget renderBody(ModelTask model) {
@@ -120,7 +116,7 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
               ]),
               onPressed: () {
                 Navigator.pushNamed(
-                        context, AppRoutes.taskGroupsFromTaskList.route,
+                        context, AppRoutes.listTaskGroupsFromTask.route,
                         arguments: _model?.id)
                     .then(
                   (value) {
