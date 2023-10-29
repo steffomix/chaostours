@@ -17,15 +17,10 @@ limitations under the License.
 import 'package:flutter/material.dart';
 
 import 'package:chaostours/logger.dart';
-import 'package:chaostours/screen.dart';
+import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/view/app_base_widget.dart';
 import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/model/model_User.dart';
-
-enum _DisplayMode {
-  list,
-  sort;
-}
 
 class WidgetUserList extends BaseWidget {
   const WidgetUserList({super.key});
@@ -38,212 +33,124 @@ class _WidgetUserList extends BaseWidgetState<WidgetUserList> {
   // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetUserList>();
 
-  final _selectDeleted = ValueNotifier<bool>(false);
+  bool _showActivated = true;
   final _textController = TextEditingController();
-  _DisplayMode _displayMode = _DisplayMode.list;
 
-  // height of seasrch field container
-  final double _toolBarHeight = 70;
-
-  // items per page
-  static const int _limit = 30;
+  final List<Widget> _loadedItems = [];
 
   @override
-  void initState() {
-    _selectDeleted.addListener(render);
-    // _pagingController.addPageRequestListener(_fetchPage);
-    // ModelUser.resetSortOrder();
-    super.initState();
+  Future<void> initialize(BuildContext context, Object? args) async {}
+
+  @override
+  Future<void> resetLoader() async {
+    await super.resetLoader();
+    _loadedItems.clear();
+    render();
   }
 
   @override
-  void dispose() {
-    _selectDeleted.dispose();
-    // _pagingController.dispose();
-    super.dispose();
+  Future<int> loadItems({required int offset, int limit = 20}) async {
+    List<ModelUser> newItems = await ModelUser.select(
+        limit: limit,
+        offset: offset,
+        activated: _showActivated,
+        search: _textController.text);
+
+    _loadedItems.addAll(newItems.map((e) => renderListItem(e)).toList());
+    return newItems.length;
   }
 
-  Widget modelWidget(ModelUser model) {
-    return ListBody(children: [
-      ListTile(
-          title: Text(model.title,
-              style: TextStyle(
-                  decoration: model.isActive
-                      ? TextDecoration.none
-                      : TextDecoration.lineThrough)),
-          subtitle: Text(
-            model.description,
-            style: TextStyle(color: Theme.of(context).hintColor),
-          ),
-          trailing: IconButton(
-              icon: const Icon(Icons.edit),
-              onPressed: () {
-                Navigator.pushNamed(context, AppRoutes.editUser.route,
-                        arguments: model.id)
-                    .then((_) {
-                  // _pagingController.refresh();
-                  render();
-                });
-              }))
-    ]);
-  }
-
-  Widget searcHeaderhWidget() {
-    return SizedBox(
-        height: _toolBarHeight,
-        width: Screen(context).width * 0.95,
-        child: Align(
-            alignment: Alignment.center,
-            child: TextField(
-              controller: _textController,
-              minLines: 1,
-              maxLines: 1,
-              decoration: const InputDecoration(
-                  icon: Icon(Icons.search, size: 30), border: InputBorder.none),
-              onChanged: (value) {
-                // _pagingController.refresh();
-                render();
-              },
-            )));
-  }
-
-  Widget sortWidget(List<ModelUser> models, int index) {
-    var model = models[index];
-    return ListTile(
-        leading: IconButton(
-            icon: const Icon(Icons.arrow_downward),
-            onPressed: () async {
-              if (index < models.length - 1) {
-                models[index + 1].sortOrder--;
-                model.sortOrder++;
-                await model.update();
-                await models[index + 1].update();
-                // _pagingController.refresh();
-                render();
-              }
-            }),
-        trailing: IconButton(
-          icon: const Icon(Icons.arrow_upward),
-          onPressed: () async {
-            if (index > 0) {
-              models[index - 1].sortOrder++;
-              model.sortOrder--;
-              await model.update();
-              await models[index - 1].update();
-              // _pagingController.refresh();
-              render();
-            }
-          },
-        ),
-        title: Text(model.title,
-            style: !model.isActive
-                ? const TextStyle(decoration: TextDecoration.lineThrough)
-                : null),
-        subtitle: Text(model.description));
-  }
-/*
   @override
-  Widget build(BuildContext context) {
-    var body = CustomScrollView(slivers: <Widget>[
-      SliverPersistentHeader(
-          pinned: true,
-          delegate: SliverHeader(
-              widget: searcHeaderhWidget(), //Text('Test'),
-              toolBarHeight: _toolBarHeight,
-              closedHeight: 0,
-              openHeight: 0)),
-      PagedSliverList<int, ModelUser>.separated(
-        separatorBuilder: (BuildContext context, int i) => const Divider(),
-        pagingController: // _pagingController,
-        builderDelegate: PagedChildBuilderDelegate<ModelUser>(
-          itemBuilder: (context, model, index) {
-            if (_displayMode == _DisplayMode.sort) {
-              if (// _pagingController.itemList == null) {
-                return AppWidgets.loading('Waiting for Users...');
-              }
-              var list = // _pagingController.itemList!;
-              return sortWidget(list, index);
-            } else {
-              return modelWidget(model);
-            }
-          },
-        ),
-      ),
-    ]);
+  List<Widget> renderBody(BoxConstraints constraints) {
+    return _loadedItems
+        .map((e) => SizedBox(width: constraints.maxWidth, child: e))
+        .toList();
+  }
 
+  @override
+  List<Widget> renderHeader(BoxConstraints constraints) {
+    return [
+      AppWidgets.searchTile(
+          context: context,
+          textController: _textController,
+          onChange: (search) {
+            resetLoader();
+          })
+    ];
+  }
+
+  @override
+  Scaffold renderScaffold(Widget body) {
     return AppWidgets.scaffold(context,
-        body: body,
-        appBar: AppBar(title: const Text('Personen Liste')),
-        navBar: BottomNavigationBar(
-            type: BottomNavigationBarType.fixed,
-            items: [
-              _displayMode == _DisplayMode.list
-                  ? const BottomNavigationBarItem(
-                      icon: Icon(Icons.add), label: 'Create new User')
-                  : const BottomNavigationBarItem(
-                      icon: Icon(Icons.clear), label: 'Reset Sort Order'),
-              _displayMode == _DisplayMode.list
-                  ? const BottomNavigationBarItem(
-                      icon: Icon(Icons.sort), label: 'Sort Items')
-                  : const BottomNavigationBarItem(
-                      icon: Icon(Icons.list), label: 'List Items'),
-              BottomNavigationBarItem(
-                  icon: Icon(
-                      !_selectDeleted.value || _displayMode == _DisplayMode.sort
-                          ? Icons.visibility_off
-                          : Icons.visibility),
-                  label:
-                      _selectDeleted.value || _displayMode == _DisplayMode.sort
-                          ? 'Show Deleted'
-                          : 'Hide Deleted')
-            ],
-            onTap: (int id) async {
-              switch (id) {
-                case 0:
-                  if (_displayMode == _DisplayMode.sort) {
-                    ModelUser.resetSortOrder().then((value) {
-                      // _pagingController.refresh();
-                      render();
+        body: body, title: 'Users', navBar: navBar());
+  }
+
+  BottomNavigationBar navBar() {
+    return BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        items: [
+          const BottomNavigationBarItem(
+              icon: Icon(Icons.add), label: 'Create new User'),
+          _showActivated
+              ? const BottomNavigationBarItem(
+                  icon: Icon(Icons.delete), label: 'Show Deleted')
+              : const BottomNavigationBarItem(
+                  icon: Icon(Icons.visibility), label: 'Show Active'),
+          const BottomNavigationBarItem(
+              icon: Icon(Icons.cancel), label: 'Cancel'),
+        ],
+        onTap: (int id) async {
+          if (id == 0) {
+            AppWidgets.dialog(context: context, contents: [
+              const Text('Create new User?')
+            ], buttons: [
+              TextButton(
+                child: const Text('Cancel'),
+                onPressed: () => Navigator.pop(context),
+              ),
+              TextButton(
+                child: const Text('Yes'),
+                onPressed: () async {
+                  var count = await ModelUser.count();
+                  var model =
+                      await ModelUser.insert(ModelUser(title: '#${count + 1}'));
+                  if (mounted) {
+                    Navigator.pushNamed(context, AppRoutes.userEdit.route,
+                            arguments: model.id)
+                        .then((value) {
+                      Navigator.pop(context);
+                      resetLoader();
                     });
-                  } else {
-                    var count = (await ModelUser.count()) + 1;
-                    var model =
-                        await ModelUser.insert(ModelUser(title: '#$count'));
-                    Fluttertoast.showToast(msg: 'Item #${model.id} created');
-                    if (mounted) {
-                      Navigator.pushNamed(context, AppRoutes.editUser.route,
-                              arguments: model.id)
-                          .then(
-                        (value) {
-                          // _pagingController.refresh();
-                          render();
-                        },
-                      );
-                    }
                   }
-                  break;
+                },
+              )
+            ]);
+          } else if (id == 1) {
+            _showActivated = !_showActivated;
+            resetLoader();
+          } else {
+            Navigator.pop(context);
+          }
+        });
+  }
 
-                case 1:
-                  _displayMode = _displayMode == _DisplayMode.list
-                      ? _DisplayMode.sort
-                      : _DisplayMode.list;
-                  // _pagingController.refresh();
-                  render();
-                  break;
-
-                case 2:
-                  if (_displayMode == _DisplayMode.list) {
-                    _selectDeleted.value = !_selectDeleted.value;
-                  } else {
-                    _selectDeleted.value = true;
-                  }
-                  // _pagingController.refresh();
-                  render();
-                  break;
-                default:
-                //
-              }
+  Widget renderListItem(ModelUser model) {
+    return ListTile(
+        title: Text(model.title,
+            style: TextStyle(
+                decoration: model.isActive
+                    ? TextDecoration.none
+                    : TextDecoration.lineThrough)),
+        subtitle: Text(
+          model.description,
+          style: TextStyle(color: Theme.of(context).hintColor),
+        ),
+        trailing: IconButton(
+            icon: const Icon(Icons.edit),
+            onPressed: () async {
+              await Navigator.pushNamed(context, AppRoutes.userEdit.route,
+                  arguments: model.id);
+              resetLoader();
             }));
   }
-  */
 }

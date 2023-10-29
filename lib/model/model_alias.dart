@@ -398,8 +398,7 @@ WHERE $isActiveCol = ? AND $whereArea
   }
 
   /// select ALL groups from this alias for checkbox selection.
-  /// Even if there is only the group id needed the groups
-  Future<List<int>> groupsIds() async {
+  Future<List<int>> groupIds() async {
     var col = TableAliasAliasGroup.idAliasGroup.column;
     final ids = await DB.execute<List<Map<String, Object?>>>((txn) async {
       return await txn.query(TableAliasAliasGroup.table,

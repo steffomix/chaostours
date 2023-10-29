@@ -13,24 +13,24 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
 import 'package:flutter/material.dart';
 
 ///
-import 'package:chaostours/logger.dart';
 import 'package:chaostours/view/app_widgets.dart';
-import 'package:chaostours/runtime_data.dart';
+import 'package:chaostours/view/app_base_widget.dart';
+import 'package:chaostours/logger.dart';
+import 'package:chaostours/conf/app_routes.dart';
+import 'package:chaostours/model/model_task_group.dart';
+import 'package:chaostours/model/model_task.dart';
 
-void main() {
-  RuntimeData.widgetsFlutterBinding = WidgetsFlutterBinding.ensureInitialized();
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  static final Logger logger = Logger.logger<MyApp>();
-  const MyApp({super.key});
+class WidgetUsersFromUserGroupList extends BaseWidget {
+  const WidgetUsersFromUserGroupList({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return AppWidgets.materialApp(context);
-  }
+  State<WidgetUsersFromUserGroupList> createState() =>
+      _WidgetUsersFromUserGroupList();
 }
+
+class _WidgetUsersFromUserGroupList
+    extends BaseWidgetState<WidgetUsersFromUserGroupList> {}

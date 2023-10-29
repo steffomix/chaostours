@@ -31,7 +31,6 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
   // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetUserEdit>();
 
-  int? _id;
   ModelUser? _model;
 
   @override
@@ -47,31 +46,22 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
 
   @override
   Widget build(BuildContext context) {
-    _id ??= ModalRoute.of(context)?.settings.arguments as int?;
-    Widget body = AppWidgets.loading('Loading user...');
-    if (_id == null) {
-      Future.microtask(() => Navigator.pop(context));
-    } else if (_model == null) {
-      ModelUser.byId(_id!).then((ModelUser? model) {
-        if (model == null) {
-          Navigator.pop(context);
-        }
-        _model = model!;
-        _id = model.id;
-        render();
-      });
-    } else {
-      body = renderBody();
-    }
+    var id = ModalRoute.of(context)?.settings.arguments as int?;
 
-    return AppWidgets.scaffold(
-      context,
-      body: body,
-      appBar: AppBar(title: const Text('Edit User')),
-    );
+    return FutureBuilder<ModelUser?>(
+        future: ModelUser.byId(id ?? 0),
+        builder: (context, snapshot) {
+          return AppWidgets.checkSnapshot(snapshot) ??
+              AppWidgets.scaffold(
+                context,
+                body: renderBody(snapshot.data!),
+                appBar: AppBar(title: const Text('Edit User')),
+              );
+        });
   }
 
-  Widget renderBody() {
+  Widget renderBody(ModelUser model) {
+    _model = model;
     return ListView(children: [
       /// taskname
       Container(

@@ -15,7 +15,6 @@ limitations under the License.
 */
 
 import 'package:chaostours/database.dart';
-import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/logger.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -188,28 +187,16 @@ class ModelUserGroup {
     return count;
   }
 
-  Future<List<ModelUser>> children(
-      {int offset = 0, int limit = 20, String search = ''}) async {
+  /// select ALL groups from this alias for checkbox selection.
+  Future<List<int>> userIds() async {
+    var col = TableUserUserGroup.idUser.column;
     final rows = await DB.execute<List<Map<String, Object?>>>((txn) async {
-      List<Object?> args = [];
-      if (search.isNotEmpty) {
-        var fields = [TableUser.title, TableUser.description];
-        args.addAll(List.filled(fields.length, '%$search%'));
-        search = ' AND (${fields.map(
-              (e) => ' $e LIKE ? ',
-            ).join(' OR ')})';
-      }
-      var q =
-          '''SELECT ${TableUser.columns.join(', ')} FROM ${TableUserUserGroup.table}
-LEFT JOIN ${TableUser.table} ON ${TableUserUserGroup.idUser} = ${TableUser.primaryKey}
-WHERE ${TableUserUserGroup.idUserGroup} = ? $search
-ORDER BY ${TableUser.title}
-LIMIT ?
-OFFSET ?  
-''';
-      return await txn.rawQuery(q, [id, ...args, limit, offset]);
+      return await txn.query(TableUserUserGroup.table,
+          columns: [col],
+          where: '${TableUserUserGroup.idUserGroup.column} = ?',
+          whereArgs: [id]);
     });
-    return rows.map((e) => ModelUser.fromMap(e)).toList();
+    return rows.map((e) => DB.parseInt(e[col])).toList();
   }
 
   ModelUserGroup clone() {

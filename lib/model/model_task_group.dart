@@ -16,8 +16,6 @@ limitations under the License.
 
 import 'package:chaostours/database.dart';
 import 'package:chaostours/logger.dart';
-import 'package:chaostours/model/model_alias.dart';
-import 'package:chaostours/model/model_Task.dart';
 import 'package:sqflite/sqflite.dart';
 
 class ModelTaskGroup {
@@ -25,14 +23,12 @@ class ModelTaskGroup {
   int _id = 0;
   int get id => _id;
   bool isActive = true;
-  AliasVisibility visibility = AliasVisibility.public;
   int sortOrder = 0;
   String title = '';
   String description = '';
 
   ModelTaskGroup(
       {this.isActive = true,
-      this.visibility = AliasVisibility.public,
       this.sortOrder = 0,
       this.title = '',
       this.description = ''});
@@ -193,28 +189,15 @@ class ModelTaskGroup {
     return count;
   }
 
-  Future<List<ModelTask>> children(
-      {int offset = 0, int limit = 20, String search = ''}) async {
+  Future<List<int>> taskIds() async {
+    var col = TableTaskTaskGroup.idTask.column;
     final rows = await DB.execute<List<Map<String, Object?>>>((txn) async {
-      List<Object?> args = [];
-      if (search.isNotEmpty) {
-        var fields = [TableTask.title, TableTask.description];
-        args.addAll(List.filled(fields.length, '%$search%'));
-        search = ' AND (${fields.map(
-              (e) => ' $e LIKE ? ',
-            ).join(' OR ')})';
-      }
-      var q =
-          '''SELECT ${TableTask.columns.join(', ')} FROM ${TableTaskTaskGroup.table}
-LEFT JOIN ${TableTask.table} ON ${TableTaskTaskGroup.idTask} = ${TableTask.primaryKey}
-WHERE ${TableTaskTaskGroup.idTaskGroup} = ? $search
-ORDER BY ${TableTask.title}
-LIMIT ?
-OFFSET ?  
-''';
-      return await txn.rawQuery(q, [id, ...args, limit, offset]);
+      return await txn.query(TableTaskTaskGroup.table,
+          columns: [col],
+          where: '${TableTaskTaskGroup.idTaskGroup.column} = ?',
+          whereArgs: [id]);
     });
-    return rows.map((e) => ModelTask.fromMap(e)).toList();
+    return rows.map((e) => DB.parseInt(e[col])).toList();
   }
 
   ModelTaskGroup clone() {

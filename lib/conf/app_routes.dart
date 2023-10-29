@@ -14,115 +14,104 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import 'package:chaostours/view/alias/widget_aliases_from_alias-group_list.dart';
 import 'package:flutter/material.dart';
 import 'package:chaostours/view/widget_welcome.dart';
-import 'package:chaostours/view/trackpoint/widget_live_tracking.dart';
-import 'package:chaostours/view/trackpoint/widget_trackpoints.dart';
+//
 import 'package:chaostours/view/system/widget_logger_page.dart';
 import 'package:chaostours/view/system/widget_permissions_page.dart';
-import 'package:chaostours/view/trackpoint/widget_edit_trackpoint.dart';
-import 'package:chaostours/view/user/widget_user_list.dart';
-import 'package:chaostours/view/user/widget_user_edit.dart';
-import 'package:chaostours/view/task/widget_task_list.dart';
-import 'package:chaostours/view/task/widget_task_edit.dart';
+import 'package:chaostours/view/system/widget_import_export.dart';
+import 'package:chaostours/view/system/widget_app_settings.dart';
+import 'package:chaostours/view/system/widget_manage_background_gps.dart';
+import 'package:chaostours/view/system/widget_database_explorer.dart';
+//
 import 'package:chaostours/view/alias/widget_alias_list.dart';
 import 'package:chaostours/view/alias/widget_alias_edit.dart';
 import 'package:chaostours/view/alias/widget_alias-group_edit.dart';
 import 'package:chaostours/view/alias/widget_alias-group_list.dart';
+import 'package:chaostours/view/alias/widget_aliases_from_alias-group_list.dart';
 import 'package:chaostours/view/alias/widget_alias-groups_from_alias_list.dart';
-import 'package:chaostours/view/trackpoint/widget_trackpoints_from_Alias_list.dart';
 import 'package:chaostours/view/alias/widget_edit_alias_osm.dart';
-import 'package:chaostours/view/system/widget_import_export.dart';
-import 'package:chaostours/view/system/widget_app_settings.dart';
-import 'package:chaostours/view/system/widget_manage_background_gps.dart';
+//
+import 'package:chaostours/view/user/widget_user_list.dart';
+import 'package:chaostours/view/user/widget_user_edit.dart';
+import 'package:chaostours/view/user/widget_user-group_edit.dart';
+import 'package:chaostours/view/user/widget_user-group_list.dart';
+import 'package:chaostours/view/user/widget_users_from_user-group_list.dart';
+import 'package:chaostours/view/user/widget_user-groups_from_user_list.dart';
+//
+import 'package:chaostours/view/task/widget_task_list.dart';
+import 'package:chaostours/view/task/widget_task_edit.dart';
+import 'package:chaostours/view/task/widget_task-group_edit.dart';
+import 'package:chaostours/view/task/widget_task-group_list.dart';
+import 'package:chaostours/view/task/widget_tasks_from_task-group_list.dart';
+import 'package:chaostours/view/task/widget_task-groups_from_task_list.dart';
+//
+import 'package:chaostours/view/trackpoint/widget_live_tracking.dart';
+import 'package:chaostours/view/trackpoint/widget_trackpoints.dart';
+import 'package:chaostours/view/trackpoint/widget_trackpoints_from_Alias_list.dart';
+import 'package:chaostours/view/trackpoint/widget_edit_trackpoint.dart';
+//
 import 'package:chaostours/view/widget_manage_calendar.dart';
-import 'package:chaostours/view/system/widget_database_explorer.dart';
 
 //import 'package:chaostours/view/_widget_test_async_loader.dart';
 
 /// use value instead of name to get the right
 enum AppRoutes {
-  /// appStart
-  // trackpoints
-  liveTracking('/'),
-  trackpoints('/trackpoints'),
-  editTrackPoint('/editTrackPoint'),
-  // task
-  listTasks('/listTasks'),
-  editTasks('/listTasks/editTasks'),
-  createTask('/listTasks/createTask'),
-  // alias
-  aliasList('/listAlias'),
-  editAlias('/listAlias/listAliasTrackpoints/editAlias'),
-  trackpointsFromAliasList('/listAlias/listAliasTrackpoints'),
-  // alias group
-  aliasGroupsFromAliasList('/listAliasGroup'),
-  aliasesFromAliasGroupList('/listAliasGroup/editAliasGroupAliasList'),
-  aliasGroupEdit('/listAliasGroup/editAliasGroup'),
-  aliasGroupList('/listAliasGroup/listAliasGroup'),
-  // alias group
-  listUserGroup('/listAliasGroup'),
-  editUsersGroup('/listAliasGroup/editAliasGroup'),
-  // alias group
-  listTaskGroup('/listAliasGroup'),
-  editTaskGroup('/listAliasGroup/editAliasGroup'),
-
-  // user
-  listUsers('/listUsers'),
-  editUser('/listUsers/editUser'),
-  createUser('/listUsers/createUser'),
-  // trackpoint events
-  selectCalendar('/selectCalendar'),
-  // osm
-  osm('/osm'),
   // system
-  welcome('/appInit'),
+  welcome('/welcome'),
   logger('/logger'),
   permissions('/permissions'),
   importExport('/importExport'),
   databaseExplorer('/databaseExplorer'),
   appSettings('/appsettings'),
-  backgroundGps('/manageBackgroundGps');
+  backgroundGps('/backgroundGps'),
+
+  // trackpoints
+  liveTracking('/liveTracking'),
+  trackpoints('/trackpoints'),
+  editTrackPoint('/editTrackPoint'),
+  trackpointsFromAliasList('/trackpointsFromAliasList'),
+
+  // alias
+  aliasList('/aliasList'),
+  editAlias('/editAlias'),
+
+  // alias group
+  aliasGroupList('/aliasGroupList'),
+  aliasGroupEdit('/aliasGroupEdit'),
+  aliasGroupsFromAliasList('/aliasGroupsFromAliasList'),
+  aliasesFromAliasGroupList('/aliasesFromAliasGroupList'),
+
+  // task
+  taskList('/taskList'),
+  taskEdit('/taskEdit'),
+
+  // task group
+  taskGroupList('/taskGroupList'),
+  taskGroupEdit('/taskGroupEdit'),
+  taskGroupsFromTaskList('/taskGroupsFromTaskList'),
+  tasksFromTaskGroupList('/tasksFromTaskGroupList'),
+
+  // user
+  userList('/userList'),
+  userEdit('/userEdit'),
+
+  // userGroup
+  userGroupList('/userGroupList'),
+  userGroupEdit('/userGroupEdit'),
+  userGroupsFromUserList('/userGroupsFromUserList'),
+  usersFromUserGroupList('/useresFromUserGroupList'),
+
+  // misc
+  selectCalendar('/selectCalendar'),
+  osm('/osm');
 
   final String route;
   const AppRoutes(this.route);
 
+  static Map<String, Widget Function(BuildContext)>? _routes;
   static get routes {
-    return <String, Widget Function(BuildContext)>{
-      // home routes
-      //AppRoutes.home.route: (context) => const WidgetTrackingPage(),
-
-      /// add/edit items routes
-      // trackpoint
-      AppRoutes.liveTracking.route: (context) => const WidgetTrackingPage(),
-      AppRoutes.trackpoints.route: (context) => const WidgetTrackPoints(),
-      AppRoutes.editTrackPoint.route: (context) => const WidgetEditTrackPoint(),
-      // user
-      AppRoutes.listUsers.route: (context) => const WidgetUserList(),
-      AppRoutes.editUser.route: (context) => const WidgetUserEdit(),
-      // task
-      AppRoutes.listTasks.route: (context) => const WidgetTaskList(),
-      AppRoutes.editTasks.route: (context) => const WidgetTaskEdit(),
-      // alias
-      AppRoutes.aliasList.route: (context) => const WidgetAliasList(),
-      AppRoutes.editAlias.route: (context) => const WidgetAliasEdit(),
-      AppRoutes.trackpointsFromAliasList.route: (context) =>
-          const WidgetAliasTrackpoint(),
-
-      // aliasGroup
-      AppRoutes.aliasGroupList.route: (context) => const WidgetAliasGroupList(),
-      AppRoutes.aliasGroupsFromAliasList.route: (context) =>
-          const WidgetAliasGroupsFromAliasList(),
-      AppRoutes.aliasGroupEdit.route: (context) => const WidgetAliasGroupEdit(),
-      AppRoutes.aliasesFromAliasGroupList.route: (context) =>
-          const WidgetAliasesFromAliasGroupList(),
-
-      // trackPoint events
-      AppRoutes.selectCalendar.route: (context) => const WidgetManageCalendar(),
-      // osm
-      AppRoutes.osm.route: (context) => const WidgetOsm(),
-
+    return _routes ??= <String, Widget Function(BuildContext)>{
       /// system config routes
       AppRoutes.welcome.route: (context) => const Welcome(),
       AppRoutes.logger.route: (context) => const WidgetLoggerPage(),
@@ -132,7 +121,55 @@ enum AppRoutes {
           const WidgetDatabaseExplorer(),
       AppRoutes.appSettings.route: (context) => const WidgetAppSettings(),
       AppRoutes.backgroundGps.route: (context) =>
-          const WidgetManageBackgroundGps()
+          const WidgetManageBackgroundGps(),
+
+      // trackpoint
+      AppRoutes.liveTracking.route: (context) => const WidgetTrackingPage(),
+      AppRoutes.trackpoints.route: (context) => const WidgetTrackPoints(),
+      AppRoutes.editTrackPoint.route: (context) => const WidgetEditTrackPoint(),
+
+      // user
+      AppRoutes.userList.route: (context) => const WidgetUserList(),
+      AppRoutes.userEdit.route: (context) => const WidgetUserEdit(),
+
+      // user group
+      AppRoutes.userGroupList.route: (context) => const WidgetUserGroupList(),
+      AppRoutes.userGroupEdit.route: (context) => const WidgetUserGroupEdit(),
+      AppRoutes.userGroupsFromUserList.route: (context) =>
+          const WidgetUserGroupsFromUserList(),
+      AppRoutes.usersFromUserGroupList.route: (context) =>
+          const WidgetUsersFromUserGroupList(),
+
+      // task
+      AppRoutes.taskList.route: (context) => const WidgetTaskList(),
+      AppRoutes.taskEdit.route: (context) => const WidgetTaskEdit(),
+
+      // task group
+      AppRoutes.taskGroupList.route: (context) => const WidgetTaskGroupList(),
+      AppRoutes.taskGroupEdit.route: (context) => const WidgetTaskGroupEdit(),
+      AppRoutes.taskGroupsFromTaskList.route: (context) =>
+          const WidgetTaskGroupsFromTaskList(),
+      AppRoutes.tasksFromTaskGroupList.route: (context) =>
+          const WidgetTasksFromTaskGroupList(),
+
+      // alias
+      AppRoutes.aliasList.route: (context) => const WidgetAliasList(),
+      AppRoutes.editAlias.route: (context) => const WidgetAliasEdit(),
+
+      // alias group
+      AppRoutes.aliasGroupList.route: (context) => const WidgetAliasGroupList(),
+      AppRoutes.aliasGroupEdit.route: (context) => const WidgetAliasGroupEdit(),
+      AppRoutes.aliasGroupsFromAliasList.route: (context) =>
+          const WidgetAliasGroupsFromAliasList(),
+      AppRoutes.aliasesFromAliasGroupList.route: (context) =>
+          const WidgetAliasesFromAliasGroupList(),
+
+      // trackPoint events
+      AppRoutes.selectCalendar.route: (context) => const WidgetManageCalendar(),
+      AppRoutes.trackpointsFromAliasList.route: (context) =>
+          const WidgetAliasTrackpoint(),
+      // osm
+      AppRoutes.osm.route: (context) => const WidgetOsm(),
     };
   }
 }

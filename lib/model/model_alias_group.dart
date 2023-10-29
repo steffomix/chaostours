@@ -192,43 +192,15 @@ class ModelAliasGroup {
   }
 
   /// select ALL groups from this alias for checkbox selection.
-  /// Even if there is only the group id needed the groups
   Future<List<int>> aliasIds() async {
     var col = TableAliasAliasGroup.idAlias.column;
-    final ids = await DB.execute<List<Map<String, Object?>>>((txn) async {
+    final rows = await DB.execute<List<Map<String, Object?>>>((txn) async {
       return await txn.query(TableAliasAliasGroup.table,
           columns: [col],
           where: '${TableAliasAliasGroup.idAliasGroup.column} = ?',
           whereArgs: [id]);
     });
-    if (ids.isEmpty) {
-      return <int>[];
-    }
-    return ids.map((e) => DB.parseInt(e[col])).toList();
-  }
-
-  Future<List<ModelAlias>> children(
-      {int offset = 0, int limit = 20, String search = ''}) async {
-    final rows = await DB.execute<List<Map<String, Object?>>>((txn) async {
-      List<Object?> args = [];
-      if (search.isNotEmpty) {
-        var fields = [TableAlias.title, TableAlias.description];
-        args.addAll(List.filled(fields.length, '%$search%'));
-        search = ' AND (${fields.map(
-              (e) => ' $e LIKE ? ',
-            ).join(' OR ')})';
-      }
-      var q =
-          '''SELECT ${TableAlias.columns.join(', ')} FROM ${TableAliasAliasGroup.table}
-LEFT JOIN ${TableAlias.table} ON ${TableAliasAliasGroup.idAlias} = ${TableAlias.primaryKey}
-WHERE ${TableAliasAliasGroup.idAliasGroup} = ? $search
-ORDER BY ${TableAlias.title}
-LIMIT ?
-OFFSET ?  
-''';
-      return await txn.rawQuery(q, [id, ...args, limit, offset]);
-    });
-    return rows.map((e) => ModelAlias.fromMap(e)).toList();
+    return rows.map((e) => DB.parseInt(e[col])).toList();
   }
 
   ModelAliasGroup clone() {

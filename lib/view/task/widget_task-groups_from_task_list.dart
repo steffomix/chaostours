@@ -21,40 +21,40 @@ import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/view/app_base_widget.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/conf/app_routes.dart';
-import 'package:chaostours/model/model_alias_group.dart';
-import 'package:chaostours/model/model_alias.dart';
+import 'package:chaostours/model/model_task_group.dart';
+import 'package:chaostours/model/model_task.dart';
 
-class WidgetAliasGroupsFromAliasList extends BaseWidget {
-  const WidgetAliasGroupsFromAliasList({super.key});
+class WidgetTaskGroupsFromTaskList extends BaseWidget {
+  const WidgetTaskGroupsFromTaskList({super.key});
 
   @override
-  State<WidgetAliasGroupsFromAliasList> createState() =>
-      _WidgetAliasGroupsFromAliasList();
+  State<WidgetTaskGroupsFromTaskList> createState() =>
+      _WidgetTaskGroupsFromTaskList();
 }
 
-class _WidgetAliasGroupsFromAliasList
-    extends BaseWidgetState<WidgetAliasGroupsFromAliasList> {
+class _WidgetTaskGroupsFromTaskList
+    extends BaseWidgetState<WidgetTaskGroupsFromTaskList> {
   // ignore: unused_field
-  static final Logger logger = Logger.logger<WidgetAliasGroupsFromAliasList>();
+  static final Logger logger = Logger.logger<WidgetTaskGroupsFromTaskList>();
 
   int _selectedNavBarItem = 0;
 
   final TextEditingController _searchTextController = TextEditingController();
   final List<Widget> _loadedWidgets = [];
-  ModelAlias? _model;
+  ModelTask? _model;
   List<int>? _ids;
   // items per page
   int getLimit() => 30;
 
   @override
   Future<void> initialize(BuildContext context, Object? args) async {
-    _model = await ModelAlias.byId(args as int);
+    _model = await ModelTask.byId(args as int);
     _ids ??= await _model?.groupIds() ?? [];
   }
 
   @override
   Future<int> loadItems({required int offset, int limit = 20}) async {
-    var newItems = await ModelAliasGroup.select(
+    var newItems = await ModelTaskGroup.select(
         limit: limit, offset: offset, search: _searchTextController.text);
 
     _loadedWidgets.addAll(newItems.map((e) => renderRow(e)).toList());
@@ -68,7 +68,7 @@ class _WidgetAliasGroupsFromAliasList
     render();
   }
 
-  Widget renderRow(ModelAliasGroup model) {
+  Widget renderRow(ModelTaskGroup model) {
     return ListTile(
       leading: editButton(model),
       trailing: checkBox(model),
@@ -77,14 +77,14 @@ class _WidgetAliasGroupsFromAliasList
     );
   }
 
-  Widget title(ModelAliasGroup model) {
+  Widget title(ModelTaskGroup model) {
     return ListTile(
       title: Text(model.title),
       subtitle: Text(model.description),
     );
   }
 
-  Widget subtitle(ModelAliasGroup model) {
+  Widget subtitle(ModelTaskGroup model) {
     return Padding(
         padding: const EdgeInsets.only(left: 30),
         child: Text(model.description,
@@ -94,10 +94,10 @@ class _WidgetAliasGroupsFromAliasList
 
   @override
   Scaffold renderScaffold(Widget body) {
-    return AppWidgets.scaffold(context, body: body, title: 'Groups from Alias');
+    return AppWidgets.scaffold(context, body: body, title: 'Groups from Task');
   }
 
-  Widget checkBox(ModelAliasGroup model) {
+  Widget checkBox(ModelTaskGroup model) {
     return AppWidgets.checkbox(
       idReference: model.id,
       referenceList: _ids ?? [],
@@ -113,11 +113,11 @@ class _WidgetAliasGroupsFromAliasList
     );
   }
 
-  Widget editButton(ModelAliasGroup model) {
+  Widget editButton(ModelTaskGroup model) {
     return IconButton(
       icon: const Icon(Icons.edit),
       onPressed: () {
-        Navigator.pushNamed(context, AppRoutes.aliasGroupEdit.route,
+        Navigator.pushNamed(context, AppRoutes.taskGroupEdit.route,
                 arguments: model.id)
             .then(
           (value) {
@@ -163,11 +163,11 @@ class _WidgetAliasGroupsFromAliasList
           switch (id) {
             /// create
             case 0:
-              var count = await ModelAliasGroup.count();
-              var model = ModelAliasGroup(title: '#${count + 1}');
-              model = await ModelAliasGroup.insert(model);
+              var count = await ModelTaskGroup.count();
+              var model = ModelTaskGroup(title: '#${count + 1}');
+              model = await ModelTaskGroup.insert(model);
               if (mounted) {
-                Navigator.pushNamed(context, AppRoutes.aliasGroupEdit.route,
+                Navigator.pushNamed(context, AppRoutes.taskGroupEdit.route,
                         arguments: model.id)
                     .then((_) {
                   resetLoader();

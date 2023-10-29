@@ -14,10 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:sqflite/sqflite.dart';
 //
 import 'package:chaostours/database.dart';
 import 'package:chaostours/logger.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:chaostours/model/model_task_group.dart';
 
 class ModelTask {
   static Logger logger = Logger.logger<ModelTask>();
@@ -112,6 +113,53 @@ class ModelTask {
       }
     }
     return models;
+  }
+
+  /// select ALL groups from this alias for checkbox selection.
+  Future<List<int>> groupIds() async {
+    var col = TableTaskTaskGroup.idTaskGroup.column;
+    final ids = await DB.execute<List<Map<String, Object?>>>((txn) async {
+      return await txn.query(TableTaskTaskGroup.table,
+          columns: [col],
+          where: '${TableTaskTaskGroup.idTask.column} = ?',
+          whereArgs: [id]);
+    });
+    if (ids.isEmpty) {
+      return <int>[];
+    }
+    return ids.map((e) => DB.parseInt(e[col])).toList();
+  }
+
+  Future<int> addGroup(ModelTaskGroup group) async {
+    return await DB.execute<int>((txn) async {
+      try {
+        var c = await txn.insert(TableTaskTaskGroup.table, {
+          TableTaskTaskGroup.idTask.column: id,
+          TableTaskTaskGroup.idTaskGroup.column: group.id
+        });
+        return c;
+      } catch (e) {
+        logger.warn('addGroup: $e');
+        return 0;
+      }
+    });
+  }
+
+  Future<int> removeGroup(ModelTaskGroup group) async {
+    return await DB.execute<int>((txn) async {
+      try {
+        var c = await txn.delete(
+          TableTaskTaskGroup.table,
+          where:
+              '${TableTaskTaskGroup.idTask.column} = ? AND ${TableTaskTaskGroup.idTaskGroup.column} = ?',
+          whereArgs: [id, group.id],
+        );
+        return c;
+      } catch (e) {
+        logger.warn('addGroup: $e');
+        return 0;
+      }
+    });
   }
 
   /// transforms text into %text%

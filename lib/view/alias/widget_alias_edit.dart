@@ -70,16 +70,13 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
   }
 
   Future<ModelAlias?> loadAlias(int? id) async {
-    if (id == null) {
-      return await createAlias();
-    }
-    var model = await ModelAlias.byId(id);
+    var model = await ModelAlias.byId(id ?? 0);
     if (model == null) {
       if (mounted) {
         Navigator.pop(context);
       }
     }
-    var ids = (await model?.groupsIds()) ?? [];
+    var ids = (await model?.groupIds()) ?? [];
     _groups = ids.isEmpty ? [] : await ModelAliasGroup.byIdList(ids);
     return model;
   }
@@ -192,6 +189,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
       ),
       AppWidgets.divider(),
 
+      // groups
       Padding(
           padding: const EdgeInsets.symmetric(vertical: 10),
           child: ElevatedButton(

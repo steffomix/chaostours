@@ -204,9 +204,10 @@ class AppWidgets {
 
   /// check FutureBuilder Snapshots,
   /// returns null on success
-  static Widget? checkSnapshot<T>(AsyncSnapshot<T> snapshot) {
+  static Widget? checkSnapshot<T>(AsyncSnapshot<T> snapshot,
+      {String msg = ''}) {
     if (snapshot.connectionState == ConnectionState.waiting) {
-      return AppWidgets.loading('');
+      return AppWidgets.loading(msg);
     } else if (snapshot.hasError) {
       /// on error
       var msg =
@@ -517,14 +518,14 @@ class _WidgetDrawer extends State<WidgetDrawer> {
               ///
               ElevatedButton(
                   onPressed: () {
-                    AppWidgets.navigate(context, AppRoutes.listUsers);
+                    AppWidgets.navigate(context, AppRoutes.userList);
                   },
                   child: const Text('Personal')),
 
               ///
               ElevatedButton(
                   onPressed: () {
-                    AppWidgets.navigate(context, AppRoutes.listTasks);
+                    AppWidgets.navigate(context, AppRoutes.taskList);
                   },
                   child: const Text('Arbeiten')),
 

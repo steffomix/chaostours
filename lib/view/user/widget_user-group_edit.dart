@@ -13,24 +13,29 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
+import 'package:chaostours/view/app_base_widget.dart';
 import 'package:flutter/material.dart';
+import 'package:device_calendar/device_calendar.dart';
 
 ///
-import 'package:chaostours/logger.dart';
 import 'package:chaostours/view/app_widgets.dart';
-import 'package:chaostours/runtime_data.dart';
+import 'package:chaostours/logger.dart';
+import 'package:chaostours/model/model_alias_group.dart';
+import 'package:chaostours/conf/app_routes.dart';
+import 'package:chaostours/calendar.dart';
 
-void main() {
-  RuntimeData.widgetsFlutterBinding = WidgetsFlutterBinding.ensureInitialized();
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  static final Logger logger = Logger.logger<MyApp>();
-  const MyApp({super.key});
+class WidgetUserGroupEdit extends StatefulWidget {
+  const WidgetUserGroupEdit({super.key});
 
   @override
+  State<WidgetUserGroupEdit> createState() => _WidgetUserGroupEdit();
+}
+
+class _WidgetUserGroupEdit extends State<WidgetUserGroupEdit> {
+  @override
   Widget build(BuildContext context) {
-    return AppWidgets.materialApp(context);
+    // TODO: implement build
+    throw UnimplementedError();
   }
 }

@@ -88,6 +88,9 @@ class _WidgetAliasList extends BaseWidgetState<WidgetAliasList>
     int count = model.trackPointCount;
     return ListTile(
         subtitle: Text(
+            style: model.isActive
+                ? null
+                : const TextStyle(decoration: TextDecoration.lineThrough),
             'Visited: ${count}x, ${count == 0 ? 'Never' : 'before $dur days.'}'),
         title: Text(model.title));
   }

@@ -116,7 +116,7 @@ class _WidgetTaskList extends BaseWidgetState<WidgetTaskList> {
                   var model =
                       await ModelTask.insert(ModelTask(title: '#${count + 1}'));
                   if (mounted) {
-                    Navigator.pushNamed(context, AppRoutes.editTasks.route,
+                    Navigator.pushNamed(context, AppRoutes.taskEdit.route,
                             arguments: model.id)
                         .then((value) {
                       Navigator.pop(context);
@@ -149,7 +149,7 @@ class _WidgetTaskList extends BaseWidgetState<WidgetTaskList> {
         trailing: IconButton(
             icon: const Icon(Icons.edit),
             onPressed: () async {
-              await Navigator.pushNamed(context, AppRoutes.editTasks.route,
+              await Navigator.pushNamed(context, AppRoutes.taskEdit.route,
                   arguments: model.id);
               resetLoader();
             }));
