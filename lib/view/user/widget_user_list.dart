@@ -33,7 +33,7 @@ class _WidgetUserList extends BaseWidgetState<WidgetUserList> {
   // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetUserList>();
 
-  bool _showActivated = true;
+  final _navBarBuilder = NavBarWithTrash();
   final _textController = TextEditingController();
 
   final List<Widget> _loadedItems = [];
@@ -53,7 +53,7 @@ class _WidgetUserList extends BaseWidgetState<WidgetUserList> {
     List<ModelUser> newItems = await ModelUser.select(
         limit: limit,
         offset: offset,
-        activated: _showActivated,
+        activated: _navBarBuilder.showActivated,
         search: _textController.text);
 
     _loadedItems.addAll(newItems.map((e) => renderListItem(e)).toList());
@@ -86,52 +86,21 @@ class _WidgetUserList extends BaseWidgetState<WidgetUserList> {
   }
 
   BottomNavigationBar navBar() {
-    return BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        items: [
-          const BottomNavigationBarItem(
-              icon: Icon(Icons.add), label: 'Create new User'),
-          _showActivated
-              ? const BottomNavigationBarItem(
-                  icon: Icon(Icons.delete), label: 'Show Deleted')
-              : const BottomNavigationBarItem(
-                  icon: Icon(Icons.visibility), label: 'Show Active'),
-          const BottomNavigationBarItem(
-              icon: Icon(Icons.cancel), label: 'Cancel'),
-        ],
-        onTap: (int id) async {
-          if (id == 0) {
-            AppWidgets.dialog(context: context, contents: [
-              const Text('Create new User?')
-            ], buttons: [
-              TextButton(
-                child: const Text('Cancel'),
-                onPressed: () => Navigator.pop(context),
-              ),
-              TextButton(
-                child: const Text('Yes'),
-                onPressed: () async {
-                  var count = await ModelUser.count();
-                  var model =
-                      await ModelUser.insert(ModelUser(title: '#${count + 1}'));
-                  if (mounted) {
-                    Navigator.pushNamed(context, AppRoutes.editUser.route,
-                            arguments: model.id)
-                        .then((value) {
-                      Navigator.pop(context);
-                      resetLoader();
-                    });
-                  }
-                },
-              )
-            ]);
-          } else if (id == 1) {
-            _showActivated = !_showActivated;
-            resetLoader();
-          } else {
-            Navigator.pop(context);
+    return _navBarBuilder.navBar(context,
+        name: 'User',
+        onCreate: (context) async {
+          var count = await ModelUser.count();
+          var model = await ModelUser.insert(ModelUser(title: '#${count + 1}'));
+          if (mounted) {
+            Navigator.pushNamed(context, AppRoutes.editUser.route,
+                    arguments: model.id)
+                .then((value) {
+              Navigator.pop(context);
+              resetLoader();
+            });
           }
-        });
+        },
+        onSwitch: (context) => resetLoader());
   }
 
   Widget renderListItem(ModelUser model) {

@@ -22,6 +22,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:device_calendar/device_calendar.dart';
 
 ///
+import 'package:chaostours/runtime_data.dart';
 import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/calendar.dart';
 import 'package:chaostours/logger.dart';
@@ -55,6 +56,7 @@ class AppWidgets {
 
   static Widget materialApp(BuildContext context) {
     return MaterialApp(
+      key: RuntimeData.globalKey,
       debugShowCheckedModeBanner: false,
       //themeMode: ThemeMode.system,
       title: 'Chaos Tours',
@@ -239,24 +241,25 @@ class AppWidgets {
   }
 
   static Widget loadingScreen(BuildContext context, Widget info) {
-    return scaffold(context, body: loading(info));
+    return Scaffold(body: loading(info));
   }
 
   static Widget errorScreen(BuildContext context, Widget info) {
-    return scaffold(context, body: loading(info));
+    return Scaffold(body: loading(info));
   }
 
   /// check FutureBuilder Snapshots,
   /// returns null on success
   static Widget? checkSnapshot<T>(
       BuildContext context, AsyncSnapshot<T> snapshot,
-      {Widget? msg}) {
+      {Widget? msg, void Function(BuildContext context, T data)? build}) {
     msg ??= const Text('');
+
     if (snapshot.connectionState == ConnectionState.waiting) {
       return AppWidgets.loadingScreen(context, msg);
     } else if (snapshot.hasError) {
       /// on error
-      logger.error(msg, StackTrace.current);
+      logger.error('checkSnapshot: ${snapshot.error}', StackTrace.current);
       return AppWidgets.errorScreen(
           context,
           Text(
@@ -264,7 +267,12 @@ class AppWidgets {
     } else {
       /// no data
       if (!snapshot.hasData) {
+        logger.error('checkSnapshot: No data', StackTrace.current);
         return AppWidgets.errorScreen(context, msg);
+      }
+      var data = snapshot.data;
+      if (data != null) {
+        build?.call(context, data);
       }
       return null;
     }

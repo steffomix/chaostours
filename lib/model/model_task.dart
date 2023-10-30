@@ -100,7 +100,7 @@ class ModelTask {
         return await txn.query(TableTask.table,
             columns: TableTask.columns,
             where:
-                '${TableTask.primaryKey.column} IN ${List.filled(ids.length, '?').join(', ')}',
+                '${TableTask.primaryKey.column} IN (${List.filled(ids.length, '?').join(', ')})',
             whereArgs: ids);
       },
     );

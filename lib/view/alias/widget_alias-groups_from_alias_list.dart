@@ -143,8 +143,7 @@ class _WidgetAliasGroupsFromAliasList
     return [
       ListTile(
         title: Text(_model?.title ?? ''),
-        subtitle: Text(_model?.description ?? '',
-            style: TextStyle(color: Theme.of(context).hintColor)),
+        subtitle: Text(_model?.description ?? ''),
       ),
       AppWidgets.searchTile(
           context: context,

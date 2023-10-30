@@ -14,11 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import 'package:chaostours/conf/app_routes.dart';
-import 'package:chaostours/model/model_task_group.dart';
 import 'package:flutter/material.dart';
 
 //import 'package:chaostours/logger.dart';
+import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_task_group.dart';
@@ -57,9 +56,10 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
         future:
             loadTask(ModalRoute.of(context)?.settings.arguments as int? ?? 0),
         builder: (context, snapshot) {
-          return AppWidgets.checkSnapshot(context, snapshot) ??
+          return AppWidgets.checkSnapshot(context, snapshot,
+                  build: (context, data) => _model = data) ??
               AppWidgets.scaffold(context,
-                  body: renderBody(snapshot.data!),
+                  body: renderBody(),
                   navBar: AppWidgets.navBarCreateItem(context, name: 'Task',
                       onCreate: () async {
                     var count = (await ModelTask.count()) + 1;
@@ -75,8 +75,7 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
         });
   }
 
-  Widget renderBody(ModelTask model) {
-    _model = model;
+  Widget renderBody() {
     return ListView(children: [
       /// taskname
       Container(

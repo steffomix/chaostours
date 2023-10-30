@@ -93,7 +93,7 @@ class ModelUserGroup {
         return await txn.query(TableUserGroup.table,
             columns: TableUserGroup.columns,
             where:
-                '${TableUserGroup.primaryKey.column} IN ${List.filled(ids.length, '?').join(', ')}',
+                '${TableUserGroup.primaryKey.column} IN (${List.filled(ids.length, '?').join(', ')})',
             whereArgs: ids);
       },
     );

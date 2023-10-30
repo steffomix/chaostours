@@ -145,12 +145,17 @@ class _WidgetTaskGroupsFromTaskList
   @override
   List<Widget> renderHeader(BoxConstraints constrains) {
     return [
+      ListTile(
+        title: Text(_model?.title ?? ''),
+        subtitle: Text(_model?.description ?? ''),
+      ),
       AppWidgets.searchTile(
           context: context,
           textController: _searchTextController,
           onChange: (String text) {
             resetLoader();
-          })
+          }),
+      AppWidgets.divider()
     ];
   }
 }

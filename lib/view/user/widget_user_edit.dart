@@ -16,9 +16,11 @@ limitations under the License.
 
 import 'package:flutter/material.dart';
 
-import 'package:chaostours/logger.dart';
+//import 'package:chaostours/logger.dart';
+import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/model/model_user.dart';
+import 'package:chaostours/model/model_user_group.dart';
 
 class WidgetUserEdit extends StatefulWidget {
   const WidgetUserEdit({super.key});
@@ -28,15 +30,10 @@ class WidgetUserEdit extends StatefulWidget {
 }
 
 class _WidgetUserEdit extends State<WidgetUserEdit> {
-  // ignore: unused_field
-  static final Logger logger = Logger.logger<WidgetUserEdit>();
+  //static final Logger logger = Logger.logger<WidgetUserEdit>();
 
   ModelUser? _model;
-
-  @override
-  void dispose() {
-    super.dispose();
-  }
+  List<ModelUserGroup> _groups = [];
 
   void render() {
     if (mounted) {
@@ -44,24 +41,41 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
     }
   }
 
+  Future<ModelUser?> loadUser(int id) async {
+    var model = await ModelUser.byId(id);
+
+    var ids = (await model?.groupIds()) ?? [];
+    _groups = ids.isEmpty ? [] : await ModelUserGroup.byIdList(ids);
+    return model;
+  }
+
   @override
   Widget build(BuildContext context) {
-    var id = ModalRoute.of(context)?.settings.arguments as int?;
-
     return FutureBuilder<ModelUser?>(
-        future: ModelUser.byId(id ?? 0),
+        initialData: _model,
+        future:
+            loadUser(ModalRoute.of(context)?.settings.arguments as int? ?? 0),
         builder: (context, snapshot) {
-          return AppWidgets.checkSnapshot(context, snapshot) ??
-              AppWidgets.scaffold(
-                context,
-                body: renderBody(snapshot.data!),
-                appBar: AppBar(title: const Text('Edit User')),
-              );
+          return AppWidgets.checkSnapshot(context, snapshot,
+                  build: (context, data) => _model = data) ??
+              AppWidgets.scaffold(context,
+                  body: renderBody(),
+                  navBar: AppWidgets.navBarCreateItem(context, name: 'User',
+                      onCreate: () async {
+                    var count = (await ModelUser.count()) + 1;
+                    var model =
+                        await ModelUser.insert(ModelUser(title: '#$count'));
+                    if (mounted) {
+                      await Navigator.pushNamed(
+                          context, AppRoutes.editUser.route,
+                          arguments: model.id);
+                      render();
+                    }
+                  }));
         });
   }
 
-  Widget renderBody(ModelUser model) {
-    _model = model;
+  Widget renderBody() {
     return ListView(children: [
       /// taskname
       Container(
@@ -91,13 +105,41 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
             },
           )),
 
+      // groups
+      Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          child: ElevatedButton(
+              child: Column(children: [
+                const Text('Groups', style: TextStyle(height: 2)),
+                ..._groups.map(
+                  (model) {
+                    return ListTile(
+                      title: Text(
+                        model.title,
+                      ),
+                      subtitle: Text(model.description),
+                    );
+                  },
+                ).toList()
+              ]),
+              onPressed: () {
+                Navigator.pushNamed(
+                        context, AppRoutes.listUserGroupsFromUser.route,
+                        arguments: _model?.id)
+                    .then(
+                  (value) {
+                    render();
+                  },
+                );
+              })),
+
+      AppWidgets.divider(),
+
       /// deleted
       ListTile(
           title: const Text('Active'),
-          subtitle: const Text(
-            'Defines if this User is visible and used or not.',
-            softWrap: true,
-          ),
+          subtitle:
+              const Text('Defines if this User is visible and used or not.'),
           leading: Checkbox(
             value: _model?.isActive ?? false,
             onChanged: (val) {

@@ -37,8 +37,6 @@ class _WidgetTasksFromTaskGroupList
   // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetTasksFromTaskGroupList>();
 
-  int _selectedNavBarItem = 0;
-
   final TextEditingController _searchTextController = TextEditingController();
   final List<Widget> _loadedWidgets = [];
   ModelTaskGroup? _model;
@@ -154,12 +152,17 @@ class _WidgetTasksFromTaskGroupList
   @override
   List<Widget> renderHeader(BoxConstraints constrains) {
     return [
+      ListTile(
+        title: Text(_model?.title ?? ''),
+        subtitle: Text(_model?.description ?? ''),
+      ),
       AppWidgets.searchTile(
           context: context,
           textController: _searchTextController,
           onChange: (String text) {
             resetLoader();
-          })
+          }),
+      AppWidgets.divider()
     ];
   }
 }
