@@ -169,7 +169,7 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
 
       /// calendar
       Column(children: [
-        const Text('Calendar', softWrap: true),
+        const Text('Calendar'),
         Column(mainAxisSize: MainAxisSize.min, children: [
           ListTile(
               leading: IconButton(

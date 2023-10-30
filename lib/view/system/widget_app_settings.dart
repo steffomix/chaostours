@@ -397,7 +397,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
               child: Text('\n\n\nKalender',
                   style: TextStyle(fontWeight: FontWeight.bold))),
           AppWidgets.divider(),
-/*
+
           Container(
               padding: const EdgeInsets.all(5),
               child: ListTile(
@@ -419,6 +419,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                     'So können sie ihre Mitarbeiter, Freunde oder Familienangehörige stets wissen lassen wo sie gerade sind '
                     'oder was sie am besuchten Ort gemacht haben.'),
               )),
+          /*
           Padding(
               padding: const EdgeInsets.all(10),
               child: ElevatedButton(
@@ -439,9 +440,9 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                         ],
                       )))),
 
+          */
           AppWidgets.divider(),
 
-          */
           const Center(
               child: Text('\n\n\nGPS',
                   style: TextStyle(fontWeight: FontWeight.bold))),

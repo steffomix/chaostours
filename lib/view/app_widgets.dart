@@ -610,8 +610,7 @@ class _WidgetDrawer extends State<WidgetDrawer> {
               ///
               ElevatedButton(
                   onPressed: () {
-                    Navigator.of(context).pop();
-                    Navigator.popUntil(context, (route) => route.isFirst);
+                    AppWidgets.navigate(context, AppRoutes.liveTracking);
                   },
                   child: const Text('Live Tracking')),
 

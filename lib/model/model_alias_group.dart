@@ -187,7 +187,6 @@ class ModelAliasGroup {
     return count;
   }
 
-  /// select ALL groups from this alias for checkbox selection.
   Future<List<int>> aliasIds() async {
     var col = TableAliasAliasGroup.idAlias.column;
     final rows = await DB.execute<List<Map<String, Object?>>>((txn) async {
@@ -197,6 +196,31 @@ class ModelAliasGroup {
           whereArgs: [id]);
     });
     return rows.map((e) => DB.parseInt(e[col])).toList();
+  }
+
+  /// select a list of distinct Groups from a List of Alias IDs
+  static Future<List<ModelAliasGroup>> aliasGroups(
+      List<ModelAlias> aliasModels) async {
+    final rows = await DB.execute<List<Map<String, Object?>>>((txn) async {
+      var ids = aliasModels
+          .map(
+            (e) => e.id,
+          )
+          .toList();
+      var q = '''
+SELECT ${TableAliasGroup.columns.join(', ')} FROM ${TableAliasAliasGroup.table}
+LEFT JOIN ${TableAliasGroup.table} ON ${TableAliasAliasGroup.idAliasGroup} = ${TableAliasGroup.primaryKey}
+WHERE ${TableAliasAliasGroup.idAlias} IN (${List.filled(ids.length, '?').join(', ')})
+GROUP by  ${TableAliasGroup.primaryKey}
+ORDER BY ${TableAliasGroup.primaryKey}
+''';
+      return await txn.rawQuery(q, ids);
+    });
+    return rows
+        .map(
+          (e) => fromMap(e),
+        )
+        .toList();
   }
 
   ModelAliasGroup clone() {

@@ -45,10 +45,11 @@ class ModelTrackPoint {
   List<int> taskIds = [];
   List<ModelTask> taskModels = [];
 
+  List<CalendarEventId> calendarEventIds = [];
+
   ///
   String address = '';
-  String notes = '';
-  List<CalendarEventId> calendarEventIds = []; // calendarId;calendarEventId
+  String notes = ''; // calendarId;calendarEventId
 
   /// real ID<br>
   /// Is set only once during save to disk
@@ -172,6 +173,17 @@ class ModelTrackPoint {
           await txn.insert(TableTrackPointUser.table, {
             TableTrackPointUser.idUser.column: id,
             TableTrackPointUser.idTrackPoint.column: model.id
+          });
+        } catch (e, stk) {
+          logger.error('insert idUser: $e', stk);
+        }
+      }
+      for (var cal in model.calendarEventIds) {
+        try {
+          await txn.insert(TableTrackPointCalendar.table, {
+            TableTrackPointCalendar.idTrackPoint.column: model.id,
+            TableTrackPointCalendar.idEvent.column: cal.eventId,
+            TableTrackPointCalendar.idCalendar.column: cal.calendarId
           });
         } catch (e, stk) {
           logger.error('insert idUser: $e', stk);

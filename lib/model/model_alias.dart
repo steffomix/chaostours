@@ -56,7 +56,8 @@ class ModelAlias {
   int get id => _id;
   int groupId = 1;
   // lazy loaded group
-  Future<ModelAliasGroup?> get groupModel => ModelAliasGroup.byId(groupId);
+  //Future<ModelAliasGroup?> get groupModel => ModelAliasGroup.byId(groupId);
+  List<ModelAliasGroup> aliasGroups = [];
   GPS gps;
   int radius = 50;
   DateTime lastVisited;
@@ -78,7 +79,7 @@ class ModelAlias {
     required this.lastVisited,
     required this.title,
     this.isActive = true,
-    this.visibility = AliasVisibility.restricted,
+    this.visibility = AliasVisibility.public,
     this.groupId = 1,
     this.radius = 50,
     this.timesVisited = 0,
@@ -197,6 +198,7 @@ class ModelAlias {
     return models;
   }
 
+/*
   /// transforms text into %text%
   static Future<List<ModelAlias>> _search(String text,
       {int offset = 0, int limit = 50}) async {
@@ -222,7 +224,7 @@ class ModelAlias {
     }
     return models;
   }
-
+*/
   /// find trackpoints by aliasId
   Future<List<ModelTrackPoint>> trackpoints(
       {int offset = 0, int limit = 20}) async {
@@ -283,38 +285,44 @@ class ModelAlias {
       bool activated = true,
       lastVisited = true,
       String search = ''}) async {
-    if (search.isNotEmpty) {
-      return await ModelAlias._search(search, offset: offset, limit: limit);
-    }
+    var searchQuery = search.isEmpty
+        ? ''
+        : ' AND ${TableAlias.title.column} = ? AND ${TableAlias.description.column} = ? ';
+    var searchArgs = search.isEmpty ? [] : ['?', '?'];
+
     var rows =
         await DB.execute<List<Map<String, Object?>>>((Transaction txn) async {
       return await txn.query(TableAlias.table,
           columns: TableAlias.columns,
-          where: '${TableAlias.isActive.column} = ?',
-          whereArgs: [DB.boolToInt(activated)],
+          where: '${TableAlias.isActive.column} = ? $searchQuery',
+          whereArgs: [DB.boolToInt(activated), ...searchArgs],
           orderBy: lastVisited
               ? '${TableAlias.lastVisited.column} DESC'
               : '${TableAlias.title.column} ASC',
           offset: offset,
           limit: limit);
     });
-    var models = <ModelAlias>[];
-    for (var row in rows) {
-      try {
-        models.add(fromMap(row));
-      } catch (e, stk) {
-        logger.error('select: $e', stk);
-      }
-    }
-    return models;
+    return rows
+        .map(
+          (e) => fromMap(e),
+        )
+        .toList();
   }
 
   static Future<ModelAlias> insert(ModelAlias model) async {
     var map = model.toMap();
     map.removeWhere((key, value) => key == TableAlias.primaryKey.column);
+
     int id = await DB.execute<int>(
       (Transaction txn) async {
-        return await txn.insert(TableAlias.table, map);
+        var newId = await txn.insert(TableAlias.table, map);
+
+        await txn.insert(TableAliasAliasGroup.table, {
+          TableAliasAliasGroup.idAlias.column: newId,
+          TableAliasAliasGroup.idAliasGroup.column: 1
+        });
+
+        return newId;
       },
     );
     model._id = id;

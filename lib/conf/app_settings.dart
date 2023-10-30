@@ -189,7 +189,7 @@ class AppSettings {
         unit: SettingUnits.piece);
   }
 
-  static const bool _publishToCalendarDefault = false;
+  static const bool _publishToCalendarDefault = true;
   static bool publishToCalendar = _publishToCalendarDefault;
 
   /// when background looks for an address of given gps
