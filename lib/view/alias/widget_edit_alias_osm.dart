@@ -335,7 +335,7 @@ class _WidgetOsm extends State<WidgetOsm> {
                   leading: ValueListenableBuilder(
                     builder: (context, value, child) {
                       return value == true
-                          ? AppWidgets.loading('')
+                          ? AppWidgets.loading(const Text(''))
                           : const SizedBox(width: 30 + 5, height: 30 + 5);
                     },
                     valueListenable: _loading,
@@ -492,7 +492,7 @@ class _WidgetOsm extends State<WidgetOsm> {
           stepZoom: 1.0,
         ),
       ),
-      mapIsLoading: AppWidgets.loading('Loading Map'),
+      mapIsLoading: AppWidgets.loading(const Text('Loading Map')),
       //androidHotReloadSupport: true,
       controller: mapController,
     );
@@ -526,7 +526,7 @@ class _WidgetOsm extends State<WidgetOsm> {
       });
       return AppWidgets.scaffold(context,
           appBar: AppBar(title: const Text('OSM & Alias')),
-          body: AppWidgets.loading('Loading Alias'));
+          body: AppWidgets.loading(const Text('Loading Alias')));
     } else {
       return AppWidgets.scaffold(context,
           appBar: AppBar(title: const Text('OSM & Alias')),

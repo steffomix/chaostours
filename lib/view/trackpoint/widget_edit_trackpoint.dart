@@ -255,7 +255,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
         }).onError((error, stackTrace) {
           logger.error('initialize build $error', stackTrace);
         });
-        return AppWidgets.loading('');
+        return AppWidgets.loading(const Text(''));
       }
       Widget divider = AppWidgets.divider();
       body = ListView(children: [
@@ -270,7 +270,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
         notes(context),
       ]);
     } catch (e) {
-      body = AppWidgets.loading('No valid ID found');
+      body = AppWidgets.loading(const Text('No valid ID found'));
       Future.delayed(const Duration(milliseconds: 500), () {
         Navigator.pop(context);
       });

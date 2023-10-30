@@ -34,7 +34,7 @@ class WidgetPermissionsPage extends StatefulWidget {
 
 class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
   Logger logger = Logger.logger<WidgetPermissionsPage>();
-  Widget widgetPermissions = AppWidgets.loading('');
+  Widget widgetPermissions = AppWidgets.loading(const Text(''));
   //BuildContext? _context;
   List<Widget> items = [];
 
@@ -103,7 +103,7 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
   }
 
   void updatePermissionsInfo(String info) {
-    widgetPermissions = AppWidgets.loading(info);
+    widgetPermissions = AppWidgets.loading(Text(info));
   }
 
   void permissionItems() {

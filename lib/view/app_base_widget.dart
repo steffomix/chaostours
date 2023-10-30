@@ -79,7 +79,7 @@ class BaseWidgetState<T extends BaseWidget> extends State<T>
         logger.error('initialize: $e', stk).then(
             (value) => Navigator.pushNamed(context, AppRoutes.logger.route));
       });
-      return Scaffold(body: AppWidgets.loading('Initializing...'));
+      return Scaffold(body: AppWidgets.loading(const Text('Initializing...')));
     }
 
     /// render body
@@ -157,7 +157,9 @@ class BaseWidgetState<T extends BaseWidget> extends State<T>
           children: [
             SizedBox(height: _headerHeight ?? 50, width: constraints.maxWidth),
             ...renderBody(constraints),
-            !widgetLoader.isFinished ? AppWidgets.loading('') : AppWidgets.empty
+            !widgetLoader.isFinished
+                ? AppWidgets.loading(const Text(''))
+                : AppWidgets.empty
           ],
         ),
         direction: scrollDirection);

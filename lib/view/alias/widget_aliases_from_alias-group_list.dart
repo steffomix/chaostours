@@ -40,8 +40,8 @@ class _WidgetAliasesFromAliasGroupList
     implements BaseWidgetPattern {
   static final Logger logger = Logger.logger<WidgetAliasesFromAliasGroupList>();
 
-  int _selectedNavBarItem = 0;
   final CalendarEntry _calendars = {};
+  final _navBarBuilder = NavBarWithTrash();
 
   final TextEditingController _searchTextController = TextEditingController();
   final List<Widget> _loadedWidgets = [];
@@ -59,8 +59,6 @@ class _WidgetAliasesFromAliasGroupList
       for (var c in cals) {
         _calendars.addEntries({c.id: c}.entries);
       }
-      //cals.map((e) => _calendars.addEntries({e.id: e}.entries));
-      print(_calendars.toString());
     } catch (e) {
       logger.warn('maybe no calendar permission granted: $e');
     }
@@ -69,7 +67,10 @@ class _WidgetAliasesFromAliasGroupList
   @override
   Future<int> loadItems({required int offset, int limit = 20}) async {
     var newItems = await ModelAlias.select(
-        limit: limit, offset: offset, search: _searchTextController.text);
+        limit: limit,
+        offset: offset,
+        search: _searchTextController.text,
+        activated: _navBarBuilder.showActivated);
 
     _loadedWidgets.addAll(newItems.map((e) => renderRow(e)).toList());
     return newItems.length;
@@ -84,60 +85,40 @@ class _WidgetAliasesFromAliasGroupList
 
   Widget renderRow(ModelAlias model) {
     return ListTile(
-      leading: editButton(model),
-      trailing: checkBox(model),
-      title: title(model),
-      subtitle: subtitle(model),
-    );
-  }
-
-  Widget title(ModelAlias model) {
-    return ListTile(
-      title: Text(model.title),
-      subtitle: Text(model.description),
-    );
-  }
-
-  Widget subtitle(ModelAlias model) {
-    return Padding(
-        padding: const EdgeInsets.only(left: 30),
-        child: Text(model.description,
-            style:
-                TextStyle(fontSize: 12, color: Theme.of(context).hintColor)));
-  }
-
-  Widget checkBox(ModelAlias model) {
-    return AppWidgets.checkbox(
-      idReference: model.id,
-      referenceList: _ids ?? [],
-      onToggle: (toggle) async {
-        bool add = toggle ?? false;
-        try {
-          if (add) {
-            await model.addGroup(_model!);
-          } else {
-            await model.removeGroup(_model!);
-          }
-          resetLoader();
-        } catch (e, stk) {
-          logger.error('checkbox _model is NULL; $e', stk);
-        }
-      },
-    );
-  }
-
-  Widget editButton(ModelAlias model) {
-    return IconButton(
-      icon: const Icon(Icons.edit),
-      onPressed: () {
-        Navigator.pushNamed(context, AppRoutes.editAlias.route,
-                arguments: model.id)
-            .then(
-          (value) {
+      leading: IconButton(
+        icon: const Icon(Icons.edit),
+        onPressed: () {
+          Navigator.pushNamed(context, AppRoutes.editAlias.route,
+                  arguments: model.id)
+              .then(
+            (value) {
+              resetLoader();
+            },
+          );
+        },
+      ),
+      trailing: AppWidgets.checkbox(
+        idReference: model.id,
+        referenceList: _ids ?? [],
+        onToggle: (toggle) async {
+          bool add = toggle ?? false;
+          try {
+            if (add) {
+              await model.addGroup(_model!);
+            } else {
+              await model.removeGroup(_model!);
+            }
             resetLoader();
-          },
-        );
-      },
+          } catch (e, stk) {
+            logger.error('checkbox _model is NULL; $e', stk);
+          }
+        },
+      ),
+      title: Text(model.title,
+          style: _navBarBuilder.showActivated
+              ? null
+              : const TextStyle(decoration: TextDecoration.lineThrough)),
+      subtitle: Text(model.description),
     );
   }
 
@@ -172,10 +153,12 @@ class _WidgetAliasesFromAliasGroupList
     return AppWidgets.scaffold(context,
         body: body,
         title: 'Aliases from Group',
-        navBar: AppWidgets.navBarCreateItem(context, name: 'Alias',
-            onCreate: () async {
-          await Navigator.pushNamed(context, AppRoutes.osm.route);
-          render();
-        }));
+        navBar: _navBarBuilder.navBar(context,
+            name: 'Alias',
+            onCreate: (context) async {
+              await Navigator.pushNamed(context, AppRoutes.osm.route);
+              resetLoader();
+            },
+            onSwitch: (context) => resetLoader()));
   }
 }

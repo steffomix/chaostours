@@ -255,13 +255,14 @@ class _WelcomeState extends State<Welcome> {
         body: FutureBuilder<bool>(
           future: checkAllPermissions(),
           builder: (context, snapshot) {
-            Widget? loading = AppWidgets.checkSnapshot(snapshot);
+            Widget? loading = AppWidgets.checkSnapshot(context, snapshot);
             if (loading == null) {
               final permissionsOk = snapshot.data!;
               if (!preloadSuccess) {
                 Future.delayed(const Duration(seconds: 2),
                     () => Navigator.pushNamed(context, AppRoutes.logger.route));
-                return AppWidgets.loading('Initialization Failure...');
+                return AppWidgets.loading(
+                    const Text('Initialization Failure...'));
               } else {
                 if (permissionsOk) {
                   Future.delayed(

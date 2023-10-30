@@ -54,7 +54,8 @@ class _WidgetTaskGroupEdit extends State<WidgetTaskGroupEdit> {
       future: ModelTaskGroup.byId(
           ModalRoute.of(context)?.settings.arguments as int? ?? 0),
       builder: (context, snapshot) {
-        return AppWidgets.checkSnapshot(snapshot) ?? body(snapshot.data!);
+        return AppWidgets.checkSnapshot(context, snapshot) ??
+            body(snapshot.data!);
       },
     );
   }

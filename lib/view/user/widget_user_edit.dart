@@ -51,7 +51,7 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
     return FutureBuilder<ModelUser?>(
         future: ModelUser.byId(id ?? 0),
         builder: (context, snapshot) {
-          return AppWidgets.checkSnapshot(snapshot) ??
+          return AppWidgets.checkSnapshot(context, snapshot) ??
               AppWidgets.scaffold(
                 context,
                 body: renderBody(snapshot.data!),

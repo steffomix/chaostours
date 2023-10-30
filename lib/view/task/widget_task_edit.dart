@@ -21,6 +21,7 @@ import 'package:flutter/material.dart';
 //import 'package:chaostours/logger.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/model/model_task.dart';
+import 'package:chaostours/model/model_task_group.dart';
 
 class WidgetTaskEdit extends StatefulWidget {
   const WidgetTaskEdit({super.key});
@@ -33,7 +34,7 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
   //static final Logger logger = Logger.logger<WidgetTaskEdit>();
 
   ModelTask? _model;
-  final List<ModelTaskGroup> _groups = [];
+  List<ModelTaskGroup> _groups = [];
 
   void render() {
     if (mounted) {
@@ -41,14 +42,22 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
     }
   }
 
+  Future<ModelTask?> loadTask(int id) async {
+    var model = await ModelTask.byId(id);
+
+    var ids = (await model?.groupIds()) ?? [];
+    _groups = ids.isEmpty ? [] : await ModelTaskGroup.byIdList(ids);
+    return model;
+  }
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<ModelTask?>(
         initialData: _model,
-        future: ModelTask.byId(
-            ModalRoute.of(context)?.settings.arguments as int? ?? 0),
+        future:
+            loadTask(ModalRoute.of(context)?.settings.arguments as int? ?? 0),
         builder: (context, snapshot) {
-          return AppWidgets.checkSnapshot(snapshot) ??
+          return AppWidgets.checkSnapshot(context, snapshot) ??
               AppWidgets.scaffold(context,
                   body: renderBody(snapshot.data!),
                   navBar: AppWidgets.navBarCreateItem(context, name: 'Task',

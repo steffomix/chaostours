@@ -37,8 +37,6 @@ class _WidgetTaskGroupsFromTaskList
   // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetTaskGroupsFromTaskList>();
 
-  int _selectedNavBarItem = 0;
-
   final TextEditingController _searchTextController = TextEditingController();
   final List<Widget> _loadedWidgets = [];
   ModelTask? _model;

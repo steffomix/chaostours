@@ -87,4 +87,19 @@ class Model {
     }
     return 0;
   }
+
+  /// todo:
+  /// sort rank preview
+  static Future<void> sortRank() async {
+    /*
+    WITH cte AS (
+    SELECT *, RANK() OVER (ORDER BY score DESC) rnk
+    FROM scores
+    )
+
+    SELECT id, rnk
+    FROM cte
+    WHERE id = <some value>;
+    */
+  }
 }

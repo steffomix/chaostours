@@ -86,21 +86,21 @@ class _WidgetAliasList extends BaseWidgetState<WidgetAliasList>
   Widget itemTitle(ModelAlias model) {
     int dur = DateTime.now().difference(model.lastVisited).inDays;
     int count = model.trackPointCount;
-    return ListTile(
-        subtitle: Text(
-            style: model.isActive
-                ? null
-                : const TextStyle(decoration: TextDecoration.lineThrough),
-            'Visited: ${count}x, ${count == 0 ? 'Never' : 'before $dur days.'}'),
-        title: Text(model.title));
+    var subStyle = Theme.of(context).listTileTheme.subtitleTextStyle;
+    return Column(children: [
+      Text(model.title,
+          style: model.isActive
+              ? null
+              : const TextStyle(decoration: TextDecoration.lineThrough)),
+      Text('Visited: ${count}x, ${count == 0 ? 'Never' : 'before $dur days.'}',
+          style: subStyle),
+      Text(model.description, style: subStyle)
+    ]);
   }
 
   Widget itemSubtitle(ModelAlias model) {
-    return Padding(
-        padding: const EdgeInsets.only(left: 30),
-        child: Text(model.description,
-            style:
-                TextStyle(fontSize: 12, color: Theme.of(context).hintColor)));
+    return Text(model.description,
+        style: Theme.of(context).listTileTheme.subtitleTextStyle);
   }
 
   Widget showTrackpoints(ModelAlias model) {

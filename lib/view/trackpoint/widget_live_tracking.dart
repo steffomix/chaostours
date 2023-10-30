@@ -213,7 +213,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
           stepZoom: 1.0,
         ),
       ),
-      mapIsLoading: AppWidgets.loading('Loading Map'),
+      mapIsLoading: AppWidgets.loading(const Text('Loading Map')),
       //androidHotReloadSupport: true,
       controller: mapController,
     );
@@ -222,7 +222,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   ///
   @override
   Widget build(BuildContext context) {
-    Widget body = AppWidgets.loading('Waiting for GPS...');
+    Widget body = AppWidgets.loading(const Text('Waiting for GPS...'));
     if (!initialized) {
       return AppWidgets.scaffold(context,
           body: body, appBar: AppBar(title: const Text('Live Tracking')));
@@ -264,12 +264,14 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
           } else if (_bridge.trackingStatus == TrackingStatus.standing) {
             body = renderTrackPointStanding();
           } else {
-            body = AppWidgets.loading('Waiting for Tracking Status');
+            body =
+                AppWidgets.loading(const Text('Waiting for Tracking Status'));
           }
       }
     } catch (e, stk) {
       logger.error('::build error: $e', stk);
-      body = AppWidgets.loading('Error, please open App Logger for details.');
+      body = AppWidgets.loading(
+          const Text('Error, please open App Logger for details.'));
     }
 
     return AppWidgets.scaffold(context,
@@ -394,11 +396,11 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   ///
   Widget renderTrackPointMoving() {
     if (_trackPointData == null) {
-      return AppWidgets.loading('Waiting for Trackpoint Data');
+      return AppWidgets.loading(const Text('Waiting for Trackpoint Data'));
     }
     TrackPointData tp = _trackPointData!;
     if (_location == null) {
-      return AppWidgets.loading('Waiting for Location Data');
+      return AppWidgets.loading(const Text('Waiting for Location Data'));
     }
     Location location = _location!;
     Widget divider = AppWidgets.divider();
@@ -494,11 +496,11 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   ///
   Widget renderTrackPointStanding() {
     if (_trackPointData == null) {
-      return AppWidgets.loading('Waiting for Trackpoint Data');
+      return AppWidgets.loading(const Text('Waiting for Trackpoint Data'));
     }
     TrackPointData tp = _trackPointData!;
     if (_location == null) {
-      return AppWidgets.loading('Waiting for Location Data');
+      return AppWidgets.loading(const Text('Waiting for Location Data'));
     }
     Location location = _location!;
     Widget divider = AppWidgets.divider();

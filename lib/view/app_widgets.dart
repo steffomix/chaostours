@@ -230,38 +230,41 @@ class AppWidgets {
     return '$day, ${timeStart.hour}:${timeStart.minute} - ${timeEnd.hour}:${timeEnd.minute}\n ($duration)';
   }
 
-  static Widget loading(String info) {
+  static Widget loading(Widget info) {
     return Center(
         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
       const SizedBox(width: 30, height: 30, child: CircularProgressIndicator()),
-      Text(info)
+      info
     ]));
   }
 
-  static Widget loadingScreen(BuildContext context, [String? info]) {
-    return scaffold(context, body: loading(info ?? translate('Loading...')));
+  static Widget loadingScreen(BuildContext context, Widget info) {
+    return scaffold(context, body: loading(info));
   }
 
-  static Widget errorScreen(BuildContext context, [String? info]) {
-    return scaffold(context, body: loading(info ?? translate(info ?? 'ERROR')));
+  static Widget errorScreen(BuildContext context, Widget info) {
+    return scaffold(context, body: loading(info));
   }
 
   /// check FutureBuilder Snapshots,
   /// returns null on success
-  static Widget? checkSnapshot<T>(AsyncSnapshot<T> snapshot,
-      {String msg = ''}) {
+  static Widget? checkSnapshot<T>(
+      BuildContext context, AsyncSnapshot<T> snapshot,
+      {Widget? msg}) {
+    msg ??= const Text('');
     if (snapshot.connectionState == ConnectionState.waiting) {
-      return AppWidgets.loading(msg);
+      return AppWidgets.loadingScreen(context, msg);
     } else if (snapshot.hasError) {
       /// on error
-      var msg =
-          'AsyncViewBuilder $T build: ${snapshot.error ?? 'unknown error'}';
       logger.error(msg, StackTrace.current);
-      return AppWidgets.loading(msg);
+      return AppWidgets.errorScreen(
+          context,
+          Text(
+              'AsyncViewBuilder $T build: ${snapshot.error ?? 'unknown error'}'));
     } else {
       /// no data
       if (!snapshot.hasData) {
-        return AppWidgets.loading('No Data');
+        return AppWidgets.errorScreen(context, msg);
       }
       return null;
     }
@@ -386,13 +389,13 @@ class AppWidgets {
       future: ModelTrackPoint.search(textController.text),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return AppWidgets.loading('');
+          return AppWidgets.loading(const Text(''));
         } else if (snapshot.hasError) {
           logger.error(
               'renderTrackPointSearchList ${snapshot.error ?? 'unknow error'}',
               StackTrace.current);
           return AppWidgets.loading(
-              'FutureBuilder Error: ${snapshot.error ?? 'unknow error'}');
+              Text('FutureBuilder Error: ${snapshot.error ?? 'unknow error'}'));
         } else {
           if (snapshot.hasData) {
             var data = snapshot.data!;
@@ -442,7 +445,7 @@ class AppWidgets {
           ? AppCalendar().loadCalendars()
           : Future.value(calendars),
       builder: (context, snapshot) {
-        return AppWidgets.checkSnapshot(snapshot) ??
+        return AppWidgets.checkSnapshot(context, snapshot) ??
             ListView.separated(
               separatorBuilder: (context, index) => AppWidgets.divider(),
               itemCount: snapshot.data!.length + 1,

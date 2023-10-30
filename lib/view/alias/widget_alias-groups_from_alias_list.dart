@@ -39,6 +39,7 @@ class _WidgetAliasGroupsFromAliasList
 
   final TextEditingController _searchTextController = TextEditingController();
   final List<Widget> _loadedWidgets = [];
+  final _navBarBuilder = NavBarWithTrash();
   ModelAlias? _model;
   List<int>? _ids;
   // items per page
@@ -53,7 +54,10 @@ class _WidgetAliasGroupsFromAliasList
   @override
   Future<int> loadItems({required int offset, int limit = 20}) async {
     var newItems = await ModelAliasGroup.select(
-        limit: limit, offset: offset, search: _searchTextController.text);
+        limit: limit,
+        offset: offset,
+        search: _searchTextController.text,
+        activated: _navBarBuilder.showActivated);
 
     _loadedWidgets.addAll(newItems.map((e) => renderRow(e)).toList());
     return newItems.length;
@@ -93,7 +97,12 @@ class _WidgetAliasGroupsFromAliasList
           resetLoader();
         },
       ),
-      title: Text(model.title),
+      title: Text(
+        model.title,
+        style: _navBarBuilder.showActivated
+            ? null
+            : const TextStyle(decoration: TextDecoration.lineThrough),
+      ),
       subtitle: Text(model.description,
           style: TextStyle(fontSize: 12, color: Theme.of(context).hintColor)),
     );
@@ -104,17 +113,22 @@ class _WidgetAliasGroupsFromAliasList
     return AppWidgets.scaffold(context,
         body: body,
         title: 'Groups from Alias',
-        navBar: AppWidgets.navBarCreateItem(context, name: 'Alias Group',
-            onCreate: () async {
-          var count = (await ModelAliasGroup.count()) + 1;
-          var model =
-              await ModelAliasGroup.insert(ModelAliasGroup(title: '#$count'));
-          if (mounted) {
-            await Navigator.pushNamed(context, AppRoutes.editAliasGroup.route,
-                arguments: model.id);
-            render();
-          }
-        }));
+        navBar: _navBarBuilder.navBar(context,
+            name: 'Alias Group',
+            onCreate: (context) async {
+              var count = await ModelAliasGroup.count();
+              var model = await ModelAliasGroup.insert(
+                  ModelAliasGroup(title: '#${count + 1}'));
+              if (mounted) {
+                Navigator.pushNamed(context, AppRoutes.editAliasGroup.route,
+                        arguments: model.id)
+                    .then((value) {
+                  Navigator.pop(context);
+                  resetLoader();
+                });
+              }
+            },
+            onSwitch: (context) => resetLoader()));
   }
 
   @override

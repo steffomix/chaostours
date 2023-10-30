@@ -88,14 +88,14 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
     return FutureBuilder<ModelAlias?>(
       future: loadAlias(id),
       builder: (context, snapshot) {
-        Widget? loading = AppWidgets.checkSnapshot(snapshot);
+        Widget? loading = AppWidgets.checkSnapshot(context, snapshot);
         if (loading == null) {
           var model = snapshot.data!;
           initialize(model);
           return scaffold(body(model));
         } else {
           return AppWidgets.scaffold(context,
-              body: AppWidgets.loading('Loading Alias...'));
+              body: AppWidgets.loading(const Text('Loading Alias...')));
         }
       },
     );

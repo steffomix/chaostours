@@ -45,7 +45,7 @@ class _WidgetManageCalendarState extends State<WidgetManageCalendar> {
         body: FutureBuilder<List<Calendar>>(
           future: AppCalendar().loadCalendars(),
           builder: (context, snapshot) {
-            return AppWidgets.checkSnapshot(snapshot) ??
+            return AppWidgets.checkSnapshot(context, snapshot) ??
                 AppWidgets.calendarSelector(
                     calendars: snapshot.data,
                     context: context,
@@ -68,7 +68,7 @@ class _WidgetManageCalendarState extends State<WidgetManageCalendar> {
     return FutureBuilder<List<Calendar>>(
       future: AppCalendar().loadCalendars(),
       builder: (context, snapshot) {
-        return AppWidgets.checkSnapshot(snapshot) ??
+        return AppWidgets.checkSnapshot(context, snapshot) ??
             ListView.separated(
               separatorBuilder: (context, index) => AppWidgets.divider(),
               itemCount: snapshot.data!.length + 1,

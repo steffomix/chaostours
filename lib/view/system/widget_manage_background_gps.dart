@@ -35,7 +35,7 @@ class WidgetManageBackgroundGps extends StatefulWidget {
 
 class _WidgetManageBackgroundGpsState extends State<WidgetManageBackgroundGps> {
   List<Widget> items = [
-    AppWidgets.loading('Checking Background Tracking Status')
+    AppWidgets.loading(const Text('Checking Background Tracking Status'))
   ];
   Widget? trackingSwitch;
   double latShift = 0;

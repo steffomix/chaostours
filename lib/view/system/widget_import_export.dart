@@ -764,7 +764,7 @@ class _WidgetImportExport extends State<WidgetImportExport> {
             return Container(
                 height: 200,
                 padding: const EdgeInsets.all(10.0),
-                child: AppWidgets.loading('Waiting for Data'));
+                child: AppWidgets.loading(const Text('Waiting for Data')));
           },
         ),
       ),

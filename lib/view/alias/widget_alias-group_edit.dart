@@ -85,10 +85,10 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
     return FutureBuilder<ModelAliasGroup?>(
       future: loadAliasGroup(id),
       builder: (context, snapshot) {
-        Widget? loading = AppWidgets.checkSnapshot(snapshot);
+        Widget? loading = AppWidgets.checkSnapshot(context, snapshot);
         if (loading != null) {
           return AppWidgets.scaffold(context,
-              body: AppWidgets.loading('Loading Group...'));
+              body: AppWidgets.loading(const Text('Loading Group...')));
         }
         var model = snapshot.data!;
         return body(model);
