@@ -58,8 +58,7 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
 
   Future<ModelAliasGroup> createAliasGroup() async {
     var count = await ModelAliasGroup.count();
-    var model = ModelAliasGroup(title: '#${count + 1}');
-    await ModelAliasGroup.insert(model);
+    var model = await ModelAliasGroup(title: '#${count + 1}').insert();
     return model;
   }
 
@@ -124,8 +123,7 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
         navBar: AppWidgets.navBarCreateItem(context, name: 'Alias Group',
             onCreate: () async {
           var count = (await ModelAliasGroup.count()) + 1;
-          var model =
-              await ModelAliasGroup.insert(ModelAliasGroup(title: '#$count'));
+          var model = await ModelAliasGroup(title: '#$count').insert();
           if (mounted) {
             await Navigator.pushNamed(context, AppRoutes.editAliasGroup.route,
                 arguments: model.id);

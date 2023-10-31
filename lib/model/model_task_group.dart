@@ -164,16 +164,15 @@ class ModelTaskGroup {
   }
 
   /// returns task id
-  static Future<ModelTaskGroup> insert(ModelTaskGroup model) async {
-    var map = model.toMap();
+  Future<ModelTaskGroup> insert() async {
+    var map = toMap();
     map.removeWhere((key, value) => key == TableTaskGroup.primaryKey.column);
-    int id = await DB.execute<int>(
+    await DB.execute(
       (Transaction txn) async {
-        return await txn.insert(TableTaskGroup.table, map);
+        _id = await txn.insert(TableTaskGroup.table, map);
       },
     );
-    model._id = id;
-    return model;
+    return this;
   }
 
   Future<int> update() async {

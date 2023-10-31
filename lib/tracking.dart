@@ -306,7 +306,7 @@ class _TrackPoint {
                           'Auto created Alias\nat address:\n"$address"\n\nat date/time: ${gps.time.toIso8601String()}',
                       radius: AppSettings.distanceTreshold);
                   logger.warn('auto create new alias');
-                  await ModelAlias.insert(newAlias);
+                  await newAlias.insert();
 
                   /// recreate location with new alias
                   gpsLocation = await Location.location(gps);
@@ -401,8 +401,7 @@ class _TrackPoint {
 
           /// calendar eventId may have changed
           /// save after completing calendar event
-
-          await ModelTrackPoint.insert(newTrackPoint);
+          await newTrackPoint.insert();
 
           /// reset calendarEvent ID
           bridge.lastCalendarEventIds =

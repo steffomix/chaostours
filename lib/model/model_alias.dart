@@ -309,24 +309,20 @@ class ModelAlias {
         .toList();
   }
 
-  static Future<ModelAlias> insert(ModelAlias model) async {
-    var map = model.toMap();
+  Future<ModelAlias> insert() async {
+    var map = toMap();
     map.removeWhere((key, value) => key == TableAlias.primaryKey.column);
 
-    int id = await DB.execute<int>(
+    await DB.execute(
       (Transaction txn) async {
-        var newId = await txn.insert(TableAlias.table, map);
-
+        _id = await txn.insert(TableAlias.table, map);
         await txn.insert(TableAliasAliasGroup.table, {
-          TableAliasAliasGroup.idAlias.column: newId,
+          TableAliasAliasGroup.idAlias.column: _id,
           TableAliasAliasGroup.idAliasGroup.column: 1
         });
-
-        return newId;
       },
     );
-    model._id = id;
-    return model;
+    return this;
   }
 
   /// returns number of changes

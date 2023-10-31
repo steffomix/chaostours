@@ -396,12 +396,12 @@ class _WidgetOsm extends State<WidgetOsm> {
                 radius: AppSettings.distanceTreshold,
                 lastVisited: DateTime.now());
 
-            var model = await ModelAlias.insert(alias);
+            alias.insert();
             Fluttertoast.showToast(msg: 'Alias created');
             if (mounted) {
               Navigator.pop(context);
               Navigator.pushNamed(context, AppRoutes.editAlias.route,
-                  arguments: model.id);
+                  arguments: alias.id);
             }
           }
         },

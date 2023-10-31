@@ -63,8 +63,7 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
                   navBar: AppWidgets.navBarCreateItem(context, name: 'Task',
                       onCreate: () async {
                     var count = (await ModelTask.count()) + 1;
-                    var model =
-                        await ModelTask.insert(ModelTask(title: '#$count'));
+                    var model = await ModelTask(title: '#$count').insert();
                     if (mounted) {
                       await Navigator.pushNamed(
                           context, AppRoutes.editTask.route,

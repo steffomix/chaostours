@@ -142,46 +142,45 @@ class ModelTrackPoint {
     );
   }
 
-  static Future<ModelTrackPoint> insert(ModelTrackPoint model) async {
-    var map = model.toMap();
+  Future<ModelTrackPoint> insert() async {
+    var map = toMap();
     map.removeWhere((key, value) => key == TableTrackPoint.primaryKey.column);
-    await DB.execute<int>((Transaction txn) async {
-      int newId = await txn.insert(TableTrackPoint.table, map);
-      model._id = newId;
-      for (var id in model.aliasIds) {
+    await DB.execute((Transaction txn) async {
+      _id = await txn.insert(TableTrackPoint.table, map);
+      for (var id in aliasIds) {
         try {
           await txn.insert(TableTrackPointAlias.table, {
             TableTrackPointAlias.idAlias.column: id,
-            TableTrackPointAlias.idTrackPoint.column: model.id
+            TableTrackPointAlias.idTrackPoint.column: _id
           });
         } catch (e, stk) {
           logger.error('insert idAlias: $e', stk);
         }
       }
-      for (var id in model.taskIds) {
+      for (var id in taskIds) {
         try {
           await txn.insert(TableTrackPointTask.table, {
             TableTrackPointTask.idTask.column: id,
-            TableTrackPointTask.idTrackPoint.column: model.id
+            TableTrackPointTask.idTrackPoint.column: _id
           });
         } catch (e, stk) {
           logger.error('insert idTask: $e', stk);
         }
       }
-      for (var id in model.userIds) {
+      for (var id in userIds) {
         try {
           await txn.insert(TableTrackPointUser.table, {
             TableTrackPointUser.idUser.column: id,
-            TableTrackPointUser.idTrackPoint.column: model.id
+            TableTrackPointUser.idTrackPoint.column: _id
           });
         } catch (e, stk) {
           logger.error('insert idUser: $e', stk);
         }
       }
-      for (var cal in model.calendarEventIds) {
+      for (var cal in calendarEventIds) {
         try {
           await txn.insert(TableTrackPointCalendar.table, {
-            TableTrackPointCalendar.idTrackPoint.column: model.id,
+            TableTrackPointCalendar.idTrackPoint.column: _id,
             TableTrackPointCalendar.idEvent.column: cal.eventId,
             TableTrackPointCalendar.idCalendar.column: cal.calendarId
           });
@@ -189,9 +188,8 @@ class ModelTrackPoint {
           logger.error('insert idUser: $e', stk);
         }
       }
-      return newId;
     });
-    return model;
+    return this;
   }
 
   Future<int> update() async {

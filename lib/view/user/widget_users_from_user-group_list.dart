@@ -98,7 +98,7 @@ class _WidgetUsersFromUserGroupList
         navBar: AppWidgets.navBarCreateItem(context, name: 'User',
             onCreate: () async {
           var count = (await ModelUser.count()) + 1;
-          var model = await ModelUser.insert(ModelUser(title: '#$count'));
+          var model = await ModelUser(title: '#$count').insert();
           if (mounted) {
             await Navigator.pushNamed(context, AppRoutes.editUser.route,
                 arguments: model.id);

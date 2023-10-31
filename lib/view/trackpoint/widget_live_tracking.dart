@@ -316,7 +316,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                           description: '',
                           lastVisited: DateTime.now(),
                           radius: AppSettings.distanceTreshold);
-                      await ModelAlias.insert(alias);
+                      await alias.insert();
                       Future.delayed(const Duration(milliseconds: 100), () {
                         render();
                       });

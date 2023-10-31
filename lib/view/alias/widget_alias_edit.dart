@@ -65,7 +65,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
     var address = (await Address(gps).lookupAddress()).toString();
     var model =
         ModelAlias(gps: gps, lastVisited: DateTime.now(), title: address);
-    await ModelAlias.insert(model);
+    await model.insert();
     return model;
   }
 

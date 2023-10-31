@@ -162,16 +162,15 @@ class ModelUserGroup {
     return models;
   }
 
-  static Future<ModelUserGroup> insert(ModelUserGroup model) async {
-    var map = model.toMap();
+  Future<ModelUserGroup> insert() async {
+    var map = toMap();
     map.removeWhere((key, value) => key == TableUserGroup.primaryKey.column);
-    int id = await DB.execute<int>(
+    await DB.execute(
       (Transaction txn) async {
-        return await txn.insert(TableUserGroup.table, map);
+        _id = await txn.insert(TableUserGroup.table, map);
       },
     );
-    model._id = id;
-    return model;
+    return this;
   }
 
   Future<int> update() async {

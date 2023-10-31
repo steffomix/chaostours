@@ -162,16 +162,15 @@ class ModelAliasGroup {
         .toList();
   }
 
-  static Future<ModelAliasGroup> insert(ModelAliasGroup model) async {
-    var map = model.toMap();
+  Future<ModelAliasGroup> insert() async {
+    var map = toMap();
     map.removeWhere((key, value) => key == TableAliasGroup.primaryKey.column);
-    int id = await DB.execute<int>(
+    await DB.execute(
       (Transaction txn) async {
-        return await txn.insert(TableAliasGroup.table, map);
+        _id = await txn.insert(TableAliasGroup.table, map);
       },
     );
-    model._id = id;
-    return model;
+    return this;
   }
 
   Future<int> update() async {

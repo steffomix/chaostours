@@ -117,8 +117,8 @@ class _WidgetAliasGroupsFromAliasList
             name: 'Alias Group',
             onCreate: (context) async {
               var count = await ModelAliasGroup.count();
-              var model = await ModelAliasGroup.insert(
-                  ModelAliasGroup(title: '#${count + 1}'));
+              var model =
+                  await ModelAliasGroup(title: '#${count + 1}').insert();
               if (mounted) {
                 Navigator.pushNamed(context, AppRoutes.editAliasGroup.route,
                         arguments: model.id)

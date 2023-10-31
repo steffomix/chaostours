@@ -74,8 +74,7 @@ class _WidgetTaskGroupEdit extends State<WidgetTaskGroupEdit> {
         navBar: AppWidgets.navBarCreateItem(context, name: 'Task Group',
             onCreate: () async {
           var count = (await ModelTaskGroup.count()) + 1;
-          var model =
-              await ModelTaskGroup.insert(ModelTaskGroup(title: '#$count'));
+          var model = await ModelTaskGroup(title: '#$count').insert();
           if (mounted) {
             await Navigator.pushNamed(context, AppRoutes.editTaskGroup.route,
                 arguments: model.id);

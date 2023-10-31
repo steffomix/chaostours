@@ -223,18 +223,15 @@ class ModelTask {
   }
 
   /// returns task id
-  static Future<ModelTask> insert(ModelTask model) async {
-    var map = model.toMap();
+  Future<ModelTask> insert() async {
+    var map = toMap();
     map.removeWhere((key, value) => key == TableTask.primaryKey.column);
-    int ct = await count();
-    model.sortOrder = ct + 1;
-    int id = await DB.execute<int>(
+    await DB.execute(
       (Transaction txn) async {
-        return await txn.insert(TableTask.table, map);
+        _id = await txn.insert(TableTask.table, map);
       },
     );
-    model._id = id;
-    return model;
+    return this;
   }
 
   Future<int> update() async {

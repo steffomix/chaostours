@@ -91,7 +91,7 @@ class _WidgetTaskList extends BaseWidgetState<WidgetTaskList> {
         name: 'Task',
         onCreate: (context) async {
           var count = await ModelTask.count();
-          var model = await ModelTask.insert(ModelTask(title: '#${count + 1}'));
+          var model = await ModelTask(title: '#${count + 1}').insert();
           if (mounted) {
             Navigator.pushNamed(context, AppRoutes.editTask.route,
                     arguments: model.id)
