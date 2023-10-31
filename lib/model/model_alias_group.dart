@@ -197,8 +197,19 @@ class ModelAliasGroup {
     return rows.map((e) => DB.parseInt(e[col])).toList();
   }
 
+  Future<int> aliasCount() async {
+    return await DB.execute<int>((txn) async {
+      var col = 'ct';
+      final rows = await txn.query(TableAliasAliasGroup.table,
+          columns: ['count(*) as $col'],
+          where: '${TableAliasAliasGroup.idAliasGroup.column} = ?',
+          whereArgs: [id]);
+      return DB.parseInt(rows.firstOrNull?[col]);
+    });
+  }
+
   /// select a list of distinct Groups from a List of Alias IDs
-  static Future<List<ModelAliasGroup>> aliasGroups(
+  static Future<List<ModelAliasGroup>> groups(
       List<ModelAlias> aliasModels) async {
     final rows = await DB.execute<List<Map<String, Object?>>>((txn) async {
       var ids = aliasModels

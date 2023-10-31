@@ -292,7 +292,7 @@ enum TableTrackPointCalendar {
   static const String table = 'trackpoint_calendar';
 
   static List<String> get columns =>
-      TableTrackPointTask.values.map((e) => e.toString()).toList();
+      TableTrackPointCalendar.values.map((e) => e.toString()).toList();
 
   final String column;
   const TableTrackPointCalendar(this.column);

@@ -297,13 +297,13 @@ class _TrackPoint {
 
                   /// create alias
                   ModelAlias newAlias = ModelAlias(
-                      groupId: 1,
                       gps: gps,
                       lastVisited: bridge.smoothGpsPoints.last.time,
                       timesVisited: 1,
                       title: address,
                       description:
-                          'Auto created Alias\nat address:\n"$address"\n\nat date/time: ${gps.time.toIso8601String()}',
+                          'Auto created Alias\nat address:\n"$address"\n'
+                          '\nat date/time: ${gps.time.toIso8601String()}',
                       radius: AppSettings.distanceTreshold);
                   logger.warn('auto create new alias');
                   await newAlias.insert();
@@ -386,6 +386,11 @@ class _TrackPoint {
           /// only if no private or restricted alias is present
           var tpData =
               await TrackPointData.trackPointData(trackPoint: newTrackPoint);
+
+          /// save new TrackPoint
+          await newTrackPoint.insert();
+
+          /// execute calendar
           if (AppSettings.publishToCalendar &&
               !gpsLocation.isPrivate &&
               (!AppSettings.statusStandingRequireAlias ||
@@ -398,10 +403,6 @@ class _TrackPoint {
               logger.error('completeCalendarEvent; $e', stk);
             }
           }
-
-          /// calendar eventId may have changed
-          /// save after completing calendar event
-          await newTrackPoint.insert();
 
           /// reset calendarEvent ID
           bridge.lastCalendarEventIds =

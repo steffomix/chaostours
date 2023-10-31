@@ -47,7 +47,7 @@ class Location {
     bool isPrivate = false;
     bool isPublic = true;
     try {
-      models.addAll(await ModelAlias.nextAlias(
+      models.addAll(await ModelAlias.byArea(
           gps: gps, area: AppSettings.distanceTreshold));
 
       for (var model in models) {

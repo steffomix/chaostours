@@ -125,7 +125,7 @@ class _WidgetAliasTrackpoint extends BaseWidgetState<WidgetAliasTrackpoint> {
     return ListTile(
         title: Text('#${alias.id} ${alias.title}'),
         subtitle: Text(alias.description),
-        leading: Text('${alias.trackPointCount}x',
+        leading: Text('${alias.timesVisited}x',
             style: TextStyle(
                 backgroundColor: AppColors.aliasStatusColor(alias.visibility))),
         trailing: IconButton(

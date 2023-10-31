@@ -40,7 +40,8 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
   // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetAliasGroupEdit>();
   _DisplayMode _displayMode = _DisplayMode.editGroup;
-  ModelAliasGroup? _modelAlias;
+  ModelAliasGroup? _modelAliasGroup;
+  int _countAlias = 0;
   Calendar? _calendar;
   final _titleController = TextEditingController();
   final _notesController = TextEditingController();
@@ -64,17 +65,21 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
 
   Future<ModelAliasGroup?> loadAliasGroup(int? id) async {
     if (id == null) {
-      return await createAliasGroup();
+      _modelAliasGroup = await createAliasGroup();
+    } else {
+      _modelAliasGroup = await ModelAliasGroup.byId(id);
     }
-    var model = await ModelAliasGroup.byId(id);
-    if (model == null) {
+    if (_modelAliasGroup == null) {
       if (mounted) {
-        Navigator.pop(context);
+        Future.microtask(() => Navigator.pop(context));
       }
       return null;
+    } else {
+      _countAlias = await _modelAliasGroup!.aliasCount();
+      _calendar =
+          await AppCalendar().calendarById(_modelAliasGroup?.idCalendar);
+      return _modelAliasGroup;
     }
-    _calendar = await AppCalendar().calendarById(model.idCalendar);
-    return model;
   }
 
   @override
@@ -84,29 +89,20 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
     return FutureBuilder<ModelAliasGroup?>(
       future: loadAliasGroup(id),
       builder: (context, snapshot) {
-        Widget? loading = AppWidgets.checkSnapshot(context, snapshot);
-        if (loading != null) {
-          return AppWidgets.scaffold(context,
-              body: AppWidgets.loading(const Text('Loading Group...')));
-        }
-        var model = snapshot.data!;
-        return body(model);
+        return AppWidgets.checkSnapshot(context, snapshot) ?? body();
       },
     );
   }
 
-  Widget body(ModelAliasGroup model) {
-    _modelAlias = model;
-    _titleController.text = model.title;
-    _notesController.text = model.description;
+  Widget body() {
     return scaffold(_displayMode == _DisplayMode.editGroup
-        ? editGroup(model)
+        ? editGroup()
         : AppWidgets.calendarSelector(
             context: context,
             selectedCalendar: _calendar,
             onSelect: (cal) {
-              _modelAlias?.idCalendar = cal.id ?? '';
-              _modelAlias?.update().then(
+              _modelAliasGroup?.idCalendar = cal.id ?? '';
+              _modelAliasGroup?.update().then(
                 (value) {
                   _displayMode = _DisplayMode.editGroup;
                   render();
@@ -132,16 +128,16 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
         }));
   }
 
-  Widget editGroup(ModelAliasGroup model) {
+  Widget editGroup() {
     return ListView(children: [
-      /// aliasname
+      /// groupname
       Container(
           padding: const EdgeInsets.all(10),
           child: TextField(
             decoration: const InputDecoration(label: Text('Alias Group Name')),
             onChanged: ((value) {
-              model.title = value;
-              model.update();
+              _modelAliasGroup?.title = value;
+              _modelAliasGroup?.update();
             }),
             maxLines: 3,
             minLines: 3,
@@ -159,8 +155,8 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
             minLines: 3,
             controller: _notesController,
             onChanged: (value) {
-              model.description = value.trim();
-              model.update();
+              _modelAliasGroup?.description = value.trim();
+              _modelAliasGroup?.update();
             },
           )),
       AppWidgets.divider(),
@@ -173,8 +169,8 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
               leading: IconButton(
                   icon: const Icon(Icons.delete),
                   onPressed: () async {
-                    model.idCalendar = '';
-                    await model.update();
+                    _modelAliasGroup?.idCalendar = '';
+                    await _modelAliasGroup?.update();
                     render();
                   }),
               trailing: IconButton(
@@ -198,20 +194,20 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
             softWrap: true,
           ),
           leading: Checkbox(
-            value: model.isActive,
+            value: _modelAliasGroup?.isActive ?? false,
             onChanged: (val) {
-              model.isActive = val ?? false;
-              model.update().then((value) => render());
+              _modelAliasGroup?.isActive = val ?? false;
+              _modelAliasGroup?.update().then((value) => render());
             },
           )),
 
       AppWidgets.divider(),
 
       ElevatedButton(
-        child: const Text('Show Aliases from this group'),
+        child: Text('Show $_countAlias Aliases from this group'),
         onPressed: () => Navigator.pushNamed(
                 context, AppRoutes.listAliasesFromAliasGroup.route,
-                arguments: _modelAlias?.id)
+                arguments: _modelAliasGroup?.id)
             .then((value) {
           render();
         }),

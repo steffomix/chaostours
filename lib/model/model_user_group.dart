@@ -16,6 +16,7 @@ limitations under the License.
 
 import 'package:chaostours/database.dart';
 import 'package:chaostours/logger.dart';
+import 'package:chaostours/model/model_user.dart';
 import 'package:sqflite/sqflite.dart';
 
 class ModelUserGroup {
@@ -186,7 +187,7 @@ class ModelUserGroup {
     return count;
   }
 
-  /// select ALL groups from this alias for checkbox selection.
+  /// select ALL groups from this User for checkbox selection.
   Future<List<int>> userIds() async {
     var col = TableUserUserGroup.idUser.column;
     final rows = await DB.execute<List<Map<String, Object?>>>((txn) async {
@@ -196,6 +197,30 @@ class ModelUserGroup {
           whereArgs: [id]);
     });
     return rows.map((e) => DB.parseInt(e[col])).toList();
+  }
+
+  /// select a list of distinct Groups from a List of User IDs
+  static Future<List<ModelUserGroup>> groups(List<ModelUser> models) async {
+    final rows = await DB.execute<List<Map<String, Object?>>>((txn) async {
+      var ids = models
+          .map(
+            (e) => e.id,
+          )
+          .toList();
+      var q = '''
+SELECT ${TableUserGroup.columns.join(', ')} FROM ${TableUserUserGroup.table}
+LEFT JOIN ${TableUserGroup.table} ON ${TableUserUserGroup.idUserGroup} = ${TableUserGroup.primaryKey}
+WHERE ${TableUserUserGroup.idUser} IN (${List.filled(ids.length, '?').join(', ')})
+GROUP by  ${TableUserGroup.primaryKey}
+ORDER BY ${TableUserGroup.primaryKey}
+''';
+      return await txn.rawQuery(q, ids);
+    });
+    return rows
+        .map(
+          (e) => fromMap(e),
+        )
+        .toList();
   }
 
   ModelUserGroup clone() {

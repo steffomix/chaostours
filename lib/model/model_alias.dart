@@ -54,9 +54,7 @@ class ModelAlias {
   static Logger logger = Logger.logger<ModelAlias>();
   int _id = 0;
   int get id => _id;
-  int groupId = 1;
   // lazy loaded group
-  //Future<ModelAliasGroup?> get groupModel => ModelAliasGroup.byId(groupId);
   List<ModelAliasGroup> aliasGroups = [];
   GPS gps;
   int radius = 50;
@@ -72,7 +70,8 @@ class ModelAlias {
 
   /// temporary set during search for nearest Alias
   int sortDistance = 0;
-  int trackPointCount = 0;
+  int _countVisited = 0;
+  int get countVisited => _countVisited;
 
   ModelAlias({
     required this.gps,
@@ -80,7 +79,6 @@ class ModelAlias {
     required this.title,
     this.isActive = true,
     this.visibility = AliasVisibility.public,
-    this.groupId = 1,
     this.radius = 50,
     this.timesVisited = 0,
     this.description = '',
@@ -88,7 +86,6 @@ class ModelAlias {
 
   static ModelAlias fromMap(Map<String, Object?> map) {
     var model = ModelAlias(
-        groupId: DB.parseInt(map[TableAlias.idAliasGroup.column], fallback: 1),
         isActive: DB.parseBool(map[TableAlias.isActive.column],
             fallback: DB.parseBool(true)),
         gps: GPS(DB.parseDouble(map[TableAlias.latitude.column]),
@@ -106,7 +103,6 @@ class ModelAlias {
   Map<String, Object?> toMap() {
     return <String, Object?>{
       TableAlias.primaryKey.column: id,
-      TableAlias.idAliasGroup.column: groupId,
       TableAlias.isActive.column: DB.boolToInt(isActive),
       TableAlias.latitude.column: gps.lat,
       TableAlias.longitude.column: gps.lon,
@@ -163,7 +159,7 @@ class ModelAlias {
     if (rows.isNotEmpty) {
       try {
         var alias = fromMap(rows.first);
-        alias.trackPointCount = await ModelTrackPoint.count(alias: alias);
+        alias._countVisited = await ModelTrackPoint.count(alias: alias);
         return alias;
       } catch (e, stk) {
         logger.error('byId: $e', stk);
@@ -198,33 +194,6 @@ class ModelAlias {
     return models;
   }
 
-/*
-  /// transforms text into %text%
-  static Future<List<ModelAlias>> _search(String text,
-      {int offset = 0, int limit = 50}) async {
-    text = '%$text%';
-    var rows = await DB.execute<List<Map<String, Object?>>>(
-      (txn) async {
-        return await txn.query(TableAlias.table,
-            columns: TableAlias.columns,
-            where:
-                '${TableAlias.title} like ? OR ${TableAlias.description} like ?',
-            offset: offset,
-            limit: limit,
-            whereArgs: [text, text]);
-      },
-    );
-    var models = <ModelAlias>[];
-    for (var row in rows) {
-      try {
-        models.add(fromMap(row));
-      } catch (e, stk) {
-        logger.error('search: $e', stk);
-      }
-    }
-    return models;
-  }
-*/
   /// find trackpoints by aliasId
   Future<List<ModelTrackPoint>> trackpoints(
       {int offset = 0, int limit = 20}) async {
@@ -257,6 +226,7 @@ class ModelAlias {
     var table = TableAlias.table;
     var latCol = TableAlias.latitude.column;
     var lonCol = TableAlias.longitude.column;
+
     var rows = await DB.execute<List<Map<String, Object?>>>(
       (Transaction txn) async {
         return await txn.query(table,
@@ -285,11 +255,36 @@ class ModelAlias {
       bool activated = true,
       lastVisited = true,
       String search = ''}) async {
-    var searchQuery = search.isEmpty
-        ? ''
-        : ' AND ${TableAlias.title.column} = ? AND ${TableAlias.description.column} = ? ';
-    var searchArgs = search.isEmpty ? [] : ['?', '?'];
-
+    var colCountVisited = 'countVisited';
+    var rows = await DB.execute(
+      (txn) async {
+        var searchQuery = search.isEmpty
+            ? ''
+            : ' AND ${TableAlias.title.column} = ? AND ${TableAlias.description.column} = ? ';
+        var searchArgs = search.isEmpty ? [] : ['?', '?'];
+        final args = [DB.boolToInt(activated), ...searchArgs, limit, offset];
+        var q = '''
+SELECT ${TableAlias.columns.join(', ')} , COUNT(${TableTrackPointAlias.idAlias}) as $colCountVisited FROM ${TableAlias.table}
+LEFT JOIN ${TableTrackPointAlias.table} ON ${TableTrackPointAlias.idAlias} = ${TableAlias.id}
+-- LEFT JOIN ${TableTrackPoint.table} ON ${TableTrackPoint.id} = ${TableTrackPointAlias.idTrackPoint}
+WHERE ${TableAlias.isActive.column} = ? $searchQuery
+GROUP BY ${TableAlias.id}  -- (${TableTrackPoint.timeStart} / (60 * 60 * 24))
+ORDER BY ${lastVisited ? '${TableAlias.lastVisited.column} DESC' : '${TableAlias.title.column} ASC'}
+LIMIT ?
+OFFSET ?
+''';
+        return await txn.rawQuery(q, args);
+      },
+    );
+    List<ModelAlias> models = [];
+    ModelAlias model;
+    for (var row in rows) {
+      model = fromMap(row);
+      model._countVisited = DB.parseInt(row[colCountVisited]);
+      models.add(model);
+    }
+    return models;
+/*
     var rows =
         await DB.execute<List<Map<String, Object?>>>((Transaction txn) async {
       return await txn.query(TableAlias.table,
@@ -301,6 +296,27 @@ class ModelAlias {
               : '${TableAlias.title.column} ASC',
           offset: offset,
           limit: limit);
+    });
+    return rows
+        .map(
+          (e) => fromMap(e),
+        )
+        .toList();
+    */
+  }
+
+  /// select deep activated, respects group activation
+  static Future<List<ModelAlias>> selsectActivated(
+      {bool isActive = true}) async {
+    final rows = await DB.execute<List<Map<String, Object?>>>((txn) async {
+      var q = '''
+SELECT ${TableAlias.columns.join(', ')} FROM ${TableAliasAliasGroup.table}
+LEFT JOIN ${TableAlias.table} ON ${TableAlias.primaryKey} = ${TableAliasAliasGroup.idAlias}
+LEFT JOIN ${TableAliasGroup.table} ON ${TableAliasAliasGroup.idAliasGroup} =  ${TableAliasGroup.primaryKey}
+WHERE ${TableAlias.isActive} = ? AND ${TableAliasGroup.isActive} = ?
+''';
+
+      return await txn.rawQuery(q, List.filled(2, DB.boolToInt(isActive)));
     });
     return rows
         .map(
@@ -343,12 +359,11 @@ class ModelAlias {
   /// select alias of an area in meters and sort the result by distance.
   /// Does not work with paging
   /// </pre>
-  static Future<List<ModelAlias>> nextAlias(
+  static Future<List<ModelAlias>> byArea(
       {required GPS gps,
       includeInactive = true,
       int area = 1000,
       int softLimit = 0}) async {
-    //return <ModelAlias>[];
     var area = GpsArea.calculateArea(
         latitude: gps.lat, longitude: gps.lon, distance: 1000);
     var latCol = TableAlias.latitude.column;

@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 import 'package:chaostours/conf/app_settings.dart';
+import 'package:chaostours/database.dart';
 import 'package:chaostours/model/model_alias_group.dart';
 import 'package:device_calendar/device_calendar.dart';
 
@@ -100,77 +101,83 @@ class AppCalendar {
     return calendars;
   }
 
-  Future<Calendar?> calendarById(String id) async {
-    var calendars = await loadCalendars();
+  Future<Calendar?> calendarById(String? id) async {
+    List<Calendar> calendars = await loadCalendars();
     try {
       for (var c in calendars) {
         if (c.id == id) {
           return c;
         }
       }
-    } catch (e, stk) {
-      logger.error('getCalendarFromCacheId: $e', stk);
+    } catch (e) {
+      logger.warn('getCalendarFromCacheId: $e');
     }
     return null;
   }
 
   Future<void> startCalendarEvent(TrackPointData tpData) async {
     var calendars = await loadCalendars();
-    if (calendars.isNotEmpty) {
-      /// get dates
-      final berlin = getLocation(AppSettings.timeZone);
-      var start = TZDateTime.from(tpData.timeStart, berlin);
-      var end = start.add(const Duration(minutes: 2));
-
-      var title =
-          'Ankunft ${tpData.aliasModels.isNotEmpty ? tpData.aliasModels.first.title : tpData.addressText} - ${start.hour}.${start.minute}';
-      var location =
-          'maps.google.com?q=${tpData.gpslastStatusChange.lat},${tpData.gpslastStatusChange.lon}';
-      var description =
-          '${tpData.aliasModels.isNotEmpty ? tpData.aliasModels.first.title : tpData.addressText}\n'
-          'am ${start.day}.${start.month}.${start.year}\n'
-          'um ${start.hour}.${start.minute} - unbekannt)\n\n'
-          'Arbeiten: ...\n\n'
-          'Mitarbeiter:\n${tpData.usersText}\n\n'
-          'Notizen: ...';
-
-      var groups = await ModelAliasGroup.aliasGroups(tpData.aliasModels);
-      Set calIds = groups
-          .map(
-            (e) => e.idCalendar,
-          )
-          .toSet();
-      List<CalendarEventId> newEvents = [];
-      for (var calId in calIds) {
-        Calendar? calendar = await calendarById(calId);
-        if (calendar == null) {
-          logger.warn('startCalendarEvent: no calendar #$calId found');
-          continue;
-        }
-        Event event = Event(calendar.id,
-            title: title,
-            start: start,
-            end: end,
-            location: location,
-            description: description);
-        var id = await inserOrUpdate(event);
-        newEvents.add(
-            CalendarEventId(calendarId: calId.toString(), eventId: id ?? ''));
-        logger
-            .log('added calendar event ID: $id to calendar ID: ${calendar.id}');
-        await Future.delayed(const Duration(milliseconds: 100));
-      }
-
-      /// cache event id
-      bridge.lastCalendarEventIds = await Cache.setValue<List<CalendarEventId>>(
-          CacheKeys.calendarLastEventIds, newEvents);
+    if (calendars.isEmpty) {
+      return;
     }
+
+    final aliasGroups = await ModelAliasGroup.groups(tpData.aliasModels);
+    List<CalendarEventId> calendarEvents = aliasGroups
+        .map(
+          (e) => CalendarEventId(calendarId: e.idCalendar),
+        )
+        .toSet()
+        .toList();
+    if (calendarEvents.isEmpty) {
+      return;
+    }
+
+    /// get dates
+    final berlin = getLocation(AppSettings.timeZone);
+    var start = TZDateTime.from(tpData.timeStart, berlin);
+    var end = start.add(const Duration(minutes: 2));
+
+    var title =
+        'Ankunft ${tpData.aliasModels.isNotEmpty ? tpData.aliasModels.first.title : tpData.addressText} - ${start.hour}.${start.minute}';
+    var location =
+        'maps.google.com?q=${tpData.gpslastStatusChange.lat},${tpData.gpslastStatusChange.lon}';
+    var description =
+        '${tpData.aliasModels.isNotEmpty ? tpData.aliasModels.first.title : tpData.addressText}\n'
+        'am ${start.day}.${start.month}.${start.year}\n'
+        'um ${start.hour}.${start.minute} - unbekannt)\n\n'
+        'Arbeiten: ...\n\n'
+        'Mitarbeiter:\n${tpData.usersText}\n\n'
+        'Notizen: ...';
+
+    for (var calId in calendarEvents) {
+      Calendar? calendar = await calendarById(calId.calendarId);
+      if (calendar == null) {
+        logger.warn('startCalendarEvent: no calendar #$calId found');
+        continue;
+      }
+      var id = await inserOrUpdate(Event(calendar.id,
+          title: title,
+          start: start,
+          end: end,
+          location: location,
+          description: description));
+
+      calId.eventId = id ?? '';
+
+      await Future.delayed(const Duration(milliseconds: 100));
+    }
+
+    /// cache event id
+    bridge.lastCalendarEventIds = await Cache.setValue<List<CalendarEventId>>(
+        CacheKeys.calendarLastEventIds, calendarEvents);
   }
 
   Future<void> completeCalendarEvent(TrackPointData tpData) async {
-    logger.log('start calender finish process');
     List<CalendarEventId> calIds = await Cache.getValue<List<CalendarEventId>>(
         CacheKeys.calendarLastEventIds, []);
+    if (calIds.isEmpty) {
+      return;
+    }
 
     /// get dates
     final berlin = getLocation(AppSettings.timeZone);
@@ -188,15 +195,12 @@ class AppCalendar {
         'Mitarbeiter:\n${tpData.usersText}\n\n'
         'Notizen: ${tpData.trackPointNotes.isEmpty ? '-' : tpData.trackPointNotes}';
 
-    logger.log('start iter through calendars');
     for (var calId in calIds) {
-      logger.log('try to find calendar ${calId.calendarId}::${calId.eventId}');
       Calendar? calendar = await calendarById(calId.calendarId);
       if (calendar == null) {
-        logger.warn('complete/update event: no calendar for found');
         continue;
       }
-      logger.log('found calendar  ${calId.calendarId}::${calId.eventId}');
+
       Event event = Event(calendar.id,
           eventId: calId.eventId.isEmpty ? null : calId.eventId,
           title: title,
@@ -206,13 +210,24 @@ class AppCalendar {
           description: description);
       String? id = await inserOrUpdate(event);
       calId.eventId = id ?? '';
-      logger
-          .log('finished calendar event ${calId.calendarId}::${calId.eventId}');
+      // save for edit trackpoint
+      await DB.execute(
+        (txn) async {
+          for (var calId in calIds) {
+            await txn.insert(TableTrackPointCalendar.table, {
+              TableTrackPointCalendar.idTrackPoint.column:
+                  tpData.trackPoint!.id,
+              TableTrackPointCalendar.idCalendar.column: calId.calendarId,
+              TableTrackPointCalendar.idEvent.column: calId.eventId
+            });
+          }
+        },
+      );
     }
+
     // clear calendar cache
     await Cache.setValue<List<CalendarEventId>>(
         CacheKeys.calendarLastEventIds, []);
     tpData.calendarEventIds.clear();
-    tpData.calendarEventIds.addAll(calIds);
   }
 }

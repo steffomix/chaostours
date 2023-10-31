@@ -18,7 +18,6 @@ import 'package:chaostours/calendar.dart';
 import 'package:chaostours/data_bridge.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_alias.dart';
-import 'package:chaostours/model/model_alias_group.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/gps.dart';
@@ -34,7 +33,6 @@ class TrackPointData {
   final DateTime timeStart;
   DateTime get timeEnd => DateTime.now();
   final List<ModelAlias> aliasModels;
-  final List<ModelAliasGroup> aliasGroupModels;
   final List<ModelUser> userModels;
   final List<ModelTask> taskModels;
   final List<CalendarEventId> calendarEventIds;
@@ -107,7 +105,7 @@ class TrackPointData {
   String get durationText => timeElapsed(timeStart, timeEnd, false);
 
   Duration get duration => timeDifference(timeStart, timeEnd);
-
+/*
   List<CalendarEventId> get calendarIds {
     var list = <CalendarEventId>[];
     for (var model in aliasGroupModels) {
@@ -115,7 +113,7 @@ class TrackPointData {
     }
     return list;
   }
-
+*/
   /// defaults to data from DataBridge
   static Future<TrackPointData> trackPointData(
       {ModelTrackPoint? trackPoint}) async {
@@ -145,18 +143,11 @@ class TrackPointData {
     List<CalendarEventId> calendarEventIds =
         (trackPoint?.calendarEventIds ?? bridge.lastCalendarEventIds);
 
-    List<ModelAliasGroup> aliasGroupModels =
-        await ModelAliasGroup.byIdList(aliasModels
-            .map(
-              (e) => e.groupId,
-            )
-            .toList());
-
     return TrackPointData(
+        trackPoint: trackPoint,
         gps: gps,
         timeStart: tStart,
         aliasModels: aliasModels,
-        aliasGroupModels: aliasGroupModels,
         taskModels: taskModels,
         userModels: userModels,
         addressText: addressText,
@@ -167,7 +158,6 @@ class TrackPointData {
       {required this.gps,
       required this.timeStart,
       required this.aliasModels,
-      required this.aliasGroupModels,
       required this.userModels,
       required this.taskModels,
       required this.addressText,

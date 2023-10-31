@@ -35,29 +35,16 @@ class OsmTools {
   Future<void> renderAlias(osm.MapController mapController) async {
     await mapController.removeAllCircle();
 
-    for (var alias in await ModelAlias.select(limit: 1000)) {
+    for (var alias in await ModelAlias.selsectActivated()) {
       try {
-        ModelAliasGroup? group = await ModelAliasGroup.byId(alias.groupId);
-        if (!(group?.isActive ?? false)) {
-          mapController.drawCircle(osm.CircleOSM(
-            key: "circle${++circleId}",
-            centerPoint:
-                osm.GeoPoint(latitude: alias.gps.lat, longitude: alias.gps.lon),
-            radius: alias.radius.toDouble(),
-            color: const Color.fromARGB(72, 0, 0, 0),
-            strokeWidth: 10,
-          ));
-        } else {
-          mapController.drawCircle(osm.CircleOSM(
-            key: "circle${++circleId}",
-            centerPoint:
-                osm.GeoPoint(latitude: alias.gps.lat, longitude: alias.gps.lon),
-            radius: alias.radius.toDouble(),
-            color: AppColors.aliasStatusColor(
-                group?.visibility ?? AliasVisibility.restricted),
-            strokeWidth: 10,
-          ));
-        }
+        mapController.drawCircle(osm.CircleOSM(
+          key: "circle${++circleId}",
+          centerPoint:
+              osm.GeoPoint(latitude: alias.gps.lat, longitude: alias.gps.lon),
+          radius: alias.radius.toDouble(),
+          color: const Color.fromARGB(72, 0, 0, 0),
+          strokeWidth: 10,
+        ));
       } catch (e, stk) {
         logger.error(e.toString(), stk);
         await Future.delayed(const Duration(seconds: 1));

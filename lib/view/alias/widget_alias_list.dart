@@ -69,7 +69,7 @@ class _WidgetAliasList extends BaseWidgetState<WidgetAliasList>
   Future<int> loadItems({required int offset, int limit = 20}) async {
     List<ModelAlias> newItems = [];
     if (_displayMode == _DisplayMode.nearest) {
-      newItems.addAll(await ModelAlias.nextAlias(
+      newItems.addAll(await ModelAlias.byArea(
           gps: _gps ??= (await GPS.gps()), area: 10000));
     } else {
       newItems.addAll(await ModelAlias.select(
@@ -85,7 +85,7 @@ class _WidgetAliasList extends BaseWidgetState<WidgetAliasList>
 
   Widget itemTitle(ModelAlias model) {
     int dur = DateTime.now().difference(model.lastVisited).inDays;
-    int count = model.trackPointCount;
+    int count = model.timesVisited;
     var subStyle = Theme.of(context).listTileTheme.subtitleTextStyle;
     return Column(children: [
       Text(model.title,

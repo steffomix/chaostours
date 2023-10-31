@@ -154,7 +154,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       if (_bridge.calcGpsPoints.isNotEmpty) {
         _bridge.currentAliasIdList = await Cache.setValue<List<int>>(
             CacheKeys.cacheCurrentAliasIdList,
-            (await ModelAlias.nextAlias(
+            (await ModelAlias.byArea(
                     gps: _bridge.calcGpsPoints.first, softLimit: 3))
                 .map((e) => e.id)
                 .toList());
@@ -333,7 +333,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
                 final geoPoint = await mapController
                     .getCurrentPositionAdvancedPositionPicker();
-                List<ModelAlias> aliasList = await ModelAlias.nextAlias(
+                List<ModelAlias> aliasList = await ModelAlias.byArea(
                     gps: GPS(geoPoint.latitude, geoPoint.longitude));
                 if (aliasList.isNotEmpty) {
                   if (mounted) {
@@ -438,9 +438,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
             var gps = _bridge.gpsPoints.first;
             _bridge.currentAliasIdList = await Cache.setValue<List<int>>(
                 CacheKeys.cacheCurrentAliasIdList,
-                (await ModelAlias.nextAlias(gps: gps))
-                    .map((e) => e.id)
-                    .toList());
+                (await ModelAlias.byArea(gps: gps)).map((e) => e.id).toList());
             await Cache.reload();
             render();
           }

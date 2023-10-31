@@ -90,7 +90,7 @@ class _WidgetUserList extends BaseWidgetState<WidgetUserList> {
         name: 'User',
         onCreate: (context) async {
           var count = await ModelUser.count();
-          var model = await ModelUser.insert(ModelUser(title: '#${count + 1}'));
+          var model = await ModelUser(title: '#${count + 1}').insert();
           if (mounted) {
             Navigator.pushNamed(context, AppRoutes.editUser.route,
                     arguments: model.id)

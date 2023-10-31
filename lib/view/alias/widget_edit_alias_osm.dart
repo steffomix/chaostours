@@ -362,7 +362,9 @@ class _WidgetOsm extends State<WidgetOsm> {
       return;
     }
     AppWidgets.dialog(context: context, contents: [
-      const Text('Create new Alias on current Position?')
+      Text(_id > 0
+          ? 'Update Position?'
+          : 'Create new Alias on current Position?')
     ], buttons: [
       TextButton(
         child: const Text('Cancel'),
@@ -443,7 +445,7 @@ class _WidgetOsm extends State<WidgetOsm> {
               mapController
                   .getCurrentPositionAdvancedPositionPicker()
                   .then((GeoPoint pos) {
-                ModelAlias.nextAlias(gps: GPS(pos.latitude, pos.longitude))
+                ModelAlias.byArea(gps: GPS(pos.latitude, pos.longitude))
                     .then((List<ModelAlias> models) {
                   if (models.isNotEmpty && mounted) {
                     Navigator.pushNamed(
