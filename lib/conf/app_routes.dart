@@ -61,7 +61,7 @@ enum AppRoutes {
   importExport,
   databaseExplorer,
   appSettings,
-  backgroundGps,
+  cacheExplorer,
 
   // trackpoints
   liveTracking,
@@ -116,7 +116,7 @@ enum AppRoutes {
       AppRoutes.databaseExplorer.route: (context) =>
           const WidgetDatabaseExplorer(),
       AppRoutes.appSettings.route: (context) => const WidgetAppSettings(),
-      AppRoutes.backgroundGps.route: (context) =>
+      AppRoutes.cacheExplorer.route: (context) =>
           const WidgetManageBackgroundGps(),
 
       // trackpoint

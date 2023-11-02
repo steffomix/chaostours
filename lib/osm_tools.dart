@@ -23,7 +23,6 @@ import 'package:chaostours/conf/app_colors.dart';
 import 'package:chaostours/data_bridge.dart';
 import 'package:chaostours/tracking.dart';
 import 'package:chaostours/model/model_alias.dart';
-import 'package:chaostours/model/model_alias_group.dart';
 import 'package:chaostours/gps.dart';
 
 class OsmTools {

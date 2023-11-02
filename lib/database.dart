@@ -382,6 +382,7 @@ enum TableTask {
   id('id'),
   idTaskGroup('id_task_group'),
   isActive('active'),
+  isPreselected('isPreselected'),
   sortOrder('sort'),
   title('title'),
   description('description');
@@ -402,6 +403,7 @@ enum TableTask {
 	${primaryKey.column}	INTEGER NOT NULL,
 	${idTaskGroup.column}	INTEGER NOT NULL DEFAULT 1,
 	${isActive.column}	INTEGER DEFAULT 1,
+	${isPreselected.column}	INTEGER DEFAULT 0,
 	${sortOrder.column}	INTEGER,
 	${title.column}	TEXT NOT NULL,
 	${description.column}	TEXT,
@@ -522,8 +524,8 @@ enum TableTaskGroup {
   const TableTaskGroup(this.column);
 
   static String get schema => '''CREATE TABLE IF NOT EXISTS $table (
-	${primaryKey.column}	INTEGER NOT NULL,
-	${isActive.column}	INTEGER DEFAULT 1,
+	${primaryKey.column} INTEGER NOT NULL,
+	${isActive.column} INTEGER DEFAULT 1,
 	${sortOrder.column}	TEXT,
 	${title.column}	TEXT NOT NULL,
 	${description.column}	TEXT,
@@ -539,6 +541,7 @@ enum TableTaskGroup {
 enum TableUserGroup {
   id('id'),
   isActive('active'),
+  isPreselected('isPreselected'),
   sortOrder('sort'),
   title('title'),
   description('description');
@@ -558,7 +561,8 @@ enum TableUserGroup {
   static String get schema => '''CREATE TABLE IF NOT EXISTS $table (
 	${primaryKey.column}	INTEGER NOT NULL,
 	${isActive.column}	INTEGER DEFAULT 1,
-	${sortOrder.column}	 DEFAULT 1,
+	${isPreselected.column}	INTEGER DEFAULT 0,
+	${sortOrder.column}	TEXT DEFAULT 1,
 	${title.column}	TEXT,
 	${description.column}	TEXT,
 	PRIMARY KEY(${primaryKey.column} AUTOINCREMENT)
