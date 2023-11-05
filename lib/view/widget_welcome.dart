@@ -258,18 +258,11 @@ class _WelcomeState extends State<Welcome> {
             Widget? loading = AppWidgets.checkSnapshot(context, snapshot);
             if (loading == null) {
               final permissionsOk = snapshot.data!;
-              if (!preloadSuccess) {
-                Future.delayed(const Duration(seconds: 2),
-                    () => Navigator.pushNamed(context, AppRoutes.logger.route));
-                return AppWidgets.loading(
-                    const Text('Initialization Failure...'));
-              } else {
-                if (permissionsOk) {
-                  Future.delayed(
-                      const Duration(milliseconds: 500),
-                      () => Navigator.pushNamed(
-                          context, AppRoutes.liveTracking.route));
-                }
+              if (permissionsOk) {
+                Future.delayed(
+                    const Duration(milliseconds: 500),
+                    () => Navigator.pushNamed(
+                        context, AppRoutes.liveTracking.route));
               }
             }
 

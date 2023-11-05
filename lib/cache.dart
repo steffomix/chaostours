@@ -29,27 +29,9 @@ import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_user.dart';
 
-class CacheKeyDump {
-  int? number;
-  double? doubleNumber;
-  bool? boolean;
-  String? string;
-  List<String>? list;
-}
-
-enum CacheKeys {
-  /// logger
-  backgroundLogger(List<LoggerLog>),
-
+enum Cache {
   // background task
   backgroundLastTick(DateTime),
-
-  /// persistent logs
-  errorLogs(List<LoggerLog>),
-
-  /// debug cheats
-  gpsLatShift(double),
-  gpsLonShift(double),
 
   /// cache foreground to background
   /// saved only on special event triggered by user
@@ -75,13 +57,13 @@ enum CacheKeys {
   cacheBackgroundCalcGpsPoints(List<GPS>),
   cacheBackgroundAddress(String),
   cacheBackgroundLastStandingAddress(String),
-
+/*
   /// cache database
   tableModelTrackpoint(List<ModelTrackPoint>),
   tableModelAlias(List<ModelAlias>),
   tableModelUser(List<ModelUser>),
   tableModelTask(List<ModelTask>),
-
+*/
   /// eventCalendar
   /// "id\tname\taccount"
   ///
@@ -102,12 +84,20 @@ enum CacheKeys {
   globalsAutocreateAlias(Duration),
   globalPublishToCalendar(bool);
 
+  Future<T> load<T>(T fallback) async {
+    return await CacheTypeAdapter.getValue<T>(this, fallback);
+  }
+
+  Future<T> save<T>(T value) async {
+    return await CacheTypeAdapter.setValue(this, value);
+  }
+
   final Type cacheType;
-  const CacheKeys(this.cacheType);
+  const Cache(this.cacheType);
 
   int get id => index + 1;
 
-  static CacheKeys? byName(String name) {
+  static Cache? byName(String name) {
     for (var key in values) {
       if (key.name == name) {
         return key;
@@ -117,34 +107,12 @@ enum CacheKeys {
   }
 }
 
-class Cache {
-  static final Logger logger = Logger.logger<Cache>();
+class CacheTypeAdapter {
+  static final Logger logger = Logger.logger<CacheTypeAdapter>();
 
-  static const String path =
-      '/data/user/0/com.stefanbrinkmann.chaosToursUnlimited/shared_prefs/FlutterSharedPreferences.xml';
-
-  Cache._();
-  static Cache? _instance;
-  factory Cache() => _instance ??= Cache._();
-  static Cache get instance => _instance ??= Cache._();
-
-  static final Map<CacheKeys, List<dynamic>> data = {};
-
-/*
-  /// reload SharedPreferences
-  static Future<void> reload() async {
-    await (await SharedPreferences.getInstance()).reload();
-  }
-
-  static Future<void> clear() async {
-    await (await SharedPreferences.getInstance()).clear();
-  }
-*/
-  /// LoggerLog
-  static List<String> serializeLoggerLog(List<LoggerLog> logs) =>
-      logs.map((e) => e.toString()).toList();
-  static List<LoggerLog> deserializeLoggerLog(List<String>? s) =>
-      s == null ? [] : s.map((e) => LoggerLog.toObject(e)).toList();
+  CacheTypeAdapter._();
+  static CacheTypeAdapter? _instance;
+  factory CacheTypeAdapter() => _instance ??= CacheTypeAdapter._();
 
   /// intList
   static List<String> serializeIntList(List<int> list) =>
@@ -254,7 +222,7 @@ class Cache {
     return set;
   }
 
-  static Future<T> setValue<T>(CacheKeys cacheKey, T value) async {
+  static Future<T> setValue<T>(Cache cacheKey, T value) async {
     final prefs = DbCache(); //await SharedPreferences.getInstance();
     //String key = cacheKey.name;
     var key = cacheKey;
@@ -291,10 +259,6 @@ class Cache {
         case const (List<CalendarEventId>):
           await prefs.setStringList(
               key, serializeCalendarEventId(value as List<CalendarEventId>));
-          break;
-        case const (List<LoggerLog>):
-          await prefs.setStringList(
-              key, serializeLoggerLog(value as List<LoggerLog>));
           break;
         case DateTime:
           await prefs.setString(key, serializeDateTime(value as DateTime));
@@ -348,9 +312,9 @@ class Cache {
     return value;
   }
 
-  static Future<T> getValue<T>(CacheKeys cacheKey, T defaultValue) async {
+  static Future<T> getValue<T>(Cache cacheKey, T defaultValue) async {
     final prefs = DbCache(); //await SharedPreferences.getInstance();
-    CacheKeys key = cacheKey; //.name;
+    Cache key = cacheKey; //.name;
     logger.log('load cache key ${key.name}');
     try {
       if (T != cacheKey.cacheType) {
@@ -374,9 +338,6 @@ class Cache {
           return await prefs.getDouble(key) as T? ?? defaultValue;
         case Duration:
           return deserializeDuration(await prefs.getInt(key)) as T? ??
-              defaultValue;
-        case const (List<LoggerLog>):
-          return deserializeLoggerLog(await prefs.getStringList(key)) as T? ??
               defaultValue;
         case DateTime:
           return deserializeDateTime(await prefs.getString(key)) as T? ??

@@ -42,10 +42,6 @@ class AppLoader {
       logger.important('start Preload sequence...');
 
       //
-      logger.log('clear error logs');
-      await Logger.clearLogs();
-
-      //
       logger.log('open Database...');
       await DB.openDatabase(create: true);
       logger.log('Database opened');

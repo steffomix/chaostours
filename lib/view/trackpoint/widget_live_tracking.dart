@@ -136,9 +136,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   Future<void> updateAliasList() async {
     try {
       if (_bridge.calcGpsPoints.isNotEmpty) {
-        _bridge.currentAliasIdList = await Cache.setValue<List<int>>(
-            CacheKeys.cacheCurrentAliasIdList,
-            (await ModelAlias.byArea(
+        _bridge.currentAliasIdList = await Cache.cacheCurrentAliasIdList
+            .save<List<int>>((await ModelAlias.byArea(
                     gps: _bridge.calcGpsPoints.first, softLimit: 3))
                 .map((e) => e.id)
                 .toList());
@@ -299,9 +298,10 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         onPressed: () async {
           if (_bridge.gpsPoints.isNotEmpty) {
             var gps = _bridge.gpsPoints.first;
-            _bridge.currentAliasIdList = await Cache.setValue<List<int>>(
-                CacheKeys.cacheCurrentAliasIdList,
-                (await ModelAlias.byArea(gps: gps)).map((e) => e.id).toList());
+            _bridge.currentAliasIdList = await Cache.cacheCurrentAliasIdList
+                .save<List<int>>((await ModelAlias.byArea(gps: gps))
+                    .map((e) => e.id)
+                    .toList());
             render();
           }
         },
@@ -316,8 +316,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
           if (_bridge.gpsPoints.isNotEmpty) {
             var gps = _bridge.gpsPoints.first;
             var address = (await addr.Address(gps).lookupAddress()).toString();
-            _bridge.currentAddress = await Cache.setValue<String>(
-                CacheKeys.cacheBackgroundAddress, address);
+            _bridge.currentAddress =
+                await Cache.cacheBackgroundAddress.save<String>(address);
             render();
           }
         },
@@ -339,9 +339,9 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                       TrackingStatus.standing) {
                     Fluttertoast.showToast(msg: 'Standing sheduled');
                   }
-                  _bridge.triggeredTrackingStatus = await Cache.setValue(
-                      CacheKeys.cacheTriggerTrackingStatus,
-                      TrackingStatus.standing);
+                  _bridge.triggeredTrackingStatus = await Cache
+                      .cacheTriggerTrackingStatus
+                      .save(TrackingStatus.standing);
                   render();
                 }),
             Container(
@@ -394,8 +394,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         child: Text('ALIAS (${location.visibility.name}):\n${tp.aliasText}'),
         onPressed: () async {
           if (_bridge.calcGpsPoints.isNotEmpty) {
-            _bridge.currentAliasIdList = await Cache.setValue<List<int>>(
-                CacheKeys.cacheCurrentAliasIdList, location.aliasIds);
+            _bridge.currentAliasIdList = await Cache.cacheCurrentAliasIdList
+                .save<List<int>>(location.aliasIds);
             render();
           }
         },
@@ -413,8 +413,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
           if (_bridge.gpsPoints.isNotEmpty) {
             var gps = _bridge.gpsPoints.first;
             var address = (await addr.Address(gps).lookupAddress()).toString();
-            _bridge.currentAddress = await Cache.setValue<String>(
-                CacheKeys.cacheBackgroundAddress, address);
+            _bridge.currentAddress =
+                await Cache.cacheBackgroundAddress.save<String>(address);
             render();
           }
         },
@@ -442,9 +442,9 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                       TrackingStatus.moving) {
                     Fluttertoast.showToast(msg: 'Moving sheduled');
                   }
-                  _bridge.triggeredTrackingStatus = await Cache.setValue(
-                      CacheKeys.cacheTriggerTrackingStatus,
-                      TrackingStatus.moving);
+                  _bridge.triggeredTrackingStatus = await Cache
+                      .cacheTriggerTrackingStatus
+                      .save(TrackingStatus.moving);
                   render();
                 }),
             Container(
@@ -469,9 +469,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
             title: model.title,
             subtitle: model.description,
             onToggle: (bool? checked) async {
-              var ck = await Cache.setValue<List<int>>(
-                  CacheKeys.cacheBackgroundTaskIdList,
-                  DataBridge.instance.trackPointTaskIdList);
+              var ck = await Cache.cacheBackgroundTaskIdList
+                  .save<List<int>>(DataBridge.instance.trackPointTaskIdList);
               _bridge.trackPointTaskIdList = ck;
               render();
             })));
@@ -493,9 +492,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
             title: model.title,
             subtitle: model.description,
             onToggle: (bool? checked) async {
-              var ck = await Cache.setValue<List<int>>(
-                  CacheKeys.cacheBackgroundUserIdList,
-                  DataBridge.instance.trackPointUserIdList);
+              var ck = await Cache.cacheBackgroundUserIdList
+                  .save<List<int>>(DataBridge.instance.trackPointUserIdList);
               _bridge.trackPointUserIdList = ck;
               render();
             })));
@@ -587,8 +585,9 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
             minLines: 2,
             controller: _tpNotes,
             onChanged: (String? s) async {
-              _bridge.trackPointUserNotes = await Cache.setValue<String>(
-                  CacheKeys.cacheBackgroundTrackPointUserNotes, _tpNotes.text);
+              _bridge.trackPointUserNotes = await Cache
+                  .cacheBackgroundTrackPointUserNotes
+                  .save<String>(_tpNotes.text);
               render();
             }));
   }

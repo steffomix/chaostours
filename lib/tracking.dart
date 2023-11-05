@@ -128,12 +128,6 @@ class _TrackPoint {
     /// create gpsPoint
     GPS gps = GPS(lat, lon);
 
-    /// debug cheats
-    double latShift = await Cache.getValue<double>(CacheKeys.gpsLatShift, 0.0);
-    double lonShift = await Cache.getValue<double>(CacheKeys.gpsLonShift, 0.0);
-    gps.lat += latShift;
-    gps.lon += lonShift;
-
     /// load global settings
     await AppSettings.loadSettings();
 
@@ -143,16 +137,16 @@ class _TrackPoint {
     if (bridge.trackingStatus == TrackingStatus.none) {
       /// initialize basic events if not set
       /// this must be done before loading last session
-      bridge.trackPointGpsStartMoving = await Cache.setValue<GPS>(
-          CacheKeys.cacheEventBackgroundGpsStartMoving, gps);
-      bridge.trackPointGpsStartStanding = await Cache.setValue<GPS>(
-          CacheKeys.cacheEventBackgroundGpsStartStanding, gps);
-      bridge.trackPointGpslastStatusChange = await Cache.setValue<GPS>(
-          CacheKeys.cacheEventBackgroundGpsLastStatusChange, gps);
+      bridge.trackPointGpsStartMoving =
+          await Cache.cacheEventBackgroundGpsStartMoving.save<GPS>(gps);
+      bridge.trackPointGpsStartStanding =
+          await Cache.cacheEventBackgroundGpsStartStanding.save<GPS>(gps);
+      bridge.trackPointGpslastStatusChange =
+          await Cache.cacheEventBackgroundGpsLastStatusChange.save<GPS>(gps);
 
       /// app start, no status yet
-      bridge.trackingStatus = await Cache.setValue<TrackingStatus>(
-          CacheKeys.cacheBackgroundTrackingStatus, TrackingStatus.moving);
+      bridge.trackingStatus = await Cache.cacheBackgroundTrackingStatus
+          .save<TrackingStatus>(TrackingStatus.moving);
     }
 
     int maxGpsPoints = (AppSettings.autoCreateAlias.inSeconds == 0
@@ -200,19 +194,18 @@ class _TrackPoint {
     gps = bridge.calcGpsPoints.first;
 
     /// all gps points calculated, save them
-    await Cache.setValue<List<GPS>>(
-        CacheKeys.cacheBackgroundGpsPoints, bridge.gpsPoints);
-    await Cache.setValue<List<GPS>>(
-        CacheKeys.cacheBackgroundSmoothGpsPoints, bridge.smoothGpsPoints);
-    await Cache.setValue<List<GPS>>(
-        CacheKeys.cacheBackgroundCalcGpsPoints, bridge.calcGpsPoints);
-    await Cache.setValue<GPS>(CacheKeys.cacheBackgroundLastGps, gps);
+    await Cache.cacheBackgroundGpsPoints.save<List<GPS>>(bridge.gpsPoints);
+    await Cache.cacheBackgroundSmoothGpsPoints
+        .save<List<GPS>>(bridge.smoothGpsPoints);
+    await Cache.cacheBackgroundCalcGpsPoints
+        .save<List<GPS>>(bridge.calcGpsPoints);
+    await Cache.cacheBackgroundLastGps.save<GPS>(gps);
 
     Location gpsLocation = await Location.location(gps);
 
     /// cache alias list
-    bridge.currentAliasIdList = await Cache.setValue<List<int>>(
-        CacheKeys.cacheCurrentAliasIdList, gpsLocation.aliasIds);
+    bridge.currentAliasIdList = await Cache.cacheCurrentAliasIdList
+        .save<List<int>>(gpsLocation.aliasIds);
 
     /// remember old status
     oldTrackingStatus = bridge.trackingStatus;
@@ -315,8 +308,9 @@ class _TrackPoint {
                   gpsLocation = await Location.location(gps);
 
                   /// update cache alias list
-                  bridge.currentAliasIdList = await Cache.setValue<List<int>>(
-                      CacheKeys.cacheCurrentAliasIdList, gpsLocation.aliasIds);
+                  bridge.currentAliasIdList = await Cache
+                      .cacheCurrentAliasIdList
+                      .save<List<int>>(gpsLocation.aliasIds);
 
                   /// change status
                   gps.time = bridge.smoothGpsPoints.last.time;
@@ -337,8 +331,8 @@ class _TrackPoint {
     }
 
     /// always reset TrackingStatus trigger
-    bridge.triggeredTrackingStatus = await Cache.setValue<TrackingStatus>(
-        CacheKeys.cacheTriggerTrackingStatus, TrackingStatus.none);
+    bridge.triggeredTrackingStatus = await Cache.cacheTriggerTrackingStatus
+        .save<TrackingStatus>(TrackingStatus.none);
 
     if (gpsLocation.isRestricted) {
       logger.log('location is restricted, skip processing status change');
@@ -409,8 +403,7 @@ class _TrackPoint {
 
           /// reset calendarEvent ID
           bridge.lastCalendarEventIds =
-              await Cache.setValue<List<CalendarEventId>>(
-                  CacheKeys.calendarLastEventIds, []);
+              await Cache.calendarLastEventIds.save<List<CalendarEventId>>([]);
 
           /// update alias
           if (gpsLocation.hasAlias) {
@@ -424,10 +417,8 @@ class _TrackPoint {
           }
 
           /// reset user data
-          await Cache.setValue<List<int>>(
-              CacheKeys.cacheBackgroundTaskIdList, []);
-          await Cache.setValue<String>(
-              CacheKeys.cacheBackgroundTrackPointUserNotes, '');
+          await Cache.cacheBackgroundTaskIdList.save<List<int>>([]);
+          await Cache.cacheBackgroundTrackPointUserNotes.save<String>('');
           logger.log('status MOVING finished');
         } else {
           logger.log(
@@ -438,15 +429,15 @@ class _TrackPoint {
       } else if (bridge.trackingStatus == TrackingStatus.standing) {
         logger.log('tracking status STANDING');
 
-        bridge.lastStandingAddress = await Cache.setValue<String>(
-            CacheKeys.cacheBackgroundLastStandingAddress,
-            AppSettings.osmLookupCondition == OsmLookupConditions.never
-                ? ''
-                : bridge.currentAddress);
+        bridge.lastStandingAddress =
+            await Cache.cacheBackgroundLastStandingAddress.save<String>(
+                AppSettings.osmLookupCondition == OsmLookupConditions.never
+                    ? ''
+                    : bridge.currentAddress);
 
         /// cache alias id list
-        bridge.trackPointAliasIdList = await Cache.setValue<List<int>>(
-            CacheKeys.cacheBackgroundAliasIdList, gpsLocation.aliasIds);
+        bridge.trackPointAliasIdList = await Cache.cacheBackgroundAliasIdList
+            .save<List<int>>(gpsLocation.aliasIds);
 
         /// create calendar entry from cache data
         if (AppSettings.publishToCalendar &&
@@ -466,26 +457,25 @@ class _TrackPoint {
       }
     }
 
-    await Cache.setValue<DateTime>(
-        CacheKeys.backgroundLastTick, DateTime.now());
+    await Cache.backgroundLastTick.save<DateTime>(DateTime.now());
   }
 
   Future<void> cacheNewStatusStanding(GPS gps) async {
-    bridge.trackingStatus = await Cache.setValue<TrackingStatus>(
-        CacheKeys.cacheBackgroundTrackingStatus, TrackingStatus.standing);
-    bridge.trackPointGpsStartStanding = await Cache.setValue<GPS>(
-        CacheKeys.cacheEventBackgroundGpsStartStanding, gps);
-    bridge.trackPointGpslastStatusChange = await Cache.setValue<GPS>(
-        CacheKeys.cacheEventBackgroundGpsLastStatusChange, gps);
+    bridge.trackingStatus = await Cache.cacheBackgroundTrackingStatus
+        .save<TrackingStatus>(TrackingStatus.standing);
+    bridge.trackPointGpsStartStanding =
+        await Cache.cacheEventBackgroundGpsStartStanding.save<GPS>(gps);
+    bridge.trackPointGpslastStatusChange =
+        await Cache.cacheEventBackgroundGpsLastStatusChange.save<GPS>(gps);
   }
 
   Future<void> cacheNewStatusMoving(GPS gps) async {
-    bridge.trackingStatus = await Cache.setValue<TrackingStatus>(
-        CacheKeys.cacheBackgroundTrackingStatus, TrackingStatus.moving);
-    bridge.trackPointGpsStartMoving = await Cache.setValue<GPS>(
-        CacheKeys.cacheEventBackgroundGpsStartMoving, gps);
-    bridge.trackPointGpslastStatusChange = await Cache.setValue<GPS>(
-        CacheKeys.cacheEventBackgroundGpsLastStatusChange, gps);
+    bridge.trackingStatus = await Cache.cacheBackgroundTrackingStatus
+        .save<TrackingStatus>(TrackingStatus.moving);
+    bridge.trackPointGpsStartMoving =
+        await Cache.cacheEventBackgroundGpsStartMoving.save<GPS>(gps);
+    bridge.trackPointGpslastStatusChange =
+        await Cache.cacheEventBackgroundGpsLastStatusChange.save<GPS>(gps);
   }
 
   void calculateSmoothPoints() {

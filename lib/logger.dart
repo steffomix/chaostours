@@ -15,7 +15,8 @@ limitations under the License.
 */
 
 // import 'package:chaostours/event_manager.dart';
-import 'package:chaostours/cache.dart';
+
+import 'package:flutter/foundation.dart';
 
 enum LogLevel {
   verbose(1),
@@ -48,80 +49,13 @@ enum LoggerRealm {
   }
 }
 
-class LoggerLog {
-  DateTime time = DateTime.now();
-  //final Logger logger;
-  final LoggerRealm realm;
-  final String loggerName;
-  final LogLevel level;
-  final String msg;
-  final String? stackTrace;
-  LoggerLog(
-      { //required this.logger,
-      required this.realm,
-      required this.loggerName,
-      required this.level,
-      required this.msg,
-      required this.stackTrace});
-
-  @override
-  String toString() {
-    return [
-      Uri.encodeFull(DateTime.now().toIso8601String()),
-      Uri.encodeFull(realm.prefix),
-      Uri.encodeFull(loggerName),
-      Uri.encodeFull(level.name),
-      Uri.encodeFull(msg),
-      Uri.encodeFull(stackTrace.toString()),
-      '|'
-    ].join('\t');
-  }
-
-  static LoggerLog toObject(String log) {
-    List<String> p = log.split('\t');
-    DateTime time = DateTime.parse(Uri.decodeFull(p[0]));
-    String realm = Uri.decodeFull(p[1]);
-    String loggerName = Uri.decodeFull(p[2]);
-    LogLevel level = LogLevel.values.byName(Uri.decodeFull(p[3]));
-    String msg = Uri.decodeFull(p[4]);
-    String stackTrace = Uri.decodeFull(p[5]);
-    var loggerLog = LoggerLog(
-        realm: LoggerRealm.byPrefix(realm),
-        loggerName: loggerName,
-        level: level,
-        msg: msg,
-        stackTrace: stackTrace);
-    loggerLog.time = time;
-    return loggerLog;
-  }
-}
-
-var _print = print;
-
 class Logger {
-  static void print(Object? msg) {
-    _print(msg);
-  }
-
-  static final List<LoggerLog> _loggerLogs = [];
-  static List<LoggerLog> get loggerLogs {
-    return [..._loggerLogs];
-  }
-
-  static void addLoggerLog(LoggerLog log) {
-    while (_loggerLogs.length > 200) {
-      _loggerLogs.removeLast();
+  static void debugPrint(Object? msg) {
+    if (kDebugMode) {
+      print(msg.toString());
     }
-    _loggerLogs.insert(0, log);
   }
 
-  /// max events from background stored in Shared
-  static int maxSharedCount = 50;
-
-  /// max events to be displayed
-  static int maxWidgetCount = 200;
-
-  /// backgroundLogger does not render widgets or render from Shared,
   /// but renders only to Shared
   /// To be different from background logger
   static LoggerRealm defaultRealm = LoggerRealm.foreground;
@@ -132,9 +66,7 @@ class Logger {
   bool backGroundLogger = globalBackgroundLogger;
   LogLevel logLevel = globalLogLevel;
 
-  static final Map<String, Logger> _loggerRegister = {};
-
-  bool loggerEnabled = true;
+  bool loggerIsEnabled = true;
 
   /// Class name of what class created the logger.
   /// defaults to Logger
@@ -158,17 +90,14 @@ class Logger {
     l.realm = realm ?? defaultRealm;
     l.backGroundLogger = specialBackgroundLogger ?? globalBackgroundLogger;
     l.logLevel = specialLogLevel ?? globalLogLevel;
-    String n = T.toString();
-    l._loggerName = n;
-    _loggerRegister[n] = l;
-    //l.log('Logger for class $n created');
+    l._loggerName = T.toString();
     return l;
   }
 
   /// Usage:
   /// ```
   /// MyClass{
-  ///   static final Logger logger = Logger.logger<MyClass>();
+  ///   static final logger = Logger.logger<MyClass>();
   /// ```
   Logger();
 
@@ -194,32 +123,12 @@ class Logger {
 
   /// main log method
   Future<void> _log(LogLevel level, String msg, [String? stackTrace]) async {
-    if (level.level >= logLevel.level && loggerEnabled) {
+    if (level.level >= logLevel.level && loggerIsEnabled) {
       try {
-        print(
+        debugPrint(
             '${realm.prefix} ${composeMessage(_loggerName, level, msg, stackTrace)}'); // ignore: avoid_print
-
-        LoggerLog log = LoggerLog(
-            realm: realm,
-            loggerName: loggerId,
-            level: level,
-            msg: msg,
-            stackTrace: stackTrace);
-
-        if (backGroundLogger) {
-          /// add active log
-          await _cacheLog(log, CacheKeys.backgroundLogger);
-        } else {
-          // prevent stack overflow due to EventManager.fire triggers a log
-          addLoggerLog(log);
-        }
-
-        /// add errorLog
-        if (level.level >= LogLevel.warn.level) {
-          await _cacheLog(log, CacheKeys.errorLogs);
-        }
       } catch (e, stk) {
-        print('Log Error: $e\n${stk.toString()}');
+        debugPrint('Logger Error: $e\n${stk.toString()}');
       }
     }
   }
@@ -233,84 +142,4 @@ class Logger {
     }
     return '$time ::${level.name} $time<$loggerName>:: $msg$stk';
   }
-
-  Future<void> _cacheLog(LoggerLog log, CacheKeys key) async {
-    return;
-    var logs = await Cache.getValue<List<LoggerLog>>(key, []);
-    logs.insert(0, log);
-    while (logs.length >= maxSharedCount) {
-      logs.removeLast();
-    }
-    await Cache.setValue<List<LoggerLog>>(key, logs);
-  }
-
-  /// fires
-  static Future<void> getBackgroundLogs() async {
-    return;
-    List<LoggerLog> list =
-        await Cache.getValue<List<LoggerLog>>(CacheKeys.backgroundLogger, []);
-    // reset list
-    await Cache.setValue<List<LoggerLog>>(CacheKeys.backgroundLogger, []);
-    for (var item in list) {
-      addLoggerLog(item);
-    }
-  }
-
-  static Future<void> clearLogs() async {
-    _loggerLogs.clear();
-    return;
-    await Cache.setValue<List<LoggerLog>>(CacheKeys.backgroundLogger, []);
-  }
-
-/*
-  ///
-  /// example widget renderer
-  ///
-  static Widget renderLog(String prefix, LogLevel level, String msg,
-      [String? stackTrace]) {
-    msg = '$prefix $msg';
-    switch (level) {
-      case LogLevel.verbose:
-        return Container(
-            margin: const EdgeInsets.only(top: 6),
-            color: Colors.white,
-            child: Text(msg, style: const TextStyle(color: Colors.black45)));
-
-      case LogLevel.log:
-        return Container(
-            margin: const EdgeInsets.only(top: 6),
-            color: Colors.white,
-            child: Text(msg, style: const TextStyle(color: Colors.black)));
-
-      case LogLevel.important:
-        return Container(
-            margin: const EdgeInsets.only(top: 6),
-            color: Colors.greenAccent,
-            child: Text(msg,
-                style: const TextStyle(
-                    color: Colors.black, fontWeight: FontWeight.bold)));
-
-      case LogLevel.warn:
-        return Container(
-            margin: const EdgeInsets.only(top: 6),
-            color: Colors.yellow,
-            child: Text(msg, style: const TextStyle(color: Colors.black)));
-
-      case LogLevel.error:
-        return Container(
-            margin: const EdgeInsets.only(top: 6),
-            color: Colors.red,
-            child: Text('$msg\n$stackTrace',
-                style: const TextStyle(color: Colors.white)));
-
-      default: // LogLevel.fatal:
-        return Container(
-            margin: const EdgeInsets.only(top: 6),
-            color: Colors.purple,
-            child: Text('$msg\n$stackTrace',
-                style: const TextStyle(
-                    color: Colors.white, fontWeight: FontWeight.bold)));
-    }
-  }
-*/
 }

@@ -31,7 +31,7 @@ enum SettingUnits {
 }
 
 class AppSettingLimits {
-  final CacheKeys cacheKey;
+  final Cache cacheKey;
   final int? min;
   final int? max;
   final bool zeroDisables;
@@ -96,7 +96,7 @@ class AppSettings {
   static Duration _backgroundLookupDuration = _backgroundLookupDurationDefault;
   static Duration get backgroundLookupDuration => _backgroundLookupDuration;
   static AppSettingLimits backgroundLookupDurationLimits = AppSettingLimits(
-      cacheKey: CacheKeys.globalsBackgroundLookupDuration, min: 5, max: 60);
+      cacheKey: Cache.globalsBackgroundLookupDuration, min: 5, max: 60);
   static set backgroundLookupDuration(Duration value) {
     if (backgroundLookupDurationLimits.isValid(value.inSeconds)) {
       _backgroundLookupDuration = value;
@@ -109,7 +109,7 @@ class AppSettings {
   static Duration _cacheGpsTime = _cacheGpsTimeDefault;
   static Duration get cacheGpsTime => _cacheGpsTime;
   static AppSettingLimits cachGpsTimeLimits = AppSettingLimits(
-      cacheKey: CacheKeys.globalsCacheGpsTime, max: 600, zeroDisables: true);
+      cacheKey: Cache.globalsCacheGpsTime, max: 600, zeroDisables: true);
 
   static set cacheGpsTime(Duration value) {
     if (cachGpsTimeLimits.isValid(value.inSeconds)) {
@@ -124,7 +124,7 @@ class AppSettings {
   static int _distanceTreshold = _distanceTresholdDefault;
   static int get distanceTreshold => _distanceTreshold;
   static AppSettingLimits distanceTresholdLimits = AppSettingLimits(
-      cacheKey: CacheKeys.globalsDistanceTreshold,
+      cacheKey: Cache.globalsDistanceTreshold,
       min: 10,
       unit: SettingUnits.meter);
   static set distanceTreshold(int value) {
@@ -146,7 +146,7 @@ class AppSettings {
   }
 
   static AppSettingLimits timeRangeTresholdLimits = AppSettingLimits(
-      cacheKey: CacheKeys.globalsTimeRangeTreshold,
+      cacheKey: Cache.globalsTimeRangeTreshold,
       min: (trackPointInterval.inSeconds * 3 / 60).ceil(),
       unit: SettingUnits.minute);
 
@@ -162,7 +162,7 @@ class AppSettings {
 
   static AppSettingLimits get trackPointIntervalLimits {
     return AppSettingLimits(
-        cacheKey: CacheKeys.globalsTrackPointInterval,
+        cacheKey: Cache.globalsTrackPointInterval,
         min: 15,
         max: (_timeRangeTreshold.inSeconds / 1).ceil());
   }
@@ -181,7 +181,7 @@ class AppSettings {
 
   static AppSettingLimits get gpsPointsSmoothCountLimits {
     return AppSettingLimits(
-        cacheKey: CacheKeys.globalsGpsPointsSmoothCount,
+        cacheKey: Cache.globalsGpsPointsSmoothCount,
         min: 2,
         max: (timeRangeTreshold.inSeconds / trackPointInterval.inSeconds)
             .floor(),
@@ -212,49 +212,46 @@ class AppSettings {
   }
 
   static AppSettingLimits autoCreateAliasLimits = AppSettingLimits(
-      cacheKey: CacheKeys.globalsAutocreateAlias,
+      cacheKey: Cache.globalsAutocreateAlias,
       min: 10,
       zeroDisables: true,
       unit: SettingUnits.minute);
 
   static Future<void> loadSettings() async {
     try {
-      statusStandingRequireAlias = await Cache.getValue<bool>(
-          CacheKeys.globalsStatusStandingRequireAlias,
-          _statusStandingRequireAliasDefault);
+      statusStandingRequireAlias = await Cache.globalsStatusStandingRequireAlias
+          .load<bool>(_statusStandingRequireAliasDefault);
 
-      backgroundTrackingEnabled = await Cache.getValue<bool>(
-          CacheKeys.globalsBackgroundTrackingEnabled,
-          _backgroundTrackingEnabledDefault);
+      backgroundTrackingEnabled = await Cache.globalsBackgroundTrackingEnabled
+          .load<bool>(_backgroundTrackingEnabledDefault);
 
-      _backgroundLookupDuration = await Cache.getValue<Duration>(
-          CacheKeys.globalsBackgroundLookupDuration,
-          _backgroundLookupDurationDefault);
+      _backgroundLookupDuration = await Cache.globalsBackgroundLookupDuration
+          .load<Duration>(_backgroundLookupDurationDefault);
 
-      _cacheGpsTime = await Cache.getValue<Duration>(
-          CacheKeys.globalsCacheGpsTime, _cacheGpsTimeDefault);
+      _cacheGpsTime =
+          await Cache.globalsCacheGpsTime.load<Duration>(_cacheGpsTimeDefault);
 
-      _distanceTreshold = await Cache.getValue<int>(
-          CacheKeys.globalsDistanceTreshold, _distanceTresholdDefault);
+      _distanceTreshold = await Cache.globalsDistanceTreshold
+          .load<int>(_distanceTresholdDefault);
 
-      _timeRangeTreshold = await Cache.getValue<Duration>(
-          CacheKeys.globalsTimeRangeTreshold, _timeRangeTresholdDefault);
+      _timeRangeTreshold = await Cache.globalsTimeRangeTreshold
+          .load<Duration>(_timeRangeTresholdDefault);
 
-      _trackPointInterval = await Cache.getValue<Duration>(
-          CacheKeys.globalsTrackPointInterval, _trackPointIntervalDefault);
+      _trackPointInterval = await Cache.globalsTrackPointInterval
+          .load<Duration>(_trackPointIntervalDefault);
 
-      _gpsPointsSmoothCount = await Cache.getValue<int>(
-          CacheKeys.globalsGpsPointsSmoothCount, _gpsPointsSmoothCountDefault);
+      _gpsPointsSmoothCount = await Cache.globalsGpsPointsSmoothCount
+          .load<int>(_gpsPointsSmoothCountDefault);
 
-      osmLookupCondition = await Cache.getValue<OsmLookupConditions>(
-          CacheKeys.globalsOsmLookupCondition, _osmLookupConditionDefault);
+      osmLookupCondition = await Cache.globalsOsmLookupCondition
+          .load<OsmLookupConditions>(_osmLookupConditionDefault);
 
       /// processed value
-      _autoCreateAlias = await Cache.getValue<Duration>(
-          CacheKeys.globalsAutocreateAlias, _autocreateAliasDefault);
+      _autoCreateAlias = await Cache.globalsAutocreateAlias
+          .load<Duration>(_autocreateAliasDefault);
 
-      publishToCalendar = await Cache.getValue<bool>(
-          CacheKeys.globalPublishToCalendar, _publishToCalendarDefault);
+      publishToCalendar = await Cache.globalPublishToCalendar
+          .load<bool>(_publishToCalendarDefault);
     } catch (e, stk) {
       logger.error('load settings: $e', stk);
     }
@@ -277,40 +274,40 @@ class AppSettings {
   }
 
   static Future<bool> updateValue(
-      {required CacheKeys key, required dynamic value}) async {
+      {required Cache key, required dynamic value}) async {
     if (value.runtimeType == int) {
       switch (key) {
-        case CacheKeys.globalsBackgroundLookupDuration:
-          backgroundLookupDuration = await Cache.setValue<Duration>(
-              key, Duration(seconds: value as int));
+        case Cache.globalsBackgroundLookupDuration:
+          backgroundLookupDuration =
+              await key.save<Duration>(Duration(seconds: value as int));
           break;
 
-        case CacheKeys.globalsCacheGpsTime:
-          cacheGpsTime = await Cache.setValue<Duration>(
-              key, Duration(seconds: value as int));
+        case Cache.globalsCacheGpsTime:
+          cacheGpsTime =
+              await key.save<Duration>(Duration(seconds: value as int));
           break;
 
-        case CacheKeys.globalsDistanceTreshold:
-          distanceTreshold = await Cache.setValue<int>(key, value as int);
+        case Cache.globalsDistanceTreshold:
+          distanceTreshold = await key.save<int>(value as int);
           break;
 
-        case CacheKeys.globalsTimeRangeTreshold:
-          timeRangeTreshold = await Cache.setValue<Duration>(
-              key, Duration(seconds: value as int));
+        case Cache.globalsTimeRangeTreshold:
+          timeRangeTreshold =
+              await key.save<Duration>(Duration(seconds: value as int));
           break;
 
-        case CacheKeys.globalsTrackPointInterval:
-          trackPointInterval = await Cache.setValue<Duration>(
-              key, Duration(seconds: value as int));
+        case Cache.globalsTrackPointInterval:
+          trackPointInterval =
+              await key.save<Duration>(Duration(seconds: value as int));
           break;
 
-        case CacheKeys.globalsGpsPointsSmoothCount:
-          gpsPointsSmoothCount = await Cache.setValue<int>(key, value as int);
+        case Cache.globalsGpsPointsSmoothCount:
+          gpsPointsSmoothCount = await key.save<int>(value as int);
           break;
 
-        case CacheKeys.globalsAutocreateAlias:
-          autoCreateAlias = await Cache.setValue<Duration>(
-              key, Duration(seconds: value as int));
+        case Cache.globalsAutocreateAlias:
+          autoCreateAlias =
+              await key.save<Duration>(Duration(seconds: value as int));
           break;
 
         default:
@@ -321,18 +318,16 @@ class AppSettings {
     }
     if (key.cacheType == bool && value.runtimeType == key.cacheType) {
       switch (key) {
-        case CacheKeys.globalsStatusStandingRequireAlias:
-          statusStandingRequireAlias =
-              await Cache.setValue<bool>(key, value as bool);
+        case Cache.globalsStatusStandingRequireAlias:
+          statusStandingRequireAlias = await key.save<bool>(value as bool);
           return true;
 
-        case CacheKeys.globalsBackgroundTrackingEnabled:
-          backgroundTrackingEnabled =
-              await Cache.setValue<bool>(key, value as bool);
+        case Cache.globalsBackgroundTrackingEnabled:
+          backgroundTrackingEnabled = await key.save<bool>(value as bool);
           return true;
 
-        case CacheKeys.globalPublishToCalendar:
-          publishToCalendar = await Cache.setValue<bool>(key, value as bool);
+        case Cache.globalPublishToCalendar:
+          publishToCalendar = await key.save<bool>(value as bool);
           return true;
 
         default:
@@ -343,44 +338,38 @@ class AppSettings {
     }
     if (key.cacheType == OsmLookupConditions &&
         value.runtimeType == key.cacheType) {
-      osmLookupCondition = await Cache.setValue<OsmLookupConditions>(
-          key, value as OsmLookupConditions);
+      osmLookupCondition =
+          await key.save<OsmLookupConditions>(value as OsmLookupConditions);
       return true;
     }
     return false;
   }
 
   static Future<void> saveSettings() async {
-    await Cache.setValue<bool>(
-        CacheKeys.globalsBackgroundTrackingEnabled, backgroundTrackingEnabled);
+    await Cache.globalsBackgroundTrackingEnabled
+        .save<bool>(backgroundTrackingEnabled);
 
-    await Cache.setValue<bool>(CacheKeys.globalsStatusStandingRequireAlias,
-        statusStandingRequireAlias);
+    await Cache.globalsStatusStandingRequireAlias
+        .save<bool>(statusStandingRequireAlias);
 
-    await Cache.setValue<Duration>(
-        CacheKeys.globalsBackgroundLookupDuration, backgroundLookupDuration);
+    await Cache.globalsBackgroundLookupDuration
+        .save<Duration>(backgroundLookupDuration);
 
-    await Cache.setValue<Duration>(CacheKeys.globalsCacheGpsTime, cacheGpsTime);
+    await Cache.globalsCacheGpsTime.save<Duration>(cacheGpsTime);
 
-    await Cache.setValue<int>(
-        CacheKeys.globalsDistanceTreshold, distanceTreshold);
+    await Cache.globalsDistanceTreshold.save<int>(distanceTreshold);
 
-    await Cache.setValue<Duration>(
-        CacheKeys.globalsTimeRangeTreshold, timeRangeTreshold);
+    await Cache.globalsTimeRangeTreshold.save<Duration>(timeRangeTreshold);
 
-    await Cache.setValue<Duration>(
-        CacheKeys.globalsTrackPointInterval, trackPointInterval);
+    await Cache.globalsTrackPointInterval.save<Duration>(trackPointInterval);
 
-    await Cache.setValue<int>(
-        CacheKeys.globalsGpsPointsSmoothCount, gpsPointsSmoothCount);
+    await Cache.globalsGpsPointsSmoothCount.save<int>(gpsPointsSmoothCount);
 
-    await Cache.setValue<OsmLookupConditions>(
-        CacheKeys.globalsOsmLookupCondition, osmLookupCondition);
+    await Cache.globalsOsmLookupCondition
+        .save<OsmLookupConditions>(osmLookupCondition);
 
-    await Cache.setValue<Duration>(
-        CacheKeys.globalsAutocreateAlias, autoCreateAlias);
+    await Cache.globalsAutocreateAlias.save<Duration>(autoCreateAlias);
 
-    await Cache.setValue<bool>(
-        CacheKeys.globalPublishToCalendar, publishToCalendar);
+    await Cache.globalPublishToCalendar.save<bool>(publishToCalendar);
   }
 }

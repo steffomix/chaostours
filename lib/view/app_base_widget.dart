@@ -77,9 +77,6 @@ class BaseWidgetState<T extends BaseWidget> extends State<T>
       _initialized = true; // prevent double call here
       initialize(context, ModalRoute.of(context)?.settings.arguments).then((_) {
         render();
-      }).onError((e, stk) {
-        logger.error('initialize: $e', stk).then(
-            (value) => Navigator.pushNamed(context, AppRoutes.logger.route));
       });
       return Scaffold(body: AppWidgets.loading(const Text('Initializing...')));
     }

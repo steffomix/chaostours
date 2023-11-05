@@ -17,11 +17,9 @@ limitations under the License.
 import 'package:flutter/material.dart';
 import 'package:chaostours/view/widget_welcome.dart';
 //
-import 'package:chaostours/view/system/widget_logger_page.dart';
 import 'package:chaostours/view/system/widget_permissions_page.dart';
 import 'package:chaostours/view/system/widget_import_export.dart';
 import 'package:chaostours/view/system/widget_app_settings.dart';
-import 'package:chaostours/view/system/widget_manage_background_gps.dart';
 import 'package:chaostours/view/system/widget_database_explorer.dart';
 //
 import 'package:chaostours/view/alias/widget_alias_list.dart';
@@ -56,12 +54,10 @@ import 'package:chaostours/view/widget_manage_calendar.dart';
 enum AppRoutes {
   // system
   welcome,
-  logger,
   permissions,
   importExport,
   databaseExplorer,
   appSettings,
-  cacheExplorer,
 
   // trackpoints
   liveTracking,
@@ -112,14 +108,11 @@ enum AppRoutes {
       AppRoutes.welcome.route: (context) => const Welcome(),
 
       /// system config routes
-      AppRoutes.logger.route: (context) => const WidgetLoggerPage(),
       AppRoutes.permissions.route: (context) => const WidgetPermissionsPage(),
       AppRoutes.importExport.route: (context) => const WidgetImportExport(),
       AppRoutes.databaseExplorer.route: (context) =>
           const WidgetDatabaseExplorer(),
       AppRoutes.appSettings.route: (context) => const WidgetAppSettings(),
-      AppRoutes.cacheExplorer.route: (context) =>
-          const WidgetManageBackgroundGps(),
 
       // trackpoint
       AppRoutes.liveTracking.route: (context) => const WidgetTrackingPage(),

@@ -23,7 +23,7 @@ import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/cache.dart';
 
 class EventOnSharedKeyChanged extends EventOn {
-  CacheKeys key;
+  Cache key;
   String oldData;
   String newData;
 
@@ -115,7 +115,7 @@ class EventManager {
       } catch (e) {
         results[fn] = EventManagerException(e.toString());
 
-        Logger.print(
+        Logger.debugPrint(
             '${Logger.defaultRealm} $m:$s.$ms EventManager failed on ${T.toString()}: $debugMessage: ${e.toString()}');
       }
     }

@@ -21,7 +21,6 @@ import 'package:sqflite/sqflite.dart' as flite;
 ///
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/cache.dart';
-import 'package:sqflite/sqlite_api.dart';
 
 class DbQueue {
   final List<Future<dynamic> Function(flite.Transaction txn)> queue = [];
@@ -811,7 +810,7 @@ CREATE INDEX IF NOT EXISTS ${TableTaskTaskGroup.table}_index ON ${TableTaskTaskG
     '''INSERT INTO ${TableTaskGroup.table} VALUES (1,1,1,"Default Taskgroup",NULL)''',
     '''INSERT INTO ${TableUserGroup.table} VALUES (1,1,1,1,"Default Usergroup",NULL)''',
     '''INSERT INTO ${TableAliasGroup.table} VALUES (1,NULL,1,1,"Default Aliasgroup",NULL)''',
-    ...CacheKeys.values.map(
+    ...Cache.values.map(
       (key) {
         return '''
 INSERT INTO ${_CacheKey.table} VALUES (${key.id}," ${key.cacheType}", "${key.name}")

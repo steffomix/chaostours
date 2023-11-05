@@ -166,7 +166,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
         // This is called when the user selects an item.
         value ??= OsmLookupConditions.never;
         AppSettings.updateValue(
-                key: CacheKeys.globalsOsmLookupCondition, value: value)
+                key: Cache.globalsOsmLookupCondition, value: value)
             .then((_) {
           AppSettings.osmLookupCondition = value!;
           modify();
@@ -216,7 +216,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                     onChanged: (bool? b) async {
                       b ??= false;
                       await AppSettings.updateValue(
-                          key: CacheKeys.globalsStatusStandingRequireAlias,
+                          key: Cache.globalsStatusStandingRequireAlias,
                           value: b);
                       //await AppSettings.loadSettings();
                       modify();
@@ -257,7 +257,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                     onChanged: (bool? b) {
                       b ??= false;
                       AppSettings.updateValue(
-                              key: CacheKeys.globalsBackgroundTrackingEnabled,
+                              key: Cache.globalsBackgroundTrackingEnabled,
                               value: b)
                           .then((_) {
                         AppSettings.backgroundTrackingEnabled = b!;
@@ -349,7 +349,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                         onChanged: (OsmLookupConditions? val) {
                           if (val != null) {
                             AppSettings.updateValue(
-                                key: CacheKeys.globalsOsmLookupCondition,
+                                key: Cache.globalsOsmLookupCondition,
                                 value: val);
                           }
                           setStatus(context, val);
@@ -366,7 +366,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                         onChanged: (OsmLookupConditions? val) {
                           if (val != null) {
                             AppSettings.updateValue(
-                                key: CacheKeys.globalsOsmLookupCondition,
+                                key: Cache.globalsOsmLookupCondition,
                                 value: val);
                           }
                           setStatus(context, val);
@@ -385,7 +385,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                         onChanged: (OsmLookupConditions? val) {
                           if (val != null) {
                             AppSettings.updateValue(
-                                key: CacheKeys.globalsOsmLookupCondition,
+                                key: Cache.globalsOsmLookupCondition,
                                 value: val);
                           }
                           setStatus(context, val);
@@ -406,7 +406,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                     onChanged: (bool? b) {
                       b ??= false;
                       AppSettings.updateValue(
-                              key: CacheKeys.globalPublishToCalendar, value: b)
+                              key: Cache.globalPublishToCalendar, value: b)
                           .then((_) {
                         AppSettings.publishToCalendar = b!;
                         modify();

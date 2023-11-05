@@ -89,7 +89,7 @@ class _Menu extends _Element {
 class _Header extends _Element {
   _Header({required super.title, super.description})
       : super(
-            route: AppRoutes.logger,
+            route: AppRoutes.liveTracking,
             type: _MenuType.header,
             widget: const Text(''));
 }
@@ -99,7 +99,7 @@ class _Divider extends _Element {
       : super(
             title: '',
             description: '',
-            route: AppRoutes.logger,
+            route: AppRoutes.liveTracking,
             type: _MenuType.divider,
             widget: const Text(''));
 }
@@ -109,7 +109,7 @@ class _Widget extends _Element {
       : super(
             title: '',
             description: '',
-            route: AppRoutes.logger,
+            route: AppRoutes.liveTracking,
             type: _MenuType.widget);
 }
 
@@ -193,15 +193,6 @@ class _WidgetDrawer extends State<WidgetDrawer> {
         title: 'Database Explorer',
         description: 'Your saved Data presented in a bloody raw style.',
         route: AppRoutes.databaseExplorer),
-    _Menu(
-        title: 'Cache Explorer',
-        description: 'The machine room of the app.',
-        route: AppRoutes.cacheExplorer),
-    _Menu(
-        title: 'Error Logger',
-        description:
-            'Tells you why this App doesn\'t work\n - hopefully - \nbut doesn\'t tell you how to fix it.',
-        route: AppRoutes.logger),
     _Menu(
         title: 'Welcome Page',
         description: 'App initialization routines and permission checks.',

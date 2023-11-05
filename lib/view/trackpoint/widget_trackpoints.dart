@@ -19,7 +19,7 @@ import 'package:flutter/material.dart';
 
 //
 import 'package:chaostours/view/app_base_widget.dart';
-import 'package:chaostours/logger.dart';
+//import 'package:chaostours/logger.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 
@@ -31,7 +31,7 @@ class WidgetTrackPoints extends BaseWidget {
 }
 
 class _WidgetTrackPointsState extends BaseWidgetState<WidgetTrackPoints> {
-  static final Logger logger = Logger.logger();
+  //static final Logger logger = Logger.logger();
   TextEditingController tpSearch = TextEditingController();
 
   final _searchController = TextEditingController();
