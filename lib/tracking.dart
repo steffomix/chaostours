@@ -128,9 +128,6 @@ class _TrackPoint {
     /// create gpsPoint
     GPS gps = GPS(lat, lon);
 
-    /// reload shared preferences
-    await Cache.reload();
-
     /// debug cheats
     double latShift = await Cache.getValue<double>(CacheKeys.gpsLatShift, 0.0);
     double lonShift = await Cache.getValue<double>(CacheKeys.gpsLonShift, 0.0);
@@ -187,9 +184,15 @@ class _TrackPoint {
 
     /// get calculation range from smoothPoints
     bridge.calcGpsPoints.clear();
-    int calculationRange = (AppSettings.timeRangeTreshold.inSeconds /
-            AppSettings.trackPointInterval.inSeconds)
-        .floor();
+    int calculationRange = 10;
+    try {
+      calculationRange += (1 +
+              (AppSettings.timeRangeTreshold.inSeconds /
+                  AppSettings.trackPointInterval.inSeconds))
+          .floor();
+    } catch (e) {
+      logger.warn(e);
+    }
     bridge.calcGpsPoints.addAll(bridge.smoothGpsPoints.getRange(
         0, math.min(bridge.smoothGpsPoints.length - 1, calculationRange)));
 
@@ -387,7 +390,7 @@ class _TrackPoint {
           var tpData =
               await TrackPointData.trackPointData(trackPoint: newTrackPoint);
 
-          /// save new TrackPoint
+          /// save new TrackPoint with user- and task ids
           await newTrackPoint.insert();
 
           /// execute calendar

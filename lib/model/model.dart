@@ -40,7 +40,7 @@ class Model {
     return map;
   }
 
-  static Future<List<Map<String, Object?>>> select(TableFields table,
+  static Future<List<Map<String, Object?>>> select(DbTable table,
       {int limit = 50, int offset = 0, String search = ''}) async {
     return await DB.execute((Transaction txn) async {
       if (search.isEmpty) {
@@ -63,7 +63,7 @@ class Model {
     });
   }
 
-  static Future<int> count(TableFields table, {String search = ''}) async {
+  static Future<int> count(DbTable table, {String search = ''}) async {
     var col = 'ct';
     var rows = await DB.execute((Transaction txn) async {
       if (search.isEmpty) {

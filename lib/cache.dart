@@ -14,9 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import 'package:shared_preferences/shared_preferences.dart';
+// import 'package:shared_preferences/shared_preferences.dart';
 
 ///
+import 'package:chaostours/model/model_cache.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/conf/app_settings.dart';
 import 'package:chaostours/gps.dart';
@@ -103,6 +104,17 @@ enum CacheKeys {
 
   final Type cacheType;
   const CacheKeys(this.cacheType);
+
+  int get id => index + 1;
+
+  static CacheKeys? byName(String name) {
+    for (var key in values) {
+      if (key.name == name) {
+        return key;
+      }
+    }
+    return null;
+  }
 }
 
 class Cache {
@@ -116,6 +128,9 @@ class Cache {
   factory Cache() => _instance ??= Cache._();
   static Cache get instance => _instance ??= Cache._();
 
+  static final Map<CacheKeys, List<dynamic>> data = {};
+
+/*
   /// reload SharedPreferences
   static Future<void> reload() async {
     await (await SharedPreferences.getInstance()).reload();
@@ -124,7 +139,7 @@ class Cache {
   static Future<void> clear() async {
     await (await SharedPreferences.getInstance()).clear();
   }
-
+*/
   /// LoggerLog
   static List<String> serializeLoggerLog(List<LoggerLog> logs) =>
       logs.map((e) => e.toString()).toList();
@@ -240,8 +255,11 @@ class Cache {
   }
 
   static Future<T> setValue<T>(CacheKeys cacheKey, T value) async {
-    final prefs = await SharedPreferences.getInstance();
-    String key = cacheKey.name;
+    final prefs = DbCache(); //await SharedPreferences.getInstance();
+    //String key = cacheKey.name;
+    var key = cacheKey;
+
+    logger.log('save cache key ${key.name}');
     try {
       if (T != cacheKey.cacheType) {
         throw Exception(
@@ -253,7 +271,7 @@ class Cache {
           break;
 
         case const (List<String>):
-          await prefs.setStringList(key.toString(), value as List<String>);
+          await prefs.setStringList(key, value as List<String>);
           break;
         case int:
           await prefs.setInt(key, value as int);
@@ -285,6 +303,7 @@ class Cache {
           await prefs.setString(key, serializeGps(value as GPS));
           break;
         case const (List<GPS>):
+          logger.log('save GPS List with ${(value as List<GPS>?)?.length}');
           await prefs.setStringList(key, serializeGpsList(value as List<GPS>));
           break;
         case TrackingStatus:
@@ -329,30 +348,10 @@ class Cache {
     return value;
   }
 
-  static CacheKeyDump _dumpKey(String keyName, SharedPreferences prefs) {
-    var dump = CacheKeyDump();
-    dump
-      ..number = prefs.getInt(keyName)
-      ..doubleNumber = prefs.getDouble(keyName)
-      ..boolean = prefs.getBool(keyName)
-      ..string = prefs.getString(keyName)
-      ..list = prefs.getStringList(keyName);
-    return dump;
-  }
-
-  static Future<CacheKeyDump> dumpKey(CacheKeys key) async {
-    final prefs = await SharedPreferences.getInstance();
-    return _dumpKey(key.name, prefs);
-  }
-
-  static Future<List<CacheKeyDump>> dumpKeys() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getKeys().map((e) => _dumpKey(e, prefs)).toList();
-  }
-
   static Future<T> getValue<T>(CacheKeys cacheKey, T defaultValue) async {
-    final prefs = await SharedPreferences.getInstance();
-    String key = cacheKey.name;
+    final prefs = DbCache(); //await SharedPreferences.getInstance();
+    CacheKeys key = cacheKey; //.name;
+    logger.log('load cache key ${key.name}');
     try {
       if (T != cacheKey.cacheType) {
         throw Exception(
@@ -360,56 +359,62 @@ class Cache {
       }
       switch (T) {
         case String:
-          return prefs.getString(key) as T? ?? defaultValue;
+          return await prefs.getString(key) as T? ?? defaultValue;
 
         case const (List<String>):
-          return prefs.getStringList(key) as T? ?? defaultValue;
+          return await prefs.getStringList(key) as T? ?? defaultValue;
         case int:
-          return prefs.getInt(key) as T? ?? defaultValue;
+          return await prefs.getInt(key) as T? ?? defaultValue;
         case const (List<int>):
-          return deserializeIntList(prefs.getStringList(key)) as T? ??
+          return deserializeIntList(await prefs.getStringList(key)) as T? ??
               defaultValue;
         case bool:
-          return prefs.getBool(key) as T? ?? defaultValue;
+          return await prefs.getBool(key) as T? ?? defaultValue;
         case double:
-          return prefs.getDouble(key) as T? ?? defaultValue;
+          return await prefs.getDouble(key) as T? ?? defaultValue;
         case Duration:
-          return deserializeDuration(prefs.getInt(key)) as T? ?? defaultValue;
+          return deserializeDuration(await prefs.getInt(key)) as T? ??
+              defaultValue;
         case const (List<LoggerLog>):
-          return deserializeLoggerLog(prefs.getStringList(key)) as T? ??
+          return deserializeLoggerLog(await prefs.getStringList(key)) as T? ??
               defaultValue;
         case DateTime:
-          return deserializeDateTime(prefs.getString(key)) as T? ??
+          return deserializeDateTime(await prefs.getString(key)) as T? ??
               defaultValue;
         case const (List<CalendarEventId>):
-          return deserializeCalendarEventId(prefs.getStringList(key)) as T? ??
+          return deserializeCalendarEventId(await prefs.getStringList(key))
+                  as T? ??
               defaultValue;
         case GPS:
-          return deserializeGps(prefs.getString(key)) as T? ?? defaultValue;
+          return deserializeGps(await prefs.getString(key)) as T? ??
+              defaultValue;
         case const (List<GPS>):
-          return deserializeGpsList(prefs.getStringList(key)) as T? ??
+          return deserializeGpsList(await prefs.getStringList(key)) as T? ??
               defaultValue;
         case TrackingStatus:
-          return deserializeTrackingStatus(prefs.getString(key)) as T? ??
+          return deserializeTrackingStatus(await prefs.getString(key)) as T? ??
               defaultValue;
         case ModelTrackPoint:
-          return deserializeModelTrackPoint(prefs.getString(key)) as T? ??
+          return deserializeModelTrackPoint(await prefs.getString(key)) as T? ??
               defaultValue;
         case const (List<ModelTrackPoint>):
-          return deserializeModelTrackPointList(prefs.getStringList(key))
+          return deserializeModelTrackPointList(await prefs.getStringList(key))
                   as T? ??
               defaultValue;
         case const (List<ModelAlias>):
-          return deserializeModelAliasList(prefs.getStringList(key)) as T? ??
+          return deserializeModelAliasList(await prefs.getStringList(key))
+                  as T? ??
               defaultValue;
         case const (List<ModelTask>):
-          return deserializeModelTaskList(prefs.getStringList(key)) as T? ??
+          return deserializeModelTaskList(await prefs.getStringList(key))
+                  as T? ??
               defaultValue;
         case const (List<ModelUser>):
-          return deserializeModelUserList(prefs.getStringList(key)) as T? ??
+          return deserializeModelUserList(await prefs.getStringList(key))
+                  as T? ??
               defaultValue;
         case OsmLookupConditions:
-          return deserializeOsmLookup(prefs.getString(key)) as T? ??
+          return deserializeOsmLookup(await prefs.getString(key)) as T? ??
               defaultValue;
 
         default:

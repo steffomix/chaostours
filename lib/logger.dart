@@ -235,7 +235,7 @@ class Logger {
   }
 
   Future<void> _cacheLog(LoggerLog log, CacheKeys key) async {
-    await Cache.reload();
+    return;
     var logs = await Cache.getValue<List<LoggerLog>>(key, []);
     logs.insert(0, log);
     while (logs.length >= maxSharedCount) {
@@ -246,6 +246,7 @@ class Logger {
 
   /// fires
   static Future<void> getBackgroundLogs() async {
+    return;
     List<LoggerLog> list =
         await Cache.getValue<List<LoggerLog>>(CacheKeys.backgroundLogger, []);
     // reset list
@@ -257,6 +258,7 @@ class Logger {
 
   static Future<void> clearLogs() async {
     _loggerLogs.clear();
+    return;
     await Cache.setValue<List<LoggerLog>>(CacheKeys.backgroundLogger, []);
   }
 

@@ -211,6 +211,18 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
             .then((value) {
           render();
         }),
+      ),
+
+      AppWidgets.divider(),
+
+      ElevatedButton(
+        child: const Text('Export Group to file for sharing'),
+        onPressed: () => Navigator.pushNamed(
+                context, AppRoutes.listAliasesFromAliasGroup.route,
+                arguments: _modelAliasGroup?.id)
+            .then((value) {
+          render();
+        }),
       )
     ]);
   }

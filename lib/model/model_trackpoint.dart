@@ -515,7 +515,7 @@ class ModelTrackPoint {
 
   static Future<List<ModelTrackPoint>> search(String search) async {
     const idcol = 'id';
-    var aliasModels = await ModelAlias.select(search: search);
+    var aliasModels = await ModelAlias.select(search: search, limit: 50);
     var aliasIdRows = await DB.execute<List<Map<String, Object?>>>(
       (Transaction txn) async {
         return await txn.query(TableTrackPointAlias.table,
@@ -527,7 +527,7 @@ class ModelTrackPoint {
     );
 
     ///
-    var taskModels = await ModelTask.select(search: search);
+    var taskModels = await ModelTask.select(search: search, limit: 50);
     var taskIdRows = await DB.execute<List<Map<String, Object?>>>(
       (Transaction txn) async {
         return await txn.query(TableTrackPointTask.table,
@@ -539,7 +539,7 @@ class ModelTrackPoint {
     );
 
     ///
-    var userModels = await ModelUser.select(search: search);
+    var userModels = await ModelUser.select(search: search, limit: 50);
     var userIdRows = await DB.execute<List<Map<String, Object?>>>(
       (Transaction txn) async {
         return await txn.query(TableTrackPointUser.table,
@@ -567,7 +567,7 @@ class ModelTrackPoint {
             columns: TableTrackPoint.columns,
             where: '${TableTrackPoint.address.column} like ? OR '
                 '${TableTrackPoint.primaryKey.column} IN (${List.filled(ids.length, '?').join(',')})',
-            whereArgs: ['%text%', ...ids.toList()]);
+            whereArgs: ['%$search%', ...ids.toList()]);
       },
     );
     var models = <ModelTrackPoint>[];

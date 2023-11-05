@@ -94,7 +94,6 @@ class _WidgetAliasList extends BaseWidgetState<WidgetAliasList>
               : const TextStyle(decoration: TextDecoration.lineThrough)),
       Text('Visited: ${count}x, ${count == 0 ? 'Never' : 'before $dur days.'}',
           style: subStyle),
-      Text(model.description, style: subStyle)
     ]);
   }
 

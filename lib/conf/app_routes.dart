@@ -65,7 +65,7 @@ enum AppRoutes {
 
   // trackpoints
   liveTracking,
-  trackpoints,
+  listTrackpoints,
   editTrackPoint,
   trackpointsFromAliasList,
 
@@ -108,8 +108,10 @@ enum AppRoutes {
   static Map<String, Widget Function(BuildContext)>? _routes;
   static get routes {
     return _routes ??= <String, Widget Function(BuildContext)>{
-      /// system config routes
+      /// initial and preloader route
       AppRoutes.welcome.route: (context) => const Welcome(),
+
+      /// system config routes
       AppRoutes.logger.route: (context) => const WidgetLoggerPage(),
       AppRoutes.permissions.route: (context) => const WidgetPermissionsPage(),
       AppRoutes.importExport.route: (context) => const WidgetImportExport(),
@@ -121,7 +123,7 @@ enum AppRoutes {
 
       // trackpoint
       AppRoutes.liveTracking.route: (context) => const WidgetTrackingPage(),
-      AppRoutes.trackpoints.route: (context) => const WidgetTrackPoints(),
+      AppRoutes.listTrackpoints.route: (context) => const WidgetTrackPoints(),
       AppRoutes.editTrackPoint.route: (context) => const WidgetEditTrackPoint(),
 
       // user

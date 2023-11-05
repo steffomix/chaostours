@@ -253,17 +253,18 @@ class ModelAlias {
       {int offset = 0,
       int limit = 50,
       bool activated = true,
-      lastVisited = true,
+      bool lastVisited = true,
       String search = ''}) async {
     var colCountVisited = 'countVisited';
     var rows = await DB.execute(
       (txn) async {
-        var searchQuery = search.isEmpty
+        final trueSearch = '%$search%';
+        final searchQuery = search.isEmpty
             ? ''
-            : ' AND ${TableAlias.title.column} = ? AND ${TableAlias.description.column} = ? ';
-        var searchArgs = search.isEmpty ? [] : ['?', '?'];
+            : ' AND (${TableAlias.title.column} LIKE ? OR ${TableAlias.description.column} LIKE ?) ';
+        final searchArgs = search.isEmpty ? [] : [trueSearch, trueSearch];
         final args = [DB.boolToInt(activated), ...searchArgs, limit, offset];
-        var q = '''
+        final q = '''
 SELECT ${TableAlias.columns.join(', ')} , COUNT(${TableTrackPointAlias.idAlias}) as $colCountVisited FROM ${TableAlias.table}
 LEFT JOIN ${TableTrackPointAlias.table} ON ${TableTrackPointAlias.idAlias} = ${TableAlias.id}
 -- LEFT JOIN ${TableTrackPoint.table} ON ${TableTrackPoint.id} = ${TableTrackPointAlias.idTrackPoint}

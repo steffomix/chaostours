@@ -13,12 +13,19 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+import 'dart:async';
 import 'dart:io' as io;
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart' as flite;
 
 ///
 import 'package:chaostours/logger.dart';
+import 'package:chaostours/cache.dart';
+import 'package:sqflite/sqlite_api.dart';
+
+class DbQueue {
+  final List<Future<dynamic> Function(flite.Transaction txn)> queue = [];
+}
 
 class DB {
   static final Logger logger = Logger.logger<DB>();
@@ -55,7 +62,7 @@ class DB {
       var path = await getDBFilePath();
       _database ??= await flite.openDatabase(path,
           version: dbVersion,
-          singleInstance: false,
+          singleInstance: true,
           onCreate: !create
               ? null
               : (flite.Database db, int version) async {
@@ -64,9 +71,9 @@ class DB {
                       try {
                         var batch = txn.batch();
                         for (var sql in [
-                          ...DatabaseSchemata.schemata,
-                          ...DatabaseSchemata.indexes,
-                          ...DatabaseSchemata.inserts
+                          ...DbTable.tables.map((e) => e.schema),
+                          ...DbTable.indexes,
+                          ...DbTable.inserts
                         ]) {
                           batch.rawQuery(sql);
                         }
@@ -97,72 +104,73 @@ class DB {
   /// </pre>
   static Future<T> execute<T>(
       Future<T> Function(flite.Transaction txn) action) async {
-    // var stk = StackTrace.current;
-    try {
-      if (_database == null) {
-        throw 'no database set';
-      }
-      T result = await _database!.transaction<T>(action);
-      logger.log('${T.toString()} loaded');
-      return result;
-    } catch (e, stk) {
-      logger.error('DB::execute: $e', stk);
-      rethrow;
-    }
+    return Future.microtask(() {
+      return _database!.transaction<T>(action);
+    });
   }
 
   static int parseInt(Object? value, {int fallback = 0}) {
+    if (value == null) {
+      return fallback;
+    }
     if (value is int) {
       return value;
-    } else if (value is String) {
+    }
+    if (value is String) {
       try {
         return int.parse(value.trim());
       } catch (e) {
         return fallback;
       }
-    } else {
-      return fallback;
     }
+    return fallback;
   }
 
   static double parseDouble(Object? value, {double fallback = 0.0}) {
+    if (value == null) {
+      return fallback;
+    }
     if (value is double) {
       return value;
-    } else if (value is String) {
+    }
+    if (value is String) {
       try {
         return double.parse(value.trim());
       } catch (e) {
         return fallback;
       }
-    } else {
-      return fallback;
     }
+    return fallback;
   }
 
   static String parseString(Object? text, {fallback = ''}) {
-    if (text is String) {
-      return text;
-    }
     if (text == null) {
       return fallback;
+    }
+    if (text is String) {
+      return text;
     }
     return text.toString();
   }
 
   static bool parseBool(Object? value, {bool fallback = false}) {
+    if (value == null) {
+      return fallback;
+    }
     if (value is bool) {
       return value;
-    } else if (value is int) {
+    }
+    if (value is int) {
       return value > 0;
-    } else if (value is String) {
+    }
+    if (value is String) {
       try {
         return int.parse(value.toString()) > 0;
       } catch (e) {
         return fallback;
       }
-    } else {
-      return fallback;
     }
+    return fallback;
   }
 
   static int boolToInt(bool b) => b ? 1 : 0;
@@ -173,6 +181,58 @@ class DB {
 
   static DateTime intToTime(Object? i) {
     return DateTime.fromMillisecondsSinceEpoch(parseInt(i) * 1000);
+  }
+}
+
+enum CacheData {
+  id('sort'),
+  key('key'),
+  data('data');
+
+  static const String table = 'cache_data';
+
+  static List<String> get columns =>
+      CacheData.values.map((e) => e.toString()).toList();
+
+  final String column;
+  const CacheData(this.column);
+
+  static String get schema => '''CREATE TABLE IF NOT EXISTS $table (
+	${id.column}	INTEGER NOT NULL,
+	${key.column}	TEXT NOT NULL,
+	${data.column}	TEXT
+);''';
+
+  @override
+  String toString() {
+    return '$table.$column';
+  }
+}
+
+enum _CacheKey {
+  id('id'),
+  type('type'),
+  name('name');
+
+  static const String table = 'cache_key';
+
+  static List<String> get columns =>
+      _CacheKey.values.map((e) => e.toString()).toList();
+
+  final String column;
+  const _CacheKey(this.column);
+
+  _CacheKey get primaryKey => id;
+
+  static String get schema => '''CREATE TABLE IF NOT EXISTS $table (
+	${id.column}	INTEGER NOT NULL,
+	${type.column}	TEXT NOT NULL,
+	${name.column}	TEXT NOT NULL
+);''';
+
+  @override
+  String toString() {
+    return '$table.$column';
   }
 }
 
@@ -667,58 +727,52 @@ enum TableAliasGroup {
   }
 }
 
-class TableFields {
-  static final List<TableFields> tables = List.unmodifiable([
+class DbTable {
+  static final List<DbTable> tables = List.unmodifiable([
+    DbTable(_CacheKey.table, _CacheKey.columns, _CacheKey.schema),
+    DbTable(CacheData.table, CacheData.columns, CacheData.schema),
     // alias
-    TableFields(TableAlias.table, TableAlias.columns),
-    TableFields(TableAliasAliasGroup.table, TableAliasAliasGroup.columns),
-    TableFields(TableAliasGroup.table, TableAliasGroup.columns),
+    DbTable(TableAlias.table, TableAlias.columns, TableAlias.schema),
+    DbTable(TableAliasAliasGroup.table, TableAliasAliasGroup.columns,
+        TableAliasAliasGroup.schema),
+    DbTable(
+        TableAliasGroup.table, TableAliasGroup.columns, TableAliasGroup.schema),
     // alias topic
-    TableFields(TableTopic.table, TableTopic.columns),
-    TableFields(TableAliasTopic.table, TableAliasTopic.columns),
+    DbTable(TableTopic.table, TableTopic.columns, TableTopic.schema),
+    DbTable(
+        TableAliasTopic.table, TableAliasTopic.columns, TableAliasTopic.schema),
     // trackpoint
-    TableFields(TableTrackPoint.table, TableTrackPoint.columns),
-    TableFields(TableTrackPointAlias.table, TableTrackPointAlias.columns),
-    TableFields(TableTrackPointTask.table, TableTrackPointTask.columns),
-    TableFields(TableTrackPointUser.table, TableTrackPointUser.columns),
-    TableFields(TableTrackPointCalendar.table, TableTrackPointCalendar.columns),
+    DbTable(
+        TableTrackPoint.table, TableTrackPoint.columns, TableTrackPoint.schema),
+    DbTable(TableTrackPointAlias.table, TableTrackPointAlias.columns,
+        TableTrackPointAlias.schema),
+    DbTable(TableTrackPointTask.table, TableTrackPointTask.columns,
+        TableTrackPointTask.schema),
+    DbTable(TableTrackPointUser.table, TableTrackPointUser.columns,
+        TableTrackPointUser.schema),
+    DbTable(TableTrackPointCalendar.table, TableTrackPointCalendar.columns,
+        TableTrackPointCalendar.schema),
     // task
-    TableFields(TableTask.table, TableTask.columns),
-    TableFields(TableTaskTaskGroup.table, TableTaskTaskGroup.columns),
-    TableFields(TableTaskGroup.table, TableTaskGroup.columns),
+    DbTable(TableTask.table, TableTask.columns, TableTask.schema),
+    DbTable(TableTaskTaskGroup.table, TableTaskTaskGroup.columns,
+        TableTaskTaskGroup.schema),
+    DbTable(
+        TableTaskGroup.table, TableTaskGroup.columns, TableTaskGroup.schema),
     // user
-    TableFields(TableUser.table, TableUser.columns),
-    TableFields(TableUserUserGroup.table, TableUserUserGroup.columns),
-    TableFields(TableUserGroup.table, TableUserGroup.columns),
+    DbTable(TableUser.table, TableUser.columns, TableUser.schema),
+    DbTable(TableUserUserGroup.table, TableUserUserGroup.columns,
+        TableUserUserGroup.schema),
+    DbTable(
+        TableUserGroup.table, TableUserGroup.columns, TableUserGroup.schema),
   ]);
   final String table;
+  final String schema;
   final List<String> _columns = [];
   List<String> get columns => List.unmodifiable(_columns);
 
-  TableFields(this.table, List<String> cols) {
+  DbTable(this.table, List<String> cols, this.schema) {
     _columns.addAll(cols);
   }
-}
-
-class DatabaseSchemata {
-  static final List<String> schemata = [
-    TableTrackPoint.schema,
-    TableTrackPointAlias.schema,
-    TableTrackPointTask.schema,
-    TableTrackPointUser.schema,
-    TableTrackPointCalendar.schema,
-    TableTask.schema,
-    TableAlias.schema,
-    TableUser.schema,
-    TableTaskGroup.schema,
-    TableAliasGroup.schema,
-    TableUserGroup.schema,
-    TableTopic.schema,
-    TableAliasTopic.schema,
-    TableAliasAliasGroup.schema,
-    TableUserUserGroup.schema,
-    TableTaskTaskGroup.schema
-  ];
 
   static final List<String> indexes = [
     '''
@@ -755,7 +809,14 @@ CREATE INDEX IF NOT EXISTS ${TableTaskTaskGroup.table}_index ON ${TableTaskTaskG
 
   static final List<String> inserts = [
     '''INSERT INTO ${TableTaskGroup.table} VALUES (1,1,1,"Default Taskgroup",NULL)''',
-    '''INSERT INTO ${TableUserGroup.table} VALUES (1,1,1,"Default Usergroup",NULL)''',
+    '''INSERT INTO ${TableUserGroup.table} VALUES (1,1,1,1,"Default Usergroup",NULL)''',
     '''INSERT INTO ${TableAliasGroup.table} VALUES (1,NULL,1,1,"Default Aliasgroup",NULL)''',
+    ...CacheKeys.values.map(
+      (key) {
+        return '''
+INSERT INTO ${_CacheKey.table} VALUES (${key.id}," ${key.cacheType}", "${key.name}")
+''';
+      },
+    )
   ];
 }

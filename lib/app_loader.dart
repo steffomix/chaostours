@@ -14,6 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/address.dart';
+import 'package:chaostours/gps.dart';
+import 'package:chaostours/model/model_alias.dart';
 import 'package:flutter/services.dart';
 import 'dart:io' as io;
 
@@ -31,29 +34,12 @@ class AppLoader {
   static Future<bool> get preload => _preload ??= _preloadApp();
   static Future<bool>? _preload;
 
-  // /data/user/0/com.stefanbrinkmann.chaosToursUnlimited/shared_prefs/FlutterSharedPreferences.xml
-  static Future<void> dbToFile() async {
-    var dbDir = await DB.getDBDir();
-    var downloadDir = io.Directory('/storage/emulated/0/Download');
-    io.File(dbDir.path).copy('${downloadDir.path}/${DB.dbFile}');
-  }
-
-  static Future<void> fileToDb() async {
-    var dbDir = await DB.getDBDir();
-    var downloadDir = io.Directory('/storage/emulated/0/Download');
-    io.File('${downloadDir.path}/${DB.dbFile}').copy(dbDir.path);
-  }
-
   ///
   /// preload recources
   static Future<bool> _preloadApp() async {
     try {
       Logger.globalLogLevel = LogLevel.verbose;
       logger.important('start Preload sequence...');
-
-      //
-      logger.log('load app settings');
-      await AppSettings.loadSettings();
 
       //
       logger.log('clear error logs');
@@ -65,11 +51,35 @@ class AppLoader {
       logger.log('Database opened');
 
       //
+      logger.log('load app settings');
+      await AppSettings.loadSettings();
+
+      var count = await ModelAlias.count();
+      if (count == 0) {
+        logger.log('create initial alias');
+        try {
+          GPS gps = await GPS.gps();
+          await ModelAlias(
+                  gps: gps,
+                  lastVisited: DateTime.now(),
+                  title: (await Address(gps).lookupAddress()).toString(),
+                  description: 'Initial Alias created by System on first run.'
+                      'Feel free to change it for your needs.')
+              .insert();
+        } catch (e) {
+          logger
+              .warn('Create initial alias failed. No GPS Permissions granted?');
+        }
+      }
+
+      //
       logger.log('get WEB SSL key from assets');
       await webKey();
 
       //
       if (AppSettings.backgroundTrackingEnabled) {
+        // wait a little
+        await Future.delayed(const Duration(seconds: 3));
         try {
           logger.log('initialize background tracking');
           await BackgroundTracking.initialize();

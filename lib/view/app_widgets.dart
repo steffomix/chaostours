@@ -26,9 +26,7 @@ import 'package:chaostours/runtime_data.dart';
 import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/calendar.dart';
 import 'package:chaostours/logger.dart';
-import 'package:chaostours/gps.dart';
 import 'package:chaostours/conf/app_settings.dart';
-import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/conf/app_routes.dart';
 import 'package:sprintf/sprintf.dart';
 
@@ -355,7 +353,7 @@ class AppWidgets {
       },
     );
   }
-
+/*
   static ListTile trackPointInfo(BuildContext context, ModelTrackPoint tp) {
     var alias = tp.aliasModels.map((model) => model.title);
     var tasks = tp.taskModels.map((model) => model.title);
@@ -386,7 +384,8 @@ class AppWidgets {
           }),
     );
   }
-
+*/
+/*
   /// time based recent and location based lastVisited
   static Widget renderTrackPointSearchList(
       {required BuildContext context,
@@ -441,6 +440,7 @@ class AppWidgets {
       },
     );
   }
+    */
 
   /// loads calendars if not provided
   static Widget calendarSelector(
@@ -511,21 +511,7 @@ class NavBarWithTrash {
                 onPressed: () => Navigator.pop(context),
               ),
               TextButton(
-                  onPressed: () => onCreate(context), child: const Text('Yes')
-                  /*
-                  var count = await ModelTask.count();
-                  var model =
-                      await ModelTask.insert(ModelTask(title: '#${count + 1}'));
-                  if (mounted) {
-                    Navigator.pushNamed(context, AppRoutes.editTask.route,
-                            arguments: model.id)
-                        .then((value) {
-                      Navigator.pop(context);
-                      resetLoader();
-                    });
-                  }
-                  */
-                  )
+                  onPressed: () => onCreate(context), child: const Text('Yes'))
             ]);
           } else if (id == 1) {
             _showActivated = !_showActivated;

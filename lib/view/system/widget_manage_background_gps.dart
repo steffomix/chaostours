@@ -113,7 +113,6 @@ class _WidgetManageBackgroundGpsState extends State<WidgetManageBackgroundGps> {
       ElevatedButton(
           child: const Text('Clear Cache'),
           onPressed: () async {
-            await Cache.clear();
             await AppSettings.reset();
             await updateBody();
           }),

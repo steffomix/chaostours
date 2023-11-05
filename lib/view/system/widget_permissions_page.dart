@@ -100,6 +100,7 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
     } catch (e) {
       await Permission.calendarFullAccess.request();
     }
+    renderBody();
   }
 
   void updatePermissionsInfo(String info) {
@@ -168,17 +169,7 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
       items.add(Center(
           child: ElevatedButton(
               onPressed: () async {
-                await Permission.location.request();
-                await Permission.locationAlways.request();
-                await Permission.ignoreBatteryOptimizations.request();
-                await Permission.storage.request();
-                await Permission.manageExternalStorage.request();
-                await Permission.notification.request();
-                try {
-                  await Permission.calendar.request();
-                } catch (e) {
-                  await Permission.calendarFullAccess.request();
-                }
+                requestAll();
               },
               child: const Text('Request all Permissions'))));
     }

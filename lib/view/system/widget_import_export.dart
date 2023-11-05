@@ -112,6 +112,7 @@ class _WidgetImportExport extends State<WidgetImportExport> {
 
   Future<void> exportDatabaseFiles(
       FileManagerController fileManagerController, Directory dir) async {
+    /*
     /// export trackPoints
     String tsv;
     String path = join(dir.path, '$trackPointFilename.tsv');
@@ -195,6 +196,7 @@ class _WidgetImportExport extends State<WidgetImportExport> {
     await f.writeAsString(tsv);
 
     Fluttertoast.showToast(msg: 'Files Exported');
+    */
   }
 
   Future<void> importDatabaseFiles(BuildContext context, String dir) async {

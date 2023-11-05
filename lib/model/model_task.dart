@@ -25,15 +25,15 @@ class ModelTask {
 
   int _id = 0;
   int get id => _id;
-  int groupId = 1;
-  int sortOrder = 0;
-  bool isActive = true;
-  String title = '';
-  String description = '';
+  int groupId;
+  String sortOrder;
+  bool isActive;
+  String title;
+  String description;
 
   ModelTask(
       {this.groupId = 1,
-      this.sortOrder = 0,
+      this.sortOrder = '',
       this.isActive = true,
       this.title = '',
       this.description = ''});
@@ -42,7 +42,7 @@ class ModelTask {
     var model = ModelTask(
         groupId: DB.parseInt(map[TableTask.idTaskGroup.column], fallback: 1),
         isActive: DB.parseBool(map[TableTask.isActive.column]),
-        sortOrder: DB.parseInt(map[TableTask.sortOrder.column]),
+        sortOrder: DB.parseString(map[TableTask.sortOrder.column]),
         title: DB.parseString(map[TableTask.title.column]),
         description: DB.parseString(map[TableTask.description.column]));
     model._id = DB.parseInt(map[TableTask.primaryKey.column]);

@@ -34,7 +34,7 @@ class WidgetDatabaseExplorer extends BaseWidget {
 class _WidgetDatabaseExplorer extends BaseWidgetState<WidgetDatabaseExplorer>
     implements BaseWidgetPattern {
   //static final Logger logger = Logger.logger<WidgetDatabaseExplorer>();
-  TableFields _table = TableFields.tables[0];
+  DbTable _table = DbTable.tables[0];
 
   final _searchController = TextEditingController();
 
@@ -77,12 +77,12 @@ class _WidgetDatabaseExplorer extends BaseWidgetState<WidgetDatabaseExplorer>
     return headers;
   }
 
-  List<DropdownMenuEntry<TableFields>> renderTableList() {
-    var list = <DropdownMenuEntry<TableFields>>[];
+  List<DropdownMenuEntry<DbTable>> renderTableList() {
+    var list = <DropdownMenuEntry<DbTable>>[];
     var i = 1;
-    for (var table in TableFields.tables) {
-      var item = DropdownMenuEntry<TableFields>(
-          value: table, label: '#$i ${table.table}');
+    for (var table in DbTable.tables) {
+      var item =
+          DropdownMenuEntry<DbTable>(value: table, label: '#$i ${table.table}');
       list.add(item);
       i++;
     }
@@ -93,10 +93,10 @@ class _WidgetDatabaseExplorer extends BaseWidgetState<WidgetDatabaseExplorer>
   List<Widget> renderHeader(BoxConstraints constraints) {
     return <Widget>[
       Row(children: [
-        const Padding(padding: EdgeInsets.all(10), child: Text('Table: ')),
+        const Padding(padding: EdgeInsets.all(10), child: Text('DbTable: ')),
         Padding(
             padding: const EdgeInsets.all(10),
-            child: DropdownMenu<TableFields>(
+            child: DropdownMenu<DbTable>(
               enableSearch: true,
               trailingIcon: const Icon(Icons.arrow_left_outlined),
               selectedTrailingIcon: const Icon(Icons.arrow_left),

@@ -26,7 +26,7 @@ class ModelUser {
   int _id = 0;
   int get id => _id;
   int groupId = 1;
-  int sortOrder = 0;
+  String sortOrder = '';
   bool isActive = true;
   String title = '';
   String description = '';
@@ -35,7 +35,7 @@ class ModelUser {
 
   ModelUser(
       {this.groupId = 1,
-      this.sortOrder = 0,
+      this.sortOrder = '',
       this.isActive = true,
       this.title = '',
       this.description = '',
@@ -46,7 +46,7 @@ class ModelUser {
     var model = ModelUser(
         groupId: DB.parseInt(map[TableUser.idUserGroup.column], fallback: 1),
         isActive: DB.parseBool(map[TableUser.isActive.column]),
-        sortOrder: DB.parseInt(map[TableUser.sortOrder.column]),
+        sortOrder: DB.parseString(map[TableUser.sortOrder.column]),
         title: DB.parseString(map[TableUser.title.column]),
         description: DB.parseString(map[TableUser.description.column]));
     model._id = DB.parseInt(map[TableUser.primaryKey.column]);

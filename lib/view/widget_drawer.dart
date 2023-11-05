@@ -132,7 +132,7 @@ class _WidgetDrawer extends State<WidgetDrawer> {
     _Menu(
         title: 'Trackpoints (todo)',
         description: 'Manage the automatic saved Trackpoints.',
-        route: AppRoutes.listAlias), // todo
+        route: AppRoutes.listTrackpoints), // todo
     _Menu(
         title: 'Tasks',
         description: 'Manage your tasks for your trackpoints.',
@@ -140,7 +140,7 @@ class _WidgetDrawer extends State<WidgetDrawer> {
     _Menu(
         title: 'Users',
         description: 'Manage your friends and mates for your trackpoints.',
-        route: AppRoutes.listAlias),
+        route: AppRoutes.listUser),
     _Divider(),
     _Header(title: 'Asset Groups', description: 'Group your Tasks and Users.'),
     _Menu(
@@ -154,13 +154,19 @@ class _WidgetDrawer extends State<WidgetDrawer> {
     _Menu(
         title: 'User Groups',
         description: 'Group your Users into Teams.',
-        route: AppRoutes.listAliasGroup),
+        route: AppRoutes.listUserGroup),
     _Divider(),
     _Header(
         title: 'External sources',
         description: 'Import Locations from the Web or as Text File.'),
-    _Menu(title: 'Import from Web (Todo)', route: AppRoutes.listAlias),
-    _Menu(title: 'Import from File (Todo)', route: AppRoutes.listAlias),
+    _Menu(
+        title: 'Import locations from Web (Todo)', route: AppRoutes.listAlias),
+    _Menu(
+        title: 'Import locations from File (Todo)', route: AppRoutes.listAlias),
+    _Menu(
+        title: 'Import & Export',
+        description: 'Make Data Backups ot import Data from friends.',
+        route: AppRoutes.importExport),
     _Divider(),
     _Header(
         title: 'App Configuration',
@@ -179,10 +185,6 @@ class _WidgetDrawer extends State<WidgetDrawer> {
         description:
             'This App needs tons of permissions to unfold its full potential.',
         route: AppRoutes.permissions),
-    _Menu(
-        title: 'Import & Export',
-        description: 'Make Data Backups ot import Data from friends.',
-        route: AppRoutes.importExport),
     _Divider(),
     _Header(
         title: 'App Backstage',
@@ -200,6 +202,10 @@ class _WidgetDrawer extends State<WidgetDrawer> {
         description:
             'Tells you why this App doesn\'t work\n - hopefully - \nbut doesn\'t tell you how to fix it.',
         route: AppRoutes.logger),
+    _Menu(
+        title: 'Welcome Page',
+        description: 'App initialization routines and permission checks.',
+        route: AppRoutes.welcome),
     _Divider(),
     _Header(title: 'Licence'),
     _Widget(

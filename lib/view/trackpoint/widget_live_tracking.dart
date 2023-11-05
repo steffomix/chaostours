@@ -37,20 +37,6 @@ import 'package:chaostours/gps.dart';
 import 'package:chaostours/conf/app_settings.dart';
 import 'package:chaostours/osm_tools.dart';
 
-enum _DisplayMode {
-  /// shows gps list
-  live,
-
-  /// trackpoints from current location
-  lastVisited,
-
-  /// recent trackpoints ordered by time
-  recentTrackPoints,
-
-  /// display task checkboxes and notes input;
-  gps;
-}
-
 class WidgetTrackingPage extends StatefulWidget {
   const WidgetTrackingPage({super.key});
 
@@ -66,7 +52,6 @@ class WidgetTrackingPage extends StatefulWidget {
 class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   static final Logger logger = Logger.logger<WidgetTrackingPage>();
 
-  _DisplayMode _displayMode = _DisplayMode.live;
   static int _bottomBarIndex = 0;
 
   GPS? _gps;
@@ -87,7 +72,6 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   /// editable fields
   final _tpNotes =
       TextEditingController(text: DataBridge.instance.trackPointUserNotes);
-  final _tpSearch = TextEditingController();
 
   void render() {
     if (mounted) {
@@ -158,9 +142,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                     gps: _bridge.calcGpsPoints.first, softLimit: 3))
                 .map((e) => e.id)
                 .toList());
-        if (_displayMode == _DisplayMode.live) {
-          render();
-        }
+        render();
       }
     } catch (e, stk) {
       logger.error('update alias idList: $e', stk);
@@ -169,9 +151,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
   void onTrackingStatusChanged(EventOnTrackingStatusChanged e) {
     _tpNotes.text = DataBridge.instance.trackPointUserNotes;
-    if (_displayMode != _DisplayMode.gps) {
-      render();
-    }
+    render();
   }
 
   ///
@@ -181,9 +161,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
   ///
   void onTick(EventOnAppTick tick) {
-    if (_displayMode != _DisplayMode.gps) {
-      render();
-    }
+    render();
   }
 
   /// _controller
@@ -228,45 +206,13 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
           body: body, appBar: AppBar(title: const Text('Live Tracking')));
     }
     try {
-      /// nothing checked at this point
-      switch (_displayMode) {
-        case _DisplayMode.recentTrackPoints:
-          body = AppWidgets.renderTrackPointSearchList(
-              context: context,
-              textController: _tpSearch,
-              onUpdate: () {
-                render();
-              });
-          break;
-
-        /// last visited mode
-        case _DisplayMode.lastVisited:
-          GPS gps = _bridge.calcGpsPoints.first;
-          body = AppWidgets.renderTrackPointSearchList(
-              context: context,
-              textController: _tpSearch,
-              onUpdate: () {
-                render();
-              },
-              gps: gps);
-
-          break;
-
-        /// tasks mode
-        case _DisplayMode.gps:
-          body = osmFlutter;
-          break;
-
-        /// recent mode
-        default:
-          if (_bridge.trackingStatus == TrackingStatus.moving) {
-            body = renderTrackPointMoving();
-          } else if (_bridge.trackingStatus == TrackingStatus.standing) {
-            body = renderTrackPointStanding();
-          } else {
-            body =
-                AppWidgets.loading(const Text('Waiting for Tracking Status'));
-          }
+      /// recent
+      if (_bridge.trackingStatus == TrackingStatus.moving) {
+        body = renderTrackPointMoving();
+      } else if (_bridge.trackingStatus == TrackingStatus.standing) {
+        body = renderTrackPointStanding();
+      } else {
+        body = AppWidgets.loading(const Text('Waiting for Tracking Status'));
       }
     } catch (e, stk) {
       logger.error('::build error: $e', stk);
@@ -282,115 +228,32 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
   ///
   BottomNavigationBar bottomNavBar(BuildContext context) {
-    if (_displayMode == _DisplayMode.gps) {
-      return BottomNavigationBar(
-          currentIndex: 3,
-          type: BottomNavigationBarType.fixed,
-          items: const [
-            BottomNavigationBarItem(
-                icon: Icon(Icons.arrow_back), label: 'Back to Live'),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.add), label: 'Create Alias'),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.search), label: 'Lookup Alias'),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.map), label: 'Google Maps'),
-          ],
-          onTap: (int id) async {
-            switch (id) {
-              case 1: // 2.
-                await AppWidgets.dialog(contents: <Widget>[
-                  const Text('Create Alias here?')
-                ], buttons: <Widget>[
-                  TextButton(
-                    child: const Text('Yes'),
-                    onPressed: () async {
-                      final geoPoint = await mapController
-                          .getCurrentPositionAdvancedPositionPicker();
-                      GPS gps = GPS(geoPoint.latitude, geoPoint.longitude);
-                      String address =
-                          (await addr.Address(gps).lookupAddress()).toString();
-                      ModelAlias alias = ModelAlias(
-                          title: address,
-                          gps: gps,
-                          description: '',
-                          lastVisited: DateTime.now(),
-                          radius: AppSettings.distanceTreshold);
-                      await alias.insert();
-                      Future.delayed(const Duration(milliseconds: 100), () {
-                        render();
-                      });
-                    },
-                  ),
-                  TextButton(
-                    child: const Text('No'),
-                    onPressed: () => Navigator.pop(context),
-                  )
-                ], context: context);
-
-                break;
-              case 2: // 3.
-
-                final geoPoint = await mapController
-                    .getCurrentPositionAdvancedPositionPicker();
-                List<ModelAlias> aliasList = await ModelAlias.byArea(
-                    gps: GPS(geoPoint.latitude, geoPoint.longitude));
-                if (aliasList.isNotEmpty) {
-                  if (mounted) {
-                    Navigator.pushNamed(context, AppRoutes.editAlias.route,
-                            arguments: aliasList.first.id)
-                        .then(
-                      (value) {
-                        render();
-                      },
-                    );
-                  }
-                } else {
-                  Fluttertoast.showToast(msg: 'Here is no Alias');
-                }
-                break;
-              case 3: // 4.
-                GPS gps = await GPS.gps();
-                var geoPoint = await mapController
-                    .getCurrentPositionAdvancedPositionPicker();
-                GPS.launchGoogleMaps(
-                    gps.lat, gps.lon, geoPoint.latitude, geoPoint.longitude);
-                break;
-              default: // 1.
-                _bottomBarIndex = 0;
-                _displayMode = _DisplayMode.live;
-            }
-            _bottomBarIndex = id;
-          });
-    } else {
-      return BottomNavigationBar(
-          currentIndex: _bottomBarIndex,
-          type: BottomNavigationBarType.fixed,
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.near_me), label: 'Live'),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.recent_actors), label: 'Lokal'),
-            BottomNavigationBarItem(icon: Icon(Icons.timer), label: 'Zeit'),
-            BottomNavigationBarItem(icon: Icon(Icons.map), label: 'GPS'),
-          ],
-          onTap: (int id) {
-            switch (id) {
-              case 1: // 2.
-                _displayMode = _DisplayMode.lastVisited;
-                break;
-              case 2: // 3.
-                _displayMode = _DisplayMode.recentTrackPoints;
-                break;
-              case 3: // 4.
-                _displayMode = _DisplayMode.gps;
-                break;
-              default: // 5.
-                _displayMode = _DisplayMode.live;
-            }
-            _bottomBarIndex = id;
-            render();
-          });
-    }
+    return BottomNavigationBar(
+        currentIndex: _bottomBarIndex,
+        type: BottomNavigationBarType.fixed,
+        items: const [
+          BottomNavigationBarItem(
+              icon: Icon(Icons.search), label: 'Trackpoints'),
+          BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Map'),
+        ],
+        onTap: (int id) async {
+          switch (id) {
+            case 0: // 2.
+              Navigator.pushNamed(context, AppRoutes.listTrackpoints.route)
+                  .then(
+                (value) => render(),
+              );
+              break;
+            case 1: // 3.
+              Navigator.pushNamed(context, AppRoutes.osm.route).then(
+                (value) => render(),
+              );
+              break;
+            default: // 5.
+          }
+          _bottomBarIndex = id;
+          render();
+        });
   }
 
   ///
@@ -439,7 +302,6 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
             _bridge.currentAliasIdList = await Cache.setValue<List<int>>(
                 CacheKeys.cacheCurrentAliasIdList,
                 (await ModelAlias.byArea(gps: gps)).map((e) => e.id).toList());
-            await Cache.reload();
             render();
           }
         },
@@ -534,7 +396,6 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
           if (_bridge.calcGpsPoints.isNotEmpty) {
             _bridge.currentAliasIdList = await Cache.setValue<List<int>>(
                 CacheKeys.cacheCurrentAliasIdList, location.aliasIds);
-            await Cache.reload();
             render();
           }
         },
@@ -654,7 +515,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         userModels.add(model);
       }
     }
-    userModels.sort((a, b) => a.sortOrder - b.sortOrder);
+    //userModels.sort((a, b) => a.sortOrder - b.sortOrder);
     var userList = userModels.map((e) => e.title);
     String users = userList.isNotEmpty ? '\n- ${userList.join('\n- ')}' : ' - ';
 
@@ -687,7 +548,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         taskModels.add(item);
       }
     }
-    taskModels.sort((a, b) => a.sortOrder - b.sortOrder);
+    //taskModels.sort((a, b) => a.sortOrder - b.sortOrder);
     var taskList = taskModels.map(
       (e) => e.title,
     );

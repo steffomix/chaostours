@@ -219,7 +219,6 @@ class AppSettings {
 
   static Future<void> loadSettings() async {
     try {
-      await Cache.reload();
       statusStandingRequireAlias = await Cache.getValue<bool>(
           CacheKeys.globalsStatusStandingRequireAlias,
           _statusStandingRequireAliasDefault);
@@ -383,7 +382,5 @@ class AppSettings {
 
     await Cache.setValue<bool>(
         CacheKeys.globalPublishToCalendar, publishToCalendar);
-
-    await Cache.reload();
   }
 }

@@ -24,13 +24,13 @@ class ModelUserGroup {
   int _id = 0;
   int get id => _id;
   bool isActive = true;
-  int sortOrder = 0;
+  String sortOrder = '';
   String title = '';
   String description = '';
 
   ModelUserGroup(
       {this.isActive = true,
-      this.sortOrder = 0,
+      this.sortOrder = '',
       this.title = '',
       this.description = ''});
 
@@ -47,7 +47,7 @@ class ModelUserGroup {
   static ModelUserGroup fromMap(Map<String, Object?> map) {
     var model = ModelUserGroup(
         isActive: DB.parseBool(map[TableUserGroup.isActive.column]),
-        sortOrder: DB.parseInt(map[TableUserGroup.sortOrder.column]),
+        sortOrder: DB.parseString(map[TableUserGroup.sortOrder.column]),
         title: DB.parseString(map[TableUserGroup.title.column]),
         description: DB.parseString(map[TableUserGroup.description.column]));
     model._id = DB.parseInt(map[TableUserGroup.primaryKey.column]);

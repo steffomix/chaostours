@@ -32,8 +32,6 @@ class DataBridge {
   factory DataBridge() => _instance ??= DataBridge._();
   static DataBridge get instance => _instance ??= DataBridge._();
 
-  Future<void> reload() async => await Cache.reload();
-
   /// trigger driving status
   TrackingStatus triggeredTrackingStatus = TrackingStatus.none;
   Future<void> triggerTrackingStatus(TrackingStatus status) async {
@@ -92,7 +90,6 @@ class DataBridge {
       _serviceRunning = true;
 
       Future.microtask(() async {
-        await DataBridge.instance.reload();
         await AppSettings.loadSettings();
         await AppSettings.saveSettings();
         await DataBridge.instance.loadCache();
@@ -142,8 +139,15 @@ class DataBridge {
           } catch (e, stk) {
             logger.error('getBackgroundLogs: $e', stk);
           }
-
-          await Future.delayed(AppSettings.backgroundLookupDuration);
+          try {
+            await Future.delayed(const Duration(seconds: 10));
+            await Future.delayed(AppSettings.backgroundLookupDuration)
+                .onError((error, stackTrace) {
+              print('e');
+            });
+          } catch (e) {
+            await Future.delayed(const Duration(seconds: 10));
+          }
         }
       });
     }
@@ -153,8 +157,6 @@ class DataBridge {
   Future<void> loadCache([GPS? gps]) async {
     try {
       gps ??= await GPS.gps();
-
-      await Cache.reload();
 
       /// address update
       currentAddress =

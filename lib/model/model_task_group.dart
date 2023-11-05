@@ -24,13 +24,13 @@ class ModelTaskGroup {
   int _id = 0;
   int get id => _id;
   bool isActive = true;
-  int sortOrder = 0;
+  String sortOrder = '';
   String title = '';
   String description = '';
 
   ModelTaskGroup(
       {this.isActive = true,
-      this.sortOrder = 0,
+      this.sortOrder = '',
       this.title = '',
       this.description = ''});
 
@@ -47,7 +47,7 @@ class ModelTaskGroup {
   static ModelTaskGroup fromMap(Map<String, Object?> map) {
     var model = ModelTaskGroup(
         isActive: DB.parseBool(map[TableTaskGroup.isActive.column]),
-        sortOrder: DB.parseInt(map[TableTaskGroup.sortOrder.column]),
+        sortOrder: DB.parseString(map[TableTaskGroup.sortOrder.column]),
         title: DB.parseString(map[TableTaskGroup.title.column]),
         description: DB.parseString(map[TableTaskGroup.description.column]));
     model._id = DB.parseInt(map[TableTaskGroup.primaryKey.column]);
