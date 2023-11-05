@@ -85,12 +85,17 @@ enum Cache {
   globalPublishToCalendar(bool);
 
   Future<T> load<T>(T fallback) async {
-    return await CacheTypeAdapter.getValue<T>(this, fallback);
+    T value =
+        (_cache[this] ??= await CacheTypeAdapter.getValue<T>(this, fallback));
+    return value; // await CacheTypeAdapter.getValue<T>(this, fallback);
   }
 
   Future<T> save<T>(T value) async {
+    _cache.addAll({this: value});
     return await CacheTypeAdapter.setValue(this, value);
   }
+
+  static final Map<Cache, dynamic> _cache = {};
 
   final Type cacheType;
   const Cache(this.cacheType);
