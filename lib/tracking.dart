@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 import 'package:background_location_tracker/background_location_tracker.dart';
+import 'package:chaostours/address.dart';
 import 'dart:math' as math;
 
 ///
@@ -122,7 +123,7 @@ class _TrackPoint {
 
   TrackingStatus oldTrackingStatus = TrackingStatus.none;
 
-  DataBridge bridge = DataBridge.instance;
+  //DataBridge bridge = DataBridge.instance;
 
   Future<void> track({required double lat, required double lon}) async {
     /// create gpsPoint
@@ -131,189 +132,179 @@ class _TrackPoint {
     /// load global settings
     await AppSettings.loadSettings();
 
-    /// load last session data
-    await bridge.loadCache(gps);
-
-    if (bridge.trackingStatus == TrackingStatus.none) {
+    if (await Cache.backgroundTrackingStatus.load(TrackingStatus.none) ==
+        TrackingStatus.none) {
       /// initialize basic events if not set
       /// this must be done before loading last session
-      bridge.trackPointGpsStartMoving =
-          await Cache.cacheEventBackgroundGpsStartMoving.save<GPS>(gps);
-      bridge.trackPointGpsStartStanding =
-          await Cache.cacheEventBackgroundGpsStartStanding.save<GPS>(gps);
-      bridge.trackPointGpslastStatusChange =
-          await Cache.cacheEventBackgroundGpsLastStatusChange.save<GPS>(gps);
+      await Cache.backgroundGpsStartMoving.save<GPS>(gps);
+      await Cache.backgroundGpsStartStanding.save<GPS>(gps);
+      await Cache.backgroundGpsLastStatusChange.save<GPS>(gps);
 
       /// app start, no status yet
-      bridge.trackingStatus = await Cache.cacheBackgroundTrackingStatus
+      await Cache.backgroundTrackingStatus
           .save<TrackingStatus>(TrackingStatus.moving);
     }
 
-    int maxGpsPoints = (AppSettings.autoCreateAlias.inSeconds == 0
-            ? AppSettings.autocreateAliasDefault.inSeconds / 60
-            : AppSettings.autoCreateAlias.inSeconds /
-                AppSettings.trackPointInterval.inSeconds)
+    Duration appSettingAutoCreateAliasDuration = await Cache
+        .appSettingAutocreateAlias
+        .load<Duration>(AppSettings.autoCreateAliasDefault);
+
+    Duration appSettingsTrackpointIntervalDuration = await Cache
+        .appSettingTrackPointInterval
+        .load<Duration>(AppSettings.backgroundLookupDurationDefault);
+
+    int maxGpsPoints = (appSettingAutoCreateAliasDuration.inSeconds == 0
+            ? AppSettings.autoCreateAliasDefault.inSeconds / 60
+            : appSettingAutoCreateAliasDuration.inSeconds /
+                appSettingsTrackpointIntervalDuration.inSeconds)
         .ceil();
 
     /// add current gps point
-    bridge.gpsPoints.insert(0, gps);
+    List<GPS> gpsPoints = await Cache.backgroundGpsPoints.load<List<GPS>>([]);
+    gpsPoints.insert(0, gps);
 
-    if (bridge.gpsPoints.length != maxGpsPoints) {
+    if (gpsPoints.length != maxGpsPoints) {
       /// prefill gpsPoints
-      while (bridge.gpsPoints.length < maxGpsPoints) {
+      while (gpsPoints.length < maxGpsPoints) {
         var gpsFiller = GPS(gps.lat, gps.lon);
         gpsFiller.time =
-            bridge.gpsPoints.last.time.add(AppSettings.trackPointInterval);
-        bridge.gpsPoints.add(gpsFiller);
+            gpsPoints.last.time.add(AppSettings.trackPointInterval);
+        gpsPoints.add(gpsFiller);
       }
 
       /// prune gpsPoints
-      while (bridge.gpsPoints.length > maxGpsPoints) {
-        bridge.gpsPoints.removeLast();
+      while (gpsPoints.length > maxGpsPoints) {
+        gpsPoints.removeLast();
       }
     }
 
     /// filter gps points for trackpoint calculation
-    calculateSmoothPoints();
+    List<GPS> smoothGpsPoints = calculateSmoothPoints(gpsPoints);
 
-    /// get calculation range from smoothPoints
-    bridge.calcGpsPoints.clear();
-    int calculationRange = 10;
-    try {
-      calculationRange += (1 +
-              (AppSettings.timeRangeTreshold.inSeconds /
-                  AppSettings.trackPointInterval.inSeconds))
-          .floor();
-    } catch (e) {
-      logger.warn(e);
-    }
-    bridge.calcGpsPoints.addAll(bridge.smoothGpsPoints.getRange(
-        0, math.min(bridge.smoothGpsPoints.length - 1, calculationRange)));
+    /// extract calculation points from smoothed points
+    List<GPS> calcGpsPoints = smoothGpsPoints
+        .getRange(
+            0,
+            math.min(
+                smoothGpsPoints.length - 1,
+                (AppSettings.timeRangeTreshold.inSeconds /
+                        AppSettings.trackPointInterval.inSeconds)
+                    .ceil()))
+        .toList();
 
     /// continue with smoothed gps
-    gps = bridge.calcGpsPoints.first;
+    gps = calcGpsPoints.first;
 
     /// all gps points calculated, save them
-    await Cache.cacheBackgroundGpsPoints.save<List<GPS>>(bridge.gpsPoints);
-    await Cache.cacheBackgroundSmoothGpsPoints
-        .save<List<GPS>>(bridge.smoothGpsPoints);
-    await Cache.cacheBackgroundCalcGpsPoints
-        .save<List<GPS>>(bridge.calcGpsPoints);
-    await Cache.cacheBackgroundLastGps.save<GPS>(gps);
+    await Cache.backgroundLastGps.save<GPS>(gps);
+    await Cache.backgroundGpsPoints.save<List<GPS>>(gpsPoints);
+    await Cache.backgroundSmoothGpsPoints.save<List<GPS>>(smoothGpsPoints);
+    await Cache.backgroundCalcGpsPoints.save<List<GPS>>(calcGpsPoints);
 
+    /// collect gps related data
     Location gpsLocation = await Location.location(gps);
 
+    int distanceTreshold = gpsLocation.aliasModels.firstOrNull?.radius ??
+        AppSettings.distanceTreshold;
+
     /// cache alias list
-    bridge.currentAliasIdList = await Cache.cacheCurrentAliasIdList
-        .save<List<int>>(gpsLocation.aliasIds);
+    await Cache.backgroundAliasIdList.save<List<int>>(gpsLocation.aliasIds);
 
     /// remember old status
-    oldTrackingStatus = bridge.trackingStatus;
+    TrackingStatus newTrackingStatus = oldTrackingStatus = await Cache
+        .backgroundTrackingStatus
+        .load<TrackingStatus>(TrackingStatus.none);
 
     ///
     /// process trackpoint
     ///
     ///
     /// process user trigger standing
-    if (bridge.triggeredTrackingStatus != TrackingStatus.none) {
-      if (bridge.triggeredTrackingStatus == TrackingStatus.standing) {
-        await cacheNewStatusStanding(gps);
+    TrackingStatus triggeredTrackingStatus = await Cache.trackingStatusTriggered
+        .load<TrackingStatus>(TrackingStatus.none);
+
+    if (triggeredTrackingStatus != TrackingStatus.none) {
+      /// reset trigger
+      await Cache.trackingStatusTriggered
+          .save<TrackingStatus>(TrackingStatus.none);
+
+      if (triggeredTrackingStatus == TrackingStatus.standing) {
+        newTrackingStatus = await cacheNewStatusStanding(gps);
 
         /// process user trigger moving
-      } else if (bridge.triggeredTrackingStatus == TrackingStatus.moving) {
-        await cacheNewStatusMoving(gps);
+      } else if (triggeredTrackingStatus == TrackingStatus.moving) {
+        newTrackingStatus = await cacheNewStatusMoving(gps);
       }
     } else {
       /// check for standing
       if (oldTrackingStatus == TrackingStatus.standing) {
-        ///
-        int distanceTreshold = AppSettings.distanceTreshold;
-        if (bridge.trackPointAliasIdList.isNotEmpty) {
-          try {
-            distanceTreshold =
-                (await ModelAlias.byId(bridge.trackPointAliasIdList.first))
-                        ?.radius ??
-                    AppSettings.distanceTreshold;
-          } catch (e) {
-            if (gpsLocation.hasAlias) {
-              distanceTreshold = gpsLocation.aliasModels.first.radius;
-            } else {
-              distanceTreshold = AppSettings.distanceTreshold;
-            }
-          }
-        }
+        /// start check with true value
+        bool checkStartedMoving = true;
 
-        GPS calculatedLocation =
-            bridge.trackPointGpsStartStanding ?? bridge.calcGpsPoints.last;
-        bool startedMoving = true;
+        GPS gpsStandingStartet = await Cache.backgroundGpsStartStanding
+            .load<GPS>(calcGpsPoints.last);
 
         /// check if all calc points are below distance treshold
-        for (var gps in bridge.calcGpsPoints) {
-          if (GPS.distance(calculatedLocation, gps) <= distanceTreshold) {
+        for (var gps in calcGpsPoints) {
+          if (GPS.distance(gpsStandingStartet, gps) <= distanceTreshold) {
             // still standing
-            startedMoving = false;
+            checkStartedMoving = false;
             break;
           }
         }
-        if (startedMoving) {
-          await cacheNewStatusMoving(gps);
+        if (checkStartedMoving) {
+          newTrackingStatus = await cacheNewStatusMoving(gps);
         }
       } else if (oldTrackingStatus == TrackingStatus.moving) {
-        /// to calculate standing simply add path distance over all calc points
+        /// autocreate alias?
         if (AppSettings.statusStandingRequireAlias && !gpsLocation.hasAlias) {
-          /// autocreate alias
           try {
             /// autocreate must be activated
             if (AppSettings.autoCreateAlias.inMinutes > 0) {
               /// check if enough time has passed
-              if ((bridge.trackPointGpsStartMoving?.time ?? gps.time)
+              if ((await Cache.backgroundGpsStartMoving.load<GPS>(gps))
+                  .time
                   .isBefore(gps.time.subtract(AppSettings.autoCreateAlias))) {
                 /// check if all points are in radius
-                bool allPointsInside = true;
-                for (var sm in bridge.smoothGpsPoints) {
+                bool checkAllPointsInside = true;
+                for (var sm in smoothGpsPoints) {
                   if (GPS.distance(sm, gps) > AppSettings.distanceTreshold) {
-                    allPointsInside = false;
+                    checkAllPointsInside = false;
                     break;
                   }
                 }
 
-                /// all conditions ok, auto create alias
-                if (allPointsInside) {
-                  /// get address if enabled
-                  String address = AppSettings.osmLookupCondition ==
-                              OsmLookupConditions.onStatus ||
-                          AppSettings.osmLookupCondition ==
-                              OsmLookupConditions.always
-                      ? await bridge.setAddress(gps)
-                      : '';
+                /// all conditions met, auto create alias
+                if (checkAllPointsInside) {
+                  GPS createAliasGps = GPS.average(calcGpsPoints);
 
-                  /// realign gps
-                  gps = GPS.average(bridge.smoothGpsPoints);
-                  gps.time = DateTime.now();
+                  /// get address
+                  String address = await saveAddress(gps);
+
+                  createAliasGps.time = DateTime.now();
 
                   /// create alias
                   ModelAlias newAlias = ModelAlias(
-                      gps: gps,
-                      lastVisited: bridge.smoothGpsPoints.last.time,
+                      gps: createAliasGps,
+                      lastVisited: smoothGpsPoints.last.time,
                       timesVisited: 1,
                       title: address,
                       description:
                           'Auto created Alias\nat address:\n"$address"\n'
-                          '\nat date/time: ${gps.time.toIso8601String()}',
+                          '\nat date/time: ${createAliasGps.time.toIso8601String()}',
                       radius: AppSettings.distanceTreshold);
                   logger.warn('auto create new alias');
                   await newAlias.insert();
 
                   /// recreate location with new alias
-                  gpsLocation = await Location.location(gps);
+                  gpsLocation = await Location.location(createAliasGps);
 
                   /// update cache alias list
-                  bridge.currentAliasIdList = await Cache
-                      .cacheCurrentAliasIdList
+                  await Cache.backgroundAliasIdList
                       .save<List<int>>(gpsLocation.aliasIds);
 
                   /// change status
-                  gps.time = bridge.smoothGpsPoints.last.time;
+                  gps.time = smoothGpsPoints.last.time;
                   await cacheNewStatusStanding(gps);
                 }
               }
@@ -322,7 +313,7 @@ class _TrackPoint {
             logger.error('autocreate alias: $e', stk);
           }
         } else {
-          if (GPS.distanceOverTrackList(bridge.calcGpsPoints) <
+          if (GPS.distanceOverTrackList(calcGpsPoints) <
               AppSettings.distanceTreshold) {
             await cacheNewStatusStanding(gps);
           }
@@ -330,20 +321,16 @@ class _TrackPoint {
       }
     }
 
-    /// always reset TrackingStatus trigger
-    bridge.triggeredTrackingStatus = await Cache.cacheTriggerTrackingStatus
-        .save<TrackingStatus>(TrackingStatus.none);
-
     if (gpsLocation.isRestricted) {
       logger.log('location is restricted, skip processing status change');
       return;
     }
 
     /// if nothing has changed, nothing to do
-    if (bridge.trackingStatus == oldTrackingStatus) {
+    if (newTrackingStatus == oldTrackingStatus) {
       /// lookup address on every interval
       if (AppSettings.osmLookupCondition == OsmLookupConditions.always) {
-        await bridge.setAddress(gps);
+        await saveAddress(gps);
       }
 
       ///
@@ -353,31 +340,44 @@ class _TrackPoint {
       ///
     } else {
       /// update osm address
-      if (AppSettings.osmLookupCondition == OsmLookupConditions.onStatus) {
-        await bridge.setAddress(gps);
+      if (AppSettings.osmLookupCondition ==
+          OsmLookupConditions.onStatusChanged) {
+        await saveAddress(gps);
       }
 
       /// we started moving
-      if (bridge.trackingStatus == TrackingStatus.moving) {
+      if (newTrackingStatus == TrackingStatus.moving) {
         logger.log('tracking status MOVING');
+
+        List<ModelAlias> aliases =
+            await ModelAlias.byRadius(gps: gps, radius: distanceTreshold);
 
         ///
         ///     --- insert and update database entrys ---
         ///
         if (!AppSettings.statusStandingRequireAlias ||
-            (AppSettings.statusStandingRequireAlias &&
-                bridge.trackPointAliasIdList.isNotEmpty)) {
+            (AppSettings.statusStandingRequireAlias && aliases.isNotEmpty)) {
           /// create and insert new trackpoint
           ModelTrackPoint newTrackPoint = ModelTrackPoint(
               gps: gps,
-              timeStart: bridge.trackPointGpsStartStanding?.time ?? gps.time,
+              timeStart:
+                  (await Cache.backgroundGpsStartStanding.load<GPS>(gps)).time,
               timeEnd: gps.time,
-              calendarEventIds: bridge.lastCalendarEventIds,
-              address: bridge.lastStandingAddress,
-              notes: bridge.trackPointUserNotes);
-          newTrackPoint.aliasIds = bridge.trackPointAliasIdList;
-          newTrackPoint.taskIds = bridge.trackPointTaskIdList;
-          newTrackPoint.userIds = bridge.trackPointUserIdList;
+              calendarEventIds: await Cache.backgroundCalendarLastEventIds
+                  .load<List<CalendarEventId>>([CalendarEventId()]),
+              address: await Cache.backgroundLastStandingAddress
+                  .load<String>(await saveAddress(gps)),
+              notes:
+                  await Cache.backgroundTrackPointUserNotes.load<String>(''));
+          newTrackPoint.aliasIds = aliases
+              .map(
+                (e) => e.id,
+              )
+              .toList();
+          newTrackPoint.taskIds =
+              await Cache.backgroundTaskIdList.load<List<int>>([]);
+          newTrackPoint.userIds =
+              await Cache.backgroundUserIdList.load<List<int>>([]);
 
           /// complete calendar event from trackpoint data
           /// only if no private or restricted alias is present
@@ -402,14 +402,14 @@ class _TrackPoint {
           }
 
           /// reset calendarEvent ID
-          bridge.lastCalendarEventIds =
-              await Cache.calendarLastEventIds.save<List<CalendarEventId>>([]);
+          await Cache.backgroundCalendarLastEventIds
+              .save<List<CalendarEventId>>([]);
 
           /// update alias
           if (gpsLocation.hasAlias) {
             for (var model in gpsLocation.aliasModels) {
-              model.lastVisited = bridge.trackPointGpsStartStanding!.time;
-              model.timesVisited++;
+              model.lastVisited = await Cache.backgroundGpsStartStanding
+                  .load<DateTime>(DateTime.now());
               await model.update();
             }
             // wait before shutdown task
@@ -417,8 +417,8 @@ class _TrackPoint {
           }
 
           /// reset user data
-          await Cache.cacheBackgroundTaskIdList.save<List<int>>([]);
-          await Cache.cacheBackgroundTrackPointUserNotes.save<String>('');
+          await Cache.backgroundTaskIdList.save<List<int>>([]);
+          await Cache.backgroundTrackPointUserNotes.save<String>('');
           logger.log('status MOVING finished');
         } else {
           logger.log(
@@ -426,18 +426,14 @@ class _TrackPoint {
         }
 
         ///
-      } else if (bridge.trackingStatus == TrackingStatus.standing) {
-        logger.log('tracking status STANDING');
+      } else if (newTrackingStatus == TrackingStatus.standing) {
+        logger.log('new tracking status STANDING');
 
-        bridge.lastStandingAddress =
-            await Cache.cacheBackgroundLastStandingAddress.save<String>(
-                AppSettings.osmLookupCondition == OsmLookupConditions.never
-                    ? ''
-                    : bridge.currentAddress);
+        await Cache.backgroundLastStandingAddress
+            .save<String>(await saveAddress(gps));
 
         /// cache alias id list
-        bridge.trackPointAliasIdList = await Cache.cacheBackgroundAliasIdList
-            .save<List<int>>(gpsLocation.aliasIds);
+        await Cache.backgroundAliasIdList.save<List<int>>(gpsLocation.aliasIds);
 
         /// create calendar entry from cache data
         if (AppSettings.publishToCalendar &&
@@ -458,56 +454,62 @@ class _TrackPoint {
     }
 
     await Cache.backgroundLastTick.save<DateTime>(DateTime.now());
+
+    await (Future.delayed(const Duration(seconds: 1)));
   }
 
-  Future<void> cacheNewStatusStanding(GPS gps) async {
-    bridge.trackingStatus = await Cache.cacheBackgroundTrackingStatus
+  Future<String> saveAddress(GPS gps) async {
+    String address = (await Address(gps).lookupAddress()).toString();
+    return await Cache.backgroundAddress.save<String>(address);
+  }
+
+  Future<TrackingStatus> cacheNewStatusStanding(GPS gps) async {
+    await Cache.backgroundTrackingStatus
         .save<TrackingStatus>(TrackingStatus.standing);
-    bridge.trackPointGpsStartStanding =
-        await Cache.cacheEventBackgroundGpsStartStanding.save<GPS>(gps);
-    bridge.trackPointGpslastStatusChange =
-        await Cache.cacheEventBackgroundGpsLastStatusChange.save<GPS>(gps);
+    await Cache.backgroundGpsStartStanding.save<GPS>(gps);
+    await Cache.backgroundGpsLastStatusChange.save<GPS>(gps);
+    return TrackingStatus.standing;
   }
 
-  Future<void> cacheNewStatusMoving(GPS gps) async {
-    bridge.trackingStatus = await Cache.cacheBackgroundTrackingStatus
+  Future<TrackingStatus> cacheNewStatusMoving(GPS gps) async {
+    await Cache.backgroundTrackingStatus
         .save<TrackingStatus>(TrackingStatus.moving);
-    bridge.trackPointGpsStartMoving =
-        await Cache.cacheEventBackgroundGpsStartMoving.save<GPS>(gps);
-    bridge.trackPointGpslastStatusChange =
-        await Cache.cacheEventBackgroundGpsLastStatusChange.save<GPS>(gps);
+    await Cache.backgroundGpsStartMoving.save<GPS>(gps);
+    await Cache.backgroundGpsLastStatusChange.save<GPS>(gps);
+    return TrackingStatus.moving;
   }
 
-  void calculateSmoothPoints() {
-    bridge.smoothGpsPoints.clear();
+  List<GPS> calculateSmoothPoints(List<GPS> gpsPoints) {
+    List<GPS> smoothGpsPoints = [];
     int smooth = AppSettings.gpsPointsSmoothCount;
     if (smooth < 2) {
       /// smoothing is disabled
-      bridge.smoothGpsPoints.addAll(bridge.gpsPoints);
-      return;
+      smoothGpsPoints.addAll(gpsPoints);
+      return smoothGpsPoints;
     }
 
-    if (bridge.gpsPoints.length <= smooth) {
+    if (gpsPoints.length <= smooth) {
       logger.warn('too few gpsPoints for $smooth smoothPoints. '
           'Use all gpsPoints as smoothPoints directly without smmothing effect');
-      bridge.smoothGpsPoints.addAll(bridge.gpsPoints);
-      return;
+      smoothGpsPoints.addAll(gpsPoints);
+      return smoothGpsPoints;
     }
     int index = 0;
-    int range = bridge.gpsPoints.length - smooth;
+    int range = gpsPoints.length - smooth;
     while (index < range) {
       try {
-        var averageGps = GPS
-            .average(bridge.gpsPoints.getRange(index, index + smooth).toList());
-        averageGps.time = bridge.gpsPoints[index].time;
-        bridge.smoothGpsPoints.add(averageGps);
+        var averageGps =
+            GPS.average(gpsPoints.getRange(index, index + smooth).toList());
+        averageGps.time = gpsPoints[index].time;
+        smoothGpsPoints.add(averageGps);
       } catch (e, stk) {
         logger.error('calculateSmoothPoints: $e', stk);
       }
       index++;
     }
+    return smoothGpsPoints;
   }
-
+/*
   /// calc points are not added until time range is fulfilled
   void calculateCalcPoints() {
     /// reset calcPoints
@@ -547,4 +549,5 @@ class _TrackPoint {
       }
     }
   }
+  */
 }

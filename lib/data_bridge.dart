@@ -36,7 +36,7 @@ class DataBridge {
   TrackingStatus triggeredTrackingStatus = TrackingStatus.none;
   Future<void> triggerTrackingStatus(TrackingStatus status) async {
     triggeredTrackingStatus =
-        await Cache.cacheTriggerTrackingStatus.save<TrackingStatus>(status);
+        await Cache.trackingStatusTriggered.save<TrackingStatus>(status);
   }
 
   // list of serialized CalendarEventId
@@ -66,7 +66,7 @@ class DataBridge {
       currentAddress = e.toString();
       logger.error('set address: $e', stk);
     }
-    await Cache.cacheBackgroundAddress.save<String>(currentAddress);
+    await Cache.backgroundAddress.save<String>(currentAddress);
     return currentAddress;
   }
 
@@ -84,20 +84,15 @@ class DataBridge {
   /// save foreground, load background and fire event
   static bool _serviceRunning = false;
   void stopService() => _serviceRunning = false;
-  void startService() {
+  Future<void> startService() async {
     if (!_serviceRunning) {
       _serviceRunning = true;
-
-      Future.microtask(() async {
-        await AppSettings.loadSettings();
-        await AppSettings.saveSettings();
-        await DataBridge.instance.loadCache();
-
-        while (_serviceRunning) {
+      while (_serviceRunning) {
+        Future.microtask(() async {
           if (AppSettings.backgroundTrackingEnabled) {
             try {
               var now = DateTime.now();
-              var lastTick = await Cache.backgroundLastTick.save<DateTime>(now);
+              var lastTick = await Cache.backgroundLastTick.load<DateTime>(now);
               if (lastTick == now) {
                 logger.warn('No Background Tick recognized');
               } else {
@@ -110,7 +105,8 @@ class DataBridge {
                   Future.delayed(const Duration(seconds: 1),
                       () => BackgroundTracking.startTracking());
                 } else {
-                  //logger.log('last BackGround GPS before ${dur.inSeconds} seconds at ${AppSettings.backgroundLookupDuration.inSeconds} seconds interval');
+                  logger.log(
+                      'last BackGround GPS before ${dur.inSeconds} seconds at ${AppSettings.backgroundLookupDuration.inSeconds} seconds interval');
                 }
               }
               Cache.backgroundLastTick.save<DateTime>(now);
@@ -132,17 +128,20 @@ class DataBridge {
           } catch (e, stk) {
             logger.error('service execution: $e', stk);
           }
-          try {
-            await Future.delayed(const Duration(seconds: 10));
-            await Future.delayed(AppSettings.backgroundLookupDuration)
-                .onError((error, stackTrace) {
-              print('e');
-            });
-          } catch (e) {
-            await Future.delayed(const Duration(seconds: 10));
-          }
+        }).onError(
+          (e, stk) {
+            logger.error('data bridge service error: $e', stk);
+          },
+        );
+        try {
+          var delay = AppSettings.backgroundLookupDuration.inSeconds < 10
+              ? const Duration(seconds: 10)
+              : AppSettings.backgroundLookupDuration;
+          await Future.delayed(delay);
+        } catch (e) {
+          await Future.delayed(const Duration(seconds: 10));
         }
-      });
+      }
     }
   }
 
@@ -151,54 +150,51 @@ class DataBridge {
     try {
       gps ??= await GPS.gps();
 
-      /// address update
-      currentAddress = await Cache.cacheBackgroundAddress.load<String>('');
-
-      lastStandingAddress =
-          await Cache.cacheBackgroundLastStandingAddress.load('');
-
       /// status and trigger
-      trackingStatus = await Cache.cacheBackgroundTrackingStatus
+      triggeredTrackingStatus = await Cache.trackingStatusTriggered
           .load<TrackingStatus>(TrackingStatus.none);
-      triggeredTrackingStatus = await Cache.cacheTriggerTrackingStatus
+
+      /// tracking status
+      trackingStatus = await Cache.backgroundTrackingStatus
           .load<TrackingStatus>(TrackingStatus.none);
+
+      /// address update
+      currentAddress = await Cache.backgroundAddress.load<String>('');
+
+      lastStandingAddress = await Cache.backgroundLastStandingAddress.load('');
 
       /// gps tracking
-      lastGps =
-          await Cache.cacheBackgroundLastGps.load<GPS>(GPS(gps.lat, gps.lon));
-      gpsPoints = await Cache.cacheBackgroundGpsPoints.load<List<GPS>>([]);
+      lastGps = await Cache.backgroundLastGps.load<GPS>(GPS(gps.lat, gps.lon));
+      gpsPoints = await Cache.backgroundGpsPoints.load<List<GPS>>([]);
       smoothGpsPoints =
-          await Cache.cacheBackgroundSmoothGpsPoints.load<List<GPS>>([]);
-      calcGpsPoints =
-          await Cache.cacheBackgroundCalcGpsPoints.load<List<GPS>>([]);
+          await Cache.backgroundSmoothGpsPoints.load<List<GPS>>([]);
+      calcGpsPoints = await Cache.backgroundCalcGpsPoints.load<List<GPS>>([]);
 
       /// alias list
       trackPointAliasIdList =
-          await Cache.cacheBackgroundAliasIdList.load<List<int>>([]);
+          await Cache.backgroundAliasIdList.load<List<int>>([]);
       currentAliasIdList =
-          await Cache.cacheCurrentAliasIdList.load<List<int>>([]);
+          await Cache.backgroundAliasIdList.load<List<int>>([]);
 
       /// status events
-      trackPointGpsStartMoving = await Cache.cacheEventBackgroundGpsStartMoving
+      trackPointGpsStartMoving =
+          await Cache.backgroundGpsStartMoving.load<GPS>(GPS(gps.lat, gps.lon));
+      trackPointGpsStartStanding = await Cache.backgroundGpsStartStanding
           .load<GPS>(GPS(gps.lat, gps.lon));
-      trackPointGpsStartStanding = await Cache
-          .cacheEventBackgroundGpsStartStanding
-          .load<GPS>(GPS(gps.lat, gps.lon));
-      trackPointGpslastStatusChange = await Cache
-          .cacheEventBackgroundGpsLastStatusChange
+      trackPointGpslastStatusChange = await Cache.backgroundGpsLastStatusChange
           .load<GPS>(GPS(gps.lat, gps.lon));
 
       /// user data
       trackPointUserIdList =
-          await Cache.cacheBackgroundUserIdList.load<List<int>>([]);
+          await Cache.backgroundUserIdList.load<List<int>>([]);
       trackPointTaskIdList =
-          await Cache.cacheBackgroundTaskIdList.load<List<int>>([]);
+          await Cache.backgroundTaskIdList.load<List<int>>([]);
       trackPointUserNotes =
-          await Cache.cacheBackgroundTrackPointUserNotes.load<String>('');
+          await Cache.backgroundTrackPointUserNotes.load<String>('');
 
       /// calendar
-      lastCalendarEventIds =
-          await Cache.calendarLastEventIds.load<List<CalendarEventId>>([]);
+      lastCalendarEventIds = await Cache.backgroundCalendarLastEventIds
+          .load<List<CalendarEventId>>([]);
     } catch (e, stk) {
       logger.error('loadBackgroundSession: $e', stk);
     }

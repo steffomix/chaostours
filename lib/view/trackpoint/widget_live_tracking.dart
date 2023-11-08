@@ -14,11 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import 'package:chaostours/location.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:visibility_detector/visibility_detector.dart';
 //
+import 'package:chaostours/location.dart';
 import 'package:chaostours/tracking.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/conf/app_routes.dart';
@@ -66,8 +67,9 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   final List<ModelTask> _taskModels = [];
   final List<ModelUser> _userModels = [];
 
-  /// osm
-  final _osmTools = OsmTools();
+  final _visibilityDetectorKey =
+      GlobalKey(debugLabel: 'Life Tracking VisibilityDetectorKey');
+  double _visibleFraction = 0.0;
 
   /// editable fields
   final _tpNotes =
@@ -136,7 +138,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   Future<void> updateAliasList() async {
     try {
       if (_bridge.calcGpsPoints.isNotEmpty) {
-        _bridge.currentAliasIdList = await Cache.cacheCurrentAliasIdList
+        _bridge.currentAliasIdList = await Cache.foregroundAliasIdList
             .save<List<int>>((await ModelAlias.byArea(
                     gps: _bridge.calcGpsPoints.first, softLimit: 3))
                 .map((e) => e.id)
@@ -163,39 +165,6 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     render();
   }
 
-  /// _controller
-  MapController? _mapController;
-  MapController get mapController {
-    return _mapController ??= MapController(
-        initMapWithUserPosition: const UserTrackingOption(unFollowUser: false));
-  }
-
-  OSMOption? _osmOption;
-  OSMFlutter? _osmFlutter;
-  OSMFlutter get osmFlutter {
-    return _osmFlutter ??= OSMFlutter(
-      onMapIsReady: (bool ready) {
-        mapController.removeAllCircle().then(
-              (value) => _osmTools.renderAlias(mapController),
-            );
-      },
-      osmOption: _osmOption ??= const OSMOption(
-        showDefaultInfoWindow: true,
-        showZoomController: true,
-        isPicker: true,
-        zoomOption: ZoomOption(
-          initZoom: 17,
-          minZoomLevel: 8,
-          maxZoomLevel: 19,
-          stepZoom: 1.0,
-        ),
-      ),
-      mapIsLoading: AppWidgets.loading(const Text('Loading Map')),
-      //androidHotReloadSupport: true,
-      controller: mapController,
-    );
-  }
-
   ///
   @override
   Widget build(BuildContext context) {
@@ -219,6 +188,12 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
           const Text('Error, please open App Logger for details.'));
     }
 
+    body = VisibilityDetector(
+        key: _visibilityDetectorKey,
+        child: body,
+        onVisibilityChanged: (VisibilityInfo info) {
+          _visibleFraction = info.visibleFraction;
+        });
     return AppWidgets.scaffold(context,
         body: body,
         navBar: bottomNavBar(context),
@@ -298,7 +273,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         onPressed: () async {
           if (_bridge.gpsPoints.isNotEmpty) {
             var gps = _bridge.gpsPoints.first;
-            _bridge.currentAliasIdList = await Cache.cacheCurrentAliasIdList
+            _bridge.currentAliasIdList = await Cache.foregroundAliasIdList
                 .save<List<int>>((await ModelAlias.byArea(gps: gps))
                     .map((e) => e.id)
                     .toList());
@@ -317,7 +292,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
             var gps = _bridge.gpsPoints.first;
             var address = (await addr.Address(gps).lookupAddress()).toString();
             _bridge.currentAddress =
-                await Cache.cacheBackgroundAddress.save<String>(address);
+                await Cache.backgroundAddress.save<String>(address);
             render();
           }
         },
@@ -340,7 +315,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                     Fluttertoast.showToast(msg: 'Standing sheduled');
                   }
                   _bridge.triggeredTrackingStatus = await Cache
-                      .cacheTriggerTrackingStatus
+                      .trackingStatusTriggered
                       .save(TrackingStatus.standing);
                   render();
                 }),
@@ -394,7 +369,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         child: Text('ALIAS (${location.visibility.name}):\n${tp.aliasText}'),
         onPressed: () async {
           if (_bridge.calcGpsPoints.isNotEmpty) {
-            _bridge.currentAliasIdList = await Cache.cacheCurrentAliasIdList
+            _bridge.currentAliasIdList = await Cache.foregroundAliasIdList
                 .save<List<int>>(location.aliasIds);
             render();
           }
@@ -414,7 +389,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
             var gps = _bridge.gpsPoints.first;
             var address = (await addr.Address(gps).lookupAddress()).toString();
             _bridge.currentAddress =
-                await Cache.cacheBackgroundAddress.save<String>(address);
+                await Cache.backgroundAddress.save<String>(address);
             render();
           }
         },
@@ -443,7 +418,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                     Fluttertoast.showToast(msg: 'Moving sheduled');
                   }
                   _bridge.triggeredTrackingStatus = await Cache
-                      .cacheTriggerTrackingStatus
+                      .trackingStatusTriggered
                       .save(TrackingStatus.moving);
                   render();
                 }),
@@ -469,7 +444,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
             title: model.title,
             subtitle: model.description,
             onToggle: (bool? checked) async {
-              var ck = await Cache.cacheBackgroundTaskIdList
+              var ck = await Cache.backgroundTaskIdList
                   .save<List<int>>(DataBridge.instance.trackPointTaskIdList);
               _bridge.trackPointTaskIdList = ck;
               render();
@@ -492,7 +467,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
             title: model.title,
             subtitle: model.description,
             onToggle: (bool? checked) async {
-              var ck = await Cache.cacheBackgroundUserIdList
+              var ck = await Cache.backgroundUserIdList
                   .save<List<int>>(DataBridge.instance.trackPointUserIdList);
               _bridge.trackPointUserIdList = ck;
               render();
@@ -586,7 +561,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
             controller: _tpNotes,
             onChanged: (String? s) async {
               _bridge.trackPointUserNotes = await Cache
-                  .cacheBackgroundTrackPointUserNotes
+                  .backgroundTrackPointUserNotes
                   .save<String>(_tpNotes.text);
               render();
             }));

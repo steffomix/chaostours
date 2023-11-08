@@ -18,7 +18,15 @@ limitations under the License.
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/cache.dart';
 
-enum OsmLookupConditions { never, onStatus, always }
+enum OsmLookupConditions {
+  never(0),
+  onCreateAlias(1),
+  onStatusChanged(2),
+  always(3);
+
+  const OsmLookupConditions(this.conditionLevel);
+  final int conditionLevel;
+}
 
 enum SettingUnits {
   second(1),
@@ -81,22 +89,21 @@ class AppSettings {
   /// user edit settings.
   /// All setting names must match enum AppSettings values in app_settings.dart
   /// if backgroundTracking is enabled and starts automatic
-  static const bool _backgroundTrackingEnabledDefault = true;
-  static bool backgroundTrackingEnabled = _backgroundTrackingEnabledDefault;
+  static const bool backgroundTrackingEnabledDefault = true;
+  static bool backgroundTrackingEnabled = backgroundTrackingEnabledDefault;
 
   ///
   /// If true, status standing is triggered only if location has an alias.
-  static const bool _statusStandingRequireAliasDefault = true;
-  static bool statusStandingRequireAlias = _statusStandingRequireAliasDefault;
+  static const bool statusStandingRequireAliasDefault = true;
+  static bool statusStandingRequireAlias = statusStandingRequireAliasDefault;
 
   /// currently only used on live tracking page.
   /// Looks for new background data.
-  static const Duration _backgroundLookupDurationDefault =
-      Duration(seconds: 15);
-  static Duration _backgroundLookupDuration = _backgroundLookupDurationDefault;
+  static const Duration backgroundLookupDurationDefault = Duration(seconds: 15);
+  static Duration _backgroundLookupDuration = backgroundLookupDurationDefault;
   static Duration get backgroundLookupDuration => _backgroundLookupDuration;
   static AppSettingLimits backgroundLookupDurationLimits = AppSettingLimits(
-      cacheKey: Cache.globalsBackgroundLookupDuration, min: 5, max: 60);
+      cacheKey: Cache.appSettingBackgroundLookupDuration, min: 5, max: 60);
   static set backgroundLookupDuration(Duration value) {
     if (backgroundLookupDurationLimits.isValid(value.inSeconds)) {
       _backgroundLookupDuration = value;
@@ -105,11 +112,11 @@ class AppSettings {
 
   /// User interactions can cause massive foreground gps lookups.
   /// to prevent application lags, gps is chached for some seconds
-  static const Duration _cacheGpsTimeDefault = Duration(seconds: 10);
-  static Duration _cacheGpsTime = _cacheGpsTimeDefault;
+  static const Duration cacheGpsTimeDefault = Duration(seconds: 10);
+  static Duration _cacheGpsTime = cacheGpsTimeDefault;
   static Duration get cacheGpsTime => _cacheGpsTime;
   static AppSettingLimits cachGpsTimeLimits = AppSettingLimits(
-      cacheKey: Cache.globalsCacheGpsTime, max: 600, zeroDisables: true);
+      cacheKey: Cache.appSettingCacheGpsTime, max: 600, zeroDisables: true);
 
   static set cacheGpsTime(Duration value) {
     if (cachGpsTimeLimits.isValid(value.inSeconds)) {
@@ -120,11 +127,11 @@ class AppSettings {
   /// the distance to travel within <timeRangeTreshold> to trigger a status change.
   /// Above to trigger moving, below to trigger standing
   /// This is also the default radius for new alias
-  static const int _distanceTresholdDefault = 100; //meters
-  static int _distanceTreshold = _distanceTresholdDefault;
+  static const int distanceTresholdDefault = 100; //meters
+  static int _distanceTreshold = distanceTresholdDefault;
   static int get distanceTreshold => _distanceTreshold;
   static AppSettingLimits distanceTresholdLimits = AppSettingLimits(
-      cacheKey: Cache.globalsDistanceTreshold,
+      cacheKey: Cache.appSettingDistanceTreshold,
       min: 10,
       unit: SettingUnits.meter);
   static set distanceTreshold(int value) {
@@ -135,8 +142,8 @@ class AppSettings {
 
   /// stop time needed to trigger stop.
   /// Shoud be at least 3 times more than trackPointDuration
-  static const Duration _timeRangeTresholdDefault = Duration(seconds: 180);
-  static Duration _timeRangeTreshold = _timeRangeTresholdDefault;
+  static const Duration timeRangeTresholdDefault = Duration(seconds: 180);
+  static Duration _timeRangeTreshold = timeRangeTresholdDefault;
   static Duration get timeRangeTreshold => _timeRangeTreshold;
   static set timeRangeTreshold(Duration value) {
     if (timeRangeTresholdLimits.isValid(value.inSeconds) &&
@@ -146,7 +153,7 @@ class AppSettings {
   }
 
   static AppSettingLimits timeRangeTresholdLimits = AppSettingLimits(
-      cacheKey: Cache.globalsTimeRangeTreshold,
+      cacheKey: Cache.appSettingTimeRangeTreshold,
       min: (trackPointInterval.inSeconds * 3 / 60).ceil(),
       unit: SettingUnits.minute);
 
@@ -162,7 +169,7 @@ class AppSettings {
 
   static AppSettingLimits get trackPointIntervalLimits {
     return AppSettingLimits(
-        cacheKey: Cache.globalsTrackPointInterval,
+        cacheKey: Cache.appSettingTrackPointInterval,
         min: 15,
         max: (_timeRangeTreshold.inSeconds / 1).ceil());
   }
@@ -170,8 +177,8 @@ class AppSettings {
   /// compensate unprecise gps by using average of given gpsPoints.
   /// That means that a smooth count of 3 requires at least 4 gpsPoints
   /// for trackpoint calculation
-  static const int _gpsPointsSmoothCountDefault = 5;
-  static int _gpsPointsSmoothCount = _gpsPointsSmoothCountDefault;
+  static const int gpsPointsSmoothCountDefault = 5;
+  static int _gpsPointsSmoothCount = gpsPointsSmoothCountDefault;
   static int get gpsPointsSmoothCount => _gpsPointsSmoothCount;
   static set gpsPointsSmoothCount(int count) {
     if (gpsPointsSmoothCountLimits.isValid(count)) {
@@ -181,7 +188,7 @@ class AppSettings {
 
   static AppSettingLimits get gpsPointsSmoothCountLimits {
     return AppSettingLimits(
-        cacheKey: Cache.globalsGpsPointsSmoothCount,
+        cacheKey: Cache.appSettingGpsPointsSmoothCount,
         min: 2,
         max: (timeRangeTreshold.inSeconds / trackPointInterval.inSeconds)
             .floor(),
@@ -189,20 +196,20 @@ class AppSettings {
         unit: SettingUnits.piece);
   }
 
-  static const bool _publishToCalendarDefault = true;
-  static bool publishToCalendar = _publishToCalendarDefault;
+  static const bool publishToCalendarDefault = true;
+  static bool publishToCalendar = publishToCalendarDefault;
 
   /// when background looks for an address of given gps
-  static const OsmLookupConditions _osmLookupConditionDefault =
-      OsmLookupConditions.onStatus;
-  static OsmLookupConditions osmLookupCondition = _osmLookupConditionDefault;
+  static const OsmLookupConditions osmLookupConditionDefault =
+      OsmLookupConditions.onStatusChanged;
+  static OsmLookupConditions osmLookupCondition = osmLookupConditionDefault;
 
   /// if no alias is found on trackingstatus standing
   /// how long in minutes to wait until an alias is autocreated
   /// 0 = disabled
-  static const Duration _autocreateAliasDefault = Duration(minutes: 10);
-  static Duration get autocreateAliasDefault => _autocreateAliasDefault;
-  static Duration _autoCreateAlias = _autocreateAliasDefault;
+  static const Duration autocreateAliasDefault = Duration(minutes: 10);
+  static Duration get autoCreateAliasDefault => autocreateAliasDefault;
+  static Duration _autoCreateAlias = autocreateAliasDefault;
 
   static Duration get autoCreateAlias => _autoCreateAlias;
   static set autoCreateAlias(Duration dur) {
@@ -212,46 +219,48 @@ class AppSettings {
   }
 
   static AppSettingLimits autoCreateAliasLimits = AppSettingLimits(
-      cacheKey: Cache.globalsAutocreateAlias,
+      cacheKey: Cache.appSettingAutocreateAlias,
       min: 10,
       zeroDisables: true,
       unit: SettingUnits.minute);
 
   static Future<void> loadSettings() async {
     try {
-      statusStandingRequireAlias = await Cache.globalsStatusStandingRequireAlias
-          .load<bool>(_statusStandingRequireAliasDefault);
+      statusStandingRequireAlias = await Cache
+          .appSettingStatusStandingRequireAlias
+          .load<bool>(statusStandingRequireAliasDefault);
 
-      backgroundTrackingEnabled = await Cache.globalsBackgroundTrackingEnabled
-          .load<bool>(_backgroundTrackingEnabledDefault);
+      backgroundTrackingEnabled = await Cache
+          .appSettingBackgroundTrackingEnabled
+          .load<bool>(backgroundTrackingEnabledDefault);
 
-      _backgroundLookupDuration = await Cache.globalsBackgroundLookupDuration
-          .load<Duration>(_backgroundLookupDurationDefault);
+      _backgroundLookupDuration = await Cache.appSettingBackgroundLookupDuration
+          .load<Duration>(backgroundLookupDurationDefault);
 
-      _cacheGpsTime =
-          await Cache.globalsCacheGpsTime.load<Duration>(_cacheGpsTimeDefault);
+      _cacheGpsTime = await Cache.appSettingCacheGpsTime
+          .load<Duration>(cacheGpsTimeDefault);
 
-      _distanceTreshold = await Cache.globalsDistanceTreshold
-          .load<int>(_distanceTresholdDefault);
+      _distanceTreshold = await Cache.appSettingDistanceTreshold
+          .load<int>(distanceTresholdDefault);
 
-      _timeRangeTreshold = await Cache.globalsTimeRangeTreshold
-          .load<Duration>(_timeRangeTresholdDefault);
+      _timeRangeTreshold = await Cache.appSettingTimeRangeTreshold
+          .load<Duration>(timeRangeTresholdDefault);
 
-      _trackPointInterval = await Cache.globalsTrackPointInterval
+      _trackPointInterval = await Cache.appSettingTrackPointInterval
           .load<Duration>(_trackPointIntervalDefault);
 
-      _gpsPointsSmoothCount = await Cache.globalsGpsPointsSmoothCount
-          .load<int>(_gpsPointsSmoothCountDefault);
+      _gpsPointsSmoothCount = await Cache.appSettingGpsPointsSmoothCount
+          .load<int>(gpsPointsSmoothCountDefault);
 
-      osmLookupCondition = await Cache.globalsOsmLookupCondition
-          .load<OsmLookupConditions>(_osmLookupConditionDefault);
+      osmLookupCondition = await Cache.appSettingOsmLookupCondition
+          .load<OsmLookupConditions>(osmLookupConditionDefault);
 
       /// processed value
-      _autoCreateAlias = await Cache.globalsAutocreateAlias
-          .load<Duration>(_autocreateAliasDefault);
+      _autoCreateAlias = await Cache.appSettingAutocreateAlias
+          .load<Duration>(autocreateAliasDefault);
 
-      publishToCalendar = await Cache.globalPublishToCalendar
-          .load<bool>(_publishToCalendarDefault);
+      publishToCalendar = await Cache.appSettingPublishToCalendar
+          .load<bool>(publishToCalendarDefault);
     } catch (e, stk) {
       logger.error('load settings: $e', stk);
     }
@@ -259,17 +268,17 @@ class AppSettings {
 
   static Future<void> reset() async {
     weekDays = _weekDaysDefault;
-    backgroundTrackingEnabled = _backgroundTrackingEnabledDefault;
-    statusStandingRequireAlias = _statusStandingRequireAliasDefault;
-    _backgroundLookupDuration = _backgroundLookupDurationDefault;
-    _cacheGpsTime = _cacheGpsTimeDefault;
-    _distanceTreshold = _distanceTresholdDefault;
-    _timeRangeTreshold = _timeRangeTresholdDefault;
+    backgroundTrackingEnabled = backgroundTrackingEnabledDefault;
+    statusStandingRequireAlias = statusStandingRequireAliasDefault;
+    _backgroundLookupDuration = backgroundLookupDurationDefault;
+    _cacheGpsTime = cacheGpsTimeDefault;
+    _distanceTreshold = distanceTresholdDefault;
+    _timeRangeTreshold = timeRangeTresholdDefault;
     _trackPointInterval = _trackPointIntervalDefault;
-    _gpsPointsSmoothCount = _gpsPointsSmoothCountDefault;
-    osmLookupCondition = _osmLookupConditionDefault;
-    _autoCreateAlias = _autocreateAliasDefault;
-    publishToCalendar = _publishToCalendarDefault;
+    _gpsPointsSmoothCount = gpsPointsSmoothCountDefault;
+    osmLookupCondition = osmLookupConditionDefault;
+    _autoCreateAlias = autocreateAliasDefault;
+    publishToCalendar = publishToCalendarDefault;
     await saveSettings();
   }
 
@@ -277,35 +286,35 @@ class AppSettings {
       {required Cache key, required dynamic value}) async {
     if (value.runtimeType == int) {
       switch (key) {
-        case Cache.globalsBackgroundLookupDuration:
+        case Cache.appSettingBackgroundLookupDuration:
           backgroundLookupDuration =
               await key.save<Duration>(Duration(seconds: value as int));
           break;
 
-        case Cache.globalsCacheGpsTime:
+        case Cache.appSettingCacheGpsTime:
           cacheGpsTime =
               await key.save<Duration>(Duration(seconds: value as int));
           break;
 
-        case Cache.globalsDistanceTreshold:
+        case Cache.appSettingDistanceTreshold:
           distanceTreshold = await key.save<int>(value as int);
           break;
 
-        case Cache.globalsTimeRangeTreshold:
+        case Cache.appSettingTimeRangeTreshold:
           timeRangeTreshold =
               await key.save<Duration>(Duration(seconds: value as int));
           break;
 
-        case Cache.globalsTrackPointInterval:
+        case Cache.appSettingTrackPointInterval:
           trackPointInterval =
               await key.save<Duration>(Duration(seconds: value as int));
           break;
 
-        case Cache.globalsGpsPointsSmoothCount:
+        case Cache.appSettingGpsPointsSmoothCount:
           gpsPointsSmoothCount = await key.save<int>(value as int);
           break;
 
-        case Cache.globalsAutocreateAlias:
+        case Cache.appSettingAutocreateAlias:
           autoCreateAlias =
               await key.save<Duration>(Duration(seconds: value as int));
           break;
@@ -318,15 +327,15 @@ class AppSettings {
     }
     if (key.cacheType == bool && value.runtimeType == key.cacheType) {
       switch (key) {
-        case Cache.globalsStatusStandingRequireAlias:
+        case Cache.appSettingStatusStandingRequireAlias:
           statusStandingRequireAlias = await key.save<bool>(value as bool);
           return true;
 
-        case Cache.globalsBackgroundTrackingEnabled:
+        case Cache.appSettingBackgroundTrackingEnabled:
           backgroundTrackingEnabled = await key.save<bool>(value as bool);
           return true;
 
-        case Cache.globalPublishToCalendar:
+        case Cache.appSettingPublishToCalendar:
           publishToCalendar = await key.save<bool>(value as bool);
           return true;
 
@@ -346,30 +355,30 @@ class AppSettings {
   }
 
   static Future<void> saveSettings() async {
-    await Cache.globalsBackgroundTrackingEnabled
+    await Cache.appSettingBackgroundTrackingEnabled
         .save<bool>(backgroundTrackingEnabled);
 
-    await Cache.globalsStatusStandingRequireAlias
+    await Cache.appSettingStatusStandingRequireAlias
         .save<bool>(statusStandingRequireAlias);
 
-    await Cache.globalsBackgroundLookupDuration
+    await Cache.appSettingBackgroundLookupDuration
         .save<Duration>(backgroundLookupDuration);
 
-    await Cache.globalsCacheGpsTime.save<Duration>(cacheGpsTime);
+    await Cache.appSettingCacheGpsTime.save<Duration>(cacheGpsTime);
 
-    await Cache.globalsDistanceTreshold.save<int>(distanceTreshold);
+    await Cache.appSettingDistanceTreshold.save<int>(distanceTreshold);
 
-    await Cache.globalsTimeRangeTreshold.save<Duration>(timeRangeTreshold);
+    await Cache.appSettingTimeRangeTreshold.save<Duration>(timeRangeTreshold);
 
-    await Cache.globalsTrackPointInterval.save<Duration>(trackPointInterval);
+    await Cache.appSettingTrackPointInterval.save<Duration>(trackPointInterval);
 
-    await Cache.globalsGpsPointsSmoothCount.save<int>(gpsPointsSmoothCount);
+    await Cache.appSettingGpsPointsSmoothCount.save<int>(gpsPointsSmoothCount);
 
-    await Cache.globalsOsmLookupCondition
+    await Cache.appSettingOsmLookupCondition
         .save<OsmLookupConditions>(osmLookupCondition);
 
-    await Cache.globalsAutocreateAlias.save<Duration>(autoCreateAlias);
+    await Cache.appSettingAutocreateAlias.save<Duration>(autoCreateAlias);
 
-    await Cache.globalPublishToCalendar.save<bool>(publishToCalendar);
+    await Cache.appSettingPublishToCalendar.save<bool>(publishToCalendar);
   }
 }

@@ -30,59 +30,58 @@ import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_user.dart';
 
 enum Cache {
+  /// trigger off == TrackingStatus.none
+  /// triggered by user, set to none in background
+  trackingStatusTriggered(TrackingStatus),
+
+  /// updated on every second in foreground
+  foregroundAliasIdList(List<int>),
+
   // background task
   backgroundLastTick(DateTime),
 
-  /// cache foreground to background
-  /// saved only on special event triggered by user
-  cacheTriggerTrackingStatus(TrackingStatus),
-
-  /// current or user updated alias Id List
-  cacheCurrentAliasIdList(List<int>),
-
-  /// saved only on special events
-  cacheEventBackgroundGpsStartMoving(GPS),
-  cacheEventBackgroundGpsStartStanding(GPS),
-  cacheEventBackgroundGpsLastStatusChange(GPS),
+  /// status change events
+  backgroundGpsStartMoving(GPS),
+  backgroundGpsStartStanding(GPS),
+  backgroundGpsLastStatusChange(GPS),
 
   /// cache background to forground
-  cacheBackgroundTrackingStatus(TrackingStatus),
-  cacheBackgroundAliasIdList(List<int>),
-  cacheBackgroundUserIdList(List<int>),
-  cacheBackgroundTaskIdList(List<int>),
-  cacheBackgroundTrackPointUserNotes(String),
-  cacheBackgroundLastGps(GPS),
-  cacheBackgroundGpsPoints(List<GPS>),
-  cacheBackgroundSmoothGpsPoints(List<GPS>),
-  cacheBackgroundCalcGpsPoints(List<GPS>),
-  cacheBackgroundAddress(String),
-  cacheBackgroundLastStandingAddress(String),
-/*
-  /// cache database
-  tableModelTrackpoint(List<ModelTrackPoint>),
-  tableModelAlias(List<ModelAlias>),
-  tableModelUser(List<ModelUser>),
-  tableModelTask(List<ModelTask>),
-*/
-  /// eventCalendar
-  /// "id\tname\taccount"
-  ///
-  calendarLastEventIds(List<CalendarEventId>),
-  calendarPublishStatusEnabled(bool),
+  backgroundTrackingStatus(TrackingStatus),
 
-  /// globals
-  globalsWeekDays(List<String>),
-  globalsBackgroundTrackingEnabled(bool),
-  globalsStatusStandingRequireAlias(bool),
-  globalsTrackPointInterval(Duration),
-  globalsOsmLookupCondition(OsmLookupConditions),
-  globalsCacheGpsTime(Duration),
-  globalsDistanceTreshold(int),
-  globalsTimeRangeTreshold(Duration),
-  globalsBackgroundLookupDuration(Duration),
-  globalsGpsPointsSmoothCount(int),
-  globalsAutocreateAlias(Duration),
-  globalPublishToCalendar(bool);
+  /// user input
+  backgroundAliasIdList(List<int>),
+  backgroundUserIdList(List<int>),
+  backgroundTaskIdList(List<int>),
+  backgroundTrackPointUserNotes(String),
+
+  /// tracking detection
+  backgroundLastGps(GPS),
+  backgroundGpsPoints(List<GPS>),
+  backgroundSmoothGpsPoints(List<GPS>),
+  backgroundCalcGpsPoints(List<GPS>),
+
+  /// address updated on each backgroiund tick - if activated
+  backgroundAddress(String),
+
+  /// address updated on status change - if activated
+  backgroundLastStandingAddress(String),
+
+  /// eventCalendar
+  backgroundCalendarLastEventIds(List<CalendarEventId>),
+
+  ///
+  appSettingWeekDays(List<String>),
+  appSettingBackgroundTrackingEnabled(bool),
+  appSettingStatusStandingRequireAlias(bool),
+  appSettingTrackPointInterval(Duration),
+  appSettingOsmLookupCondition(OsmLookupConditions),
+  appSettingCacheGpsTime(Duration),
+  appSettingDistanceTreshold(int),
+  appSettingTimeRangeTreshold(Duration),
+  appSettingBackgroundLookupDuration(Duration),
+  appSettingGpsPointsSmoothCount(int),
+  appSettingAutocreateAlias(Duration),
+  appSettingPublishToCalendar(bool);
 
   Future<T> load<T>(T fallback) async {
     T value =
@@ -92,7 +91,7 @@ enum Cache {
 
   Future<T> save<T>(T value) async {
     _cache.addAll({this: value});
-    return await CacheTypeAdapter.setValue(this, value);
+    return await CacheTypeAdapter.setValue<T>(this, value);
   }
 
   static final Map<Cache, dynamic> _cache = {};

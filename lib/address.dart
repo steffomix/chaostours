@@ -132,6 +132,7 @@ class Address {
     } catch (e, stk) {
       // ignore
       logger.error('lookupAdress failed  $e', stk);
+      road = 'OSM Lookup failed on GPS: ${_gps.lat}, ${_gps.lon}';
     }
     logger.log('Lookup Address: ${toString()}');
     _loaded = true;

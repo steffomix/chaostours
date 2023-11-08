@@ -88,7 +88,7 @@ class AppCalendar {
           err.add(e.errorMessage);
         });
         DataBridge.instance.trackPointUserNotes = await Cache
-            .cacheBackgroundTrackPointUserNotes
+            .backgroundTrackPointUserNotes
             .save<String>(err.join('\n\n'));
       }
       var data = calendarsResult.data;
@@ -169,13 +169,13 @@ class AppCalendar {
     }
 
     /// cache event id
-    bridge.lastCalendarEventIds = await Cache.calendarLastEventIds
+    bridge.lastCalendarEventIds = await Cache.backgroundCalendarLastEventIds
         .save<List<CalendarEventId>>(calendarEvents);
   }
 
   Future<void> completeCalendarEvent(TrackPointData tpData) async {
-    List<CalendarEventId> calIds =
-        await Cache.calendarLastEventIds.load<List<CalendarEventId>>([]);
+    List<CalendarEventId> calIds = await Cache.backgroundCalendarLastEventIds
+        .load<List<CalendarEventId>>([]);
     if (calIds.isEmpty) {
       return;
     }
@@ -227,7 +227,7 @@ class AppCalendar {
     }
 
     // clear calendar cache
-    await Cache.calendarLastEventIds.save<List<CalendarEventId>>([]);
+    await Cache.backgroundCalendarLastEventIds.save<List<CalendarEventId>>([]);
     tpData.calendarEventIds.clear();
   }
 }

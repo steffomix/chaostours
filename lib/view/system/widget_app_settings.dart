@@ -155,7 +155,8 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
   Widget osmLookup(BuildContext context) {
     List<OsmLookupConditions> list = [
       OsmLookupConditions.always,
-      OsmLookupConditions.onStatus,
+      OsmLookupConditions.onStatusChanged,
+      OsmLookupConditions.onCreateAlias,
       OsmLookupConditions.never
     ];
     return DropdownButton<OsmLookupConditions>(
@@ -166,7 +167,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
         // This is called when the user selects an item.
         value ??= OsmLookupConditions.never;
         AppSettings.updateValue(
-                key: Cache.globalsOsmLookupCondition, value: value)
+                key: Cache.appSettingOsmLookupCondition, value: value)
             .then((_) {
           AppSettings.osmLookupCondition = value!;
           modify();
@@ -180,9 +181,12 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
         String text = '';
         switch (value) {
           case OsmLookupConditions.never:
-            text = 'niemals';
+            text = 'Niemals';
             break;
-          case OsmLookupConditions.onStatus:
+          case OsmLookupConditions.onCreateAlias:
+            text = 'Bei automatischer Alias Erstellung';
+            break;
+          case OsmLookupConditions.onStatusChanged:
             text = 'Bei Halten/Fahren wechsel';
             break;
           case OsmLookupConditions.always:
@@ -197,8 +201,21 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
     );
   }
 
+  Future<bool> load() async {
+    return true;
+  }
+
   @override
   Widget build(BuildContext context) {
+    return FutureBuilder(
+      future: load(),
+      builder: (context, snapshot) {
+        return AppWidgets.checkSnapshot(context, snapshot) ?? _build(context);
+      },
+    );
+  }
+
+  Widget _build(BuildContext context) {
     return AppWidgets.scaffold(context,
         appBar: AppBar(title: const Text('Einstellungen')),
         body: ListView(children: [
@@ -216,7 +233,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                     onChanged: (bool? b) async {
                       b ??= false;
                       await AppSettings.updateValue(
-                          key: Cache.globalsStatusStandingRequireAlias,
+                          key: Cache.appSettingStatusStandingRequireAlias,
                           value: b);
                       //await AppSettings.loadSettings();
                       modify();
@@ -257,7 +274,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                     onChanged: (bool? b) {
                       b ??= false;
                       AppSettings.updateValue(
-                              key: Cache.globalsBackgroundTrackingEnabled,
+                              key: Cache.appSettingBackgroundTrackingEnabled,
                               value: b)
                           .then((_) {
                         AppSettings.backgroundTrackingEnabled = b!;
@@ -349,7 +366,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                         onChanged: (OsmLookupConditions? val) {
                           if (val != null) {
                             AppSettings.updateValue(
-                                key: Cache.globalsOsmLookupCondition,
+                                key: Cache.appSettingOsmLookupCondition,
                                 value: val);
                           }
                           setStatus(context, val);
@@ -361,12 +378,12 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                       softWrap: true,
                     ),
                     leading: Radio<OsmLookupConditions>(
-                        value: OsmLookupConditions.onStatus,
+                        value: OsmLookupConditions.onStatusChanged,
                         groupValue: AppSettings.osmLookupCondition,
                         onChanged: (OsmLookupConditions? val) {
                           if (val != null) {
                             AppSettings.updateValue(
-                                key: Cache.globalsOsmLookupCondition,
+                                key: Cache.appSettingOsmLookupCondition,
                                 value: val);
                           }
                           setStatus(context, val);
@@ -385,7 +402,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                         onChanged: (OsmLookupConditions? val) {
                           if (val != null) {
                             AppSettings.updateValue(
-                                key: Cache.globalsOsmLookupCondition,
+                                key: Cache.appSettingOsmLookupCondition,
                                 value: val);
                           }
                           setStatus(context, val);
@@ -406,7 +423,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                     onChanged: (bool? b) {
                       b ??= false;
                       AppSettings.updateValue(
-                              key: Cache.globalPublishToCalendar, value: b)
+                              key: Cache.appSettingPublishToCalendar, value: b)
                           .then((_) {
                         AppSettings.publishToCalendar = b!;
                         modify();
@@ -419,28 +436,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                     'So können sie ihre Mitarbeiter, Freunde oder Familienangehörige stets wissen lassen wo sie gerade sind '
                     'oder was sie am besuchten Ort gemacht haben.'),
               )),
-          /*
-          Padding(
-              padding: const EdgeInsets.all(10),
-              child: ElevatedButton(
-                  style: const ButtonStyle(alignment: Alignment.centerLeft),
-                  onPressed: () {
-                    Navigator.pushNamed(context, AppRoutes.selectCalendar.route)
-                        .then((_) {
-                      getCalendarId();
-                    });
-                  },
-                  child: Padding(
-                      padding: const EdgeInsets.all(5),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('Kalender auswählen. Aktuell:\n'),
-                          Text(selectedCalendar)
-                        ],
-                      )))),
 
-          */
           AppWidgets.divider(),
 
           const Center(
