@@ -22,10 +22,6 @@ import 'package:sqflite/sqflite.dart' as flite;
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/cache.dart';
 
-class DbQueue {
-  final List<Future<dynamic> Function(flite.Transaction txn)> queue = [];
-}
-
 class DB {
   static final Logger logger = Logger.logger<DB>();
 
@@ -78,13 +74,12 @@ class DB {
                         }
                         await batch.commit();
                       } catch (e, stk) {
-                        logger.fatal(
-                            'Execute Batch create Database failed: $e', stk);
+                        logger.fatal('Execute Batch create Database: $e', stk);
                         rethrow;
                       }
                     });
                   } catch (e, stk) {
-                    logger.fatal('Create Database failed; $e', stk);
+                    logger.fatal('Create Database: $e', stk);
                     rethrow;
                   }
                 });

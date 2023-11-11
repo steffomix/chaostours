@@ -53,7 +53,7 @@ void backgroundCallback() {
 class BackgroundTracking {
   static bool _initialized = false;
 
-  static AndroidConfig _androidConfig() {
+  static Future<AndroidConfig> _androidConfig() async {
     return AndroidConfig(
         channelName: 'Chaos Tours Unlimited Background Tracking',
         notificationBody:
@@ -62,7 +62,8 @@ class BackgroundTracking {
         enableNotificationLocationUpdates: false,
         cancelTrackingActionText: 'Stop Tracking',
         enableCancelTrackingAction: true,
-        trackingInterval: AppSettings.trackPointInterval);
+        trackingInterval: await Cache.appSettingForegroundUpdateInterval
+            .load<Duration>(const Duration(seconds: 30)));
   }
 
   static Future<bool> isTracking() async {
@@ -75,7 +76,8 @@ class BackgroundTracking {
     }
     if (!await isTracking()) {
       await initialize();
-      BackgroundLocationTrackerManager.startTracking(config: _androidConfig());
+      BackgroundLocationTrackerManager.startTracking(
+          config: await _androidConfig());
     }
   }
 
@@ -88,8 +90,8 @@ class BackgroundTracking {
   ///
   static Future<void> initialize() async {
     await BackgroundLocationTrackerManager.initialize(backgroundCallback,
-        config:
-            BackgroundLocationTrackerConfig(androidConfig: _androidConfig()));
+        config: BackgroundLocationTrackerConfig(
+            androidConfig: await _androidConfig()));
     _initialized = true;
   }
 }
@@ -150,7 +152,7 @@ class _TrackPoint {
         .load<Duration>(AppSettings.autoCreateAliasDefault);
 
     Duration appSettingsTrackpointIntervalDuration = await Cache
-        .appSettingTrackPointInterval
+        .appSettingForegroundUpdateInterval
         .load<Duration>(AppSettings.backgroundLookupDurationDefault);
 
     int maxGpsPoints = (appSettingAutoCreateAliasDuration.inSeconds == 0

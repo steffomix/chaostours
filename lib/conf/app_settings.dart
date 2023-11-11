@@ -15,8 +15,11 @@ limitations under the License.
 */
 
 // ignore_for_file: prefer_const_constructors
+import 'package:flutter/material.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/cache.dart';
+import 'dart:math' as math;
+// import 'package:chaostours/logger.dart';
 
 enum OsmLookupConditions {
   never(0),
@@ -24,10 +27,404 @@ enum OsmLookupConditions {
   onStatusChanged(2),
   always(3);
 
+  static OsmLookupConditions? byName(String name) {
+    for (var value in values) {
+      if (value.name == name) {
+        return value;
+      }
+    }
+    return null;
+  }
+
   const OsmLookupConditions(this.conditionLevel);
   final int conditionLevel;
 }
 
+enum Unit {
+  piece(1),
+  minute(60),
+  second(1),
+  meter(1),
+  km(1000),
+  option(1);
+
+  final int multiplicator;
+  const Unit(this.multiplicator);
+}
+
+class AppUserSettings {
+  static final Logger logger = Logger.logger<AppUserSettings>();
+  Cache cache;
+  dynamic defaultValue;
+  int? minValue;
+  int? maxValue;
+  bool? zeroDeactivates;
+  Unit unit = Unit.piece;
+  Future<void> Function() resetToDefault;
+  Future<int> Function(int value)? extraCheck;
+  Widget title;
+  Widget description;
+
+  AppUserSettings._option(this.cache,
+      {required this.title,
+      required this.description,
+      required this.defaultValue,
+      required this.resetToDefault,
+      this.extraCheck,
+      this.minValue,
+      this.maxValue,
+      required this.unit,
+      this.zeroDeactivates});
+
+  factory AppUserSettings(Cache cache) {
+    switch (cache) {
+      case Cache.appSettingAutocreateAlias:
+        return AppUserSettings._option(
+          cache,
+          title: Text(cache.toString()),
+          description: Text('Description of ${cache.toString()}'),
+          unit: Unit.minute,
+          minValue: 60 * 5, // 5 minutes
+          defaultValue: Duration(seconds: 60 * 15),
+          resetToDefault: () async {
+            await cache.save<Duration>(
+                AppUserSettings(cache).defaultValue as Duration);
+          }, //
+          extraCheck: (int value) async {
+            /// must be at least appSettingTimeRangeTreshold * 2
+            Cache cTimeRange = Cache.appSettingTimeRangeTreshold;
+            int timeRange = (await cTimeRange.load<Duration>(
+                    AppUserSettings(cTimeRange).defaultValue as Duration))
+                .inSeconds;
+            int min = timeRange * 2;
+            if (value < min) {
+              return min;
+            }
+            return value;
+          }, //
+        ); // 15 minutes
+
+      case Cache.appSettingBackgroundLookupDuration:
+        return AppUserSettings._option(
+          cache, //
+          title: Text(cache.toString()),
+          description: Text('Description of ${cache.toString()}'),
+          unit: Unit.second,
+          minValue: 15,
+          defaultValue: Duration(seconds: 30),
+          resetToDefault: () async {
+            await cache.save<Duration>(
+                AppUserSettings(cache).defaultValue as Duration);
+          }, //
+          extraCheck: (int value) async {
+            /// timeRange must at least allow 4 lookups
+            int minTimeRange = value * 4;
+            Cache cTimeRange = Cache.appSettingTimeRangeTreshold;
+            int timeRange = (await cTimeRange.load<Duration>(
+                    AppUserSettings(cTimeRange).defaultValue as Duration))
+                .inSeconds;
+            if (minTimeRange > timeRange) {
+              // modify timeRange
+              await cTimeRange.save<Duration>(Duration(seconds: minTimeRange));
+              // recheck autocreate alias duration
+              int minCreate = minTimeRange * 2;
+              Cache cAutoCreate = Cache.appSettingAutocreateAlias;
+              int autoCreate = (await cAutoCreate.load<Duration>(
+                      AppUserSettings(cAutoCreate).defaultValue as Duration))
+                  .inSeconds;
+              if (autoCreate < minCreate) {
+                await cAutoCreate.save<Duration>(Duration(seconds: minCreate));
+              }
+            }
+
+            // recheck smoothCount
+            Cache cSmooth = Cache.appSettingGpsPointsSmoothCount;
+            int smooth = await cSmooth
+                .load<int>(AppUserSettings(cSmooth).defaultValue as int);
+            if (smooth > 0) {
+              int maxSmooth = maxSmoothCount(timeRange, value);
+              if (smooth > maxSmooth) {
+                await cSmooth.save<int>(maxSmooth);
+              }
+            }
+            return value;
+          },
+        );
+
+      case Cache.appSettingBackgroundTrackingEnabled:
+        return AppUserSettings._option(
+          cache,
+          title: Text(cache.toString()),
+          description: Text('Description of ${cache.toString()}'),
+          unit: Unit.option,
+          defaultValue: true,
+          resetToDefault: () async {
+            await cache.save<bool>(AppUserSettings(cache).defaultValue as bool);
+          },
+        );
+
+      case Cache.appSettingCacheGpsTime:
+        return AppUserSettings._option(
+          cache,
+          title: Text(cache.toString()),
+          description: Text('Description of ${cache.toString()}'),
+          unit: Unit.second,
+          defaultValue: const Duration(seconds: 10),
+          resetToDefault: () async {
+            await cache.save<Duration>(
+                AppUserSettings(cache).defaultValue as Duration);
+          },
+          minValue: 0,
+          maxValue: 60, // 1 minute
+          zeroDeactivates: true,
+        );
+
+      case Cache.appSettingDistanceTreshold:
+        return AppUserSettings._option(
+          cache,
+          title: Text(cache.toString()),
+          description: Text('Description of ${cache.toString()}'),
+          unit: Unit.meter,
+          defaultValue: 100,
+          resetToDefault: () async {
+            await cache.save<int>(AppUserSettings(cache).defaultValue as int);
+          },
+          minValue: 20,
+        );
+
+      case Cache.appSettingGpsPointsSmoothCount:
+        return AppUserSettings._option(
+          cache,
+          title: Text(cache.toString()),
+          description: Text('Description of ${cache.toString()}'),
+          unit: Unit.piece,
+          defaultValue: 3,
+          resetToDefault: () async {
+            await cache.save<int>(AppUserSettings(cache).defaultValue as int);
+          },
+          extraCheck: (int value) async {
+            Cache cTimeRange = Cache.appSettingTimeRangeTreshold;
+            int timeRange = (await cTimeRange.load<Duration>(
+                    AppUserSettings(cTimeRange).defaultValue as Duration))
+                .inSeconds;
+            Cache cLookup = Cache.appSettingBackgroundLookupDuration;
+            int lookup = (await cLookup.load<Duration>(
+                    AppUserSettings(cLookup).defaultValue as Duration))
+                .inSeconds;
+            int maxCount = (timeRange / lookup).floor() - 1;
+            if (value > maxCount) {
+              return maxCount;
+            }
+            return value;
+          },
+        );
+
+      case Cache.appSettingOsmLookupCondition:
+        return AppUserSettings._option(
+          cache,
+          title: Text(cache.toString()),
+          description: Text('Description of ${cache.toString()}'),
+          unit: Unit.option,
+          defaultValue: OsmLookupConditions.onCreateAlias,
+          resetToDefault: () async {
+            await cache.save<OsmLookupConditions>(
+                AppUserSettings(cache).defaultValue as OsmLookupConditions);
+          },
+        );
+
+      case Cache.appSettingPublishToCalendar:
+        return AppUserSettings._option(
+          cache,
+          title: Text(cache.toString()),
+          description: Text('Description of ${cache.toString()}'),
+          unit: Unit.option,
+          defaultValue: true,
+          resetToDefault: () async {
+            await cache.save<bool>(AppUserSettings(cache).defaultValue as bool);
+          },
+        );
+
+      case Cache.appSettingStatusStandingRequireAlias:
+        return AppUserSettings._option(
+          cache,
+          title: Text(cache.toString()),
+          description: Text('Description of ${cache.toString()}'),
+          unit: Unit.option,
+          defaultValue: true,
+          resetToDefault: () async {
+            await cache.save<bool>(AppUserSettings(cache).defaultValue as bool);
+          },
+        );
+
+      case Cache.appSettingTimeRangeTreshold:
+        return AppUserSettings._option(
+          cache,
+          title: Text(cache.toString()),
+          description: Text('Description of ${cache.toString()}'),
+          unit: Unit.second,
+          minValue: 60, // 1 minute
+          maxValue: 60 * 60 * 10, // 10 hours
+          defaultValue: const Duration(seconds: 10),
+          resetToDefault: () async {
+            await cache.save<Duration>(
+                AppUserSettings(cache).defaultValue as Duration);
+          },
+          extraCheck: (int value) async {
+            // recheck autocreate alias duration
+            int minCreate = value * 2;
+            Cache cAutoCreate = Cache.appSettingAutocreateAlias;
+            int autoCreate = (await cAutoCreate.load<Duration>(
+                    AppUserSettings(cAutoCreate).defaultValue as Duration))
+                .inSeconds;
+            if (autoCreate < minCreate) {
+              await cAutoCreate.save<Duration>(Duration(seconds: minCreate));
+            }
+            // recheck smoothCount
+            Cache cSmooth = Cache.appSettingGpsPointsSmoothCount;
+            int smooth = await cSmooth
+                .load<int>(AppUserSettings(cSmooth).defaultValue as int);
+            if (smooth > 0) {
+              Cache cLookup = Cache.appSettingBackgroundLookupDuration;
+              int lookup = (await cLookup
+                      .load<Duration>(AppUserSettings(cLookup) as Duration))
+                  .inSeconds;
+              int maxSmooth = maxSmoothCount(value, lookup);
+              if (smooth > maxSmooth) {
+                await cSmooth.save<int>(maxSmooth);
+              }
+            }
+
+            return value;
+          },
+        );
+
+      case Cache.appSettingForegroundUpdateInterval:
+        return AppUserSettings._option(cache,
+            title: Text(cache.toString()),
+            description: Text('Description of ${cache.toString()}'),
+            unit: Unit.second,
+            minValue: 1,
+            maxValue: 30,
+            defaultValue: Duration(seconds: 3), //
+            resetToDefault: () async {
+          await cache
+              .save<Duration>(AppUserSettings(cache).defaultValue as Duration);
+        });
+
+      default:
+        throw 'AppUserSettings for ${cache.name} not implemented';
+    }
+  }
+
+  static int maxSmoothCount(int timeRange, int lookup) {
+    return (timeRange / lookup).floor() - 1;
+  }
+
+  Future<int> pruneInt(String data) async {
+    int value = int.tryParse(data) ?? (defaultValue as int);
+    if (minValue != null) {
+      value = math.max(minValue!, value);
+    }
+    if (maxValue != null) {
+      value = math.min(maxValue!, value);
+    }
+    value *= unit.multiplicator;
+    value = (await extraCheck?.call(value)) ?? value;
+    return value;
+  }
+
+  Future<void> save(String data) async {
+    switch (cache.cacheType) {
+      case String:
+        String value = data.trim();
+        await cache.save<String>(value);
+        break;
+
+      case int:
+        int value = await pruneInt(data);
+        await cache.save<int>(value);
+        break;
+
+      case bool:
+        bool value = (data == '1' || data == 'true') ? true : false;
+        await cache.save<bool>(value);
+        break;
+
+      case Duration:
+        int value = await pruneInt(data);
+        await cache.save<Duration>(Duration(seconds: value));
+        break;
+
+      case OsmLookupConditions:
+        var value = OsmLookupConditions.byName(data) ??
+            (defaultValue as OsmLookupConditions);
+        await cache.save<OsmLookupConditions>(value);
+        break;
+
+      default:
+        logger.warn(
+            'save ${cache.name}: Type ${data.runtimeType} not implemented');
+    }
+  }
+
+  Future<String> load() async {
+    switch (cache.cacheType) {
+      case String:
+        return await cache.load<String>(defaultValue);
+
+      case int:
+        int value = await cache.load<int>(defaultValue as int);
+        return (value / unit.multiplicator).round().toString();
+
+      case bool:
+        bool value = await cache.load<bool>(defaultValue as bool);
+        return value ? '1' : '0';
+
+      case Duration:
+        Duration value = await cache.load<Duration>(defaultValue as Duration);
+        return (value.inSeconds / unit.multiplicator).round().toString();
+
+      case OsmLookupConditions:
+        OsmLookupConditions value = await cache
+            .load<OsmLookupConditions>(defaultValue as OsmLookupConditions);
+        return value.name;
+
+      default:
+        logger.warn('load: ${cache.cacheType} not implemented');
+    }
+    return '${cache.cacheType} Not implemented!';
+  }
+}
+
+
+
+
+
+
+
+///
+///
+///
+///
+///
+///
+///
+///
+///
+///
+///
+///
+///
+///
+
+
+
+
+
+
+
+
+/*
 enum SettingUnits {
   second(1),
   minute(60),
@@ -63,8 +460,8 @@ class AppSettingLimits {
   }
 }
 
-class AppSettings {
-  static final Logger logger = Logger.logger<AppSettings>();
+class AppUserSettings {
+  static final Logger logger = Logger.logger<AppUserSettings>();
 
   static String version = '0.0.1';
 
@@ -87,7 +484,7 @@ class AppSettings {
   static String timeZone = 'Europe/Berlin';
 
   /// user edit settings.
-  /// All setting names must match enum AppSettings values in app_settings.dart
+  /// All setting names must match enum AppUserSettings values in app_settings.dart
   /// if backgroundTracking is enabled and starts automatic
   static const bool backgroundTrackingEnabledDefault = true;
   static bool backgroundTrackingEnabled = backgroundTrackingEnabledDefault;
@@ -382,3 +779,4 @@ class AppSettings {
     await Cache.appSettingPublishToCalendar.save<bool>(publishToCalendar);
   }
 }
+*/

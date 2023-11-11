@@ -70,18 +70,17 @@ enum Cache {
   backgroundCalendarLastEventIds(List<CalendarEventId>),
 
   ///
-  appSettingWeekDays(List<String>),
-  appSettingBackgroundTrackingEnabled(bool),
-  appSettingStatusStandingRequireAlias(bool),
-  appSettingTrackPointInterval(Duration),
-  appSettingOsmLookupCondition(OsmLookupConditions),
-  appSettingCacheGpsTime(Duration),
-  appSettingDistanceTreshold(int),
-  appSettingTimeRangeTreshold(Duration),
-  appSettingBackgroundLookupDuration(Duration),
-  appSettingGpsPointsSmoothCount(int),
-  appSettingAutocreateAlias(Duration),
-  appSettingPublishToCalendar(bool);
+  appSettingBackgroundTrackingEnabled(bool, true),
+  appSettingStatusStandingRequireAlias(bool, true),
+  appSettingForegroundUpdateInterval(Duration, true),
+  appSettingOsmLookupCondition(OsmLookupConditions, true),
+  appSettingCacheGpsTime(Duration, true),
+  appSettingDistanceTreshold(int, true),
+  appSettingTimeRangeTreshold(Duration, true),
+  appSettingBackgroundLookupDuration(Duration, true),
+  appSettingGpsPointsSmoothCount(int, true),
+  appSettingAutocreateAlias(Duration, true),
+  appSettingPublishToCalendar(bool, true);
 
   Future<T> load<T>(T fallback) async {
     T value =
@@ -97,7 +96,8 @@ enum Cache {
   static final Map<Cache, dynamic> _cache = {};
 
   final Type cacheType;
-  const Cache(this.cacheType);
+  final bool isAppSetting;
+  const Cache(this.cacheType, [this.isAppSetting = false]);
 
   int get id => index + 1;
 
@@ -108,6 +108,27 @@ enum Cache {
       }
     }
     return null;
+  }
+
+  static List<Cache> get appSettings {
+    List<Cache> settings = [];
+    for (var cache in values) {
+      if (cache.isAppSetting) {
+        settings.add(cache);
+      }
+    }
+    return settings;
+  }
+
+  static Future<void> loadUserSettingDefaults() async {
+    for (var cache in appSettings) {
+      AppUserSettings setting = AppUserSettings(cache);
+    }
+
+    final Map<Cache, AppUserSettings> _cachedUserSettings = Map.fromEntries(
+        Cache.appSettings.map<MapEntry<Cache, AppUserSettings>>((cache) {
+      return MapEntry(cache, AppUserSettings(cache));
+    }));
   }
 }
 

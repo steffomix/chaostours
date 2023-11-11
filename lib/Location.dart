@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/cache.dart';
 import 'package:chaostours/conf/app_settings.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/logger.dart';
@@ -48,7 +49,10 @@ class Location {
     bool isPublic = true;
     try {
       models.addAll(await ModelAlias.byArea(
-          gps: gps, area: AppSettings.distanceTreshold));
+          gps: gps,
+          area: await Cache.appSettingDistanceTreshold.load(
+              AppUserSettings(Cache.appSettingDistanceTreshold).defaultValue
+                  as int)));
 
       for (var model in models) {
         if (model.visibility == AliasVisibility.restricted) {

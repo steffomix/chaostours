@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/cache.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -395,7 +396,9 @@ class _WidgetOsm extends State<WidgetOsm> {
                 gps: GPS(pos.latitude, pos.longitude),
                 title: address,
                 description: '',
-                radius: AppSettings.distanceTreshold,
+                radius: await Cache.appSettingDistanceTreshold.load<int>(
+                    AppUserSettings(Cache.appSettingDistanceTreshold)
+                        .defaultValue as int),
                 lastVisited: DateTime.now());
 
             alias.insert();

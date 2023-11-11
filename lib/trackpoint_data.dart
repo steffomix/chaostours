@@ -25,6 +25,8 @@ import 'package:chaostours/conf/app_settings.dart';
 import 'package:chaostours/util.dart';
 import 'package:chaostours/logger.dart';
 
+/// todo:
+/// make this class obsolete
 class TrackPointData {
   static final Logger logger = Logger.logger<TrackPointData>();
   ModelTrackPoint? trackPoint;
@@ -41,12 +43,13 @@ class TrackPointData {
   GPS get gpslastStatusChange => bridge.trackPointGpslastStatusChange ?? gps;
 
   /// defaults to AppSettings.distanceTreshold
+  /*
   int get radius {
     return aliasModels.isEmpty
         ? AppSettings.distanceTreshold
         : aliasModels.first.radius;
   }
-
+  */
   /// defaults to bridge.gpsPoints -> gps
   GPS get calcGps {
     return bridge.calcGpsPoints.isNotEmpty

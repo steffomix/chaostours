@@ -16,6 +16,7 @@ limitations under the License.
 
 import 'dart:async';
 import 'dart:math';
+import 'package:chaostours/cache.dart';
 import 'package:vector_math/vector_math.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:android_intent_plus/android_intent.dart';
@@ -157,7 +158,9 @@ class GPS {
         await Permission.location.request();
       }
       bool cacheOutdated = lastGps?.time
-              .add(AppSettings.cacheGpsTime)
+              .add(await Cache.appSettingCacheGpsTime.load<Duration>(
+                  AppUserSettings(Cache.appSettingCacheGpsTime).defaultValue
+                      as Duration))
               .isBefore(DateTime.now()) ??
           true;
 
