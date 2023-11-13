@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/cache.dart';
 import 'package:chaostours/calendar.dart';
 import 'package:chaostours/database.dart';
 import 'package:chaostours/model/model_task.dart';
@@ -34,22 +35,38 @@ class ModelTrackPoint {
   DateTime timeStart;
   DateTime timeEnd;
 
+  ///
+  String address = '';
+  String notes = ''; // calendarId;calendarEventId
+
   /// "id,id,..." needs to be sorted by distance
-  List<int> aliasIds = [];
+  List<int> get aliasIds => aliasModels
+      .map(
+        (e) => e.id,
+      )
+      .toList();
   List<ModelAlias> aliasModels = [];
 
-  List<int> userIds = [];
+  List<int> get userIds => userModels
+      .map(
+        (e) => e.id,
+      )
+      .toList();
   List<ModelUser> userModels = [];
 
   /// "id,id,..." needs to be ordered by user
-  List<int> taskIds = [];
+  List<int> get taskIds => taskModels
+      .map(
+        (e) => e.id,
+      )
+      .toList();
   List<ModelTask> taskModels = [];
 
   List<CalendarEventId> calendarEventIds = [];
 
-  ///
-  String address = '';
-  String notes = ''; // calendarId;calendarEventId
+  Duration get duration => timeEnd.difference(timeStart);
+
+  String get durationText => util.formatDuration(timeStart, timeEnd);
 
   /// real ID<br>
   /// Is set only once during save to disk
@@ -67,7 +84,7 @@ class ModelTrackPoint {
       this.calendarEventIds = const []});
 
   String timeElapsed() {
-    return util.timeElapsed(timeStart, timeEnd);
+    return util.formatDuration(timeStart, timeEnd);
   }
 
   ModelTrackPoint clone() => fromMap(toMap());
@@ -147,7 +164,7 @@ class ModelTrackPoint {
     map.removeWhere((key, value) => key == TableTrackPoint.primaryKey.column);
     await DB.execute((Transaction txn) async {
       _id = await txn.insert(TableTrackPoint.table, map);
-      for (var id in aliasIds) {
+      for (var id in await Cache.backgroundAliasIdList.load<List<int>>([])) {
         try {
           await txn.insert(TableTrackPointAlias.table, {
             TableTrackPointAlias.idAlias.column: id,
@@ -157,7 +174,7 @@ class ModelTrackPoint {
           logger.error('insert idAlias: $e', stk);
         }
       }
-      for (var id in taskIds) {
+      for (var id in await Cache.backgroundTaskIdList.load<List<int>>([])) {
         try {
           await txn.insert(TableTrackPointTask.table, {
             TableTrackPointTask.idTask.column: id,
@@ -167,7 +184,7 @@ class ModelTrackPoint {
           logger.error('insert idTask: $e', stk);
         }
       }
-      for (var id in userIds) {
+      for (var id in await Cache.backgroundUserIdList.load<List<int>>([])) {
         try {
           await txn.insert(TableTrackPointUser.table, {
             TableTrackPointUser.idUser.column: id,
@@ -308,7 +325,6 @@ class ModelTrackPoint {
           logger.error('getAlias: $e', stk);
         }
       }
-      aliasIds = idList;
       aliasModels = await ModelAlias.byIdList(idList);
       return aliasModels;
     }
@@ -330,7 +346,6 @@ class ModelTrackPoint {
           logger.error('getTask: $e', stk);
         }
       }
-      taskIds = idList;
       taskModels = await ModelTask.byIdList(idList);
       return taskModels;
     }
@@ -353,7 +368,6 @@ class ModelTrackPoint {
         }
       }
     }
-    userIds = idList;
     userModels = await ModelUser.byIdList(idList);
     return userModels;
   }
@@ -362,6 +376,31 @@ class ModelTrackPoint {
     aliasModels = await loadAliasList();
     taskModels = await loadTaskList();
     userModels = await loadUserList();
+  }
+
+  static Future<ModelTrackPoint> fromCache(GPS gps) async {
+    List<ModelAlias> aliasesByArea =
+        await ModelAlias.byArea(gps: gps, includeInactive: false);
+    List<ModelAlias> aliases = [];
+    for (var model in aliasesByArea) {
+      if (GPS.distance(gps, model.gps) <= model.radius) {
+        aliases.add(model);
+      }
+    }
+    ModelTrackPoint newTrackPoint = ModelTrackPoint(
+        gps: gps,
+        timeStart: (await Cache.backgroundGpsStartStanding.load<GPS>(gps)).time,
+        timeEnd: gps.time,
+        calendarEventIds: await Cache.backgroundCalendarLastEventIds
+            .load<List<CalendarEventId>>([]),
+        address: await Cache.backgroundLastStandingAddress.load<String>(''),
+        notes: await Cache.backgroundTrackPointUserNotes.load<String>(''));
+    newTrackPoint.aliasModels = aliases;
+    newTrackPoint.taskModels = await ModelTask.byIdList(
+        await Cache.backgroundTaskIdList.load<List<int>>([]));
+    newTrackPoint.userModels = await ModelUser.byIdList(
+        await Cache.backgroundUserIdList.load<List<int>>([]));
+    return newTrackPoint;
   }
 
   static Future<ModelTrackPoint?> byId(int id) async {

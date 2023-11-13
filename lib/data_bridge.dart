@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-
+/*
 import 'package:chaostours/cache.dart';
 import 'package:chaostours/calendar.dart';
 import 'package:chaostours/logger.dart';
@@ -24,7 +24,7 @@ import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/conf/app_settings.dart';
 import 'package:chaostours/util.dart';
 
-class DataBridge {
+class _DataBridge {
   static final Logger logger = Logger.logger<DataBridge>();
 
   DataBridge._();
@@ -167,8 +167,8 @@ class DataBridge {
       lastGps = await Cache.backgroundLastGps.load<GPS>(GPS(gps.lat, gps.lon));
       gpsPoints = await Cache.backgroundGpsPoints.load<List<GPS>>([]);
       smoothGpsPoints =
-          await Cache.backgroundSmoothGpsPoints.load<List<GPS>>([]);
-      calcGpsPoints = await Cache.backgroundCalcGpsPoints.load<List<GPS>>([]);
+          await Cache.backgroundGpsSmoothPoints.load<List<GPS>>([]);
+      calcGpsPoints = await Cache.backgroundGpsCalcPoints.load<List<GPS>>([]);
 
       /// alias list
       trackPointAliasIdList =
@@ -200,3 +200,4 @@ class DataBridge {
     }
   }
 }
+*/

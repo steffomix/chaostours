@@ -57,8 +57,8 @@ enum Cache {
   /// tracking detection
   backgroundLastGps(GPS),
   backgroundGpsPoints(List<GPS>),
-  backgroundSmoothGpsPoints(List<GPS>),
-  backgroundCalcGpsPoints(List<GPS>),
+  backgroundGpsSmoothPoints(List<GPS>),
+  backgroundGpsCalcPoints(List<GPS>),
 
   /// address updated on each backgroiund tick - if activated
   backgroundAddress(String),
@@ -70,17 +70,19 @@ enum Cache {
   backgroundCalendarLastEventIds(List<CalendarEventId>),
 
   ///
-  appSettingBackgroundTrackingEnabled(bool, true),
-  appSettingStatusStandingRequireAlias(bool, true),
-  appSettingForegroundUpdateInterval(Duration, true),
-  appSettingOsmLookupCondition(OsmLookupConditions, true),
-  appSettingCacheGpsTime(Duration, true),
-  appSettingDistanceTreshold(int, true),
-  appSettingTimeRangeTreshold(Duration, true),
-  appSettingBackgroundLookupDuration(Duration, true),
-  appSettingGpsPointsSmoothCount(int, true),
-  appSettingAutocreateAlias(Duration, true),
-  appSettingPublishToCalendar(bool, true);
+  appSettingBackgroundTrackingEnabled(bool),
+  appSettingStatusStandingRequireAlias(bool),
+  appSettingForegroundUpdateInterval(Duration),
+  appSettingOsmLookupCondition(OsmLookupConditions),
+  appSettingCacheGpsTime(Duration),
+  appSettingDistanceTreshold(int),
+  appSettingTimeRangeTreshold(Duration),
+  appSettingBackgroundTrackingInterval(Duration),
+  appSettingGpsPointsSmoothCount(int),
+  appSettingAutocreateAlias(Duration),
+  appSettingPublishToCalendar(bool),
+  appSettingTimeZone(String),
+  appSettingWeekdays(Weekdays);
 
   Future<T> load<T>(T fallback) async {
     T value =
@@ -96,8 +98,7 @@ enum Cache {
   static final Map<Cache, dynamic> _cache = {};
 
   final Type cacheType;
-  final bool isAppSetting;
-  const Cache(this.cacheType, [this.isAppSetting = false]);
+  const Cache(this.cacheType);
 
   int get id => index + 1;
 
@@ -108,27 +109,6 @@ enum Cache {
       }
     }
     return null;
-  }
-
-  static List<Cache> get appSettings {
-    List<Cache> settings = [];
-    for (var cache in values) {
-      if (cache.isAppSetting) {
-        settings.add(cache);
-      }
-    }
-    return settings;
-  }
-
-  static Future<void> loadUserSettingDefaults() async {
-    for (var cache in appSettings) {
-      AppUserSettings setting = AppUserSettings(cache);
-    }
-
-    final Map<Cache, AppUserSettings> _cachedUserSettings = Map.fromEntries(
-        Cache.appSettings.map<MapEntry<Cache, AppUserSettings>>((cache) {
-      return MapEntry(cache, AppUserSettings(cache));
-    }));
   }
 }
 
@@ -228,104 +208,96 @@ class CacheTypeAdapter {
               .toList();
 
   /// OSMLookup
-  static String serializeOsmLookup(OsmLookupConditions lo) => lo.name;
+  static String serializeOsmLookup(OsmLookupConditions o) => o.name;
   static OsmLookupConditions? deserializeOsmLookup(String? osm) => osm == null
       ? OsmLookupConditions.never
       : OsmLookupConditions.values.byName(osm);
 
-  /// IntMap
-  static const intSeparator = ',';
-  static String serializeIntSet(Set<int> se) => se.join(intSeparator);
-  static Set<int> deserializeIntSet(String se) {
-    Set<int> set = {};
-    if (se.trim().isEmpty) {
-      return set;
-    }
-    for (var i in se.split(intSeparator)) {
-      set.add(int.parse(i));
-    }
-    return set;
-  }
+  /// OSMLookup
+  static String serializeWeekdays(Weekdays o) => o.name;
+  static Weekdays? deserializeWeekdays(String? osm) =>
+      osm == null ? Weekdays.mondayFirst : Weekdays.values.byName(osm);
 
-  static Future<T> setValue<T>(Cache cacheKey, T value) async {
-    final prefs = DbCache(); //await SharedPreferences.getInstance();
-    //String key = cacheKey.name;
-    var key = cacheKey;
-
+  static Future<T> setValue<T>(Cache key, T value) async {
     logger.log('save cache key ${key.name}');
     try {
-      if (T != cacheKey.cacheType) {
+      if (T != key.cacheType) {
         throw Exception(
-            'setValue::value with type $T on key $key doesn\'t match required type ${cacheKey.cacheType}');
+            'setValue::value with type $T on key $key doesn\'t match required type ${key.cacheType}');
       }
       switch (T) {
         case String:
-          await prefs.setString(key, value as String);
+          await DbCache.setString(key, value as String);
           break;
 
         case const (List<String>):
-          await prefs.setStringList(key, value as List<String>);
+          await DbCache.setStringList(key, value as List<String>);
           break;
         case int:
-          await prefs.setInt(key, value as int);
+          await DbCache.setInt(key, value as int);
           break;
         case const (List<int>):
-          await prefs.setStringList(key, serializeIntList(value as List<int>));
+          await DbCache.setStringList(
+              key, serializeIntList(value as List<int>));
           break;
         case bool:
-          await prefs.setBool(key, value as bool);
+          await DbCache.setBool(key, value as bool);
           break;
         case double:
-          await prefs.setDouble(key, value as double);
+          await DbCache.setDouble(key, value as double);
           break;
         case Duration:
-          await prefs.setInt(key, serializeDuration(value as Duration));
+          await DbCache.setInt(key, serializeDuration(value as Duration));
           break;
         case const (List<CalendarEventId>):
-          await prefs.setStringList(
+          await DbCache.setStringList(
               key, serializeCalendarEventId(value as List<CalendarEventId>));
           break;
         case DateTime:
-          await prefs.setString(key, serializeDateTime(value as DateTime));
+          await DbCache.setString(key, serializeDateTime(value as DateTime));
           break;
         case GPS:
-          await prefs.setString(key, serializeGps(value as GPS));
+          await DbCache.setString(key, serializeGps(value as GPS));
           break;
         case const (List<GPS>):
           logger.log('save GPS List with ${(value as List<GPS>?)?.length}');
-          await prefs.setStringList(key, serializeGpsList(value as List<GPS>));
+          await DbCache.setStringList(
+              key, serializeGpsList(value as List<GPS>));
           break;
         case TrackingStatus:
-          await prefs.setString(
+          await DbCache.setString(
               key, serializeTrackingStatus(value as TrackingStatus));
           break;
         case ModelTrackPoint:
-          await prefs.setString(
+          await DbCache.setString(
               key, serializeModelTrackPoint(value as ModelTrackPoint));
           break;
         case const (List<ModelTrackPoint>):
-          await prefs.setStringList(key,
+          await DbCache.setStringList(key,
               serializeModelTrackPointList(value as List<ModelTrackPoint>));
           break;
         case const (List<ModelAlias>):
-          await prefs.setStringList(
+          await DbCache.setStringList(
               key, serializeModelAliasList(value as List<ModelAlias>));
           break;
         case const (List<ModelTask>):
-          await prefs.setStringList(
+          await DbCache.setStringList(
               key, serializeModelTaskList(value as List<ModelTask>));
           break;
         case const (List<ModelUser>):
-          await prefs.setStringList(
+          await DbCache.setStringList(
               key, serializeModelUserList(value as List<ModelUser>));
           break;
         case OsmLookupConditions:
-          await prefs.setString(
+          await DbCache.setString(
               key, serializeOsmLookup(value as OsmLookupConditions));
+          break;
+        case Weekdays:
+          await DbCache.setString(key, serializeWeekdays(value as Weekdays));
           break;
         // ignore: prefer_void_to_null
         case Null:
-          await prefs.remove(key);
+          await DbCache.remove(key);
           break;
 
         default:
@@ -337,70 +309,73 @@ class CacheTypeAdapter {
     return value;
   }
 
-  static Future<T> getValue<T>(Cache cacheKey, T defaultValue) async {
-    final prefs = DbCache(); //await SharedPreferences.getInstance();
-    Cache key = cacheKey; //.name;
+  static Future<T> getValue<T>(Cache key, T defaultValue) async {
     logger.log('load cache key ${key.name}');
     try {
-      if (T != cacheKey.cacheType) {
+      if (T != key.cacheType) {
         throw Exception(
-            'getValue::value with type $T on key $key doesn\'t match required type ${cacheKey.cacheType}');
+            'getValue::value with type $T on key $key doesn\'t match required type ${key.cacheType}');
       }
       switch (T) {
         case String:
-          return await prefs.getString(key) as T? ?? defaultValue;
+          return await DbCache.getString(key) as T? ?? defaultValue;
 
         case const (List<String>):
-          return await prefs.getStringList(key) as T? ?? defaultValue;
+          return await DbCache.getStringList(key) as T? ?? defaultValue;
         case int:
-          return await prefs.getInt(key) as T? ?? defaultValue;
+          return await DbCache.getInt(key) as T? ?? defaultValue;
         case const (List<int>):
-          return deserializeIntList(await prefs.getStringList(key)) as T? ??
+          return deserializeIntList(await DbCache.getStringList(key)) as T? ??
               defaultValue;
         case bool:
-          return await prefs.getBool(key) as T? ?? defaultValue;
+          return await DbCache.getBool(key) as T? ?? defaultValue;
         case double:
-          return await prefs.getDouble(key) as T? ?? defaultValue;
+          return await DbCache.getDouble(key) as T? ?? defaultValue;
         case Duration:
-          return deserializeDuration(await prefs.getInt(key)) as T? ??
+          return deserializeDuration(await DbCache.getInt(key)) as T? ??
               defaultValue;
         case DateTime:
-          return deserializeDateTime(await prefs.getString(key)) as T? ??
+          return deserializeDateTime(await DbCache.getString(key)) as T? ??
               defaultValue;
         case const (List<CalendarEventId>):
-          return deserializeCalendarEventId(await prefs.getStringList(key))
+          return deserializeCalendarEventId(await DbCache.getStringList(key))
                   as T? ??
               defaultValue;
         case GPS:
-          return deserializeGps(await prefs.getString(key)) as T? ??
+          return deserializeGps(await DbCache.getString(key)) as T? ??
               defaultValue;
         case const (List<GPS>):
-          return deserializeGpsList(await prefs.getStringList(key)) as T? ??
+          return deserializeGpsList(await DbCache.getStringList(key)) as T? ??
               defaultValue;
         case TrackingStatus:
-          return deserializeTrackingStatus(await prefs.getString(key)) as T? ??
-              defaultValue;
-        case ModelTrackPoint:
-          return deserializeModelTrackPoint(await prefs.getString(key)) as T? ??
-              defaultValue;
-        case const (List<ModelTrackPoint>):
-          return deserializeModelTrackPointList(await prefs.getStringList(key))
+          return deserializeTrackingStatus(await DbCache.getString(key))
                   as T? ??
               defaultValue;
+        case ModelTrackPoint:
+          return deserializeModelTrackPoint(await DbCache.getString(key))
+                  as T? ??
+              defaultValue;
+        case const (List<ModelTrackPoint>):
+          return deserializeModelTrackPointList(
+                  await DbCache.getStringList(key)) as T? ??
+              defaultValue;
         case const (List<ModelAlias>):
-          return deserializeModelAliasList(await prefs.getStringList(key))
+          return deserializeModelAliasList(await DbCache.getStringList(key))
                   as T? ??
               defaultValue;
         case const (List<ModelTask>):
-          return deserializeModelTaskList(await prefs.getStringList(key))
+          return deserializeModelTaskList(await DbCache.getStringList(key))
                   as T? ??
               defaultValue;
         case const (List<ModelUser>):
-          return deserializeModelUserList(await prefs.getStringList(key))
+          return deserializeModelUserList(await DbCache.getStringList(key))
                   as T? ??
               defaultValue;
         case OsmLookupConditions:
-          return deserializeOsmLookup(await prefs.getString(key)) as T? ??
+          return deserializeOsmLookup(await DbCache.getString(key)) as T? ??
+              defaultValue;
+        case Weekdays:
+          return deserializeWeekdays(await DbCache.getString(key)) as T? ??
               defaultValue;
 
         default:

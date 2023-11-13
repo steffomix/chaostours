@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/cache.dart';
 import 'package:chaostours/view/app_base_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -42,6 +43,7 @@ class _WidgetAliasTrackpoint extends BaseWidgetState<WidgetAliasTrackpoint> {
 
   final TextEditingController _searchTextController = TextEditingController();
 
+  Weekdays weekdays = Weekdays.mondayFirst;
   ModelAlias? _modelAlias;
   final List<Widget> _loadedWidgets = [];
 
@@ -49,6 +51,8 @@ class _WidgetAliasTrackpoint extends BaseWidgetState<WidgetAliasTrackpoint> {
   Future<void> initialize(BuildContext context, Object? args) async {
     int id = args as int;
     _modelAlias = await ModelAlias.byId(id);
+    weekdays =
+        await Cache.appSettingWeekdays.load<Weekdays>(Weekdays.mondayFirst);
   }
 
   @override
@@ -141,9 +145,9 @@ class _WidgetAliasTrackpoint extends BaseWidgetState<WidgetAliasTrackpoint> {
   }
 
   Widget renderTrackPoint(ModelTrackPoint tp) {
-    var date = '${AppSettings.weekDays[tp.timeStart.weekday]}. '
+    var date = '${weekdays.weekdays[tp.timeStart.weekday]}. '
         '${tp.timeStart.day}.${tp.timeStart.month}.${tp.timeStart.year}';
-    var dur = timeElapsed(tp.timeStart, tp.timeEnd, false);
+    var dur = formatDuration(tp.timeStart, tp.timeEnd, false);
     var time =
         'von ${tp.timeStart.hour}:${tp.timeStart.minute} bis ${tp.timeEnd.hour}:${tp.timeEnd.minute}\n($dur)';
     Iterable<String> tasks = tp.taskModels.map((model) => model.title);

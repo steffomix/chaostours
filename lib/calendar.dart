@@ -16,13 +16,15 @@ limitations under the License.
 
 import 'package:chaostours/conf/app_settings.dart';
 import 'package:chaostours/database.dart';
+import 'package:chaostours/gps.dart';
+import 'package:chaostours/model/model.dart';
 import 'package:chaostours/model/model_alias_group.dart';
+import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:device_calendar/device_calendar.dart';
 
 ///
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/cache.dart';
-import 'package:chaostours/data_bridge.dart';
 import 'package:chaostours/trackpoint_data.dart';
 
 class CalendarEventId {
@@ -50,7 +52,11 @@ class AppCalendar {
   static final Logger logger = Logger.logger<AppCalendar>();
 
   final DeviceCalendarPlugin _deviceCalendarPlugin = DeviceCalendarPlugin();
-  final bridge = DataBridge.instance;
+
+  Future<String> getTimeZone() async {
+    Cache key = Cache.appSettingTimeZone;
+    return await key.load<String>(AppUserSettings(key).defaultValue as String);
+  }
 
   Future<String?> inserOrUpdate(Event e) async {
     Result<String>? id = await _deviceCalendarPlugin.createOrUpdateEvent(e);
@@ -87,8 +93,7 @@ class AppCalendar {
         calendarsResult.errors.map((e) {
           err.add(e.errorMessage);
         });
-        DataBridge.instance.trackPointUserNotes = await Cache
-            .backgroundTrackPointUserNotes
+        await Cache.backgroundTrackPointUserNotes
             .save<String>(err.join('\n\n'));
       }
       var data = calendarsResult.data;
@@ -116,13 +121,13 @@ class AppCalendar {
     return null;
   }
 
-  Future<void> startCalendarEvent(TrackPointData tpData) async {
+  Future<void> startCalendarEvent(ModelTrackPoint tp) async {
     var calendars = await loadCalendars();
     if (calendars.isEmpty) {
       return;
     }
 
-    final aliasGroups = await ModelAliasGroup.groups(tpData.aliasModels);
+    final aliasGroups = await ModelAliasGroup.groups(tp.aliasModels);
     List<CalendarEventId> calendarEvents = aliasGroups
         .map(
           (e) => CalendarEventId(calendarId: e.idCalendar),
@@ -133,22 +138,27 @@ class AppCalendar {
       return;
     }
 
+    GPS lastStatusChange =
+        await Cache.backgroundGpsLastStatusChange.load<GPS>(tp.gps);
+
     /// get dates
-    final berlin = getLocation(AppSettings.timeZone);
-    var start = TZDateTime.from(tpData.timeStart, berlin);
+    final berlin = getLocation(await getTimeZone());
+    var start = TZDateTime.from(tp.timeStart, berlin);
     var end = start.add(const Duration(minutes: 2));
 
     var title =
-        'Ankunft ${tpData.aliasModels.isNotEmpty ? tpData.aliasModels.first.title : tpData.addressText} - ${start.hour}.${start.minute}';
+        'Arrived ${tp.aliasModels.isNotEmpty ? tp.aliasModels.first.title : tp.address} - ${start.hour}.${start.minute}';
     var location =
-        'maps.google.com?q=${tpData.gpslastStatusChange.lat},${tpData.gpslastStatusChange.lon}';
+        'maps.google.com?q=${lastStatusChange.lat},${lastStatusChange.lon}';
     var description =
-        '${tpData.aliasModels.isNotEmpty ? tpData.aliasModels.first.title : tpData.addressText}\n'
-        'am ${start.day}.${start.month}.${start.year}\n'
-        'um ${start.hour}.${start.minute} - unbekannt)\n\n'
-        'Arbeiten: ...\n\n'
-        'Mitarbeiter:\n${tpData.usersText}\n\n'
-        'Notizen: ...';
+        '${tp.aliasModels.isNotEmpty ? tp.aliasModels.first.title : tp.address}\n'
+        '${start.day}.${start.month}.${start.year}\n'
+        'at ${start.hour}.${start.minute} - unknown)\n\n'
+        'Tasks: ...\n\n'
+        'Users:\n${tp.userModels.map(
+              (e) => e.title,
+            ).join(', ')}\n\n'
+        'Notes: ...';
 
     for (var calId in calendarEvents) {
       Calendar? calendar = await calendarById(calId.calendarId);
@@ -169,32 +179,39 @@ class AppCalendar {
     }
 
     /// cache event id
-    bridge.lastCalendarEventIds = await Cache.backgroundCalendarLastEventIds
+    await Cache.backgroundCalendarLastEventIds
         .save<List<CalendarEventId>>(calendarEvents);
   }
 
-  Future<void> completeCalendarEvent(TrackPointData tpData) async {
+  Future<void> completeCalendarEvent(ModelTrackPoint tp) async {
     List<CalendarEventId> calIds = await Cache.backgroundCalendarLastEventIds
         .load<List<CalendarEventId>>([]);
     if (calIds.isEmpty) {
       return;
     }
 
+    GPS lastStatusChange =
+        await Cache.backgroundGpsLastStatusChange.load<GPS>(tp.gps);
+
     /// get dates
-    final berlin = getLocation(AppSettings.timeZone);
-    var start = TZDateTime.from(tpData.timeStart, berlin);
-    var end = TZDateTime.from(tpData.timeEnd, berlin);
+    final berlin = getLocation(await getTimeZone());
+    var start = TZDateTime.from(tp.timeStart, berlin);
+    var end = TZDateTime.from(tp.timeEnd, berlin);
     var title =
-        '${tpData.aliasModels.isNotEmpty ? tpData.aliasModels.first.title : tpData.addressText}; ${tpData.durationText}';
+        '${tp.aliasModels.isNotEmpty ? tp.aliasModels.first.title : tp.address}; ${tp.durationText}';
     var location =
-        'maps.google.com?q=${tpData.gpslastStatusChange.lat},${tpData.gpslastStatusChange.lon}';
+        'maps.google.com?q=${lastStatusChange.lat},${lastStatusChange.lon}';
     var description =
-        '${tpData.aliasModels.isNotEmpty ? tpData.aliasModels.first.title : tpData.addressText}\n'
-        '${start.day}.${start.month}. - ${tpData.durationText}\n'
+        '${tp.aliasModels.isNotEmpty ? tp.aliasModels.first.title : tp.address}\n'
+        '${start.day}.${start.month}. - ${tp.durationText}\n'
         '(${start.hour}.${start.minute} - ${end.hour}.${end.minute})\n\n'
-        'Arbeiten:\n${tpData.tasksText}\n\n'
-        'Mitarbeiter:\n${tpData.usersText}\n\n'
-        'Notizen: ${tpData.trackPointNotes.isEmpty ? '-' : tpData.trackPointNotes}';
+        'Tasks:\n${tp.taskModels.map(
+              (e) => e.title,
+            ).join(', ')}\n\n'
+        'Users:\n${tp.userModels.map(
+              (e) => e.title,
+            ).join(', ')}\n\n'
+        'Notes: ${tp.notes.isEmpty ? '-' : tp.notes}';
 
     for (var calId in calIds) {
       Calendar? calendar = await calendarById(calId.calendarId);
@@ -216,8 +233,7 @@ class AppCalendar {
         (txn) async {
           for (var calId in calIds) {
             await txn.insert(TableTrackPointCalendar.table, {
-              TableTrackPointCalendar.idTrackPoint.column:
-                  tpData.trackPoint!.id,
+              TableTrackPointCalendar.idTrackPoint.column: tp.id,
               TableTrackPointCalendar.idCalendar.column: calId.calendarId,
               TableTrackPointCalendar.idEvent.column: calId.eventId
             });
@@ -228,6 +244,6 @@ class AppCalendar {
 
     // clear calendar cache
     await Cache.backgroundCalendarLastEventIds.save<List<CalendarEventId>>([]);
-    tpData.calendarEventIds.clear();
+    tp.calendarEventIds.clear();
   }
 }

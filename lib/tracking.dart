@@ -131,9 +131,6 @@ class _TrackPoint {
     /// create gpsPoint
     GPS gps = GPS(lat, lon);
 
-    /// load global settings
-    await AppSettings.loadSettings();
-
     if (await Cache.backgroundTrackingStatus.load(TrackingStatus.none) ==
         TrackingStatus.none) {
       /// initialize basic events if not set
@@ -147,18 +144,27 @@ class _TrackPoint {
           .save<TrackingStatus>(TrackingStatus.moving);
     }
 
+    bool appSettingStatusStandingRequireAlias = await Cache
+        .appSettingStatusStandingRequireAlias
+        .load<bool>(AppUserSettings(Cache.appSettingStatusStandingRequireAlias)
+            .defaultValue as bool);
+
+    Duration autoCreateAliasDefault =
+        AppUserSettings(Cache.appSettingAutocreateAlias).defaultValue
+            as Duration;
     Duration appSettingAutoCreateAliasDuration = await Cache
         .appSettingAutocreateAlias
-        .load<Duration>(AppSettings.autoCreateAliasDefault);
+        .load<Duration>(autoCreateAliasDefault);
 
-    Duration appSettingsTrackpointIntervalDuration = await Cache
-        .appSettingForegroundUpdateInterval
-        .load<Duration>(AppSettings.backgroundLookupDurationDefault);
+    Duration appSettingsTrackpointInterval =
+        await Cache.appSettingBackgroundTrackingInterval.load<Duration>(
+            AppUserSettings(Cache.appSettingBackgroundTrackingInterval)
+                .defaultValue as Duration);
 
-    int maxGpsPoints = (appSettingAutoCreateAliasDuration.inSeconds == 0
-            ? AppSettings.autoCreateAliasDefault.inSeconds / 60
-            : appSettingAutoCreateAliasDuration.inSeconds /
-                appSettingsTrackpointIntervalDuration.inSeconds)
+    int maxGpsPoints = ((appSettingAutoCreateAliasDuration.inSeconds == 0
+                ? autoCreateAliasDefault.inSeconds
+                : appSettingAutoCreateAliasDuration.inSeconds) /
+            appSettingsTrackpointInterval.inSeconds)
         .ceil();
 
     /// add current gps point
@@ -167,10 +173,9 @@ class _TrackPoint {
 
     if (gpsPoints.length != maxGpsPoints) {
       /// prefill gpsPoints
-      while (gpsPoints.length < maxGpsPoints) {
+      while (gpsPoints.length <= maxGpsPoints) {
         var gpsFiller = GPS(gps.lat, gps.lon);
-        gpsFiller.time =
-            gpsPoints.last.time.add(AppSettings.trackPointInterval);
+        gpsFiller.time = gpsPoints.last.time.add(appSettingsTrackpointInterval);
         gpsPoints.add(gpsFiller);
       }
 
@@ -181,7 +186,12 @@ class _TrackPoint {
     }
 
     /// filter gps points for trackpoint calculation
-    List<GPS> smoothGpsPoints = calculateSmoothPoints(gpsPoints);
+    List<GPS> smoothGpsPoints = await calculateSmoothPoints(gpsPoints);
+
+    Duration appSettingTimeRangeTreshold =
+        await Cache.appSettingTimeRangeTreshold.load<Duration>(
+            AppUserSettings(Cache.appSettingTimeRangeTreshold).defaultValue
+                as Duration);
 
     /// extract calculation points from smoothed points
     List<GPS> calcGpsPoints = smoothGpsPoints
@@ -189,8 +199,8 @@ class _TrackPoint {
             0,
             math.min(
                 smoothGpsPoints.length - 1,
-                (AppSettings.timeRangeTreshold.inSeconds /
-                        AppSettings.trackPointInterval.inSeconds)
+                (appSettingTimeRangeTreshold.inSeconds /
+                        appSettingsTrackpointInterval.inSeconds)
                     .ceil()))
         .toList();
 
@@ -200,14 +210,16 @@ class _TrackPoint {
     /// all gps points calculated, save them
     await Cache.backgroundLastGps.save<GPS>(gps);
     await Cache.backgroundGpsPoints.save<List<GPS>>(gpsPoints);
-    await Cache.backgroundSmoothGpsPoints.save<List<GPS>>(smoothGpsPoints);
-    await Cache.backgroundCalcGpsPoints.save<List<GPS>>(calcGpsPoints);
+    await Cache.backgroundGpsSmoothPoints.save<List<GPS>>(smoothGpsPoints);
+    await Cache.backgroundGpsCalcPoints.save<List<GPS>>(calcGpsPoints);
 
     /// collect gps related data
     Location gpsLocation = await Location.location(gps);
 
     int distanceTreshold = gpsLocation.aliasModels.firstOrNull?.radius ??
-        AppSettings.distanceTreshold;
+        await Cache.appSettingDistanceTreshold.load<int>(
+            AppUserSettings(Cache.appSettingDistanceTreshold).defaultValue
+                as int);
 
     /// cache alias list
     await Cache.backgroundAliasIdList.save<List<int>>(gpsLocation.aliasIds);
@@ -221,7 +233,7 @@ class _TrackPoint {
     /// process trackpoint
     ///
     ///
-    /// process user trigger standing
+    /// process user trigger
     TrackingStatus triggeredTrackingStatus = await Cache.trackingStatusTriggered
         .load<TrackingStatus>(TrackingStatus.none);
 
@@ -240,7 +252,7 @@ class _TrackPoint {
     } else {
       /// check for standing
       if (oldTrackingStatus == TrackingStatus.standing) {
-        /// start check with true value
+        /// start check with assumed true value
         bool checkStartedMoving = true;
 
         GPS gpsStandingStartet = await Cache.backgroundGpsStartStanding
@@ -259,18 +271,19 @@ class _TrackPoint {
         }
       } else if (oldTrackingStatus == TrackingStatus.moving) {
         /// autocreate alias?
-        if (AppSettings.statusStandingRequireAlias && !gpsLocation.hasAlias) {
+        if (appSettingStatusStandingRequireAlias && !gpsLocation.hasAlias) {
           try {
             /// autocreate must be activated
-            if (AppSettings.autoCreateAlias.inMinutes > 0) {
+            if (appSettingAutoCreateAliasDuration.inMinutes > 0) {
               /// check if enough time has passed
               if ((await Cache.backgroundGpsStartMoving.load<GPS>(gps))
                   .time
-                  .isBefore(gps.time.subtract(AppSettings.autoCreateAlias))) {
+                  .isBefore(
+                      gps.time.subtract(appSettingAutoCreateAliasDuration))) {
                 /// check if all points are in radius
                 bool checkAllPointsInside = true;
                 for (var sm in smoothGpsPoints) {
-                  if (GPS.distance(sm, gps) > AppSettings.distanceTreshold) {
+                  if (GPS.distance(sm, gps) > distanceTreshold) {
                     checkAllPointsInside = false;
                     break;
                   }
@@ -281,7 +294,10 @@ class _TrackPoint {
                   GPS createAliasGps = GPS.average(calcGpsPoints);
 
                   /// get address
-                  String address = await saveAddress(gps);
+                  String address =
+                      await OsmLookupConditions.saveBackgroundAddress(
+                          gps: gps,
+                          condition: OsmLookupConditions.onAutoCreateAlias);
 
                   createAliasGps.time = DateTime.now();
 
@@ -294,7 +310,7 @@ class _TrackPoint {
                       description:
                           'Auto created Alias\nat address:\n"$address"\n'
                           '\nat date/time: ${createAliasGps.time.toIso8601String()}',
-                      radius: AppSettings.distanceTreshold);
+                      radius: distanceTreshold);
                   logger.warn('auto create new alias');
                   await newAlias.insert();
 
@@ -315,8 +331,7 @@ class _TrackPoint {
             logger.error('autocreate alias: $e', stk);
           }
         } else {
-          if (GPS.distanceOverTrackList(calcGpsPoints) <
-              AppSettings.distanceTreshold) {
+          if (GPS.distanceOverTrackList(calcGpsPoints) < distanceTreshold) {
             await cacheNewStatusStanding(gps);
           }
         }
@@ -331,9 +346,8 @@ class _TrackPoint {
     /// if nothing has changed, nothing to do
     if (newTrackingStatus == oldTrackingStatus) {
       /// lookup address on every interval
-      if (AppSettings.osmLookupCondition == OsmLookupConditions.always) {
-        await saveAddress(gps);
-      }
+      await OsmLookupConditions.saveBackgroundAddress(
+          gps: gps, condition: OsmLookupConditions.onBackgroundGps);
 
       ///
       ///
@@ -342,10 +356,8 @@ class _TrackPoint {
       ///
     } else {
       /// update osm address
-      if (AppSettings.osmLookupCondition ==
-          OsmLookupConditions.onStatusChanged) {
-        await saveAddress(gps);
-      }
+      String address = await OsmLookupConditions.saveBackgroundAddress(
+          gps: gps, condition: OsmLookupConditions.onStatusChanged);
 
       /// we started moving
       if (newTrackingStatus == TrackingStatus.moving) {
@@ -357,8 +369,8 @@ class _TrackPoint {
         ///
         ///     --- insert and update database entrys ---
         ///
-        if (!AppSettings.statusStandingRequireAlias ||
-            (AppSettings.statusStandingRequireAlias && aliases.isNotEmpty)) {
+        if (!appSettingStatusStandingRequireAlias ||
+            (appSettingStatusStandingRequireAlias && aliases.isNotEmpty)) {
           /// create and insert new trackpoint
           ModelTrackPoint newTrackPoint = ModelTrackPoint(
               gps: gps,
@@ -367,37 +379,26 @@ class _TrackPoint {
               timeEnd: gps.time,
               calendarEventIds: await Cache.backgroundCalendarLastEventIds
                   .load<List<CalendarEventId>>([CalendarEventId()]),
-              address: await Cache.backgroundLastStandingAddress
-                  .load<String>(await saveAddress(gps)),
+              address: address,
               notes:
                   await Cache.backgroundTrackPointUserNotes.load<String>(''));
-          newTrackPoint.aliasIds = aliases
-              .map(
-                (e) => e.id,
-              )
-              .toList();
-          newTrackPoint.taskIds =
-              await Cache.backgroundTaskIdList.load<List<int>>([]);
-          newTrackPoint.userIds =
-              await Cache.backgroundUserIdList.load<List<int>>([]);
-
-          /// complete calendar event from trackpoint data
-          /// only if no private or restricted alias is present
-          var tpData =
-              await TrackPointData.trackPointData(trackPoint: newTrackPoint);
 
           /// save new TrackPoint with user- and task ids
           await newTrackPoint.insert();
 
+          bool publishToCalendar = await Cache.appSettingPublishToCalendar
+              .load<bool>(AppUserSettings(Cache.appSettingPublishToCalendar)
+                  .defaultValue as bool);
+
           /// execute calendar
-          if (AppSettings.publishToCalendar &&
+          if (publishToCalendar &&
               !gpsLocation.isPrivate &&
-              (!AppSettings.statusStandingRequireAlias ||
-                  (AppSettings.statusStandingRequireAlias &&
-                      tpData.aliasModels.isNotEmpty))) {
+              (!appSettingStatusStandingRequireAlias ||
+                  (appSettingStatusStandingRequireAlias &&
+                      newTrackPoint.aliasModels.isNotEmpty))) {
             try {
               var calendar = AppCalendar();
-              await calendar.completeCalendarEvent(tpData);
+              await calendar.completeCalendarEvent(newTrackPoint);
             } catch (e, stk) {
               logger.error('completeCalendarEvent; $e', stk);
             }
@@ -431,22 +432,23 @@ class _TrackPoint {
       } else if (newTrackingStatus == TrackingStatus.standing) {
         logger.log('new tracking status STANDING');
 
-        await Cache.backgroundLastStandingAddress
-            .save<String>(await saveAddress(gps));
-
         /// cache alias id list
         await Cache.backgroundAliasIdList.save<List<int>>(gpsLocation.aliasIds);
 
+        bool publishToCalendar = await Cache.appSettingPublishToCalendar
+            .load<bool>(AppUserSettings(Cache.appSettingPublishToCalendar)
+                .defaultValue as bool);
+
         /// create calendar entry from cache data
-        if (AppSettings.publishToCalendar &&
+        if (publishToCalendar &&
             !gpsLocation.isPrivate &&
-            (!AppSettings.statusStandingRequireAlias ||
-                (AppSettings.statusStandingRequireAlias &&
+            (!appSettingStatusStandingRequireAlias ||
+                (appSettingStatusStandingRequireAlias &&
                     gpsLocation.hasAlias))) {
           logger.log('create new calendar event');
           try {
             await AppCalendar()
-                .startCalendarEvent(await TrackPointData.trackPointData());
+                .startCalendarEvent(await ModelTrackPoint.fromCache(gps));
           } catch (e, stk) {
             logger.error('startCalendarEvent: $e', stk);
           }
@@ -458,11 +460,6 @@ class _TrackPoint {
     await Cache.backgroundLastTick.save<DateTime>(DateTime.now());
 
     await (Future.delayed(const Duration(seconds: 1)));
-  }
-
-  Future<String> saveAddress(GPS gps) async {
-    String address = (await Address(gps).lookupAddress()).toString();
-    return await Cache.backgroundAddress.save<String>(address);
   }
 
   Future<TrackingStatus> cacheNewStatusStanding(GPS gps) async {
@@ -481,27 +478,29 @@ class _TrackPoint {
     return TrackingStatus.moving;
   }
 
-  List<GPS> calculateSmoothPoints(List<GPS> gpsPoints) {
+  Future<List<GPS>> calculateSmoothPoints(List<GPS> gpsPoints) async {
     List<GPS> smoothGpsPoints = [];
-    int smooth = AppSettings.gpsPointsSmoothCount;
-    if (smooth < 2) {
+    int smoothCount = await Cache.appSettingGpsPointsSmoothCount.load<int>(
+        AppUserSettings(Cache.appSettingGpsPointsSmoothCount).defaultValue
+            as int);
+    if (smoothCount < 2) {
       /// smoothing is disabled
       smoothGpsPoints.addAll(gpsPoints);
       return smoothGpsPoints;
     }
 
-    if (gpsPoints.length <= smooth) {
-      logger.warn('too few gpsPoints for $smooth smoothPoints. '
+    if (gpsPoints.length <= smoothCount) {
+      logger.warn('too few gpsPoints for $smoothCount smoothPoints. '
           'Use all gpsPoints as smoothPoints directly without smmothing effect');
       smoothGpsPoints.addAll(gpsPoints);
       return smoothGpsPoints;
     }
     int index = 0;
-    int range = gpsPoints.length - smooth;
+    int range = gpsPoints.length - smoothCount;
     while (index < range) {
       try {
-        var averageGps =
-            GPS.average(gpsPoints.getRange(index, index + smooth).toList());
+        var averageGps = GPS
+            .average(gpsPoints.getRange(index, index + smoothCount).toList());
         averageGps.time = gpsPoints[index].time;
         smoothGpsPoints.add(averageGps);
       } catch (e, stk) {

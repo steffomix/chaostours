@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/tracking.dart';
 import 'package:flutter/material.dart';
 import 'dart:collection';
 //
@@ -22,44 +23,16 @@ import 'package:chaostours/gps.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/cache.dart';
 
-class EventOnSharedKeyChanged extends EventOn {
-  Cache key;
-  String oldData;
-  String newData;
+class EventOnTrackingStatusChanged extends EventOn {
+  final TrackingStatus oldStatus;
+  final TrackingStatus status;
 
-  EventOnSharedKeyChanged(
-      {required this.key, required this.oldData, required this.newData});
+  EventOnTrackingStatusChanged({required this.status, required this.oldStatus});
 }
 
-class EventOnMainPaneChanged extends EventOn {
-  final Widget pane;
-  EventOnMainPaneChanged(this.pane);
-}
+class EventOnBackgroundUpdate extends EventOn {}
 
-class EventOnTrackingStatusChanged extends EventOn {}
-
-/// <p><b>Deprecated!</b></p>
-/// moved to background tracking<br>
-/// EventOnTracking
-class EventOnTrackPoint extends EventOn {
-  ModelTrackPoint tp;
-  EventOnTrackPoint(this.tp);
-}
-
-class EventOnCacheLoaded extends EventOn {}
-
-class EventOnGPS extends EventOn {
-  final GPS gps;
-  EventOnGPS(this.gps);
-}
-
-class EventOnAppTick extends EventOn {
-  static int _nextId = 0;
-  final int id = (_nextId++);
-  EventOnAppTick();
-}
-
-class EventOnSetState extends EventOn {}
+class EventOnAppTick extends EventOn {}
 
 class EventOn {
   static int _nextId = 0;

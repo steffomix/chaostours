@@ -26,15 +26,15 @@ double fileSize(File file) {
   return mb;
 }
 
-Duration timeDifference(DateTime t1, DateTime t2) {
-  var diff = t1.difference(t2);
-  if (diff.isNegative) {
-    diff = t2.difference(t1);
-  }
-  return diff;
+Duration duration(DateTime t1, DateTime t2) {
+  return t1.difference(t2).abs();
 }
 
-String timeElapsed(DateTime t1, DateTime t2, [bool short = true]) {
+Duration timeDifference(DateTime t1, DateTime t2) {
+  return t1.difference(t2).abs();
+}
+
+String formatDuration(DateTime t1, DateTime t2, [bool short = true]) {
   DateTime t0;
   if (t1.difference(t2).isNegative) {
     t0 = t1;
@@ -58,13 +58,13 @@ String timeElapsed(DateTime t1, DateTime t2, [bool short = true]) {
   } else {
     s = '';
     if (days > 0) {
-      s += '$days Tage, ';
+      s += '$days Days, ';
     }
     if (hours > 0) {
-      s += '$hours Stunden, ';
+      s += '$hours Hours, ';
     }
     if (minutes > 0) {
-      s += '$minutes Minuten';
+      s += '$minutes Minutes';
     }
     /*
     if (seconds > 0) {
@@ -74,16 +74,6 @@ String timeElapsed(DateTime t1, DateTime t2, [bool short = true]) {
   }
 
   return s;
-}
-
-Duration duration(DateTime t1, DateTime t2) {
-  DateTime t0;
-  if (t1.difference(t2).isNegative) {
-    t0 = t1;
-    t2 = t1;
-    t1 = t0;
-  }
-  return t1.difference(t2);
 }
 
 String formatDate(DateTime t, [bool short = true]) {

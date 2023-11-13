@@ -24,42 +24,38 @@ class DbCache {
   static final _key = CacheData.key.column;
   static final _data = CacheData.data.column;
 
-  static DbCache? _instance;
-  DbCache._();
-  factory DbCache() => _instance ??= DbCache._();
+  static String id(Cache key) => key.name;
 
-  String id(Cache key) => key.name;
-
-  Future<int> _count(Transaction txn, Cache key) async {
+  static Future<int> _count(Transaction txn, Cache key) async {
     var col = 'ct';
     var rows = await txn.rawQuery('SELECT count(*) FROM $_table AS $col');
     return DB.parseInt(rows.firstOrNull?[col]);
   }
 
-  Future<int> count(Cache key) async {
+  static Future<int> count(Cache key) async {
     return DB.execute<int>((Transaction txn) async {
       return _count(txn, key);
     });
   }
 
-  Future<void> remove(Cache key) async {
+  static Future<void> remove(Cache key) async {
     await DB.execute((Transaction txn) async {
       await _delete(txn, key);
     });
   }
 
-  Future<int> _delete(Transaction txn, Cache key) async {
+  static Future<int> _delete(Transaction txn, Cache key) async {
     return await txn.delete(_table, where: '$_key = ?', whereArgs: [id(key)]);
   }
 
-  Future<int> _set(Cache key, Object? value) async {
+  static Future<int> _set(Cache key, Object? value) async {
     return DB.execute<int>((Transaction txn) async {
       await _delete(txn, key);
       return await txn.insert(_table, {_id: 1, _key: id(key), _data: value});
     });
   }
 
-  Future<void> _setList(Cache key, List<Object?> values) async {
+  static Future<void> _setList(Cache key, List<Object?> values) async {
     return DB.execute((Transaction txn) async {
       await _delete(txn, key);
       if (values.isEmpty) {
@@ -75,7 +71,7 @@ class DbCache {
     });
   }
 
-  Future<String?> _get(Cache key) async {
+  static Future<String?> _get(Cache key) async {
     final rows = await DB.execute(
       (Transaction txn) async {
         return await txn.query(_table,
@@ -88,7 +84,7 @@ class DbCache {
     return rows.firstOrNull?[_data].toString();
   }
 
-  Future<List<String>> _getList(Cache key) async {
+  static Future<List<String>> _getList(Cache key) async {
     final rows = await DB.execute(
       (Transaction txn) async {
         return await txn.query(_table,
@@ -111,36 +107,36 @@ class DbCache {
   }
 
   /// String
-  Future<void> setString(Cache key, Object? value) async =>
+  static Future<void> setString(Cache key, Object? value) async =>
       await _set(key, value);
-  Future<String?> getString(Cache key) async => await _get(key);
+  static Future<String?> getString(Cache key) async => await _get(key);
 
   /// StringList
-  Future<void> setStringList(Cache key, List<Object?> values) async =>
+  static Future<void> setStringList(Cache key, List<Object?> values) async =>
       await _setList(key, values);
-  Future<List<String>?> getStringList(Cache key) async {
+  static Future<List<String>?> getStringList(Cache key) async {
     final list = await _getList(key);
     return list.isEmpty ? null : list;
   }
 
   /// int
-  Future<void> setInt(Cache key, int value) async =>
+  static Future<void> setInt(Cache key, int value) async =>
       await _set(key, value.toString());
-  Future<int?> getInt(Cache key) async {
+  static Future<int?> getInt(Cache key) async {
     final value = await _get(key);
     return value == null ? null : DB.parseInt(value);
   }
 
   /// double
-  Future<void> setDouble(Cache key, double value) async =>
+  static Future<void> setDouble(Cache key, double value) async =>
       await _set(key, value.toString());
-  Future<double?> getDouble(Cache key) async {
+  static Future<double?> getDouble(Cache key) async {
     final value = await _get(key);
     return value == null ? null : DB.parseDouble(value);
   }
 
   /// bool
-  Future<void> setBool(Cache key, bool value) async =>
+  static Future<void> setBool(Cache key, bool value) async =>
       await _set(key, DB.boolToInt(value).toString());
-  Future<bool> getBool(Cache key) async => DB.parseBool(await _get(key));
+  static Future<bool> getBool(Cache key) async => DB.parseBool(await _get(key));
 }

@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 import 'package:chaostours/address.dart';
+import 'package:chaostours/cache.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:flutter/services.dart';
@@ -23,10 +24,8 @@ import 'dart:io' as io;
 ///
 import 'package:chaostours/tracking.dart';
 import 'package:chaostours/logger.dart';
-import 'package:chaostours/ticker.dart';
-import 'package:chaostours/conf/app_settings.dart';
-import 'package:chaostours/data_bridge.dart';
 import 'package:chaostours/database.dart';
+import 'runtime_data.dart';
 
 class AppLoader {
   static Logger logger = Logger.logger<AppLoader>();
@@ -48,7 +47,7 @@ class AppLoader {
 
       //
       logger.log('load app settings');
-      await AppSettings.loadSettings();
+      //await AppSettings.loadSettings();
 
       var count = await ModelAlias.count();
       if (count == 0) {
@@ -73,7 +72,7 @@ class AppLoader {
       await webKey();
 
       //
-      if (AppSettings.backgroundTrackingEnabled) {
+      if (await Cache.appSettingBackgroundTrackingEnabled.load<bool>(true)) {
         // wait a little
         await Future.delayed(const Duration(seconds: 3));
         try {
@@ -89,12 +88,6 @@ class AppLoader {
           logger.error('start background tracking', stk);
         }
       }
-
-      logger.log('start app tick');
-      Ticker.startAppTick();
-
-      logger.log('start databridge');
-      DataBridge.instance.startService();
     } catch (e, stk) {
       logger.fatal('preload $e', stk);
       return false;

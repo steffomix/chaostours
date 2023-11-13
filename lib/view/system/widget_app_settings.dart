@@ -42,6 +42,13 @@ class WidgetAppSettings extends StatefulWidget {
 }
 
 class _WidgetAppSettings extends State<WidgetAppSettings> {
+  @override
+  Widget build(BuildContext context) {
+    return AppWidgets.scaffold(context,
+        body: AppWidgets.loadingScreen(context, const Text('Not implemented')));
+  }
+
+  /*
   static final Logger logger = Logger.logger<WidgetAppSettings>();
 
   bool? statusStandingRequireAlias = AppSettings.statusStandingRequireAlias;
@@ -156,7 +163,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
     List<OsmLookupConditions> list = [
       OsmLookupConditions.always,
       OsmLookupConditions.onStatusChanged,
-      OsmLookupConditions.onCreateAlias,
+      OsmLookupConditions.onAutoCreateAlias,
       OsmLookupConditions.never
     ];
     return DropdownButton<OsmLookupConditions>(
@@ -183,7 +190,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
           case OsmLookupConditions.never:
             text = 'Niemals';
             break;
-          case OsmLookupConditions.onCreateAlias:
+          case OsmLookupConditions.onAutoCreateAlias:
             text = 'Bei automatischer Alias Erstellung';
             break;
           case OsmLookupConditions.onStatusChanged:
@@ -496,4 +503,5 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
         ]),
         navBar: null);
   }
+  */
 }

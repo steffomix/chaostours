@@ -303,8 +303,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
             if (id == 0 && modified.value) {
               trackPoint.notes = tpNotes.text;
               await trackPoint.update();
-              await AppCalendar().completeCalendarEvent(
-                  await TrackPointData.trackPointData(trackPoint: trackPoint));
+              await AppCalendar().completeCalendarEvent(trackPoint);
               if (mounted) {
                 Navigator.pop(context);
               }

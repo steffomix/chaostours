@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-
+/*
 import 'package:chaostours/calendar.dart';
 import 'package:chaostours/data_bridge.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
@@ -30,7 +30,7 @@ import 'package:chaostours/logger.dart';
 class TrackPointData {
   static final Logger logger = Logger.logger<TrackPointData>();
   ModelTrackPoint? trackPoint;
-  final bridge = DataBridge.instance;
+  //final bridge = DataBridge.instance;
   final GPS gps;
   final DateTime timeStart;
   DateTime get timeEnd => DateTime.now();
@@ -167,3 +167,4 @@ class TrackPointData {
       required this.calendarEventIds,
       this.trackPoint});
 }
+*/

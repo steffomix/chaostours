@@ -115,16 +115,6 @@ class _WidgetOsm extends State<WidgetOsm> {
   final List<OsmSearchResult> searchResultList = [];
 
   @override
-  void initState() {
-    super.initState();
-    DataBridge.instance.loadCache().then((_) {
-      if (mounted) {
-        setState(() {});
-      }
-    });
-  }
-
-  @override
   void dispose() {
     _addressNotifier.dispose();
     mapController.removeAllCircle();

@@ -75,7 +75,7 @@ class Option {
       case Cache.appSettingAutocreateAlias:
         return Option._option(cache, defaultValue: true);
 
-      case Cache.appSettingBackgroundLookupDuration:
+      case Cache.appSettingBackgroundTrackingInterval:
         return Option._option(cache,
             defaultValue: 30, minValue: 15, unit: Unit.second);
 
@@ -103,7 +103,7 @@ class Option {
 
       case Cache.appSettingOsmLookupCondition:
         return Option._option(cache,
-            defaultValue: OsmLookupConditions.onCreateAlias);
+            defaultValue: OsmLookupConditions.onAutoCreateAlias);
 
       case Cache.appSettingPublishToCalendar:
         return Option._option(cache, defaultValue: true);

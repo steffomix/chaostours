@@ -17,31 +17,55 @@ limitations under the License.
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/logger.dart';
 
+enum TickerTypes {
+  hud,
+  background;
+}
+
 class Ticker {
   static final Logger logger = Logger.logger<Ticker>();
+  static final Map<TickerTypes, Ticker> _runningTickers = {};
 
-  static int _appTick = 0;
-  static get appTick => _appTick;
+  factory Ticker(
+      {required TickerTypes type,
+      required Future<Duration> Function() getDuration,
+      required void Function() action}) {
+    return _runningTickers[type] ??=
+        Ticker._ticker(getDuration: getDuration, action: action);
+  }
 
-  static bool _appTickIsRunning = false;
-  static bool get appTickIsRunning => _appTickIsRunning;
+  Ticker? getTicker(TickerTypes type) {
+    return _runningTickers[type];
+  }
 
-  static Duration appTickDuration = const Duration(seconds: 1);
+  int _ticks = 0;
+  int get ticks => _ticks;
+  bool isRunning = true;
+  Future<Duration> Function() getDuration;
+  void Function() action;
 
-  static Future<void> startAppTick() async {
-    if (_appTickIsRunning) {
-      return;
-    }
-    _appTickIsRunning = true;
-    while (true) {
-      try {
-        EventManager.fire<EventOnAppTick>(EventOnAppTick());
-        _appTick++;
-      } catch (e, stk) {
-        logger.error(
-            'appTick ${DateTime.now().toIso8601String()} failed: $e', stk);
-      }
-      await Future.delayed(appTickDuration);
-    }
+  Ticker._ticker({required this.getDuration, required this.action}) {
+    getDuration.call().then(
+      (duration) {
+        Future.microtask(
+          () async {
+            while (isRunning) {
+              try {
+                action.call();
+                EventManager.fire<EventOnAppTick>(EventOnAppTick());
+                _ticks++;
+              } catch (e, stk) {
+                logger.error(
+                    'appTick ${DateTime.now().toIso8601String()} failed: $e',
+                    stk);
+              }
+              await Future.delayed(duration);
+            }
+          },
+        );
+      },
+    ).onError((e, stk) {
+      logger.fatal('', stk);
+    });
   }
 }

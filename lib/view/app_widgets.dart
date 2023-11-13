@@ -224,9 +224,8 @@ class AppWidgets {
   }
 
   static String timeInfo(DateTime timeStart, DateTime timeEnd) {
-    var day = '${AppSettings.weekDays[timeStart.weekday]}. den'
-        ' ${timeStart.day}.${timeStart.month}.${timeStart.year}';
-    String duration = util.timeElapsed(timeStart, timeEnd, false);
+    var day = '${timeStart.day}.${timeStart.month}.${timeStart.year}';
+    String duration = util.formatDuration(timeStart, timeEnd, false);
     return '$day, ${timeStart.hour}:${timeStart.minute} - ${timeEnd.hour}:${timeEnd.minute}\n ($duration)';
   }
 
