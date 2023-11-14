@@ -29,7 +29,6 @@ import 'package:chaostours/gps.dart';
 import 'package:chaostours/address.dart' as addr;
 import 'package:chaostours/conf/app_settings.dart';
 import 'package:chaostours/screen.dart';
-import 'package:chaostours/data_bridge.dart';
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/osm_tools.dart';

@@ -203,7 +203,7 @@ enum CacheData {
   }
 }
 
-enum _CacheKey {
+enum CacheKey {
   id('id'),
   type('type'),
   name('name');
@@ -211,12 +211,12 @@ enum _CacheKey {
   static const String table = 'cache_key';
 
   static List<String> get columns =>
-      _CacheKey.values.map((e) => e.toString()).toList();
+      CacheKey.values.map((e) => e.toString()).toList();
 
   final String column;
-  const _CacheKey(this.column);
+  const CacheKey(this.column);
 
-  _CacheKey get primaryKey => id;
+  CacheKey get primaryKey => id;
 
   static String get schema => '''CREATE TABLE IF NOT EXISTS $table (
 	${id.column}	INTEGER NOT NULL,
@@ -723,7 +723,7 @@ enum TableAliasGroup {
 
 class DbTable {
   static final List<DbTable> tables = List.unmodifiable([
-    DbTable(_CacheKey.table, _CacheKey.columns, _CacheKey.schema),
+    DbTable(CacheKey.table, CacheKey.columns, CacheKey.schema),
     DbTable(CacheData.table, CacheData.columns, CacheData.schema),
     // alias
     DbTable(TableAlias.table, TableAlias.columns, TableAlias.schema),
@@ -808,7 +808,7 @@ CREATE INDEX IF NOT EXISTS ${TableTaskTaskGroup.table}_index ON ${TableTaskTaskG
     ...Cache.values.map(
       (key) {
         return '''
-INSERT INTO ${_CacheKey.table} VALUES (${key.id}," ${key.cacheType}", "${key.name}")
+INSERT INTO ${CacheKey.table} VALUES (${key.id}," ${key.cacheType}", "${key.name}")
 ''';
       },
     )

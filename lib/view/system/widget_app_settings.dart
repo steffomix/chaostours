@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 ///
 import 'package:chaostours/logger.dart';
@@ -23,7 +23,6 @@ import 'package:chaostours/conf/app_colors.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/conf/app_settings.dart';
 import 'package:chaostours/cache.dart';
-import 'package:chaostours/data_bridge.dart';
 
 enum AliasRequired {
   yes(true),
@@ -42,50 +41,200 @@ class WidgetAppSettings extends StatefulWidget {
 }
 
 class _WidgetAppSettings extends State<WidgetAppSettings> {
-  @override
-  Widget build(BuildContext context) {
-    return AppWidgets.scaffold(context,
-        body: AppWidgets.loadingScreen(context, const Text('Not implemented')));
-  }
-
-  /*
   static final Logger logger = Logger.logger<WidgetAppSettings>();
 
-  bool? statusStandingRequireAlias = AppSettings.statusStandingRequireAlias;
-  bool? backgroundTrackingEnabled = AppSettings.backgroundTrackingEnabled;
+  OsmLookupConditions _currentOsmCondition = OsmLookupConditions.never;
+  final Map<Cache, ValueNotifier<int>> valueNotifiers = {};
+  final Map<Cache, TextEditingController> textEditingControllers = {};
 
-  TextEditingController txAutocreateAlias = TextEditingController();
-  TextEditingController txTrackPointInterval = TextEditingController();
-  TextEditingController txAddressLookupInterval = TextEditingController();
-  TextEditingController txCacheGpsTime = TextEditingController();
-  TextEditingController txDistanceTrehold = TextEditingController();
-  TextEditingController txTimeRangeTreshold = TextEditingController();
-  TextEditingController txAppTickDuration = TextEditingController();
-  TextEditingController txGpsSmoothCount = TextEditingController();
-  TextEditingController txGpsMaxSpeed = TextEditingController();
+  Future<bool> renderWidgets() async {
+    _renderedWidgets.addAll({
+      Cache.appSettingBackgroundTrackingEnabled:
+          await renderOptionEnableTracking(),
+      Cache.appSettingOsmLookupCondition: await osmlookupCondition(),
+    });
+    return true;
+  }
 
-  String selectedCalendar = ' --- ';
+  final Map<Cache, Widget> _renderedWidgets = {};
 
-  @override
-  void initState() {
-    super.initState();
+  Future<void> render() async {
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
-  void dispose() {
-    super.dispose();
+  Widget build(BuildContext context) {
+    return FutureBuilder(
+      future: renderWidgets(),
+      builder: (context, snapshot) {
+        return AppWidgets.checkSnapshot(context, snapshot) ?? scaffold();
+      },
+    );
   }
 
-  Future<void> modify() async {
-    await AppSettings.loadSettings();
-    setState(() {});
+  Widget scaffold() {
+    return AppWidgets.scaffold(context, body: body());
   }
 
-  void setStatus(BuildContext context, OsmLookupConditions? val) {
-    AppSettings.osmLookupCondition = val ?? OsmLookupConditions.never;
-    setState(() {});
+  Widget body() {
+    return ListView(
+      children: _renderedWidgets.values.toList(),
+    );
   }
 
+  Future<T> save<T>(Cache cache, T value) async {
+    await cache.save<T>(value);
+    valueNotifiers[cache]?.value++;
+    return value;
+  }
+
+  Future<Widget> renderOptionEnableTracking() async {
+    const cache = Cache.appSettingBackgroundTrackingEnabled;
+    final setting = AppUserSettings(cache);
+    bool xValue = await cache.load<bool>(false);
+    return ValueListenableBuilder(
+      valueListenable: valueNotifiers[cache] ??= ValueNotifier<int>(0),
+      builder: (context, value, child) {
+        return ListTile(
+          title: setting.title,
+          subtitle: setting.description,
+          leading: Checkbox(
+            value: xValue,
+            onChanged: (bool? value) async {
+              xValue = await save<bool>(cache, value ?? false);
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  Future<Widget> osmlookupCondition() async {
+    const cache = Cache.appSettingOsmLookupCondition;
+    final setting = AppUserSettings(cache);
+    _currentOsmCondition = await cache
+        .load<OsmLookupConditions>(setting.defaultValue as OsmLookupConditions);
+    return ValueListenableBuilder(
+      valueListenable: valueNotifiers[cache] ??= ValueNotifier<int>(0),
+      builder: (context, value, child) {
+        return Column(
+          children: [
+            /// never
+            ListTile(
+                title: setting.title,
+                subtitle: setting.description,
+                leading: Checkbox(
+                  value: _currentOsmCondition.index >=
+                      OsmLookupConditions.never.index,
+                  onChanged: (value) async {
+                    _currentOsmCondition = await save<OsmLookupConditions>(
+                        cache, OsmLookupConditions.never);
+                  },
+                )),
+
+            /// onUserRequest
+            ListTile(
+                title: setting.title,
+                subtitle: setting.description,
+                leading: Checkbox(
+                    value: _currentOsmCondition.index >=
+                        OsmLookupConditions.onUserRequest.index,
+                    onChanged: (value) async {
+                      _currentOsmCondition = await save<OsmLookupConditions>(
+                          cache,
+                          !(value ?? false)
+                              ? OsmLookupConditions.never
+                              : OsmLookupConditions.onUserRequest);
+                    })),
+
+            /// onUserRequest
+            ListTile(
+                title: setting.title,
+                subtitle: setting.description,
+                leading: Checkbox(
+                  value: _currentOsmCondition.index >=
+                      OsmLookupConditions.onUserCreateAlias.index,
+                  onChanged: (value) async {
+                    _currentOsmCondition = await save<OsmLookupConditions>(
+                        cache,
+                        !(value ?? false)
+                            ? OsmLookupConditions.onUserRequest
+                            : OsmLookupConditions.onUserCreateAlias);
+                  },
+                )),
+
+            /// onUserRequest
+            ListTile(
+                title: setting.title,
+                subtitle: setting.description,
+                leading: Checkbox(
+                  value: _currentOsmCondition.index >=
+                      OsmLookupConditions.onAutoCreateAlias.index,
+                  onChanged: (value) async {
+                    _currentOsmCondition = await save<OsmLookupConditions>(
+                        cache,
+                        !(value ?? false)
+                            ? OsmLookupConditions.onUserCreateAlias
+                            : OsmLookupConditions.onAutoCreateAlias);
+                  },
+                )),
+
+            /// onUserRequest
+            ListTile(
+                title: setting.title,
+                subtitle: setting.description,
+                leading: Checkbox(
+                  value: _currentOsmCondition.index >=
+                      OsmLookupConditions.onStatusChanged.index,
+                  onChanged: (value) async {
+                    _currentOsmCondition = await save<OsmLookupConditions>(
+                        cache,
+                        !(value ?? false)
+                            ? OsmLookupConditions.onAutoCreateAlias
+                            : OsmLookupConditions.onStatusChanged);
+                  },
+                )),
+
+            /// onUserRequest
+            ListTile(
+                title: setting.title,
+                subtitle: setting.description,
+                leading: Checkbox(
+                  value: _currentOsmCondition.index >=
+                      OsmLookupConditions.onBackgroundGps.index,
+                  onChanged: (value) async {
+                    _currentOsmCondition = await save<OsmLookupConditions>(
+                        cache,
+                        !(value ?? false)
+                            ? OsmLookupConditions.onStatusChanged
+                            : OsmLookupConditions.onBackgroundGps);
+                  },
+                )),
+
+            /// onUserRequest
+            ListTile(
+                title: setting.title,
+                subtitle: setting.description,
+                leading: Checkbox(
+                  value: _currentOsmCondition.index >=
+                      OsmLookupConditions.always.index,
+                  onChanged: (value) async {
+                    _currentOsmCondition = await save<OsmLookupConditions>(
+                        cache,
+                        !(value ?? false)
+                            ? OsmLookupConditions.onBackgroundGps
+                            : OsmLookupConditions.always);
+                  },
+                ))
+          ],
+        );
+      },
+    );
+  }
+}
+/*
   Widget numberField({
     required BuildContext context,
     required TextEditingController controller,
@@ -503,5 +652,6 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
         ]),
         navBar: null);
   }
-  */
 }
+
+  */

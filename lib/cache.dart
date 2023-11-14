@@ -69,7 +69,7 @@ enum Cache {
   /// eventCalendar
   backgroundCalendarLastEventIds(List<CalendarEventId>),
 
-  ///
+  /// appUserStettings
   appSettingBackgroundTrackingEnabled(bool),
   appSettingStatusStandingRequireAlias(bool),
   appSettingForegroundUpdateInterval(Duration),
@@ -82,7 +82,10 @@ enum Cache {
   appSettingAutocreateAlias(Duration),
   appSettingPublishToCalendar(bool),
   appSettingTimeZone(String),
-  appSettingWeekdays(Weekdays);
+  appSettingWeekdays(Weekdays),
+
+  /// appUserSetting placeholder for anything
+  nothing(Null);
 
   Future<T> load<T>(T fallback) async {
     T value =
