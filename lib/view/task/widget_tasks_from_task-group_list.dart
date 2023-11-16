@@ -108,9 +108,9 @@ class _WidgetTasksFromTaskGroupList
   }
 
   Widget checkBox(ModelTask model) {
-    return AppWidgets.checkbox(
-      idReference: model.id,
-      referenceList: _ids ?? [],
+    return AppWidgets.multiCheckbox(
+      id: model.id,
+      idList: _ids ?? [],
       onToggle: (toggle) async {
         bool add = toggle ?? false;
         try {

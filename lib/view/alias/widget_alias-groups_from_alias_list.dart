@@ -84,9 +84,9 @@ class _WidgetAliasGroupsFromAliasList
           );
         },
       ),
-      trailing: AppWidgets.checkbox(
-        idReference: model.id,
-        referenceList: _ids ?? [],
+      trailing: AppWidgets.multiCheckbox(
+        id: model.id,
+        idList: _ids ?? [],
         onToggle: (toggle) async {
           bool add = toggle ?? false;
           if (add) {

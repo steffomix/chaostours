@@ -120,10 +120,10 @@ class AppUserSettings {
           cache,
           title: Text(cache.toString()),
           description: Text('Description of ${cache.toString()}'),
-          unit: Unit.second,
+          unit: Unit.minute,
           minValue: 60, // 1 minute
-          maxValue: 60 * 60 * 10, // 10 hours
-          defaultValue: const Duration(seconds: 10),
+          maxValue: 60 * 60, // 10 hours
+          defaultValue: const Duration(minutes: 3),
           resetToDefault: () async {
             await cache.save<Duration>(
                 AppUserSettings(cache).defaultValue as Duration);
@@ -144,8 +144,8 @@ class AppUserSettings {
                 .load<int>(AppUserSettings(cSmooth).defaultValue as int);
             if (smooth > 0) {
               Cache cLookup = Cache.appSettingBackgroundTrackingInterval;
-              int lookup = (await cLookup
-                      .load<Duration>(AppUserSettings(cLookup) as Duration))
+              int lookup = (await cLookup.load<Duration>(
+                      AppUserSettings(cLookup).defaultValue as Duration))
                   .inSeconds;
               int maxSmooth = maxSmoothCount(value, lookup);
               if (smooth > maxSmooth) {
@@ -381,15 +381,15 @@ class AppUserSettings {
     return (timeRange / lookup).floor() - 1;
   }
 
-  Future<int> pruneInt(String data) async {
-    int value = int.tryParse(data) ?? (defaultValue as int);
+  Future<int> pruneInt(String? data) async {
+    int value = (int.tryParse(data ?? '') ?? (defaultValue as int)) *
+        unit.multiplicator;
     if (minValue != null) {
       value = math.max(minValue!, value);
     }
     if (maxValue != null) {
       value = math.min(maxValue!, value);
     }
-    value *= unit.multiplicator;
     value = (await extraCheck?.call(value)) ?? value;
     return value;
   }

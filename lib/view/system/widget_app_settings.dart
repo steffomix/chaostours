@@ -23,6 +23,7 @@ import 'package:chaostours/conf/app_colors.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/conf/app_settings.dart';
 import 'package:chaostours/cache.dart';
+import 'package:flutter/services.dart';
 
 enum AliasRequired {
   yes(true),
@@ -43,20 +44,28 @@ class WidgetAppSettings extends StatefulWidget {
 class _WidgetAppSettings extends State<WidgetAppSettings> {
   static final Logger logger = Logger.logger<WidgetAppSettings>();
 
+  static const String infinity = '∞';
+
+  static const divider = Divider();
+
   OsmLookupConditions _currentOsmCondition = OsmLookupConditions.never;
   final Map<Cache, ValueNotifier<int>> valueNotifiers = {};
   final Map<Cache, TextEditingController> textEditingControllers = {};
+  final Map<Cache, UndoHistoryController> undoHistoryControllers = {};
 
   Future<bool> renderWidgets() async {
-    _renderedWidgets.addAll({
-      Cache.appSettingBackgroundTrackingEnabled:
-          await renderOptionEnableTracking(),
-      Cache.appSettingOsmLookupCondition: await osmlookupCondition(),
-    });
+    _renderedWidgets.clear();
+    _renderedWidgets.addAll([
+      await settingEnableTracking(),
+      divider,
+      await settingOsmlookupCondition(),
+      divider,
+      await settingTimeRangeTreshold(),
+    ]);
     return true;
   }
 
-  final Map<Cache, Widget> _renderedWidgets = {};
+  final List<Widget> _renderedWidgets = [];
 
   Future<void> render() async {
     if (mounted) {
@@ -80,7 +89,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
 
   Widget body() {
     return ListView(
-      children: _renderedWidgets.values.toList(),
+      children: _renderedWidgets,
     );
   }
 
@@ -90,35 +99,37 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
     return value;
   }
 
-  Future<Widget> renderOptionEnableTracking() async {
+  Future<Widget> settingEnableTracking() async {
     const cache = Cache.appSettingBackgroundTrackingEnabled;
     final setting = AppUserSettings(cache);
-    bool xValue = await cache.load<bool>(false);
+    //bool checkboxValue = await cache.load<bool>(false);
+
+    Widget checkbox = AppWidgets.checkBox(
+        value: await cache.load<bool>(false),
+        onToggle: (value) async {
+          await save<bool>(cache, value ?? false);
+        });
+
     return ValueListenableBuilder(
       valueListenable: valueNotifiers[cache] ??= ValueNotifier<int>(0),
-      builder: (context, value, child) {
+      builder: (context, _, __) {
         return ListTile(
           title: setting.title,
           subtitle: setting.description,
-          leading: Checkbox(
-            value: xValue,
-            onChanged: (bool? value) async {
-              xValue = await save<bool>(cache, value ?? false);
-            },
-          ),
+          leading: checkbox,
         );
       },
     );
   }
 
-  Future<Widget> osmlookupCondition() async {
+  Future<Widget> settingOsmlookupCondition() async {
     const cache = Cache.appSettingOsmLookupCondition;
     final setting = AppUserSettings(cache);
     _currentOsmCondition = await cache
         .load<OsmLookupConditions>(setting.defaultValue as OsmLookupConditions);
     return ValueListenableBuilder(
       valueListenable: valueNotifiers[cache] ??= ValueNotifier<int>(0),
-      builder: (context, value, child) {
+      builder: (context, _, __) {
         return Column(
           children: [
             /// never
@@ -233,7 +244,97 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
       },
     );
   }
+
+  Future<Widget> settingTimeRangeTreshold() async {
+    const cache = Cache.appSettingTimeRangeTreshold;
+    AppUserSettings setting = AppUserSettings(cache);
+    String initialValue = await setting.load();
+    final controller =
+        textEditingControllers[cache] ??= TextEditingController();
+    controller.text = initialValue;
+    bool isValid = true;
+    return Column(
+      children: [
+        ListTile(
+          title: setting.title,
+          subtitle: setting.description,
+        ),
+        ValueListenableBuilder(
+            valueListenable: valueNotifiers[cache] ??= ValueNotifier<int>(0),
+            builder: (context, _, __) {
+              return ListTile(
+                  leading: IconButton(
+                    icon: const Icon(Icons.settings_backup_restore),
+                    onPressed: () async {
+                      await setting.save((setting.defaultValue as Duration)
+                          .inMinutes
+                          .toString());
+                      textEditingControllers[cache]?.text =
+                          await setting.load();
+                      valueNotifiers[cache]?.value++;
+                    },
+                  ),
+                  title: TextField(
+                    controller: controller,
+                    undoController: undoHistoryControllers[cache] ??=
+                        UndoHistoryController(),
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp('[0-9]')),
+                    ],
+                    decoration: InputDecoration(
+                        label: Text(
+                            '${setting.minValue == null ? '0' : (setting.minValue! / setting.unit.multiplicator).round().toString()} - '
+                            '${setting.maxValue == null ? '+$infinity' : (setting.maxValue! / setting.unit.multiplicator).round().toString()}'
+                            ' ${setting.unit.name}',
+                            style: isValid
+                                ? null
+                                : const TextStyle(color: Colors.red))),
+                    onChanged: (String? value) async {
+                      await Future.microtask(() async {
+                        int unChecked = (int.tryParse(value ?? '') ?? -1) *
+                            setting.unit.multiplicator;
+                        int checked = await setting.pruneInt(value);
+                        isValid = checked == unChecked;
+                        if (isValid) {
+                          setting.save(value!);
+                        }
+                        valueNotifiers[cache]?.value++;
+                      });
+                    },
+                  ));
+            })
+      ],
+    );
+  }
 }
+
+
+
+/* 
+Future<Widget> renderCheckbox(
+    {required Cache cache,
+    required Widget title,
+    required Widget subtitle}) async {
+  //
+  final Widget checkbox = AppWidgets.checkBox(
+      value: await cache.load<bool>(false),
+      onToggle: (value) async {
+        await save<bool>(cache, value ?? false);
+      });
+
+  return ValueListenableBuilder(
+    valueListenable: valueNotifiers[cache] ??= ValueNotifier<int>(0),
+    builder: (context, value, child) {
+      return ListTile(
+        title: title,
+        subtitle: subtitle,
+        leading: checkbox,
+      );
+    },
+  );
+}
+ */
 /*
   Widget numberField({
     required BuildContext context,

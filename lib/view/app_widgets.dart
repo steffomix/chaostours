@@ -26,7 +26,6 @@ import 'package:chaostours/runtime_data.dart';
 import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/calendar.dart';
 import 'package:chaostours/logger.dart';
-import 'package:chaostours/conf/app_settings.dart';
 import 'package:chaostours/conf/app_routes.dart';
 import 'package:sprintf/sprintf.dart';
 
@@ -278,14 +277,49 @@ class AppWidgets {
   static Widget checkboxListTile(util.CheckboxController controller) =>
       util.CheckboxController.createCheckboxListTile(controller);
 
-  static Widget checkbox(
-      {required int idReference,
-      required List<int> referenceList,
-      required Function(bool? toggle) onToggle}) {
-    return util.CheckboxController.createCheckbox(util.CheckboxController(
-        idReference: idReference,
-        referenceList: referenceList,
-        onToggle: onToggle));
+  static Widget multiCheckbox(
+      {required int id,
+      required List<int> idList,
+      required dynamic Function(bool? toggle) onToggle}) {
+    final notifier = ValueNotifier<int>(0);
+    return ValueListenableBuilder(
+      valueListenable: notifier,
+      builder: (context, _, child) {
+        return Checkbox(
+          value: idList.contains(id),
+          onChanged: (bool? state) {
+            bool checked = state ?? false;
+            if (checked) {
+              idList.removeWhere((i) => i == id);
+            } else {
+              if (!idList.contains(id)) {
+                idList.add(id);
+              }
+            }
+            Future.microtask(() => onToggle(state));
+            notifier.value++;
+          },
+        );
+      },
+    );
+  }
+
+  static Widget checkBox(
+      {required bool value, required dynamic Function(bool? state) onToggle}) {
+    final notifier = ValueNotifier<int>(0);
+    return ValueListenableBuilder(
+      valueListenable: notifier,
+      builder: (context, _, child) {
+        return Checkbox(
+          value: value,
+          onChanged: (bool? state) async {
+            await onToggle(state);
+            value = state ?? false;
+            notifier.value++;
+          },
+        );
+      },
+    );
   }
 
   static Future<T?> dialog<T>(
