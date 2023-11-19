@@ -37,7 +37,7 @@ import 'package:chaostours/trackpoint_data.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/address.dart' as addr;
 import 'package:chaostours/gps.dart';
-import 'package:chaostours/conf/app_settings.dart';
+import 'package:chaostours/conf/app_user_settings.dart';
 import 'package:chaostours/osm_tools.dart';
 
 class WidgetTrackingPage extends StatefulWidget {

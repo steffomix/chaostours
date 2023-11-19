@@ -99,8 +99,8 @@ class AppUserSettings {
   Unit unit = Unit.piece;
   Future<void> Function() resetToDefault;
   Future<int> Function(int value)? extraCheck;
-  Widget title;
-  Widget description;
+  Widget? title;
+  Widget? description;
 
   AppUserSettings._option(this.cache,
       {required this.title,
@@ -118,10 +118,11 @@ class AppUserSettings {
       case Cache.appSettingTimeRangeTreshold:
         return _appUserSettings[cache] ??= AppUserSettings._option(
           cache,
-          title: Text(cache.toString()),
-          description: Text('Description of ${cache.toString()}'),
+          title: Text('Calculation Time Period'),
+          description: Text(
+              'The time period in which the Moving or Stopping status is calculated.'),
           unit: Unit.minute,
-          minValue: 60, // 1 minute
+          minValue: 60 * 3, // 3 minute
           maxValue: 60 * 60, // 10 hours
           defaultValue: const Duration(minutes: 3),
           resetToDefault: () async {
@@ -131,7 +132,7 @@ class AppUserSettings {
           extraCheck: (int value) async {
             // recheck autocreate alias duration
             int minCreate = value * 2;
-            Cache cAutoCreate = Cache.appSettingAutocreateAlias;
+            Cache cAutoCreate = Cache.appSettingAutocreateAliasDuration;
             int autoCreate = (await cAutoCreate.load<Duration>(
                     AppUserSettings(cAutoCreate).defaultValue as Duration))
                 .inSeconds;
@@ -157,11 +158,13 @@ class AppUserSettings {
           },
         );
 
-      case Cache.appSettingAutocreateAlias:
+      case Cache.appSettingAutocreateAliasDuration:
         return _appUserSettings[cache] ??= AppUserSettings._option(
           cache,
-          title: Text(cache.toString()),
-          description: Text('Description of ${cache.toString()}'),
+          title: Text('Auto create Alias time period.'),
+          description: Text(
+              'The period after which an alias will be created automatically if none is found.'
+              'The "Status Standing requires alias" option must be deactivated so that an alias can be created automatically.'),
           unit: Unit.minute,
           minValue: 60 * 5, // 5 minutes
           defaultValue: Duration(seconds: 60 * 15),
@@ -186,8 +189,10 @@ class AppUserSettings {
       case Cache.appSettingBackgroundTrackingInterval:
         return _appUserSettings[cache] ??= AppUserSettings._option(
           cache, //
-          title: Text(cache.toString()),
-          description: Text('Description of ${cache.toString()}'),
+          title: Text('Background tracking interval duration'),
+          description: Text(
+              'The heartbeat of this app. A higher value consumes less battery, '
+              'but it also takes longer to measure the status of stopping or moving.'),
           unit: Unit.second,
           minValue: 15,
           defaultValue: Duration(seconds: 30),
@@ -207,7 +212,7 @@ class AppUserSettings {
               await cTimeRange.save<Duration>(Duration(seconds: minTimeRange));
               // recheck autocreate alias duration
               int minCreate = minTimeRange * 2;
-              Cache cAutoCreate = Cache.appSettingAutocreateAlias;
+              Cache cAutoCreate = Cache.appSettingAutocreateAliasDuration;
               int autoCreate = (await cAutoCreate.load<Duration>(
                       AppUserSettings(cAutoCreate).defaultValue as Duration))
                   .inSeconds;
@@ -233,10 +238,13 @@ class AppUserSettings {
       case Cache.appSettingGpsPointsSmoothCount:
         return _appUserSettings[cache] ??= AppUserSettings._option(
           cache,
-          title: Text(cache.toString()),
-          description: Text('Description of ${cache.toString()}'),
+          title: Text('GPS smoothing count'),
+          description: Text(
+              'Compensates for inaccurate GPS by calculating the average of the given number of GPS points.'
+              'The value 0 deactivates this future'),
           unit: Unit.piece,
           defaultValue: 3,
+          zeroDeactivates: true,
           resetToDefault: () async {
             await cache.save<int>(AppUserSettings(cache).defaultValue as int);
           },
@@ -260,8 +268,9 @@ class AppUserSettings {
       case Cache.appSettingBackgroundTrackingEnabled:
         return _appUserSettings[cache] ??= AppUserSettings._option(
           cache,
-          title: Text(cache.toString()),
-          description: Text('Description of ${cache.toString()}'),
+          title: Text('Activate background GPS tracking'),
+          description: Text(
+              'This option is only relevant if the app including the background process has been terminated and is restarted.'),
           unit: Unit.option,
           defaultValue: true,
           resetToDefault: () async {
@@ -272,8 +281,10 @@ class AppUserSettings {
       case Cache.appSettingCacheGpsTime:
         return _appUserSettings[cache] ??= AppUserSettings._option(
           cache,
-          title: Text(cache.toString()),
-          description: Text('Description of ${cache.toString()}'),
+          title: Text('Cache foreground GPS duration'),
+          description: Text(
+              'GPS Cache can speed up the foreground functions of the app. '
+              'However, you may receive an outdated GPS measurement result.'),
           unit: Unit.second,
           defaultValue: const Duration(seconds: 10),
           resetToDefault: () async {
@@ -288,8 +299,10 @@ class AppUserSettings {
       case Cache.appSettingDistanceTreshold:
         return _appUserSettings[cache] ??= AppUserSettings._option(
           cache,
-          title: Text(cache.toString()),
-          description: Text('Description of ${cache.toString()}'),
+          title: Text('Movement measuring range.'),
+          description: Text('Only relevant if no alias is found. '
+              'All measuring points must be within this radius to trigger the status Standing. '
+              'Or all measuring points must be outside this measuring range to trigger the status Moving.'),
           unit: Unit.meter,
           defaultValue: 100,
           resetToDefault: () async {
@@ -301,8 +314,10 @@ class AppUserSettings {
       case Cache.appSettingOsmLookupCondition:
         return _appUserSettings[cache] ??= AppUserSettings._option(
           cache,
-          title: Text(cache.toString()),
-          description: Text('Description of ${cache.toString()}'),
+          title: Text('OpenStreetMap Address Lookup Conditions'),
+          description: Text(
+              'Die Vorraussetzungen wann die App nach einer Adresse suchen darf. '
+              'Höhere Einschränkungen veringern den Datenverbrauch der App.'),
           unit: Unit.option,
           defaultValue: OsmLookupConditions.onAutoCreateAlias,
           resetToDefault: () async {
@@ -314,8 +329,8 @@ class AppUserSettings {
       case Cache.appSettingWeekdays:
         return _appUserSettings[cache] ??= AppUserSettings._option(
           cache,
-          title: Text(cache.toString()),
-          description: Text('Description of ${cache.toString()}'),
+          title: Text('Erster Wochentag'),
+          description: null,
           unit: Unit.option,
           defaultValue: Weekdays.mondayFirst,
           resetToDefault: () async {
@@ -327,8 +342,22 @@ class AppUserSettings {
       case Cache.appSettingPublishToCalendar:
         return _appUserSettings[cache] ??= AppUserSettings._option(
           cache,
-          title: Text(cache.toString()),
-          description: Text('Description of ${cache.toString()}'),
+          title: Text('Use Calender'),
+          description: Text(
+              'Here you can turn the calendar function on or off globally.'),
+          unit: Unit.option,
+          defaultValue: true,
+          resetToDefault: () async {
+            await cache.save<bool>(AppUserSettings(cache).defaultValue as bool);
+          },
+        );
+
+      case Cache.appSettingAutocreateAlias:
+        return _appUserSettings[cache] ??= AppUserSettings._option(
+          cache,
+          title:
+              Text('Here you can turn the automatic alias creation on or off.'),
+          description: Text(''),
           unit: Unit.option,
           defaultValue: true,
           resetToDefault: () async {
@@ -339,8 +368,9 @@ class AppUserSettings {
       case Cache.appSettingStatusStandingRequireAlias:
         return _appUserSettings[cache] ??= AppUserSettings._option(
           cache,
-          title: Text(cache.toString()),
-          description: Text('Description of ${cache.toString()}'),
+          title: Text('Status stop required alias'),
+          description: Text(
+              'If deactivated, the Movement measuring range is used as a virtual alias.'),
           unit: Unit.option,
           defaultValue: true,
           resetToDefault: () async {
@@ -350,8 +380,9 @@ class AppUserSettings {
 
       case Cache.appSettingForegroundUpdateInterval:
         return _appUserSettings[cache] ??= AppUserSettings._option(cache,
-            title: Text(cache.toString()),
-            description: Text('Description of ${cache.toString()}'),
+            title: Text('Life tracking forground lookup interval'),
+            description: Text(
+                'The interval period in which the foreground process reloads the measurement data from the background process.'),
             unit: Unit.second,
             minValue: 1,
             maxValue: 30,
@@ -363,7 +394,7 @@ class AppUserSettings {
 
       case Cache.appSettingTimeZone:
         return _appUserSettings[cache] ??= AppUserSettings._option(cache,
-            title: Text(cache.toString()),
+            title: Text('ToDo - implement timezones'),
             description: Text('Description of ${cache.toString()}'),
             unit: Unit.piece,
             defaultValue: 'Europe/Berlin', //
@@ -382,42 +413,52 @@ class AppUserSettings {
   }
 
   Future<int> pruneInt(String? data) async {
-    int value = (int.tryParse(data ?? '') ?? (defaultValue as int)) *
+    int value = (int.tryParse(data ?? '') ??
+            (cache.cacheType == int
+                ? defaultValue as int
+                : ((defaultValue as Duration).inSeconds / unit.multiplicator)
+                    .round())) *
         unit.multiplicator;
-    if (minValue != null) {
+
+    if (minValue != null && value < minValue!) {
       value = math.max(minValue!, value);
     }
-    if (maxValue != null) {
+    if (maxValue != null && value > maxValue!) {
       value = math.min(maxValue!, value);
     }
     value = (await extraCheck?.call(value)) ?? value;
     return value;
   }
 
-  Future<void> save(String data) async {
+  Future<void> save(String? data) async {
     switch (cache.cacheType) {
       case String:
-        String value = data.trim();
+        String value = data?.trim() ?? defaultValue as String;
         await cache.save<String>(value);
         break;
 
       case int:
-        int value = await pruneInt(data);
+        int value = await pruneInt(data ?? defaultValue.toString());
         await cache.save<int>(value);
         break;
 
       case bool:
-        bool value = (data == '1' || data == 'true') ? true : false;
+        bool value =
+            (data != null && (data == '1' || data == 'true')) ? true : false;
         await cache.save<bool>(value);
         break;
 
       case Duration:
-        int value = await pruneInt(data);
+        int value = await pruneInt(data ??
+            ((defaultValue as Duration).inSeconds / unit.multiplicator)
+                .round()
+                .toString());
         await cache.save<Duration>(Duration(seconds: value));
         break;
 
       case OsmLookupConditions:
-        var value = OsmLookupConditions.byName(data) ??
+        var value = OsmLookupConditions.byName(
+                data ?? (defaultValue as OsmLookupConditions).name) ??
             (defaultValue as OsmLookupConditions);
         await cache.save<OsmLookupConditions>(value);
         break;

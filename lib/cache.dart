@@ -19,7 +19,7 @@ limitations under the License.
 ///
 import 'package:chaostours/model/model_cache.dart';
 import 'package:chaostours/logger.dart';
-import 'package:chaostours/conf/app_settings.dart';
+import 'package:chaostours/conf/app_user_settings.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/tracking.dart';
 import 'package:chaostours/calendar.dart';
@@ -72,6 +72,8 @@ enum Cache {
   /// appUserStettings
   appSettingBackgroundTrackingEnabled(bool),
   appSettingStatusStandingRequireAlias(bool),
+  appSettingAutocreateAliasDuration(Duration),
+  appSettingAutocreateAlias(bool),
   appSettingForegroundUpdateInterval(Duration),
   appSettingOsmLookupCondition(OsmLookupConditions),
   appSettingCacheGpsTime(Duration),
@@ -79,7 +81,6 @@ enum Cache {
   appSettingTimeRangeTreshold(Duration),
   appSettingBackgroundTrackingInterval(Duration),
   appSettingGpsPointsSmoothCount(int),
-  appSettingAutocreateAlias(Duration),
   appSettingPublishToCalendar(bool),
   appSettingTimeZone(String),
   appSettingWeekdays(Weekdays),

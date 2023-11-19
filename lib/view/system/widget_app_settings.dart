@@ -14,14 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 
 ///
 import 'package:chaostours/logger.dart';
-import 'package:chaostours/conf/app_colors.dart';
+import 'package:chaostours/gps.dart';
 import 'package:chaostours/view/app_widgets.dart';
-import 'package:chaostours/conf/app_settings.dart';
+import 'package:chaostours/conf/app_user_settings.dart';
 import 'package:chaostours/cache.dart';
 import 'package:flutter/services.dart';
 
@@ -52,20 +52,93 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
   final Map<Cache, ValueNotifier<int>> valueNotifiers = {};
   final Map<Cache, TextEditingController> textEditingControllers = {};
   final Map<Cache, UndoHistoryController> undoHistoryControllers = {};
+  final List<Widget> _renderedWidgets = [];
+
+  @override
+  void dispose() {
+    for (var value in valueNotifiers.values) {
+      value.dispose();
+    }
+    super.dispose();
+  }
 
   Future<bool> renderWidgets() async {
+    await updateDebugValues();
     _renderedWidgets.clear();
     _renderedWidgets.addAll([
-      await settingEnableTracking(),
+      await booleanSetting(Cache.appSettingBackgroundTrackingEnabled),
+      divider,
+      await booleanSetting(Cache.appSettingAutocreateAlias),
+      divider,
+      await booleanSetting(Cache.appSettingStatusStandingRequireAlias),
+      divider,
+      await booleanSetting(Cache.appSettingPublishToCalendar),
+      divider,
+      await integerSetting(Cache.appSettingBackgroundTrackingInterval),
+      divider,
+      await integerSetting(Cache.appSettingTimeRangeTreshold),
+      divider,
+      await integerSetting(Cache.appSettingAutocreateAliasDuration),
+      divider,
+      await integerSetting(Cache.appSettingGpsPointsSmoothCount),
+      divider,
+      await integerSetting(Cache.appSettingDistanceTreshold),
+      divider,
+      await integerSetting(Cache.appSettingCacheGpsTime),
       divider,
       await settingOsmlookupCondition(),
-      divider,
-      await settingTimeRangeTreshold(),
     ]);
     return true;
   }
 
-  final List<Widget> _renderedWidgets = [];
+  final List<Widget> debugValues = [];
+  Future<void> updateDebugValues() async {
+    debugValues.clear();
+    final smoothCount =
+        await Cache.appSettingGpsPointsSmoothCount.load<int>(-1);
+    final autoCreateDuration = await Cache.appSettingAutocreateAliasDuration
+        .load<Duration>(Duration.zero);
+    final trackingInterval = await Cache.appSettingBackgroundTrackingInterval
+        .load<Duration>(Duration.zero);
+    final distanceTreshold =
+        await Cache.appSettingDistanceTreshold.load<int>(-1);
+    final timeTreshold =
+        await Cache.appSettingTimeRangeTreshold.load<Duration>(Duration.zero);
+
+    valueNotifiers[Cache.appSettingGpsPointsSmoothCount]?.value++;
+    valueNotifiers[Cache.appSettingAutocreateAliasDuration]?.value++;
+    valueNotifiers[Cache.appSettingBackgroundTrackingInterval]?.value++;
+    valueNotifiers[Cache.appSettingDistanceTreshold]?.value++;
+    valueNotifiers[Cache.appSettingTimeRangeTreshold]?.value++;
+
+    final gpsPoints =
+        (autoCreateDuration.inSeconds / trackingInterval.inSeconds).ceil();
+
+    final calcPoints = math.min(smoothCount - 1,
+        (timeTreshold.inSeconds / trackingInterval.inSeconds).ceil());
+    debugValues.addAll([
+      Text('min autocreate Alias: '
+          '${autoCreateDuration.inMinutes.toString()}'),
+      Text('sec tracking Interval: '
+          '${trackingInterval.inSeconds.toString()}'),
+      Text('GPS Points: $gpsPoints'),
+      divider,
+      Text('min timeRange Treshold: '
+          '${timeTreshold.inMinutes.toString()}'),
+      Text('GPS calc points: $calcPoints'),
+      Text('int smoothCount: ${smoothCount.toString()}'),
+      divider,
+      Text('m distanceTreshold: '
+          '${distanceTreshold.toString()}'),
+    ]);
+  }
+
+  Future<bool> checkIntegerInput(AppUserSettings setting, String? value) async {
+    int unChecked =
+        (int.tryParse(value ?? '') ?? -1) * setting.unit.multiplicator;
+    int checked = await setting.pruneInt(value);
+    return checked == unChecked;
+  }
 
   Future<void> render() async {
     if (mounted) {
@@ -99,8 +172,10 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
     return value;
   }
 
-  Future<Widget> settingEnableTracking() async {
-    const cache = Cache.appSettingBackgroundTrackingEnabled;
+  Future<Widget> booleanSetting(Cache cache) async {
+    if (cache.cacheType != bool) {
+      return AppWidgets.loading(Text('${cache.name} type is not bool'));
+    }
     final setting = AppUserSettings(cache);
     //bool checkboxValue = await cache.load<bool>(false);
 
@@ -120,6 +195,87 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
         );
       },
     );
+  }
+
+  Future<Widget> integerSetting(Cache cache, [showDebugInfo = false]) async {
+    AppUserSettings setting = AppUserSettings(cache);
+    final controller =
+        textEditingControllers[cache] ??= TextEditingController();
+    controller.text = await setting.load();
+
+    bool isValid = true;
+
+    return ValueListenableBuilder(
+        valueListenable: valueNotifiers[cache] ??= ValueNotifier<int>(0),
+        builder: (context, _, __) {
+          return Column(children: [
+            ListTile(
+                title: setting.title,
+                subtitle: showDebugInfo
+                    ? Column(children: [
+                        setting.description ?? const Text(''),
+                        ...(showDebugInfo ? debugValues : [])
+                      ])
+                    : setting.description),
+            ListTile(
+                leading: IconButton(
+                  icon: const Icon(Icons.settings_backup_restore),
+                  onPressed: () async {
+                    AppWidgets.dialog(context: context, contents: [
+                      const Text('Reset to default?')
+                    ], buttons: [
+                      TextButton(
+                        child: const Text('Cancel'),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                      TextButton(
+                        child: const Text('Yes'),
+                        onPressed: () async {
+                          await setting.save(null);
+                          textEditingControllers[cache]?.text =
+                              await setting.load();
+                          await updateDebugValues();
+                          valueNotifiers[cache]?.value++;
+                        },
+                      )
+                    ]);
+                  },
+                ),
+                title: TextField(
+                  controller: controller,
+                  undoController: undoHistoryControllers[cache] ??=
+                      UndoHistoryController(),
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp('[0-9]')),
+                  ],
+                  decoration: InputDecoration(
+                      label: Text(
+                          '${setting.minValue == null ? '0' : (setting.minValue! / setting.unit.multiplicator).round().toString()} - '
+                          '${setting.maxValue == null ? infinity : (setting.maxValue! / setting.unit.multiplicator).round().toString()}'
+                          ' ${setting.unit.name}',
+                          style: isValid
+                              ? null
+                              : const TextStyle(color: Colors.red))),
+                  onSubmitted: (_) async {
+                    await setting.save(textEditingControllers[cache]!.text);
+                    controller.text = await setting.load();
+                    isValid = true;
+                    await updateDebugValues();
+                    valueNotifiers[cache]?.value++;
+                  },
+                  onTapOutside: (_) async {
+                    controller.text = await setting.load();
+                    isValid = true;
+                    valueNotifiers[cache]?.value++;
+                  },
+                  onChanged: (String? value) async {
+                    isValid = await checkIntegerInput(setting, value);
+                    valueNotifiers[cache]?.value++;
+                  },
+                ))
+          ]);
+        });
   }
 
   Future<Widget> settingOsmlookupCondition() async {
@@ -242,69 +398,6 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
           ],
         );
       },
-    );
-  }
-
-  Future<Widget> settingTimeRangeTreshold() async {
-    const cache = Cache.appSettingTimeRangeTreshold;
-    AppUserSettings setting = AppUserSettings(cache);
-    String initialValue = await setting.load();
-    final controller =
-        textEditingControllers[cache] ??= TextEditingController();
-    controller.text = initialValue;
-    bool isValid = true;
-    return Column(
-      children: [
-        ListTile(
-          title: setting.title,
-          subtitle: setting.description,
-        ),
-        ValueListenableBuilder(
-            valueListenable: valueNotifiers[cache] ??= ValueNotifier<int>(0),
-            builder: (context, _, __) {
-              return ListTile(
-                  leading: IconButton(
-                    icon: const Icon(Icons.settings_backup_restore),
-                    onPressed: () async {
-                      await setting.save((setting.defaultValue as Duration)
-                          .inMinutes
-                          .toString());
-                      textEditingControllers[cache]?.text =
-                          await setting.load();
-                      valueNotifiers[cache]?.value++;
-                    },
-                  ),
-                  title: TextField(
-                    controller: controller,
-                    undoController: undoHistoryControllers[cache] ??=
-                        UndoHistoryController(),
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(RegExp('[0-9]')),
-                    ],
-                    decoration: InputDecoration(
-                        label: Text(
-                            '${setting.minValue == null ? '0' : (setting.minValue! / setting.unit.multiplicator).round().toString()} - '
-                            '${setting.maxValue == null ? '+$infinity' : (setting.maxValue! / setting.unit.multiplicator).round().toString()}'
-                            ' ${setting.unit.name}',
-                            style: isValid
-                                ? null
-                                : const TextStyle(color: Colors.red))),
-                    onChanged: (String? value) async {
-                      await Future.microtask(() async {
-                        int unChecked = (int.tryParse(value ?? '') ?? -1) *
-                            setting.unit.multiplicator;
-                        int checked = await setting.pruneInt(value);
-                        isValid = checked == unChecked;
-                        if (isValid) {
-                          setting.save(value!);
-                        }
-                        valueNotifiers[cache]?.value++;
-                      });
-                    },
-                  ));
-            })
-      ],
     );
   }
 }

@@ -1,5 +1,5 @@
 import "package:chaostours/cache.dart";
-import 'package:chaostours/conf/app_settings.dart';
+import 'package:chaostours/conf/app_user_settings.dart';
 import 'dart:math' as math;
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/view/alias/widget_edit_alias_osm.dart';
@@ -72,7 +72,7 @@ class Option {
 
   factory Option(Cache cache) {
     switch (cache) {
-      case Cache.appSettingAutocreateAlias:
+      case Cache.appSettingAutocreateAliasDuration:
         return Option._option(cache, defaultValue: true);
 
       case Cache.appSettingBackgroundTrackingInterval:

@@ -20,7 +20,7 @@ import 'dart:math' as math;
 
 ///
 import 'package:chaostours/logger.dart';
-import 'package:chaostours/conf/app_settings.dart';
+import 'package:chaostours/conf/app_user_settings.dart';
 import 'package:chaostours/trackpoint_data.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/cache.dart';
@@ -150,10 +150,10 @@ class _TrackPoint {
             .defaultValue as bool);
 
     Duration autoCreateAliasDefault =
-        AppUserSettings(Cache.appSettingAutocreateAlias).defaultValue
+        AppUserSettings(Cache.appSettingAutocreateAliasDuration).defaultValue
             as Duration;
     Duration appSettingAutoCreateAliasDuration = await Cache
-        .appSettingAutocreateAlias
+        .appSettingAutocreateAliasDuration
         .load<Duration>(autoCreateAliasDefault);
 
     Duration appSettingsTrackpointInterval =

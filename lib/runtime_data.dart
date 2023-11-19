@@ -1,4 +1,4 @@
-import 'package:chaostours/conf/app_settings.dart';
+import 'package:chaostours/conf/app_user_settings.dart';
 import 'package:chaostours/event_manager.dart';
 import 'package:flutter/material.dart';
 

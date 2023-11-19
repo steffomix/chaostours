@@ -22,7 +22,7 @@ import 'package:flutter/services.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/util.dart';
 import 'package:chaostours/conf/app_routes.dart';
-import 'package:chaostours/conf/app_settings.dart';
+import 'package:chaostours/conf/app_user_settings.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/conf/app_colors.dart';
 import 'package:chaostours/gps.dart';

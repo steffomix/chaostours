@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import 'package:chaostours/conf/app_settings.dart';
+import 'package:chaostours/conf/app_user_settings.dart';
 import 'package:chaostours/database.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/model/model.dart';
@@ -197,6 +197,7 @@ class AppCalendar {
     final berlin = getLocation(await getTimeZone());
     var start = TZDateTime.from(tp.timeStart, berlin);
     var end = TZDateTime.from(tp.timeEnd, berlin);
+
     var title =
         '${tp.aliasModels.isNotEmpty ? tp.aliasModels.first.title : tp.address}; ${tp.durationText}';
     var location =

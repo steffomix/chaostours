@@ -23,7 +23,7 @@ import 'package:android_intent_plus/android_intent.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 //
-import 'package:chaostours/conf/app_settings.dart';
+import 'package:chaostours/conf/app_user_settings.dart';
 import 'package:chaostours/logger.dart';
 
 const earthRadius = 6378137.0;
