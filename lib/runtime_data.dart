@@ -11,7 +11,11 @@ class RuntimeData {
       GlobalKey<NavigatorState>(debugLabel: 'Global Key');
   static BuildContext? get context => globalKey.currentContext;
 
-  static Ticker hudTicker = Ticker(
+  RuntimeData._();
+  static RuntimeData? _instance;
+  factory RuntimeData() => _instance ??= RuntimeData._();
+
+  Ticker hudTicker = Ticker(
     type: TickerTypes.hud,
     getDuration: () async {
       var cache = Cache.appSettingForegroundUpdateInterval;
@@ -23,7 +27,7 @@ class RuntimeData {
     },
   );
 
-  static Ticker backgroundTicker = Ticker(
+  Ticker backgroundTicker = Ticker(
     type: TickerTypes.background,
     getDuration: () async {
       var cache = Cache.appSettingBackgroundTrackingInterval;

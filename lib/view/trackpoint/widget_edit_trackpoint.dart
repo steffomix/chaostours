@@ -23,7 +23,6 @@ import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
-import 'package:chaostours/trackpoint_data.dart';
 import 'package:chaostours/calendar.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/util.dart';

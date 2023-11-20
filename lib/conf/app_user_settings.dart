@@ -24,13 +24,16 @@ import 'dart:math' as math;
 // import 'package:chaostours/logger.dart';
 
 enum OsmLookupConditions {
-  never,
-  onUserRequest,
-  onUserCreateAlias,
-  onAutoCreateAlias,
-  onStatusChanged,
-  onBackgroundGps,
-  always;
+  never(Text('Never, completely restricted')),
+  onUserRequest(Text('On user requests')),
+  onUserCreateAlias(Text('On user create alias')),
+  onAutoCreateAlias(Text('On auto create alias')),
+  onStatusChanged(Text('On tracking status changed')),
+  onBackgroundGps(Text('On every background GPS interval')),
+  always(Text('Always, no restrictions'));
+
+  final Widget title;
+  const OsmLookupConditions(this.title);
 
   static OsmLookupConditions? byName(String name) {
     for (var value in values) {
@@ -118,7 +121,7 @@ class AppUserSettings {
       case Cache.appSettingTimeRangeTreshold:
         return _appUserSettings[cache] ??= AppUserSettings._option(
           cache,
-          title: Text('Calculation Time Period'),
+          title: Text('Tracking status calculation time period'),
           description: Text(
               'The time period in which the Moving or Stopping status is calculated.'),
           unit: Unit.minute,
@@ -163,8 +166,8 @@ class AppUserSettings {
           cache,
           title: Text('Auto create Alias time period.'),
           description: Text(
-              'The period after which an alias will be created automatically if none is found.'
-              'The "Status Standing requires alias" option must be deactivated so that an alias can be created automatically.'),
+              'The period after which an alias will be created automatically if none is found. '
+              'The "Status Standing requires alias" option must be activated.'),
           unit: Unit.minute,
           minValue: 60 * 5, // 5 minutes
           defaultValue: Duration(seconds: 60 * 15),
@@ -240,7 +243,7 @@ class AppUserSettings {
           cache,
           title: Text('GPS smoothing count'),
           description: Text(
-              'Compensates for inaccurate GPS by calculating the average of the given number of GPS points.'
+              'Compensates for inaccurate GPS by calculating the average of the given number of GPS points. '
               'The value 0 deactivates this future'),
           unit: Unit.piece,
           defaultValue: 3,
@@ -302,7 +305,8 @@ class AppUserSettings {
           title: Text('Movement measuring range.'),
           description: Text('Only relevant if no alias is found. '
               'All measuring points must be within this radius to trigger the status Standing. '
-              'Or all measuring points must be outside this measuring range to trigger the status Moving.'),
+              'Or the path of the GPS calculation points must be greater '
+              'than this measuring range value to trigger the status Moving.'),
           unit: Unit.meter,
           defaultValue: 100,
           resetToDefault: () async {
@@ -316,8 +320,8 @@ class AppUserSettings {
           cache,
           title: Text('OpenStreetMap Address Lookup Conditions'),
           description: Text(
-              'Die Vorraussetzungen wann die App nach einer Adresse suchen darf. '
-              'Höhere Einschränkungen veringern den Datenverbrauch der App.'),
+              'The requirements for when the app is allowed to search for an address. '
+              'Higher restrictions reduce the app\'s data consumption.'),
           unit: Unit.option,
           defaultValue: OsmLookupConditions.onAutoCreateAlias,
           resetToDefault: () async {

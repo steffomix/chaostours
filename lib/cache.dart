@@ -83,15 +83,11 @@ enum Cache {
   appSettingGpsPointsSmoothCount(int),
   appSettingPublishToCalendar(bool),
   appSettingTimeZone(String),
-  appSettingWeekdays(Weekdays),
-
-  /// appUserSetting placeholder for anything
-  nothing(Null);
+  appSettingWeekdays(Weekdays);
 
   Future<T> load<T>(T fallback) async {
-    T value =
-        (_cache[this] ??= await CacheTypeAdapter.getValue<T>(this, fallback));
-    return value; // await CacheTypeAdapter.getValue<T>(this, fallback);
+    return (_cache[this] ??= await CacheTypeAdapter.getValue<T>(this, fallback))
+        as T;
   }
 
   Future<T> save<T>(T value) async {
@@ -102,7 +98,9 @@ enum Cache {
   static final Map<Cache, dynamic> _cache = {};
 
   final Type cacheType;
-  const Cache(this.cacheType);
+  const Cache(
+    this.cacheType,
+  );
 
   int get id => index + 1;
 

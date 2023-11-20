@@ -236,6 +236,9 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                               await setting.load();
                           await updateDebugValues();
                           valueNotifiers[cache]?.value++;
+                          if (mounted) {
+                            Navigator.pop(context);
+                          }
                         },
                       )
                     ]);
@@ -288,10 +291,29 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
       builder: (context, _, __) {
         return Column(
           children: [
+            ListTile(
+              title: setting.title,
+              subtitle: setting.description,
+            ),
+            ...OsmLookupConditions.values.map(
+              (condition) {
+                return Row(children: [
+                  Checkbox(
+                    value: _currentOsmCondition.index >= condition.index,
+                    onChanged: (value) async {
+                      _currentOsmCondition =
+                          await save<OsmLookupConditions>(cache, condition);
+                    },
+                  ),
+                  condition.title
+                ]);
+              },
+            )
+/*
             /// never
             ListTile(
-                title: setting.title,
-                subtitle: setting.description,
+                dense: true,
+                title: const Text('Never'),
                 leading: Checkbox(
                   value: _currentOsmCondition.index >=
                       OsmLookupConditions.never.index,
@@ -303,98 +325,81 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
 
             /// onUserRequest
             ListTile(
-                title: setting.title,
-                subtitle: setting.description,
+                dense: true,
+                title: const Text('On User Requests'),
                 leading: Checkbox(
                     value: _currentOsmCondition.index >=
                         OsmLookupConditions.onUserRequest.index,
                     onChanged: (value) async {
                       _currentOsmCondition = await save<OsmLookupConditions>(
-                          cache,
-                          !(value ?? false)
-                              ? OsmLookupConditions.never
-                              : OsmLookupConditions.onUserRequest);
+                          cache, OsmLookupConditions.onUserRequest);
                     })),
 
             /// onUserRequest
             ListTile(
-                title: setting.title,
-                subtitle: setting.description,
+                dense: true,
+                title: const Text('On User Create Alias'),
                 leading: Checkbox(
                   value: _currentOsmCondition.index >=
                       OsmLookupConditions.onUserCreateAlias.index,
                   onChanged: (value) async {
                     _currentOsmCondition = await save<OsmLookupConditions>(
-                        cache,
-                        !(value ?? false)
-                            ? OsmLookupConditions.onUserRequest
-                            : OsmLookupConditions.onUserCreateAlias);
+                        cache, OsmLookupConditions.onUserCreateAlias);
                   },
                 )),
 
             /// onUserRequest
             ListTile(
-                title: setting.title,
-                subtitle: setting.description,
+                dense: true,
+                title: const Text('On Autocreate Alias'),
                 leading: Checkbox(
                   value: _currentOsmCondition.index >=
                       OsmLookupConditions.onAutoCreateAlias.index,
                   onChanged: (value) async {
                     _currentOsmCondition = await save<OsmLookupConditions>(
-                        cache,
-                        !(value ?? false)
-                            ? OsmLookupConditions.onUserCreateAlias
-                            : OsmLookupConditions.onAutoCreateAlias);
+                        cache, OsmLookupConditions.onAutoCreateAlias);
                   },
                 )),
 
             /// onUserRequest
             ListTile(
-                title: setting.title,
-                subtitle: setting.description,
+                dense: true,
+                title: const Text('On Tracking Status changed'),
                 leading: Checkbox(
                   value: _currentOsmCondition.index >=
                       OsmLookupConditions.onStatusChanged.index,
                   onChanged: (value) async {
                     _currentOsmCondition = await save<OsmLookupConditions>(
-                        cache,
-                        !(value ?? false)
-                            ? OsmLookupConditions.onAutoCreateAlias
-                            : OsmLookupConditions.onStatusChanged);
+                        cache, OsmLookupConditions.onStatusChanged);
                   },
                 )),
 
             /// onUserRequest
             ListTile(
-                title: setting.title,
-                subtitle: setting.description,
+                dense: true,
+                title: const Text('On every background GPS interval'),
                 leading: Checkbox(
                   value: _currentOsmCondition.index >=
                       OsmLookupConditions.onBackgroundGps.index,
                   onChanged: (value) async {
                     _currentOsmCondition = await save<OsmLookupConditions>(
-                        cache,
-                        !(value ?? false)
-                            ? OsmLookupConditions.onStatusChanged
-                            : OsmLookupConditions.onBackgroundGps);
+                        cache, OsmLookupConditions.onBackgroundGps);
                   },
                 )),
 
             /// onUserRequest
             ListTile(
-                title: setting.title,
-                subtitle: setting.description,
+                dense: true,
+                title: const Text('Always, no restrictions'),
                 leading: Checkbox(
                   value: _currentOsmCondition.index >=
                       OsmLookupConditions.always.index,
                   onChanged: (value) async {
                     _currentOsmCondition = await save<OsmLookupConditions>(
-                        cache,
-                        !(value ?? false)
-                            ? OsmLookupConditions.onBackgroundGps
-                            : OsmLookupConditions.always);
+                        cache, OsmLookupConditions.always);
                   },
                 ))
+                */
           ],
         );
       },

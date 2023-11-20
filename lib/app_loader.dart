@@ -45,10 +45,6 @@ class AppLoader {
       await DB.openDatabase(create: true);
       logger.log('Database opened');
 
-      //
-      logger.log('load app settings');
-      //await AppSettings.loadSettings();
-
       var count = await ModelAlias.count();
       if (count == 0) {
         logger.log('create initial alias');
@@ -92,6 +88,9 @@ class AppLoader {
       logger.fatal('preload $e', stk);
       return false;
     }
+
+    // init and start app tickers
+    RuntimeData();
 
     logger.important('Preload sequence finished without errors');
     return true;

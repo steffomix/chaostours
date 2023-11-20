@@ -17,7 +17,6 @@ limitations under the License.
 import 'package:chaostours/conf/app_user_settings.dart';
 import 'package:chaostours/database.dart';
 import 'package:chaostours/gps.dart';
-import 'package:chaostours/model/model.dart';
 import 'package:chaostours/model/model_alias_group.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:device_calendar/device_calendar.dart';
@@ -25,7 +24,6 @@ import 'package:device_calendar/device_calendar.dart';
 ///
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/cache.dart';
-import 'package:chaostours/trackpoint_data.dart';
 
 class CalendarEventId {
   String calendarId;

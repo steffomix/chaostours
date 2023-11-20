@@ -17,7 +17,6 @@ limitations under the License.
 import 'package:chaostours/conf/app_colors.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 //
@@ -27,18 +26,15 @@ import 'package:chaostours/logger.dart';
 import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/cache.dart';
-import 'package:chaostours/data_bridge.dart';
 import 'package:chaostours/util.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_user.dart';
-import 'package:chaostours/trackpoint_data.dart';
 //
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/address.dart' as addr;
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/conf/app_user_settings.dart';
-import 'package:chaostours/osm_tools.dart';
 
 class WidgetTrackingPage extends StatefulWidget {
   const WidgetTrackingPage({super.key});
@@ -54,15 +50,12 @@ class WidgetTrackingPage extends StatefulWidget {
 ///
 
 class _Cache {
-  static List<int> aliasIds = [];
-  static List<int> taskIds = [];
-  static List<int> userIds = [];
-  static GPS? lastTrackpointStanding;
+  //static GPS? lastTrackpointStanding;
   static List<GPS> gpsPoints = [];
   static List<GPS> gpsSmoothPoints = [];
   static List<GPS> gpsCalcPoints = [];
   static get distanceMoving => GPS.distanceOverTrackList(gpsPoints);
-
+  static GPS? lastTrackpointStanding;
   static get distanceStanding => GPS.distanceOverTrackList(gpsPoints);
   static TrackingStatus trackingStatus = TrackingStatus.none;
   static TrackingStatus triggeredTrackingStatus = TrackingStatus.none;
@@ -81,10 +74,6 @@ class _Cache {
     gps = await GPS.gps();
     location = await Location.location(gps!);
     trackPoint = await ModelTrackPoint.fromCache(gps!);
-
-    aliasIds = await Cache.backgroundAliasIdList.load<List<int>>([]);
-    userIds = await Cache.backgroundUserIdList.load<List<int>>([]);
-    taskIds = await Cache.backgroundTaskIdList.load<List<int>>([]);
 
     gpsPoints = await Cache.backgroundGpsPoints.load<List<GPS>>([]);
     gpsSmoothPoints = await Cache.backgroundGpsSmoothPoints.load<List<GPS>>([]);
@@ -121,6 +110,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   static final Logger logger = Logger.logger<WidgetTrackingPage>();
 
   static int _bottomBarIndex = 0;
+
+  Widget divider = AppWidgets.divider();
 
   double? _visibleFraction;
   final _visibilityDetectorKey =
@@ -183,18 +174,23 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
   Widget body() {
     Widget widget;
-    switch (_Cache.trackingStatus) {
-      case TrackingStatus.standing:
-        widget = renderTrackPointStanding();
-        break;
+    try {
+      switch (_Cache.trackingStatus) {
+        case TrackingStatus.standing:
+          widget = renderTrackPointStanding();
+          break;
 
-      case TrackingStatus.moving:
-        widget = renderTrackPointMoving();
-        break;
+        case TrackingStatus.moving:
+          widget = renderTrackPointMoving();
+          break;
 
-      default:
-        widget = AppWidgets.loadingScreen(
-            context, const Text('Waiting for Tracking Status'));
+        default:
+          widget = AppWidgets.loadingScreen(
+              context, const Text('Waiting for Tracking Status'));
+      }
+    } catch (e, stk) {
+      widget = AppWidgets.loadingScreen(
+          context, Text('Error render Trackpoint: $e\n$stk'));
     }
 
     widget = VisibilityDetector(
@@ -267,12 +263,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
   ///
   Widget renderTrackPointMoving() {
-    if (_Cache.trackPoint == null) {
-      return AppWidgets.loading(const Text('Waiting for Trackpoint Data'));
-    }
     ModelTrackPoint tp = _Cache.trackPoint!;
 
-    Widget divider = AppWidgets.divider();
     Widget body =
         Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Center(
@@ -353,15 +345,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
   ///
   Widget renderTrackPointStanding() {
-    if (_Cache.trackPoint == null) {
-      return AppWidgets.loading(const Text('Waiting for Trackpoint Data'));
-    }
     ModelTrackPoint tp = _Cache.trackPoint!;
-    if (_Cache.location == null) {
-      return AppWidgets.loading(const Text('Waiting for Location Data'));
-    }
-    Location location = _Cache.location!;
-    Widget divider = AppWidgets.divider();
     Widget body =
         Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Center(
@@ -391,11 +375,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                 const EdgeInsets.fromLTRB(30, 0, 20, 0))),
         child: renderAliases(),
         onPressed: () async {
-          if (_Cache.gpsCalcPoints.isNotEmpty) {
-            _Cache.aliasIds = await Cache.foregroundAliasIdList
-                .save<List<int>>(location.aliasIds);
-            render();
-          }
+          await _Cache.reload();
+          render();
         },
       ),
       divider,
@@ -455,7 +436,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
   ///
   List<Widget> taskCheckboxes() {
-    var referenceList = _Cache.taskIds;
+    var referenceList = _Cache.trackPoint!.taskIds;
     var checkBoxes = <Widget>[];
     for (var model in _Cache.trackPoint!.taskModels) {
       if (model.isActive) {
@@ -466,9 +447,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
             title: model.title,
             subtitle: model.description,
             onToggle: (bool? checked) async {
-              var ck = await Cache.backgroundTaskIdList
-                  .save<List<int>>(_Cache.taskIds);
-              _Cache.taskIds = ck;
+              await _Cache.reload();
               render();
             })));
       }
@@ -478,7 +457,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
   ///
   List<Widget> userCheckboxes() {
-    var referenceList = _Cache.userIds;
+    var referenceList = _Cache.trackPoint!.userIds;
     var checkBoxes = <Widget>[];
     for (var model in _Cache.trackPoint!.userModels) {
       if (model.isActive) {
@@ -489,9 +468,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
             title: model.title,
             subtitle: model.description,
             onToggle: (bool? checked) async {
-              var ck = await Cache.backgroundUserIdList
-                  .save<List<int>>(_Cache.userIds);
-              _Cache.userIds = ck;
+              await _Cache.reload();
               render();
             })));
       }
@@ -506,7 +483,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
     List<ModelUser> userModels = [];
     for (var model in userModels) {
-      if (_Cache.userIds.contains(model.id)) {
+      if (_Cache.trackPoint!.userIds.contains(model.id)) {
         userModels.add(model);
       }
     }
@@ -539,7 +516,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     /// render selected tasks
     List<ModelTask> taskModels = [];
     for (var item in taskModels) {
-      if (_Cache.taskIds.contains(item.id)) {
+      if (_Cache.trackPoint!.taskIds.contains(item.id)) {
         taskModels.add(item);
       }
     }

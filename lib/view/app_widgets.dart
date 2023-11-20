@@ -237,11 +237,13 @@ class AppWidgets {
   }
 
   static Widget loadingScreen(BuildContext context, Widget info) {
-    return Scaffold(body: loading(info));
+    return AppWidgets.scaffold(context,
+        body: loading(info), title: 'Loading...');
   }
 
   static Widget errorScreen(BuildContext context, Widget info) {
-    return Scaffold(body: loading(info));
+    return AppWidgets.scaffold(context,
+        body: loading(info), title: 'What the F...!');
   }
 
   /// check FutureBuilder Snapshots,

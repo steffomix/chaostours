@@ -15,16 +15,13 @@ limitations under the License.
 */
 
 import 'package:background_location_tracker/background_location_tracker.dart';
-import 'package:chaostours/address.dart';
 import 'dart:math' as math;
 
 ///
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/conf/app_user_settings.dart';
-import 'package:chaostours/trackpoint_data.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/cache.dart';
-import 'package:chaostours/data_bridge.dart';
 import 'package:chaostours/location.dart';
 import 'package:chaostours/calendar.dart';
 import 'package:chaostours/database.dart';
