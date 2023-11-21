@@ -51,6 +51,9 @@ class BackgroundTracking {
   static bool _initialized = false;
 
   static Future<AndroidConfig> _androidConfig() async {
+    var interval = await Cache.appSettingBackgroundTrackingInterval
+        .load<Duration>(const Duration(seconds: 30));
+    var sec = interval.inSeconds;
     return AndroidConfig(
         channelName: 'Chaos Tours Unlimited Background Tracking',
         notificationBody:
@@ -59,8 +62,7 @@ class BackgroundTracking {
         enableNotificationLocationUpdates: false,
         cancelTrackingActionText: 'Stop Tracking',
         enableCancelTrackingAction: true,
-        trackingInterval: await Cache.appSettingForegroundUpdateInterval
-            .load<Duration>(const Duration(seconds: 30)));
+        trackingInterval: interval);
   }
 
   static Future<bool> isTracking() async {
@@ -68,9 +70,10 @@ class BackgroundTracking {
   }
 
   static Future<void> startTracking() async {
-    if (!_initialized) {
-      await initialize();
-    }
+    //if (!_initialized) {
+    //await initialize();
+    // }
+    return;
     if (!await isTracking()) {
       await initialize();
       BackgroundLocationTrackerManager.startTracking(
@@ -166,6 +169,8 @@ class _TrackPoint {
 
     /// add current gps point
     List<GPS> gpsPoints = await Cache.backgroundGpsPoints.load<List<GPS>>([]);
+
+    var sm = await Cache.backgroundGpsSmoothPoints.load<List<GPS>>([]);
     gpsPoints.insert(0, gps);
 
     if (gpsPoints.length != maxGpsPoints) {

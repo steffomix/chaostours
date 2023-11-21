@@ -35,6 +35,16 @@ class OsmTools {
   Future<void> renderAlias(osm.MapController mapController) async {
     await mapController.removeAllCircle();
 
+    GPS currentGps = await GPS.gps();
+    mapController.drawCircle(osm.CircleOSM(
+      key: "circle${++circleId}",
+      centerPoint:
+          osm.GeoPoint(latitude: currentGps.lat, longitude: currentGps.lon),
+      radius: 10,
+      color: const Color.fromARGB(255, 247, 2, 255),
+      strokeWidth: 10,
+    ));
+
     List<GPS> gpsPoints = await Cache.backgroundGpsPoints.load<List<GPS>>([]);
     if (gpsPoints.isEmpty) {
       return;

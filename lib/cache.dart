@@ -29,6 +29,15 @@ import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_user.dart';
 
+class _Cache {
+  static const int cacheDuration = 3;
+  DateTime lastChange = DateTime.now();
+  bool get cacheExpired {
+    return DateTime.now().difference(lastChange).abs().inSeconds >
+        cacheDuration;
+  }
+}
+
 enum Cache {
   /// trigger off == TrackingStatus.none
   /// triggered by user, set to none in background
@@ -86,14 +95,21 @@ enum Cache {
   appSettingWeekdays(Weekdays);
 
   Future<T> load<T>(T fallback) async {
+    if (_cacheCheck.cacheExpired) {
+      _cache[this] = await CacheTypeAdapter.getValue<T>(this, fallback);
+      _cacheCheck.lastChange = DateTime.now();
+    }
     return (_cache[this] ??= await CacheTypeAdapter.getValue<T>(this, fallback))
         as T;
   }
 
   Future<T> save<T>(T value) async {
+    _cacheCheck.lastChange = DateTime.now();
     _cache.addAll({this: value});
     return await CacheTypeAdapter.setValue<T>(this, value);
   }
+
+  final _cacheCheck = _Cache();
 
   static final Map<Cache, dynamic> _cache = {};
 

@@ -33,6 +33,7 @@ import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/osm_tools.dart';
 import 'package:chaostours/model/model_alias.dart';
+import 'package:chaostours/tracking.dart';
 
 class OsmSearchResult {
   final double lat;
@@ -115,10 +116,30 @@ class _WidgetOsm extends State<WidgetOsm> {
 
   @override
   void dispose() {
+    EventManager.remove<EventOnBackgroundUpdate>(onBackgroundLookup);
+    EventManager.remove<EventOnAppTick>(onAppTick);
     _addressNotifier.dispose();
     mapController.removeAllCircle();
     mapController.dispose();
     super.dispose();
+  }
+
+  @override
+  void initState() {
+    EventManager.listen<EventOnBackgroundUpdate>(onBackgroundLookup);
+    EventManager.listen<EventOnAppTick>(onAppTick);
+    super.initState();
+  }
+
+  void onBackgroundLookup(EventOnBackgroundUpdate e) {}
+
+  void onAppTick(EventOnAppTick e) {
+    osmTools.renderAlias(mapController);
+    GPS.gps().then(
+      (gps) {
+        track(gps);
+      },
+    );
   }
 
   Future<void> lookupGps([String? query]) async {

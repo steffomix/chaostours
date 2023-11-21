@@ -91,8 +91,7 @@ class DbCache {
             columns: [_data],
             where: '$_key = ?',
             whereArgs: [id(key)],
-            orderBy: _id,
-            limit: 1);
+            orderBy: _id);
       },
     );
     final data = <String>[];

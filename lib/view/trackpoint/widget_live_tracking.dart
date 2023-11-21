@@ -131,7 +131,6 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   ///
   @override
   void initState() {
-    GPS.gps().then((GPS gps) => track(gps));
     EventManager.listen<EventOnAppTick>(onTick);
     EventManager.listen<EventOnTrackingStatusChanged>(onTrackingStatusChanged);
     super.initState();
