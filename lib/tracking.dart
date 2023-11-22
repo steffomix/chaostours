@@ -97,7 +97,7 @@ class BackgroundTracking {
 }
 
 Future<void> track(GPS gps) async {
-  return _TrackPoint().track(lat: gps.lat, lon: gps.lon);
+  return await _TrackPoint().track(lat: gps.lat, lon: gps.lon);
 }
 
 enum TrackingStatus {

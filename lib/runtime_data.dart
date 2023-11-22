@@ -16,14 +16,14 @@ class RuntimeData {
   factory RuntimeData() => _instance ??= RuntimeData._();
 
   Ticker hudTicker = Ticker(
-    type: TickerTypes.hud,
+    type: TickerTypes.foregroundTracking,
     getDuration: () async {
       var cache = Cache.appSettingForegroundUpdateInterval;
       return await cache
           .load<Duration>(AppUserSettings(cache).defaultValue as Duration);
     },
     action: () {
-      EventManager.fire<EventOnAppTick>(EventOnAppTick());
+      EventManager.fire<EventOnForegroundTracking>(EventOnForegroundTracking());
     },
   );
 

@@ -29,12 +29,15 @@ import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_user.dart';
 
-class _Cache {
-  static const int cacheDuration = 3;
-  DateTime lastChange = DateTime.now();
-  bool get cacheExpired {
-    return DateTime.now().difference(lastChange).abs().inSeconds >
-        cacheDuration;
+class _Expire {
+  final dynamic value;
+
+  final Duration duration;
+  late DateTime _expiredAt;
+  bool get expired => DateTime.now().isAfter(_expiredAt);
+
+  _Expire({required this.value, required this.duration}) {
+    _expiredAt = DateTime.now().add(duration);
   }
 }
 
@@ -79,44 +82,46 @@ enum Cache {
   backgroundCalendarLastEventIds(List<CalendarEventId>),
 
   /// appUserStettings
-  appSettingBackgroundTrackingEnabled(bool),
-  appSettingStatusStandingRequireAlias(bool),
-  appSettingAutocreateAliasDuration(Duration),
-  appSettingAutocreateAlias(bool),
-  appSettingForegroundUpdateInterval(Duration),
-  appSettingOsmLookupCondition(OsmLookupConditions),
-  appSettingCacheGpsTime(Duration),
-  appSettingDistanceTreshold(int),
-  appSettingTimeRangeTreshold(Duration),
-  appSettingBackgroundTrackingInterval(Duration),
-  appSettingGpsPointsSmoothCount(int),
-  appSettingPublishToCalendar(bool),
-  appSettingTimeZone(String),
-  appSettingWeekdays(Weekdays);
+  appSettingBackgroundTrackingEnabled(bool, Duration(days: 365)),
+  appSettingStatusStandingRequireAlias(bool, Duration(days: 365)),
+  appSettingAutocreateAliasDuration(Duration, Duration(days: 365)),
+  appSettingAutocreateAlias(bool, Duration(days: 365)),
+  appSettingForegroundUpdateInterval(Duration, Duration(days: 365)),
+  appSettingOsmLookupCondition(OsmLookupConditions, Duration(days: 365)),
+  appSettingCacheGpsTime(Duration, Duration(days: 365)),
+  appSettingDistanceTreshold(int, Duration(days: 365)),
+  appSettingTimeRangeTreshold(Duration, Duration(days: 365)),
+  appSettingBackgroundTrackingInterval(Duration, Duration(days: 365)),
+  appSettingGpsPointsSmoothCount(int, Duration(days: 365)),
+  appSettingPublishToCalendar(bool, Duration(days: 365)),
+  appSettingTimeZone(String, Duration(days: 365)),
+  appSettingWeekdays(Weekdays, Duration(days: 365));
 
   Future<T> load<T>(T fallback) async {
-    if (_cacheCheck.cacheExpired) {
-      _cache[this] = await CacheTypeAdapter.getValue<T>(this, fallback);
-      _cacheCheck.lastChange = DateTime.now();
+    var exp = _cache[this]?.expired;
+    var isNull = _cache[this] == null;
+
+    if (_cache[this]?.expired ?? true) {
+      var value = await CacheTypeAdapter.getValue<T>(this, fallback);
+      _cache[this] = _Expire(value: value, duration: expireAfter);
+      return value;
     }
-    return (_cache[this] ??= await CacheTypeAdapter.getValue<T>(this, fallback))
-        as T;
+    return (_cache[this] ??= _Expire(
+            value: await CacheTypeAdapter.getValue<T>(this, fallback),
+            duration: expireAfter))
+        .value as T;
   }
 
   Future<T> save<T>(T value) async {
-    _cacheCheck.lastChange = DateTime.now();
-    _cache.addAll({this: value});
+    _cache.addAll({this: _Expire(value: value, duration: expireAfter)});
     return await CacheTypeAdapter.setValue<T>(this, value);
   }
 
-  final _cacheCheck = _Cache();
-
-  static final Map<Cache, dynamic> _cache = {};
+  static final Map<Cache, _Expire> _cache = {};
 
   final Type cacheType;
-  const Cache(
-    this.cacheType,
-  );
+  final Duration expireAfter;
+  const Cache(this.cacheType, [this.expireAfter = Duration.zero]);
 
   int get id => index + 1;
 

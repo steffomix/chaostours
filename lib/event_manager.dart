@@ -28,7 +28,7 @@ class EventOnTrackingStatusChanged extends EventOn {
 
 class EventOnBackgroundUpdate extends EventOn {}
 
-class EventOnAppTick extends EventOn {}
+class EventOnForegroundTracking extends EventOn {}
 
 class EventOn {
   static int _nextId = 0;
@@ -48,68 +48,34 @@ class EventManagerException implements Exception {
 }
 
 class EventManager {
-  static Logger logger = Logger.logger<EventManager>();
   static final List<Set<dynamic>> _register = [];
 
   static bool listen<T>(Function(T) fn) {
-    bool added = _get<T>().add(fn);
-    if (added) {
-      //logger.verbose('add Listener ${T.toString()}');
+    var reg = _register.whereType<Set<Function(T)>>();
+    if (reg.isEmpty) {
+      Set<Function(T)> s = {fn};
+      _register.add(s);
+      return true;
     } else {
-      logger
-          .warn('add Listener  ${T.toString()} skipped: Listener already set');
+      return reg.first.add(fn);
     }
-    return added;
   }
 
-  /// fires event and returns result of each executed listener
-  static Future<Map<dynamic Function(T), dynamic>> fire<T>(T instance,
-      [dispatchAsync = true, String debugMessage = '']) async {
-    DateTime t = DateTime.now();
-    int m = t.minute;
-    int s = t.second;
-    int ms = t.millisecond;
-
-    Map<dynamic Function(T), dynamic> results = {};
-
-    /// copy list to prevent modification during iteration
-    var list = UnmodifiableListView(_get<T>());
-    for (var fn in list) {
+  static fire<T>(T event) async {
+    for (var fn in _get<T>()) {
       try {
-        if (dispatchAsync) {
-          results[fn] = await Future.microtask(() => fn(instance));
-        } else {
-          results[fn] = fn(instance);
-        }
+        Future.microtask(() => fn(event));
       } catch (e) {
-        results[fn] = EventManagerException(e.toString());
-
-        Logger.debugPrint(
-            '${Logger.defaultRealm} $m:$s.$ms EventManager failed on ${T.toString()}: $debugMessage: ${e.toString()}');
+        EventManagerException(e.toString());
       }
     }
-    return results;
   }
 
-  static void remove<T>(Function(T) fn) {
-    var set = _get<T>();
-    if (set.contains(fn)) {
-      _get<T>().removeWhere((el) => el == fn);
-      //logger.verbose('remove Listener ${T.toString()}');
-    } else {
-      logger.warn(
-          'remove Listener ${T.toString()} skipped: Listener not present');
-    }
-  }
+  static void remove<T>(Function(T) fn) => _register
+      .whereType<Set<Function(T)>>()
+      .firstOrNull
+      ?.removeWhere((el) => el == fn);
 
-  static Set<Function(T)> _get<T>() {
-    try {
-      _register.whereType<Set<Function(T)>>().first;
-    } catch (e) {
-      Set<Function(T)> s = {};
-      _register.add(s);
-    }
-    var f = _register.whereType<Set<Function(T)>>().first;
-    return f;
-  }
+  static List<Function(T)> _get<T>() => List.unmodifiable(
+      _register.whereType<Set<Function(T)>>().firstOrNull?.toList() ?? []);
 }

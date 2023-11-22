@@ -18,7 +18,7 @@ import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/logger.dart';
 
 enum TickerTypes {
-  hud,
+  foregroundTracking,
   background;
 }
 
@@ -52,7 +52,6 @@ class Ticker {
             while (isRunning) {
               try {
                 action.call();
-                EventManager.fire<EventOnAppTick>(EventOnAppTick());
                 _ticks++;
               } catch (e, stk) {
                 logger.error(

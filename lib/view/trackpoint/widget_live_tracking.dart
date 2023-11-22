@@ -35,6 +35,7 @@ import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/address.dart' as addr;
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/conf/app_user_settings.dart';
+import 'package:chaostours/tracking.dart' as tracking;
 
 class WidgetTrackingPage extends StatefulWidget {
   const WidgetTrackingPage({super.key});
@@ -113,7 +114,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
   Widget divider = AppWidgets.divider();
 
-  double? _visibleFraction;
+  double _visibleFraction = 100.0;
   final _visibilityDetectorKey =
       GlobalKey(debugLabel: 'Life Tracking VisibilityDetectorKey');
 
@@ -131,33 +132,38 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   ///
   @override
   void initState() {
-    EventManager.listen<EventOnAppTick>(onTick);
-    EventManager.listen<EventOnTrackingStatusChanged>(onTrackingStatusChanged);
+    EventManager.listen<EventOnForegroundTracking>(onTracking);
+    // EventManager.listen<EventOnTrackingStatusChanged>(onTrackingStatusChanged);
     super.initState();
   }
 
   ///
   @override
   void dispose() {
-    EventManager.remove<EventOnAppTick>(onTick);
+    EventManager.remove<EventOnForegroundTracking>(onTracking);
     EventManager.remove<EventOnTrackingStatusChanged>(onTrackingStatusChanged);
     super.dispose();
   }
 
   void onTrackingStatusChanged(EventOnTrackingStatusChanged e) {
-    if ((_visibleFraction ?? 0) < 50) {
+    if ((_visibleFraction ?? 0) < .5) {
       return;
     }
+    logger.log('------ onTracking Status Changed ------');
     _tpNotes.text = _Cache.notes;
-    render();
+    //render();
   }
 
   ///
-  void onTick(EventOnAppTick tick) {
-    if ((_visibleFraction ?? 0) < 50) {
+  void onTracking(EventOnForegroundTracking tick) {
+    if ((_visibleFraction ?? 0) < .5) {
       return;
     }
-    render();
+    GPS.gps().then((gps) async {
+      await logger.log('------ onTracking ------');
+      await tracking.track(gps);
+      //render();
+    });
   }
 
   ///

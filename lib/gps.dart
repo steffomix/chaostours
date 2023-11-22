@@ -157,13 +157,12 @@ class GPS {
       if (!(await Permission.location.isGranted)) {
         await Permission.location.request();
       }
-      bool cacheOutdated = lastGps?.time
-              .add(await Cache.appSettingCacheGpsTime.load<Duration>(
-                  AppUserSettings(Cache.appSettingCacheGpsTime).defaultValue
-                      as Duration))
-              .isBefore(DateTime.now()) ??
-          true;
 
+      var defaultValue = AppUserSettings(Cache.appSettingCacheGpsTime)
+          .defaultValue as Duration;
+      var dur = await Cache.appSettingCacheGpsTime.load<Duration>(defaultValue);
+      bool cacheOutdated =
+          lastGps?.time.add(dur).isBefore(DateTime.now()) ?? true;
       if (cacheOutdated) {
         /// cache is outdated
         GPS gps = await _gps();
