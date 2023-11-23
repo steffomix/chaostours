@@ -84,20 +84,32 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
       divider,
       await booleanSetting(Cache.appSettingPublishToCalendar),
       divider,
-      await integerSetting(Cache.appSettingBackgroundTrackingInterval, onChange:
-          ({required AppUserSetting setting, required int value}) async {
-        await BackgroundTracking.stopTracking();
-        await BackgroundTracking.startTracking();
-      }),
-      divider,
       await integerSetting(Cache.appSettingForegroundUpdateInterval),
-      divider,
-      await integerSetting(Cache.appSettingTimeRangeTreshold),
-      divider,
-      await integerSetting(Cache.appSettingAutocreateAliasDuration),
-      divider,
-      await integerSetting(Cache.appSettingGpsPointsSmoothCount),
-      divider,
+      Container(
+          decoration: BoxDecoration(border: Border.all()),
+          margin: const EdgeInsets.all(10),
+          child: Column(
+            children: [
+              const ListTile(
+                  title: Text('Tracking calculating settings'),
+                  subtitle: Text(
+                      'These Settings depend on each other. The System will auto-correct values if neccecary.')),
+              divider,
+              await integerSetting(Cache.appSettingBackgroundTrackingInterval,
+                  onChange: (
+                      {required AppUserSetting setting,
+                      required int value}) async {
+                await BackgroundTracking.stopTracking();
+                await BackgroundTracking.startTracking();
+              }),
+              divider,
+              await integerSetting(Cache.appSettingTimeRangeTreshold),
+              divider,
+              await integerSetting(Cache.appSettingAutocreateAliasDuration),
+              divider,
+              await integerSetting(Cache.appSettingGpsPointsSmoothCount),
+            ],
+          )),
       await integerSetting(Cache.appSettingDistanceTreshold),
       divider,
       await integerSetting(Cache.appSettingCacheGpsTime),
@@ -279,6 +291,11 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                     isValid = true;
                     await updateDebugValues();
                     valueNotifiers[cache]?.value++;
+
+                    await onChange?.call(
+                        setting: setting,
+                        value: await setting
+                            .pruneInt(textEditingControllers[cache]!.text));
                     activate();
                   },
                   onTapOutside: (_) async {
@@ -289,8 +306,6 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                   onChanged: (String? value) async {
                     isValid = await checkIntegerInput(setting, value);
                     valueNotifiers[cache]?.value++;
-                    onChange?.call(
-                        setting: setting, value: await setting.pruneInt(value));
                   },
                 ))
           ]);

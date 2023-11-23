@@ -154,6 +154,13 @@ class AppUserSetting {
                 .save<Duration>(AppUserSetting(cache).defaultValue as Duration);
           },
           extraCheck: (int value) async {
+            // must be min 3x appSettingBackgroundTrackingInterval
+            Cache cLookup = Cache.appSettingBackgroundTrackingInterval;
+            int lookup = (await cLookup.load<Duration>(
+                    AppUserSetting(cLookup).defaultValue as Duration))
+                .inSeconds;
+            value = math.max(value, lookup * 3);
+
             // recheck autocreate alias duration
             int minCreate = value * 2;
             Cache cAutoCreate = Cache.appSettingAutocreateAliasDuration;
@@ -168,10 +175,6 @@ class AppUserSetting {
             int smooth = await cSmooth
                 .load<int>(AppUserSetting(cSmooth).defaultValue as int);
             if (smooth > 0) {
-              Cache cLookup = Cache.appSettingBackgroundTrackingInterval;
-              int lookup = (await cLookup.load<Duration>(
-                      AppUserSetting(cLookup).defaultValue as Duration))
-                  .inSeconds;
               int maxSmooth = maxSmoothCount(value, lookup);
               if (smooth > maxSmooth) {
                 await cSmooth.save<int>(maxSmooth);
