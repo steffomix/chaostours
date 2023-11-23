@@ -20,7 +20,6 @@ import 'package:sqflite/sqflite.dart' as flite;
 
 ///
 import 'package:chaostours/logger.dart';
-import 'package:chaostours/cache.dart';
 
 class DB {
   static final Logger logger = Logger.logger<DB>();
@@ -195,33 +194,6 @@ enum CacheData {
 	${id.column}	INTEGER NOT NULL,
 	${key.column}	TEXT NOT NULL,
 	${data.column}	TEXT
-);''';
-
-  @override
-  String toString() {
-    return '$table.$column';
-  }
-}
-
-enum CacheKey {
-  id('id'),
-  type('type'),
-  name('name');
-
-  static const String table = 'cache_key';
-
-  static List<String> get columns =>
-      CacheKey.values.map((e) => e.toString()).toList();
-
-  final String column;
-  const CacheKey(this.column);
-
-  CacheKey get primaryKey => id;
-
-  static String get schema => '''CREATE TABLE IF NOT EXISTS $table (
-	${id.column}	INTEGER NOT NULL,
-	${type.column}	TEXT NOT NULL,
-	${name.column}	TEXT NOT NULL
 );''';
 
   @override
@@ -561,6 +533,7 @@ enum TableUser {
 enum TableTaskGroup {
   id('id'),
   isActive('active'),
+  selectable('selectable'),
   sortOrder('sort'),
   title('title'),
   description('description');
@@ -580,6 +553,7 @@ enum TableTaskGroup {
   static String get schema => '''CREATE TABLE IF NOT EXISTS $table (
 	${primaryKey.column} INTEGER NOT NULL,
 	${isActive.column} INTEGER DEFAULT 1,
+	${selectable.column} INTEGER DEFAULT 1,
 	${sortOrder.column}	TEXT,
 	${title.column}	TEXT NOT NULL,
 	${description.column}	TEXT,
@@ -595,7 +569,7 @@ enum TableTaskGroup {
 enum TableUserGroup {
   id('id'),
   isActive('active'),
-  isPreselected('isPreselected'),
+  selectable('selectable'),
   sortOrder('sort'),
   title('title'),
   description('description');
@@ -615,7 +589,7 @@ enum TableUserGroup {
   static String get schema => '''CREATE TABLE IF NOT EXISTS $table (
 	${primaryKey.column}	INTEGER NOT NULL,
 	${isActive.column}	INTEGER DEFAULT 1,
-	${isPreselected.column}	INTEGER DEFAULT 0,
+	${selectable.column} INTEGER DEFAULT 1,
 	${sortOrder.column}	TEXT DEFAULT 1,
 	${title.column}	TEXT,
 	${description.column}	TEXT,
@@ -723,7 +697,6 @@ enum TableAliasGroup {
 
 class DbTable {
   static final List<DbTable> tables = List.unmodifiable([
-    DbTable(CacheKey.table, CacheKey.columns, CacheKey.schema),
     DbTable(CacheData.table, CacheData.columns, CacheData.schema),
     // alias
     DbTable(TableAlias.table, TableAlias.columns, TableAlias.schema),
@@ -802,15 +775,8 @@ CREATE INDEX IF NOT EXISTS ${TableTaskTaskGroup.table}_index ON ${TableTaskTaskG
   ];
 
   static final List<String> inserts = [
-    '''INSERT INTO ${TableTaskGroup.table} VALUES (1,1,1,"Default Taskgroup",NULL)''',
+    '''INSERT INTO ${TableTaskGroup.table} VALUES (1,1,1,1,"Default Taskgroup",NULL)''',
     '''INSERT INTO ${TableUserGroup.table} VALUES (1,1,1,1,"Default Usergroup",NULL)''',
     '''INSERT INTO ${TableAliasGroup.table} VALUES (1,NULL,1,1,"Default Aliasgroup",NULL)''',
-    ...Cache.values.map(
-      (key) {
-        return '''
-INSERT INTO ${CacheKey.table} VALUES (${key.id}," ${key.cacheType}", "${key.name}")
-''';
-      },
-    )
   ];
 }

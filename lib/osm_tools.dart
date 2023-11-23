@@ -21,8 +21,6 @@ import 'package:flutter_osm_plugin/flutter_osm_plugin.dart' as osm;
 ///
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/conf/app_colors.dart';
-import 'package:chaostours/data_bridge.dart';
-import 'package:chaostours/tracking.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/gps.dart';
 

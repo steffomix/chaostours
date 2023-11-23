@@ -15,9 +15,6 @@ limitations under the License.
 */
 
 import 'package:chaostours/tracking.dart';
-import 'dart:collection';
-//
-import 'package:chaostours/logger.dart';
 
 class EventOnTrackingStatusChanged extends EventOn {
   final TrackingStatus oldStatus;
@@ -31,20 +28,9 @@ class EventOnBackgroundUpdate extends EventOn {}
 class EventOnForegroundTracking extends EventOn {}
 
 class EventOn {
-  static int _nextId = 0;
-  int eventId = (_nextId++);
+  static int _nextId = 1;
+  int id = (_nextId++);
   DateTime t = DateTime.now();
-}
-
-class EventManagerException implements Exception {
-  /// A message describing the format error.
-  final String message;
-
-  /// Creates a new FormatException with an optional error [message].
-  const EventManagerException([this.message = ""]);
-
-  @override
-  String toString() => "EventManagerException: $message";
 }
 
 class EventManager {
@@ -63,11 +49,7 @@ class EventManager {
 
   static fire<T>(T event) async {
     for (var fn in _get<T>()) {
-      try {
-        Future.microtask(() => fn(event));
-      } catch (e) {
-        EventManagerException(e.toString());
-      }
+      Future.microtask(() => fn(event));
     }
   }
 

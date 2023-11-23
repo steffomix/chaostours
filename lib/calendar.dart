@@ -53,7 +53,7 @@ class AppCalendar {
 
   Future<String> getTimeZone() async {
     Cache key = Cache.appSettingTimeZone;
-    return await key.load<String>(AppUserSettings(key).defaultValue as String);
+    return await key.load<String>(AppUserSetting(key).defaultValue as String);
   }
 
   Future<String?> inserOrUpdate(Event e) async {

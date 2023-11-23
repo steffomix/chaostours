@@ -407,7 +407,7 @@ class _WidgetOsm extends State<WidgetOsm> {
                 title: address,
                 description: '',
                 radius: await Cache.appSettingDistanceTreshold.load<int>(
-                    AppUserSettings(Cache.appSettingDistanceTreshold)
+                    AppUserSetting(Cache.appSettingDistanceTreshold)
                         .defaultValue as int),
                 lastVisited: DateTime.now());
 

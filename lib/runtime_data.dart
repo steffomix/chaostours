@@ -15,24 +15,24 @@ class RuntimeData {
   static RuntimeData? _instance;
   factory RuntimeData() => _instance ??= RuntimeData._();
 
-  Ticker hudTicker = Ticker(
-    type: TickerTypes.foregroundTracking,
+  Ticker foregroudTrackingTicker = Ticker(
+    type: TickerTypes.foregroundTrackingTicker,
     getDuration: () async {
       var cache = Cache.appSettingForegroundUpdateInterval;
       return await cache
-          .load<Duration>(AppUserSettings(cache).defaultValue as Duration);
+          .load<Duration>(AppUserSetting(cache).defaultValue as Duration);
     },
     action: () {
       EventManager.fire<EventOnForegroundTracking>(EventOnForegroundTracking());
     },
   );
 
-  Ticker backgroundTicker = Ticker(
-    type: TickerTypes.background,
+  Ticker backgroundLookupTicker = Ticker(
+    type: TickerTypes.backgroundLookupTicker,
     getDuration: () async {
       var cache = Cache.appSettingBackgroundTrackingInterval;
       return await cache
-          .load<Duration>(AppUserSettings(cache).defaultValue as Duration);
+          .load<Duration>(AppUserSetting(cache).defaultValue as Duration);
     },
     action: () {
       EventManager.fire<EventOnBackgroundUpdate>(EventOnBackgroundUpdate());

@@ -51,7 +51,7 @@ class Location {
       models.addAll(await ModelAlias.byArea(
           gps: gps,
           area: await Cache.appSettingDistanceTreshold.load(
-              AppUserSettings(Cache.appSettingDistanceTreshold).defaultValue
+              AppUserSetting(Cache.appSettingDistanceTreshold).defaultValue
                   as int)));
 
       for (var model in models) {

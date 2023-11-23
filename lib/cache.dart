@@ -98,9 +98,6 @@ enum Cache {
   appSettingWeekdays(Weekdays, Duration(days: 365));
 
   Future<T> load<T>(T fallback) async {
-    var exp = _cache[this]?.expired;
-    var isNull = _cache[this] == null;
-
     if (_cache[this]?.expired ?? true) {
       var value = await CacheTypeAdapter.getValue<T>(this, fallback);
       _cache[this] = _Expire(value: value, duration: expireAfter);

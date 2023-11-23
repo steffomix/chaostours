@@ -16,6 +16,7 @@ limitations under the License.
 
 import 'package:chaostours/address.dart';
 import 'package:chaostours/cache.dart';
+import 'package:chaostours/conf/app_user_settings.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:flutter/services.dart';
@@ -47,6 +48,10 @@ class AppLoader {
 
       var count = await ModelAlias.count();
       if (count == 0) {
+        logger.log('initalize user setings');
+
+        await AppUserSetting.resetAllToDefault();
+
         logger.log('create initial alias');
         try {
           GPS gps = await GPS.gps();

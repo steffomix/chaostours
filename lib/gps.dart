@@ -158,8 +158,8 @@ class GPS {
         await Permission.location.request();
       }
 
-      var defaultValue = AppUserSettings(Cache.appSettingCacheGpsTime)
-          .defaultValue as Duration;
+      var defaultValue =
+          AppUserSetting(Cache.appSettingCacheGpsTime).defaultValue as Duration;
       var dur = await Cache.appSettingCacheGpsTime.load<Duration>(defaultValue);
       bool cacheOutdated =
           lastGps?.time.add(dur).isBefore(DateTime.now()) ?? true;

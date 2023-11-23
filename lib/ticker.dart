@@ -14,12 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/logger.dart';
 
 enum TickerTypes {
-  foregroundTracking,
-  background;
+  foregroundTrackingTicker,
+  backgroundLookupTicker;
 }
 
 class Ticker {
@@ -38,33 +37,34 @@ class Ticker {
     return _runningTickers[type];
   }
 
+  void dispose() {
+    _isRunning = false;
+  }
+
   int _ticks = 0;
   int get ticks => _ticks;
-  bool isRunning = true;
+  bool _isRunning = true;
   Future<Duration> Function() getDuration;
   void Function() action;
 
   Ticker._ticker({required this.getDuration, required this.action}) {
-    getDuration.call().then(
-      (duration) {
-        Future.microtask(
-          () async {
-            while (isRunning) {
-              try {
-                action.call();
-                _ticks++;
-              } catch (e, stk) {
-                logger.error(
-                    'appTick ${DateTime.now().toIso8601String()} failed: $e',
-                    stk);
-              }
-              await Future.delayed(duration);
-            }
-          },
-        );
+    Future.microtask(
+      () async {
+        while (_isRunning) {
+          try {
+            action.call();
+            _ticks++;
+          } catch (e, stk) {
+            logger.error(
+                'appTick ${DateTime.now().toIso8601String()} failed: $e', stk);
+          }
+          var duration = await getDuration();
+          if (duration.inSeconds < 3) {
+            await Future.delayed(Duration(seconds: 3 - duration.inSeconds));
+          }
+          await Future.delayed(duration);
+        }
       },
-    ).onError((e, stk) {
-      logger.fatal('', stk);
-    });
+    );
   }
 }

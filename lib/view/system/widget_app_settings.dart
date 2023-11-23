@@ -18,8 +18,8 @@ import 'package:flutter/material.dart';
 import 'dart:math' as math;
 
 ///
-import 'package:chaostours/logger.dart';
-import 'package:chaostours/gps.dart';
+//import 'package:chaostours/logger.dart';
+import 'package:chaostours/tracking.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/conf/app_user_settings.dart';
 import 'package:chaostours/cache.dart';
@@ -41,8 +41,13 @@ class WidgetAppSettings extends StatefulWidget {
   State<WidgetAppSettings> createState() => _WidgetAppSettings();
 }
 
+typedef ChangedBool = Function(
+    {required AppUserSetting setting, required bool value});
+typedef ChangedInteger = Function(
+    {required AppUserSetting setting, required int value});
+
 class _WidgetAppSettings extends State<WidgetAppSettings> {
-  static final Logger logger = Logger.logger<WidgetAppSettings>();
+  //static final Logger logger = Logger.logger<WidgetAppSettings>();
 
   static const String infinity = '∞';
 
@@ -66,7 +71,12 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
     await updateDebugValues();
     _renderedWidgets.clear();
     _renderedWidgets.addAll([
-      await booleanSetting(Cache.appSettingBackgroundTrackingEnabled),
+      await booleanSetting(Cache.appSettingBackgroundTrackingEnabled, onChange:
+          ({required AppUserSetting setting, required bool value}) async {
+        value
+            ? await BackgroundTracking.startTracking()
+            : await BackgroundTracking.stopTracking();
+      }),
       divider,
       await booleanSetting(Cache.appSettingAutocreateAlias),
       divider,
@@ -74,7 +84,11 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
       divider,
       await booleanSetting(Cache.appSettingPublishToCalendar),
       divider,
-      await integerSetting(Cache.appSettingBackgroundTrackingInterval),
+      await integerSetting(Cache.appSettingBackgroundTrackingInterval, onChange:
+          ({required AppUserSetting setting, required int value}) async {
+        await BackgroundTracking.stopTracking();
+        await BackgroundTracking.startTracking();
+      }),
       divider,
       await integerSetting(Cache.appSettingForegroundUpdateInterval),
       divider,
@@ -135,7 +149,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
     ]);
   }
 
-  Future<bool> checkIntegerInput(AppUserSettings setting, String? value) async {
+  Future<bool> checkIntegerInput(AppUserSetting setting, String? value) async {
     int unChecked =
         (int.tryParse(value ?? '') ?? -1) * setting.unit.multiplicator;
     int checked = await setting.pruneInt(value);
@@ -174,17 +188,20 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
     return value;
   }
 
-  Future<Widget> booleanSetting(Cache cache) async {
+  Future<Widget> booleanSetting(Cache cache, {ChangedBool? onChange}) async {
     if (cache.cacheType != bool) {
       return AppWidgets.loading(Text('${cache.name} type is not bool'));
     }
-    final setting = AppUserSettings(cache);
+    final setting = AppUserSetting(cache);
     //bool checkboxValue = await cache.load<bool>(false);
 
     Widget checkbox = AppWidgets.checkBox(
         value: await cache.load<bool>(false),
         onToggle: (value) async {
+          deactivate();
           await save<bool>(cache, value ?? false);
+          await onChange?.call(setting: setting, value: value ?? false);
+          activate();
         });
 
     return ValueListenableBuilder(
@@ -199,8 +216,8 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
     );
   }
 
-  Future<Widget> integerSetting(Cache cache, [showDebugInfo = false]) async {
-    AppUserSettings setting = AppUserSettings(cache);
+  Future<Widget> integerSetting(Cache cache, {ChangedInteger? onChange}) async {
+    AppUserSetting setting = AppUserSetting(cache);
     final controller =
         textEditingControllers[cache] ??= TextEditingController();
     controller.text = await setting.load();
@@ -211,14 +228,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
         valueListenable: valueNotifiers[cache] ??= ValueNotifier<int>(0),
         builder: (context, _, __) {
           return Column(children: [
-            ListTile(
-                title: setting.title,
-                subtitle: showDebugInfo
-                    ? Column(children: [
-                        setting.description ?? const Text(''),
-                        ...(showDebugInfo ? debugValues : [])
-                      ])
-                    : setting.description),
+            ListTile(title: setting.title, subtitle: setting.description),
             ListTile(
                 leading: IconButton(
                   icon: const Icon(Icons.settings_backup_restore),
@@ -263,11 +273,13 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                               ? null
                               : const TextStyle(color: Colors.red))),
                   onSubmitted: (_) async {
+                    deactivate();
                     await setting.save(textEditingControllers[cache]!.text);
                     controller.text = await setting.load();
                     isValid = true;
                     await updateDebugValues();
                     valueNotifiers[cache]?.value++;
+                    activate();
                   },
                   onTapOutside: (_) async {
                     controller.text = await setting.load();
@@ -277,6 +289,8 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                   onChanged: (String? value) async {
                     isValid = await checkIntegerInput(setting, value);
                     valueNotifiers[cache]?.value++;
+                    onChange?.call(
+                        setting: setting, value: await setting.pruneInt(value));
                   },
                 ))
           ]);
@@ -285,7 +299,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
 
   Future<Widget> settingOsmlookupCondition() async {
     const cache = Cache.appSettingOsmLookupCondition;
-    final setting = AppUserSettings(cache);
+    final setting = AppUserSetting(cache);
     _currentOsmCondition = await cache
         .load<OsmLookupConditions>(setting.defaultValue as OsmLookupConditions);
     return ValueListenableBuilder(
@@ -303,8 +317,10 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                   Checkbox(
                     value: _currentOsmCondition.index >= condition.index,
                     onChanged: (value) async {
+                      deactivate();
                       _currentOsmCondition =
                           await save<OsmLookupConditions>(cache, condition);
+                      activate();
                     },
                   ),
                   condition.title

@@ -48,12 +48,9 @@ void backgroundCallback() {
 }
 
 class BackgroundTracking {
-  static bool _initialized = false;
-
   static Future<AndroidConfig> _androidConfig() async {
     var interval = await Cache.appSettingBackgroundTrackingInterval
         .load<Duration>(const Duration(seconds: 30));
-    var sec = interval.inSeconds;
     return AndroidConfig(
         channelName: 'Chaos Tours Unlimited Background Tracking',
         notificationBody:
@@ -70,13 +67,9 @@ class BackgroundTracking {
   }
 
   static Future<void> startTracking() async {
-    //if (!_initialized) {
-    //await initialize();
-    // }
-    return;
     if (!await isTracking()) {
       await initialize();
-      BackgroundLocationTrackerManager.startTracking(
+      await BackgroundLocationTrackerManager.startTracking(
           config: await _androidConfig());
     }
   }
@@ -92,7 +85,6 @@ class BackgroundTracking {
     await BackgroundLocationTrackerManager.initialize(backgroundCallback,
         config: BackgroundLocationTrackerConfig(
             androidConfig: await _androidConfig()));
-    _initialized = true;
   }
 }
 
@@ -146,11 +138,11 @@ class _TrackPoint {
 
     bool appSettingStatusStandingRequireAlias = await Cache
         .appSettingStatusStandingRequireAlias
-        .load<bool>(AppUserSettings(Cache.appSettingStatusStandingRequireAlias)
+        .load<bool>(AppUserSetting(Cache.appSettingStatusStandingRequireAlias)
             .defaultValue as bool);
 
     Duration autoCreateAliasDefault =
-        AppUserSettings(Cache.appSettingAutocreateAliasDuration).defaultValue
+        AppUserSetting(Cache.appSettingAutocreateAliasDuration).defaultValue
             as Duration;
     Duration appSettingAutoCreateAliasDuration = await Cache
         .appSettingAutocreateAliasDuration
@@ -158,7 +150,7 @@ class _TrackPoint {
 
     Duration appSettingsTrackpointInterval =
         await Cache.appSettingBackgroundTrackingInterval.load<Duration>(
-            AppUserSettings(Cache.appSettingBackgroundTrackingInterval)
+            AppUserSetting(Cache.appSettingBackgroundTrackingInterval)
                 .defaultValue as Duration);
 
     int maxGpsPoints = ((appSettingAutoCreateAliasDuration.inSeconds == 0
@@ -170,7 +162,6 @@ class _TrackPoint {
     /// add current gps point
     List<GPS> gpsPoints = await Cache.backgroundGpsPoints.load<List<GPS>>([]);
 
-    var sm = await Cache.backgroundGpsSmoothPoints.load<List<GPS>>([]);
     gpsPoints.insert(0, gps);
 
     if (gpsPoints.length != maxGpsPoints) {
@@ -192,7 +183,7 @@ class _TrackPoint {
 
     Duration appSettingTimeRangeTreshold =
         await Cache.appSettingTimeRangeTreshold.load<Duration>(
-            AppUserSettings(Cache.appSettingTimeRangeTreshold).defaultValue
+            AppUserSetting(Cache.appSettingTimeRangeTreshold).defaultValue
                 as Duration);
 
     /// extract calculation points from smoothed points
@@ -220,7 +211,7 @@ class _TrackPoint {
 
     int distanceTreshold = gpsLocation.aliasModels.firstOrNull?.radius ??
         await Cache.appSettingDistanceTreshold.load<int>(
-            AppUserSettings(Cache.appSettingDistanceTreshold).defaultValue
+            AppUserSetting(Cache.appSettingDistanceTreshold).defaultValue
                 as int);
 
     /// cache alias list
@@ -389,7 +380,7 @@ class _TrackPoint {
           await newTrackPoint.insert();
 
           bool publishToCalendar = await Cache.appSettingPublishToCalendar
-              .load<bool>(AppUserSettings(Cache.appSettingPublishToCalendar)
+              .load<bool>(AppUserSetting(Cache.appSettingPublishToCalendar)
                   .defaultValue as bool);
 
           /// execute calendar
@@ -438,7 +429,7 @@ class _TrackPoint {
         await Cache.backgroundAliasIdList.save<List<int>>(gpsLocation.aliasIds);
 
         bool publishToCalendar = await Cache.appSettingPublishToCalendar
-            .load<bool>(AppUserSettings(Cache.appSettingPublishToCalendar)
+            .load<bool>(AppUserSetting(Cache.appSettingPublishToCalendar)
                 .defaultValue as bool);
 
         /// create calendar entry from cache data
@@ -483,7 +474,7 @@ class _TrackPoint {
   Future<List<GPS>> calculateSmoothPoints(List<GPS> gpsPoints) async {
     List<GPS> smoothGpsPoints = [];
     int smoothCount = await Cache.appSettingGpsPointsSmoothCount.load<int>(
-        AppUserSettings(Cache.appSettingGpsPointsSmoothCount).defaultValue
+        AppUserSetting(Cache.appSettingGpsPointsSmoothCount).defaultValue
             as int);
     if (smoothCount < 2) {
       /// smoothing is disabled

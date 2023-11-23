@@ -20,7 +20,7 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 //
-import 'package:chaostours/location.dart';
+//import 'package:chaostours/location.dart';
 import 'package:chaostours/tracking.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/conf/app_routes.dart';
@@ -53,10 +53,10 @@ class WidgetTrackingPage extends StatefulWidget {
 class _Cache {
   //static GPS? lastTrackpointStanding;
   static List<GPS> gpsPoints = [];
-  static List<GPS> gpsSmoothPoints = [];
+  //static List<GPS> gpsSmoothPoints = [];
   static List<GPS> gpsCalcPoints = [];
   static get distanceMoving => GPS.distanceOverTrackList(gpsPoints);
-  static GPS? lastTrackpointStanding;
+  //static GPS? lastTrackpointStanding;
   static get distanceStanding => GPS.distanceOverTrackList(gpsPoints);
   static TrackingStatus trackingStatus = TrackingStatus.none;
   static TrackingStatus triggeredTrackingStatus = TrackingStatus.none;
@@ -69,19 +69,18 @@ class _Cache {
   /// non Cache values
   static GPS? gps;
   static ModelTrackPoint? trackPoint;
-  static Location? location;
+  //static Location? location;
 
   static Future<bool> reload() async {
     gps = await GPS.gps();
-    location = await Location.location(gps!);
+    //location = await Location.location(gps!);
     trackPoint = await ModelTrackPoint.fromCache(gps!);
 
     gpsPoints = await Cache.backgroundGpsPoints.load<List<GPS>>([]);
-    gpsSmoothPoints = await Cache.backgroundGpsSmoothPoints.load<List<GPS>>([]);
+    //gpsSmoothPoints = await Cache.backgroundGpsSmoothPoints.load<List<GPS>>([]);
     gpsCalcPoints = await Cache.backgroundGpsCalcPoints.load<List<GPS>>([]);
 
-    lastTrackpointStanding =
-        await Cache.backgroundGpsStartStanding.load<GPS>(gps!);
+    //lastTrackpointStanding = await Cache.backgroundGpsStartStanding.load<GPS>(gps!);
     trackingStatus = await Cache.backgroundTrackingStatus
         .load<TrackingStatus>(TrackingStatus.none);
     triggeredTrackingStatus = await Cache.trackingStatusTriggered
@@ -92,16 +91,16 @@ class _Cache {
 
     Cache cache = Cache.appSettingWeekdays;
     weekdays = (await cache
-            .load<Weekdays>(AppUserSettings(cache).defaultValue as Weekdays))
+            .load<Weekdays>(AppUserSetting(cache).defaultValue as Weekdays))
         .weekdays;
 
     cache = Cache.appSettingDistanceTreshold;
     distanceTreshold =
-        await cache.load<int>(AppUserSettings(cache).defaultValue as int);
+        await cache.load<int>(AppUserSetting(cache).defaultValue as int);
 
     cache = Cache.appSettingTimeRangeTreshold;
     timeRangeTreshold = await cache
-        .load<Duration>(AppUserSettings(cache).defaultValue as Duration);
+        .load<Duration>(AppUserSetting(cache).defaultValue as Duration);
 
     return true;
   }
@@ -146,7 +145,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   }
 
   void onTrackingStatusChanged(EventOnTrackingStatusChanged e) {
-    if ((_visibleFraction ?? 0) < .5) {
+    if (_visibleFraction < .5) {
       return;
     }
     logger.log('------ onTracking Status Changed ------');
@@ -156,7 +155,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
   ///
   void onTracking(EventOnForegroundTracking tick) {
-    if ((_visibleFraction ?? 0) < .5) {
+    if (_visibleFraction < .5) {
       return;
     }
     GPS.gps().then((gps) async {
