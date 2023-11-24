@@ -139,81 +139,9 @@ class AppUserSetting {
 
   factory AppUserSetting(Cache cache) {
     switch (cache) {
-      case Cache.appSettingTimeRangeTreshold:
-        return _appUserSettings[cache] ??= AppUserSetting._option(
-          cache,
-          title: Text('Tracking status calculation time period'),
-          description: Text(
-              'The time period in which the Moving or Stopping status is calculated.'),
-          unit: Unit.minute,
-          minValue: 60 * 3, // 3 minute
-          maxValue: 60 * 60, // 10 hours
-          defaultValue: const Duration(minutes: 3),
-          resetToDefault: () async {
-            await cache
-                .save<Duration>(AppUserSetting(cache).defaultValue as Duration);
-          },
-          extraCheck: (int value) async {
-            // must be min 3x appSettingBackgroundTrackingInterval
-            Cache cLookup = Cache.appSettingBackgroundTrackingInterval;
-            int lookup = (await cLookup.load<Duration>(
-                    AppUserSetting(cLookup).defaultValue as Duration))
-                .inSeconds;
-            value = math.max(value, lookup * 3);
-
-            // recheck autocreate alias duration
-            int minCreate = value * 2;
-            Cache cAutoCreate = Cache.appSettingAutocreateAliasDuration;
-            int autoCreate = (await cAutoCreate.load<Duration>(
-                    AppUserSetting(cAutoCreate).defaultValue as Duration))
-                .inSeconds;
-            if (autoCreate < minCreate) {
-              await cAutoCreate.save<Duration>(Duration(seconds: minCreate));
-            }
-            // recheck smoothCount
-            Cache cSmooth = Cache.appSettingGpsPointsSmoothCount;
-            int smooth = await cSmooth
-                .load<int>(AppUserSetting(cSmooth).defaultValue as int);
-            if (smooth > 0) {
-              int maxSmooth = maxSmoothCount(value, lookup);
-              if (smooth > maxSmooth) {
-                await cSmooth.save<int>(maxSmooth);
-              }
-            }
-
-            return value;
-          },
-        );
-
-      case Cache.appSettingAutocreateAliasDuration:
-        return _appUserSettings[cache] ??= AppUserSetting._option(
-          cache,
-          title: Text('Auto create Alias time period.'),
-          description: Text(
-              'The period after which an alias will be created automatically if none is found. '
-              'The "Status Standing requires alias" option must be activated to make it work.'
-              'The system requires at least twice as much time as Time Range Threshold '
-              'and will automatically increase the value if necessary.'),
-          unit: Unit.minute,
-          minValue: 60 * 5, // 5 minutes
-          defaultValue: Duration(seconds: 60 * 15),
-          resetToDefault: () async {
-            await cache
-                .save<Duration>(AppUserSetting(cache).defaultValue as Duration);
-          }, //
-          extraCheck: (int value) async {
-            /// must be at least appSettingTimeRangeTreshold * 2
-            Cache cTimeRange = Cache.appSettingTimeRangeTreshold;
-            int timeRange = (await cTimeRange.load<Duration>(
-                    AppUserSetting(cTimeRange).defaultValue as Duration))
-                .inSeconds;
-            int min = timeRange * 2;
-            if (value < min) {
-              return min;
-            }
-            return value;
-          }, //
-        ); // 15 minutes
+      ///
+      /// Tracking Values
+      ///
 
       case Cache.appSettingBackgroundTrackingInterval:
         return _appUserSettings[cache] ??= AppUserSetting._option(
@@ -239,15 +167,16 @@ class AppUserSetting {
             if (minTimeRange > timeRange) {
               // modify timeRange
               await cTimeRange.save<Duration>(Duration(seconds: minTimeRange));
-              // recheck autocreate alias duration
-              int minCreate = minTimeRange * 2;
-              Cache cAutoCreate = Cache.appSettingAutocreateAliasDuration;
-              int autoCreate = (await cAutoCreate.load<Duration>(
-                      AppUserSetting(cAutoCreate).defaultValue as Duration))
-                  .inSeconds;
-              if (autoCreate < minCreate) {
-                await cAutoCreate.save<Duration>(Duration(seconds: minCreate));
-              }
+            }
+
+            // recheck autocreate alias duration
+            int minCreate = minTimeRange * 2;
+            Cache cAutoCreate = Cache.appSettingAutocreateAliasDuration;
+            int autoCreate = (await cAutoCreate.load<Duration>(
+                    AppUserSetting(cAutoCreate).defaultValue as Duration))
+                .inSeconds;
+            if (autoCreate < minCreate) {
+              await cAutoCreate.save<Duration>(Duration(seconds: minCreate));
             }
 
             // recheck smoothCount
@@ -264,13 +193,96 @@ class AppUserSetting {
           },
         );
 
+      case Cache.appSettingTimeRangeTreshold:
+        return _appUserSettings[cache] ??= AppUserSetting._option(
+          cache,
+          title: Text('Tracking status calculation time period'),
+          description: Text(
+              'The time period in which the Moving or Stopping status is calculated.\n'
+              'The System requires at least 3x time as the above "Background GPS Tracking Interval Duration" '
+              'and will increase false values if necessary.'),
+          unit: Unit.minute,
+          minValue: 60, // 1 minute
+          maxValue: null,
+          defaultValue: const Duration(minutes: 3),
+          resetToDefault: () async {
+            await cache
+                .save<Duration>(AppUserSetting(cache).defaultValue as Duration);
+          },
+          extraCheck: (int timeRangeSeconds) async {
+            //
+            // must be min 3x appSettingBackgroundTrackingInterval
+            Cache cache = Cache.appSettingBackgroundTrackingInterval;
+            int trackingSeconds = (await cache.load<Duration>(
+                    AppUserSetting(cache).defaultValue as Duration))
+                .inSeconds;
+            timeRangeSeconds = math.max(timeRangeSeconds, trackingSeconds * 3);
+            //
+            // recheck autocreate alias duration
+            int minCreateSeconds = timeRangeSeconds * 2;
+            cache = Cache.appSettingAutocreateAliasDuration;
+            int createSeconds = (await cache.load<Duration>(
+                    AppUserSetting(cache).defaultValue as Duration))
+                .inSeconds;
+            if (createSeconds < minCreateSeconds) {
+              await cache.save<Duration>(Duration(seconds: minCreateSeconds));
+            }
+            //
+            // recheck smoothCount
+            cache = Cache.appSettingGpsPointsSmoothCount;
+            int smoothCount = await cache
+                .load<int>(AppUserSetting(cache).defaultValue as int);
+            if (smoothCount > 1) {
+              // if not disabled
+              int maxSmooth = maxSmoothCount(timeRangeSeconds, trackingSeconds);
+              if (smoothCount > maxSmooth) {
+                await cache.save<int>(maxSmooth);
+              }
+            }
+
+            return timeRangeSeconds;
+          },
+        );
+
+      case Cache.appSettingAutocreateAliasDuration:
+        return _appUserSettings[cache] ??= AppUserSetting._option(
+          cache,
+          title: Text('Auto create Alias time period.'),
+          description: Text(
+              'The period after which an alias will be created automatically if none is found. '
+              'The "Status Standing Requires Alias" option must be activated to make it work. '
+              'The system requires at least 2x time as the above "Time Range Threshold" '
+              'and will automatically increase false values if necessary.'),
+          unit: Unit.minute,
+          minValue: 60 * 5, // 5 minutes
+          defaultValue: Duration(seconds: 60 * 15),
+          resetToDefault: () async {
+            await cache
+                .save<Duration>(AppUserSetting(cache).defaultValue as Duration);
+          }, //
+          extraCheck: (int value) async {
+            /// must be at least appSettingTimeRangeTreshold * 2
+            Cache cTimeRange = Cache.appSettingTimeRangeTreshold;
+            int timeRange = (await cTimeRange.load<Duration>(
+                    AppUserSetting(cTimeRange).defaultValue as Duration))
+                .inSeconds;
+            int min = timeRange * 2;
+            if (value < min) {
+              return min;
+            }
+            return value;
+          }, //
+        ); // 15 minutes
+
       case Cache.appSettingGpsPointsSmoothCount:
         return _appUserSettings[cache] ??= AppUserSetting._option(
           cache,
           title: Text('GPS smoothing count'),
           description: Text(
               'Compensates for inaccurate GPS by calculating the average of the given number of GPS points. '
-              'The value 0 deactivates this future'),
+              'The maximum possible number of smooth points is calculated with the '
+              'ceiling of "(Time Range Treshold" / "Background GPS Tracking Interval Duration) -1"'
+              'A value below 2 disables this future.'),
           unit: Unit.piece,
           defaultValue: 3,
           zeroDeactivates: true,
@@ -282,10 +294,12 @@ class AppUserSetting {
             int timeRange = (await cTimeRange.load<Duration>(
                     AppUserSetting(cTimeRange).defaultValue as Duration))
                 .inSeconds;
+            //
             Cache cLookup = Cache.appSettingBackgroundTrackingInterval;
             int lookup = (await cLookup.load<Duration>(
                     AppUserSetting(cLookup).defaultValue as Duration))
                 .inSeconds;
+            //
             int maxCount = (timeRange / lookup).floor() - 1;
             if (value > maxCount) {
               return maxCount;
@@ -294,12 +308,19 @@ class AppUserSetting {
           },
         );
 
+      ///
+      ///
+      ///
+
       case Cache.appSettingBackgroundTrackingEnabled:
         return _appUserSettings[cache] ??= AppUserSetting._option(
           cache,
           title: Text('Activate background GPS tracking'),
           description: Text(
-              'This option is only relevant if the app including the background process has been terminated and is restarted.'),
+              'Please note that the Android System *WILL* put the Background GPS Tracking Future'
+              ' to sleep after a while of user inactivity even if all battery saving options are deactivated. '
+              'So that it is strongly recommended to start the App for at least once at morning to minimize the risk '
+              'the tracking future get stopped by the system.'),
           unit: Unit.option,
           defaultValue: true,
           resetToDefault: () async {
@@ -373,8 +394,7 @@ class AppUserSetting {
         return _appUserSettings[cache] ??= AppUserSetting._option(
           cache,
           title: Text('Use Calender'),
-          description: Text(
-              'Here you can turn the calendar function on or off globally.'),
+          description: Text('General publish to Calendar switch.'),
           unit: Unit.option,
           defaultValue: true,
           resetToDefault: () async {
@@ -385,9 +405,10 @@ class AppUserSetting {
       case Cache.appSettingAutocreateAlias:
         return _appUserSettings[cache] ??= AppUserSetting._option(
           cache,
-          title:
-              Text('Here you can turn the automatic alias creation on or off.'),
-          description: Text(''),
+          title: Text('Auto create Location Alias.'),
+          description: Text(
+              'The App can create a Location Alias for you automatically after a certain time of standing. '
+              ' It also can lookup an Address from OpenStreetMap.com for free, just make sure you have set the lookup permissions below.'),
           unit: Unit.option,
           defaultValue: true,
           resetToDefault: () async {
@@ -438,8 +459,8 @@ class AppUserSetting {
     }
   }
 
-  static int maxSmoothCount(int timeRange, int lookup) {
-    return (timeRange / lookup).floor() - 1;
+  static int maxSmoothCount(int timeRangeSeconds, int trackingSeconds) {
+    return math.max((timeRangeSeconds / trackingSeconds).floor() - 1, 0);
   }
 
   Future<int> pruneInt(String? data) async {

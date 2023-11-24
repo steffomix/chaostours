@@ -133,13 +133,10 @@ class _WidgetOsm extends State<WidgetOsm> {
 
   void onBackgroundLookup(EventOnBackgroundUpdate e) {}
 
-  void onTracking(EventOnForegroundTracking e) {
+  void onTracking(EventOnForegroundTracking e) async {
+    final gps = await GPS.gps();
+    await tracking.track(gps);
     osmTools.renderAlias(mapController);
-    GPS.gps().then(
-      (gps) {
-        tracking.track(gps);
-      },
-    );
   }
 
   Future<void> lookupGps([String? query]) async {

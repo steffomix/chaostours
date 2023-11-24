@@ -85,6 +85,12 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
       await booleanSetting(Cache.appSettingPublishToCalendar),
       divider,
       await integerSetting(Cache.appSettingForegroundUpdateInterval),
+      divider,
+      await integerSetting(Cache.appSettingDistanceTreshold),
+      divider,
+      await integerSetting(Cache.appSettingCacheGpsTime),
+      divider,
+      await settingOsmlookupCondition(),
       Container(
           decoration: BoxDecoration(border: Border.all()),
           margin: const EdgeInsets.all(10),
@@ -93,7 +99,9 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
               const ListTile(
                   title: Text('Tracking calculating settings'),
                   subtitle: Text(
-                      'These Settings depend on each other. The System will auto-correct values if neccecary.')),
+                      'These Settings depend on each other from top to bottom.\n'
+                      'It is strongly recommended to modify the values in that order, because '
+                      'the System will auto-adjust them if neccecary.')),
               divider,
               await integerSetting(Cache.appSettingBackgroundTrackingInterval,
                   onChange: (
@@ -101,20 +109,39 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                       required int value}) async {
                 await BackgroundTracking.stopTracking();
                 await BackgroundTracking.startTracking();
+
+                //valueNotifiers[Cache.appSettingBackgroundTrackingInterval]?.value++;
+                valueNotifiers[Cache.appSettingTimeRangeTreshold]?.value++;
+                valueNotifiers[Cache.appSettingAutocreateAliasDuration]
+                    ?.value++;
+                valueNotifiers[Cache.appSettingGpsPointsSmoothCount]?.value++;
+              }),
+              await integerSetting(Cache.appSettingTimeRangeTreshold, onChange:
+                  (
+                      {required AppUserSetting setting,
+                      required int value}) async {
+                valueNotifiers[Cache.appSettingBackgroundTrackingInterval]
+                    ?.value++;
+                //valueNotifiers[Cache.appSettingTimeRangeTreshold]?.value++;
+                valueNotifiers[Cache.appSettingAutocreateAliasDuration]
+                    ?.value++;
+                valueNotifiers[Cache.appSettingGpsPointsSmoothCount]?.value++;
               }),
               divider,
-              await integerSetting(Cache.appSettingTimeRangeTreshold),
-              divider,
-              await integerSetting(Cache.appSettingAutocreateAliasDuration),
+              await integerSetting(Cache.appSettingAutocreateAliasDuration,
+                  onChange: (
+                      {required AppUserSetting setting,
+                      required int value}) async {
+                valueNotifiers[Cache.appSettingBackgroundTrackingInterval]
+                    ?.value++;
+                valueNotifiers[Cache.appSettingTimeRangeTreshold]?.value++;
+                // valueNotifiers[Cache.appSettingAutocreateAliasDuration]?.value++;
+                valueNotifiers[Cache.appSettingGpsPointsSmoothCount]?.value++;
+              }),
               divider,
               await integerSetting(Cache.appSettingGpsPointsSmoothCount),
             ],
           )),
-      await integerSetting(Cache.appSettingDistanceTreshold),
-      divider,
-      await integerSetting(Cache.appSettingCacheGpsTime),
-      divider,
-      await settingOsmlookupCondition(),
     ]);
     return true;
   }
