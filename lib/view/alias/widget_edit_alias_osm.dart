@@ -442,13 +442,7 @@ class _WidgetOsm extends State<WidgetOsm> {
               createAlias();
               break;
             case 1:
-              logger.log('launch google maps');
-              if (GPS.lastGps != null) {
-                launchGoogleMaps();
-              } else {
-                GPS.gps().then((_) => launchGoogleMaps());
-              }
-
+              launchGoogleMaps();
               break;
             case 2:
               // search for alias

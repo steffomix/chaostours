@@ -13,22 +13,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import 'package:flutter/material.dart';
 
-///
-import 'package:chaostours/view/app_widgets.dart';
-import 'package:chaostours/runtime_data.dart';
+class ValueExpired {
+  dynamic value;
 
-void main() {
-  RuntimeData.widgetsFlutterBinding = WidgetsFlutterBinding.ensureInitialized();
-  runApp(const MyApp());
-}
+  late DateTime _expiredAt;
+  bool get expired => DateTime.now().isAfter(_expiredAt);
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return AppWidgets.materialApp(context);
+  ValueExpired({required this.value, required Duration duration}) {
+    _expiredAt = DateTime.now().add(duration);
   }
 }

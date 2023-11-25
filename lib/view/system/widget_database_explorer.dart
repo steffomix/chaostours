@@ -133,8 +133,8 @@ class _WidgetDatabaseExplorer extends BaseWidgetState<WidgetDatabaseExplorer>
     var cells = <DataCell>[];
     for (var k in row.keys) {
       String v = row[k]?.toString() ?? 'NULL';
-      if (v.length > 40) {
-        v = '${v.substring(0, 20)}...';
+      if (v.length > 100) {
+        v = '${v.substring(0, 100)}...';
       }
       cells.add(DataCell(Text(
         v,

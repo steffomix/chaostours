@@ -431,7 +431,7 @@ class AppUserSetting {
 
       case Cache.appSettingForegroundUpdateInterval:
         return _appUserSettings[cache] ??= AppUserSetting._option(cache,
-            title: Text('Life tracking forground lookup interval'),
+            title: Text('Life tracking foreground lookup interval'),
             description: Text(
                 'The interval period in which the foreground process reloads the measurement data from the background process.'),
             unit: Unit.second,

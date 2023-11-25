@@ -16,6 +16,7 @@ limitations under the License.
 
 import 'package:chaostours/conf/app_colors.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:visibility_detector/visibility_detector.dart';
@@ -51,6 +52,7 @@ class WidgetTrackingPage extends StatefulWidget {
 ///
 
 class _Cache {
+  static final Logger logger = Logger.logger<_Cache>();
   //static GPS? lastTrackpointStanding;
   static List<GPS> gpsPoints = [];
   //static List<GPS> gpsSmoothPoints = [];
@@ -72,6 +74,7 @@ class _Cache {
   //static Location? location;
 
   static Future<bool> reload() async {
+    logger.log('-------reload live tracking cache -------');
     gps = await GPS.gps();
     //location = await Location.location(gps!);
     trackPoint = await ModelTrackPoint.fromCache(gps!);
@@ -120,6 +123,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   /// editable fields
   final _tpNotes = TextEditingController();
 
+  final listener = ValueNotifier<int>(0);
+
   Future<void> render() async {
     if (mounted) {
       setState(() {});
@@ -149,8 +154,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       return;
     }
     logger.log('------ onTracking Status Changed ------');
-    _tpNotes.text = _Cache.notes;
-    //render();
+    _Cache.reload();
+    listener.value++;
   }
 
   ///
@@ -161,7 +166,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     GPS.gps().then((gps) async {
       await logger.log('------ onTracking ------');
       await tracking.track(gps);
-      //render();
+      _Cache.reload();
+      listener.value++;
     });
   }
 
@@ -181,11 +187,17 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     try {
       switch (_Cache.trackingStatus) {
         case TrackingStatus.standing:
-          widget = renderTrackPointStanding();
+          widget = ValueListenableBuilder(
+            valueListenable: listener,
+            builder: (context, value, child) => renderTrackPointStanding(),
+          );
           break;
 
         case TrackingStatus.moving:
-          widget = renderTrackPointMoving();
+          widget = ValueListenableBuilder(
+            valueListenable: listener,
+            builder: (context, value, child) => renderTrackPointMoving(),
+          );
           break;
 
         default:
@@ -222,18 +234,18 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         ],
         onTap: (int id) async {
           switch (id) {
-            case 0: // 2.
+            case 0: // 1.
               Navigator.pushNamed(context, AppRoutes.listTrackpoints.route)
                   .then(
                 (value) => render(),
               );
               break;
-            case 1: // 3.
+            case 1: // 2.
               Navigator.pushNamed(context, AppRoutes.osm.route).then(
                 (value) => render(),
               );
               break;
-            default: // 5.
+            default: //3.
           }
           _bottomBarIndex = id;
           render();

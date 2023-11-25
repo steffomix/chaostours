@@ -20,10 +20,10 @@ import 'package:chaostours/cache.dart';
 import 'package:vector_math/vector_math.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:android_intent_plus/android_intent.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 //
 import 'package:chaostours/conf/app_user_settings.dart';
+import 'package:chaostours/value_expired.dart';
 import 'package:chaostours/logger.dart';
 
 const earthRadius = 6378137.0;
@@ -142,10 +142,10 @@ class GpsArea {
 class GPS {
   static Logger logger = Logger.logger<GPS>();
 
-  static GPS? lastGps;
-  static int _nextId = 0;
-  final int _id = ++_nextId;
-  int get id => _id;
+  static Duration defaultCacheDuration =
+      AppUserSetting(Cache.appSettingCacheGpsTime).defaultValue as Duration;
+  static ValueExpired _cachedGps =
+      ValueExpired(value: null, duration: Duration.zero);
   DateTime time = DateTime.now();
   double lat;
   double lon;
@@ -153,14 +153,14 @@ class GPS {
   GPS(this.lat, this.lon);
 
   static Future<GPS> gps() async {
-    try {
-      if (!(await Permission.location.isGranted)) {
-        await Permission.location.request();
-      }
-
-      var defaultValue =
-          AppUserSetting(Cache.appSettingCacheGpsTime).defaultValue as Duration;
-      var dur = await Cache.appSettingCacheGpsTime.load<Duration>(defaultValue);
+    if (_cachedGps.expired) {
+      _cachedGps = ValueExpired(
+          value: _gps(),
+          duration: await Cache.appSettingCacheGpsTime
+              .load<Duration>(defaultCacheDuration));
+    }
+    return await _cachedGps.value as GPS;
+    /*
       bool cacheOutdated =
           lastGps?.time.add(dur).isBefore(DateTime.now()) ?? true;
       if (cacheOutdated) {
@@ -176,6 +176,7 @@ class GPS {
       logger.error('get GPS: $e', stk);
       return await _gps();
     }
+    */
   }
 
   static Future<GPS> _gps() async {
@@ -185,15 +186,19 @@ class GPS {
 
   @override
   String toString() {
-    return '$lat,$lon';
+    return '$lat,$lon;${time.toIso8601String()}';
   }
 
   /// inverse of GPS.toString()
   static GPS toObject(String row) {
-    List<String> p = row.split(',');
-    double lat = double.parse(p[0]);
-    double lon = double.parse(p[1]);
-    return GPS(lat, lon);
+    List<String> parts = row.split(';');
+    var gpsParts = parts[0].split(',');
+    double lat = double.parse(gpsParts[0]);
+    double lon = double.parse(gpsParts[1]);
+    var time = DateTime.parse(gpsParts[1]);
+    var gps = GPS(lat, lon);
+    gps.time = time;
+    return gps;
   }
 
   static GPS average(List<GPS> gpsList) {

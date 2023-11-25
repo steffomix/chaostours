@@ -28,18 +28,7 @@ import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_user.dart';
-
-class _Expire {
-  final dynamic value;
-
-  final Duration duration;
-  late DateTime _expiredAt;
-  bool get expired => DateTime.now().isAfter(_expiredAt);
-
-  _Expire({required this.value, required this.duration}) {
-    _expiredAt = DateTime.now().add(duration);
-  }
-}
+import 'package:chaostours/value_expired.dart';
 
 enum Cache {
   /// trigger off == TrackingStatus.none
@@ -100,21 +89,21 @@ enum Cache {
   Future<T> load<T>(T fallback) async {
     if (_cache[this]?.expired ?? true) {
       var value = await CacheTypeAdapter.getValue<T>(this, fallback);
-      _cache[this] = _Expire(value: value, duration: expireAfter);
+      _cache[this] = ValueExpired(value: value, duration: expireAfter);
       return value;
     }
-    return (_cache[this] ??= _Expire(
+    return (_cache[this] ??= ValueExpired(
             value: await CacheTypeAdapter.getValue<T>(this, fallback),
             duration: expireAfter))
         .value as T;
   }
 
   Future<T> save<T>(T value) async {
-    _cache.addAll({this: _Expire(value: value, duration: expireAfter)});
+    _cache.addAll({this: ValueExpired(value: value, duration: expireAfter)});
     return await CacheTypeAdapter.setValue<T>(this, value);
   }
 
-  static final Map<Cache, _Expire> _cache = {};
+  static final Map<Cache, ValueExpired> _cache = {};
 
   final Type cacheType;
   final Duration expireAfter;

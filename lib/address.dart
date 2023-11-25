@@ -144,7 +144,7 @@ class Address {
     var url = Uri.https('nominatim.openstreetmap.org', '/reverse',
         {'lat': gps.lat.toString(), 'lon': gps.lon.toString()});
     http.Response response = await http.get(url);
-    logger.log('OpenStreetMap reverse lookup for gps #${gps.id} at $gps');
+    logger.log('OpenStreetMap reverse lookup for gps at $gps');
     return response;
   }
 }

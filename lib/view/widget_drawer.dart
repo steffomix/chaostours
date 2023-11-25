@@ -39,6 +39,7 @@ class _Element {
   final String title;
   final String description;
   final AppRoutes route;
+  final dynamic routeArguments;
   final _MenuType type;
   final Widget widget;
 
@@ -46,6 +47,7 @@ class _Element {
       {required this.title,
       this.description = '',
       required this.route,
+      this.routeArguments,
       required this.type,
       required this.widget});
 
@@ -57,7 +59,7 @@ class _Element {
           subtitle: Text(description,
               style: TextStyle(color: Theme.of(context).hintColor)),
           onTap: () {
-            AppWidgets.navigate(context, route);
+            AppWidgets.navigate(context, route, routeArguments);
           },
         );
 
@@ -82,7 +84,11 @@ class _Element {
 }
 
 class _Menu extends _Element {
-  _Menu({required super.title, super.description, required super.route})
+  _Menu(
+      {required super.title,
+      super.description,
+      required super.route,
+      super.routeArguments})
       : super(type: _MenuType.menu, widget: const Text(''));
 }
 
@@ -184,7 +190,8 @@ class _WidgetDrawer extends State<WidgetDrawer> {
         title: 'Permissions',
         description:
             'This App needs tons of permissions to unfold its full potential.',
-        route: AppRoutes.permissions),
+        route: AppRoutes.welcome,
+        routeArguments: ''),
     _Divider(),
     _Header(
         title: 'App Backstage',

@@ -16,15 +16,25 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import 'package:chaostours/app_loader.dart';
-import 'package:chaostours/conf/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:app_settings/app_settings.dart';
+import 'dart:io' as io;
+import 'package:flutter/services.dart';
 
 ///
+import 'package:chaostours/conf/app_routes.dart';
+import 'package:chaostours/address.dart';
+import 'package:chaostours/cache.dart';
+import 'package:chaostours/conf/app_user_settings.dart';
+import 'package:chaostours/gps.dart';
+import 'package:chaostours/model/model_alias.dart';
+import 'package:chaostours/tracking.dart';
+import 'package:chaostours/logger.dart';
+import 'package:chaostours/database.dart';
+import 'package:chaostours/runtime_data.dart';
 import 'package:chaostours/view/app_widgets.dart';
 //import 'package:chaostours/logger.dart';
-import 'package:chaostours/tracking.dart';
 
 class Welcome extends StatefulWidget {
   const Welcome({super.key});
@@ -34,7 +44,7 @@ class Welcome extends StatefulWidget {
 }
 
 class _WelcomeState extends State<Welcome> {
-  //static final Logger logger = Logger.logger<AppInit>();
+  static final Logger logger = Logger.logger<Welcome>();
 
   bool preloadSuccess = false;
 
@@ -58,35 +68,173 @@ class _WelcomeState extends State<Welcome> {
   Widget divider = AppWidgets.divider();
   Widget empty = AppWidgets.empty;
 
-  Future<void> requestAllPermissions() async {
+  Future<void> requestLocation() async {
+    var service = await Permission.location.serviceStatus;
+    if (service.isDisabled) {
+      if (mounted) {
+        await AppWidgets.dialog(context: context, contents: [
+          const Text(
+              'Your GPS Service seems to be disabled. Please enable your GPS Service first.')
+        ], buttons: [
+          TextButton(
+            child: const Text('Cancel'),
+            onPressed: () {},
+          ),
+          TextButton(
+            child: const Text('OK'),
+            onPressed: () async {
+              await AppSettings.openAppSettings(type: AppSettingsType.location);
+              if (mounted) {
+                Navigator.pop(context);
+              }
+            },
+          )
+        ]);
+      }
+    }
     await Permission.location.request();
-    await Permission.locationAlways.request();
-    await Permission.ignoreBatteryOptimizations.request();
-    await Permission.storage.request();
-    await Permission.manageExternalStorage.request();
-    await Permission.notification.request();
-    await Permission.calendar.request();
+    var status = await Permission.locationAlways.request();
+    if ((status.isDenied || status.isPermanentlyDenied) && mounted) {
+      await AppWidgets.dialog(context: context, contents: [
+        const Text(
+            'Oops, something went wrong on request access for GPS!\nPlease grant access to "GPS Always" in your App Settings directly.')
+      ], buttons: [
+        TextButton(
+          child: const Text('Cancel'),
+          onPressed: () {},
+        ),
+        TextButton(
+          child: const Text('OK'),
+          onPressed: () async {
+            await AppSettings.openAppSettings(type: AppSettingsType.settings);
+            if (mounted) {
+              Navigator.pop(context);
+            }
+          },
+        )
+      ]);
+    }
   }
 
-  Future<bool> checkAllPermissions() async {
+  Future<void> requestBatteryOptimization() async {
+    if (await Permission.ignoreBatteryOptimizations.isPermanentlyDenied) {
+      await AppSettings.openAppSettings(
+          type: AppSettingsType.batteryOptimization);
+    } else {
+      await Permission.ignoreBatteryOptimizations.request();
+    }
+  }
+
+  Future<void> requestStorage() async {
+    if (await Permission.storage.isPermanentlyDenied) {
+      await AppSettings.openAppSettings(type: AppSettingsType.internalStorage);
+    } else {
+      await Permission.storage.request();
+    }
+  }
+
+  Future<void> requestExternalStorage() async {
+    if (await Permission.manageExternalStorage.isPermanentlyDenied) {
+      await dialogPermissionRequest('Manage external Storage');
+    } else {
+      await Permission.manageExternalStorage.request();
+    }
+  }
+
+  Future<void> requestNotification() async {
+    if (await Permission.notification.isPermanentlyDenied) {
+      await AppSettings.openAppSettings(type: AppSettingsType.notification);
+    } else {
+      await Permission.notification.request();
+    }
+  }
+
+  Future<void> requestCalendar() async {
+    if (await Permission.calendar.isPermanentlyDenied) {
+      await dialogPermissionRequest('Calendar Access');
+    } else {
+      await Permission.calendar.request();
+    }
+  }
+
+  Future<void> requestAllPermissions() async {
+    await requestLocation();
+    await requestBatteryOptimization();
+    await requestStorage();
+    await requestExternalStorage();
+    await requestNotification();
+    await requestCalendar();
+  }
+
+  Future<void> dialogPermissionRequest(String permission) async {
+    await AppWidgets.dialog(context: context, contents: [
+      Text(
+          'You have permanently denied permission "$permission", so that it is impossible to request this permission from within the app. '
+          'However, you can still access the general app settings page from here. ')
+    ], buttons: [
+      TextButton(
+        child: const Text('Cancel'),
+        onPressed: () async {
+          await AppSettings.openAppSettings(type: AppSettingsType.settings);
+          if (mounted) {
+            Navigator.pop(context);
+          }
+        },
+      ),
+      TextButton(
+        child: const Text('App Settings'),
+        onPressed: () {},
+      )
+    ]);
+  }
+
+  Future<bool> checkAllRequiredPermissions() async {
     bool granted = false;
     try {
       granted = (permissionLocationIsGranted =
-              await Permission.location.isGranted) &&
-          (permissionLocationAlwaysIsGranted =
-              await Permission.locationAlways.isGranted) &&
-          (permissionIgnoreBatteryOptimizationsIsGranted =
-              await Permission.ignoreBatteryOptimizations.isGranted) &&
+                  await Permission.location.isGranted) &&
+              (permissionLocationAlwaysIsGranted =
+                  await Permission.locationAlways.isGranted) &&
+              (permissionIgnoreBatteryOptimizationsIsGranted =
+                  await Permission.ignoreBatteryOptimizations.isGranted)
+          /* &&
           (permissionManageExternalStorageIsGranted =
               await Permission.manageExternalStorage.isGranted) &&
           (permissionNotificationIsGranted =
               await Permission.notification.isGranted) &&
-          (permissionCalendarIsGranted = await Permission.calendar.isGranted);
+          (permissionCalendarIsGranted = await Permission.calendar.isGranted)*/
+          ;
     } catch (e) {
       // ignore
     }
 
-    preloadSuccess = await AppLoader.preload;
+    try {
+      isTracking = await BackgroundTracking.isTracking();
+    } catch (e) {
+      isTracking = false;
+    }
+    return granted && isTracking;
+  }
+
+  Future<bool> checkAllOptionalPermissions() async {
+    bool granted = false;
+    try {
+      granted = /* (permissionLocationIsGranted =
+              await Permission.location.isGranted) &&
+          (permissionLocationAlwaysIsGranted =
+              await Permission.locationAlways.isGranted) &&
+          (permissionIgnoreBatteryOptimizationsIsGranted =
+              await Permission.ignoreBatteryOptimizations.isGranted) && */
+          (permissionManageExternalStorageIsGranted =
+                  await Permission.manageExternalStorage.isGranted) &&
+              (permissionNotificationIsGranted =
+                  await Permission.notification.isGranted) &&
+              (permissionCalendarIsGranted =
+                  await Permission.calendar.isGranted);
+    } catch (e) {
+      // ignore
+    }
+
     try {
       isTracking = await BackgroundTracking.isTracking();
     } catch (e) {
@@ -98,6 +246,22 @@ class _WelcomeState extends State<Welcome> {
   @override
   void initState() {
     super.initState();
+    if (preloadFinished) {
+      return;
+    }
+    preload().then(
+      (_) async {
+        await Future.delayed(const Duration(seconds: 1));
+        preloadFinished = true;
+        Future.delayed(const Duration(milliseconds: 200), () => render());
+      },
+    );
+  }
+
+  void render() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   void renderItems() {
@@ -147,7 +311,7 @@ class _WelcomeState extends State<Welcome> {
           trailing: IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
-              Permission.location.request().then(
+              requestLocation().then(
                 (_) {
                   setState(() {});
                 },
@@ -163,7 +327,7 @@ class _WelcomeState extends State<Welcome> {
           trailing: IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
-              Permission.locationAlways.request().then(
+              requestLocation().then(
                 (_) {
                   setState(() {});
                 },
@@ -180,7 +344,7 @@ class _WelcomeState extends State<Welcome> {
           trailing: IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
-              Permission.ignoreBatteryOptimizations.request().then(
+              requestBatteryOptimization().then(
                 (_) {
                   setState(() {});
                 },
@@ -189,14 +353,14 @@ class _WelcomeState extends State<Welcome> {
           )));
     }
     if (!permissionNotificationIsGranted) {
-      permissionItemsRequired.add(ListTile(
+      permissionItemsOptional.add(ListTile(
           title: const Text('Anzeige von App-Meldungen.'),
           subtitle: const Text(
               'Wird benötigt wenn sie über Statuswechsel informiert werden wollen.'),
           trailing: IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
-              Permission.notification.request().then(
+              requestLocation().then(
                 (_) {
                   setState(() {});
                 },
@@ -213,7 +377,7 @@ class _WelcomeState extends State<Welcome> {
           trailing: IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
-              Permission.manageExternalStorage.request().then(
+              requestExternalStorage().then(
                 (_) {
                   setState(() {});
                 },
@@ -229,7 +393,7 @@ class _WelcomeState extends State<Welcome> {
           trailing: IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
-              Permission.calendar.request().then(
+              requestCalendar().then(
                 (_) {
                   setState(() {});
                 },
@@ -249,16 +413,36 @@ class _WelcomeState extends State<Welcome> {
         child: Text(text, style: const TextStyle(fontSize: 20, height: 2)));
   }
 
+  static bool preloadFinished = false;
+  static List<Widget> preloadMessages = [];
+  Future<void> addPreloadMessage(Widget message) async {
+    preloadMessages.add(message);
+    render();
+    await Future.delayed(const Duration(milliseconds: 200));
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (!preloadFinished) {
+      return AppWidgets.scaffold(
+        context,
+        title: 'Initialize Chaos Tours...',
+        body: ListView(
+          children: [...preloadMessages],
+        ),
+      );
+    }
     return AppWidgets.scaffold(context,
+        title: 'Chaos Tours Permission check',
         body: FutureBuilder<bool>(
-          future: checkAllPermissions(),
+          future: checkAllRequiredPermissions(),
           builder: (context, snapshot) {
             Widget? loading = AppWidgets.checkSnapshot(context, snapshot);
             if (loading == null) {
               final permissionsOk = snapshot.data!;
-              if (permissionsOk) {
+              final bool stop =
+                  ModalRoute.of(context)?.settings.arguments != null;
+              if (permissionsOk && !stop) {
                 Future.delayed(
                     const Duration(milliseconds: 500),
                     () => Navigator.pushNamed(
@@ -305,5 +489,98 @@ class _WelcomeState extends State<Welcome> {
                 })());
           },
         ));
+  }
+
+  ///
+  /// preload recources
+  Future<bool> preload() async {
+    try {
+      Logger.globalLogLevel = LogLevel.verbose;
+      await addPreloadMessage(const Text('Start Initialization...'));
+
+      //
+      await addPreloadMessage(const Text('Open Database...'));
+      await DB.openDatabase(create: true);
+      await addPreloadMessage(const Text('Database opened'));
+
+      var count = await ModelAlias.count();
+      if (count == 0) {
+        await addPreloadMessage(const Text('Initalize user settings'));
+
+        await AppUserSetting.resetAllToDefault();
+
+        await addPreloadMessage(const Text('Create initial alias'));
+        try {
+          if (!await Permission.location.isGranted) {
+            await requestLocation();
+            if (!await Permission.location.isGranted) {
+              await requestLocation();
+              await addPreloadMessage(const Text(
+                  'This app is based on GPS location tracking. '
+                  '\nTherefore you should at least grant some GPS location permissions.'));
+            }
+          }
+          GPS gps = await GPS.gps();
+          await ModelAlias(
+                  gps: gps,
+                  lastVisited: DateTime.now(),
+                  title: (await Address(gps).lookupAddress()).toString(),
+                  description: 'Initial Alias created by System on first run.'
+                      '\nFeel free to change it for your needs.')
+              .insert();
+        } catch (e) {
+          await addPreloadMessage(const Text(
+              'Create initial location alias failed. No GPS Permissions granted?'));
+        }
+      }
+
+      //
+      await addPreloadMessage(const Text('Load Web SSL key'));
+      await webKey();
+
+      //
+      if (await Cache.appSettingBackgroundTrackingEnabled.load<bool>(true)) {
+        await addPreloadMessage(const Text('Start background tracking'));
+        await BackgroundTracking.startTracking();
+      }
+
+      // init and start app tickers
+      await addPreloadMessage(const Text('Start foreground interval'));
+      RuntimeData();
+
+      await addPreloadMessage(const Text('Check Permissions...'));
+
+      bool perm = await checkAllRequiredPermissions();
+      if (perm) {
+        preloadFinished = true;
+        if (mounted) {
+          Navigator.popAndPushNamed(context, AppRoutes.liveTracking.route);
+        }
+      }
+    } catch (e, stk) {
+      await addPreloadMessage(ListTile(
+          title: Text('Initialization Error $e'),
+          subtitle: Text(stk.toString())));
+      logger.fatal('Initialization Error $e', stk);
+      return false;
+    }
+
+    // init and start app tickers
+    RuntimeData();
+
+    logger.important('Preload sequence finished without errors');
+    return true;
+  }
+
+  ///
+  /// load ssh key for https connections
+  /// add cert for https requests you can download here:
+  /// https://letsencrypt.org/certs/lets-encrypt-r3.pem
+  static Future<void> webKey() async {
+    ByteData data =
+        await PlatformAssetBundle().load('assets/lets-encrypt-r3.pem');
+    io.SecurityContext.defaultContext
+        .setTrustedCertificatesBytes(data.buffer.asUint8List());
+    logger.log('SSL Key loaded');
   }
 }

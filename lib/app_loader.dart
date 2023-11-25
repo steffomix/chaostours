@@ -37,6 +37,7 @@ class AppLoader {
   ///
   /// preload recources
   static Future<bool> _preloadApp() async {
+    return false;
     try {
       Logger.globalLogLevel = LogLevel.verbose;
       logger.important('start Preload sequence...');
