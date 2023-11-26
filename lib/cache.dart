@@ -41,6 +41,7 @@ enum Cache {
 
   // background task
   backgroundLastTick(DateTime),
+  backgroundTickList(List<DateTime>),
 
   /// status change events
   backgroundGpsStartMoving(GPS),
@@ -153,6 +154,15 @@ class CacheTypeAdapter {
 
   static List<GPS>? deserializeGpsList(List<String>? list) {
     return list == null ? [] : list.map((e) => GPS.toObject(e)).toList();
+  }
+
+  /// DateTime list
+  static List<String> serializeDateTimeList(List<DateTime> gpsList) {
+    return gpsList.map((e) => e.toIso8601String()).toList();
+  }
+
+  static List<DateTime>? deserializeDateTimeList(List<String>? list) {
+    return list == null ? [] : list.map((e) => DateTime.parse(e)).toList();
   }
 
   /// GPS
@@ -269,9 +279,12 @@ class CacheTypeAdapter {
           await DbCache.setString(key, serializeGps(value as GPS));
           break;
         case const (List<GPS>):
-          logger.log('save GPS List with ${(value as List<GPS>?)?.length}');
           await DbCache.setStringList(
               key, serializeGpsList(value as List<GPS>));
+          break;
+        case const (List<DateTime>):
+          await DbCache.setStringList(
+              key, serializeDateTimeList(value as List<DateTime>));
           break;
         case TrackingStatus:
           await DbCache.setString(
@@ -359,6 +372,10 @@ class CacheTypeAdapter {
               defaultValue;
         case const (List<GPS>):
           return deserializeGpsList(await DbCache.getStringList(key)) as T? ??
+              defaultValue;
+        case const (List<DateTime>):
+          return deserializeDateTimeList(await DbCache.getStringList(key))
+                  as T? ??
               defaultValue;
         case TrackingStatus:
           return deserializeTrackingStatus(await DbCache.getString(key))

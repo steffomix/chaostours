@@ -54,6 +54,8 @@ class WidgetTrackingPage extends StatefulWidget {
 class _Cache {
   static final Logger logger = Logger.logger<_Cache>();
   static DateTime lastBackgroundTick = DateTime.now();
+  static List<DateTime> tickList = [];
+  static Duration averageDuration = Duration.zero;
   //static GPS? lastTrackpointStanding;
   static List<GPS> gpsPoints = [];
   //static List<GPS> gpsSmoothPoints = [];
@@ -80,6 +82,22 @@ class _Cache {
 
     lastBackgroundTick =
         await Cache.backgroundLastTick.load<DateTime>(DateTime.now());
+
+    tickList = await Cache.backgroundTickList.load<List<DateTime>>([]);
+
+    List<int> seconds = [];
+    if (tickList.length > 1) {
+      var last = tickList.removeLast();
+      while (tickList.isNotEmpty) {
+        var next = tickList.removeLast();
+        seconds.add(last.difference(next).abs().inMilliseconds);
+        last = next;
+      }
+      averageDuration = Duration(
+          milliseconds:
+              (seconds.reversed.reduce((a, b) => a + b) / seconds.length)
+                  .round());
+    }
 
     //location = await Location.location(gps!);
     trackPoint = await ModelTrackPoint.fromCache(gps!);
@@ -420,8 +438,11 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       ),
       divider,
       ListTile(
-          title: Text(
-              'Last Tick before ${_Cache.lastBackgroundTick.difference(DateTime.now()).abs().inMilliseconds} ms.')),
+        title: Text(
+            'Last Tick before ${_Cache.lastBackgroundTick.difference(DateTime.now()).abs().inMilliseconds} ms.'),
+        subtitle: Text(
+            'Average seconds: ${_Cache.averageDuration.inMilliseconds / 1000}'),
+      ),
       divider,
       dropdownTasks(),
       divider,

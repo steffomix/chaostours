@@ -94,6 +94,9 @@ class _WelcomeState extends State<Welcome> {
       }
     }
     await Permission.location.request();
+  }
+
+  Future<void> requestLocationAlways() async {
     var status = await Permission.locationAlways.request();
     if ((status.isDenied || status.isPermanentlyDenied) && mounted) {
       await AppWidgets.dialog(context: context, contents: [
@@ -108,6 +111,7 @@ class _WelcomeState extends State<Welcome> {
           child: const Text('OK'),
           onPressed: () async {
             await AppSettings.openAppSettings(type: AppSettingsType.settings);
+            await Permission.locationAlways.request();
             if (mounted) {
               Navigator.pop(context);
             }
@@ -160,6 +164,7 @@ class _WelcomeState extends State<Welcome> {
 
   Future<void> requestAllPermissions() async {
     await requestLocation();
+    await requestLocationAlways();
     await requestBatteryOptimization();
     await requestStorage();
     await requestExternalStorage();
@@ -516,8 +521,9 @@ class _WelcomeState extends State<Welcome> {
         /// UserSettings initialize
         await AppUserSetting.resetAllToDefault();
 
-        await addPreloadMessage(
-            const Text('Request GPS and Background GPS permissions.'));
+        await addPreloadMessage(const Text('Request GPS permission'));
+        await requestLocation();
+
         try {
           if (!await Permission.location.isGranted) {
             await requestLocation();
@@ -539,6 +545,25 @@ class _WelcomeState extends State<Welcome> {
                   description: 'Initial Alias created by System on first run.'
                       '\nFeel free to change it for your needs.')
               .insert();
+
+          if (!(await Permission.locationAlways.isGranted) && mounted) {
+            await AppWidgets.dialog(context: context, contents: [
+              const Text(
+                  'For Background GPS Tracking the app need GPS permission "Always". '
+                  'Please tap OK to get to the permission request.')
+            ], buttons: [
+              TextButton(
+                child: const Text('OK'),
+                onPressed: () async {
+                  await requestLocationAlways();
+                  if (await Permission.locationAlways.isGranted && mounted) {
+                    Navigator.pop(context);
+                  }
+                },
+              )
+            ]);
+          }
+          await requestLocationAlways();
 
           await addPreloadMessage(
               const Text('Execute first background tracking from foreground'));

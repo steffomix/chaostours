@@ -72,11 +72,11 @@ class BackgroundTracking {
     await BackgroundLocationTrackerManager.stopTracking();
     await Future.delayed(const Duration(seconds: 1));
     var config = await _androidConfig();
-    /*
+
     await BackgroundLocationTrackerManager.initialize(backgroundCallback,
         config: BackgroundLocationTrackerConfig(
             loggingEnabled: false, androidConfig: config));
-            */
+
     await BackgroundLocationTrackerManager.startTracking(config: config);
   }
 
@@ -124,8 +124,15 @@ class _TrackPoint {
   //DataBridge bridge = DataBridge.instance;
 
   Future<void> track({required double lat, required double lon}) async {
+    // gather info and stats
     if (logger.realm == LoggerRealm.background) {
       await Cache.backgroundLastTick.save<DateTime>(DateTime.now());
+      var tickList = await Cache.backgroundTickList.load<List<DateTime>>([]);
+      tickList.insert(0, DateTime.now());
+      while (tickList.length > 10) {
+        tickList.removeLast();
+      }
+      await Cache.backgroundTickList.save<List<DateTime>>(tickList);
     }
 
     /// create gpsPoint
