@@ -29,6 +29,7 @@ import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/value_expired.dart';
+import 'package:geolocator/geolocator.dart';
 
 enum Cache {
   /// trigger off == TrackingStatus.none
@@ -78,6 +79,7 @@ enum Cache {
   appSettingForegroundUpdateInterval(Duration, Duration(days: 365)),
   appSettingOsmLookupCondition(OsmLookupConditions, Duration(days: 365)),
   appSettingCacheGpsTime(Duration, Duration(days: 365)),
+  appSettingLocationAccuracy(LocationAccuracy, Duration(days: 365)),
   appSettingDistanceTreshold(int, Duration(days: 365)),
   appSettingTimeRangeTreshold(Duration, Duration(days: 365)),
   appSettingBackgroundTrackingInterval(Duration, Duration(days: 365)),
@@ -92,10 +94,7 @@ enum Cache {
       _cache[this] = ValueExpired(value: value, duration: expireAfter);
       return value;
     }
-    return (_cache[this] ??= ValueExpired(
-            value: await CacheTypeAdapter.getValue<T>(this, fallback),
-            duration: expireAfter))
-        .value as T;
+    return _cache[this]!.value as T;
   }
 
   Future<T> save<T>(T value) async {
@@ -123,10 +122,6 @@ enum Cache {
 
 class CacheTypeAdapter {
   static final Logger logger = Logger.logger<CacheTypeAdapter>();
-
-  CacheTypeAdapter._();
-  static CacheTypeAdapter? _instance;
-  factory CacheTypeAdapter() => _instance ??= CacheTypeAdapter._();
 
   /// intList
   static List<String> serializeIntList(List<int> list) =>
@@ -223,6 +218,11 @@ class CacheTypeAdapter {
       : OsmLookupConditions.values.byName(osm);
 
   /// OSMLookup
+  static String serializeLocationAccuracy(LocationAccuracy o) => o.name;
+  static LocationAccuracy? deserializeLocationAccuracy(String? acc) =>
+      acc == null ? LocationAccuracy.best : LocationAccuracy.values.byName(acc);
+
+  /// OSMWeekdays
   static String serializeWeekdays(Weekdays o) => o.name;
   static Weekdays? deserializeWeekdays(String? osm) =>
       osm == null ? Weekdays.mondayFirst : Weekdays.values.byName(osm);
@@ -300,6 +300,10 @@ class CacheTypeAdapter {
         case OsmLookupConditions:
           await DbCache.setString(
               key, serializeOsmLookup(value as OsmLookupConditions));
+          break;
+        case LocationAccuracy:
+          await DbCache.setString(
+              key, serializeLocationAccuracy(value as LocationAccuracy));
           break;
         case Weekdays:
           await DbCache.setString(key, serializeWeekdays(value as Weekdays));
@@ -382,6 +386,10 @@ class CacheTypeAdapter {
               defaultValue;
         case OsmLookupConditions:
           return deserializeOsmLookup(await DbCache.getString(key)) as T? ??
+              defaultValue;
+        case LocationAccuracy:
+          return deserializeLocationAccuracy(await DbCache.getString(key))
+                  as T? ??
               defaultValue;
         case Weekdays:
           return deserializeWeekdays(await DbCache.getString(key)) as T? ??

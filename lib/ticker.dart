@@ -59,8 +59,8 @@ class Ticker {
                 'appTick ${DateTime.now().toIso8601String()} failed: $e', stk);
           }
           var duration = await getDuration();
-          if (duration.inSeconds < 3) {
-            await Future.delayed(Duration(seconds: 3 - duration.inSeconds));
+          if (duration.inSeconds < 1) {
+            await Future.delayed(const Duration(seconds: 1));
           }
           await Future.delayed(duration);
         }

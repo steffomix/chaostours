@@ -73,6 +73,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
     _renderedWidgets.addAll([
       await booleanSetting(Cache.appSettingBackgroundTrackingEnabled, onChange:
           ({required AppUserSetting setting, required bool value}) async {
+        await BackgroundTracking.stopTracking();
         value
             ? await BackgroundTracking.startTracking()
             : await BackgroundTracking.stopTracking();

@@ -48,17 +48,19 @@ void backgroundCallback() {
 }
 
 class BackgroundTracking {
+  static Logger logger = Logger.logger<BackgroundTracking>();
+
   static Future<AndroidConfig> _androidConfig() async {
     var interval = await Cache.appSettingBackgroundTrackingInterval
         .load<Duration>(const Duration(seconds: 30));
     return AndroidConfig(
-        channelName: 'Chaos Tours Unlimited Background Tracking',
+        channelName: 'Chaos Tours Tracking',
         notificationBody:
             'Background Tracking running, tap to open Chaos Tours App.',
-        notificationIcon: 'drawable/explore',
+        notificationIcon: '@ic_launcher',
         enableNotificationLocationUpdates: false,
         cancelTrackingActionText: 'Stop Tracking',
-        enableCancelTrackingAction: true,
+        enableCancelTrackingAction: false,
         trackingInterval: interval);
   }
 
@@ -67,24 +69,26 @@ class BackgroundTracking {
   }
 
   static Future<void> startTracking() async {
-    if (!await isTracking()) {
-      await initialize();
-      await BackgroundLocationTrackerManager.startTracking(
-          config: await _androidConfig());
-    }
+    await BackgroundLocationTrackerManager.stopTracking();
+    await Future.delayed(const Duration(seconds: 1));
+    var config = await _androidConfig();
+    /*
+    await BackgroundLocationTrackerManager.initialize(backgroundCallback,
+        config: BackgroundLocationTrackerConfig(
+            loggingEnabled: false, androidConfig: config));
+            */
+    await BackgroundLocationTrackerManager.startTracking(config: config);
   }
 
   static Future<void> stopTracking() async {
-    if (await isTracking()) {
-      await BackgroundLocationTrackerManager.stopTracking();
-    }
+    await BackgroundLocationTrackerManager.stopTracking();
   }
 
   ///
   static Future<void> initialize() async {
     await BackgroundLocationTrackerManager.initialize(backgroundCallback,
         config: BackgroundLocationTrackerConfig(
-            androidConfig: await _androidConfig()));
+            loggingEnabled: false, androidConfig: await _androidConfig()));
   }
 }
 
@@ -120,6 +124,10 @@ class _TrackPoint {
   //DataBridge bridge = DataBridge.instance;
 
   Future<void> track({required double lat, required double lon}) async {
+    if (logger.realm == LoggerRealm.background) {
+      await Cache.backgroundLastTick.save<DateTime>(DateTime.now());
+    }
+
     /// create gpsPoint
     GPS gps = GPS(lat, lon);
 
@@ -450,9 +458,7 @@ class _TrackPoint {
       }
     }
 
-    await Cache.backgroundLastTick.save<DateTime>(DateTime.now());
-
-    await (Future.delayed(const Duration(seconds: 1)));
+    //await (Future.delayed(const Duration(seconds: 1)));
   }
 
   Future<TrackingStatus> cacheNewStatusStanding(GPS gps) async {

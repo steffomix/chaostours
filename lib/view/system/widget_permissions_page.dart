@@ -138,7 +138,6 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
             if (isTracking) {
               await BackgroundTracking.stopTracking();
             } else {
-              await BackgroundTracking.initialize();
               await BackgroundTracking.startTracking();
             }
             await _permissionItems();

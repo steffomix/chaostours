@@ -34,6 +34,7 @@ import 'package:chaostours/logger.dart';
 import 'package:chaostours/database.dart';
 import 'package:chaostours/runtime_data.dart';
 import 'package:chaostours/view/app_widgets.dart';
+import 'package:chaostours/tracking.dart' as tracking;
 //import 'package:chaostours/logger.dart';
 
 class Welcome extends StatefulWidget {
@@ -243,6 +244,11 @@ class _WelcomeState extends State<Welcome> {
     return granted && isTracking;
   }
 
+  Future<bool> checkAllPermissions() async {
+    return await checkAllRequiredPermissions() &&
+        await checkAllOptionalPermissions();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -285,7 +291,6 @@ class _WelcomeState extends State<Welcome> {
                 await BackgroundTracking.stopTracking();
                 setState(() {});
               } else {
-                await BackgroundTracking.initialize();
                 await BackgroundTracking.startTracking();
                 setState(() {});
               }
@@ -435,7 +440,7 @@ class _WelcomeState extends State<Welcome> {
     return AppWidgets.scaffold(context,
         title: 'Chaos Tours Permission check',
         body: FutureBuilder<bool>(
-          future: checkAllRequiredPermissions(),
+          future: checkAllPermissions(),
           builder: (context, snapshot) {
             Widget? loading = AppWidgets.checkSnapshot(context, snapshot);
             if (loading == null) {
@@ -500,6 +505,7 @@ class _WelcomeState extends State<Welcome> {
 
       //
       await addPreloadMessage(const Text('Open Database...'));
+      // open database
       await DB.openDatabase(create: true);
       await addPreloadMessage(const Text('Database opened'));
 
@@ -507,9 +513,11 @@ class _WelcomeState extends State<Welcome> {
       if (count == 0) {
         await addPreloadMessage(const Text('Initalize user settings'));
 
+        /// UserSettings initialize
         await AppUserSetting.resetAllToDefault();
 
-        await addPreloadMessage(const Text('Create initial alias'));
+        await addPreloadMessage(
+            const Text('Request GPS and Background GPS permissions.'));
         try {
           if (!await Permission.location.isGranted) {
             await requestLocation();
@@ -520,7 +528,10 @@ class _WelcomeState extends State<Welcome> {
                   '\nTherefore you should at least grant some GPS location permissions.'));
             }
           }
+
+          await addPreloadMessage(const Text('Lookup GPS'));
           GPS gps = await GPS.gps();
+          await addPreloadMessage(const Text('Create initial alias'));
           await ModelAlias(
                   gps: gps,
                   lastVisited: DateTime.now(),
@@ -528,6 +539,10 @@ class _WelcomeState extends State<Welcome> {
                   description: 'Initial Alias created by System on first run.'
                       '\nFeel free to change it for your needs.')
               .insert();
+
+          await addPreloadMessage(
+              const Text('Execute first background tracking from foreground'));
+          tracking.track(gps);
         } catch (e) {
           await addPreloadMessage(const Text(
               'Create initial location alias failed. No GPS Permissions granted?'));
@@ -539,6 +554,7 @@ class _WelcomeState extends State<Welcome> {
       await webKey();
 
       //
+      await BackgroundTracking.initialize();
       if (await Cache.appSettingBackgroundTrackingEnabled.load<bool>(true)) {
         await addPreloadMessage(const Text('Start background tracking'));
         await BackgroundTracking.startTracking();

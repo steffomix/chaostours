@@ -435,9 +435,9 @@ class AppUserSetting {
             description: Text(
                 'The interval period in which the foreground process reloads the measurement data from the background process.'),
             unit: Unit.second,
-            minValue: 1,
+            minValue: 3,
             maxValue: 30,
-            defaultValue: Duration(seconds: 3), //
+            defaultValue: Duration(seconds: 5), //
             resetToDefault: () async {
           await cache
               .save<Duration>(AppUserSetting(cache).defaultValue as Duration);

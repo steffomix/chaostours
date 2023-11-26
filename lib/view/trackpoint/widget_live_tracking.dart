@@ -53,6 +53,7 @@ class WidgetTrackingPage extends StatefulWidget {
 
 class _Cache {
   static final Logger logger = Logger.logger<_Cache>();
+  static DateTime lastBackgroundTick = DateTime.now();
   //static GPS? lastTrackpointStanding;
   static List<GPS> gpsPoints = [];
   //static List<GPS> gpsSmoothPoints = [];
@@ -64,7 +65,7 @@ class _Cache {
   static TrackingStatus triggeredTrackingStatus = TrackingStatus.none;
   static List<String> weekdays = Weekdays.mondayFirst.weekdays;
   static String address = '';
-  static String notes = '';
+  //static String notes = '';
   static int distanceTreshold = 0;
   static Duration timeRangeTreshold = Duration.zero;
 
@@ -76,6 +77,10 @@ class _Cache {
   static Future<bool> reload() async {
     logger.log('-------reload live tracking cache -------');
     gps = await GPS.gps();
+
+    lastBackgroundTick =
+        await Cache.backgroundLastTick.load<DateTime>(DateTime.now());
+
     //location = await Location.location(gps!);
     trackPoint = await ModelTrackPoint.fromCache(gps!);
 
@@ -90,7 +95,7 @@ class _Cache {
         .load<TrackingStatus>(TrackingStatus.none);
 
     address = await Cache.backgroundAddress.load<String>('Reload');
-    notes = await Cache.backgroundTrackPointUserNotes.load<String>('');
+    //notes = await Cache.backgroundTrackPointUserNotes.load<String>('');
 
     Cache cache = Cache.appSettingWeekdays;
     weekdays = (await cache
@@ -165,8 +170,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     }
     GPS.gps().then((gps) async {
       await logger.log('------ onTracking ------');
-      await tracking.track(gps);
-      _Cache.reload();
+      await _Cache.reload();
       listener.value++;
     });
   }
@@ -415,6 +419,10 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         },
       ),
       divider,
+      ListTile(
+          title: Text(
+              'Last Tick before ${_Cache.lastBackgroundTick.difference(DateTime.now()).abs().inMilliseconds} ms.')),
+      divider,
       dropdownTasks(),
       divider,
       dropdownUser(),
@@ -575,8 +583,6 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
             minLines: 2,
             controller: _tpNotes,
             onChanged: (String? s) async {
-              _Cache.notes = await Cache.backgroundTrackPointUserNotes
-                  .save<String>(_tpNotes.text);
               render();
             }));
   }

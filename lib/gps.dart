@@ -195,7 +195,7 @@ class GPS {
     var gpsParts = parts[0].split(',');
     double lat = double.parse(gpsParts[0]);
     double lon = double.parse(gpsParts[1]);
-    var time = DateTime.parse(gpsParts[1]);
+    var time = DateTime.parse(parts[1]);
     var gps = GPS(lat, lon);
     gps.time = time;
     return gps;
