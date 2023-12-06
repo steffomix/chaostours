@@ -238,7 +238,7 @@ class CacheTypeAdapter {
       osm == null ? Weekdays.mondayFirst : Weekdays.values.byName(osm);
 
   static Future<T> setValue<T>(Cache key, T value) async {
-    logger.log('save cache key ${key.name}');
+    //logger.log('save cache key ${key.name}');
     try {
       if (T != key.cacheType) {
         throw Exception(
@@ -336,7 +336,7 @@ class CacheTypeAdapter {
   }
 
   static Future<T> getValue<T>(Cache key, T defaultValue) async {
-    logger.log('load cache key ${key.name}');
+    //logger.log('load cache key ${key.name}');
     try {
       if (T != key.cacheType) {
         throw Exception(

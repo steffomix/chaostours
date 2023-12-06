@@ -135,7 +135,7 @@ class _WidgetOsm extends State<WidgetOsm> {
 
   void onTracking(EventOnForegroundTracking e) async {
     final gps = await GPS.gps();
-    await tracking.track(gps);
+    //await tracking.track(gps);
     osmTools.renderAlias(mapController);
   }
 
@@ -472,18 +472,18 @@ class _WidgetOsm extends State<WidgetOsm> {
   /// _controller
   MapController? _mapController;
   MapController get mapController {
-    return _mapController ??= _gps == null
-        ? MapController(
-            initMapWithUserPosition:
-                const UserTrackingOption(unFollowUser: false))
-        : MapController(
-            initPosition: GeoPoint(latitude: _gps!.lat, longitude: _gps!.lon));
+    return _mapController ??= MapController(
+        initPosition: _gps == null
+            ? null
+            : GeoPoint(latitude: _gps!.lat, longitude: _gps!.lon));
   }
 
-  OSMOption? _osmOption;
+  //OSMOption? _osmOption;
   OSMFlutter? _osmFlutter;
   OSMFlutter get osmFlutter {
     return _osmFlutter ??= OSMFlutter(
+      isPicker: true,
+      /*
       onMapIsReady: (bool ready) {
         osmTools.renderAlias(mapController);
       },
@@ -498,6 +498,7 @@ class _WidgetOsm extends State<WidgetOsm> {
           stepZoom: 1.0,
         ),
       ),
+      */
       mapIsLoading: AppWidgets.loading(const Text('Loading Map')),
       //androidHotReloadSupport: true,
       controller: mapController,

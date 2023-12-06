@@ -579,7 +579,7 @@ class _WelcomeState extends State<Welcome> {
       await webKey();
 
       //
-      await BackgroundTracking.initialize();
+      //await BackgroundTracking.initialize();
       if (await Cache.appSettingBackgroundTrackingEnabled.load<bool>(true)) {
         await addPreloadMessage(const Text('Start background tracking'));
         await BackgroundTracking.startTracking();

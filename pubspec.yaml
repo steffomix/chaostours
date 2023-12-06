@@ -30,32 +30,79 @@ dependencies:
   flutter:
     sdk: flutter
 
-  background_location_tracker: ^1.4.1
-  flutter_osm_plugin: ^0.60.5
-  flutter_local_notifications: ^15.1.1
-  permission_handler: ^10.2.0
-  shared_preferences: ^2.2.0
-  path: ^1.8.3
-  http: ^0.13.5
+  #path: ^1.8.3
+  #http: ^0.13.5
+  #vector_math: ^2.1.4
+  #logger: ^1.1.0
+  #loading_animation_widget: ^1.2.0
+  #confirm_dialog: ^1.0.2
+  #provider: ^6.0.5
   sprintf: ^7.0.0
-  vector_math: ^2.1.4
-  logger: ^1.1.0
+
+  # https://pub.dev/packages/background_location_tracker
+  #background_location_tracker: ^1.4.1
+  background_location_tracker:
+    git: https://github.com/steffomix/flutter-background-location-tracker
+    #git: https://github.com/icapps/flutter-background-location-tracker
+
+  # https://pub.dev/packages/flutter_osm_plugin
+  flutter_osm_plugin: #^0.60.5 #^0.70.0
+    git: 
+      url: https://github.com/liodali/osm_flutter
+      ref: 0.8.3
+
+  # https://pub.dev/packages/flutter_local_notifications
+  flutter_local_notifications: ^16.2.0 #^15.1.1
+
+  # https://pub.dev/packages/permission_handler
+  permission_handler: ^11.0.1 #^10.2.0
+
+  # https://pub.dev/packages/shared_preferences
+  shared_preferences: ^2.2.2
+
+  # https://pub.dev/packages/path_provider
   path_provider: ^2.0.13
+
+  # https://pub.dev/packages/external_path
   external_path: ^1.0.3
+
+  # https://pub.dev/packages/android_intent_plus
   android_intent_plus: ^4.0.2
-  loading_animation_widget: ^1.2.0
-  confirm_dialog: ^1.0.2
+
+  # https://pub.dev/packages/share_plus
+  share_plus: ^7.2.1
+
+  # https://pub.dev/packages/app_settings
   app_settings: ^5.1.1
+
+  # https://pub.dev/packages/device_calendar
   device_calendar: ^4.3.1 
+
+  # https://pub.dev/packages/geolocator
   geolocator: ^10.0.0
+
+  # https://pub.dev/packages/url_launcher
   url_launcher: ^6.1.12
+
+  # https://pub.dev/packages/file_manager
   file_manager: ^1.0.2
+
+  # https://pub.dev/packages/fluttertoast
   fluttertoast: ^8.2.2
+
+  # https://pub.dev/packages/sqflite
   sqflite: ^2.3.0
+
+  # https://pub.dev/packages/cupertino_icons
   cupertino_icons: ^1.0.5
-  provider: ^6.0.5
+
+  # https://pub.dev/packages/flex_color_scheme
   flex_color_scheme: ^7.3.1
+
+  # https://pub.dev/packages/google_fonts
   google_fonts: ^4.0.4
+
+  # https://pub.dev/packages/visibility_detector
   visibility_detector: ^0.4.0+2
 
 

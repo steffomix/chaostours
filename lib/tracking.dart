@@ -51,17 +51,18 @@ class BackgroundTracking {
   static Logger logger = Logger.logger<BackgroundTracking>();
 
   static Future<AndroidConfig> _androidConfig() async {
+    /*
     var interval = await Cache.appSettingBackgroundTrackingInterval
         .load<Duration>(const Duration(seconds: 30));
+        */
     return AndroidConfig(
-        channelName: 'Chaos Tours Tracking',
-        notificationBody:
-            'Background Tracking running, tap to open Chaos Tours App.',
-        notificationIcon: '@ic_launcher',
-        enableNotificationLocationUpdates: false,
-        cancelTrackingActionText: 'Stop Tracking',
-        enableCancelTrackingAction: false,
-        trackingInterval: interval);
+        //channelName: 'Chaos Tours Tracking',
+        //notificationBody: 'Background Tracking running, tap to open Chaos Tours App.',
+        //notificationIcon: '@ic_launcher',
+        //enableNotificationLocationUpdates: false,
+        //cancelTrackingActionText: 'Stop Tracking',
+        //enableCancelTrackingAction: false,
+        trackingInterval: const Duration(seconds: 30));
   }
 
   static Future<bool> isTracking() async {
@@ -71,13 +72,8 @@ class BackgroundTracking {
   static Future<void> startTracking() async {
     await BackgroundLocationTrackerManager.stopTracking();
     await Future.delayed(const Duration(seconds: 1));
-    var config = await _androidConfig();
-
-    await BackgroundLocationTrackerManager.initialize(backgroundCallback,
-        config: BackgroundLocationTrackerConfig(
-            loggingEnabled: false, androidConfig: config));
-
-    await BackgroundLocationTrackerManager.startTracking(config: config);
+    //await initialize();
+    await BackgroundLocationTrackerManager.startTracking();
   }
 
   static Future<void> stopTracking() async {
@@ -126,12 +122,15 @@ class _TrackPoint {
   Future<void> track({required double lat, required double lon}) async {
     // gather info and stats
     if (logger.realm == LoggerRealm.background) {
-      await Cache.backgroundLastTick.save<DateTime>(DateTime.now());
+      var tick = DateTime.now();
+      await Cache.backgroundLastTick.save<DateTime>(tick);
       var tickList = await Cache.backgroundTickList.load<List<DateTime>>([]);
-      tickList.insert(0, DateTime.now());
+      tickList.insert(0, tick);
       while (tickList.length > 10) {
         tickList.removeLast();
       }
+      logger.log(
+          'last background duration: ${tick.difference(tickList.length <= 1 ? tick : tickList[1]).abs().inMilliseconds}');
       await Cache.backgroundTickList.save<List<DateTime>>(tickList);
     }
 
