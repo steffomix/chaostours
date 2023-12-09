@@ -478,12 +478,10 @@ class _WidgetOsm extends State<WidgetOsm> {
             : GeoPoint(latitude: _gps!.lat, longitude: _gps!.lon));
   }
 
-  //OSMOption? _osmOption;
+  OSMOption? _osmOption;
   OSMFlutter? _osmFlutter;
   OSMFlutter get osmFlutter {
     return _osmFlutter ??= OSMFlutter(
-      isPicker: true,
-      /*
       onMapIsReady: (bool ready) {
         osmTools.renderAlias(mapController);
       },
@@ -498,7 +496,7 @@ class _WidgetOsm extends State<WidgetOsm> {
           stepZoom: 1.0,
         ),
       ),
-      */
+
       mapIsLoading: AppWidgets.loading(const Text('Loading Map')),
       //androidHotReloadSupport: true,
       controller: mapController,

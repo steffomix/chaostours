@@ -546,25 +546,6 @@ class _WelcomeState extends State<Welcome> {
                       '\nFeel free to change it for your needs.')
               .insert();
 
-          if (!(await Permission.locationAlways.isGranted) && mounted) {
-            await AppWidgets.dialog(context: context, contents: [
-              const Text(
-                  'For Background GPS Tracking the app need GPS permission "Always". '
-                  'Please tap OK to get to the permission request.')
-            ], buttons: [
-              TextButton(
-                child: const Text('OK'),
-                onPressed: () async {
-                  await requestLocationAlways();
-                  if (await Permission.locationAlways.isGranted && mounted) {
-                    Navigator.pop(context);
-                  }
-                },
-              )
-            ]);
-          }
-          await requestLocationAlways();
-
           await addPreloadMessage(
               const Text('Execute first background tracking from foreground'));
           tracking.track(gps);
@@ -573,6 +554,26 @@ class _WelcomeState extends State<Welcome> {
               'Create initial location alias failed. No GPS Permissions granted?'));
         }
       }
+
+      // request gps always
+      if (!(await Permission.locationAlways.isGranted) && mounted) {
+        await AppWidgets.dialog(context: context, contents: [
+          const Text(
+              'For Background GPS Tracking the app need GPS permission "Always". '
+              'Please tap OK to get to the permission request.')
+        ], buttons: [
+          TextButton(
+            child: const Text('OK'),
+            onPressed: () async {
+              await requestLocationAlways();
+              if (await Permission.locationAlways.isGranted && mounted) {
+                Navigator.pop(context);
+              }
+            },
+          )
+        ]);
+      }
+      await requestLocationAlways();
 
       //
       await addPreloadMessage(const Text('Load Web SSL key'));

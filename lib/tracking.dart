@@ -51,18 +51,18 @@ class BackgroundTracking {
   static Logger logger = Logger.logger<BackgroundTracking>();
 
   static Future<AndroidConfig> _androidConfig() async {
-    /*
-    var interval = await Cache.appSettingBackgroundTrackingInterval
-        .load<Duration>(const Duration(seconds: 30));
-        */
+    var cache = Cache.appSettingBackgroundTrackingInterval;
+    var interval = await cache
+        .load<Duration>(AppUserSetting(cache).defaultValue as Duration);
+
     return AndroidConfig(
-        //channelName: 'Chaos Tours Tracking',
+        channelName: 'com.stefanbrinkmann.chaosToursUnlimited',
         //notificationBody: 'Background Tracking running, tap to open Chaos Tours App.',
         //notificationIcon: '@ic_launcher',
         //enableNotificationLocationUpdates: false,
         //cancelTrackingActionText: 'Stop Tracking',
         //enableCancelTrackingAction: false,
-        trackingInterval: const Duration(seconds: 30));
+        trackingInterval: interval);
   }
 
   static Future<bool> isTracking() async {

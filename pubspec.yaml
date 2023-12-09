@@ -46,10 +46,11 @@ dependencies:
     #git: https://github.com/icapps/flutter-background-location-tracker
 
   # https://pub.dev/packages/flutter_osm_plugin
-  flutter_osm_plugin: #^0.60.5 #^0.70.0
-    git: 
-      url: https://github.com/liodali/osm_flutter
-      ref: 0.8.3
+  flutter_osm_plugin: # ^0.70.0 #^0.60.5 
+    path: C:/dev/forks/osm_flutter
+    #git: 
+    #  url: https://github.com/steffomix/osm_flutter
+    #  ref: 0.70.0
 
   # https://pub.dev/packages/flutter_local_notifications
   flutter_local_notifications: ^16.2.0 #^15.1.1

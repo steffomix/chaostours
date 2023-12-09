@@ -152,7 +152,7 @@ class AppUserSetting {
               'but it also takes longer to measure the status of stopping or moving.'),
           unit: Unit.second,
           minValue: 15,
-          defaultValue: Duration(seconds: 30),
+          defaultValue: Duration(seconds: 60),
           resetToDefault: () async {
             await cache
                 .save<Duration>(AppUserSetting(cache).defaultValue as Duration);
@@ -536,6 +536,9 @@ class AppUserSetting {
 
       case Duration:
         Duration value = await cache.load<Duration>(defaultValue as Duration);
+        if (cache == Cache.appSettingBackgroundTrackingInterval) {
+          print('~~ Tracking interval user setting $value');
+        }
         return (value.inSeconds / unit.multiplicator).round().toString();
 
       case OsmLookupConditions:

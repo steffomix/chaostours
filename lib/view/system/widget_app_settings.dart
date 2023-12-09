@@ -41,9 +41,9 @@ class WidgetAppSettings extends StatefulWidget {
   State<WidgetAppSettings> createState() => _WidgetAppSettings();
 }
 
-typedef ChangedBool = Function(
+typedef OnChangedBool = Function(
     {required AppUserSetting setting, required bool value});
-typedef ChangedInteger = Function(
+typedef OnChangedInteger = Function(
     {required AppUserSetting setting, required int value});
 
 class _WidgetAppSettings extends State<WidgetAppSettings> {
@@ -73,7 +73,6 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
     _renderedWidgets.addAll([
       await booleanSetting(Cache.appSettingBackgroundTrackingEnabled, onChange:
           ({required AppUserSetting setting, required bool value}) async {
-        await BackgroundTracking.stopTracking();
         value
             ? await BackgroundTracking.startTracking()
             : await BackgroundTracking.stopTracking();
@@ -109,6 +108,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                       {required AppUserSetting setting,
                       required int value}) async {
                 await BackgroundTracking.stopTracking();
+                await BackgroundTracking.initialize();
                 await BackgroundTracking.startTracking();
 
                 //valueNotifiers[Cache.appSettingBackgroundTrackingInterval]?.value++;
@@ -228,7 +228,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
     return value;
   }
 
-  Future<Widget> booleanSetting(Cache cache, {ChangedBool? onChange}) async {
+  Future<Widget> booleanSetting(Cache cache, {OnChangedBool? onChange}) async {
     if (cache.cacheType != bool) {
       return AppWidgets.loading(Text('${cache.name} type is not bool'));
     }
@@ -256,7 +256,8 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
     );
   }
 
-  Future<Widget> integerSetting(Cache cache, {ChangedInteger? onChange}) async {
+  Future<Widget> integerSetting(Cache cache,
+      {OnChangedInteger? onChange}) async {
     AppUserSetting setting = AppUserSetting(cache);
     final controller =
         textEditingControllers[cache] ??= TextEditingController();

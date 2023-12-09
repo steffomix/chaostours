@@ -90,12 +90,30 @@ enum Cache {
   appSettingWeekdays(Weekdays, Duration(days: 365));
 
   Future<T> load<T>(T fallback) async {
+    if (this == Cache.appSettingBackgroundTrackingInterval) {
+      if (_cache[this]?.expired ?? true) {
+        var value = await CacheTypeAdapter.getValue<T>(this, fallback);
+        _cache[this] = ValueExpired(value: value, duration: expireAfter);
+        if (this == Cache.appSettingBackgroundTrackingInterval) {
+          print('~~ loaded Tracking interval $value');
+        }
+        return value;
+      }
+      var value = _cache[this]!.value as T;
+      print('~~ cached Tracking interval $value');
+      return value;
+    }
+
     if (_cache[this]?.expired ?? true) {
       var value = await CacheTypeAdapter.getValue<T>(this, fallback);
       _cache[this] = ValueExpired(value: value, duration: expireAfter);
+      if (this == Cache.appSettingBackgroundTrackingInterval) {
+        print('~~ loaded Tracking interval $value');
+      }
       return value;
     }
-    return _cache[this]!.value as T;
+    var value = _cache[this]!.value as T;
+    return value;
   }
 
   Future<T> save<T>(T value) async {
