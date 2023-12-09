@@ -147,12 +147,13 @@ class AppUserSetting {
         return _appUserSettings[cache] ??= AppUserSetting._option(
           cache, //
           title: Text('Background GPS tracking interval duration.'),
-          description: Text(
-              'The heartbeat of this app. A higher value consumes less battery, '
-              'but it also takes longer to measure the status of stopping or moving.'),
+          description: Text('A higher value consumes less battery, '
+              'but it also takes longer to measure the status of stopping or moving.\n'
+              'NOTE:\n'
+              'To activate changes restart the App you must!\nCompletely!\nInclusive the background process!'),
           unit: Unit.second,
           minValue: 15,
-          defaultValue: Duration(seconds: 60),
+          defaultValue: Duration(seconds: 30),
           resetToDefault: () async {
             await cache
                 .save<Duration>(AppUserSetting(cache).defaultValue as Duration);

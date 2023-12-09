@@ -77,7 +77,7 @@ class _Cache {
   //static Location? location;
 
   static Future<bool> reload() async {
-    logger.log('-------reload live tracking cache -------');
+    //logger.log('-------reload live tracking cache -------');
     gps = await GPS.gps();
 
     lastBackgroundTick =
@@ -176,7 +176,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     if (_visibleFraction < .5) {
       return;
     }
-    logger.log('------ onTracking Status Changed ------');
+    //logger.log('------ onTracking Status Changed ------');
     _Cache.reload();
     listener.value++;
   }
@@ -187,7 +187,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       return;
     }
     GPS.gps().then((gps) async {
-      await logger.log('------ onTracking ------');
+      //await logger.log('------ onTracking ------');
       await _Cache.reload();
       listener.value++;
     });

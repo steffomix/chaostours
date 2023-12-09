@@ -203,9 +203,10 @@ class _WidgetDrawer extends State<WidgetDrawer> {
     _Menu(
         title: 'Welcome Page',
         description: 'App initialization routines and permission checks.',
-        route: AppRoutes.welcome),
+        route: AppRoutes.welcome,
+        routeArguments: 1),
     _Divider(),
-    _Header(title: 'Licence'),
+    _Header(title: 'Licence ChaosTours'),
     _Widget(
         widget: TextButton(
             child: Text('\n\nChaosTours\n'
@@ -217,6 +218,22 @@ class _WidgetDrawer extends State<WidgetDrawer> {
               try {
                 launchUrl(Uri.parse(
                     'https://www.apache.org/licenses/LICENSE-2.0.html'));
+              } catch (e) {
+                //
+              }
+            })),
+    _Divider(),
+    _Header(title: 'Licence OpenStreetMap'),
+    _Widget(
+        widget: TextButton(
+            child: const Text('\n\nOpenStreetmap\n'
+                'This App uses the free service from OpenStreetMap.org'
+                ' for Mmp display and reverse address lookup.\n'
+                'Tap on this text to get to:\n'
+                'www.openstreetmap.org/copyright'),
+            onPressed: () {
+              try {
+                launchUrl(Uri.parse('https://www.openstreetmap.org/copyright'));
               } catch (e) {
                 //
               }

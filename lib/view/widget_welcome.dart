@@ -1,5 +1,3 @@
-// ignore_for_file: deprecated_member_use
-
 /*
 Copyright 2023 Stefan Brinkmann <st.brinkmann@gmail.com>
 
@@ -155,10 +153,10 @@ class _WelcomeState extends State<Welcome> {
   }
 
   Future<void> requestCalendar() async {
-    if (await Permission.calendar.isPermanentlyDenied) {
+    if (await Permission.calendarFullAccess.isPermanentlyDenied) {
       await dialogPermissionRequest('Calendar Access');
     } else {
-      await Permission.calendar.request();
+      await Permission.calendarFullAccess.request();
     }
   }
 
@@ -285,8 +283,8 @@ class _WelcomeState extends State<Welcome> {
           leading: isTracking
               ? const Icon(Icons.done, color: Colors.green)
               : const Icon(Icons.error_outline, color: Colors.red),
-          title: const Text('Status Hintergrund GPS'),
-          subtitle: const Text('Hintergrund GPS starten/stoppen'),
+          title: const Text('Background GPS Tracking Status'),
+          subtitle: const Text('Start / Stop'),
           trailing: IconButton(
             icon: isTracking
                 ? const Icon(Icons.stop)
@@ -315,9 +313,9 @@ class _WelcomeState extends State<Welcome> {
 
     if (!permissionLocationIsGranted) {
       permissionItemsRequired.add(ListTile(
-          title: const Text('Einfache (Vordergrund) GPS Ortung.'),
+          title: const Text('Common foreground GPS Tracking.'),
           subtitle: const Text(
-              'Wird für für die Karte und Sortierung der Orte benötigt.'),
+              'Needed for Maps and reverse Address Lookup from OpenStreetMap.com'),
           trailing: IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
@@ -331,9 +329,9 @@ class _WelcomeState extends State<Welcome> {
     }
     if (!permissionLocationAlwaysIsGranted) {
       permissionItemsRequired.add(ListTile(
-          title: const Text('Hintergrund GPS Ortung.'),
-          subtitle: const Text('Das Herz dieser App. Wird für die Ortung, '
-              'Status Halten und Status Fahren benötigt.'),
+          title: const Text('Background GPS Tracking'),
+          subtitle: const Text(
+              'Needed to detect Move and Stop detection and its locations.'),
           trailing: IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
@@ -348,9 +346,9 @@ class _WelcomeState extends State<Welcome> {
 
     if (!permissionIgnoreBatteryOptimizationsIsGranted) {
       permissionItemsRequired.add(ListTile(
-          title: const Text('Ignorieren der Batterieoptimierung.'),
+          title: const Text('Ignore Battery optimization.'),
           subtitle: const Text(
-              'Sorgt dafür dass die App nicht vom Android-System abgeschaltet wird.'),
+              'Needed to prevent the Android system from app shutdown when running in background.'),
           trailing: IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
@@ -364,9 +362,9 @@ class _WelcomeState extends State<Welcome> {
     }
     if (!permissionNotificationIsGranted) {
       permissionItemsOptional.add(ListTile(
-          title: const Text('Anzeige von App-Meldungen.'),
+          title: const Text('Show notifications.'),
           subtitle: const Text(
-              'Wird benötigt wenn sie über Statuswechsel informiert werden wollen.'),
+              'Needed to inform you about automatic alias creation or Moving/Standing Status changes.'),
           trailing: IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
@@ -380,10 +378,8 @@ class _WelcomeState extends State<Welcome> {
     }
     if (!permissionManageExternalStorageIsGranted) {
       permissionItemsOptional.add(ListTile(
-          title: const Text('Zugriff auf App-Externes Dateisystem.'),
-          subtitle: const Text(
-              'Wird benötigt wenn sie auf ihre Daten von außerhalb diese App zugreifen wollen. '
-              'Schauen sie im Hauptmenü unter "Speicherorte" für weitere Optionen.'),
+          title: const Text('Access to external File system.'),
+          subtitle: const Text('Needed to export or import the Database.'),
           trailing: IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
@@ -397,9 +393,9 @@ class _WelcomeState extends State<Welcome> {
     }
     if (!permissionCalendarIsGranted) {
       permissionItemsOptional.add(ListTile(
-          title: const Text('Zugriff auf Geräte-Kalender.'),
+          title: const Text('Access to your device calendar (if installed)'),
           subtitle: const Text(
-              'Wird benötigt, wenn sie Statusereignisse in ihren Kalender eintragen lassen wollen.'),
+              'You can track and share your stops with the device Google calendar.'),
           trailing: IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
@@ -579,11 +575,21 @@ class _WelcomeState extends State<Welcome> {
       await addPreloadMessage(const Text('Load Web SSL key'));
       await webKey();
 
+      var cache = Cache.appSettingBackgroundTrackingInterval;
+      var dur = await cache
+          .load<Duration>(AppUserSetting(cache).defaultValue as Duration);
+      await addPreloadMessage(
+          Text('Initialize background trackig with ${dur.inSeconds} sec.'));
+      await BackgroundTracking.initialize();
+
       //
       //await BackgroundTracking.initialize();
       if (await Cache.appSettingBackgroundTrackingEnabled.load<bool>(true)) {
         await addPreloadMessage(const Text('Start background tracking'));
         await BackgroundTracking.startTracking();
+      } else {
+        await addPreloadMessage(
+            const Text('Background tracking not enabled, skip start tracking'));
       }
 
       // init and start app tickers

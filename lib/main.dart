@@ -13,18 +13,15 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import 'package:chaostours/tracking.dart';
 import 'package:flutter/material.dart';
 
 ///
 ///
-import 'package:background_location_tracker/background_location_tracker.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/runtime_data.dart';
 
 void main() async {
   RuntimeData.widgetsFlutterBinding = WidgetsFlutterBinding.ensureInitialized();
-  await BackgroundTracking.initialize();
   runApp(const MyApp());
 }
 

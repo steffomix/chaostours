@@ -97,8 +97,8 @@ class DB {
   /// </pre>
   static Future<T> execute<T>(
       Future<T> Function(flite.Transaction txn) action) async {
-    return Future.microtask(() {
-      return _database!.transaction<T>(action);
+    return Future.microtask(() async {
+      return await _database!.transaction<T>(action);
     });
   }
 

@@ -107,10 +107,6 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                   onChange: (
                       {required AppUserSetting setting,
                       required int value}) async {
-                await BackgroundTracking.stopTracking();
-                await BackgroundTracking.initialize();
-                await BackgroundTracking.startTracking();
-
                 //valueNotifiers[Cache.appSettingBackgroundTrackingInterval]?.value++;
                 valueNotifiers[Cache.appSettingTimeRangeTreshold]?.value++;
                 valueNotifiers[Cache.appSettingAutocreateAliasDuration]
@@ -233,7 +229,6 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
       return AppWidgets.loading(Text('${cache.name} type is not bool'));
     }
     final setting = AppUserSetting(cache);
-    //bool checkboxValue = await cache.load<bool>(false);
 
     Widget checkbox = AppWidgets.checkBox(
         value: await cache.load<bool>(false),
