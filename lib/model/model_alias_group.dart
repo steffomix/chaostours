@@ -149,7 +149,7 @@ class ModelAliasGroup {
         return await txn.query(TableAliasGroup.table,
             columns: TableAliasGroup.columns,
             where: '${TableAliasGroup.isActive.column} = ?',
-            whereArgs: [activated],
+            whereArgs: [DB.boolToInt(activated)],
             limit: limit,
             offset: offset,
             orderBy: TableAliasGroup.title.column);

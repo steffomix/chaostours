@@ -210,7 +210,7 @@ class ModelUser {
           TableUser.table,
           columns: TableUser.columns,
           where: '${TableUser.isActive.column} = ?',
-          whereArgs: [activated],
+          whereArgs: [DB.boolToInt(activated)],
           orderBy: TableUser.title.column,
           limit: limit,
           offset: offset,

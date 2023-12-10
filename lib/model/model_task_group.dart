@@ -147,7 +147,7 @@ class ModelTaskGroup {
         return await txn.query(TableTaskGroup.table,
             columns: TableTaskGroup.columns,
             where: '${TableTaskGroup.isActive.column} = ?',
-            whereArgs: [activated],
+            whereArgs: [DB.boolToInt(activated)],
             limit: limit,
             offset: offset,
             orderBy: TableTaskGroup.primaryKey.column);

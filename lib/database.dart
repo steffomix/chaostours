@@ -103,7 +103,7 @@ class DB {
       do {
         try {
           return await _database!.transaction<T>(action);
-        } on flite.DatabaseException catch (e, stk) {
+        } on flite.DatabaseException catch (e) {
           if (e.toString().contains('transaction')) {
             await Future.delayed(const Duration(seconds: 1));
             retry = true;

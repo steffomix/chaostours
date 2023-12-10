@@ -146,7 +146,7 @@ class ModelUserGroup {
         return await txn.query(TableUserGroup.table,
             columns: TableUserGroup.columns,
             where: '${TableUserGroup.isActive.column} = ?',
-            whereArgs: [activated],
+            whereArgs: [DB.boolToInt(activated)],
             limit: limit,
             offset: offset,
             orderBy: TableUserGroup.primaryKey.column);

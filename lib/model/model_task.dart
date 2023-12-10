@@ -205,7 +205,7 @@ class ModelTask {
         return await txn.query(TableTask.table,
             columns: TableTask.columns,
             where: '${TableTask.isActive.column} = ?',
-            whereArgs: [activated],
+            whereArgs: [DB.boolToInt(activated)],
             orderBy: TableTask.title.column,
             limit: limit,
             offset: offset);
