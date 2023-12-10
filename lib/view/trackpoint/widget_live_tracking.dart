@@ -429,7 +429,10 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         onPressed: () async {
           if (_Cache.gpsPoints.isNotEmpty) {
             var gps = _Cache.gpsPoints.first;
-            var address = (await addr.Address(gps).lookupAddress()).toString();
+            var address = (await addr.Address(gps).lookup(
+                    OsmLookupConditions.onUserRequest,
+                    saveToCache: true))
+                .alias;
             _Cache.address =
                 await Cache.backgroundAddress.save<String>(address);
             render();

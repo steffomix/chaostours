@@ -44,27 +44,10 @@ enum OsmLookupConditions {
     return null;
   }
 
-  static Future<bool> allowLookup(OsmLookupConditions condition) async {
+  Future<bool> allowLookup() async {
     OsmLookupConditions setting = await Cache.appSettingOsmLookupCondition
         .load<OsmLookupConditions>(OsmLookupConditions.never);
-    return setting.index > 0 && condition.index <= setting.index;
-  }
-
-  static Future<String> saveBackgroundAddress(
-      {required GPS gps, required OsmLookupConditions condition}) async {
-    if (await OsmLookupConditions.allowLookup(condition)) {
-      String address = (await Address(gps).lookupAddress()).toString();
-      return await Cache.backgroundAddress.save<String>(address);
-    }
-    return 'Address lookup permission denied on condition.${condition.name}';
-  }
-
-  static Future<String?> lookupAddress(
-      {required GPS gps, required OsmLookupConditions condition}) async {
-    if (await OsmLookupConditions.allowLookup(condition)) {
-      return (await Address(gps).lookupAddress()).toString();
-    }
-    return null;
+    return setting.index > 0 && index <= setting.index;
   }
 }
 

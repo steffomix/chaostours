@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/conf/app_user_settings.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -62,9 +63,13 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
 
   Future<ModelAlias> createAlias() async {
     var gps = await GPS.gps();
-    var address = (await Address(gps).lookupAddress()).toString();
-    var model =
-        ModelAlias(gps: gps, lastVisited: DateTime.now(), title: address);
+    var address =
+        (await Address(gps).lookup(OsmLookupConditions.onUserCreateAlias));
+    var model = ModelAlias(
+        gps: gps,
+        lastVisited: DateTime.now(),
+        title: address.alias,
+        description: address.description);
     await model.insert();
     return model;
   }

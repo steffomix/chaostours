@@ -537,7 +537,7 @@ class _WelcomeState extends State<Welcome> {
           await ModelAlias(
                   gps: gps,
                   lastVisited: DateTime.now(),
-                  title: (await Address(gps).lookupAddress()).toString(),
+                  title: 'Initial Alias',
                   description: 'Initial Alias created by System on first run.'
                       '\nFeel free to change it for your needs.')
               .insert();

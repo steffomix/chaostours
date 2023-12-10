@@ -20,7 +20,7 @@ import 'package:flutter/material.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/runtime_data.dart';
 
-void main() async {
+void main() {
   RuntimeData.widgetsFlutterBinding = WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
 }

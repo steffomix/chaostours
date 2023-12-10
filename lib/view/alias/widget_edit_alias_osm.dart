@@ -249,8 +249,10 @@ class _WidgetOsm extends State<WidgetOsm> {
                       .goToLocation(
                           GeoPoint(latitude: gps.lat, longitude: gps.lon))
                       .then((_) {
-                    addr.Address(gps).lookupAddress().then((address) {
-                      _addressNotifier.value = address.toString();
+                    addr.Address(gps)
+                        .lookup(OsmLookupConditions.onUserRequest)
+                        .then((address) {
+                      _addressNotifier.value = address.alias;
                     }).onError((error, stackTrace) {
                       logger.error(error.toString(), stackTrace);
                     });
@@ -394,15 +396,14 @@ class _WidgetOsm extends State<WidgetOsm> {
             }
           } else {
             /// create alias
-            String address =
+            addr.Address address =
                 (await addr.Address(GPS(pos.latitude, pos.longitude))
-                        .lookupAddress())
-                    .toString();
+                    .lookup(OsmLookupConditions.onUserCreateAlias));
 
             ModelAlias alias = ModelAlias(
                 gps: GPS(pos.latitude, pos.longitude),
-                title: address,
-                description: '',
+                title: address.alias,
+                description: address.description,
                 radius: await Cache.appSettingDistanceTreshold.load<int>(
                     AppUserSetting(Cache.appSettingDistanceTreshold)
                         .defaultValue as int),

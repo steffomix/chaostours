@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 import 'package:background_location_tracker/background_location_tracker.dart';
+import 'package:chaostours/address.dart';
 import 'dart:math' as math;
 
 ///
@@ -301,10 +302,9 @@ class _TrackPoint {
                   GPS createAliasGps = GPS.average(calcGpsPoints);
 
                   /// get address
-                  String address =
-                      await OsmLookupConditions.saveBackgroundAddress(
-                          gps: gps,
-                          condition: OsmLookupConditions.onAutoCreateAlias);
+                  Address address = await Address(gps).lookup(
+                      OsmLookupConditions.onAutoCreateAlias,
+                      saveToCache: true);
 
                   createAliasGps.time = DateTime.now();
 
@@ -313,10 +313,8 @@ class _TrackPoint {
                       gps: createAliasGps,
                       lastVisited: smoothGpsPoints.last.time,
                       timesVisited: 1,
-                      title: address,
-                      description:
-                          'Auto created Alias\nat address:\n"$address"\n'
-                          '\nat date/time: ${createAliasGps.time.toIso8601String()}',
+                      title: address.alias,
+                      description: address.description,
                       radius: distanceTreshold);
                   logger.warn('auto create new alias');
                   await newAlias.insert();
@@ -353,8 +351,8 @@ class _TrackPoint {
     /// if nothing has changed, nothing to do
     if (newTrackingStatus == oldTrackingStatus) {
       /// lookup address on every interval
-      await OsmLookupConditions.saveBackgroundAddress(
-          gps: gps, condition: OsmLookupConditions.onBackgroundGps);
+      await Address(gps)
+          .lookup(OsmLookupConditions.onBackgroundGps, saveToCache: true);
 
       ///
       ///
@@ -363,8 +361,8 @@ class _TrackPoint {
       ///
     } else {
       /// update osm address
-      String address = await OsmLookupConditions.saveBackgroundAddress(
-          gps: gps, condition: OsmLookupConditions.onStatusChanged);
+      Address address = await Address(gps)
+          .lookup(OsmLookupConditions.onStatusChanged, saveToCache: true);
 
       /// we started moving
       if (newTrackingStatus == TrackingStatus.moving) {
@@ -386,7 +384,7 @@ class _TrackPoint {
               timeEnd: gps.time,
               calendarEventIds: await Cache.backgroundCalendarLastEventIds
                   .load<List<CalendarEventId>>([CalendarEventId()]),
-              address: address,
+              address: address.alias,
               notes:
                   await Cache.backgroundTrackPointUserNotes.load<String>(''));
 
@@ -515,45 +513,4 @@ class _TrackPoint {
     }
     return smoothGpsPoints;
   }
-/*
-  /// calc points are not added until time range is fulfilled
-  void calculateCalcPoints() {
-    /// reset calcPoints
-    bridge.calcGpsPoints.clear();
-    int p = (AppSettings.timeRangeTreshold.inSeconds /
-            AppSettings.trackPointInterval.inSeconds)
-        .ceil();
-    if (bridge.smoothGpsPoints.length >= p) {
-      bridge.calcGpsPoints.addAll(bridge.smoothGpsPoints.getRange(0, p));
-    }
-    if (bridge.smoothGpsPoints.length > 1) {
-      List<GPS> gpsList = [];
-      bool fullTresholdRange = false;
-
-      /// most recent gps time in ms
-      int tRef = bridge.smoothGpsPoints.first.time.millisecondsSinceEpoch;
-
-      /// duration in ms
-      int dur = AppSettings.timeRangeTreshold.inMilliseconds;
-
-      /// max past time in ms
-      int maxPast = tRef - dur;
-
-      /// iter into the past
-      for (var gps in bridge.smoothGpsPoints) {
-        if (gps.time.millisecondsSinceEpoch >= maxPast) {
-          gpsList.add(gps);
-        } else {
-          fullTresholdRange = true;
-          break;
-        }
-      }
-
-      /// add calcPoints only if time range is fulfilled
-      if (fullTresholdRange) {
-        bridge.calcGpsPoints.addAll(gpsList);
-      }
-    }
-  }
-  */
 }
