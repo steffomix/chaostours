@@ -109,8 +109,6 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
           padding: const EdgeInsets.all(10),
           child: TextField(
             decoration: const InputDecoration(label: Text('Sort order')),
-            maxLines: null,
-            minLines: 5,
             controller: TextEditingController(text: _model?.sortOrder),
             onChanged: (val) {
               _model?.sortOrder = val;
