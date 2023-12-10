@@ -292,11 +292,11 @@ class AppWidgets {
           onChanged: (bool? state) {
             bool checked = state ?? false;
             if (checked) {
-              idList.removeWhere((i) => i == id);
-            } else {
               if (!idList.contains(id)) {
                 idList.add(id);
               }
+            } else {
+              idList.removeWhere((i) => i == id);
             }
             Future.microtask(() => onToggle(state));
             notifier.value++;

@@ -118,7 +118,6 @@ class _WidgetTaskGroupsFromTaskList
         } else {
           await _model?.removeGroup(model);
         }
-        resetLoader();
       },
     );
   }

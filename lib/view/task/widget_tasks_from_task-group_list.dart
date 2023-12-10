@@ -119,7 +119,6 @@ class _WidgetTasksFromTaskGroupList
           } else {
             await model.removeGroup(_model!);
           }
-          resetLoader();
         } catch (e, stk) {
           logger.error('toggle checkbox: $e', stk);
         }

@@ -439,13 +439,6 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         },
       ),
       divider,
-      ListTile(
-        title: Text(
-            'Last Tick before ${_Cache.lastBackgroundTick.difference(DateTime.now()).abs().inMilliseconds} ms.'),
-        subtitle: Text(
-            'Average seconds: ${_Cache.averageDuration.inMilliseconds / 1000}'),
-      ),
-      divider,
       dropdownTasks(),
       divider,
       dropdownUser(),

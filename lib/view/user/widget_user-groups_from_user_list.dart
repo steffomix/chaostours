@@ -118,7 +118,6 @@ class _WidgetUserGroupsFromUserList
         } else {
           await _model?.removeGroup(model);
         }
-        resetLoader();
       },
     );
   }
