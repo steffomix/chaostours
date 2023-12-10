@@ -443,7 +443,7 @@ enum TableTask {
 	${idTaskGroup.column}	INTEGER NOT NULL DEFAULT 1,
 	${isActive.column}	INTEGER DEFAULT 1,
 	${isPreselected.column}	INTEGER DEFAULT 0,
-	${sortOrder.column}	INTEGER,
+	${sortOrder.column}	TEXT,
 	${title.column}	TEXT NOT NULL,
 	${description.column}	TEXT,
 	PRIMARY KEY(${primaryKey.column} AUTOINCREMENT)
@@ -603,7 +603,7 @@ enum TableUserGroup {
 	${primaryKey.column}	INTEGER NOT NULL,
 	${isActive.column}	INTEGER DEFAULT 1,
 	${selectable.column} INTEGER DEFAULT 1,
-	${sortOrder.column}	TEXT DEFAULT 1,
+	${sortOrder.column}	TEXT,
 	${title.column}	TEXT,
 	${description.column}	TEXT,
 	PRIMARY KEY(${primaryKey.column} AUTOINCREMENT)

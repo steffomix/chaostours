@@ -104,6 +104,20 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
             },
           )),
 
+      /// sort order
+      Container(
+          padding: const EdgeInsets.all(10),
+          child: TextField(
+            decoration: const InputDecoration(label: Text('Sort order')),
+            maxLines: null,
+            minLines: 5,
+            controller: TextEditingController(text: _model?.sortOrder),
+            onChanged: (val) {
+              _model?.sortOrder = val;
+              _model?.update();
+            },
+          )),
+
       // groups
       Padding(
           padding: const EdgeInsets.symmetric(vertical: 10),
@@ -119,7 +133,7 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
                       subtitle: Text(model.description),
                     );
                   },
-                ).toList()
+                )
               ]),
               onPressed: () {
                 Navigator.pushNamed(

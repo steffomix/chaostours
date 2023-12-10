@@ -33,7 +33,6 @@ import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/osm_tools.dart';
 import 'package:chaostours/model/model_alias.dart';
-import 'package:chaostours/tracking.dart' as tracking;
 
 class OsmSearchResult {
   final double lat;
@@ -134,8 +133,6 @@ class _WidgetOsm extends State<WidgetOsm> {
   void onBackgroundLookup(EventOnBackgroundUpdate e) {}
 
   void onTracking(EventOnForegroundTracking e) async {
-    final gps = await GPS.gps();
-    //await tracking.track(gps);
     osmTools.renderAlias(mapController);
   }
 

@@ -36,7 +36,6 @@ import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/address.dart' as addr;
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/conf/app_user_settings.dart';
-import 'package:chaostours/tracking.dart' as tracking;
 
 class WidgetTrackingPage extends StatefulWidget {
   const WidgetTrackingPage({super.key});
@@ -52,7 +51,7 @@ class WidgetTrackingPage extends StatefulWidget {
 ///
 
 class _Cache {
-  static final Logger logger = Logger.logger<_Cache>();
+  // static final Logger logger = Logger.logger<_Cache>();
   static DateTime lastBackgroundTick = DateTime.now();
   static List<DateTime> tickList = [];
   static Duration averageDuration = Duration.zero;

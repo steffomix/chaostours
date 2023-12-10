@@ -211,7 +211,7 @@ class ModelUser {
           columns: TableUser.columns,
           where: '${TableUser.isActive.column} = ?',
           whereArgs: [DB.boolToInt(activated)],
-          orderBy: TableUser.title.column,
+          orderBy: '${TableUser.sortOrder.column}, ${TableUser.title.column}',
           limit: limit,
           offset: offset,
         );

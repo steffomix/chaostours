@@ -206,7 +206,7 @@ class ModelTask {
             columns: TableTask.columns,
             where: '${TableTask.isActive.column} = ?',
             whereArgs: [DB.boolToInt(activated)],
-            orderBy: TableTask.title.column,
+            orderBy: '${TableTask.sortOrder.column}, ${TableTask.title.column}',
             limit: limit,
             offset: offset);
       },

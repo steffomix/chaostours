@@ -22,7 +22,6 @@ import 'package:flutter/services.dart';
 
 ///
 import 'package:chaostours/conf/app_routes.dart';
-import 'package:chaostours/address.dart';
 import 'package:chaostours/cache.dart';
 import 'package:chaostours/conf/app_user_settings.dart';
 import 'package:chaostours/gps.dart';
@@ -273,6 +272,13 @@ class _WelcomeState extends State<Welcome> {
     }
   }
 
+  Future<void> updatePermission() async {
+    await checkAllPermissions();
+    if (mounted) {
+      Navigator.popAndPushNamed(context, AppRoutes.welcome.route, arguments: 1);
+    }
+  }
+
   void renderItems() {
     permissionItemsOptional.clear();
     permissionItemsRequired.clear();
@@ -292,11 +298,10 @@ class _WelcomeState extends State<Welcome> {
             onPressed: () async {
               if (isTracking) {
                 await BackgroundTracking.stopTracking();
-                setState(() {});
               } else {
                 await BackgroundTracking.startTracking();
-                setState(() {});
               }
+              updatePermission();
             },
           )));
     }
@@ -306,7 +311,8 @@ class _WelcomeState extends State<Welcome> {
           padding: const EdgeInsets.all(20),
           child: ElevatedButton(
               onPressed: () {
-                Navigator.pushNamed(context, AppRoutes.liveTracking.route);
+                Navigator.popAndPushNamed(
+                    context, AppRoutes.liveTracking.route);
               },
               child: const Text('Go Live Tracking...'))));
     }
@@ -318,12 +324,9 @@ class _WelcomeState extends State<Welcome> {
               'Needed for Maps and reverse Address Lookup from OpenStreetMap.com'),
           trailing: IconButton(
             icon: const Icon(Icons.settings),
-            onPressed: () {
-              requestLocation().then(
-                (_) {
-                  setState(() {});
-                },
-              );
+            onPressed: () async {
+              await requestLocation();
+              updatePermission();
             },
           )));
     }
@@ -334,12 +337,9 @@ class _WelcomeState extends State<Welcome> {
               'Needed to detect Move and Stop detection and its locations.'),
           trailing: IconButton(
             icon: const Icon(Icons.settings),
-            onPressed: () {
-              requestLocation().then(
-                (_) {
-                  setState(() {});
-                },
-              );
+            onPressed: () async {
+              await requestLocation();
+              updatePermission();
             },
           )));
     }
@@ -351,12 +351,9 @@ class _WelcomeState extends State<Welcome> {
               'Needed to prevent the Android system from app shutdown when running in background.'),
           trailing: IconButton(
             icon: const Icon(Icons.settings),
-            onPressed: () {
-              requestBatteryOptimization().then(
-                (_) {
-                  setState(() {});
-                },
-              );
+            onPressed: () async {
+              await requestBatteryOptimization();
+              updatePermission();
             },
           )));
     }
@@ -367,12 +364,9 @@ class _WelcomeState extends State<Welcome> {
               'Needed to inform you about automatic alias creation or Moving/Standing Status changes.'),
           trailing: IconButton(
             icon: const Icon(Icons.settings),
-            onPressed: () {
-              requestLocation().then(
-                (_) {
-                  setState(() {});
-                },
-              );
+            onPressed: () async {
+              await requestNotification();
+              updatePermission();
             },
           )));
     }
@@ -382,12 +376,9 @@ class _WelcomeState extends State<Welcome> {
           subtitle: const Text('Needed to export or import the Database.'),
           trailing: IconButton(
             icon: const Icon(Icons.settings),
-            onPressed: () {
-              requestExternalStorage().then(
-                (_) {
-                  setState(() {});
-                },
-              );
+            onPressed: () async {
+              await requestExternalStorage();
+              updatePermission();
             },
           )));
     }
@@ -398,12 +389,9 @@ class _WelcomeState extends State<Welcome> {
               'You can track and share your stops with the device Google calendar.'),
           trailing: IconButton(
             icon: const Icon(Icons.settings),
-            onPressed: () {
-              requestCalendar().then(
-                (_) {
-                  setState(() {});
-                },
-              );
+            onPressed: () async {
+              await requestCalendar();
+              updatePermission();
             },
           )));
     }
@@ -451,7 +439,7 @@ class _WelcomeState extends State<Welcome> {
               if (permissionsOk && !stop) {
                 Future.delayed(
                     const Duration(milliseconds: 500),
-                    () => Navigator.pushNamed(
+                    () => Navigator.popAndPushNamed(
                         context, AppRoutes.liveTracking.route));
               }
             }
@@ -482,15 +470,6 @@ class _WelcomeState extends State<Welcome> {
                     permissionItemsOptional.isEmpty
                         ? header('All optional Permissions granted')
                         : empty,
-                    divider,
-                    Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: ElevatedButton(
-                          child: const Text('Request all Permissions anyway'),
-                          onPressed: () {
-                            requestAllPermissions();
-                          },
-                        ))
                   ];
                 })());
           },

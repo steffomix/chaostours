@@ -14,9 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// ignore_for_file: prefer_const_constructors
-import 'package:chaostours/address.dart';
-import 'package:chaostours/gps.dart';
 import 'package:flutter/material.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/cache.dart';
@@ -129,14 +126,14 @@ class AppUserSetting {
       case Cache.appSettingBackgroundTrackingInterval:
         return _appUserSettings[cache] ??= AppUserSetting._option(
           cache, //
-          title: Text('Background GPS tracking interval duration.'),
-          description: Text('A higher value consumes less battery, '
+          title: const Text('Background GPS tracking interval duration.'),
+          description: const Text('A higher value consumes less battery, '
               'but it also takes longer to measure the status of stopping or moving.\n'
               'NOTE:\n'
               'To activate changes restart the App you must!\nCompletely!\nInclusive the background process!'),
           unit: Unit.second,
           minValue: 15,
-          defaultValue: Duration(seconds: 30),
+          defaultValue: const Duration(seconds: 30),
           resetToDefault: () async {
             await cache
                 .save<Duration>(AppUserSetting(cache).defaultValue as Duration);
@@ -180,8 +177,8 @@ class AppUserSetting {
       case Cache.appSettingTimeRangeTreshold:
         return _appUserSettings[cache] ??= AppUserSetting._option(
           cache,
-          title: Text('Tracking status calculation time period'),
-          description: Text(
+          title: const Text('Tracking status calculation time period'),
+          description: const Text(
               'The time period in which the Moving or Stopping status is calculated.\n'
               'The System requires at least 3x time as the above "Background GPS Tracking Interval Duration" '
               'and will increase false values if necessary.'),
@@ -231,15 +228,15 @@ class AppUserSetting {
       case Cache.appSettingAutocreateAliasDuration:
         return _appUserSettings[cache] ??= AppUserSetting._option(
           cache,
-          title: Text('Auto create Alias time period.'),
-          description: Text(
+          title: const Text('Auto create Alias time period.'),
+          description: const Text(
               'The period after which an alias will be created automatically if none is found. '
               'The "Status Standing Requires Alias" option must be activated to make it work. '
               'The system requires at least 2x time as the above "Time Range Threshold" '
               'and will automatically increase false values if necessary.'),
           unit: Unit.minute,
           minValue: 60 * 5, // 5 minutes
-          defaultValue: Duration(seconds: 60 * 15),
+          defaultValue: const Duration(seconds: 60 * 15),
           resetToDefault: () async {
             await cache
                 .save<Duration>(AppUserSetting(cache).defaultValue as Duration);
@@ -261,8 +258,8 @@ class AppUserSetting {
       case Cache.appSettingGpsPointsSmoothCount:
         return _appUserSettings[cache] ??= AppUserSetting._option(
           cache,
-          title: Text('GPS smoothing count'),
-          description: Text(
+          title: const Text('GPS smoothing count'),
+          description: const Text(
               'Compensates for inaccurate GPS by calculating the average of the given number of GPS points. '
               'The maximum possible number of smooth points is calculated with the '
               'ceiling of "(Time Range Treshold" / "Background GPS Tracking Interval Duration) -1"'
@@ -299,8 +296,8 @@ class AppUserSetting {
       case Cache.appSettingBackgroundTrackingEnabled:
         return _appUserSettings[cache] ??= AppUserSetting._option(
           cache,
-          title: Text('Activate background GPS tracking'),
-          description: Text(
+          title: const Text('Activate background GPS tracking'),
+          description: const Text(
               'Please note that the Android System *WILL* put the Background GPS Tracking Future'
               ' to sleep after a while of user inactivity even if all battery saving options are deactivated. '
               'So that it is strongly recommended to start the App for at least once at morning to minimize the risk '
@@ -315,8 +312,8 @@ class AppUserSetting {
       case Cache.appSettingCacheGpsTime:
         return _appUserSettings[cache] ??= AppUserSetting._option(
           cache,
-          title: Text('Cache foreground GPS duration'),
-          description: Text(
+          title: const Text('Cache foreground GPS duration'),
+          description: const Text(
               'GPS Cache can speed up the foreground functions of the app. '
               'However, you may receive an outdated GPS measurement result.'),
           unit: Unit.second,
@@ -333,8 +330,8 @@ class AppUserSetting {
       case Cache.appSettingDistanceTreshold:
         return _appUserSettings[cache] ??= AppUserSetting._option(
           cache,
-          title: Text('Movement measuring range.'),
-          description: Text('Only relevant if no alias is found. '
+          title: const Text('Movement measuring range.'),
+          description: const Text('Only relevant if no alias is found. '
               'All measuring points must be within this radius to trigger the status Standing. '
               'Or the path of the GPS calculation points must be greater '
               'than this measuring range value to trigger the status Moving.'),
@@ -349,8 +346,8 @@ class AppUserSetting {
       case Cache.appSettingOsmLookupCondition:
         return _appUserSettings[cache] ??= AppUserSetting._option(
           cache,
-          title: Text('OpenStreetMap Address Lookup Conditions'),
-          description: Text(
+          title: const Text('OpenStreetMap Address Lookup Conditions'),
+          description: const Text(
               'The requirements for when the app is allowed to search for an address. '
               'Higher restrictions reduce the app\'s data consumption.'),
           unit: Unit.option,
@@ -364,7 +361,7 @@ class AppUserSetting {
       case Cache.appSettingWeekdays:
         return _appUserSettings[cache] ??= AppUserSetting._option(
           cache,
-          title: Text('Erster Wochentag'),
+          title: const Text('Erster Wochentag'),
           description: null,
           unit: Unit.option,
           defaultValue: Weekdays.mondayFirst,
@@ -377,8 +374,8 @@ class AppUserSetting {
       case Cache.appSettingPublishToCalendar:
         return _appUserSettings[cache] ??= AppUserSetting._option(
           cache,
-          title: Text('Use Calender'),
-          description: Text('General publish to Calendar switch.'),
+          title: const Text('Use Calender'),
+          description: const Text('General publish to Calendar switch.'),
           unit: Unit.option,
           defaultValue: true,
           resetToDefault: () async {
@@ -389,8 +386,8 @@ class AppUserSetting {
       case Cache.appSettingAutocreateAlias:
         return _appUserSettings[cache] ??= AppUserSetting._option(
           cache,
-          title: Text('Auto create Location Alias.'),
-          description: Text(
+          title: const Text('Auto create Location Alias.'),
+          description: const Text(
               'The App can create a Location Alias for you automatically after a certain time of standing. '
               ' It also can lookup an Address from OpenStreetMap.com for free, just make sure you have set the lookup permissions below.'),
           unit: Unit.option,
@@ -403,8 +400,8 @@ class AppUserSetting {
       case Cache.appSettingStatusStandingRequireAlias:
         return _appUserSettings[cache] ??= AppUserSetting._option(
           cache,
-          title: Text('Status stop required alias'),
-          description: Text(
+          title: const Text('Status stop required alias'),
+          description: const Text(
               'If deactivated, the Movement measuring range is used as a virtual alias.'),
           unit: Unit.option,
           defaultValue: true,
@@ -415,13 +412,13 @@ class AppUserSetting {
 
       case Cache.appSettingForegroundUpdateInterval:
         return _appUserSettings[cache] ??= AppUserSetting._option(cache,
-            title: Text('Life tracking foreground lookup interval'),
-            description: Text(
+            title: const Text('Life tracking foreground lookup interval'),
+            description: const Text(
                 'The interval period in which the foreground process reloads the measurement data from the background process.'),
             unit: Unit.second,
             minValue: 3,
             maxValue: 30,
-            defaultValue: Duration(seconds: 5), //
+            defaultValue: const Duration(seconds: 5), //
             resetToDefault: () async {
           await cache
               .save<Duration>(AppUserSetting(cache).defaultValue as Duration);
@@ -429,7 +426,7 @@ class AppUserSetting {
 
       case Cache.appSettingTimeZone:
         return _appUserSettings[cache] ??= AppUserSetting._option(cache,
-            title: Text('ToDo - implement timezones'),
+            title: const Text('ToDo - implement timezones'),
             description: Text('Description of ${cache.toString()}'),
             unit: Unit.piece,
             defaultValue: 'Europe/Berlin', //
@@ -506,26 +503,23 @@ class AppUserSetting {
 
   Future<String> load() async {
     switch (cache.cacheType) {
-      case String:
+      case const (String):
         return (_cachedValue ??= await cache.load<String>(defaultValue))
             as String;
 
-      case int:
+      case const (int):
         int value = await cache.load<int>(defaultValue as int);
         return (value / unit.multiplicator).round().toString();
 
-      case bool:
+      case const (bool):
         bool value = await cache.load<bool>(defaultValue as bool);
         return value ? '1' : '0';
 
-      case Duration:
+      case const (Duration):
         Duration value = await cache.load<Duration>(defaultValue as Duration);
-        if (cache == Cache.appSettingBackgroundTrackingInterval) {
-          print('~~ Tracking interval user setting $value');
-        }
         return (value.inSeconds / unit.multiplicator).round().toString();
 
-      case OsmLookupConditions:
+      case const (OsmLookupConditions):
         OsmLookupConditions value = await cache
             .load<OsmLookupConditions>(defaultValue as OsmLookupConditions);
         return value.name;
