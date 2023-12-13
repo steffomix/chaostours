@@ -98,18 +98,17 @@ class DB {
   static Future<T> execute<T>(
       Future<T> Function(flite.Transaction txn) action) async {
     return Future.microtask(() async {
-      bool retry = false;
-
+      int trys = 0;
       do {
         try {
           return await _database!.transaction<T>(action);
         } on flite.DatabaseException catch (e) {
           if (e.toString().contains('transaction')) {
             await Future.delayed(const Duration(seconds: 1));
-            retry = true;
+            trys++;
           }
         }
-      } while (retry);
+      } while (trys < 3);
 
       throw ('DB::execute unknown error');
     });

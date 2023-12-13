@@ -57,12 +57,10 @@ class BaseWidgetState<T extends BaseWidget> extends State<T>
     super.initState();
   }
 
-  Future<void> render({void Function()? fn}) async {
-    Future.microtask(() {
-      if (mounted) {
-        super.setState(fn ?? () {});
-      }
-    });
+  void render({void Function()? fn}) {
+    if (mounted) {
+      setState(fn ?? () {});
+    }
   }
 
   bool _initialized = false;

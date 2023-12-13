@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import 'package:background_location_tracker/background_location_tracker.dart';
+//import 'package:background_location_tracker/background_location_tracker.dart';
 import 'package:chaostours/address.dart';
 import 'dart:math' as math;
 
@@ -25,10 +25,11 @@ import 'package:chaostours/gps.dart';
 import 'package:chaostours/cache.dart';
 import 'package:chaostours/location.dart';
 import 'package:chaostours/calendar.dart';
-import 'package:chaostours/database.dart';
+//import 'package:chaostours/database.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_alias.dart';
 
+/* 
 @pragma('vm:entry-point')
 void backgroundCallback() {
   BackgroundLocationTrackerManager.handleBackgroundUpdated(
@@ -88,10 +89,7 @@ class BackgroundTracking {
             loggingEnabled: false, androidConfig: await _androidConfig()));
   }
 }
-
-Future<void> track(GPS gps) async {
-  return await _TrackPoint().track(lat: gps.lat, lon: gps.lon);
-}
+ */
 
 enum TrackingStatus {
   none(0),
@@ -109,18 +107,19 @@ enum TrackingStatus {
   }
 }
 
-class _TrackPoint {
-  final Logger logger = Logger.logger<_TrackPoint>();
+class Tracker {
+  final Logger logger = Logger.logger<Tracker>();
 
-  static _TrackPoint? _instance;
-  _TrackPoint._();
-  factory _TrackPoint() => _instance ??= _TrackPoint._();
+  static Tracker? _instance;
+  Tracker._();
+  factory Tracker() => _instance ??= Tracker._();
 
   TrackingStatus oldTrackingStatus = TrackingStatus.none;
 
-  //DataBridge bridge = DataBridge.instance;
+  static Future<GPS>? _gpsStartMoving;
+  static Future<GPS> gpsStartMoving() => _gpsStartMoving ??= GPS.gps();
 
-  Future<void> track({required double lat, required double lon}) async {
+  Future<void> track() async {
     // gather info and stats
     if (logger.realm == LoggerRealm.background) {
       var tick = DateTime.now();
@@ -136,7 +135,7 @@ class _TrackPoint {
     }
 
     /// create gpsPoint
-    GPS gps = GPS(lat, lon);
+    GPS gps = await GPS.gps();
 
     if (await Cache.backgroundTrackingStatus.load(TrackingStatus.none) ==
         TrackingStatus.none) {
@@ -416,8 +415,8 @@ class _TrackPoint {
           /// update alias
           if (gpsLocation.hasAlias) {
             for (var model in gpsLocation.aliasModels) {
-              model.lastVisited = await Cache.backgroundGpsStartStanding
-                  .load<DateTime>(DateTime.now());
+              model.lastVisited =
+                  (await Cache.backgroundGpsStartStanding.load<GPS>(gps)).time;
               await model.update();
             }
             // wait before shutdown task

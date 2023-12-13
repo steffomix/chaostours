@@ -17,8 +17,7 @@ limitations under the License.
 */
 
 import 'package:permission_handler/permission_handler.dart';
-
-import 'package:chaostours/tracking.dart';
+import 'package:chaostours/channel/background_channel.dart';
 import 'package:flutter/material.dart';
 //
 import 'package:chaostours/logger.dart';
@@ -123,7 +122,7 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
       await showAwesomePermissionCheck();
     }
 
-    bool isTracking = await BackgroundTracking.isTracking();
+    bool isTracking = await BackgroundChannel.isRunning();
     items.add(ListTile(
         leading: isTracking
             ? const Icon(Icons.done, color: Colors.green)
@@ -136,9 +135,9 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
               : const Icon(Icons.play_arrow),
           onPressed: () async {
             if (isTracking) {
-              await BackgroundTracking.stopTracking();
+              await BackgroundChannel.stop();
             } else {
-              await BackgroundTracking.startTracking();
+              await BackgroundChannel.start();
             }
             await _permissionItems();
             Future.delayed(const Duration(milliseconds: 100), () {

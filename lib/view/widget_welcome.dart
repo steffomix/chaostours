@@ -19,6 +19,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:app_settings/app_settings.dart';
 import 'dart:io' as io;
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 ///
 import 'package:chaostours/conf/app_routes.dart';
@@ -26,12 +27,12 @@ import 'package:chaostours/cache.dart';
 import 'package:chaostours/conf/app_user_settings.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/model/model_alias.dart';
-import 'package:chaostours/tracking.dart';
+import 'package:chaostours/channel/background_channel.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/database.dart';
 import 'package:chaostours/runtime_data.dart';
 import 'package:chaostours/view/app_widgets.dart';
-import 'package:chaostours/tracking.dart' as tracking;
+import 'package:chaostours/tracking.dart';
 //import 'package:chaostours/logger.dart';
 
 class Welcome extends StatefulWidget {
@@ -212,7 +213,7 @@ class _WelcomeState extends State<Welcome> {
     }
 
     try {
-      isTracking = await BackgroundTracking.isTracking();
+      isTracking = await BackgroundChannel.isRunning();
     } catch (e) {
       isTracking = false;
     }
@@ -239,7 +240,7 @@ class _WelcomeState extends State<Welcome> {
     }
 
     try {
-      isTracking = await BackgroundTracking.isTracking();
+      isTracking = await BackgroundChannel.isRunning();
     } catch (e) {
       isTracking = false;
     }
@@ -297,9 +298,9 @@ class _WelcomeState extends State<Welcome> {
                 : const Icon(Icons.play_arrow),
             onPressed: () async {
               if (isTracking) {
-                await BackgroundTracking.stopTracking();
+                await BackgroundChannel.stop();
               } else {
-                await BackgroundTracking.startTracking();
+                await BackgroundChannel.start();
               }
               updatePermission();
             },
@@ -489,6 +490,10 @@ class _WelcomeState extends State<Welcome> {
       await DB.openDatabase(create: true);
       await addPreloadMessage(const Text('Database opened'));
 
+      bool consent = await userConsent();
+      if (!consent) {
+        SystemChannels.platform.invokeMethod<void>('SystemNavigator.pop', true);
+      }
       var count = await ModelAlias.count();
       if (count == 0) {
         await addPreloadMessage(const Text('Initalize user settings'));
@@ -523,7 +528,7 @@ class _WelcomeState extends State<Welcome> {
 
           await addPreloadMessage(
               const Text('Execute first background tracking from foreground'));
-          tracking.track(gps);
+          await Tracker().track();
         } catch (e) {
           await addPreloadMessage(const Text(
               'Create initial location alias failed. No GPS Permissions granted?'));
@@ -559,13 +564,13 @@ class _WelcomeState extends State<Welcome> {
           .load<Duration>(AppUserSetting(cache).defaultValue as Duration);
       await addPreloadMessage(
           Text('Initialize background trackig with ${dur.inSeconds} sec.'));
-      await BackgroundTracking.initialize();
+      await BackgroundChannel.initialize();
 
       //
       //await BackgroundTracking.initialize();
       if (await Cache.appSettingBackgroundTrackingEnabled.load<bool>(true)) {
         await addPreloadMessage(const Text('Start background tracking'));
-        await BackgroundTracking.startTracking();
+        await BackgroundChannel.start();
       } else {
         await addPreloadMessage(
             const Text('Background tracking not enabled, skip start tracking'));
@@ -610,4 +615,56 @@ class _WelcomeState extends State<Welcome> {
         .setTrustedCertificatesBytes(data.buffer.asUint8List());
     logger.log('SSL Key loaded');
   }
+
+  Future<bool> userConsent() async {
+    var licenseConsent = await Cache.appSettingLicenseConsent.load<bool>(false);
+    var consentGiven = false;
+    if (licenseConsent) {
+      return true;
+    }
+    if (mounted) {
+      await AppWidgets.dialog(context: context, contents: [
+        TextButton(
+          child: Text(license),
+          onPressed: () async {
+            await launchUrl(
+                Uri.parse('http://www.apache.org/licenses/LICENSE-2.0'));
+          },
+        )
+      ], buttons: [
+        TextButton(
+          child: const Text('Decline'),
+          onPressed: () {
+            consentGiven = false;
+            Navigator.pop(context);
+          },
+        ),
+        TextButton(
+          child: const Text('Consent'),
+          onPressed: () {
+            consentGiven = true;
+            Navigator.pop(context);
+          },
+        )
+      ]);
+    }
+    return consentGiven;
+  }
+
+  static String license = '''Chaos Tours
+
+Copyright ${DateTime.now().year} Stefan Brinkmann
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+''';
 }

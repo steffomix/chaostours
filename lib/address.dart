@@ -37,11 +37,11 @@ class Address {
 
   String? _alias;
   String get alias {
-    if (!_checkResponse()) {
-      return msgOSMFailed;
-    }
     if (_alias != null) {
       return _alias!;
+    }
+    if (!_checkResponse()) {
+      return msgOSMFailed;
     }
     try {
       final body = _response!.body;
@@ -55,11 +55,11 @@ class Address {
 
   String? _description;
   String get description {
-    if (!_checkResponse()) {
-      return msgOSMFailed;
-    }
     if (_description != null) {
       return _description!;
+    }
+    if (!_checkResponse()) {
+      return msgOSMFailed;
     }
     try {
       final body = _response!.body;
@@ -86,7 +86,9 @@ class Address {
       return false;
     }
     if (_response!.statusCode != 200) {
-      logger.error('_response is Null', StackTrace.current);
+      logger.error(
+          '_response status code is != 200 (actually ${_response?.statusCode ?? 'unknown'})',
+          StackTrace.current);
       return false;
     }
     return true;

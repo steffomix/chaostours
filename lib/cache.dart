@@ -32,6 +32,8 @@ import 'package:chaostours/value_expired.dart';
 import 'package:geolocator/geolocator.dart';
 
 enum Cache {
+  // user consent
+
   /// trigger off == TrackingStatus.none
   /// triggered by user, set to none in background
   trackingStatusTriggered(TrackingStatus),
@@ -73,6 +75,8 @@ enum Cache {
   backgroundCalendarLastEventIds(List<CalendarEventId>),
 
   /// appUserStettings
+  appSettingLicenseConsent(bool),
+  appSettingOsmConsent(bool),
   appSettingBackgroundTrackingEnabled(bool, Duration(days: 365)),
   appSettingStatusStandingRequireAlias(bool, Duration(days: 365)),
   appSettingAutocreateAliasDuration(Duration, Duration(days: 365)),

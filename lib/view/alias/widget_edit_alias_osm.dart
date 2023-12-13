@@ -473,7 +473,8 @@ class _WidgetOsm extends State<WidgetOsm> {
     return _mapController ??= MapController(
         initPosition: _gps == null
             ? null
-            : GeoPoint(latitude: _gps!.lat, longitude: _gps!.lon));
+            : GeoPoint(latitude: _gps!.lat, longitude: _gps!.lon),
+        initMapWithUserPosition: const UserTrackingOption());
   }
 
   OSMOption? _osmOption;

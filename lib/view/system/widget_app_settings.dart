@@ -19,7 +19,7 @@ import 'dart:math' as math;
 
 ///
 //import 'package:chaostours/logger.dart';
-import 'package:chaostours/tracking.dart';
+import 'package:chaostours/channel/background_channel.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/conf/app_user_settings.dart';
 import 'package:chaostours/cache.dart';
@@ -71,12 +71,15 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
     await updateDebugValues();
     _renderedWidgets.clear();
     _renderedWidgets.addAll([
-      await booleanSetting(Cache.appSettingBackgroundTrackingEnabled, onChange:
+      await booleanSetting(
+        Cache
+            .appSettingBackgroundTrackingEnabled, /*onChange:
           ({required AppUserSetting setting, required bool value}) async {
         value
             ? await BackgroundTracking.startTracking()
             : await BackgroundTracking.stopTracking();
-      }),
+      }*/
+      ),
       divider,
       await booleanSetting(Cache.appSettingAutocreateAlias),
       divider,

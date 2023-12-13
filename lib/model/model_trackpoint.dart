@@ -164,7 +164,13 @@ class ModelTrackPoint {
     map.removeWhere((key, value) => key == TableTrackPoint.primaryKey.column);
     await DB.execute((Transaction txn) async {
       _id = await txn.insert(TableTrackPoint.table, map);
-      for (var id in await Cache.backgroundAliasIdList.load<List<int>>([])) {
+    });
+
+    final aliasIdList = await Cache.backgroundAliasIdList.load<List<int>>([]);
+    final taskIdList = await Cache.backgroundTaskIdList.load<List<int>>([]);
+    final userIdList = await Cache.backgroundUserIdList.load<List<int>>([]);
+    await DB.execute((Transaction txn) async {
+      for (var id in aliasIdList) {
         try {
           await txn.insert(TableTrackPointAlias.table, {
             TableTrackPointAlias.idAlias.column: id,
@@ -174,7 +180,7 @@ class ModelTrackPoint {
           logger.error('insert idAlias: $e', stk);
         }
       }
-      for (var id in await Cache.backgroundTaskIdList.load<List<int>>([])) {
+      for (var id in taskIdList) {
         try {
           await txn.insert(TableTrackPointTask.table, {
             TableTrackPointTask.idTask.column: id,
@@ -184,7 +190,7 @@ class ModelTrackPoint {
           logger.error('insert idTask: $e', stk);
         }
       }
-      for (var id in await Cache.backgroundUserIdList.load<List<int>>([])) {
+      for (var id in userIdList) {
         try {
           await txn.insert(TableTrackPointUser.table, {
             TableTrackPointUser.idUser.column: id,
@@ -459,7 +465,7 @@ class ModelTrackPoint {
             columns: TableTrackPoint.columns,
             offset: offset,
             limit: limit,
-            orderBy: '${TableTrackPoint.timeStart.column} DESC');
+            orderBy: '${TableTrackPoint.timeStart.column}');
       },
     );
     var models = <ModelTrackPoint>[];
@@ -606,7 +612,8 @@ class ModelTrackPoint {
             columns: TableTrackPoint.columns,
             where: '${TableTrackPoint.address.column} like ? OR '
                 '${TableTrackPoint.primaryKey.column} IN (${List.filled(ids.length, '?').join(',')})',
-            whereArgs: ['%$search%', ...ids.toList()]);
+            whereArgs: ['%$search%', ...ids],
+            orderBy: '${TableTrackPoint.timeStart.column} DESC');
       },
     );
     var models = <ModelTrackPoint>[];
