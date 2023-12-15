@@ -22,7 +22,7 @@ import 'dart:math' as math;
 import 'package:chaostours/channel/background_channel.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/conf/app_user_settings.dart';
-import 'package:chaostours/cache.dart';
+import 'package:chaostours/database/cache.dart';
 import 'package:flutter/services.dart';
 
 enum AliasRequired {
@@ -71,15 +71,12 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
     await updateDebugValues();
     _renderedWidgets.clear();
     _renderedWidgets.addAll([
-      await booleanSetting(
-        Cache
-            .appSettingBackgroundTrackingEnabled, /*onChange:
+      await booleanSetting(Cache.appSettingBackgroundTrackingEnabled, onChange:
           ({required AppUserSetting setting, required bool value}) async {
         value
-            ? await BackgroundTracking.startTracking()
-            : await BackgroundTracking.stopTracking();
-      }*/
-      ),
+            ? await BackgroundChannel.start()
+            : await BackgroundChannel.stop();
+      }),
       divider,
       await booleanSetting(Cache.appSettingAutocreateAlias),
       divider,
@@ -150,15 +147,15 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
   Future<void> updateDebugValues() async {
     debugValues.clear();
     final smoothCount =
-        await Cache.appSettingGpsPointsSmoothCount.load<int>(-1);
+        await Cache.appSettingGpsPointsSmoothCount.loadCache<int>(-1);
     final autoCreateDuration = await Cache.appSettingAutocreateAliasDuration
-        .load<Duration>(Duration.zero);
+        .loadCache<Duration>(Duration.zero);
     final trackingInterval = await Cache.appSettingBackgroundTrackingInterval
-        .load<Duration>(Duration.zero);
+        .loadCache<Duration>(Duration.zero);
     final distanceTreshold =
-        await Cache.appSettingDistanceTreshold.load<int>(-1);
-    final timeTreshold =
-        await Cache.appSettingTimeRangeTreshold.load<Duration>(Duration.zero);
+        await Cache.appSettingDistanceTreshold.loadCache<int>(-1);
+    final timeTreshold = await Cache.appSettingTimeRangeTreshold
+        .loadCache<Duration>(Duration.zero);
 
     valueNotifiers[Cache.appSettingGpsPointsSmoothCount]?.value++;
     valueNotifiers[Cache.appSettingAutocreateAliasDuration]?.value++;
@@ -222,7 +219,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
   }
 
   Future<T> save<T>(Cache cache, T value) async {
-    await cache.save<T>(value);
+    await cache.saveCache<T>(value);
     valueNotifiers[cache]?.value++;
     return value;
   }
@@ -234,7 +231,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
     final setting = AppUserSetting(cache);
 
     Widget checkbox = AppWidgets.checkBox(
-        value: await cache.load<bool>(false),
+        value: await cache.loadCache<bool>(false),
         onToggle: (value) async {
           deactivate();
           await save<bool>(cache, value ?? false);
@@ -342,8 +339,8 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
   Future<Widget> settingOsmlookupCondition() async {
     const cache = Cache.appSettingOsmLookupCondition;
     final setting = AppUserSetting(cache);
-    _currentOsmCondition = await cache
-        .load<OsmLookupConditions>(setting.defaultValue as OsmLookupConditions);
+    _currentOsmCondition = await cache.loadCache<OsmLookupConditions>(
+        setting.defaultValue as OsmLookupConditions);
     return ValueListenableBuilder(
       valueListenable: valueNotifiers[cache] ??= ValueNotifier<int>(0),
       builder: (context, _, __) {

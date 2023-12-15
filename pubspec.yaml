@@ -39,11 +39,6 @@ dependencies:
   #provider: ^6.0.5
   sprintf: ^7.0.0
 
-  # https://pub.dev/packages/background_location_tracker
-  #background_location_tracker: ^1.4.1
-  #background_location_tracker:
-    #git: https://github.com/steffomix/flutter-background-location-tracker
-    #git: https://github.com/icapps/flutter-background-location-tracker
 
   # https://pub.dev/packages/flutter_background_service
   flutter_background_service: ^5.0.5

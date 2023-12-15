@@ -18,7 +18,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 ///
-import 'package:chaostours/cache.dart';
+import 'package:chaostours/database/cache.dart';
 import 'package:chaostours/conf/app_user_settings.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/logger.dart';
@@ -105,7 +105,7 @@ class Address {
 
       _response ??= await http.get(url);
       if (saveToCache) {
-        await Cache.backgroundAddress.save<String>(alias);
+        await Cache.backgroundAddress.saveCache<String>(alias);
       }
     } else {
       _alias = 'Address Lookup denied by User Setting';

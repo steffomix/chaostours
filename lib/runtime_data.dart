@@ -3,7 +3,7 @@ import 'package:chaostours/event_manager.dart';
 import 'package:flutter/material.dart';
 
 import 'package:chaostours/ticker.dart';
-import 'package:chaostours/cache.dart';
+import 'package:chaostours/database/cache.dart';
 
 class RuntimeData {
   static WidgetsBinding? widgetsFlutterBinding;
@@ -20,7 +20,7 @@ class RuntimeData {
     getDuration: () async {
       var cache = Cache.appSettingForegroundUpdateInterval;
       return await cache
-          .load<Duration>(AppUserSetting(cache).defaultValue as Duration);
+          .loadCache<Duration>(AppUserSetting(cache).defaultValue as Duration);
     },
     action: () {
       EventManager.fire<EventOnForegroundTracking>(EventOnForegroundTracking());
@@ -32,7 +32,7 @@ class RuntimeData {
     getDuration: () async {
       var cache = Cache.appSettingBackgroundTrackingInterval;
       return await cache
-          .load<Duration>(AppUserSetting(cache).defaultValue as Duration);
+          .loadCache<Duration>(AppUserSetting(cache).defaultValue as Duration);
     },
     action: () {
       EventManager.fire<EventOnBackgroundUpdate>(EventOnBackgroundUpdate());

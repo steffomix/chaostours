@@ -14,22 +14,24 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/channel/notification_channel.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:app_settings/app_settings.dart';
 import 'dart:io' as io;
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 ///
 import 'package:chaostours/conf/app_routes.dart';
-import 'package:chaostours/cache.dart';
+import 'package:chaostours/database/cache.dart';
 import 'package:chaostours/conf/app_user_settings.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/channel/background_channel.dart';
 import 'package:chaostours/logger.dart';
-import 'package:chaostours/database.dart';
+import 'package:chaostours/database/database.dart';
 import 'package:chaostours/runtime_data.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/tracking.dart';
@@ -200,7 +202,9 @@ class _WelcomeState extends State<Welcome> {
               (permissionLocationAlwaysIsGranted =
                   await Permission.locationAlways.isGranted) &&
               (permissionIgnoreBatteryOptimizationsIsGranted =
-                  await Permission.ignoreBatteryOptimizations.isGranted)
+                  await Permission.ignoreBatteryOptimizations.isGranted) &&
+              (permissionNotificationIsGranted =
+                  await Permission.notification.isGranted)
           /* &&
           (permissionManageExternalStorageIsGranted =
               await Permission.manageExternalStorage.isGranted) &&
@@ -228,11 +232,12 @@ class _WelcomeState extends State<Welcome> {
           (permissionLocationAlwaysIsGranted =
               await Permission.locationAlways.isGranted) &&
           (permissionIgnoreBatteryOptimizationsIsGranted =
-              await Permission.ignoreBatteryOptimizations.isGranted) && */
-          (permissionManageExternalStorageIsGranted =
-                  await Permission.manageExternalStorage.isGranted) &&
+              await Permission.ignoreBatteryOptimizations.isGranted) &&
               (permissionNotificationIsGranted =
                   await Permission.notification.isGranted) &&
+               */
+          (permissionManageExternalStorageIsGranted =
+                  await Permission.manageExternalStorage.isGranted) &&
               (permissionCalendarIsGranted =
                   await Permission.calendar.isGranted);
     } catch (e) {
@@ -359,7 +364,7 @@ class _WelcomeState extends State<Welcome> {
           )));
     }
     if (!permissionNotificationIsGranted) {
-      permissionItemsOptional.add(ListTile(
+      permissionItemsRequired.add(ListTile(
           title: const Text('Show notifications.'),
           subtitle: const Text(
               'Needed to inform you about automatic alias creation or Moving/Standing Status changes.'),
@@ -535,40 +540,105 @@ class _WelcomeState extends State<Welcome> {
         }
       }
 
-      // request gps always
-      if (!(await Permission.locationAlways.isGranted) && mounted) {
+      if (mounted) {
         await AppWidgets.dialog(context: context, contents: [
-          const Text(
-              'For Background GPS Tracking the app need GPS permission "Always". '
-              'Please tap OK to get to the permission request.')
+          const Text('Chaos Tours requires\n'
+              'Notification permission granted\n'
+              'to be able to track GPS in background mode.\n'
+              'Do you want to track GPS while this App is closed?')
         ], buttons: [
           TextButton(
-            child: const Text('OK'),
+            child: const Text('No'),
+            onPressed: () => Navigator.pop(context),
+          ),
+          TextButton(
+            child: const Text('Yes'),
             onPressed: () async {
-              await requestLocationAlways();
-              if (await Permission.locationAlways.isGranted && mounted) {
+              await requestNotification();
+              if (await Permission.notification.isGranted) {
+                Cache.appSettingBackgroundTrackingEnabled.saveCache<bool>(true);
+              }
+              if (mounted) {
                 Navigator.pop(context);
               }
             },
           )
         ]);
       }
-      await requestLocationAlways();
+      if (await Cache.appSettingBackgroundTrackingEnabled
+          .loadCache<bool>(false)) {
+        // request gps always
+        if (!(await Permission.locationAlways.isGranted) && mounted) {
+          await AppWidgets.dialog(context: context, contents: [
+            const Text(
+                'For Background GPS Tracking the app need GPS permission "Always". '
+                'Please tap OK to get to the permission request.')
+          ], buttons: [
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () async {
+                await requestLocationAlways();
+                if (await Permission.locationAlways.isGranted && mounted) {
+                  Navigator.pop(context);
+                }
+              },
+            )
+          ]);
+        }
+      }
+      if (mounted) {
+        await AppWidgets.dialog(context: context, contents: [
+          const Text('Chaos Tours can lookup Address Data\n'
+              'from OpenStreetMap.org\n'
+              'from GPS coordonates.\n'
+              'This future consumes about 1-2kb Internet Data for each lookup.\n'
+              'Do you want this future enabled?\n'
+              'You can set a more fine grained permision level in the Settings menu later on.')
+        ], buttons: [
+          TextButton(
+            child: const Text('No'),
+            onPressed: () async {
+              await Cache.appSettingOsmLookupCondition
+                  .saveCache<OsmLookupConditions>(OsmLookupConditions.never);
+              if (mounted) {
+                Navigator.pop(context);
+              }
+            },
+          ),
+          TextButton(
+            child: const Text('Yes'),
+            onPressed: () async {
+              await Cache.appSettingOsmLookupCondition
+                  .saveCache<OsmLookupConditions>(
+                      OsmLookupConditions.onAutoCreateAlias);
+              if (mounted) {
+                Navigator.pop(context);
+              }
+            },
+          )
+        ]);
+      }
 
-      //
-      await addPreloadMessage(const Text('Load Web SSL key'));
-      await webKey();
+      if (await Permission.notification.isGranted) {
+        await NotificationChannel.initialize();
+        if (await Permission.location.isGranted) {
+          await BackgroundChannel.initialize();
+        }
+      }
+
+      await loadWebSSLKey();
 
       var cache = Cache.appSettingBackgroundTrackingInterval;
       var dur = await cache
-          .load<Duration>(AppUserSetting(cache).defaultValue as Duration);
+          .loadCache<Duration>(AppUserSetting(cache).defaultValue as Duration);
       await addPreloadMessage(
           Text('Initialize background trackig with ${dur.inSeconds} sec.'));
       await BackgroundChannel.initialize();
 
       //
       //await BackgroundTracking.initialize();
-      if (await Cache.appSettingBackgroundTrackingEnabled.load<bool>(true)) {
+      if (await Cache.appSettingBackgroundTrackingEnabled
+          .loadCache<bool>(true)) {
         await addPreloadMessage(const Text('Start background tracking'));
         await BackgroundChannel.start();
       } else {
@@ -583,6 +653,7 @@ class _WelcomeState extends State<Welcome> {
       await addPreloadMessage(const Text('Check Permissions...'));
 
       bool perm = await checkAllRequiredPermissions();
+      await checkAllOptionalPermissions();
       if (perm) {
         preloadFinished = true;
         if (mounted) {
@@ -608,7 +679,7 @@ class _WelcomeState extends State<Welcome> {
   /// load ssh key for https connections
   /// add cert for https requests you can download here:
   /// https://letsencrypt.org/certs/lets-encrypt-r3.pem
-  static Future<void> webKey() async {
+  static Future<void> loadWebSSLKey() async {
     ByteData data =
         await PlatformAssetBundle().load('assets/lets-encrypt-r3.pem');
     io.SecurityContext.defaultContext
@@ -617,7 +688,8 @@ class _WelcomeState extends State<Welcome> {
   }
 
   Future<bool> userConsent() async {
-    var licenseConsent = await Cache.appSettingLicenseConsent.load<bool>(false);
+    var licenseConsent =
+        await Cache.appSettingLicenseConsent.loadCache<bool>(false);
     var consentGiven = false;
     if (licenseConsent) {
       return true;
@@ -651,7 +723,7 @@ class _WelcomeState extends State<Welcome> {
     return consentGiven;
   }
 
-  static String license = '''Chaos Tours
+  static String license = '''Chaos Tours License
 
 Copyright ${DateTime.now().year} Stefan Brinkmann
 

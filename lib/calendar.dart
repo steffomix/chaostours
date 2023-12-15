@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import 'package:chaostours/conf/app_user_settings.dart';
-import 'package:chaostours/database.dart';
+import 'package:chaostours/database/database.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/model/model_alias_group.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
@@ -23,7 +23,7 @@ import 'package:device_calendar/device_calendar.dart';
 
 ///
 import 'package:chaostours/logger.dart';
-import 'package:chaostours/cache.dart';
+import 'package:chaostours/database/cache.dart';
 
 class CalendarEventId {
   String calendarId;
@@ -53,7 +53,8 @@ class AppCalendar {
 
   Future<String> getTimeZone() async {
     Cache key = Cache.appSettingTimeZone;
-    return await key.load<String>(AppUserSetting(key).defaultValue as String);
+    return await key
+        .loadCache<String>(AppUserSetting(key).defaultValue as String);
   }
 
   Future<String?> inserOrUpdate(Event e) async {
@@ -92,7 +93,7 @@ class AppCalendar {
           err.add(e.errorMessage);
         });
         await Cache.backgroundTrackPointUserNotes
-            .save<String>(err.join('\n\n'));
+            .saveCache<String>(err.join('\n\n'));
       }
       var data = calendarsResult.data;
       if (data != null) {
@@ -137,7 +138,7 @@ class AppCalendar {
     }
 
     GPS lastStatusChange =
-        await Cache.backgroundGpsLastStatusChange.load<GPS>(tp.gps);
+        await Cache.backgroundGpsLastStatusChange.loadCache<GPS>(tp.gps);
 
     /// get dates
     final berlin = getLocation(await getTimeZone());
@@ -178,18 +179,18 @@ class AppCalendar {
 
     /// cache event id
     await Cache.backgroundCalendarLastEventIds
-        .save<List<CalendarEventId>>(calendarEvents);
+        .saveCache<List<CalendarEventId>>(calendarEvents);
   }
 
   Future<void> completeCalendarEvent(ModelTrackPoint tp) async {
     List<CalendarEventId> calIds = await Cache.backgroundCalendarLastEventIds
-        .load<List<CalendarEventId>>([]);
+        .loadCache<List<CalendarEventId>>([]);
     if (calIds.isEmpty) {
       return;
     }
 
     GPS lastStatusChange =
-        await Cache.backgroundGpsLastStatusChange.load<GPS>(tp.gps);
+        await Cache.backgroundGpsLastStatusChange.loadCache<GPS>(tp.gps);
 
     /// get dates
     final berlin = getLocation(await getTimeZone());
@@ -242,7 +243,8 @@ class AppCalendar {
     }
 
     // clear calendar cache
-    await Cache.backgroundCalendarLastEventIds.save<List<CalendarEventId>>([]);
+    await Cache.backgroundCalendarLastEventIds
+        .saveCache<List<CalendarEventId>>([]);
     tp.calendarEventIds.clear();
   }
 }

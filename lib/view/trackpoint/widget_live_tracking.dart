@@ -16,7 +16,6 @@ limitations under the License.
 
 import 'package:chaostours/conf/app_colors.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:visibility_detector/visibility_detector.dart';
@@ -26,7 +25,7 @@ import 'package:chaostours/tracking.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/event_manager.dart';
-import 'package:chaostours/cache.dart';
+import 'package:chaostours/database/cache.dart';
 import 'package:chaostours/util.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_task.dart';
@@ -80,9 +79,9 @@ class _Cache {
     gps = await GPS.gps();
 
     lastBackgroundTick =
-        await Cache.backgroundLastTick.load<DateTime>(DateTime.now());
+        await Cache.backgroundLastTick.loadCache<DateTime>(DateTime.now());
 
-    tickList = await Cache.backgroundTickList.load<List<DateTime>>([]);
+    tickList = await Cache.backgroundTickList.loadCache<List<DateTime>>([]);
 
     List<int> seconds = [];
     if (tickList.length > 1) {
@@ -101,31 +100,32 @@ class _Cache {
     //location = await Location.location(gps!);
     trackPoint = await ModelTrackPoint.fromCache(gps!);
 
-    gpsPoints = await Cache.backgroundGpsPoints.load<List<GPS>>([]);
+    gpsPoints = await Cache.backgroundGpsPoints.loadCache<List<GPS>>([]);
     //gpsSmoothPoints = await Cache.backgroundGpsSmoothPoints.load<List<GPS>>([]);
-    gpsCalcPoints = await Cache.backgroundGpsCalcPoints.load<List<GPS>>([]);
+    gpsCalcPoints =
+        await Cache.backgroundGpsCalcPoints.loadCache<List<GPS>>([]);
 
     //lastTrackpointStanding = await Cache.backgroundGpsStartStanding.load<GPS>(gps!);
     trackingStatus = await Cache.backgroundTrackingStatus
-        .load<TrackingStatus>(TrackingStatus.none);
+        .loadCache<TrackingStatus>(TrackingStatus.none);
     triggeredTrackingStatus = await Cache.trackingStatusTriggered
-        .load<TrackingStatus>(TrackingStatus.none);
+        .loadCache<TrackingStatus>(TrackingStatus.none);
 
-    address = await Cache.backgroundAddress.load<String>('Reload');
+    address = await Cache.backgroundAddress.loadCache<String>('Reload');
     //notes = await Cache.backgroundTrackPointUserNotes.load<String>('');
 
     Cache cache = Cache.appSettingWeekdays;
-    weekdays = (await cache
-            .load<Weekdays>(AppUserSetting(cache).defaultValue as Weekdays))
+    weekdays = (await cache.loadCache<Weekdays>(
+            AppUserSetting(cache).defaultValue as Weekdays))
         .weekdays;
 
     cache = Cache.appSettingDistanceTreshold;
     distanceTreshold =
-        await cache.load<int>(AppUserSetting(cache).defaultValue as int);
+        await cache.loadCache<int>(AppUserSetting(cache).defaultValue as int);
 
     cache = Cache.appSettingTimeRangeTreshold;
     timeRangeTreshold = await cache
-        .load<Duration>(AppUserSetting(cache).defaultValue as Duration);
+        .loadCache<Duration>(AppUserSetting(cache).defaultValue as Duration);
 
     return true;
   }
@@ -368,7 +368,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                   }
                   _Cache.triggeredTrackingStatus = await Cache
                       .trackingStatusTriggered
-                      .save(TrackingStatus.standing);
+                      .saveCache(TrackingStatus.standing);
                   render();
                 }),
             Container(
@@ -433,7 +433,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                     saveToCache: true))
                 .alias;
             _Cache.address =
-                await Cache.backgroundAddress.save<String>(address);
+                await Cache.backgroundAddress.saveCache<String>(address);
             render();
           }
         },
@@ -462,7 +462,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                   }
                   _Cache.triggeredTrackingStatus = await Cache
                       .trackingStatusTriggered
-                      .save(TrackingStatus.moving);
+                      .saveCache(TrackingStatus.moving);
                   render();
                 }),
             Container(

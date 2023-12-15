@@ -20,11 +20,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 
 ///
+import 'package:chaostours/database/database.dart';
 import 'package:chaostours/logger.dart';
-import 'package:chaostours/cache.dart';
+import 'package:chaostours/database/cache.dart';
 import 'package:chaostours/channel/notification_channel.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/tracking.dart';
+import 'package:sqflite/sqflite.dart';
 
 enum BackgroundChannelCommand {
   startService,
@@ -58,6 +60,7 @@ class BackgroundChannel {
       running = false;
       service.stopSelf();
     });
+    await DB.openDatabase();
 
     try {
       const Cache cache = Cache.appSettingBackgroundTrackingInterval;
@@ -69,8 +72,8 @@ class BackgroundChannel {
           logger.error('background tracking: $e', stk);
         }
         try {
-          await Future.delayed(await cache
-              .load<Duration>(AppUserSetting(cache).defaultValue as Duration));
+          await Future.delayed(await cache.loadCache<Duration>(
+              AppUserSetting(cache).defaultValue as Duration));
         } catch (e) {
           logger.warn('Background interval delay failed. Fallback to default');
           Future.delayed(AppUserSetting(cache).defaultValue as Duration);

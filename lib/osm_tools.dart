@@ -14,13 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import 'package:chaostours/cache.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_osm_plugin/flutter_osm_plugin.dart' as osm;
 
 ///
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/conf/app_colors.dart';
+import 'package:chaostours/database/cache.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/gps.dart';
 
@@ -43,16 +43,17 @@ class OsmTools {
       strokeWidth: 10,
     ));
 
-    List<GPS> gpsPoints = await Cache.backgroundGpsPoints.load<List<GPS>>([]);
+    List<GPS> gpsPoints =
+        await Cache.backgroundGpsPoints.loadCache<List<GPS>>([]);
     if (gpsPoints.isEmpty) {
       return;
     }
     List<GPS> gpsSmoothPoints =
-        await Cache.backgroundGpsSmoothPoints.load<List<GPS>>([]);
+        await Cache.backgroundGpsSmoothPoints.loadCache<List<GPS>>([]);
     List<GPS> gpsCalcPoints =
-        await Cache.backgroundGpsCalcPoints.load<List<GPS>>([]);
+        await Cache.backgroundGpsCalcPoints.loadCache<List<GPS>>([]);
     GPS lastStatusStanding =
-        await Cache.backgroundGpsStartStanding.load(gpsPoints.last);
+        await Cache.backgroundGpsStartStanding.loadCache(gpsPoints.last);
 
     for (var alias in await ModelAlias.selsectActivated()) {
       try {

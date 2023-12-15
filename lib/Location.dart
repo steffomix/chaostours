@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import 'package:chaostours/cache.dart';
+import 'package:chaostours/database/cache.dart';
 import 'package:chaostours/conf/app_user_settings.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/logger.dart';
@@ -50,7 +50,7 @@ class Location {
     try {
       models.addAll(await ModelAlias.byArea(
           gps: gps,
-          area: await Cache.appSettingDistanceTreshold.load(
+          area: await Cache.appSettingDistanceTreshold.loadCache(
               AppUserSetting(Cache.appSettingDistanceTreshold).defaultValue
                   as int)));
 

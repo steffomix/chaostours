@@ -25,7 +25,7 @@ class NotificationChannel {
       'Chaos Tours Background Service';
   static const String backgroundNotificationDescription =
       'Chaos Tours notification channel';
-  static const String notificationIcon = 'ic_launcher';
+  static const String notificationIcon = 'ic_bg_service_small';
   static const int foregroundServiceNotificationId = 777;
 
   static Future<void> initialize() async {

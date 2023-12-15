@@ -16,7 +16,7 @@ limitations under the License.
 import 'dart:convert';
 
 import 'package:chaostours/logger.dart';
-import 'package:chaostours/database.dart';
+import 'package:chaostours/database/database.dart';
 import 'package:sqflite/sqflite.dart';
 
 var decode = Uri.decodeFull; // util.base64Codec().decode;

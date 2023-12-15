@@ -16,7 +16,7 @@ limitations under the License.
 
 import 'package:sqflite/sqflite.dart';
 //
-import 'package:chaostours/database.dart';
+import 'package:chaostours/database/database.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/model/model_user_group.dart';
 

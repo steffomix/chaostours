@@ -327,8 +327,12 @@ class AppWidgets {
   static Future<T?> dialog<T>(
       {required BuildContext context,
       required List<Widget> contents,
-      required List<Widget> buttons}) {
+      required List<Widget> buttons,
+      bool isDismissible = false}) {
     var dialog = showDialog<T>(
+        barrierDismissible: isDismissible,
+        barrierColor:
+            !isDismissible ? const Color.fromARGB(125, 255, 255, 255) : null,
         context: context,
         builder: (contextDialog) {
           return Dialog(

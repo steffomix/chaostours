@@ -16,7 +16,7 @@ limitations under the License.
 
 import 'dart:async';
 import 'dart:math';
-import 'package:chaostours/cache.dart';
+import 'package:chaostours/database/cache.dart';
 import 'package:vector_math/vector_math.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:android_intent_plus/android_intent.dart';
@@ -157,7 +157,7 @@ class GPS {
       _cachedGps = ValueExpired(
           value: _gps(),
           duration: await Cache.appSettingCacheGpsTime
-              .load<Duration>(defaultCacheDuration));
+              .loadCache<Duration>(defaultCacheDuration));
     }
     return await _cachedGps.value as GPS;
     /*

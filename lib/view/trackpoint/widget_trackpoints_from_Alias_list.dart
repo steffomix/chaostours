@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import 'package:chaostours/cache.dart';
+import 'package:chaostours/database/cache.dart';
 import 'package:chaostours/view/app_base_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -51,8 +51,8 @@ class _WidgetAliasTrackpoint extends BaseWidgetState<WidgetAliasTrackpoint> {
   Future<void> initialize(BuildContext context, Object? args) async {
     int id = args as int;
     _modelAlias = await ModelAlias.byId(id);
-    weekdays =
-        await Cache.appSettingWeekdays.load<Weekdays>(Weekdays.mondayFirst);
+    weekdays = await Cache.appSettingWeekdays
+        .loadCache<Weekdays>(Weekdays.mondayFirst);
   }
 
   @override
