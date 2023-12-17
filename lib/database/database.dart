@@ -100,7 +100,9 @@ class DB {
     return await Future.microtask(() async {
       int trys = 0;
       do {
-        try {} on flite.DatabaseException catch (e) {
+        try {
+          return await _database!.transaction<T>(action);
+        } on flite.DatabaseException catch (e) {
           if (e.toString().contains('transaction')) {
             await Future.delayed(const Duration(seconds: 1));
             trys++;

@@ -14,20 +14,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// ignore: depend_on_referenced_packages
+import 'package:path_provider_android/path_provider_android.dart';
 import 'dart:io';
 import 'dart:ui';
-import 'package:path_provider_android/path_provider_android.dart';
 import 'package:chaostours/conf/app_user_settings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
-import 'package:device_info_plus/device_info_plus.dart';
 
 ///
 import 'package:chaostours/database/database.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/database/cache.dart';
 import 'package:chaostours/channel/notification_channel.dart';
-import 'package:chaostours/gps.dart';
 import 'package:chaostours/tracking.dart';
 
 enum BackgroundChannelCommand {
@@ -58,7 +57,7 @@ class BackgroundChannel {
   static void onStart(ServiceInstance service) async {
     DartPluginRegistrant.ensureInitialized();
     if (Platform.isAndroid) {
-      PathProviderAndroid.registerWith();
+      //PathProviderAndroid.registerWith();
     } else if (Platform.isIOS) {
       //PathProviderIOS.registerWith();
     }
@@ -73,7 +72,6 @@ class BackgroundChannel {
       const Cache cache = Cache.appSettingBackgroundTrackingInterval;
       while (running) {
         try {
-          var gps = await GPS.gps();
           Tracker().track();
           tick++;
           service.invoke(

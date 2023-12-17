@@ -23,6 +23,7 @@ import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 ///
+import 'package:chaostours/conf/license.dart';
 import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/database/cache.dart';
 import 'package:chaostours/conf/app_user_settings.dart';
@@ -238,7 +239,7 @@ class _WelcomeState extends State<Welcome> {
           (permissionManageExternalStorageIsGranted =
                   await Permission.manageExternalStorage.isGranted) &&
               (permissionCalendarIsGranted =
-                  await Permission.calendar.isGranted);
+                  await Permission.calendarFullAccess.isGranted);
     } catch (e) {
       // ignore
     }
@@ -263,10 +264,12 @@ class _WelcomeState extends State<Welcome> {
       return;
     }
     preload().then(
-      (_) async {
+      (success) async {
         await Future.delayed(const Duration(seconds: 1));
-        preloadFinished = true;
-        Future.delayed(const Duration(milliseconds: 200), () => render());
+        if (success) {
+          preloadFinished = true;
+          Future.delayed(const Duration(milliseconds: 200), () => render());
+        }
       },
     );
   }
@@ -485,6 +488,25 @@ class _WelcomeState extends State<Welcome> {
   /// preload recources
   Future<bool> preload() async {
     try {
+      if (!(await Cache.licenseConsentChaosTours.load<bool>(false))) {
+        bool consent = await chaosToursLicenseConsent();
+        if (consent) {
+          await Cache.licenseConsentChaosTours.save<bool>(true);
+        } else {
+          await Cache.licenseConsentChaosTours.save<bool>(false);
+          await addPreloadMessage(
+              const Text('App stopped due to rejected License consent.'));
+          await addPreloadMessage(FloatingActionButton(
+            child: const Text('Tap here to try again.'),
+            onPressed: () {
+              if (mounted) {
+                Navigator.popAndPushNamed(context, AppRoutes.welcome.route);
+              }
+            },
+          ));
+        }
+      }
+
       Logger.globalLogLevel = LogLevel.verbose;
       await addPreloadMessage(const Text('Start Initialization...'));
 
@@ -494,10 +516,6 @@ class _WelcomeState extends State<Welcome> {
       await DB.openDatabase(create: true);
       await addPreloadMessage(const Text('Database opened'));
 
-      bool consent = await userConsent();
-      if (!consent) {
-        SystemChannels.platform.invokeMethod<void>('SystemNavigator.pop', true);
-      }
       var count = await ModelAlias.count();
       if (count == 0) {
         await addPreloadMessage(const Text('Initalize user settings'));
@@ -539,7 +557,7 @@ class _WelcomeState extends State<Welcome> {
         }
       }
 
-      if (mounted) {
+      if (!(await Permission.notification.isGranted) && mounted) {
         await AppWidgets.dialog(context: context, contents: [
           const Text('Chaos Tours requires\n'
               'Notification permission granted\n'
@@ -564,6 +582,7 @@ class _WelcomeState extends State<Welcome> {
           )
         ]);
       }
+
       if (await Cache.appSettingBackgroundTrackingEnabled.load<bool>(false)) {
         // request gps always
         if (!(await Permission.locationAlways.isGranted) && mounted) {
@@ -584,20 +603,18 @@ class _WelcomeState extends State<Welcome> {
           ]);
         }
       }
-      if (mounted) {
+
+      if (!(await Cache.licenseConsentRequestedOsm.load<bool>(false)) &&
+          mounted) {
         await AppWidgets.dialog(context: context, contents: [
-          const Text('Chaos Tours can lookup Address Data\n'
-              'from OpenStreetMap.org\n'
-              'from GPS coordonates.\n'
-              'This future consumes about 1-2kb Internet Data for each lookup.\n'
-              'Do you want this future enabled?\n'
-              'You can set a more fine grained permision level in the Settings menu later on.')
+          Text(osmLicense)
         ], buttons: [
           TextButton(
             child: const Text('No'),
             onPressed: () async {
               await Cache.appSettingOsmLookupCondition
                   .save<OsmLookupConditions>(OsmLookupConditions.never);
+              await Cache.licenseConsentRequestedOsm.load<bool>(true);
               if (mounted) {
                 Navigator.pop(context);
               }
@@ -609,6 +626,7 @@ class _WelcomeState extends State<Welcome> {
               await Cache.appSettingOsmLookupCondition
                   .save<OsmLookupConditions>(
                       OsmLookupConditions.onAutoCreateAlias);
+              await Cache.licenseConsentRequestedOsm.load<bool>(true);
               if (mounted) {
                 Navigator.pop(context);
               }
@@ -684,8 +702,8 @@ class _WelcomeState extends State<Welcome> {
     logger.log('SSL Key loaded');
   }
 
-  Future<bool> userConsent() async {
-    var licenseConsent = await Cache.appSettingLicenseConsent.load<bool>(false);
+  Future<bool> chaosToursLicenseConsent() async {
+    var licenseConsent = await Cache.licenseConsentChaosTours.load<bool>(false);
     var consentGiven = false;
     if (licenseConsent) {
       return true;
@@ -693,7 +711,7 @@ class _WelcomeState extends State<Welcome> {
     if (mounted) {
       await AppWidgets.dialog(context: context, contents: [
         TextButton(
-          child: Text(license),
+          child: Text(chaosToursLicense),
           onPressed: () async {
             await launchUrl(
                 Uri.parse('http://www.apache.org/licenses/LICENSE-2.0'));
@@ -719,20 +737,38 @@ class _WelcomeState extends State<Welcome> {
     return consentGiven;
   }
 
-  static String license = '''Chaos Tours License
-
-Copyright ${DateTime.now().year} Stefan Brinkmann
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-''';
+  Future<bool> osmLicenseConsent() async {
+    var licenseConsent = await Cache.licenseConsentChaosTours.load<bool>(false);
+    var consentGiven = false;
+    if (licenseConsent) {
+      return true;
+    }
+    if (mounted) {
+      await AppWidgets.dialog(context: context, contents: [
+        TextButton(
+          child: Text(osmLicense),
+          onPressed: () async {
+            await launchUrl(
+                Uri.parse('https://www.openstreetmap.org/copyright'));
+          },
+        )
+      ], buttons: [
+        TextButton(
+          child: const Text('Decline'),
+          onPressed: () {
+            consentGiven = false;
+            Navigator.pop(context);
+          },
+        ),
+        TextButton(
+          child: const Text('Consent'),
+          onPressed: () {
+            consentGiven = true;
+            Navigator.pop(context);
+          },
+        )
+      ]);
+    }
+    return consentGiven;
+  }
 }

@@ -58,20 +58,23 @@ class Tracker {
   /// initials
   TrackingStatus oldTrackingStatus = TrackingStatus.standing;
   TrackingStatus trackingStatus = TrackingStatus.standing;
-  Future<GPS>? _initialGps;
-  Future<GPS>? _gpsStartMoving;
-  Future<GPS> get gpsStartMoving =>
-      _gpsStartMoving ??= (_initialGps ??= GPS.gps());
-  Future<GPS>? _gpsStartStanding;
-  Future<GPS> get gpsStartStanding =>
-      _gpsStartStanding ??= (_initialGps ??= GPS.gps());
-  Future<GPS>? _gpsLastStatusChange;
-  Future<GPS> get gpsLastStatusChange =>
-      _gpsLastStatusChange ??= (_initialGps ??= GPS.gps());
 
   Future<void> track() async {
     /// create gpsPoint
     GPS gps = await GPS.gps();
+
+    if (await Cache.backgroundTrackingStatus.load(TrackingStatus.none) ==
+        TrackingStatus.none) {
+      /// initialize basic events if not set
+      /// this must be done before loading last session
+      await Cache.backgroundGpsStartMoving.save<GPS>(gps);
+      await Cache.backgroundGpsStartStanding.save<GPS>(gps);
+      await Cache.backgroundGpsLastStatusChange.save<GPS>(gps);
+
+      /// app start, no status yet
+      await Cache.backgroundTrackingStatus
+          .save<TrackingStatus>(TrackingStatus.standing);
+    }
 
     bool appSettingStatusStandingRequireAlias = await Cache
         .appSettingStatusStandingRequireAlias

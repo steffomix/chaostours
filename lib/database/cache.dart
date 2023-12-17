@@ -112,11 +112,13 @@ enum Cache {
   backgroundCalendarLastEventIds(CacheModulId.sharedPreferences,
       List<CalendarEventId>, expireAfterThreeSeconds),
 
-  /// appUserStettings
-  appSettingLicenseConsent(
-      CacheModulId.database, bool, expireAfterThreeSeconds),
-  appSettingOsmConsent(CacheModulId.database, bool, expireAfterThreeSeconds),
+  /// startup consent
+  licenseConsentChaosTours(
+      CacheModulId.sharedPreferences, bool, expireAfterThreeSeconds),
+  licenseConsentRequestedOsm(
+      CacheModulId.sharedPreferences, bool, expireAfterThreeSeconds),
 
+  /// appUserStettings
   appSettingBackgroundTrackingEnabled(
       CacheModulId.database, bool, expireAfterOneYear),
   appSettingStatusStandingRequireAlias(
@@ -181,7 +183,7 @@ enum Cache {
   }
 
   Future<T> save<T>(T value) async {
-    if (modulId == CacheModulId.database) {
+    if (modulId == CacheModulId.sharedPreferences) {
       return await savePreference<T>(value);
     } else {
       return await _saveToDatabase<T>(value);
