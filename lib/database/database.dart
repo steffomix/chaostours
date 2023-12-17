@@ -56,7 +56,7 @@ class DB {
       var path = await getDBFilePath();
       _database ??= await flite.openDatabase(path,
           version: dbVersion,
-          singleInstance: false,
+          singleInstance: true,
           onCreate: !create
               ? null
               : (flite.Database db, int version) async {
@@ -97,7 +97,6 @@ class DB {
   /// </pre>
   static Future<T> execute<T>(
       Future<T> Function(flite.Transaction txn) action) async {
-    return await _database!.transaction<T>(action);
     return await Future.microtask(() async {
       int trys = 0;
       do {

@@ -43,7 +43,7 @@ enum OsmLookupConditions {
 
   Future<bool> allowLookup() async {
     OsmLookupConditions setting = await Cache.appSettingOsmLookupCondition
-        .loadCache<OsmLookupConditions>(OsmLookupConditions.never);
+        .load<OsmLookupConditions>(OsmLookupConditions.never);
     return setting.index > 0 && index <= setting.index;
   }
 }
@@ -135,41 +135,39 @@ class AppUserSetting {
           minValue: 15,
           defaultValue: const Duration(seconds: 30),
           resetToDefault: () async {
-            await cache.saveCache<Duration>(
-                AppUserSetting(cache).defaultValue as Duration);
+            await cache
+                .save<Duration>(AppUserSetting(cache).defaultValue as Duration);
           }, //
           extraCheck: (int value) async {
             /// timeRange must at least allow 4 lookups
             int minTimeRange = value * 4;
             Cache cTimeRange = Cache.appSettingTimeRangeTreshold;
-            int timeRange = (await cTimeRange.loadCache<Duration>(
+            int timeRange = (await cTimeRange.load<Duration>(
                     AppUserSetting(cTimeRange).defaultValue as Duration))
                 .inSeconds;
             if (minTimeRange > timeRange) {
               // modify timeRange
-              await cTimeRange
-                  .saveCache<Duration>(Duration(seconds: minTimeRange));
+              await cTimeRange.save<Duration>(Duration(seconds: minTimeRange));
             }
 
             // recheck autocreate alias duration
             int minCreate = minTimeRange * 2;
             Cache cAutoCreate = Cache.appSettingAutocreateAliasDuration;
-            int autoCreate = (await cAutoCreate.loadCache<Duration>(
+            int autoCreate = (await cAutoCreate.load<Duration>(
                     AppUserSetting(cAutoCreate).defaultValue as Duration))
                 .inSeconds;
             if (autoCreate < minCreate) {
-              await cAutoCreate
-                  .saveCache<Duration>(Duration(seconds: minCreate));
+              await cAutoCreate.save<Duration>(Duration(seconds: minCreate));
             }
 
             // recheck smoothCount
             Cache cSmooth = Cache.appSettingGpsPointsSmoothCount;
             int smooth = await cSmooth
-                .loadCache<int>(AppUserSetting(cSmooth).defaultValue as int);
+                .load<int>(AppUserSetting(cSmooth).defaultValue as int);
             if (smooth > 0) {
               int maxSmooth = maxSmoothCount(timeRange, value);
               if (smooth > maxSmooth) {
-                await cSmooth.saveCache<int>(maxSmooth);
+                await cSmooth.save<int>(maxSmooth);
               }
             }
             return value;
@@ -189,14 +187,14 @@ class AppUserSetting {
           maxValue: null,
           defaultValue: const Duration(minutes: 3),
           resetToDefault: () async {
-            await cache.saveCache<Duration>(
-                AppUserSetting(cache).defaultValue as Duration);
+            await cache
+                .save<Duration>(AppUserSetting(cache).defaultValue as Duration);
           },
           extraCheck: (int timeRangeSeconds) async {
             //
             // must be min 3x appSettingBackgroundTrackingInterval
             Cache cache = Cache.appSettingBackgroundTrackingInterval;
-            int trackingSeconds = (await cache.loadCache<Duration>(
+            int trackingSeconds = (await cache.load<Duration>(
                     AppUserSetting(cache).defaultValue as Duration))
                 .inSeconds;
             timeRangeSeconds = math.max(timeRangeSeconds, trackingSeconds * 3);
@@ -204,23 +202,22 @@ class AppUserSetting {
             // recheck autocreate alias duration
             int minCreateSeconds = timeRangeSeconds * 2;
             cache = Cache.appSettingAutocreateAliasDuration;
-            int createSeconds = (await cache.loadCache<Duration>(
+            int createSeconds = (await cache.load<Duration>(
                     AppUserSetting(cache).defaultValue as Duration))
                 .inSeconds;
             if (createSeconds < minCreateSeconds) {
-              await cache
-                  .saveCache<Duration>(Duration(seconds: minCreateSeconds));
+              await cache.save<Duration>(Duration(seconds: minCreateSeconds));
             }
             //
             // recheck smoothCount
             cache = Cache.appSettingGpsPointsSmoothCount;
             int smoothCount = await cache
-                .loadCache<int>(AppUserSetting(cache).defaultValue as int);
+                .load<int>(AppUserSetting(cache).defaultValue as int);
             if (smoothCount > 1) {
               // if not disabled
               int maxSmooth = maxSmoothCount(timeRangeSeconds, trackingSeconds);
               if (smoothCount > maxSmooth) {
-                await cache.saveCache<int>(maxSmooth);
+                await cache.save<int>(maxSmooth);
               }
             }
 
@@ -241,13 +238,13 @@ class AppUserSetting {
           minValue: 60 * 5, // 5 minutes
           defaultValue: const Duration(seconds: 60 * 15),
           resetToDefault: () async {
-            await cache.saveCache<Duration>(
-                AppUserSetting(cache).defaultValue as Duration);
+            await cache
+                .save<Duration>(AppUserSetting(cache).defaultValue as Duration);
           }, //
           extraCheck: (int value) async {
             /// must be at least appSettingTimeRangeTreshold * 2
             Cache cTimeRange = Cache.appSettingTimeRangeTreshold;
-            int timeRange = (await cTimeRange.loadCache<Duration>(
+            int timeRange = (await cTimeRange.load<Duration>(
                     AppUserSetting(cTimeRange).defaultValue as Duration))
                 .inSeconds;
             int min = timeRange * 2;
@@ -271,17 +268,16 @@ class AppUserSetting {
           defaultValue: 3,
           zeroDeactivates: true,
           resetToDefault: () async {
-            await cache
-                .saveCache<int>(AppUserSetting(cache).defaultValue as int);
+            await cache.save<int>(AppUserSetting(cache).defaultValue as int);
           },
           extraCheck: (int value) async {
             Cache cTimeRange = Cache.appSettingTimeRangeTreshold;
-            int timeRange = (await cTimeRange.loadCache<Duration>(
+            int timeRange = (await cTimeRange.load<Duration>(
                     AppUserSetting(cTimeRange).defaultValue as Duration))
                 .inSeconds;
             //
             Cache cLookup = Cache.appSettingBackgroundTrackingInterval;
-            int lookup = (await cLookup.loadCache<Duration>(
+            int lookup = (await cLookup.load<Duration>(
                     AppUserSetting(cLookup).defaultValue as Duration))
                 .inSeconds;
             //
@@ -309,8 +305,7 @@ class AppUserSetting {
           unit: Unit.option,
           defaultValue: true,
           resetToDefault: () async {
-            await cache
-                .saveCache<bool>(AppUserSetting(cache).defaultValue as bool);
+            await cache.save<bool>(AppUserSetting(cache).defaultValue as bool);
           },
         );
 
@@ -324,8 +319,8 @@ class AppUserSetting {
           unit: Unit.second,
           defaultValue: const Duration(seconds: 10),
           resetToDefault: () async {
-            await cache.saveCache<Duration>(
-                AppUserSetting(cache).defaultValue as Duration);
+            await cache
+                .save<Duration>(AppUserSetting(cache).defaultValue as Duration);
           },
           minValue: 0,
           maxValue: 60, // 1 minute
@@ -343,8 +338,7 @@ class AppUserSetting {
           unit: Unit.meter,
           defaultValue: 100,
           resetToDefault: () async {
-            await cache
-                .saveCache<int>(AppUserSetting(cache).defaultValue as int);
+            await cache.save<int>(AppUserSetting(cache).defaultValue as int);
           },
           minValue: 20,
         );
@@ -359,7 +353,7 @@ class AppUserSetting {
           unit: Unit.option,
           defaultValue: OsmLookupConditions.onAutoCreateAlias,
           resetToDefault: () async {
-            await cache.saveCache<OsmLookupConditions>(
+            await cache.save<OsmLookupConditions>(
                 AppUserSetting(cache).defaultValue as OsmLookupConditions);
           },
         );
@@ -372,8 +366,8 @@ class AppUserSetting {
           unit: Unit.option,
           defaultValue: Weekdays.mondayFirst,
           resetToDefault: () async {
-            await cache.saveCache<Weekdays>(
-                AppUserSetting(cache).defaultValue as Weekdays);
+            await cache
+                .save<Weekdays>(AppUserSetting(cache).defaultValue as Weekdays);
           },
         );
 
@@ -385,8 +379,7 @@ class AppUserSetting {
           unit: Unit.option,
           defaultValue: true,
           resetToDefault: () async {
-            await cache
-                .saveCache<bool>(AppUserSetting(cache).defaultValue as bool);
+            await cache.save<bool>(AppUserSetting(cache).defaultValue as bool);
           },
         );
 
@@ -400,8 +393,7 @@ class AppUserSetting {
           unit: Unit.option,
           defaultValue: true,
           resetToDefault: () async {
-            await cache
-                .saveCache<bool>(AppUserSetting(cache).defaultValue as bool);
+            await cache.save<bool>(AppUserSetting(cache).defaultValue as bool);
           },
         );
 
@@ -414,8 +406,7 @@ class AppUserSetting {
           unit: Unit.option,
           defaultValue: true,
           resetToDefault: () async {
-            await cache
-                .saveCache<bool>(AppUserSetting(cache).defaultValue as bool);
+            await cache.save<bool>(AppUserSetting(cache).defaultValue as bool);
           },
         );
 
@@ -429,8 +420,8 @@ class AppUserSetting {
             maxValue: 30,
             defaultValue: const Duration(seconds: 5), //
             resetToDefault: () async {
-          await cache.saveCache<Duration>(
-              AppUserSetting(cache).defaultValue as Duration);
+          await cache
+              .save<Duration>(AppUserSetting(cache).defaultValue as Duration);
         });
 
       case Cache.appSettingTimeZone:
@@ -441,7 +432,7 @@ class AppUserSetting {
             defaultValue: 'Europe/Berlin', //
             resetToDefault: () async {
           await cache
-              .saveCache<String>(AppUserSetting(cache).defaultValue as String);
+              .save<String>(AppUserSetting(cache).defaultValue as String);
         });
 
       default:
@@ -475,18 +466,18 @@ class AppUserSetting {
     switch (cache.cacheType) {
       case String:
         String value = data?.trim() ?? defaultValue as String;
-        await cache.saveCache<String>(value);
+        await cache.save<String>(value);
         break;
 
       case int:
         int value = await pruneInt(data ?? defaultValue.toString());
-        await cache.saveCache<int>(value);
+        await cache.save<int>(value);
         break;
 
       case bool:
         bool value =
             (data != null && (data == '1' || data == 'true')) ? true : false;
-        await cache.saveCache<bool>(value);
+        await cache.save<bool>(value);
         break;
 
       case Duration:
@@ -494,14 +485,14 @@ class AppUserSetting {
             ((defaultValue as Duration).inSeconds / unit.multiplicator)
                 .round()
                 .toString());
-        await cache.saveCache<Duration>(Duration(seconds: value));
+        await cache.save<Duration>(Duration(seconds: value));
         break;
 
       case OsmLookupConditions:
         var value = OsmLookupConditions.byName(
                 data ?? (defaultValue as OsmLookupConditions).name) ??
             (defaultValue as OsmLookupConditions);
-        await cache.saveCache<OsmLookupConditions>(value);
+        await cache.save<OsmLookupConditions>(value);
         break;
 
       default:
@@ -513,25 +504,24 @@ class AppUserSetting {
   Future<String> load() async {
     switch (cache.cacheType) {
       case const (String):
-        return (_cachedValue ??= await cache.loadCache<String>(defaultValue))
+        return (_cachedValue ??= await cache.load<String>(defaultValue))
             as String;
 
       case const (int):
-        int value = await cache.loadCache<int>(defaultValue as int);
+        int value = await cache.load<int>(defaultValue as int);
         return (value / unit.multiplicator).round().toString();
 
       case const (bool):
-        bool value = await cache.loadCache<bool>(defaultValue as bool);
+        bool value = await cache.load<bool>(defaultValue as bool);
         return value ? '1' : '0';
 
       case const (Duration):
-        Duration value =
-            await cache.loadCache<Duration>(defaultValue as Duration);
+        Duration value = await cache.load<Duration>(defaultValue as Duration);
         return (value.inSeconds / unit.multiplicator).round().toString();
 
       case const (OsmLookupConditions):
-        OsmLookupConditions value = await cache.loadCache<OsmLookupConditions>(
-            defaultValue as OsmLookupConditions);
+        OsmLookupConditions value = await cache
+            .load<OsmLookupConditions>(defaultValue as OsmLookupConditions);
         return value.name;
 
       default:

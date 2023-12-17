@@ -401,7 +401,7 @@ class _WidgetOsm extends State<WidgetOsm> {
                 gps: GPS(pos.latitude, pos.longitude),
                 title: address.alias,
                 description: address.description,
-                radius: await Cache.appSettingDistanceTreshold.loadCache<int>(
+                radius: await Cache.appSettingDistanceTreshold.load<int>(
                     AppUserSetting(Cache.appSettingDistanceTreshold)
                         .defaultValue as int),
                 lastVisited: DateTime.now());

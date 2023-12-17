@@ -50,7 +50,7 @@ class Location {
     try {
       models.addAll(await ModelAlias.byArea(
           gps: gps,
-          area: await Cache.appSettingDistanceTreshold.loadCache(
+          area: await Cache.appSettingDistanceTreshold.load(
               AppUserSetting(Cache.appSettingDistanceTreshold).defaultValue
                   as int)));
 

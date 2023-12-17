@@ -20,7 +20,6 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:app_settings/app_settings.dart';
 import 'dart:io' as io;
 import 'package:flutter/services.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 ///
@@ -556,7 +555,7 @@ class _WelcomeState extends State<Welcome> {
             onPressed: () async {
               await requestNotification();
               if (await Permission.notification.isGranted) {
-                Cache.appSettingBackgroundTrackingEnabled.saveCache<bool>(true);
+                Cache.appSettingBackgroundTrackingEnabled.save<bool>(true);
               }
               if (mounted) {
                 Navigator.pop(context);
@@ -565,8 +564,7 @@ class _WelcomeState extends State<Welcome> {
           )
         ]);
       }
-      if (await Cache.appSettingBackgroundTrackingEnabled
-          .loadCache<bool>(false)) {
+      if (await Cache.appSettingBackgroundTrackingEnabled.load<bool>(false)) {
         // request gps always
         if (!(await Permission.locationAlways.isGranted) && mounted) {
           await AppWidgets.dialog(context: context, contents: [
@@ -599,7 +597,7 @@ class _WelcomeState extends State<Welcome> {
             child: const Text('No'),
             onPressed: () async {
               await Cache.appSettingOsmLookupCondition
-                  .saveCache<OsmLookupConditions>(OsmLookupConditions.never);
+                  .save<OsmLookupConditions>(OsmLookupConditions.never);
               if (mounted) {
                 Navigator.pop(context);
               }
@@ -609,7 +607,7 @@ class _WelcomeState extends State<Welcome> {
             child: const Text('Yes'),
             onPressed: () async {
               await Cache.appSettingOsmLookupCondition
-                  .saveCache<OsmLookupConditions>(
+                  .save<OsmLookupConditions>(
                       OsmLookupConditions.onAutoCreateAlias);
               if (mounted) {
                 Navigator.pop(context);
@@ -630,15 +628,14 @@ class _WelcomeState extends State<Welcome> {
 
       var cache = Cache.appSettingBackgroundTrackingInterval;
       var dur = await cache
-          .loadCache<Duration>(AppUserSetting(cache).defaultValue as Duration);
+          .load<Duration>(AppUserSetting(cache).defaultValue as Duration);
       await addPreloadMessage(
           Text('Initialize background trackig with ${dur.inSeconds} sec.'));
       await BackgroundChannel.initialize();
 
       //
       //await BackgroundTracking.initialize();
-      if (await Cache.appSettingBackgroundTrackingEnabled
-          .loadCache<bool>(true)) {
+      if (await Cache.appSettingBackgroundTrackingEnabled.load<bool>(true)) {
         await addPreloadMessage(const Text('Start background tracking'));
         await BackgroundChannel.start();
       } else {
@@ -688,8 +685,7 @@ class _WelcomeState extends State<Welcome> {
   }
 
   Future<bool> userConsent() async {
-    var licenseConsent =
-        await Cache.appSettingLicenseConsent.loadCache<bool>(false);
+    var licenseConsent = await Cache.appSettingLicenseConsent.load<bool>(false);
     var consentGiven = false;
     if (licenseConsent) {
       return true;

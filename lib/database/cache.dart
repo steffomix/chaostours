@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-///
 import 'package:chaostours/database/cache_modules.dart';
 import 'package:chaostours/database/type_adapter.dart';
 import 'package:chaostours/logger.dart';
@@ -46,76 +45,115 @@ abstract class CacheModul {
   Future<void> reload();
 }
 
+enum CacheModulId {
+  database,
+  sharedPreferences;
+}
+
 enum Cache {
   // shared preferences keys
-  licenseConsent(bool),
 
   /// trigger off == TrackingStatus.none
   /// triggered by user, set to none in background
-  trackingStatusTriggered(TrackingStatus),
+  trackingStatusTriggered(
+      CacheModulId.sharedPreferences, TrackingStatus, expireAfterThreeSeconds),
 
   /// updated on every second in foreground
-  foregroundAliasIdList(List<int>),
+  foregroundAliasIdList(
+      CacheModulId.sharedPreferences, List<int>, expireAfterThreeSeconds),
 
   // background task
-  backgroundLastTick(DateTime),
-  backgroundTickList(List<DateTime>),
+  backgroundLastTick(
+      CacheModulId.sharedPreferences, DateTime, expireAfterThreeSeconds),
+  backgroundTickList(
+      CacheModulId.sharedPreferences, List<DateTime>, expireAfterThreeSeconds),
 
   /// status change events
-  backgroundGpsStartMoving(GPS),
-  backgroundGpsStartStanding(GPS),
-  backgroundGpsLastStatusChange(GPS),
+  backgroundGpsStartMoving(
+      CacheModulId.sharedPreferences, GPS, expireAfterThreeSeconds),
+  backgroundGpsStartStanding(
+      CacheModulId.sharedPreferences, GPS, expireAfterThreeSeconds),
+  backgroundGpsLastStatusChange(
+      CacheModulId.sharedPreferences, GPS, expireAfterThreeSeconds),
 
   /// cache background to forground
-  backgroundTrackingStatus(TrackingStatus),
+  backgroundTrackingStatus(
+      CacheModulId.sharedPreferences, TrackingStatus, expireAfterThreeSeconds),
 
   /// user input
-  backgroundAliasIdList(List<int>),
-  backgroundUserIdList(List<int>),
-  backgroundTaskIdList(List<int>),
-  backgroundTrackPointUserNotes(String),
+  backgroundAliasIdList(
+      CacheModulId.sharedPreferences, List<int>, expireAfterThreeSeconds),
+  backgroundUserIdList(
+      CacheModulId.sharedPreferences, List<int>, expireAfterThreeSeconds),
+  backgroundTaskIdList(
+      CacheModulId.sharedPreferences, List<int>, expireAfterThreeSeconds),
+  backgroundTrackPointUserNotes(
+      CacheModulId.sharedPreferences, String, expireAfterThreeSeconds),
 
   /// tracking detection
-  backgroundLastGps(GPS),
-  backgroundGpsPoints(List<GPS>),
-  backgroundGpsSmoothPoints(List<GPS>),
-  backgroundGpsCalcPoints(List<GPS>),
+  backgroundLastGps(
+      CacheModulId.sharedPreferences, GPS, expireAfterThreeSeconds),
+  backgroundGpsPoints(
+      CacheModulId.sharedPreferences, List<GPS>, expireAfterThreeSeconds),
+  backgroundGpsSmoothPoints(
+      CacheModulId.sharedPreferences, List<GPS>, expireAfterThreeSeconds),
+  backgroundGpsCalcPoints(
+      CacheModulId.sharedPreferences, List<GPS>, expireAfterThreeSeconds),
 
   /// address updated on each backgroiund tick - if activated
-  backgroundAddress(String),
+  backgroundAddress(
+      CacheModulId.sharedPreferences, String, expireAfterThreeSeconds),
 
   /// address updated on status change - if activated
-  backgroundLastStandingAddress(String),
+  backgroundLastStandingAddress(
+      CacheModulId.sharedPreferences, String, expireAfterThreeSeconds),
 
   /// eventCalendar
-  backgroundCalendarLastEventIds(List<CalendarEventId>),
+  backgroundCalendarLastEventIds(CacheModulId.sharedPreferences,
+      List<CalendarEventId>, expireAfterThreeSeconds),
 
   /// appUserStettings
-  appSettingLicenseConsent(bool),
-  appSettingOsmConsent(bool),
-  appSettingBackgroundTrackingEnabled(bool, oneYear),
-  appSettingStatusStandingRequireAlias(bool, oneYear),
-  appSettingAutocreateAliasDuration(Duration, oneYear),
-  appSettingAutocreateAlias(bool, oneYear),
-  appSettingForegroundUpdateInterval(Duration, oneYear),
-  appSettingOsmLookupCondition(OsmLookupConditions, oneYear),
-  appSettingCacheGpsTime(Duration, oneYear),
-  appSettingLocationAccuracy(LocationAccuracy, oneYear),
-  appSettingDistanceTreshold(int, oneYear),
-  appSettingTimeRangeTreshold(Duration, oneYear),
-  appSettingBackgroundTrackingInterval(Duration, oneYear),
-  appSettingGpsPointsSmoothCount(int, oneYear),
-  appSettingPublishToCalendar(bool, oneYear),
-  appSettingTimeZone(String, oneYear),
-  appSettingWeekdays(Weekdays, oneYear);
+  appSettingLicenseConsent(
+      CacheModulId.database, bool, expireAfterThreeSeconds),
+  appSettingOsmConsent(CacheModulId.database, bool, expireAfterThreeSeconds),
 
-  const Cache(this.cacheType, [this.expireAfter = Duration.zero]);
+  appSettingBackgroundTrackingEnabled(
+      CacheModulId.database, bool, expireAfterOneYear),
+  appSettingStatusStandingRequireAlias(
+      CacheModulId.database, bool, expireAfterOneYear),
+  appSettingAutocreateAliasDuration(
+      CacheModulId.database, Duration, expireAfterOneYear),
+  appSettingAutocreateAlias(CacheModulId.database, bool, expireAfterOneYear),
+  appSettingForegroundUpdateInterval(
+      CacheModulId.database, Duration, expireAfterOneYear),
+  appSettingOsmLookupCondition(
+      CacheModulId.database, OsmLookupConditions, expireAfterOneYear),
+  appSettingCacheGpsTime(CacheModulId.database, Duration, expireAfterOneYear),
+  appSettingLocationAccuracy(
+      CacheModulId.database, LocationAccuracy, expireAfterOneYear),
+  appSettingDistanceTreshold(CacheModulId.database, int, expireAfterOneYear),
+  appSettingTimeRangeTreshold(
+      CacheModulId.database, Duration, expireAfterOneYear),
+  appSettingBackgroundTrackingInterval(
+      CacheModulId.database, Duration, expireAfterOneYear),
+  appSettingGpsPointsSmoothCount(
+      CacheModulId.database, int, expireAfterOneYear),
+  appSettingPublishToCalendar(CacheModulId.database, bool, expireAfterOneYear),
+  appSettingTimeZone(CacheModulId.database, String, expireAfterOneYear),
+  appSettingWeekdays(CacheModulId.database, Weekdays, expireAfterOneYear);
+
+  const Cache(this.modulId, this.cacheType, this.expireAfter);
 
   static final Logger logger = Logger.logger<Cache>();
-  static const Duration oneYear = Duration(days: 365);
+
+  static const Duration expireImmediately = Duration.zero;
+  static const Duration expireAfterThreeSeconds = Duration(seconds: 3);
+  static const Duration expireAfterOneYear = Duration(days: 365);
+
   static final Map<Cache, ValueExpired> _cache = {};
 
   final Type cacheType;
+  final CacheModulId modulId;
   final Duration expireAfter;
 
   static Cache? byName(String name) {
@@ -127,9 +165,32 @@ enum Cache {
     return null;
   }
 
-  Future<T> loadCache<T>(T defaultValue) async {
+  Future<void> reload() async {
+    await SharedCache().reload();
+    for (var value in _cache.values) {
+      value.expire();
+    }
+  }
+
+  Future<T> load<T>(T defaultValue) async {
+    if (modulId == CacheModulId.database) {
+      return await _loadFromDatabase<T>(defaultValue);
+    } else {
+      return loadPreference<T>(defaultValue);
+    }
+  }
+
+  Future<T> save<T>(T value) async {
+    if (modulId == CacheModulId.database) {
+      return await savePreference<T>(value);
+    } else {
+      return await _saveToDatabase<T>(value);
+    }
+  }
+
+  Future<T> _loadFromDatabase<T>(T defaultValue) async {
     _checkType<T>(this);
-    if (_cache[this]?.expired ?? true) {
+    if (_cache[this]?.isExpired ?? true) {
       var value = await _getValue<T>(
           cacheModul: DbCache(), key: this, defaultValue: defaultValue);
       _cache[this] = ValueExpired(value: value, duration: expireAfter);
@@ -139,7 +200,7 @@ enum Cache {
     return value;
   }
 
-  Future<T> saveCache<T>(T value) async {
+  Future<T> _saveToDatabase<T>(T value) async {
     _checkType<T>(this);
     _cache.addAll({this: ValueExpired(value: value, duration: expireAfter)});
     return await _setValue<T>(cacheModul: DbCache(), key: this, value: value);

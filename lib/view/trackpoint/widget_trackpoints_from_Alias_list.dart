@@ -51,8 +51,8 @@ class _WidgetAliasTrackpoint extends BaseWidgetState<WidgetAliasTrackpoint> {
   Future<void> initialize(BuildContext context, Object? args) async {
     int id = args as int;
     _modelAlias = await ModelAlias.byId(id);
-    weekdays = await Cache.appSettingWeekdays
-        .loadCache<Weekdays>(Weekdays.mondayFirst);
+    weekdays =
+        await Cache.appSettingWeekdays.load<Weekdays>(Weekdays.mondayFirst);
   }
 
   @override

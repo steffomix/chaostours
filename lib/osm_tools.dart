@@ -43,17 +43,16 @@ class OsmTools {
       strokeWidth: 10,
     ));
 
-    List<GPS> gpsPoints =
-        await Cache.backgroundGpsPoints.loadCache<List<GPS>>([]);
+    List<GPS> gpsPoints = await Cache.backgroundGpsPoints.load<List<GPS>>([]);
     if (gpsPoints.isEmpty) {
       return;
     }
     List<GPS> gpsSmoothPoints =
-        await Cache.backgroundGpsSmoothPoints.loadCache<List<GPS>>([]);
+        await Cache.backgroundGpsSmoothPoints.load<List<GPS>>([]);
     List<GPS> gpsCalcPoints =
-        await Cache.backgroundGpsCalcPoints.loadCache<List<GPS>>([]);
+        await Cache.backgroundGpsCalcPoints.load<List<GPS>>([]);
     GPS lastStatusStanding =
-        await Cache.backgroundGpsStartStanding.loadCache(gpsPoints.last);
+        await Cache.backgroundGpsStartStanding.load(gpsPoints.last);
 
     for (var alias in await ModelAlias.selsectActivated()) {
       try {

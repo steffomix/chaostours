@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 import 'dart:convert';
+import 'package:chaostours/value_expired.dart';
 import 'package:http/http.dart' as http;
 
 ///
@@ -26,8 +27,12 @@ import 'package:chaostours/logger.dart';
 class Address {
   static Logger logger = Logger.logger<Address>();
 
-  final msgOSMFailed = 'OSM Lookup failed';
+  static const expireAfter = Duration(seconds: 3);
+  static const _msgOSMFailed = 'OSM Lookup failed';
   final GPS _gps;
+
+  ValueExpired? lastResponse;
+  http.Response? _response;
 
   Address(this._gps);
 
@@ -41,15 +46,15 @@ class Address {
       return _alias!;
     }
     if (!_checkResponse()) {
-      return msgOSMFailed;
+      return _msgOSMFailed;
     }
     try {
       final body = _response!.body;
       var json = jsonDecode(body);
-      return _alias = (json['display_name'] ?? msgOSMFailed);
+      return _alias = (json['display_name'] ?? _msgOSMFailed);
     } catch (e, stk) {
       logger.error('get address alias: $e', stk);
-      return msgOSMFailed;
+      return _msgOSMFailed;
     }
   }
 
@@ -59,7 +64,7 @@ class Address {
       return _description!;
     }
     if (!_checkResponse()) {
-      return msgOSMFailed;
+      return _msgOSMFailed;
     }
     try {
       final body = _response!.body;
@@ -75,11 +80,10 @@ class Address {
       return _description = parts.join('\n');
     } catch (e, stk) {
       logger.error('get address description: $e', stk);
-      return msgOSMFailed;
+      return _msgOSMFailed;
     }
   }
 
-  http.Response? _response;
   bool _checkResponse() {
     if (_response == null) {
       logger.error('_response is Null', StackTrace.current);
@@ -103,9 +107,13 @@ class Address {
         'format': 'json'
       });
 
-      _response ??= await http.get(url);
+      if (lastResponse?.isExpired ?? false) {
+        lastResponse =
+            ValueExpired(value: await http.get(url), duration: expireAfter);
+      }
+      _response = lastResponse!.value as http.Response;
       if (saveToCache) {
-        await Cache.backgroundAddress.saveCache<String>(alias);
+        await Cache.backgroundAddress.save<String>(alias);
       }
     } else {
       _alias = 'Address Lookup denied by User Setting';

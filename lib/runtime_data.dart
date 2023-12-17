@@ -20,7 +20,7 @@ class RuntimeData {
     getDuration: () async {
       var cache = Cache.appSettingForegroundUpdateInterval;
       return await cache
-          .loadCache<Duration>(AppUserSetting(cache).defaultValue as Duration);
+          .load<Duration>(AppUserSetting(cache).defaultValue as Duration);
     },
     action: () {
       EventManager.fire<EventOnForegroundTracking>(EventOnForegroundTracking());
@@ -32,7 +32,7 @@ class RuntimeData {
     getDuration: () async {
       var cache = Cache.appSettingBackgroundTrackingInterval;
       return await cache
-          .loadCache<Duration>(AppUserSetting(cache).defaultValue as Duration);
+          .load<Duration>(AppUserSetting(cache).defaultValue as Duration);
     },
     action: () {
       EventManager.fire<EventOnBackgroundUpdate>(EventOnBackgroundUpdate());

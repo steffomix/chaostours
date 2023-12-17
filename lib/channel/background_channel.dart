@@ -14,10 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'dart:io';
 import 'dart:ui';
+import 'package:path_provider_android/path_provider_android.dart';
 import 'package:chaostours/conf/app_user_settings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 
 ///
 import 'package:chaostours/database/database.dart';
@@ -26,7 +29,6 @@ import 'package:chaostours/database/cache.dart';
 import 'package:chaostours/channel/notification_channel.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/tracking.dart';
-import 'package:sqflite/sqflite.dart';
 
 enum BackgroundChannelCommand {
   startService,
@@ -34,6 +36,7 @@ enum BackgroundChannelCommand {
   gotoForeground,
   gotoBackground,
   onUpdate,
+  notify,
   ;
 
   @override
@@ -54,26 +57,33 @@ class BackgroundChannel {
   @pragma('vm:entry-point')
   static void onStart(ServiceInstance service) async {
     DartPluginRegistrant.ensureInitialized();
-
+    if (Platform.isAndroid) {
+      PathProviderAndroid.registerWith();
+    } else if (Platform.isIOS) {
+      //PathProviderIOS.registerWith();
+    }
     bool running = true;
     service.on(BackgroundChannelCommand.stopService.toString()).listen((event) {
       running = false;
       service.stopSelf();
     });
     await DB.openDatabase();
-
+    int tick = 0;
     try {
       const Cache cache = Cache.appSettingBackgroundTrackingInterval;
       while (running) {
         try {
           var gps = await GPS.gps();
           Tracker().track();
+          tick++;
+          service.invoke(
+              BackgroundChannelCommand.notify.toString(), {'tick': tick});
         } catch (e, stk) {
           logger.error('background tracking: $e', stk);
         }
         try {
-          await Future.delayed(await cache.loadCache<Duration>(
-              AppUserSetting(cache).defaultValue as Duration));
+          await Future.delayed(await cache
+              .load<Duration>(AppUserSetting(cache).defaultValue as Duration));
         } catch (e) {
           logger.warn('Background interval delay failed. Fallback to default');
           Future.delayed(AppUserSetting(cache).defaultValue as Duration);

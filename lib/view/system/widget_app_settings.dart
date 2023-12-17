@@ -147,15 +147,15 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
   Future<void> updateDebugValues() async {
     debugValues.clear();
     final smoothCount =
-        await Cache.appSettingGpsPointsSmoothCount.loadCache<int>(-1);
+        await Cache.appSettingGpsPointsSmoothCount.load<int>(-1);
     final autoCreateDuration = await Cache.appSettingAutocreateAliasDuration
-        .loadCache<Duration>(Duration.zero);
+        .load<Duration>(Duration.zero);
     final trackingInterval = await Cache.appSettingBackgroundTrackingInterval
-        .loadCache<Duration>(Duration.zero);
+        .load<Duration>(Duration.zero);
     final distanceTreshold =
-        await Cache.appSettingDistanceTreshold.loadCache<int>(-1);
-    final timeTreshold = await Cache.appSettingTimeRangeTreshold
-        .loadCache<Duration>(Duration.zero);
+        await Cache.appSettingDistanceTreshold.load<int>(-1);
+    final timeTreshold =
+        await Cache.appSettingTimeRangeTreshold.load<Duration>(Duration.zero);
 
     valueNotifiers[Cache.appSettingGpsPointsSmoothCount]?.value++;
     valueNotifiers[Cache.appSettingAutocreateAliasDuration]?.value++;
@@ -219,7 +219,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
   }
 
   Future<T> save<T>(Cache cache, T value) async {
-    await cache.saveCache<T>(value);
+    await cache.save<T>(value);
     valueNotifiers[cache]?.value++;
     return value;
   }
@@ -231,7 +231,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
     final setting = AppUserSetting(cache);
 
     Widget checkbox = AppWidgets.checkBox(
-        value: await cache.loadCache<bool>(false),
+        value: await cache.load<bool>(false),
         onToggle: (value) async {
           deactivate();
           await save<bool>(cache, value ?? false);
@@ -339,8 +339,8 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
   Future<Widget> settingOsmlookupCondition() async {
     const cache = Cache.appSettingOsmLookupCondition;
     final setting = AppUserSetting(cache);
-    _currentOsmCondition = await cache.loadCache<OsmLookupConditions>(
-        setting.defaultValue as OsmLookupConditions);
+    _currentOsmCondition = await cache
+        .load<OsmLookupConditions>(setting.defaultValue as OsmLookupConditions);
     return ValueListenableBuilder(
       valueListenable: valueNotifiers[cache] ??= ValueNotifier<int>(0),
       builder: (context, _, __) {

@@ -53,8 +53,7 @@ class AppCalendar {
 
   Future<String> getTimeZone() async {
     Cache key = Cache.appSettingTimeZone;
-    return await key
-        .loadCache<String>(AppUserSetting(key).defaultValue as String);
+    return await key.load<String>(AppUserSetting(key).defaultValue as String);
   }
 
   Future<String?> inserOrUpdate(Event e) async {
@@ -93,7 +92,7 @@ class AppCalendar {
           err.add(e.errorMessage);
         });
         await Cache.backgroundTrackPointUserNotes
-            .saveCache<String>(err.join('\n\n'));
+            .save<String>(err.join('\n\n'));
       }
       var data = calendarsResult.data;
       if (data != null) {
@@ -138,7 +137,7 @@ class AppCalendar {
     }
 
     GPS lastStatusChange =
-        await Cache.backgroundGpsLastStatusChange.loadCache<GPS>(tp.gps);
+        await Cache.backgroundGpsLastStatusChange.load<GPS>(tp.gps);
 
     /// get dates
     final berlin = getLocation(await getTimeZone());
@@ -179,18 +178,18 @@ class AppCalendar {
 
     /// cache event id
     await Cache.backgroundCalendarLastEventIds
-        .saveCache<List<CalendarEventId>>(calendarEvents);
+        .save<List<CalendarEventId>>(calendarEvents);
   }
 
   Future<void> completeCalendarEvent(ModelTrackPoint tp) async {
     List<CalendarEventId> calIds = await Cache.backgroundCalendarLastEventIds
-        .loadCache<List<CalendarEventId>>([]);
+        .load<List<CalendarEventId>>([]);
     if (calIds.isEmpty) {
       return;
     }
 
     GPS lastStatusChange =
-        await Cache.backgroundGpsLastStatusChange.loadCache<GPS>(tp.gps);
+        await Cache.backgroundGpsLastStatusChange.load<GPS>(tp.gps);
 
     /// get dates
     final berlin = getLocation(await getTimeZone());
@@ -243,8 +242,7 @@ class AppCalendar {
     }
 
     // clear calendar cache
-    await Cache.backgroundCalendarLastEventIds
-        .saveCache<List<CalendarEventId>>([]);
+    await Cache.backgroundCalendarLastEventIds.save<List<CalendarEventId>>([]);
     tp.calendarEventIds.clear();
   }
 }

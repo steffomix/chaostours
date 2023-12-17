@@ -166,12 +166,9 @@ class ModelTrackPoint {
       _id = await txn.insert(TableTrackPoint.table, map);
     });
 
-    final aliasIdList =
-        await Cache.backgroundAliasIdList.loadCache<List<int>>([]);
-    final taskIdList =
-        await Cache.backgroundTaskIdList.loadCache<List<int>>([]);
-    final userIdList =
-        await Cache.backgroundUserIdList.loadCache<List<int>>([]);
+    final aliasIdList = await Cache.backgroundAliasIdList.load<List<int>>([]);
+    final taskIdList = await Cache.backgroundTaskIdList.load<List<int>>([]);
+    final userIdList = await Cache.backgroundUserIdList.load<List<int>>([]);
     await DB.execute((Transaction txn) async {
       for (var id in aliasIdList) {
         try {
@@ -398,19 +395,17 @@ class ModelTrackPoint {
     }
     ModelTrackPoint newTrackPoint = ModelTrackPoint(
         gps: gps,
-        timeStart:
-            (await Cache.backgroundGpsStartStanding.loadCache<GPS>(gps)).time,
+        timeStart: (await Cache.backgroundGpsStartStanding.load<GPS>(gps)).time,
         timeEnd: gps.time,
         calendarEventIds: await Cache.backgroundCalendarLastEventIds
-            .loadCache<List<CalendarEventId>>([]),
-        address:
-            await Cache.backgroundLastStandingAddress.loadCache<String>(''),
-        notes: await Cache.backgroundTrackPointUserNotes.loadCache<String>(''));
+            .load<List<CalendarEventId>>([]),
+        address: await Cache.backgroundLastStandingAddress.load<String>(''),
+        notes: await Cache.backgroundTrackPointUserNotes.load<String>(''));
     newTrackPoint.aliasModels = aliases;
     newTrackPoint.taskModels = await ModelTask.byIdList(
-        await Cache.backgroundTaskIdList.loadCache<List<int>>([]));
+        await Cache.backgroundTaskIdList.load<List<int>>([]));
     newTrackPoint.userModels = await ModelUser.byIdList(
-        await Cache.backgroundUserIdList.loadCache<List<int>>([]));
+        await Cache.backgroundUserIdList.load<List<int>>([]));
     return newTrackPoint;
   }
 

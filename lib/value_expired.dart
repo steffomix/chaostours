@@ -18,7 +18,11 @@ class ValueExpired {
   dynamic value;
 
   late DateTime _expiredAt;
-  bool get expired => DateTime.now().isAfter(_expiredAt);
+  bool get isExpired => DateTime.now().isAfter(_expiredAt);
+
+  void expire() {
+    _expiredAt = DateTime.now().subtract(const Duration(seconds: 1));
+  }
 
   ValueExpired({required this.value, required Duration duration}) {
     _expiredAt = DateTime.now().add(duration);

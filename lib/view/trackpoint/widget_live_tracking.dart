@@ -14,9 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/channel/background_channel.dart';
 import 'package:chaostours/conf/app_colors.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 //
@@ -79,9 +81,9 @@ class _Cache {
     gps = await GPS.gps();
 
     lastBackgroundTick =
-        await Cache.backgroundLastTick.loadCache<DateTime>(DateTime.now());
+        await Cache.backgroundLastTick.load<DateTime>(DateTime.now());
 
-    tickList = await Cache.backgroundTickList.loadCache<List<DateTime>>([]);
+    tickList = await Cache.backgroundTickList.load<List<DateTime>>([]);
 
     List<int> seconds = [];
     if (tickList.length > 1) {
@@ -100,32 +102,31 @@ class _Cache {
     //location = await Location.location(gps!);
     trackPoint = await ModelTrackPoint.fromCache(gps!);
 
-    gpsPoints = await Cache.backgroundGpsPoints.loadCache<List<GPS>>([]);
+    gpsPoints = await Cache.backgroundGpsPoints.load<List<GPS>>([]);
     //gpsSmoothPoints = await Cache.backgroundGpsSmoothPoints.load<List<GPS>>([]);
-    gpsCalcPoints =
-        await Cache.backgroundGpsCalcPoints.loadCache<List<GPS>>([]);
+    gpsCalcPoints = await Cache.backgroundGpsCalcPoints.load<List<GPS>>([]);
 
     //lastTrackpointStanding = await Cache.backgroundGpsStartStanding.load<GPS>(gps!);
     trackingStatus = await Cache.backgroundTrackingStatus
-        .loadCache<TrackingStatus>(TrackingStatus.none);
+        .load<TrackingStatus>(TrackingStatus.none);
     triggeredTrackingStatus = await Cache.trackingStatusTriggered
-        .loadCache<TrackingStatus>(TrackingStatus.none);
+        .load<TrackingStatus>(TrackingStatus.none);
 
-    address = await Cache.backgroundAddress.loadCache<String>('Reload');
+    address = await Cache.backgroundAddress.load<String>('Reload');
     //notes = await Cache.backgroundTrackPointUserNotes.load<String>('');
 
     Cache cache = Cache.appSettingWeekdays;
-    weekdays = (await cache.loadCache<Weekdays>(
-            AppUserSetting(cache).defaultValue as Weekdays))
+    weekdays = (await cache
+            .load<Weekdays>(AppUserSetting(cache).defaultValue as Weekdays))
         .weekdays;
 
     cache = Cache.appSettingDistanceTreshold;
     distanceTreshold =
-        await cache.loadCache<int>(AppUserSetting(cache).defaultValue as int);
+        await cache.load<int>(AppUserSetting(cache).defaultValue as int);
 
     cache = Cache.appSettingTimeRangeTreshold;
     timeRangeTreshold = await cache
-        .loadCache<Duration>(AppUserSetting(cache).defaultValue as Duration);
+        .load<Duration>(AppUserSetting(cache).defaultValue as Duration);
 
     return true;
   }
@@ -368,7 +369,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                   }
                   _Cache.triggeredTrackingStatus = await Cache
                       .trackingStatusTriggered
-                      .saveCache(TrackingStatus.standing);
+                      .save(TrackingStatus.standing);
                   render();
                 }),
             Container(
@@ -401,7 +402,16 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
           child: Text('Distance: ${_Cache.distanceStanding}m',
               style: const TextStyle(letterSpacing: 2, fontSize: 15))),
     ]);
+
     List<Widget> items = [
+      StreamBuilder(
+        stream: FlutterBackgroundService()
+            .on(BackgroundChannelCommand.notify.toString()),
+        builder: (context, snapshot) {
+          Widget info = Text('Ticks: ${snapshot.data}');
+          return info;
+        },
+      ),
       divider,
 
       /// alias
@@ -433,7 +443,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                     saveToCache: true))
                 .alias;
             _Cache.address =
-                await Cache.backgroundAddress.saveCache<String>(address);
+                await Cache.backgroundAddress.save<String>(address);
             render();
           }
         },
@@ -462,7 +472,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                   }
                   _Cache.triggeredTrackingStatus = await Cache
                       .trackingStatusTriggered
-                      .saveCache(TrackingStatus.moving);
+                      .save(TrackingStatus.moving);
                   render();
                 }),
             Container(

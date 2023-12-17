@@ -23,7 +23,6 @@ class SharedCache implements CacheModul {
   static SharedCache? _instance;
   SharedCache._();
   factory SharedCache() => _instance ??= SharedCache._();
-
   SharedPreferences? _sharedPreferencesInstance;
 
   String _key(Cache key) {
