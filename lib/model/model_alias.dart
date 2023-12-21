@@ -22,16 +22,18 @@ import 'package:chaostours/model/model_alias_group.dart';
 import 'package:chaostours/database/database.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/logger.dart';
+import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 
 enum AliasVisibility {
-  public(1),
-  privat(2),
-  restricted(3);
+  public(1, Color.fromARGB(255, 0, 166, 0)),
+  privat(2, Color.fromARGB(255, 0, 0, 166)),
+  restricted(3, Color.fromARGB(255, 166, 0, 166));
 
   static final Logger logger = Logger.logger<AliasVisibility>();
   final int value;
-  const AliasVisibility(this.value);
+  final Color color;
+  const AliasVisibility(this.value, this.color);
   static final int _saveId = AliasVisibility.restricted.value;
 
   static AliasVisibility byId(Object? value) {
@@ -221,8 +223,8 @@ class ModelAlias {
   ///
   static Future<List<ModelAlias>> byRadius(
       {required GPS gps, required int radius}) async {
-    var area = GpsArea.calculateArea(
-        latitude: gps.lat, longitude: gps.lon, distance: radius);
+    var area = GpsArea(
+        latitude: gps.lat, longitude: gps.lon, distanceInMeters: radius);
     var table = TableAlias.table;
     var latCol = TableAlias.latitude.column;
     var lonCol = TableAlias.longitude.column;
@@ -233,7 +235,12 @@ class ModelAlias {
             columns: TableAlias.columns,
             where:
                 '$latCol > ? AND $latCol < ? AND $lonCol > ? AND $lonCol < ?',
-            whereArgs: [area.latMin, area.latMax, area.lonMin, area.lonMax]);
+            whereArgs: [
+              area.southLatitudeBorder,
+              area.northLatitudeBorder,
+              area.westLongitudeBorder,
+              area.eastLongitudeBorder
+            ]);
       },
     );
     var rawModels = <ModelAlias>[];
@@ -365,8 +372,8 @@ WHERE ${TableAlias.isActive} = ? AND ${TableAliasGroup.isActive} = ?
       includeInactive = true,
       int area = 1000,
       int softLimit = 0}) async {
-    var area = GpsArea.calculateArea(
-        latitude: gps.lat, longitude: gps.lon, distance: 1000);
+    var area =
+        GpsArea(latitude: gps.lat, longitude: gps.lon, distanceInMeters: 1000);
     var latCol = TableAlias.latitude.column;
     var lonCol = TableAlias.longitude.column;
     var whereArea =
@@ -380,20 +387,20 @@ LEFT JOIN ${TableAliasGroup.table} ON ${TableAlias.idAliasGroup} = ${TableAliasG
 WHERE $isActiveCol = ? AND $whereArea
           ''', [
           DB.boolToInt(includeInactive),
-          area.latMin,
-          area.latMax,
-          area.lonMin,
-          area.lonMax
+          area.southLatitudeBorder,
+          area.northLatitudeBorder,
+          area.westLongitudeBorder,
+          area.eastLongitudeBorder
         ]);
       } else {
         return await txn.query(TableAlias.table,
             columns: TableAlias.columns,
             where: whereArea,
             whereArgs: [
-              area.latMin,
-              area.latMax,
-              area.lonMin,
-              area.lonMax,
+              area.southLatitudeBorder,
+              area.northLatitudeBorder,
+              area.westLongitudeBorder,
+              area.eastLongitudeBorder,
             ]);
       }
     });

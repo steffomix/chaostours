@@ -24,6 +24,7 @@ import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/conf/app_user_settings.dart';
 import 'package:chaostours/database/cache.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_background_service/flutter_background_service.dart';
 
 enum AliasRequired {
   yes(true),
@@ -224,6 +225,12 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
     return value;
   }
 
+  void onSettingChanged(void Function() fn) {
+    fn.call();
+    FlutterBackgroundService()
+        .invoke(BackgroundChannelCommand.reloadUserSettings.toString());
+  }
+
   Future<Widget> booleanSetting(Cache cache, {OnChangedBool? onChange}) async {
     if (cache.cacheType != bool) {
       return AppWidgets.loading(Text('${cache.name} type is not bool'));
@@ -233,10 +240,10 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
     Widget checkbox = AppWidgets.checkBox(
         value: await cache.load<bool>(false),
         onToggle: (value) async {
-          deactivate();
-          await save<bool>(cache, value ?? false);
-          await onChange?.call(setting: setting, value: value ?? false);
-          activate();
+          onSettingChanged(() async {
+            await save<bool>(cache, value ?? false);
+            await onChange?.call(setting: setting, value: value ?? false);
+          });
         });
 
     return ValueListenableBuilder(
@@ -279,14 +286,16 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                       TextButton(
                         child: const Text('Yes'),
                         onPressed: () async {
-                          await setting.save(null);
-                          textEditingControllers[cache]?.text =
-                              await setting.load();
-                          await updateDebugValues();
-                          valueNotifiers[cache]?.value++;
-                          if (mounted) {
-                            Navigator.pop(context);
-                          }
+                          onSettingChanged(() async {
+                            await setting.resetToDefault();
+                            textEditingControllers[cache]?.text =
+                                await setting.load();
+                            await updateDebugValues();
+                            valueNotifiers[cache]?.value++;
+                            if (mounted) {
+                              Navigator.pop(context);
+                            }
+                          });
                         },
                       )
                     ]);
@@ -309,18 +318,18 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                               ? null
                               : const TextStyle(color: Colors.red))),
                   onSubmitted: (_) async {
-                    deactivate();
-                    await setting.save(textEditingControllers[cache]!.text);
-                    controller.text = await setting.load();
-                    isValid = true;
-                    await updateDebugValues();
-                    valueNotifiers[cache]?.value++;
+                    onSettingChanged(() async {
+                      await setting.save(textEditingControllers[cache]!.text);
+                      controller.text = await setting.load();
+                      isValid = true;
+                      await updateDebugValues();
+                      valueNotifiers[cache]?.value++;
 
-                    await onChange?.call(
-                        setting: setting,
-                        value: await setting
-                            .pruneInt(textEditingControllers[cache]!.text));
-                    activate();
+                      await onChange?.call(
+                          setting: setting,
+                          value: await setting
+                              .pruneInt(textEditingControllers[cache]!.text));
+                    });
                   },
                   onTapOutside: (_) async {
                     controller.text = await setting.load();
@@ -356,10 +365,10 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                   Checkbox(
                     value: _currentOsmCondition.index >= condition.index,
                     onChanged: (value) async {
-                      deactivate();
-                      _currentOsmCondition =
-                          await save<OsmLookupConditions>(cache, condition);
-                      activate();
+                      onSettingChanged(() async {
+                        _currentOsmCondition =
+                            await save<OsmLookupConditions>(cache, condition);
+                      });
                     },
                   ),
                   condition.title

@@ -14,8 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/channel/data_channel.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_osm_plugin/flutter_osm_plugin.dart' as osm;
+import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
 
 ///
 import 'package:chaostours/logger.dart';
@@ -30,38 +31,59 @@ class OsmTools {
   //static final bridge = DataBridge();
   static int circleId = 0;
 
-  Future<void> renderAlias(osm.MapController mapController) async {
-    await mapController.removeAllCircle();
+  String get key {
+    var k = 'circle${++circleId}';
+    keys.add(k);
+    return k;
+  }
 
-    GPS currentGps = await GPS.gps();
-    mapController.drawCircle(osm.CircleOSM(
-      key: "circle${++circleId}",
+  String rectKey = '';
+
+  List<String> keys = [];
+
+  int maxRange = 30;
+
+  List<GPS> getRange(List<GPS> source) {
+    if (source.length > maxRange) {
+      return source.getRange(0, maxRange).toList();
+    }
+    return source;
+  }
+
+  Future<void> renderAlias(MapController controller) async {
+    DataChannel channel = DataChannel();
+
+    if (channel.gpsPoints.isEmpty) {
+      return;
+    }
+    GeoPoint geoPoint = await controller.centerMap;
+    GPS currentGps = channel.gps ?? GPS(geoPoint.latitude, geoPoint.longitude);
+    List<GPS> gpsPoints = getRange(channel.gpsPoints);
+    List<GPS> gpsSmoothPoints = getRange(channel.gpsSmoothPoints);
+    List<GPS> gpsCalcPoints = getRange(channel.gpsCalcPoints);
+    GPS? lastStatusStanding = channel.gpsLastStatusStanding;
+    while (keys.isNotEmpty) {
+      controller.removeCircle(keys.removeLast());
+    }
+
+    controller.drawCircle(CircleOSM(
+      key: key,
       centerPoint:
-          osm.GeoPoint(latitude: currentGps.lat, longitude: currentGps.lon),
+          GeoPoint(latitude: currentGps.lat, longitude: currentGps.lon),
       radius: 10,
       color: const Color.fromARGB(255, 247, 2, 255),
       strokeWidth: 10,
     ));
 
-    List<GPS> gpsPoints = await Cache.backgroundGpsPoints.load<List<GPS>>([]);
-    if (gpsPoints.isEmpty) {
-      return;
-    }
-    List<GPS> gpsSmoothPoints =
-        await Cache.backgroundGpsSmoothPoints.load<List<GPS>>([]);
-    List<GPS> gpsCalcPoints =
-        await Cache.backgroundGpsCalcPoints.load<List<GPS>>([]);
-    GPS lastStatusStanding =
-        await Cache.backgroundGpsStartStanding.load(gpsPoints.last);
-
-    for (var alias in await ModelAlias.selsectActivated()) {
+    for (var alias in await ModelAlias.byArea(
+        gps: GPS(geoPoint.latitude, geoPoint.longitude), area: 1000 * 50)) {
       try {
-        mapController.drawCircle(osm.CircleOSM(
-          key: "circle${++circleId}",
+        controller.drawCircle(CircleOSM(
+          key: key,
           centerPoint:
-              osm.GeoPoint(latitude: alias.gps.lat, longitude: alias.gps.lon),
+              GeoPoint(latitude: alias.gps.lat, longitude: alias.gps.lon),
           radius: alias.radius.toDouble(),
-          color: const Color.fromARGB(72, 0, 0, 0),
+          color: alias.visibility.color,
           strokeWidth: 10,
         ));
       } catch (e, stk) {
@@ -73,38 +95,38 @@ class OsmTools {
     /// draw gps points
     try {
       for (var gps in gpsPoints) {
-        mapController.drawCircle(osm.CircleOSM(
-          key: "circle${++circleId}",
-          centerPoint: osm.GeoPoint(latitude: gps.lat, longitude: gps.lon),
+        controller.drawCircle(CircleOSM(
+          key: key,
+          centerPoint: GeoPoint(latitude: gps.lat, longitude: gps.lon),
           radius: 2,
           color: AppColors.rawGpsTrackingDot.color,
           strokeWidth: 10,
         ));
       }
       for (var gps in gpsSmoothPoints) {
-        mapController.drawCircle(osm.CircleOSM(
-          key: "circle${++circleId}",
-          centerPoint: osm.GeoPoint(latitude: gps.lat, longitude: gps.lon),
+        controller.drawCircle(CircleOSM(
+          key: key,
+          centerPoint: GeoPoint(latitude: gps.lat, longitude: gps.lon),
           radius: 3,
           color: AppColors.smoothedGpsTrackingDot.color,
           strokeWidth: 10,
         ));
       }
       for (var gps in gpsCalcPoints) {
-        mapController.drawCircle(osm.CircleOSM(
-          key: "circle${++circleId}",
-          centerPoint: osm.GeoPoint(latitude: gps.lat, longitude: gps.lon),
+        controller.drawCircle(CircleOSM(
+          key: key,
+          centerPoint: GeoPoint(latitude: gps.lat, longitude: gps.lon),
           radius: 4,
           color: AppColors.calcGpsTrackingDot.color,
           strokeWidth: 10,
         ));
       }
 
-      if (gpsPoints.isNotEmpty) {
+      if (lastStatusStanding != null) {
         GPS gps = lastStatusStanding;
-        mapController.drawCircle(osm.CircleOSM(
-          key: "circle${++circleId}",
-          centerPoint: osm.GeoPoint(latitude: gps.lat, longitude: gps.lon),
+        controller.drawCircle(CircleOSM(
+          key: key,
+          centerPoint: GeoPoint(latitude: gps.lat, longitude: gps.lon),
           radius: 5,
           color: AppColors.lastTrackingStatusWithAliasDot.color,
           strokeWidth: 10,

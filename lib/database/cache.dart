@@ -51,106 +51,94 @@ enum CacheModulId {
 }
 
 enum Cache {
-  // shared preferences keys
-
   /// trigger off == TrackingStatus.none
   /// triggered by user, set to none in background
   trackingStatusTriggered(
-      CacheModulId.sharedPreferences, TrackingStatus, expireAfterThreeSeconds),
-
-  /// updated on every second in foreground
-  foregroundAliasIdList(
-      CacheModulId.sharedPreferences, List<int>, expireAfterThreeSeconds),
-
-  // background task
-  backgroundLastTick(
-      CacheModulId.sharedPreferences, DateTime, expireAfterThreeSeconds),
-  backgroundTickList(
-      CacheModulId.sharedPreferences, List<DateTime>, expireAfterThreeSeconds),
+      CacheModulId.sharedPreferences, TrackingStatus, expireAfterOneSecond),
 
   /// status change events
   backgroundGpsStartMoving(
-      CacheModulId.sharedPreferences, GPS, expireAfterThreeSeconds),
+      CacheModulId.sharedPreferences, GPS, expireAfterOneSecond),
   backgroundGpsStartStanding(
-      CacheModulId.sharedPreferences, GPS, expireAfterThreeSeconds),
+      CacheModulId.sharedPreferences, GPS, expireAfterOneSecond),
   backgroundGpsLastStatusChange(
-      CacheModulId.sharedPreferences, GPS, expireAfterThreeSeconds),
+      CacheModulId.sharedPreferences, GPS, expireAfterOneSecond),
 
   /// cache background to forground
   backgroundTrackingStatus(
-      CacheModulId.sharedPreferences, TrackingStatus, expireAfterThreeSeconds),
+      CacheModulId.sharedPreferences, TrackingStatus, expireAfterOneSecond),
 
   /// user input
   backgroundAliasIdList(
-      CacheModulId.sharedPreferences, List<int>, expireAfterThreeSeconds),
+      CacheModulId.sharedPreferences, List<int>, expireAfterOneSecond),
   backgroundUserIdList(
-      CacheModulId.sharedPreferences, List<int>, expireAfterThreeSeconds),
+      CacheModulId.sharedPreferences, List<int>, expireAfterOneSecond),
   backgroundTaskIdList(
-      CacheModulId.sharedPreferences, List<int>, expireAfterThreeSeconds),
+      CacheModulId.sharedPreferences, List<int>, expireAfterOneSecond),
   backgroundTrackPointUserNotes(
-      CacheModulId.sharedPreferences, String, expireAfterThreeSeconds),
+      CacheModulId.sharedPreferences, String, expireAfterOneSecond),
 
   /// tracking detection
-  backgroundLastGps(
-      CacheModulId.sharedPreferences, GPS, expireAfterThreeSeconds),
+  backgroundLastGps(CacheModulId.sharedPreferences, GPS, expireAfterOneSecond),
   backgroundGpsPoints(
-      CacheModulId.sharedPreferences, List<GPS>, expireAfterThreeSeconds),
+      CacheModulId.sharedPreferences, List<GPS>, expireAfterOneSecond),
   backgroundGpsSmoothPoints(
-      CacheModulId.sharedPreferences, List<GPS>, expireAfterThreeSeconds),
+      CacheModulId.sharedPreferences, List<GPS>, expireAfterOneSecond),
   backgroundGpsCalcPoints(
-      CacheModulId.sharedPreferences, List<GPS>, expireAfterThreeSeconds),
+      CacheModulId.sharedPreferences, List<GPS>, expireAfterOneSecond),
 
-  /// address updated on each backgroiund tick - if activated
-  backgroundAddress(
-      CacheModulId.sharedPreferences, String, expireAfterThreeSeconds),
+  /// stores last lookup to prevent more than one osm lookups per second
+  addressLastLookup(CacheModulId.sharedPreferences, int, expireAfterOneSecond),
+
+  /// address updated on each background tick - if permission granted
+  backgroundAddress(CacheModulId.sharedPreferences, String, expireImmediately),
 
   /// address updated on status change - if activated
   backgroundLastStandingAddress(
-      CacheModulId.sharedPreferences, String, expireAfterThreeSeconds),
+      CacheModulId.sharedPreferences, String, expireImmediately),
 
   /// eventCalendar
-  backgroundCalendarLastEventIds(CacheModulId.sharedPreferences,
-      List<CalendarEventId>, expireAfterThreeSeconds),
+  backgroundCalendarLastEventIds(
+      CacheModulId.sharedPreferences, List<CalendarEventId>, expireImmediately),
 
   /// startup consent
-  licenseConsentChaosTours(
-      CacheModulId.sharedPreferences, bool, expireAfterThreeSeconds),
-  licenseConsentRequestedOsm(
-      CacheModulId.sharedPreferences, bool, expireAfterThreeSeconds),
+  licenseConsentChaosTours(CacheModulId.sharedPreferences, bool, expireNever),
+  licenseConsentRequestedOsm(CacheModulId.sharedPreferences, bool, expireNever),
+
+  /// webSSLKey
+  ///
+  webSSLKey(CacheModulId.sharedPreferences, String, expireNever),
 
   /// appUserStettings
-  appSettingBackgroundTrackingEnabled(
-      CacheModulId.database, bool, expireAfterOneYear),
+  appSettingBackgroundTrackingEnabled(CacheModulId.database, bool, expireNever),
   appSettingStatusStandingRequireAlias(
-      CacheModulId.database, bool, expireAfterOneYear),
+      CacheModulId.database, bool, expireNever),
   appSettingAutocreateAliasDuration(
-      CacheModulId.database, Duration, expireAfterOneYear),
-  appSettingAutocreateAlias(CacheModulId.database, bool, expireAfterOneYear),
+      CacheModulId.database, Duration, expireNever),
+  appSettingAutocreateAlias(CacheModulId.database, bool, expireNever),
   appSettingForegroundUpdateInterval(
-      CacheModulId.database, Duration, expireAfterOneYear),
+      CacheModulId.database, Duration, expireNever),
   appSettingOsmLookupCondition(
-      CacheModulId.database, OsmLookupConditions, expireAfterOneYear),
-  appSettingCacheGpsTime(CacheModulId.database, Duration, expireAfterOneYear),
+      CacheModulId.database, OsmLookupConditions, expireNever),
+  appSettingCacheGpsTime(CacheModulId.database, Duration, expireNever),
   appSettingLocationAccuracy(
-      CacheModulId.database, LocationAccuracy, expireAfterOneYear),
-  appSettingDistanceTreshold(CacheModulId.database, int, expireAfterOneYear),
-  appSettingTimeRangeTreshold(
-      CacheModulId.database, Duration, expireAfterOneYear),
+      CacheModulId.database, LocationAccuracy, expireNever),
+  appSettingDistanceTreshold(CacheModulId.database, int, expireNever),
+  appSettingTimeRangeTreshold(CacheModulId.database, Duration, expireNever),
   appSettingBackgroundTrackingInterval(
-      CacheModulId.database, Duration, expireAfterOneYear),
-  appSettingGpsPointsSmoothCount(
-      CacheModulId.database, int, expireAfterOneYear),
-  appSettingPublishToCalendar(CacheModulId.database, bool, expireAfterOneYear),
-  appSettingTimeZone(CacheModulId.database, String, expireAfterOneYear),
-  appSettingWeekdays(CacheModulId.database, Weekdays, expireAfterOneYear);
+      CacheModulId.database, Duration, expireNever),
+  appSettingGpsPointsSmoothCount(CacheModulId.database, int, expireNever),
+  appSettingPublishToCalendar(CacheModulId.database, bool, expireNever),
+  appSettingTimeZone(CacheModulId.database, String, expireNever),
+  appSettingWeekdays(CacheModulId.database, Weekdays, expireNever);
 
   const Cache(this.modulId, this.cacheType, this.expireAfter);
 
   static final Logger logger = Logger.logger<Cache>();
 
   static const Duration expireImmediately = Duration.zero;
-  static const Duration expireAfterThreeSeconds = Duration(seconds: 3);
-  static const Duration expireAfterOneYear = Duration(days: 365);
+  static const Duration expireAfterOneSecond = Duration(seconds: 1);
+  static const Duration expireNever = Duration(days: 36500);
 
   static final Map<Cache, ValueExpired> _cache = {};
 
@@ -167,7 +155,7 @@ enum Cache {
     return null;
   }
 
-  Future<void> reload() async {
+  static Future<void> reload() async {
     await SharedCache().reload();
     for (var value in _cache.values) {
       value.expire();

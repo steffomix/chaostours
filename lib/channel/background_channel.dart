@@ -1,3 +1,5 @@
+// ignore_for_file: unused_import
+
 /*
 Copyright 2023 Stefan Brinkmann <st.brinkmann@gmail.com>
 
@@ -14,8 +16,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// required for sqflite
 // ignore: depend_on_referenced_packages
-import 'package:path_provider_android/path_provider_android.dart';
+// import 'package:path_provider_android/path_provider_android.dart';
+
+// ignore: depend_on_referenced_packages
+import 'package:chaostours/channel/data_channel.dart';
+import 'package:chaostours/database/type_adapter.dart';
+import 'package:flutter_background_service_android/flutter_background_service_android.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'dart:io';
 import 'dart:ui';
 import 'package:chaostours/conf/app_user_settings.dart';
@@ -23,6 +32,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 
 ///
+import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/database/database.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/database/cache.dart';
@@ -34,7 +44,8 @@ enum BackgroundChannelCommand {
   stopService,
   gotoForeground,
   gotoBackground,
-  onUpdate,
+  reloadUserSettings,
+  onTracking,
   notify,
   ;
 
@@ -61,21 +72,33 @@ class BackgroundChannel {
     } else if (Platform.isIOS) {
       //PathProviderIOS.registerWith();
     }
-    bool running = true;
-    service.on(BackgroundChannelCommand.stopService.toString()).listen((event) {
-      running = false;
+    bool serviceIsRunning = true;
+    service.on(BackgroundChannelCommand.stopService.toString()).listen((_) {
+      serviceIsRunning = false;
       service.stopSelf();
     });
+
+    service
+        .on(BackgroundChannelCommand.reloadUserSettings.toString())
+        .listen((_) {
+      Cache.reload();
+    });
+
     await DB.openDatabase();
+    Tracker tracker = Tracker();
     int tick = 0;
     try {
       const Cache cache = Cache.appSettingBackgroundTrackingInterval;
-      while (running) {
+      while (serviceIsRunning) {
         try {
-          Tracker().track();
           tick++;
-          service.invoke(
-              BackgroundChannelCommand.notify.toString(), {'tick': tick});
+          service.invoke(BackgroundChannelCommand.onTracking.toString(),
+              await tracker.track());
+          NotificationChannel.sendTrackingUpdateNotification(
+              title: 'Tick Update',
+              message:
+                  'T$tick Status: ${tracker.trackingStatus.name.toUpperCase()}'
+                  ' since ${util.formatDuration(DateTime.now(), tracker.gpsLastStatusChange?.time ?? DateTime.now())}');
         } catch (e, stk) {
           logger.error('background tracking: $e', stk);
         }
@@ -89,6 +112,20 @@ class BackgroundChannel {
       }
     } catch (e, stk) {
       logger.fatal('Background task crashed: $e', stk);
+    }
+  }
+
+  static sendNotification(
+      {required ServiceInstance service,
+      required String title,
+      required String message}) async {
+    if (service is AndroidServiceInstance) {
+      if (await service.isForegroundService()) {
+        service.setForegroundNotificationInfo(
+          title: title,
+          content: message,
+        );
+      }
     }
   }
 
@@ -120,12 +157,12 @@ class BackgroundChannel {
         autoStart: false,
         isForegroundMode: true,
 
-        notificationChannelId: NotificationChannel.backgroundNotificationId,
-        initialNotificationTitle:
-            NotificationChannel.backgroundNotificationTitle,
-        initialNotificationContent: 'Initializing...',
+        notificationChannelId:
+            NotificationChannel.ongoingTrackingUpdateChannelName,
+        initialNotificationTitle: 'Chaos Tours on start',
+        initialNotificationContent: 'Initializing Background Tracking...',
         foregroundServiceNotificationId:
-            NotificationChannel.foregroundServiceNotificationId,
+            NotificationChannel.ongoingTrackingUpdateChannelId,
       ),
       iosConfiguration: IosConfiguration(
         // auto start service

@@ -53,8 +53,7 @@ class WidgetTrackingPage extends StatefulWidget {
 
 class _Cache {
   // static final Logger logger = Logger.logger<_Cache>();
-  static DateTime lastBackgroundTick = DateTime.now();
-  static List<DateTime> tickList = [];
+
   static Duration averageDuration = Duration.zero;
   //static GPS? lastTrackpointStanding;
   static List<GPS> gpsPoints = [];
@@ -79,25 +78,6 @@ class _Cache {
   static Future<bool> reload() async {
     //logger.log('-------reload live tracking cache -------');
     gps = await GPS.gps();
-
-    lastBackgroundTick =
-        await Cache.backgroundLastTick.load<DateTime>(DateTime.now());
-
-    tickList = await Cache.backgroundTickList.load<List<DateTime>>([]);
-
-    List<int> seconds = [];
-    if (tickList.length > 1) {
-      var last = tickList.removeLast();
-      while (tickList.isNotEmpty) {
-        var next = tickList.removeLast();
-        seconds.add(last.difference(next).abs().inMilliseconds);
-        last = next;
-      }
-      averageDuration = Duration(
-          milliseconds:
-              (seconds.reversed.reduce((a, b) => a + b) / seconds.length)
-                  .round());
-    }
 
     //location = await Location.location(gps!);
     trackPoint = await ModelTrackPoint.fromCache(gps!);
@@ -162,6 +142,15 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     EventManager.listen<EventOnForegroundTracking>(onTracking);
     // EventManager.listen<EventOnTrackingStatusChanged>(onTrackingStatusChanged);
     super.initState();
+    Future.microtask(() async {
+      await for (var stream in FlutterBackgroundService()
+          .on(BackgroundChannelCommand.onTracking.toString())) {
+        if (!mounted) {
+          return;
+        }
+        Cache.reload();
+      }
+    });
   }
 
   ///
@@ -404,14 +393,6 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     ]);
 
     List<Widget> items = [
-      StreamBuilder(
-        stream: FlutterBackgroundService()
-            .on(BackgroundChannelCommand.notify.toString()),
-        builder: (context, snapshot) {
-          Widget info = Text('Ticks: ${snapshot.data}');
-          return info;
-        },
-      ),
       divider,
 
       /// alias

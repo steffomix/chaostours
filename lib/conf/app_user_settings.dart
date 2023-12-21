@@ -132,7 +132,7 @@ class AppUserSetting {
               'NOTE:\n'
               'To activate changes restart the App you must!\nCompletely!\nInclusive the background process!'),
           unit: Unit.second,
-          minValue: 15,
+          minValue: 3,
           defaultValue: const Duration(seconds: 30),
           resetToDefault: () async {
             await cache

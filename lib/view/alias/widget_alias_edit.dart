@@ -16,6 +16,7 @@ limitations under the License.
 
 import 'package:chaostours/conf/app_user_settings.dart';
 import 'package:chaostours/view/app_widgets.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -39,17 +40,26 @@ class WidgetAliasEdit extends StatefulWidget {
 class _WidgetAliasEdit extends State<WidgetAliasEdit> {
   // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetAliasEdit>();
-  final _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  ModelAlias? _modelAlias;
   final _addressController = TextEditingController();
+  final _addressUndoController = UndoHistoryController();
+
   final _notesController = TextEditingController();
+  final _notesUndoController = UndoHistoryController();
+
   final _radiusController = TextEditingController();
+  final _radiusUndoController = UndoHistoryController();
+
+  final _visibility = ValueNotifier<bool>(false);
+  ModelAlias? _modelAlias;
+
   List<ModelAliasGroup> _groups = [];
 
   void initialize(ModelAlias model) {
     _modelAlias = model;
-    _addressController.text = model.title;
+    if (_addressController.text != model.title) {
+      //_addressController.text = model.title;
+    }
     _notesController.text = model.description;
     _radiusController.text = model.radius.toString();
   }
@@ -108,7 +118,6 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
 
   Widget scaffold(Widget body) {
     return AppWidgets.scaffold(context,
-        key: _scaffoldKey,
         title: 'Edit Alias',
         navBar: BottomNavigationBar(
             type: BottomNavigationBarType.fixed,
@@ -138,66 +147,102 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
   Widget body(ModelAlias alias) {
     return ListView(children: [
       /// aliasname
-      Container(
-          padding: const EdgeInsets.all(10),
-          child: TextField(
-            decoration: const InputDecoration(label: Text('Alias Address')),
-            onChanged: ((value) {
-              alias.title = value;
-              alias.update();
-            }),
-            maxLines: 3,
-            minLines: 3,
-            controller: _addressController,
-          )),
+
+      ListTile(
+          dense: true,
+          trailing: ValueListenableBuilder<UndoHistoryValue>(
+            valueListenable: _addressUndoController,
+            builder: (context, value, child) {
+              return IconButton(
+                icon: const Icon(Icons.undo),
+                onPressed: value.canUndo
+                    ? () {
+                        _addressUndoController.undo();
+                      }
+                    : null,
+              );
+            },
+          ),
+          title: Container(
+              padding: const EdgeInsets.all(10),
+              child: TextField(
+                undoController: _addressUndoController,
+                decoration: const InputDecoration(label: Text('Alias Address')),
+                onChanged: ((value) {
+                  alias.title = value;
+                  alias.update();
+                }),
+                maxLines: 3,
+                minLines: 3,
+                controller: _addressController,
+              ))),
 
       /// notes
-      Container(
-          padding: const EdgeInsets.all(10),
-          child: TextField(
-            keyboardType: TextInputType.multiline,
-            decoration: const InputDecoration(label: Text('Notes')),
-            maxLines: null,
-            minLines: 3,
-            controller: _notesController,
-            onChanged: (value) {
-              alias.description = value.trim();
-              alias.update();
+      ListTile(
+          dense: true,
+          trailing: ValueListenableBuilder<UndoHistoryValue>(
+            valueListenable: _notesUndoController,
+            builder: (context, value, child) {
+              return IconButton(
+                icon: const Icon(Icons.undo),
+                onPressed: value.canUndo
+                    ? () {
+                        _notesUndoController.undo();
+                      }
+                    : null,
+              );
             },
-          )),
+          ),
+          title: Container(
+              padding: const EdgeInsets.all(10),
+              child: TextField(
+                undoController: _notesUndoController,
+                keyboardType: TextInputType.multiline,
+                decoration: const InputDecoration(label: Text('Notes')),
+                maxLines: null,
+                minLines: 3,
+                controller: _notesController,
+                onChanged: (value) {
+                  alias.description = value.trim();
+                  alias.update();
+                },
+              ))),
       AppWidgets.divider(),
 
-      ElevatedButton(
-        child: Column(children: [
-          const Text('GPS'),
-          ListTile(
-              leading: const Icon(
-                Icons.near_me,
-                size: 40,
-              ),
-              title: Text('Latitude:\n${alias.gps.lat}\n\n'
-                  'Longitude:\n${alias.gps.lon}'))
-        ]),
-        onPressed: () {
-          Navigator.pushNamed(context, AppRoutes.osm.route, arguments: alias.id)
-              .then(
-            (value) {
-              ModelAlias.byId(alias.id).then(
-                (ModelAlias? model) {
-                  setState(() {
-                    _modelAlias = model;
-                  });
+      Padding(
+          padding: const EdgeInsets.all(10),
+          child: ElevatedButton(
+            child: Column(children: [
+              const Text('GPS'),
+              ListTile(
+                  leading: const Icon(
+                    Icons.near_me,
+                    size: 40,
+                  ),
+                  title: Text('Latitude:\n${alias.gps.lat}\n\n'
+                      'Longitude:\n${alias.gps.lon}'))
+            ]),
+            onPressed: () {
+              Navigator.pushNamed(context, AppRoutes.osm.route,
+                      arguments: alias.id)
+                  .then(
+                (value) {
+                  ModelAlias.byId(alias.id).then(
+                    (ModelAlias? model) {
+                      setState(() {
+                        _modelAlias = model;
+                      });
+                    },
+                  );
                 },
               );
             },
-          );
-        },
-      ),
+          )),
       AppWidgets.divider(),
 
       // groups
       Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10),
+          padding: const EdgeInsets.all(10),
           child: ElevatedButton(
               child: Column(children: [
                 const Text('Groups', style: TextStyle(height: 2)),
@@ -210,6 +255,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                       subtitle: Text(model.description),
                     );
                   },
+                  // ignore: unnecessary_to_list_in_spreads
                 ).toList()
               ]),
               onPressed: () {
@@ -226,26 +272,43 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
       AppWidgets.divider(),
 
       /// radius
-      Container(
-          padding: const EdgeInsets.all(10),
-          child: TextField(
-            keyboardType: TextInputType.number,
-            inputFormatters: [
-              FilteringTextInputFormatter.allow(RegExp('[0-9]')),
-            ],
-            decoration: const InputDecoration(label: Text('Radius in meter.')),
-            onChanged: ((value) {
-              try {
-                alias.radius = int.parse(value);
-                alias.update();
-              } catch (e) {
-                //
-              }
-            }),
-            maxLines: 1, //
-            minLines: 1,
-            controller: _radiusController,
-          )),
+      ListTile(
+          dense: true,
+          trailing: ValueListenableBuilder<UndoHistoryValue>(
+            valueListenable: _radiusUndoController,
+            builder: (context, value, child) {
+              return IconButton(
+                icon: const Icon(Icons.undo),
+                onPressed: value.canUndo
+                    ? () {
+                        _radiusUndoController.undo();
+                      }
+                    : null,
+              );
+            },
+          ),
+          title: Container(
+              padding: const EdgeInsets.all(10),
+              child: TextField(
+                undoController: _radiusUndoController,
+                keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp('[0-9]')),
+                ],
+                decoration:
+                    const InputDecoration(label: Text('Radius in meter.')),
+                onChanged: ((value) {
+                  try {
+                    alias.radius = int.parse(value);
+                    alias.update();
+                  } catch (e) {
+                    //
+                  }
+                }),
+                maxLines: 1, //
+                minLines: 1,
+                controller: _radiusController,
+              ))),
 
       AppWidgets.divider(),
 
@@ -261,67 +324,81 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
               ),
             ),
             ListTile(
-                title: Text('Öffentlich',
-                    style: TextStyle(
-                      backgroundColor: AppColors.aliasPublic.color,
-                    )),
-                subtitle: const Text(
-                    'Ereignisse die diesen Ort betreffen können gespeichert und '
-                    'z.B. automatisch in einem privaten oder öffentlichen Kalender publiziert werden.'),
-                leading: Radio<AliasVisibility>(
-                    value: AliasVisibility.public,
-                    groupValue: alias.visibility,
-                    onChanged: (AliasVisibility? val) {
-                      setStatus(context, val);
+                title: Container(
+                    color: AliasVisibility.public.color,
+                    padding: const EdgeInsets.all(3),
+                    child: const Text('  Public',
+                        style: TextStyle(
+                          color: Colors.white,
+                        ))),
+                subtitle: const Text('This Alias supports all app futures.'),
+                leading: ValueListenableBuilder(
+                    valueListenable: _visibility,
+                    builder: (context, value, child) {
+                      return Radio<AliasVisibility>(
+                          value: AliasVisibility.public,
+                          groupValue: alias.visibility,
+                          onChanged: (AliasVisibility? val) {
+                            setStatus(val);
+                          });
                     })),
             ListTile(
-                title: Text('Privat',
-                    style: TextStyle(
-                      backgroundColor: AppColors.aliasPrivate.color,
-                    )),
+                title: Container(
+                    color: AliasVisibility.privat.color,
+                    padding: const EdgeInsets.all(3),
+                    child: const Text('  Private',
+                        style: TextStyle(
+                          color: Colors.white,
+                        ))),
                 subtitle: const Text(
-                    'Ereignisse die diesen Ort betreffen verlassen ihr Gerät nicht, '
-                    'es sei denn sie exportieren z.B. die Datenbank, machen Screenshots etc. '
-                    'und geben die Informationen selst an Dritte weiter.'),
-                leading: Radio<AliasVisibility>(
-                    value: AliasVisibility.privat,
-                    groupValue: alias.visibility,
-                    onChanged: (AliasVisibility? val) {
-                      setStatus(context, val);
+                    'This Alias is reduced to app internal futures only.'),
+                leading: ValueListenableBuilder(
+                    valueListenable: _visibility,
+                    builder: (context, value, child) {
+                      return Radio<AliasVisibility>(
+                          value: AliasVisibility.privat,
+                          groupValue: alias.visibility,
+                          onChanged: (AliasVisibility? val) {
+                            setStatus(val);
+                          });
                     })),
             ListTile(
-                title: Text('Geheim',
-                    style: TextStyle(
-                      backgroundColor: AppColors.aliasRestricted.color,
-                    )),
+                title: Container(
+                    color: AliasVisibility.restricted.color,
+                    padding: const EdgeInsets.all(3),
+                    child: const Text('  Restricted ',
+                        style: TextStyle(
+                          color: Colors.white,
+                        ))),
                 subtitle: const Text(
-                    'An diesem Ort werden keine Haltepunkte aufgezeichnent, als wäre das Gerät ausgeschaltet. '
-                    'Das bedeutet, wenn Sie diesen Ort erreichen, halten und wieder losfahren, '
-                    'fehlt die gesamte Aufzeichnung vom losfahren zu diesem Ort bis zum erreichen des nächsten Ortes. '
-                    'Die daraus resultierende Aufzeichnung erweckt den Eindruck, als hätten sie sich von Ort A, '
-                    'über Ort B(geheim) nach Ort C über einen bisher unbekannten Subraum transportiert.'),
-                leading: Radio<AliasVisibility>(
-                    value: AliasVisibility.restricted,
-                    groupValue: alias.visibility,
-                    onChanged: (AliasVisibility? val) {
-                      setStatus(context, val);
-                    }))
+                    'This Alias functionality is reduced to be visible in apps map.'),
+                leading: ValueListenableBuilder(
+                  valueListenable: _visibility,
+                  builder: (context, value, child) {
+                    return Radio<AliasVisibility>(
+                        value: AliasVisibility.restricted,
+                        groupValue: alias.visibility,
+                        onChanged: (AliasVisibility? state) {
+                          _visibility.value = !_visibility.value;
+                          setStatus(state);
+                        });
+                  },
+                ))
           ])),
       AppWidgets.divider(),
 
       /// deleted
       ListTile(
-          title: const Text('Aktive'),
+          title: const Text('Aktive if checked'),
           subtitle: const Text(
-            'If this Alias is visible and in use.',
+            'If inactive this Alias has no functionality and is visible in garbage list only.',
             softWrap: true,
           ),
-          leading: Checkbox(
+          leading: AppWidgets.checkBox(
             value: alias.isActive,
-            onChanged: (val) async {
-              alias.isActive = val ?? false;
+            onToggle: (state) async {
+              alias.isActive = state ?? false;
               await alias.update();
-              render();
             },
           ))
     ]);
@@ -333,12 +410,9 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
     }
   }
 
-  void setStatus(BuildContext context, AliasVisibility? val) {
-    _modelAlias?.visibility = (val ?? AliasVisibility.restricted);
-    _modelAlias?.update().then(
-      (value) {
-        render();
-      },
-    );
+  void setStatus(AliasVisibility? state) {
+    _modelAlias?.visibility = (state ?? AliasVisibility.restricted);
+    _modelAlias?.update();
+    _visibility.value = !_visibility.value;
   }
 }

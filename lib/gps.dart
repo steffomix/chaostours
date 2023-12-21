@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import 'dart:async';
-import 'dart:math';
+import 'dart:math' as math;
 import 'package:chaostours/database/cache.dart';
 import 'package:vector_math/vector_math.dart';
 import 'package:geolocator/geolocator.dart' as geo;
@@ -42,17 +42,17 @@ class GpsArea {
   final GPS south;
   final GPS west;
 
-  /// South border
-  double get latMin => south.lat;
-
   /// North border
-  double get latMax => north.lat;
+  double get northLatitudeBorder => north.lat;
+
+  /// South border
+  double get southLatitudeBorder => south.lat;
 
   /// West border
-  double get lonMin => west.lon;
+  double get westLongitudeBorder => west.lon;
 
   /// East border
-  double get lonMax => east.lon;
+  double get eastLongitudeBorder => east.lon;
 
   bool isInArea({
     double? lat,
@@ -64,78 +64,81 @@ class GpsArea {
     if (lat == null || lon == null) {
       throw ('GpsArea::isInArea: provide rather a gps or lat and lon');
     }
-    return (lat >= latMin && lat <= latMax && lon >= lonMin && lon <= lonMax);
+    return (lat >= southLatitudeBorder &&
+        lat <= northLatitudeBorder &&
+        lon >= westLongitudeBorder &&
+        lon <= eastLongitudeBorder);
   }
 
-  GpsArea(
+  factory GpsArea(
+      {required double latitude,
+      required double longitude,
+      required int distanceInMeters}) {
+    return _calculateArea(
+        latitude: latitude,
+        longitude: longitude,
+        distanceInMeters: distanceInMeters);
+  }
+
+  GpsArea.byArea(
       {required this.north,
       required this.east,
       required this.south,
       required this.west});
 
-  /// based on ChatGPT-4 response
-  static GpsArea calculateArea(
+  static _calculateArea(
       {required double latitude,
       required double longitude,
-      required int distance}) {
-    // Constants for Earth's radius in meters
-    //const earthRadius = 6371000.0;
-
-    // Convert the start position to radians
-    final startLatitudeRad = radians(latitude);
-    final startLongitudeRad = radians(longitude);
-
-    // Calculate distances in radians
-    final latDistanceRad = distance / earthRadius;
-    final lonDistanceRad = distance / (earthRadius * cos(startLatitudeRad));
-
-    // Calculate new latitudes and longitudes
-    final northernLatitude = asin(sin(startLatitudeRad) * cos(latDistanceRad) +
-        cos(startLatitudeRad) * sin(latDistanceRad) * cos(0));
-    final southernLatitude = asin(sin(startLatitudeRad) * cos(latDistanceRad) +
-        cos(startLatitudeRad) * sin(latDistanceRad) * cos(180));
-
-    final easternLongitude = startLongitudeRad +
-        atan2(
-            sin(lonDistanceRad) * cos(startLatitudeRad),
-            cos(latDistanceRad) -
-                sin(startLatitudeRad) * sin(northernLatitude));
-    final westernLongitude = startLongitudeRad -
-        atan2(
-            sin(lonDistanceRad) * cos(startLatitudeRad),
-            cos(latDistanceRad) -
-                sin(startLatitudeRad) * sin(southernLatitude));
-
-    // Convert the new latitudes and longitudes to degrees
-    final northernLatitudeDeg = degrees(northernLatitude);
-    final easternLongitudeDeg = degrees(easternLongitude);
-    final southernLatitudeDeg = degrees(southernLatitude);
-    final westernLongitudeDeg = degrees(westernLongitude);
-
-    // Create the surrounding GPS points
-    final north = GPS(northernLatitudeDeg, longitude);
-    final east = GPS(latitude, easternLongitudeDeg);
-    final south = GPS(southernLatitudeDeg, longitude);
-    final west = GPS(latitude, westernLongitudeDeg);
-
-    return GpsArea(north: north, east: east, south: south, west: west);
-
+      required int distanceInMeters}) {
     /*
-    void test() {
-      final area =
-          calculateArea(latitude: 50, longitude: 30, distance: 1000.0);
+    credit to: @ssten https://stackoverflow.com/a/50506609/4823385
 
-      print("Northern Point: ${area.north.lat}, ${area.north.lon}");
-      print("Eastern Point: ${area.east.lat}, ${area.east.lon}");
-      print("Southern Point: ${area.south.lat}, ${area.south.lon}");
-      print("Western Point: ${area.west.lat}, ${area.west.lon}");
-    }
 
-              Northern Point: 50.008993216059196, 30
-              Eastern Point: 50, 30.021770141923543
-              Southern Point: 49.99100678394081, 30
-              Western Point: 50, 29.978238001159266
-    */
+    
+/// <pre>
+///         [N++lat]
+/// [W--lon]        [E++lon]
+///         [S--lat]
+///
+      var earth = 6378.137,  //radius of the earth in kilometer
+          pi = Math.PI,
+          m = (1 / ((2 * pi / 360) * earth)) / 1000;  //1 meter in degree
+
+      var new_latitude = latitude + (your_meters * m);
+      For longitude do:
+
+      var earth = 6378.137,  //radius of the earth in kilometer
+          pi = Math.PI,
+          cos = Math.cos,
+          m = (1 / ((2 * pi / 360) * earth)) / 1000;  //1 meter in degree
+
+      var new_longitude = longitude + (your_meters * m) / cos(latitude * (pi / 180));
+      The variable your_meters can contain a positive or a negative value.
+  */
+    var earth = 6378.137, //radius of the earth in kilometer
+        pi = math.pi,
+        m = (1 / ((2 * pi / 360) * earth)) / 1000; //1 meter in degree
+
+    // new_latitude  = latitude  + (dy / r_earth) * (180 / pi);
+    // new_longitude = longitude + (dx / r_earth) * (180 / pi) / cos(latitude * pi / 180);
+
+    var north = latitude +
+        (distanceInMeters / earth) * (180 / pi); //(distanceInMeters * m);
+    var south = latitude - (distanceInMeters / earth) * (180 / pi);
+
+    var west = longitude -
+        (distanceInMeters / earth) * (180 / pi) / math.cos(latitude * pi / 180);
+    var east = longitude +
+        (distanceInMeters / earth) * (180 / pi) / math.cos(latitude * pi / 180);
+
+    var gpsNorth = GPS(north, longitude);
+    var gpsSouth = GPS(south, longitude);
+
+    var gpsWest = GPS(latitude, west);
+    var gpsEast = GPS(latitude, east);
+
+    return GpsArea.byArea(
+        north: gpsNorth, east: gpsEast, south: gpsSouth, west: gpsWest);
   }
 }
 
@@ -246,17 +249,17 @@ class GPS {
     var dLat = toRadians(endLatitude - startLatitude);
     var dLon = toRadians(endLongitude - startLongitude);
 
-    var a = pow(sin(dLat / 2), 2) +
-        pow(sin(dLon / 2), 2) *
-            cos(toRadians(startLatitude)) *
-            cos(toRadians(endLatitude));
-    var c = 2 * asin(sqrt(a));
+    var a = math.pow(math.sin(dLat / 2), 2) +
+        math.pow(math.sin(dLon / 2), 2) *
+            math.cos(toRadians(startLatitude)) *
+            math.cos(toRadians(endLatitude));
+    var c = 2 * math.asin(math.sqrt(a));
 
     return earthRadius * c;
   }
 
   static double toRadians(double degree) {
-    return degree * pi / 180;
+    return degree * math.pi / 180;
   }
 
   /// Calculates the initial bearing between two points
@@ -276,14 +279,14 @@ class GPS {
     var endLongitudeRadians = radians(endLongitude);
     var endLatitudeRadians = radians(endLatitude);
 
-    var y = sin(endLongitudeRadians - startLongitudeRadians) *
-        cos(endLatitudeRadians);
-    var x = cos(startLatitudeRadians) * sin(endLatitudeRadians) -
-        sin(startLatitudeRadians) *
-            cos(endLatitudeRadians) *
-            cos(endLongitudeRadians - startLongitudeRadians);
+    var y = math.sin(endLongitudeRadians - startLongitudeRadians) *
+        math.cos(endLatitudeRadians);
+    var x = math.cos(startLatitudeRadians) * math.sin(endLatitudeRadians) -
+        math.sin(startLatitudeRadians) *
+            math.cos(endLatitudeRadians) *
+            math.cos(endLongitudeRadians - startLongitudeRadians);
 
-    return degrees(atan2(y, x));
+    return degrees(math.atan2(y, x));
   }
 
   static Future<void> launchGoogleMaps(

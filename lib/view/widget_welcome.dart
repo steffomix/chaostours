@@ -21,6 +21,7 @@ import 'package:app_settings/app_settings.dart';
 import 'dart:io' as io;
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:http/http.dart' as http;
 
 ///
 import 'package:chaostours/conf/license.dart';
@@ -614,7 +615,7 @@ class _WelcomeState extends State<Welcome> {
             onPressed: () async {
               await Cache.appSettingOsmLookupCondition
                   .save<OsmLookupConditions>(OsmLookupConditions.never);
-              await Cache.licenseConsentRequestedOsm.load<bool>(true);
+              await Cache.licenseConsentRequestedOsm.save<bool>(false);
               if (mounted) {
                 Navigator.pop(context);
               }
@@ -626,7 +627,7 @@ class _WelcomeState extends State<Welcome> {
               await Cache.appSettingOsmLookupCondition
                   .save<OsmLookupConditions>(
                       OsmLookupConditions.onAutoCreateAlias);
-              await Cache.licenseConsentRequestedOsm.load<bool>(true);
+              await Cache.licenseConsentRequestedOsm.save<bool>(true);
               if (mounted) {
                 Navigator.pop(context);
               }
@@ -695,11 +696,26 @@ class _WelcomeState extends State<Welcome> {
   /// add cert for https requests you can download here:
   /// https://letsencrypt.org/certs/lets-encrypt-r3.pem
   static Future<void> loadWebSSLKey() async {
-    ByteData data =
-        await PlatformAssetBundle().load('assets/lets-encrypt-r3.pem');
-    io.SecurityContext.defaultContext
-        .setTrustedCertificatesBytes(data.buffer.asUint8List());
-    logger.log('SSL Key loaded');
+    Uint8List cachedKey =
+        Uint8List.fromList((await Cache.webSSLKey.load<String>('')).codeUnits);
+
+    if (cachedKey.isEmpty) {
+      final uri = Uri.http('letsencrypt.org', '/certs/lets-encrypt-r3.pem');
+      final response = await http.get(uri);
+      if (response.statusCode == 200) {
+        cachedKey = Uint8List.fromList(response.body.trim().codeUnits);
+      }
+    }
+
+    if (cachedKey.isEmpty) {
+      ByteData data =
+          await PlatformAssetBundle().load('assets/lets-encrypt-r3.pem');
+      cachedKey = data.buffer.asUint8List();
+    }
+
+    io.SecurityContext.defaultContext.setTrustedCertificatesBytes(cachedKey);
+
+    await Cache.webSSLKey.save<String>(String.fromCharCodes(cachedKey));
   }
 
   Future<bool> chaosToursLicenseConsent() async {

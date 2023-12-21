@@ -57,7 +57,7 @@ class TypeAdapter {
     return gpsList.map((e) => e.toString()).toList();
   }
 
-  static List<GPS>? deserializeGpsList(List<String>? list) {
+  static List<GPS> deserializeGpsList(List<String>? list) {
     return list == null ? [] : list.map((e) => GPS.toObject(e)).toList();
   }
 

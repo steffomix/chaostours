@@ -529,8 +529,8 @@ class ModelTrackPoint {
   ///
   static Future<List<ModelTrackPoint>> lastVisited(
       {required GPS gps, required int radius}) async {
-    var area = GpsArea.calculateArea(
-        latitude: gps.lat, longitude: gps.lon, distance: radius);
+    var area = GpsArea(
+        latitude: gps.lat, longitude: gps.lon, distanceInMeters: radius);
     var table = TableTrackPoint.table;
     var latCol = TableTrackPoint.latitude.column;
     var lonCol = TableTrackPoint.longitude.column;
@@ -540,7 +540,12 @@ class ModelTrackPoint {
             columns: TableTrackPoint.columns,
             where:
                 '$latCol > ? AND $latCol < ? AND $lonCol > ? AND $lonCol < ?',
-            whereArgs: [area.latMin, area.latMax, area.lonMin, area.lonMax],
+            whereArgs: [
+              area.southLatitudeBorder,
+              area.northLatitudeBorder,
+              area.westLongitudeBorder,
+              area.eastLongitudeBorder
+            ],
             orderBy: '${TableTrackPoint.timeStart.column} ASC');
       },
     );

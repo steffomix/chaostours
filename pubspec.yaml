@@ -46,6 +46,9 @@ dependencies:
   # https://pub.dev/packages/flutter_osm_plugin
   flutter_osm_plugin: ^0.70.3
 
+  # https://pub.dev/packages/osm_flutter_hooks
+  osm_flutter_hooks: ^1.4.0
+
   # https://pub.dev/packages/http
   http: ^1.1.2
 
@@ -108,6 +111,8 @@ dependencies:
 
   # https://pub.dev/packages/visibility_detector
   visibility_detector: ^0.4.0+2
+
+  
 
 
 dev_dependencies:

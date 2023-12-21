@@ -18,22 +18,25 @@ import 'dart:io';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class NotificationChannel {
-  static const String backgroundNotificationId =
-      'chaostous_foreground_service_id';
+  static const int ongoingTrackingUpdateChannelId = 777;
+  static const String ongoingTrackingUpdateChannelName =
+      'chaostous_tracking_update_channel';
+  static const String icon = 'ic_bg_service_small';
 
-  static const String backgroundNotificationTitle =
-      'Chaos Tours Background Service';
-  static const String backgroundNotificationDescription =
-      'Chaos Tours notification channel';
-  static const String notificationIcon = 'ic_bg_service_small';
-  static const int foregroundServiceNotificationId = 777;
+  static const ongoigTrackingUpdateConfiguration = NotificationDetails(
+    android: AndroidNotificationDetails(
+        ongoingTrackingUpdateChannelName, 'Chaos Tours config',
+        playSound: false,
+        onlyAlertOnce: true,
+        icon: 'ic_bg_service_small',
+        ongoing: true),
+  );
 
   static Future<void> initialize() async {
     /// OPTIONAL, using custom notification channel id
     const AndroidNotificationChannel channel = AndroidNotificationChannel(
-      backgroundNotificationId, // id
-      backgroundNotificationTitle, // title
-      description: backgroundNotificationDescription, // description
+      ongoingTrackingUpdateChannelName, // id
+      'Chaos Tours init', // title
       importance: Importance.high, // importance must be at low or higher level
     );
 
@@ -44,7 +47,7 @@ class NotificationChannel {
       await flutterLocalNotificationsPlugin.initialize(
         const InitializationSettings(
           iOS: DarwinInitializationSettings(),
-          android: AndroidInitializationSettings(notificationIcon),
+          android: AndroidInitializationSettings(icon),
         ),
       );
     }
@@ -53,5 +56,16 @@ class NotificationChannel {
         .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>()
         ?.createNotificationChannel(channel);
+  }
+
+  static sendTrackingUpdateNotification(
+      {required String title,
+      required String message,
+      NotificationDetails? details}) {
+    FlutterLocalNotificationsPlugin().show(
+        NotificationChannel.ongoingTrackingUpdateChannelId,
+        title,
+        message,
+        details ?? NotificationChannel.ongoigTrackingUpdateConfiguration);
   }
 }

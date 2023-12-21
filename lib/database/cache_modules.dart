@@ -244,5 +244,7 @@ class DbCache implements CacheModul {
   }
 
   @override
-  Future<void> reload() async {}
+  Future<void> reload() async {
+    // do nothing
+  }
 }

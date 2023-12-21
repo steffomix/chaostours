@@ -29,6 +29,8 @@ class Address {
 
   static const expireAfter = Duration(seconds: 3);
   static const _msgOSMFailed = 'OSM Lookup failed';
+  static const messageDenyAddressLookup =
+      'Address Lookup denied by User Setting';
   final GPS _gps;
 
   ValueExpired? lastResponse;
@@ -107,16 +109,23 @@ class Address {
         'format': 'json'
       });
 
-      if (lastResponse?.isExpired ?? false) {
-        lastResponse =
-            ValueExpired(value: await http.get(url), duration: expireAfter);
+      Future<int> lastLookup() async {
+        return await Cache.addressLastLookup.load<int>(0);
       }
-      _response = lastResponse!.value as http.Response;
+
+      while (
+          (await lastLookup()) + 1000 > DateTime.now().millisecondsSinceEpoch) {
+        await Future.delayed(const Duration(milliseconds: 200));
+      }
+
+      /// don't wait for it
+      Cache.addressLastLookup.save<int>(DateTime.now().millisecondsSinceEpoch);
+      _response = await http.get(url);
       if (saveToCache) {
         await Cache.backgroundAddress.save<String>(alias);
       }
     } else {
-      _alias = 'Address Lookup denied by User Setting';
+      _alias = messageDenyAddressLookup;
       _description = '';
     }
     return this;
