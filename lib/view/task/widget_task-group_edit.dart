@@ -32,9 +32,14 @@ class WidgetTaskGroupEdit extends StatefulWidget {
 class _WidgetTaskGroupEdit extends State<WidgetTaskGroupEdit> {
   // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetTaskGroupEdit>();
-  ModelTaskGroup? _model;
+
   final _titleController = TextEditingController();
+  final _titleUndoController = UndoHistoryController();
+
   final _notesController = TextEditingController();
+  final _notesUndoController = UndoHistoryController();
+
+  ModelTaskGroup? _model;
 
   @override
   void dispose() {
@@ -86,34 +91,65 @@ class _WidgetTaskGroupEdit extends State<WidgetTaskGroupEdit> {
   Widget renderBody() {
     return ListView(children: [
       /// taskname
-      Container(
-          padding: const EdgeInsets.all(10),
-          child: TextField(
-            decoration: const InputDecoration(label: Text('Task Group Name')),
-            onChanged: ((value) {
-              _model?.title = value;
-              _model?.update();
-            }),
-            maxLines: 3,
-            minLines: 3,
-            controller: _titleController,
-          )),
+      ListTile(
+          dense: true,
+          trailing: ValueListenableBuilder<UndoHistoryValue>(
+            valueListenable: _titleUndoController,
+            builder: (context, value, child) {
+              return IconButton(
+                icon: const Icon(Icons.undo),
+                onPressed: value.canUndo
+                    ? () {
+                        _titleUndoController.undo();
+                      }
+                    : null,
+              );
+            },
+          ),
+          title: Container(
+              padding: const EdgeInsets.all(10),
+              child: TextField(
+                decoration:
+                    const InputDecoration(label: Text('Task Group Name')),
+                onChanged: ((value) {
+                  _model?.title = value;
+                  _model?.update();
+                }),
+                maxLines: 3,
+                minLines: 3,
+                controller: _titleController,
+              ))),
       AppWidgets.divider(),
 
       /// notes
-      Container(
-          padding: const EdgeInsets.all(10),
-          child: TextField(
-            keyboardType: TextInputType.multiline,
-            decoration: const InputDecoration(label: Text('Notizen')),
-            maxLines: null,
-            minLines: 3,
-            controller: _notesController,
-            onChanged: (value) {
-              _model?.description = value.trim();
-              _model?.update();
+      ListTile(
+          dense: true,
+          trailing: ValueListenableBuilder<UndoHistoryValue>(
+            valueListenable: _notesUndoController,
+            builder: (context, value, child) {
+              return IconButton(
+                icon: const Icon(Icons.undo),
+                onPressed: value.canUndo
+                    ? () {
+                        _notesUndoController.undo();
+                      }
+                    : null,
+              );
             },
-          )),
+          ),
+          title: Container(
+              padding: const EdgeInsets.all(10),
+              child: TextField(
+                keyboardType: TextInputType.multiline,
+                decoration: const InputDecoration(label: Text('Notizen')),
+                maxLines: null,
+                minLines: 3,
+                controller: _notesController,
+                onChanged: (value) {
+                  _model?.description = value.trim();
+                  _model?.update();
+                },
+              ))),
       AppWidgets.divider(),
 
       /// deleted

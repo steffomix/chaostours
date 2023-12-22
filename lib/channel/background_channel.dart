@@ -86,19 +86,12 @@ class BackgroundChannel {
 
     await DB.openDatabase();
     Tracker tracker = Tracker();
-    int tick = 0;
     try {
       const Cache cache = Cache.appSettingBackgroundTrackingInterval;
       while (serviceIsRunning) {
         try {
-          tick++;
           service.invoke(BackgroundChannelCommand.onTracking.toString(),
               await tracker.track());
-          NotificationChannel.sendTrackingUpdateNotification(
-              title: 'Tick Update',
-              message:
-                  'T$tick Status: ${tracker.trackingStatus.name.toUpperCase()}'
-                  ' since ${util.formatDuration(DateTime.now(), tracker.gpsLastStatusChange?.time ?? DateTime.now())}');
         } catch (e, stk) {
           logger.error('background tracking: $e', stk);
         }
@@ -112,20 +105,6 @@ class BackgroundChannel {
       }
     } catch (e, stk) {
       logger.fatal('Background task crashed: $e', stk);
-    }
-  }
-
-  static sendNotification(
-      {required ServiceInstance service,
-      required String title,
-      required String message}) async {
-    if (service is AndroidServiceInstance) {
-      if (await service.isForegroundService()) {
-        service.setForegroundNotificationInfo(
-          title: title,
-          content: message,
-        );
-      }
     }
   }
 

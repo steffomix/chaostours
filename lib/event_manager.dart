@@ -25,7 +25,7 @@ class EventOnTrackingStatusChanged extends EventOn {
 
 class EventOnBackgroundUpdate extends EventOn {}
 
-class EventOnForegroundTracking extends EventOn {}
+class EventOnRender extends EventOn {}
 
 class EventOn {
   static int _nextId = 1;

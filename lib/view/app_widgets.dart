@@ -223,9 +223,9 @@ class AppWidgets {
   }
 
   static String timeInfo(DateTime timeStart, DateTime timeEnd) {
-    var day = '${timeStart.day}.${timeStart.month}.${timeStart.year}';
-    String duration = util.formatDuration(timeStart, timeEnd, false);
-    return '$day, ${timeStart.hour}:${timeStart.minute} - ${timeEnd.hour}:${timeEnd.minute}\n ($duration)';
+    var day = util.formatDate(timeStart);
+    String duration = util.formatDuration(timeStart.difference(timeEnd).abs());
+    return '$day\n${timeStart.hour}:${timeStart.minute}::${timeStart.second} - ${timeEnd.hour}:${timeEnd.minute}::${timeEnd.second}\nDuration: $duration';
   }
 
   static Widget loading(Widget info) {
@@ -332,7 +332,7 @@ class AppWidgets {
     var dialog = showDialog<T>(
         barrierDismissible: isDismissible,
         barrierColor:
-            !isDismissible ? const Color.fromARGB(125, 255, 255, 255) : null,
+            !isDismissible ? const Color.fromARGB(164, 0, 0, 0) : null,
         context: context,
         builder: (contextDialog) {
           return Dialog(

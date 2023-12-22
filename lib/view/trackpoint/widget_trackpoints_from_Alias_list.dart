@@ -131,7 +131,7 @@ class _WidgetAliasTrackpoint extends BaseWidgetState<WidgetAliasTrackpoint> {
         subtitle: Text(alias.description),
         leading: Text('${alias.timesVisited}x',
             style: TextStyle(
-                backgroundColor: AppColors.aliasStatusColor(alias.visibility))),
+                color: Colors.white, backgroundColor: alias.visibility.color)),
         trailing: IconButton(
           icon: Icon(Icons.edit, size: 30, color: AppColors.black.color),
           onPressed: () {
@@ -147,7 +147,7 @@ class _WidgetAliasTrackpoint extends BaseWidgetState<WidgetAliasTrackpoint> {
   Widget renderTrackPoint(ModelTrackPoint tp) {
     var date = '${weekdays.weekdays[tp.timeStart.weekday]}. '
         '${tp.timeStart.day}.${tp.timeStart.month}.${tp.timeStart.year}';
-    var dur = formatDuration(tp.timeStart, tp.timeEnd, false);
+    var dur = formatDuration(tp.duration);
     var time =
         'von ${tp.timeStart.hour}:${tp.timeStart.minute} bis ${tp.timeEnd.hour}:${tp.timeEnd.minute}\n($dur)';
     Iterable<String> tasks = tp.taskModels.map((model) => model.title);

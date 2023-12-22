@@ -14,16 +14,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:device_calendar/device_calendar.dart';
+
+///
 import 'package:chaostours/conf/app_user_settings.dart';
 import 'package:chaostours/database/database.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/model/model_alias_group.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
-import 'package:device_calendar/device_calendar.dart';
-
-///
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/database/cache.dart';
+import 'package:chaostours/util.dart' as util;
 
 class CalendarEventId {
   String calendarId;
@@ -197,12 +198,12 @@ class AppCalendar {
     var end = TZDateTime.from(tp.timeEnd, berlin);
 
     var title =
-        '${tp.aliasModels.isNotEmpty ? tp.aliasModels.first.title : tp.address}; ${tp.durationText}';
+        '${tp.aliasModels.isNotEmpty ? tp.aliasModels.first.title : tp.address}; ${util.formatDuration(tp.duration)}';
     var location =
         'maps.google.com?q=${lastStatusChange.lat},${lastStatusChange.lon}';
     var description =
         '${tp.aliasModels.isNotEmpty ? tp.aliasModels.first.title : tp.address}\n'
-        '${start.day}.${start.month}. - ${tp.durationText}\n'
+        '${start.day}.${start.month}. - ${util.formatDuration(tp.duration)}\n'
         '(${start.hour}.${start.minute} - ${end.hour}.${end.minute})\n\n'
         'Tasks:\n${tp.taskModels.map(
               (e) => e.title,

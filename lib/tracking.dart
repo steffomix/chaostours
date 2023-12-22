@@ -87,6 +87,8 @@ class Tracker {
           gpsLastStatusStanding == null
               ? null
               : TypeAdapter.serializeGps(gpsLastStatusStanding!),
+      DataChannelKey.trackingStatus.toString():
+          TypeAdapter.serializeTrackingStatus(trackingStatus),
       DataChannelKey.lastAddress.toString(): address?.alias ?? '-',
     };
   }
@@ -415,7 +417,7 @@ class Tracker {
   }
 
   Future<TrackingStatus> cacheNewStatusStanding(GPS gps) async {
-    await Cache.backgroundTrackingStatus
+    trackingStatus = await Cache.backgroundTrackingStatus
         .save<TrackingStatus>(TrackingStatus.standing);
     await Cache.backgroundGpsStartStanding.save<GPS>(gps);
     await Cache.backgroundGpsLastStatusChange.save<GPS>(gps);
@@ -425,7 +427,7 @@ class Tracker {
   }
 
   Future<TrackingStatus> cacheNewStatusMoving(GPS gps) async {
-    await Cache.backgroundTrackingStatus
+    trackingStatus = await Cache.backgroundTrackingStatus
         .save<TrackingStatus>(TrackingStatus.moving);
     await Cache.backgroundGpsStartMoving.save<GPS>(gps);
     await Cache.backgroundGpsLastStatusChange.save<GPS>(gps);

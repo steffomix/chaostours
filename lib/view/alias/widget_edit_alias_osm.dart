@@ -1,3 +1,5 @@
+// ignore_for_file: annotate_overrides, must_call_super
+
 /*
 Copyright 2023 Stefan Brinkmann <st.brinkmann@gmail.com>
 
@@ -14,17 +16,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import 'package:chaostours/database/cache.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
 import 'dart:convert';
-
-import 'dart:math' as math;
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:http/http.dart' as http;
+import 'dart:math' as math;
 import 'package:flutter/services.dart';
 
 ///
+import 'package:chaostours/database/cache.dart';
 import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/gps.dart';
@@ -33,41 +34,17 @@ import 'package:chaostours/conf/app_user_settings.dart';
 import 'package:chaostours/screen.dart';
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/view/app_widgets.dart';
-import 'package:chaostours/osm_tools.dart';
 import 'package:chaostours/model/model_alias.dart';
+import 'package:chaostours/channel/data_channel.dart';
+import 'package:chaostours/conf/app_colors.dart';
 
-class OsmSearchResult {
+class _OsmSearchResult {
   final double lat;
   final double lon;
   final String address;
 
-  OsmSearchResult(
+  _OsmSearchResult(
       {required this.address, required this.lat, required this.lon});
-}
-
-class WidgetMapIsLoading extends StatefulWidget {
-  const WidgetMapIsLoading({super.key});
-
-  @override
-  State<WidgetMapIsLoading> createState() => _WidgetMapIsLoading();
-}
-
-class EventOnOsmIsLoading {}
-
-class _WidgetMapIsLoading extends State<WidgetMapIsLoading> {
-  static final Logger logger = Logger.logger<WidgetMapIsLoading>();
-
-  @override
-  void dispose() {
-    EventManager.fire<EventOnOsmIsLoading>(EventOnOsmIsLoading());
-    logger.log('loading disposed');
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return const SizedBox.shrink();
-  }
 }
 
 ///
@@ -79,20 +56,13 @@ class WidgetOsm extends StatefulWidget {
 }
 
 class _WidgetOsm extends State<WidgetOsm> {
-  /*
-  @override
-  Widget build(BuildContext context) {
-    return AppWidgets.scaffold(context,
-        body: AppWidgets.loading('Widget under construction'));
-  }
-  */
   static final Logger logger = Logger.logger<WidgetOsm>();
 
   /// screen
   //late SizeChangedLayoutNotifier screenListener;
 
   /// osm tools to draw circles
-  final OsmTools osmTools = OsmTools();
+  final _AliasTrackingRenderer osmTools = _AliasTrackingRenderer();
 
   /// alias id
   int _id = 0;
@@ -113,30 +83,25 @@ class _WidgetOsm extends State<WidgetOsm> {
   DateTime _lastSearch = DateTime.now();
 
   ///searchResult
-  final List<OsmSearchResult> searchResultList = [];
+  final List<_OsmSearchResult> searchResultList = [];
 
   @override
   void dispose() {
-    EventManager.remove<EventOnBackgroundUpdate>(onBackgroundLookup);
-    EventManager.remove<EventOnForegroundTracking>(onTracking);
+    EventManager.remove<DataChannel>(onTracking);
     _addressNotifier.dispose();
     _loading.dispose();
     _textController.dispose();
-    mapController.removeAllCircle();
     mapController.dispose();
     super.dispose();
   }
 
   @override
   void initState() {
-    EventManager.listen<EventOnBackgroundUpdate>(onBackgroundLookup);
-    EventManager.listen<EventOnForegroundTracking>(onTracking);
+    EventManager.listen<DataChannel>(onTracking);
     super.initState();
   }
 
-  void onBackgroundLookup(EventOnBackgroundUpdate e) {}
-
-  void onTracking(EventOnForegroundTracking e) async {
+  void onTracking(DataChannel e) async {
     osmTools.renderAlias(mapController);
   }
 
@@ -183,7 +148,7 @@ class _WidgetOsm extends State<WidgetOsm> {
         searchResultList.clear();
         for (var f in futures) {
           try {
-            searchResultList.add(OsmSearchResult(
+            searchResultList.add(_OsmSearchResult(
                 address: f['properties']['display_name'],
                 lat: f['geometry']['coordinates'][1],
                 lon: f['geometry']['coordinates'][0]));
@@ -458,16 +423,16 @@ class _WidgetOsm extends State<WidgetOsm> {
         });
   }
 
-  /// _controller
+  OsmObserver? _osmObserver;
   MapController? _mapController;
   MapController get mapController => _mapController!;
 
   Future<bool> init() async {
     if (mounted) {
-      int? id = ModalRoute.of(context)?.settings.arguments as int?;
+      _id = (ModalRoute.of(context)?.settings.arguments as int?) ?? 0;
 
-      if (id != null && _modelAlias == null) {
-        ModelAlias? model = await ModelAlias.byId(id);
+      if (_id > 0 && _modelAlias == null) {
+        ModelAlias? model = await ModelAlias.byId(_id);
         if (model != null) {
           _modelAlias = model;
           _gps = model.gps;
@@ -481,7 +446,7 @@ class _WidgetOsm extends State<WidgetOsm> {
       initPosition: GeoPoint(latitude: _gps!.lat, longitude: _gps!.lon),
     );
 
-    _mapController!.addObserver(OsmObserver(_mapController!));
+    _mapController!.addObserver(_osmObserver ??= OsmObserver(_mapController!));
 
     return true;
   }
@@ -497,17 +462,6 @@ class _WidgetOsm extends State<WidgetOsm> {
         Widget? check = AppWidgets.checkSnapshot(context, snapshot);
         if (check == null) {
           OSMFlutter osmFlutter = OSMFlutter(
-            onMapIsReady: (bool ready) {
-              osmTools.renderAlias(mapController);
-            },
-            onGeoPointClicked: (GeoPoint geoPoint) {
-              print(
-                  'onGeoPointClicked: ${geoPoint.latitude}, ${geoPoint.longitude}');
-            },
-            onLocationChanged: (GeoPoint geoPoint) {
-              print(
-                  'onLocationChanged: ${geoPoint.latitude}, ${geoPoint.longitude}');
-            },
             osmOption: const OSMOption(
               isPicker: false,
               zoomOption: ZoomOption(
@@ -517,12 +471,12 @@ class _WidgetOsm extends State<WidgetOsm> {
                 stepZoom: 1.0,
               ),
             ),
-
-            //mapIsLoading: AppWidgets.loading(const Text('Loading Map')),
-            //androidHotReloadSupport: true,
             controller: mapController,
           );
-
+          Future.delayed(const Duration(seconds: 1), () {
+            MapCenter.draw(mapController);
+            osmTools.renderAlias(mapController);
+          });
           return AppWidgets.scaffold(context,
               appBar: AppBar(title: const Text('OSM & Alias')),
               body: Stack(
@@ -536,20 +490,128 @@ class _WidgetOsm extends State<WidgetOsm> {
   }
 }
 
-class OsmObserver with OSMMixinObserver {
-  MapController controller;
-  OsmObserver(this.controller);
-  int _id = 0;
-  String get id {
+class _AliasTrackingRenderer {
+  static final Logger logger = Logger.logger<_AliasTrackingRenderer>();
+
+  //static final bridge = DataBridge();
+  static int circleId = 0;
+
+  String get key {
+    var k = 'circle${++circleId}';
+    keys.add(k);
+    return k;
+  }
+
+  String rectKey = '';
+
+  List<String> keys = [];
+
+  int maxRange = 30;
+
+  List<GPS> getRange(List<GPS> source) {
+    if (source.length > maxRange) {
+      return source.getRange(0, maxRange).toList();
+    }
+    return source;
+  }
+
+  Future<void> renderAlias(MapController controller) async {
+    DataChannel channel = DataChannel();
+
+    if (channel.gpsPoints.isEmpty) {
+      return;
+    }
+    GeoPoint geoPoint = await controller.centerMap;
+    GPS currentGps = channel.gps ?? GPS(geoPoint.latitude, geoPoint.longitude);
+    List<GPS> gpsPoints = getRange(channel.gpsPoints);
+    List<GPS> gpsSmoothPoints = getRange(channel.gpsSmoothPoints);
+    List<GPS> gpsCalcPoints = getRange(channel.gpsCalcPoints);
+    GPS? lastStatusStanding = channel.gpsLastStatusStanding;
+    while (keys.isNotEmpty) {
+      controller.removeCircle(keys.removeLast());
+    }
+
+    controller.drawCircle(CircleOSM(
+      key: key,
+      centerPoint:
+          GeoPoint(latitude: currentGps.lat, longitude: currentGps.lon),
+      radius: 10,
+      color: const Color.fromARGB(255, 247, 2, 255),
+      strokeWidth: 10,
+    ));
+
+    for (var alias in await ModelAlias.byArea(
+        gps: GPS(geoPoint.latitude, geoPoint.longitude), area: 1000 * 50)) {
+      try {
+        controller.drawCircle(CircleOSM(
+          key: key,
+          centerPoint:
+              GeoPoint(latitude: alias.gps.lat, longitude: alias.gps.lon),
+          radius: alias.radius.toDouble(),
+          color: alias.visibility.color,
+          strokeWidth: 10,
+        ));
+      } catch (e, stk) {
+        logger.error(e.toString(), stk);
+        await Future.delayed(const Duration(seconds: 1));
+      }
+    }
+
+    /// draw gps points
+    try {
+      for (var gps in gpsPoints) {
+        controller.drawCircle(CircleOSM(
+          key: key,
+          centerPoint: GeoPoint(latitude: gps.lat, longitude: gps.lon),
+          radius: 2,
+          color: AppColors.rawGpsTrackingDot.color,
+          strokeWidth: 10,
+        ));
+      }
+      for (var gps in gpsSmoothPoints) {
+        controller.drawCircle(CircleOSM(
+          key: key,
+          centerPoint: GeoPoint(latitude: gps.lat, longitude: gps.lon),
+          radius: 3,
+          color: AppColors.smoothedGpsTrackingDot.color,
+          strokeWidth: 10,
+        ));
+      }
+      for (var gps in gpsCalcPoints) {
+        controller.drawCircle(CircleOSM(
+          key: key,
+          centerPoint: GeoPoint(latitude: gps.lat, longitude: gps.lon),
+          radius: 4,
+          color: AppColors.calcGpsTrackingDot.color,
+          strokeWidth: 10,
+        ));
+      }
+
+      if (lastStatusStanding != null) {
+        GPS gps = lastStatusStanding;
+        controller.drawCircle(CircleOSM(
+          key: key,
+          centerPoint: GeoPoint(latitude: gps.lat, longitude: gps.lon),
+          radius: 5,
+          color: AppColors.lastTrackingStatusWithAliasDot.color,
+          strokeWidth: 10,
+        ));
+      }
+      MapCenter.draw(controller);
+    } catch (e, stk) {
+      logger.error(e.toString(), stk);
+    }
+  }
+}
+
+class MapCenter {
+  static int _id = 0;
+  static String get id {
     return (++_id).toString();
   }
 
-  double calculateCircleSize(double zoomLevel) {
-    return math.pow(2, 2.5).toDouble();
-  }
-
-  Future<void> drawMapCenter() async {
-    double zoom = await controller.osmBaseController.getZoom();
+  static Future<void> draw(MapController controller) async {
+    double zoom = await controller.getZoom();
     String oldId = _id.toString();
     controller.drawCircle(CircleOSM(
       key: id,
@@ -561,38 +623,58 @@ class OsmObserver with OSMMixinObserver {
 
     controller.removeCircle(oldId);
   }
+}
+
+class OsmObserver with OSMMixinObserver {
+  MapController controller;
+
+  static OsmObserver? _instance;
+  OsmObserver._(this.controller);
+
+  factory OsmObserver(MapController controller) {
+    return _instance ??= OsmObserver._(controller);
+  }
 
   @override
   Future<void> mapIsReady(bool isReady) async {
-    drawMapCenter();
+    MapCenter.draw(controller);
   }
 
+  @override
   @mustCallSuper
   Future<void> mapRestored() async {
-    drawMapCenter();
+    MapCenter.draw(controller);
+    super.mapRestored();
   }
 
+  @override
   @mustCallSuper
   void onSingleTap(GeoPoint position) {
-    print('onSingleTap');
+    super.onSingleTap(position);
   }
 
+  @override
   @mustCallSuper
-  void onLongTap(GeoPoint position) {}
+  void onLongTap(GeoPoint position) {
+    super.onLongTap(position);
+  }
 
+  @override
   @mustCallSuper
   void onRegionChanged(Region region) {
-    drawMapCenter();
-    print('onLongTap');
+    MapCenter.draw(controller);
+    super.onRegionChanged(region);
   }
 
+  @override
   @mustCallSuper
   void onRoadTap(RoadInfo road) {
-    print('onRoadTap');
+    super.onRoadTap(road);
   }
 
+  @override
   @mustCallSuper
   void onLocationChanged(GeoPoint userLocation) {
-    print('onLocationChanged');
+    super.onLocationChanged(userLocation);
   }
 }

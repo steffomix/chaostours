@@ -20,7 +20,13 @@ import 'package:chaostours/database/cache.dart';
 import 'dart:math' as math;
 // import 'package:chaostours/logger.dart';
 
-enum OsmLookupConditions {
+abstract class EnumUserSetting<T> {
+  final Widget title;
+  final int index = 0;
+  const EnumUserSetting(this.title);
+}
+
+enum OsmLookupConditions implements EnumUserSetting<OsmLookupConditions> {
   never(Text('Never, completely restricted')),
   onUserRequest(Text('On user requests')),
   onUserCreateAlias(Text('On user create alias')),
@@ -29,6 +35,7 @@ enum OsmLookupConditions {
   onBackgroundGps(Text('On every background GPS interval')),
   always(Text('Always, no restrictions'));
 
+  @override
   final Widget title;
   const OsmLookupConditions(this.title);
 
@@ -48,13 +55,23 @@ enum OsmLookupConditions {
   }
 }
 
-enum Weekdays {
-  mondayFirst(['', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']),
-  sundayFirst(['', 'So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa']);
+enum Weekdays implements EnumUserSetting<OsmLookupConditions> {
+  mondayFirst(['', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'], Text('Monday')),
+  sundayFirst(['', 'So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'], Text('Sunday'));
 
   final List<String> weekdays;
+  final Widget title;
 
-  const Weekdays(this.weekdays);
+  const Weekdays(this.weekdays, this.title);
+}
+
+enum DateFormat implements EnumUserSetting<OsmLookupConditions> {
+  yyyymmdd(Text('YYYY:MM:DD')),
+  ddmmyyyy(Text('DD:MM:YYYY'));
+
+  final Widget title;
+
+  const DateFormat(this.title);
 }
 
 enum Unit {
@@ -358,10 +375,23 @@ class AppUserSetting {
           },
         );
 
+      case Cache.appSettingDateFormat:
+        return _appUserSettings[cache] ??= AppUserSetting._option(
+          cache,
+          title: const Text('Date Format'),
+          description: const Text('How Dates are displayed.'),
+          unit: Unit.option,
+          defaultValue: DateFormat.yyyymmdd,
+          resetToDefault: () async {
+            await cache.save<DateFormat>(
+                AppUserSetting(cache).defaultValue as DateFormat);
+          },
+        );
+
       case Cache.appSettingWeekdays:
         return _appUserSettings[cache] ??= AppUserSetting._option(
           cache,
-          title: const Text('Erster Wochentag'),
+          title: const Text('First Weekday'),
           description: null,
           unit: Unit.option,
           defaultValue: Weekdays.mondayFirst,

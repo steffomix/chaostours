@@ -50,6 +50,27 @@ enum CacheModulId {
   sharedPreferences;
 }
 
+class StaticCache {
+  static Weekdays _weekdays = Weekdays.mondayFirst;
+  static Weekdays get weekdays => _weekdays;
+  static DateFormat _dateFormat = DateFormat.yyyymmdd;
+  static DateFormat get dateFormat => _dateFormat;
+
+  static void update<T>(Cache cache, T value) {
+    switch (cache) {
+      case Cache.appSettingWeekdays:
+        _weekdays = value as Weekdays;
+        break;
+      case Cache.appSettingDateFormat:
+        _dateFormat = value as DateFormat;
+        break;
+
+      default:
+      //
+    }
+  }
+}
+
 enum Cache {
   /// trigger off == TrackingStatus.none
   /// triggered by user, set to none in background
@@ -130,7 +151,8 @@ enum Cache {
   appSettingGpsPointsSmoothCount(CacheModulId.database, int, expireNever),
   appSettingPublishToCalendar(CacheModulId.database, bool, expireNever),
   appSettingTimeZone(CacheModulId.database, String, expireNever),
-  appSettingWeekdays(CacheModulId.database, Weekdays, expireNever);
+  appSettingWeekdays(CacheModulId.database, Weekdays, expireNever),
+  appSettingDateFormat(CacheModulId.database, DateFormat, expireNever);
 
   const Cache(this.modulId, this.cacheType, this.expireAfter);
 
@@ -166,13 +188,14 @@ enum Cache {
     if (modulId == CacheModulId.database) {
       return await _loadFromDatabase<T>(defaultValue);
     } else {
-      return loadPreference<T>(defaultValue);
+      return _loadPreference<T>(defaultValue);
     }
   }
 
   Future<T> save<T>(T value) async {
+    StaticCache.update(this, value);
     if (modulId == CacheModulId.sharedPreferences) {
-      return await savePreference<T>(value);
+      return await _savePreference<T>(value);
     } else {
       return await _saveToDatabase<T>(value);
     }
@@ -196,13 +219,13 @@ enum Cache {
     return await _setValue<T>(cacheModul: DbCache(), key: this, value: value);
   }
 
-  Future<T> loadPreference<T>(T defaultValue) async {
+  Future<T> _loadPreference<T>(T defaultValue) async {
     _checkType<T>(this);
     return await _getValue<T>(
         cacheModul: SharedCache(), key: this, defaultValue: defaultValue);
   }
 
-  Future<T> savePreference<T>(T value) async {
+  Future<T> _savePreference<T>(T value) async {
     return await _setValue<T>(
         cacheModul: SharedCache(), key: this, value: value);
   }
@@ -304,13 +327,17 @@ enum Cache {
           await cacheModul.setString(
               key, TypeAdapter.serializeWeekdays(value as Weekdays));
           break;
+        case const (DateFormat):
+          await cacheModul.setString(
+              key, TypeAdapter.serializeDateFormat(value as DateFormat));
+          break;
         // ignore: prefer_void_to_null
         case const (Null):
           await cacheModul.remove(key);
           break;
 
         default:
-          throw Exception("Unsupported data type $T");
+          throw "Unsupported data type $T";
       }
     } catch (e, stk) {
       logger.error('setValue for $key failed: $e', stk);
@@ -400,9 +427,12 @@ enum Cache {
           return TypeAdapter.deserializeWeekdays(
                   await cacheModul.getString(key)) as T? ??
               defaultValue;
-
+        case const (DateFormat):
+          return TypeAdapter.deserializeDateFormat(
+                  await cacheModul.getString(key)) as T? ??
+              defaultValue;
         default:
-          throw Exception("Unsupported data type $T");
+          throw "Unsupported data type $T";
       }
     } catch (e, stk) {
       logger.error('getValue for $key failed - return defaultValue: $e', stk);

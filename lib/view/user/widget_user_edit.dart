@@ -35,6 +35,10 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
   ModelUser? _model;
   List<ModelUserGroup> _groups = [];
 
+  final _titleUndoController = UndoHistoryController();
+  final _notesUndoController = UndoHistoryController();
+  final _sortUndoController = UndoHistoryController();
+
   void render() {
     if (mounted) {
       setState(() {});
@@ -77,44 +81,89 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
   Widget renderBody() {
     return ListView(children: [
       /// taskname
-      Container(
-          padding: const EdgeInsets.all(10),
-          child: TextField(
-            decoration: const InputDecoration(label: Text('User')),
-            onChanged: ((value) {
-              _model?.title = value;
-              _model?.update();
-            }),
-            minLines: 1,
-            maxLines: 5,
-            controller: TextEditingController(text: _model?.title),
-          )),
+      ListTile(
+          dense: true,
+          trailing: ValueListenableBuilder<UndoHistoryValue>(
+            valueListenable: _titleUndoController,
+            builder: (context, value, child) {
+              return IconButton(
+                icon: const Icon(Icons.undo),
+                onPressed: value.canUndo
+                    ? () {
+                        _titleUndoController.undo();
+                      }
+                    : null,
+              );
+            },
+          ),
+          title: Container(
+              padding: const EdgeInsets.all(10),
+              child: TextField(
+                decoration: const InputDecoration(label: Text('User')),
+                onChanged: ((value) {
+                  _model?.title = value;
+                  _model?.update();
+                }),
+                minLines: 1,
+                maxLines: 5,
+                controller: TextEditingController(text: _model?.title),
+              ))),
 
       /// notes
-      Container(
-          padding: const EdgeInsets.all(10),
-          child: TextField(
-            decoration: const InputDecoration(label: Text('Notes')),
-            maxLines: null,
-            minLines: 5,
-            controller: TextEditingController(text: _model?.description),
-            onChanged: (val) {
-              _model?.description = val;
-              _model?.update();
+      ListTile(
+          dense: true,
+          trailing: ValueListenableBuilder<UndoHistoryValue>(
+            valueListenable: _notesUndoController,
+            builder: (context, value, child) {
+              return IconButton(
+                icon: const Icon(Icons.undo),
+                onPressed: value.canUndo
+                    ? () {
+                        _notesUndoController.undo();
+                      }
+                    : null,
+              );
             },
-          )),
+          ),
+          title: Container(
+              padding: const EdgeInsets.all(10),
+              child: TextField(
+                decoration: const InputDecoration(label: Text('Notes')),
+                maxLines: null,
+                minLines: 5,
+                controller: TextEditingController(text: _model?.description),
+                onChanged: (val) {
+                  _model?.description = val;
+                  _model?.update();
+                },
+              ))),
 
       /// sort order
-      Container(
-          padding: const EdgeInsets.all(10),
-          child: TextField(
-            decoration: const InputDecoration(label: Text('Sort order')),
-            controller: TextEditingController(text: _model?.sortOrder),
-            onChanged: (val) {
-              _model?.sortOrder = val;
-              _model?.update();
+      ListTile(
+          dense: true,
+          trailing: ValueListenableBuilder<UndoHistoryValue>(
+            valueListenable: _sortUndoController,
+            builder: (context, value, child) {
+              return IconButton(
+                icon: const Icon(Icons.undo),
+                onPressed: value.canUndo
+                    ? () {
+                        _sortUndoController.undo();
+                      }
+                    : null,
+              );
             },
-          )),
+          ),
+          title: Container(
+              padding: const EdgeInsets.all(10),
+              child: TextField(
+                decoration: const InputDecoration(label: Text('Sort order')),
+                controller: TextEditingController(text: _model?.sortOrder),
+                onChanged: (val) {
+                  _model?.sortOrder = val;
+                  _model?.update();
+                },
+              ))),
 
       // groups
       Padding(

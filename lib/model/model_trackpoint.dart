@@ -64,9 +64,7 @@ class ModelTrackPoint {
 
   List<CalendarEventId> calendarEventIds = [];
 
-  Duration get duration => timeEnd.difference(timeStart);
-
-  String get durationText => util.formatDuration(timeStart, timeEnd);
+  Duration get duration => timeEnd.difference(timeStart).abs();
 
   /// real ID<br>
   /// Is set only once during save to disk
@@ -84,7 +82,7 @@ class ModelTrackPoint {
       this.calendarEventIds = const []});
 
   String timeElapsed() {
-    return util.formatDuration(timeStart, timeEnd);
+    return util.formatDuration(timeStart.difference(timeStart).abs());
   }
 
   ModelTrackPoint clone() => fromMap(toMap());

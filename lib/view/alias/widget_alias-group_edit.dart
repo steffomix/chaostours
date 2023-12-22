@@ -44,7 +44,10 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
   int _countAlias = 0;
   Calendar? _calendar;
   final _titleController = TextEditingController();
+  final _titleUndoController = UndoHistoryController();
+
   final _notesController = TextEditingController();
+  final _notesUndoController = UndoHistoryController();
 
   @override
   void dispose() {
@@ -131,34 +134,65 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
   Widget editGroup() {
     return ListView(children: [
       /// groupname
-      Container(
-          padding: const EdgeInsets.all(10),
-          child: TextField(
-            decoration: const InputDecoration(label: Text('Alias Group Name')),
-            onChanged: ((value) {
-              _modelAliasGroup?.title = value;
-              _modelAliasGroup?.update();
-            }),
-            maxLines: 3,
-            minLines: 3,
-            controller: _titleController,
-          )),
+      ListTile(
+          dense: true,
+          trailing: ValueListenableBuilder<UndoHistoryValue>(
+            valueListenable: _titleUndoController,
+            builder: (context, value, child) {
+              return IconButton(
+                icon: const Icon(Icons.undo),
+                onPressed: value.canUndo
+                    ? () {
+                        _titleUndoController.undo();
+                      }
+                    : null,
+              );
+            },
+          ),
+          title: Container(
+              padding: const EdgeInsets.all(10),
+              child: TextField(
+                decoration:
+                    const InputDecoration(label: Text('Alias Group Name')),
+                onChanged: ((value) {
+                  _modelAliasGroup?.title = value;
+                  _modelAliasGroup?.update();
+                }),
+                maxLines: 3,
+                minLines: 3,
+                controller: _titleController,
+              ))),
       AppWidgets.divider(),
 
       /// notes
-      Container(
-          padding: const EdgeInsets.all(10),
-          child: TextField(
-            keyboardType: TextInputType.multiline,
-            decoration: const InputDecoration(label: Text('Notizen')),
-            maxLines: null,
-            minLines: 3,
-            controller: _notesController,
-            onChanged: (value) {
-              _modelAliasGroup?.description = value.trim();
-              _modelAliasGroup?.update();
+      ListTile(
+          dense: true,
+          trailing: ValueListenableBuilder<UndoHistoryValue>(
+            valueListenable: _notesUndoController,
+            builder: (context, value, child) {
+              return IconButton(
+                icon: const Icon(Icons.undo),
+                onPressed: value.canUndo
+                    ? () {
+                        _notesUndoController.undo();
+                      }
+                    : null,
+              );
             },
-          )),
+          ),
+          title: Container(
+              padding: const EdgeInsets.all(10),
+              child: TextField(
+                keyboardType: TextInputType.multiline,
+                decoration: const InputDecoration(label: Text('Notizen')),
+                maxLines: null,
+                minLines: 3,
+                controller: _notesController,
+                onChanged: (value) {
+                  _modelAliasGroup?.description = value.trim();
+                  _modelAliasGroup?.update();
+                },
+              ))),
       AppWidgets.divider(),
 
       /// calendar

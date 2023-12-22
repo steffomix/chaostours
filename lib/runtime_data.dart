@@ -23,10 +23,10 @@ class RuntimeData {
           .load<Duration>(AppUserSetting(cache).defaultValue as Duration);
     },
     action: () {
-      EventManager.fire<EventOnForegroundTracking>(EventOnForegroundTracking());
+      EventManager.fire<EventOnRender>(EventOnRender());
     },
   );
-
+/* 
   Ticker backgroundLookupTicker = Ticker(
     type: TickerTypes.backgroundLookupTicker,
     getDuration: () async {
@@ -37,5 +37,5 @@ class RuntimeData {
     action: () {
       EventManager.fire<EventOnBackgroundUpdate>(EventOnBackgroundUpdate());
     },
-  );
+  ); */
 }

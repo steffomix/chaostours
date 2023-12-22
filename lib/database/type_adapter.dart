@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the License);
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+    htvalue://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an AS IS BASIS,
@@ -30,115 +30,125 @@ class TypeAdapter {
   static final Logger logger = Logger.logger<TypeAdapter>();
 
   /// intList
-  static List<String> serializeIntList(List<int> list) =>
-      list.map((e) => e.toString()).toList();
-  static List<int> deserializeIntList(List<String>? s) =>
-      s == null ? [] : s.map((e) => int.parse(e)).toList();
+  static List<String> serializeIntList(List<int> value) =>
+      value.map((e) => e.toString()).toList();
+  static List<int> deserializeIntList(List<String>? value) =>
+      value == null ? [] : value.map((e) => int.parse(e)).toList();
 
   /// DateTime
-  static String serializeDateTime(DateTime dateTime) =>
-      dateTime.toIso8601String();
-  static DateTime? deserializeDateTime(String? time) =>
-      time == null ? null : DateTime.parse(time);
+  static String serializeDateTime(DateTime value) => value.toIso8601String();
+  static DateTime? deserializeDateTime(String? value) =>
+      value == null ? null : DateTime.parse(value);
 
   /// Duration
-  static int serializeDuration(Duration duration) => duration.inSeconds;
-  static Duration? deserializeDuration(int? seconds) =>
-      seconds == null ? null : Duration(seconds: seconds);
+  static int serializeDuration(Duration value) => value.inSeconds;
+  static Duration? deserializeDuration(int? value) =>
+      value == null ? null : Duration(seconds: value);
 
   /// CalendarEventId
-  static List<String> serializeCalendarEventId(List<CalendarEventId> ids) =>
-      ids.map((e) => e.toString()).toList();
-  static List<CalendarEventId> deserializeCalendarEventId(List<String>? ids) =>
-      ids == null ? [] : ids.map((s) => CalendarEventId.toObject(s)).toList();
+  static List<String> serializeCalendarEventId(List<CalendarEventId> value) =>
+      value.map((e) => e.toString()).toList();
+  static List<CalendarEventId> deserializeCalendarEventId(
+          List<String>? value) =>
+      value == null
+          ? []
+          : value.map((value) => CalendarEventId.toObject(value)).toList();
 
-  /// gps list
-  static List<String> serializeGpsList(List<GPS> gpsList) {
-    return gpsList.map((e) => e.toString()).toList();
+  /// gps List
+  static List<String> serializeGpsList(List<GPS> value) {
+    return value.map((e) => e.toString()).toList();
   }
 
-  static List<GPS> deserializeGpsList(List<String>? list) {
-    return list == null ? [] : list.map((e) => GPS.toObject(e)).toList();
+  static List<GPS> deserializeGpsList(List<String>? value) {
+    return value == null ? [] : value.map((e) => GPS.toObject(e)).toList();
   }
 
-  /// DateTime list
-  static List<String> serializeDateTimeList(List<DateTime> gpsList) {
-    return gpsList.map((e) => e.toIso8601String()).toList();
+  /// DateTime value
+  static List<String> serializeDateTimeList(List<DateTime> value) {
+    return value.map((e) => e.toIso8601String()).toList();
   }
 
-  static List<DateTime>? deserializeDateTimeList(List<String>? list) {
-    return list == null ? [] : list.map((e) => DateTime.parse(e)).toList();
+  static List<DateTime>? deserializeDateTimeList(List<String>? value) {
+    return value == null ? [] : value.map((e) => DateTime.parse(e)).toList();
   }
 
   /// GPS
-  static String serializeGps(GPS gps) => gps.toString();
-  static GPS? deserializeGps(String? gps) =>
-      gps == null ? null : GPS.toObject(gps);
+  static String serializeGps(GPS value) => value.toString();
+  static GPS? deserializeGps(String? value) =>
+      value == null ? null : GPS.toObject(value);
 
   /// trackingstatus
-  static String serializeTrackingStatus(TrackingStatus t) {
-    return t.name;
+  static String serializeTrackingStatus(TrackingStatus value) {
+    return value.name;
   }
 
-  static TrackingStatus? deserializeTrackingStatus(String? s) {
-    return s == null ? null : TrackingStatus.values.byName(s);
+  static TrackingStatus? deserializeTrackingStatus(String? value) {
+    return value == null ? null : TrackingStatus.values.byName(value);
   }
 
   // ModelTrackPoint
-  static String serializeModelTrackPoint(ModelTrackPoint tp) =>
-      Model.toJson(tp.toMap());
-  static ModelTrackPoint? deserializeModelTrackPoint(String? tp) =>
-      tp == null ? null : ModelTrackPoint.fromMap(Model.fromJson(tp));
+  static String serializeModelTrackPoint(ModelTrackPoint value) =>
+      Model.toJson(value.toMap());
+  static ModelTrackPoint? deserializeModelTrackPoint(String? value) =>
+      value == null ? null : ModelTrackPoint.fromMap(Model.fromJson(value));
 
   /// List ModelAlias
-  static List<String> serializeModelAliasList(List<ModelAlias> tpList) =>
-      tpList.map((e) => Model.toJson(e.toMap())).toList();
-  static List<ModelAlias>? deserializeModelAliasList(List<String>? list) =>
-      list == null
+  static List<String> serializeModelAliasList(List<ModelAlias> value) =>
+      value.map((e) => Model.toJson(e.toMap())).toList();
+  static List<ModelAlias>? deserializeModelAliasList(List<String>? value) =>
+      value == null
           ? []
-          : list.map((e) => ModelAlias.fromMap(Model.fromJson(e))).toList();
+          : value.map((e) => ModelAlias.fromMap(Model.fromJson(e))).toList();
 
   /// List ModelUser
-  static List<String> serializeModelUserList(List<ModelUser> tpList) =>
-      tpList.map((e) => Model.toJson(e.toMap())).toList();
-  static List<ModelUser>? deserializeModelUserList(List<String>? list) =>
-      list == null
+  static List<String> serializeModelUserList(List<ModelUser> value) =>
+      value.map((e) => Model.toJson(e.toMap())).toList();
+  static List<ModelUser>? deserializeModelUserList(List<String>? value) =>
+      value == null
           ? []
-          : list.map((e) => ModelUser.fromMap(Model.fromJson(e))).toList();
+          : value.map((e) => ModelUser.fromMap(Model.fromJson(e))).toList();
 
   /// List ModelTask
-  static List<String> serializeModelTaskList(List<ModelTask> tpList) =>
-      tpList.map((e) => Model.toJson(e.toMap())).toList();
-  static List<ModelTask>? deserializeModelTaskList(List<String>? list) =>
-      list == null
+  static List<String> serializeModelTaskList(List<ModelTask> value) =>
+      value.map((e) => Model.toJson(e.toMap())).toList();
+  static List<ModelTask>? deserializeModelTaskList(List<String>? value) =>
+      value == null
           ? []
-          : list.map((e) => ModelTask.fromMap(Model.fromJson(e))).toList();
+          : value.map((e) => ModelTask.fromMap(Model.fromJson(e))).toList();
 
   /// List ModelTrackPoint
   static List<String> serializeModelTrackPointList(
-          List<ModelTrackPoint> tpList) =>
-      tpList.map((e) => Model.toJson(e.toMap())).toList();
+          List<ModelTrackPoint> value) =>
+      value.map((e) => Model.toJson(e.toMap())).toList();
   static List<ModelTrackPoint>? deserializeModelTrackPointList(
-          List<String>? list) =>
-      list == null
+          List<String>? value) =>
+      value == null
           ? []
-          : list
+          : value
               .map((e) => ModelTrackPoint.fromMap(Model.fromJson(e)))
               .toList();
 
   /// OSMLookup
-  static String serializeOsmLookup(OsmLookupConditions o) => o.name;
-  static OsmLookupConditions? deserializeOsmLookup(String? osm) => osm == null
-      ? OsmLookupConditions.never
-      : OsmLookupConditions.values.byName(osm);
+  static String serializeOsmLookup(OsmLookupConditions value) => value.name;
+  static OsmLookupConditions? deserializeOsmLookup(String? value) =>
+      value == null
+          ? OsmLookupConditions.never
+          : OsmLookupConditions.values.byName(value);
 
-  /// OSMLookup
-  static String serializeLocationAccuracy(LocationAccuracy o) => o.name;
-  static LocationAccuracy? deserializeLocationAccuracy(String? acc) =>
-      acc == null ? LocationAccuracy.best : LocationAccuracy.values.byName(acc);
+  /// Location Accuracy
+  static String serializeLocationAccuracy(LocationAccuracy value) => value.name;
+  static LocationAccuracy? deserializeLocationAccuracy(String? value) =>
+      value == null
+          ? LocationAccuracy.best
+          : LocationAccuracy.values.byName(value);
 
   /// OSMWeekdays
-  static String serializeWeekdays(Weekdays o) => o.name;
-  static Weekdays? deserializeWeekdays(String? osm) =>
-      osm == null ? Weekdays.mondayFirst : Weekdays.values.byName(osm);
+  static String serializeWeekdays(Weekdays value) => value.name;
+  static Weekdays? deserializeWeekdays(String? value) =>
+      value == null ? Weekdays.mondayFirst : Weekdays.values.byName(value);
+
+  /// DateFormat
+  static String serializeDateFormat(DateFormat value) => value.name;
+  static DateFormat? deserializeDateFormat(String? value) =>
+      value == null ? DateFormat.yyyymmdd : DateFormat.values.byName(value);
 }

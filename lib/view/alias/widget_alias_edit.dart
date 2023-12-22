@@ -16,7 +16,6 @@ limitations under the License.
 
 import 'package:chaostours/conf/app_user_settings.dart';
 import 'package:chaostours/view/app_widgets.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -28,7 +27,6 @@ import 'package:chaostours/logger.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_alias_group.dart';
 import 'package:chaostours/conf/app_routes.dart';
-import 'package:chaostours/conf/app_colors.dart';
 
 class WidgetAliasEdit extends StatefulWidget {
   const WidgetAliasEdit({super.key});
@@ -40,6 +38,8 @@ class WidgetAliasEdit extends StatefulWidget {
 class _WidgetAliasEdit extends State<WidgetAliasEdit> {
   // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetAliasEdit>();
+
+  static const double _paddingSide = 10.0;
 
   final _addressController = TextEditingController();
   final _addressUndoController = UndoHistoryController();
@@ -58,7 +58,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
   void initialize(ModelAlias model) {
     _modelAlias = model;
     if (_addressController.text != model.title) {
-      //_addressController.text = model.title;
+      _addressController.text = model.title;
     }
     _notesController.text = model.description;
     _radiusController.text = model.radius.toString();
@@ -164,7 +164,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
             },
           ),
           title: Container(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(_paddingSide),
               child: TextField(
                 undoController: _addressUndoController,
                 decoration: const InputDecoration(label: Text('Alias Address')),
@@ -194,7 +194,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
             },
           ),
           title: Container(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(_paddingSide),
               child: TextField(
                 undoController: _notesUndoController,
                 keyboardType: TextInputType.multiline,
@@ -209,40 +209,49 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
               ))),
       AppWidgets.divider(),
 
-      Padding(
-          padding: const EdgeInsets.all(10),
-          child: ElevatedButton(
-            child: Column(children: [
-              const Text('GPS'),
-              ListTile(
-                  leading: const Icon(
-                    Icons.near_me,
-                    size: 40,
-                  ),
-                  title: Text('Latitude:\n${alias.gps.lat}\n\n'
-                      'Longitude:\n${alias.gps.lon}'))
-            ]),
+      ListTile(
+        trailing: IconButton(
+            icon: const Icon(Icons.copy),
             onPressed: () {
-              Navigator.pushNamed(context, AppRoutes.osm.route,
-                      arguments: alias.id)
-                  .then(
-                (value) {
-                  ModelAlias.byId(alias.id).then(
-                    (ModelAlias? model) {
-                      setState(() {
-                        _modelAlias = model;
-                      });
-                    },
-                  );
-                },
-              );
-            },
-          )),
+              Clipboard.setData(
+                  ClipboardData(text: '${alias.gps.lat}, ${alias.gps.lon}'));
+            }),
+        title: const Text('Edit GPS Location'),
+        subtitle: Padding(
+            padding: const EdgeInsets.all(_paddingSide),
+            child: ElevatedButton(
+              child: ListTile(
+                  leading: IconButton(
+                      icon: const Icon(Icons.copy),
+                      onPressed: () {
+                        Clipboard.setData(ClipboardData(
+                            text: '${alias.gps.lat}, ${alias.gps.lon}'));
+                      }),
+                  title: Text(
+                      'Latitude, Longitude:\n${alias.gps.lat}, ${alias.gps.lon}')),
+              onPressed: () {
+                Navigator.pushNamed(context, AppRoutes.osm.route,
+                        arguments: alias.id)
+                    .then(
+                  (value) {
+                    ModelAlias.byId(alias.id).then(
+                      (ModelAlias? model) {
+                        setState(() {
+                          _modelAlias = model;
+                        });
+                      },
+                    );
+                  },
+                );
+              },
+            )),
+      ),
+
       AppWidgets.divider(),
 
       // groups
       Padding(
-          padding: const EdgeInsets.all(10),
+          padding: const EdgeInsets.all(_paddingSide),
           child: ElevatedButton(
               child: Column(children: [
                 const Text('Groups', style: TextStyle(height: 2)),
@@ -288,7 +297,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
             },
           ),
           title: Container(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(_paddingSide),
               child: TextField(
                 undoController: _radiusUndoController,
                 keyboardType: TextInputType.number,
@@ -314,7 +323,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
 
       /// type
       Container(
-          padding: const EdgeInsets.all(10),
+          padding: const EdgeInsets.all(_paddingSide),
           child: Column(children: [
             const ListTile(
               title: Text('Typ'),

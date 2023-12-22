@@ -54,6 +54,8 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
 
   static const divider = Divider();
 
+  final Map<String, dynamic> _radioSettings = {};
+
   OsmLookupConditions _currentOsmCondition = OsmLookupConditions.never;
   final Map<Cache, ValueNotifier<int>> valueNotifiers = {};
   final Map<Cache, TextEditingController> textEditingControllers = {};
@@ -140,6 +142,8 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
               await integerSetting(Cache.appSettingGpsPointsSmoothCount),
             ],
           )),
+      await radioSetting<DateFormat>(
+          Cache.appSettingDateFormat, DateFormat.values)
     ]);
     return true;
   }
@@ -345,6 +349,44 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
         });
   }
 
+  Future<Widget> radioSetting<T>(Cache cache, List<T> values) async {
+    final setting = AppUserSetting(cache);
+    _radioSettings[T.toString()] =
+        await cache.load<T>(setting.defaultValue as T);
+    return ValueListenableBuilder(
+      valueListenable: valueNotifiers[cache] ??= ValueNotifier<int>(0),
+      builder: (context, _, __) {
+        return Column(
+          children: [
+            ListTile(
+              title: setting.title,
+              subtitle: setting.description,
+            ),
+            ...values.map(
+              (T condition) {
+                return Padding(
+                    padding: const EdgeInsets.only(left: 20),
+                    child: Row(children: [
+                      Radio(
+                        value: condition,
+                        groupValue: _radioSettings[T.toString()],
+                        onChanged: (value) async {
+                          onSettingChanged(() async {
+                            _radioSettings[T.toString()] =
+                                await save<T>(cache, condition);
+                          });
+                        },
+                      ),
+                      (condition as EnumUserSetting).title
+                    ]));
+              },
+            )
+          ],
+        );
+      },
+    );
+  }
+
   Future<Widget> settingOsmlookupCondition() async {
     const cache = Cache.appSettingOsmLookupCondition;
     final setting = AppUserSetting(cache);
@@ -361,18 +403,21 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
             ),
             ...OsmLookupConditions.values.map(
               (condition) {
-                return Row(children: [
-                  Checkbox(
-                    value: _currentOsmCondition.index >= condition.index,
-                    onChanged: (value) async {
-                      onSettingChanged(() async {
-                        _currentOsmCondition =
-                            await save<OsmLookupConditions>(cache, condition);
-                      });
-                    },
-                  ),
-                  condition.title
-                ]);
+                return Padding(
+                    padding: const EdgeInsets.only(left: 20),
+                    child: Row(children: [
+                      Checkbox(
+                        value: _currentOsmCondition.index >= condition.index,
+                        onChanged: (value) async {
+                          onSettingChanged(() async {
+                            _currentOsmCondition =
+                                await save<OsmLookupConditions>(
+                                    cache, condition);
+                          });
+                        },
+                      ),
+                      condition.title
+                    ]));
               },
             )
           ],

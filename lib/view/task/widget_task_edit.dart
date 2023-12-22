@@ -32,6 +32,12 @@ class WidgetTaskEdit extends StatefulWidget {
 class _WidgetTaskEdit extends State<WidgetTaskEdit> {
   //static final Logger logger = Logger.logger<WidgetTaskEdit>();
 
+  final _titleController = TextEditingController();
+  final _titleUndoController = UndoHistoryController();
+
+  final _notesController = TextEditingController();
+  final _notesUndoController = UndoHistoryController();
+
   ModelTask? _model;
   List<ModelTaskGroup> _groups = [];
 
@@ -77,32 +83,62 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
   Widget renderBody() {
     return ListView(children: [
       /// taskname
-      Container(
-          padding: const EdgeInsets.all(10),
-          child: TextField(
-            decoration: const InputDecoration(label: Text('Task')),
-            onChanged: ((value) {
-              _model?.title = value;
-              _model?.update();
-            }),
-            minLines: 1,
-            maxLines: 5,
-            controller: TextEditingController(text: _model?.title),
-          )),
+      ListTile(
+          dense: true,
+          trailing: ValueListenableBuilder<UndoHistoryValue>(
+            valueListenable: _titleUndoController,
+            builder: (context, value, child) {
+              return IconButton(
+                icon: const Icon(Icons.undo),
+                onPressed: value.canUndo
+                    ? () {
+                        _titleUndoController.undo();
+                      }
+                    : null,
+              );
+            },
+          ),
+          title: Container(
+              padding: const EdgeInsets.all(10),
+              child: TextField(
+                decoration: const InputDecoration(label: Text('Task')),
+                onChanged: ((value) {
+                  _model?.title = value;
+                  _model?.update();
+                }),
+                minLines: 1,
+                maxLines: 5,
+                controller: _titleController,
+              ))),
 
       /// notes
-      Container(
-          padding: const EdgeInsets.all(10),
-          child: TextField(
-            decoration: const InputDecoration(label: Text('Notes')),
-            maxLines: null,
-            minLines: 5,
-            controller: TextEditingController(text: _model?.description),
-            onChanged: (val) {
-              _model?.description = val;
-              _model?.update();
+      ListTile(
+          dense: true,
+          trailing: ValueListenableBuilder<UndoHistoryValue>(
+            valueListenable: _notesUndoController,
+            builder: (context, value, child) {
+              return IconButton(
+                icon: const Icon(Icons.undo),
+                onPressed: value.canUndo
+                    ? () {
+                        _notesUndoController.undo();
+                      }
+                    : null,
+              );
             },
-          )),
+          ),
+          title: Container(
+              padding: const EdgeInsets.all(10),
+              child: TextField(
+                decoration: const InputDecoration(label: Text('Notes')),
+                maxLines: null,
+                minLines: 5,
+                controller: _notesController,
+                onChanged: (val) {
+                  _model?.description = val;
+                  _model?.update();
+                },
+              ))),
 
       /// sort order
       Container(

@@ -14,25 +14,22 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import 'package:chaostours/channel/background_channel.dart';
-import 'package:chaostours/conf/app_colors.dart';
-import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:visibility_detector/visibility_detector.dart';
-//
+
 //import 'package:chaostours/location.dart';
+import 'package:chaostours/channel/data_channel.dart';
+import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/tracking.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/database/cache.dart';
-import 'package:chaostours/util.dart';
+import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_user.dart';
-//
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/address.dart' as addr;
 import 'package:chaostours/gps.dart';
@@ -117,69 +114,55 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
   static int _bottomBarIndex = 0;
 
-  Widget divider = AppWidgets.divider();
+  final dataChannel = DataChannel();
+
+  final divider = AppWidgets.divider();
 
   double _visibleFraction = 100.0;
   final _visibilityDetectorKey =
       GlobalKey(debugLabel: 'Life Tracking VisibilityDetectorKey');
 
   /// editable fields
-  final _tpNotes = TextEditingController();
+  final _notesController = TextEditingController();
 
-  final listener = ValueNotifier<int>(0);
+  final trackingListener = ValueNotifier<bool>(false);
+  final renderListener = ValueNotifier<bool>(false);
 
   Future<void> render() async {
     if (mounted) {
       setState(() {});
-    } else {
-      logger.warn('setState - not mounted');
     }
   }
 
   ///
   @override
   void initState() {
-    EventManager.listen<EventOnForegroundTracking>(onTracking);
-    // EventManager.listen<EventOnTrackingStatusChanged>(onTrackingStatusChanged);
+    EventManager.listen<DataChannel>(onTracking);
+    EventManager.listen<EventOnRender>(onRender);
     super.initState();
-    Future.microtask(() async {
-      await for (var stream in FlutterBackgroundService()
-          .on(BackgroundChannelCommand.onTracking.toString())) {
-        if (!mounted) {
-          return;
-        }
-        Cache.reload();
-      }
-    });
   }
 
   ///
   @override
   void dispose() {
-    EventManager.remove<EventOnForegroundTracking>(onTracking);
-    EventManager.remove<EventOnTrackingStatusChanged>(onTrackingStatusChanged);
+    EventManager.remove<DataChannel>(onTracking);
     super.dispose();
   }
 
-  void onTrackingStatusChanged(EventOnTrackingStatusChanged e) {
+  ///
+  void onTracking(DataChannel dataChannel) {
     if (_visibleFraction < .5) {
       return;
     }
-    //logger.log('------ onTracking Status Changed ------');
-    _Cache.reload();
-    listener.value++;
+    trackingListener.value = !trackingListener.value;
   }
 
   ///
-  void onTracking(EventOnForegroundTracking tick) {
+  void onRender(EventOnRender _) {
     if (_visibleFraction < .5) {
       return;
     }
-    GPS.gps().then((gps) async {
-      //await logger.log('------ onTracking ------');
-      await _Cache.reload();
-      listener.value++;
-    });
+    renderListener.value = !renderListener.value;
   }
 
   ///
@@ -199,14 +182,14 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       switch (_Cache.trackingStatus) {
         case TrackingStatus.standing:
           widget = ValueListenableBuilder(
-            valueListenable: listener,
+            valueListenable: trackingListener,
             builder: (context, value, child) => renderTrackPointStanding(),
           );
           break;
 
         case TrackingStatus.moving:
           widget = ValueListenableBuilder(
-            valueListenable: listener,
+            valueListenable: trackingListener,
             builder: (context, value, child) => renderTrackPointMoving(),
           );
           break;
@@ -266,26 +249,26 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   Widget renderAliases() {
     List<Widget> list = [];
     for (var model in _Cache.trackPoint!.aliasModels) {
-      Color color;
-      switch (model.visibility) {
-        case AliasVisibility.public:
-          color = AppColors.aliasPublic.color;
-          break;
-
-        case AliasVisibility.privat:
-          color = AppColors.aliasPrivate.color;
-          break;
-
-        default:
-          color = AppColors.aliasRestricted.color;
-      }
       list.add(Text('(${GPS.distance(_Cache.gps!, model.gps)}m) ${model.title}',
-          style: TextStyle(color: color, backgroundColor: Colors.grey)));
+          style: TextStyle(
+              color: model.visibility.color, backgroundColor: Colors.grey)));
     }
     return Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: list);
+  }
+
+  Widget widgetTrackingStatus() {
+    return Text(DataChannel().trackingStatus.name.toUpperCase());
+  }
+
+  Widget widgetDate() {
+    return Text(util.formatDate(DateTime.now()));
+  }
+
+  Widget widgetDuration() {
+    return Text(util.formatDuration(DataChannel().duration));
   }
 
   ///
@@ -382,7 +365,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
           heightFactor: 2,
           child: Text('Standing',
               style: TextStyle(letterSpacing: 2, fontSize: 20))),
-      Center(child: Text(tp.durationText)),
+      Center(child: Text(util.formatDuration(tp.duration))),
       Center(
           child: Text(
               '${tp.timeStart.hour}:${tp.timeStart.minute} - ${tp.timeEnd.hour}:${tp.timeEnd.minute}')),
@@ -471,7 +454,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     var checkBoxes = <Widget>[];
     for (var model in _Cache.trackPoint!.taskModels) {
       if (model.isActive) {
-        checkBoxes.add(AppWidgets.checkboxListTile(CheckboxController(
+        checkBoxes.add(AppWidgets.checkboxListTile(util.CheckboxController(
             idReference: model.id,
             referenceList: referenceList,
             isActive: model.isActive,
@@ -492,7 +475,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     var checkBoxes = <Widget>[];
     for (var model in _Cache.trackPoint!.userModels) {
       if (model.isActive) {
-        checkBoxes.add(AppWidgets.checkboxListTile(CheckboxController(
+        checkBoxes.add(AppWidgets.checkboxListTile(util.CheckboxController(
             idReference: model.id,
             referenceList: referenceList,
             isActive: model.isActive,
@@ -588,7 +571,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
             //expands: true,
             maxLines: null,
             minLines: 2,
-            controller: _tpNotes,
+            controller: _notesController,
             onChanged: (String? s) async {
               render();
             }));

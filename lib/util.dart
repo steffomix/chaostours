@@ -16,6 +16,8 @@ limitations under the License.
 
 import 'dart:convert';
 import 'dart:io';
+import 'package:chaostours/conf/app_user_settings.dart';
+import 'package:chaostours/database/cache.dart';
 import 'package:flutter/material.dart';
 //
 
@@ -26,62 +28,29 @@ double fileSize(File file) {
   return mb;
 }
 
-Duration duration(DateTime t1, DateTime t2) {
-  return t1.difference(t2).abs();
+String twoDigits(int n) => n.toString().padLeft(2, "0");
+
+String formatDuration(Duration duration) {
+  String negativeSign = duration.isNegative ? '-' : '';
+  String twoDigitHours = twoDigits(duration.inHours.remainder(24).abs());
+  String twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60).abs());
+  String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60).abs());
+  return "$negativeSign${twoDigits(duration.inDays)}d:${twoDigitHours}h:${twoDigitMinutes}m:${twoDigitSeconds}s";
 }
 
-Duration timeDifference(DateTime t1, DateTime t2) {
-  return t1.difference(t2).abs();
+String formatTimeRange(DateTime timeStart, DateTime timeEnd) {
+  return '${twoDigits(timeStart.hour)}:${twoDigits(timeStart.minute)}::${twoDigits(timeStart.second)}'
+      ' - ${twoDigits(timeEnd.hour)}:${twoDigits(timeEnd.minute)}::${twoDigits(timeEnd.second)}';
 }
 
-String formatDuration(DateTime t1, DateTime t2, [bool short = true]) {
-  DateTime t0;
-  if (t1.difference(t2).isNegative) {
-    t0 = t1;
-    t1 = t2;
-    t2 = t0;
-  }
-  String s = '';
-  int days = t1.difference(t2).inDays;
-  t2 = t2.add(Duration(days: days));
-  //
-  int hours = t1.difference(t2).inHours;
-  t2 = t2.add(Duration(hours: hours));
-  //
-  int minutes = t1.difference(t2).inMinutes;
-  t2 = t2.add(Duration(minutes: minutes));
-  //
-  int seconds = t1.difference(t2).inSeconds;
-  t2 = t2.add(Duration(seconds: seconds));
-  if (short) {
-    s = '$hours:$minutes';
+String formatDate(DateTime t) {
+  String date;
+  if (StaticCache.dateFormat == DateFormat.yyyymmdd) {
+    date = '${t.year}.${twoDigits(t.month)}.${twoDigits(t.day)}';
   } else {
-    s = '';
-    if (days > 0) {
-      s += '$days Days, ';
-    }
-    if (hours > 0) {
-      s += '$hours Hours, ';
-    }
-    if (minutes > 0) {
-      s += '$minutes Minutes';
-    }
-    /*
-    if (seconds > 0) {
-      s += '$seconds Sekunden';
-    }
-    */
+    date = '${t.day}.${twoDigits(t.month)}.${twoDigits(t.year)}';
   }
-
-  return s;
-}
-
-String formatDate(DateTime t, [bool short = true]) {
-  if (short) {
-    return '${t.day}.${t.month}.${t.year} um ${t.hour}:${t.minute}';
-  } else {
-    return '${t.day}.${t.month}.${t.year} ${t.hour}:${t.minute}::${t.second}:::${t.millisecond}';
-  }
+  return '$date - ${twoDigits(t.hour)}:${twoDigits(t.minute)}::${twoDigits(t.second)}';
 }
 
 ///

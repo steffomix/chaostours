@@ -14,9 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/channel/notification_channel.dart';
+import 'package:chaostours/tracking.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 
 ///
+import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/channel/background_channel.dart';
 import 'package:chaostours/conf/app_user_settings.dart';
 import 'package:chaostours/database/cache.dart';
@@ -35,6 +38,7 @@ enum DataChannelKey {
   gpsLastStatusChange,
   gpsLastStatusStanding,
   gpsLastStatusMoving,
+  trackingStatus,
   lastAddress;
 }
 
@@ -52,8 +56,12 @@ class DataChannel {
   GPS? gpsLastStatusStanding;
   GPS? gpsLastStatusMoving;
 
-  int distance = 0;
-  get duration => gpsPoints.isEmpty
+  TrackingStatus trackingStatus = TrackingStatus.standing;
+
+  int distanceMoving = 0;
+  int distanceStanding = 0;
+
+  Duration get duration => gpsPoints.isEmpty
       ? Duration.zero
       : gpsPoints.first.time.difference(gpsPoints.last.time).abs();
 
@@ -87,7 +95,21 @@ class DataChannel {
                 data?[DataChannelKey.gpsLastStatusMoving.toString()]);
             lastAddress = DataChannelKey.lastAddress.toString();
 
-            distance = GPS.distanceOverTrackList(gpsPoints).round();
+            final TrackingStatus status = TypeAdapter.deserializeTrackingStatus(
+                    data?[DataChannelKey.trackingStatus.toString()]) ??
+                TrackingStatus.standing;
+
+            final bool statusChanged = status != trackingStatus;
+            trackingStatus = status;
+
+            /// computed values
+            distanceMoving = gpsPoints.isNotEmpty
+                ? GPS.distanceOverTrackList(gpsPoints).round()
+                : 0;
+            distanceStanding = gpsLastStatusStanding != null &&
+                    gpsPoints.isNotEmpty
+                ? GPS.distance(gpsLastStatusStanding!, gpsPoints.first).round()
+                : 0;
             Cache cache = Cache.appSettingDistanceTreshold;
             distanceTreshold = await cache
                 .load<int>(AppUserSetting(cache).defaultValue as int);
@@ -96,9 +118,22 @@ class DataChannel {
                 : await ModelAlias.byRadius(
                     gps: gps!, radius: distanceTreshold);
 
-            Future.microtask(
-              () => EventManager.fire<DataChannel>(_instance!),
-            );
+            EventManager.fire<DataChannel>(_instance!);
+
+            if (statusChanged) {
+              EventManager.fire<TrackingStatus>(trackingStatus);
+            }
+
+            var notificationConfiguration = (statusChanged
+                ? NotificationChannel.trackingStatusChangedConfiguration
+                : NotificationChannel.ongoigTrackingUpdateConfiguration);
+
+            NotificationChannel.sendTrackingUpdateNotification(
+                title: 'Tick Update',
+                message:
+                    'T$tick ${statusChanged ? 'New Status' : 'Status'}: ${trackingStatus.name.toUpperCase()}'
+                    ' since ${util.formatDuration(duration)}',
+                details: notificationConfiguration);
           } catch (e, stk) {
             logger.error('Deserialize Channel Data: $e', stk);
           }

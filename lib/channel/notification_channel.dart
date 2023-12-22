@@ -32,6 +32,15 @@ class NotificationChannel {
         ongoing: true),
   );
 
+  static const trackingStatusChangedConfiguration = NotificationDetails(
+    android: AndroidNotificationDetails(
+        ongoingTrackingUpdateChannelName, 'Chaos Tours config',
+        playSound: true,
+        onlyAlertOnce: false,
+        icon: 'ic_bg_service_small',
+        ongoing: false),
+  );
+
   static Future<void> initialize() async {
     /// OPTIONAL, using custom notification channel id
     const AndroidNotificationChannel channel = AndroidNotificationChannel(
