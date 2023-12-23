@@ -125,6 +125,8 @@ enum Cache {
   /// startup consent
   licenseConsentChaosTours(CacheModulId.sharedPreferences, bool, expireNever),
   licenseConsentRequestedOsm(CacheModulId.sharedPreferences, bool, expireNever),
+  useOfOsmAddressLookupRequested(
+      CacheModulId.sharedPreferences, bool, expireNever),
 
   /// webSSLKey
   ///
@@ -152,7 +154,8 @@ enum Cache {
   appSettingPublishToCalendar(CacheModulId.database, bool, expireNever),
   appSettingTimeZone(CacheModulId.database, String, expireNever),
   appSettingWeekdays(CacheModulId.database, Weekdays, expireNever),
-  appSettingDateFormat(CacheModulId.database, DateFormat, expireNever);
+  appSettingDateFormat(CacheModulId.database, DateFormat, expireNever),
+  appSettingGpsPrecision(CacheModulId.database, GpsPrecision, expireNever);
 
   const Cache(this.modulId, this.cacheType, this.expireAfter);
 
@@ -331,6 +334,10 @@ enum Cache {
           await cacheModul.setString(
               key, TypeAdapter.serializeDateFormat(value as DateFormat));
           break;
+        case const (GpsPrecision):
+          await cacheModul.setString(
+              key, TypeAdapter.serializeGpsPrecision(value as GpsPrecision));
+          break;
         // ignore: prefer_void_to_null
         case const (Null):
           await cacheModul.remove(key);
@@ -429,6 +436,10 @@ enum Cache {
               defaultValue;
         case const (DateFormat):
           return TypeAdapter.deserializeDateFormat(
+                  await cacheModul.getString(key)) as T? ??
+              defaultValue;
+        case const (GpsPrecision):
+          return TypeAdapter.deserializeGpsPrecision(
                   await cacheModul.getString(key)) as T? ??
               defaultValue;
         default:

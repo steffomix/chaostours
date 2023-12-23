@@ -143,7 +143,10 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
             ],
           )),
       await radioSetting<DateFormat>(
-          Cache.appSettingDateFormat, DateFormat.values)
+          Cache.appSettingDateFormat, DateFormat.values),
+      await radioSetting<Weekdays>(Cache.appSettingWeekdays, Weekdays.values),
+      await radioSetting<GpsPrecision>(
+          Cache.appSettingWeekdays, GpsPrecision.values),
     ]);
     return true;
   }

@@ -38,6 +38,8 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
   final _titleUndoController = UndoHistoryController();
   final _notesUndoController = UndoHistoryController();
   final _sortUndoController = UndoHistoryController();
+  final _phoneUndoController = UndoHistoryController();
+  final _addressUndoController = UndoHistoryController();
 
   void render() {
     if (mounted) {
@@ -137,6 +139,97 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
                   _model?.update();
                 },
               ))),
+
+      /// phone
+      ListTile(
+          dense: true,
+          trailing: ValueListenableBuilder<UndoHistoryValue>(
+            valueListenable: _phoneUndoController,
+            builder: (context, value, child) {
+              return IconButton(
+                icon: const Icon(Icons.undo),
+                onPressed: value.canUndo
+                    ? () {
+                        _phoneUndoController.undo();
+                      }
+                    : null,
+              );
+            },
+          ),
+          title: Container(
+              padding: const EdgeInsets.all(10),
+              child: TextField(
+                decoration: const InputDecoration(label: Text('Phone')),
+                controller: TextEditingController(text: _model?.phone),
+                onChanged: (val) {
+                  _model?.phone = val;
+                  _model?.update();
+                },
+              ))),
+
+      /// address
+      ListTile(
+          dense: true,
+          trailing: ValueListenableBuilder<UndoHistoryValue>(
+            valueListenable: _addressUndoController,
+            builder: (context, value, child) {
+              return IconButton(
+                icon: const Icon(Icons.undo),
+                onPressed: value.canUndo
+                    ? () {
+                        _addressUndoController.undo();
+                      }
+                    : null,
+              );
+            },
+          ),
+          title: Container(
+              padding: const EdgeInsets.all(10),
+              child: TextField(
+                decoration: const InputDecoration(label: Text('Address')),
+                controller: TextEditingController(text: _model?.address),
+                maxLines: null,
+                minLines: 5,
+                onChanged: (val) {
+                  _model?.address = val;
+                  _model?.update();
+                },
+              ))),
+
+      AppWidgets.divider(),
+
+      /// isSelectable
+      ListTile(
+          title: const Text('Selectable'),
+          subtitle: const Text(
+            'If checked this group appears in Live Tracking lists',
+            softWrap: true,
+          ),
+          leading: Checkbox(
+            value: _model?.isSelectable ?? false,
+            onChanged: (val) {
+              _model?.isSelectable = val ?? false;
+              _model?.update().then((value) => render());
+            },
+          )),
+
+      /// isPreselected
+      ListTile(
+          title: const Text('Preselected'),
+          subtitle: const Text(
+            'If checked this group is already selected in Live Tracking lists.\n '
+            'However, you can always uncheck preselected tasks.',
+            softWrap: true,
+          ),
+          leading: Checkbox(
+            value: _model?.isActive ?? false,
+            onChanged: (val) {
+              _model?.isActive = val ?? false;
+              _model?.update().then((value) => render());
+            },
+          )),
+
+      AppWidgets.divider(),
 
       /// sort order
       ListTile(

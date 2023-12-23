@@ -605,10 +605,21 @@ class _WelcomeState extends State<Welcome> {
         }
       }
 
-      if (!(await Cache.licenseConsentRequestedOsm.load<bool>(false)) &&
+      if (!(await Cache.useOfOsmAddressLookupRequested.load<bool>(false)) &&
           mounted) {
         await AppWidgets.dialog(context: context, contents: [
-          Text(osmLicense)
+          const Text('Do you want to use the GPS-to-Address Future?\n'
+              'This future sends your GPS location to the free service of OpenStreetMap.com and receives an Address you can use.'),
+          TextButton(
+            child: const Text(
+                'For more Informations please visit OpenStreetMap.com'),
+            onPressed: () async {
+              await launchUrl(Uri(
+                scheme: 'https',
+                host: 'openstreetmap.com',
+              ));
+            },
+          )
         ], buttons: [
           TextButton(
             child: const Text('No'),
@@ -624,10 +635,14 @@ class _WelcomeState extends State<Welcome> {
           TextButton(
             child: const Text('Yes'),
             onPressed: () async {
-              await Cache.appSettingOsmLookupCondition
-                  .save<OsmLookupConditions>(
-                      OsmLookupConditions.onAutoCreateAlias);
-              await Cache.licenseConsentRequestedOsm.save<bool>(true);
+              if (!(await Cache.licenseConsentRequestedOsm.load<bool>(false))) {
+                if (await osmLicenseConsent()) {
+                  await Cache.appSettingOsmLookupCondition
+                      .save<OsmLookupConditions>(
+                          OsmLookupConditions.onAutoCreateAlias);
+                  await Cache.licenseConsentRequestedOsm.save<bool>(true);
+                }
+              }
               if (mounted) {
                 Navigator.pop(context);
               }

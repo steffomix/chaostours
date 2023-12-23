@@ -60,6 +60,7 @@ enum Weekdays implements EnumUserSetting<OsmLookupConditions> {
   sundayFirst(['', 'So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'], Text('Sunday'));
 
   final List<String> weekdays;
+  @override
   final Widget title;
 
   const Weekdays(this.weekdays, this.title);
@@ -69,9 +70,19 @@ enum DateFormat implements EnumUserSetting<OsmLookupConditions> {
   yyyymmdd(Text('YYYY:MM:DD')),
   ddmmyyyy(Text('DD:MM:YYYY'));
 
+  @override
   final Widget title;
 
   const DateFormat(this.title);
+}
+
+enum GpsPrecision implements EnumUserSetting<OsmLookupConditions> {
+  coarse(Text('Coarse')),
+  best(Text('Best'));
+
+  @override
+  final Widget title;
+  const GpsPrecision(this.title);
 }
 
 enum Unit {
@@ -552,6 +563,11 @@ class AppUserSetting {
       case const (OsmLookupConditions):
         OsmLookupConditions value = await cache
             .load<OsmLookupConditions>(defaultValue as OsmLookupConditions);
+        return value.name;
+
+      case const (GpsPrecision):
+        GpsPrecision value =
+            await cache.load<GpsPrecision>(defaultValue as GpsPrecision);
         return value.name;
 
       default:

@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:visibility_detector/visibility_detector.dart';
@@ -122,11 +123,14 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   final _visibilityDetectorKey =
       GlobalKey(debugLabel: 'Life Tracking VisibilityDetectorKey');
 
-  /// editable fields
-  final _notesController = TextEditingController();
-
-  final trackingListener = ValueNotifier<bool>(false);
-  final renderListener = ValueNotifier<bool>(false);
+  TextEditingController? _userNotesController;
+  final trackingListener = ValueNotifier<int>(0);
+  final renderListener = ValueNotifier<int>(0);
+  final _listenableSelectedTasks = ValueNotifier<int>(0);
+  final _listenableSelectedUsers = ValueNotifier<int>(0);
+  final _listenableDuration = ValueNotifier<int>(0);
+  final _listenableDate = ValueNotifier<int>(0);
+  final _listenableStatus = ValueNotifier<int>(0);
 
   Future<void> render() async {
     if (mounted) {
@@ -154,7 +158,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     if (_visibleFraction < .5) {
       return;
     }
-    trackingListener.value = !trackingListener.value;
+    trackingListener.value++;
   }
 
   ///
@@ -162,7 +166,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     if (_visibleFraction < .5) {
       return;
     }
-    renderListener.value = !renderListener.value;
+    renderListener.value++;
   }
 
   ///
@@ -181,16 +185,18 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     try {
       switch (_Cache.trackingStatus) {
         case TrackingStatus.standing:
-          widget = ValueListenableBuilder(
-            valueListenable: trackingListener,
-            builder: (context, value, child) => renderTrackPointStanding(),
+          widget = ListenableBuilder(
+            listenable: trackingListener,
+            builder: (context, child) =>
+                const Text('under construction'), //renderTrackPointStanding(),
           );
           break;
 
         case TrackingStatus.moving:
-          widget = ValueListenableBuilder(
-            valueListenable: trackingListener,
-            builder: (context, value, child) => renderTrackPointMoving(),
+          widget = ListenableBuilder(
+            listenable: trackingListener,
+            builder: (context, child) =>
+                const Text('under construction'), // renderTrackPointMoving(),
           );
           break;
 
@@ -260,19 +266,123 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   }
 
   Widget widgetTrackingStatus() {
-    return Text(DataChannel().trackingStatus.name.toUpperCase());
+    return ListenableBuilder(
+        listenable: _listenableStatus,
+        builder: (context, child) {
+          return Text(DataChannel().trackingStatus.name.toUpperCase());
+        });
   }
 
   Widget widgetDate() {
-    return Text(util.formatDate(DateTime.now()));
+    return ListenableBuilder(
+        listenable: _listenableDate,
+        builder: (context, child) {
+          return Text(util.formatDate(DateTime.now()));
+        });
   }
 
   Widget widgetDuration() {
-    return Text(util.formatDuration(DataChannel().duration));
+    return ListenableBuilder(
+        listenable: _listenableDuration,
+        builder: (context, child) {
+          return Text(util.formatDuration(DataChannel().duration));
+        });
   }
 
+  Widget widgetselectedUsers() {
+    return ListenableBuilder(
+      listenable: _listenableSelectedUsers,
+      builder: (context, child) {
+        return ListTile(
+            trailing: IconButton(
+              icon: const Icon(Icons.edit),
+              onPressed: () async {
+                await editSelectedUsers();
+                _listenableSelectedUsers.value++;
+              },
+            ),
+            title: Column(
+              children: DataChannel().userList.map<Widget>(
+                (model) {
+                  return TextButton(
+                    child: Text(model.title),
+                    onPressed: () {
+                      Navigator.pushNamed(context, AppRoutes.editUser.route,
+                              arguments: model.id)
+                          .then((value) => _listenableSelectedUsers.value++);
+                    },
+                  );
+                },
+              ).toList(),
+            ));
+      },
+    );
+  }
+
+  Widget widgetselectedTasks() {
+    return ListenableBuilder(
+        listenable: _listenableSelectedTasks,
+        builder: (context, child) {
+          return ListTile(
+              trailing: IconButton(
+                icon: const Icon(Icons.edit),
+                onPressed: () async {
+                  await editSelectedTasks();
+                  _listenableSelectedTasks.value++;
+                },
+              ),
+              title: Column(
+                children: DataChannel().taskList.map<Widget>(
+                  (model) {
+                    return TextButton(
+                      child: Text(model.title),
+                      onPressed: () {
+                        Navigator.pushNamed(context, AppRoutes.editUser.route,
+                                arguments: model.id)
+                            .then((value) => _listenableSelectedTasks.value++);
+                      },
+                    );
+                  },
+                ).toList(),
+              ));
+        });
+  }
+
+  final _userNotesUndoController = UndoHistoryController();
+  final _listenableUserNotes = ValueNotifier<int>(0);
+  Widget widgetUserNotes() {
+    return ListTile(
+        trailing: ListenableBuilder(
+            listenable: _listenableUserNotes,
+            builder: (context, child) {
+              return IconButton(
+                icon: const Icon(Icons.undo),
+                onPressed: _userNotesUndoController.value.canUndo
+                    ? () {
+                        _userNotesUndoController.undo();
+                      }
+                    : null,
+              );
+            }),
+        title: TextField(
+          controller: _userNotesController ??=
+              TextEditingController(text: DataChannel().notes),
+          undoController: _userNotesUndoController,
+          minLines: 2,
+          maxLines: 6,
+          decoration: const InputDecoration(hintText: 'Notes'),
+          onEditingComplete: () async {
+            DataChannel().notes =
+                await Cache.backgroundTrackPointUserNotes.load<String>('');
+          },
+        ));
+  }
+
+  Future<void> editSelectedUsers() async {}
+  Future<void> editSelectedTasks() async {}
+
   ///
-  Widget renderTrackPointMoving() {
+  Widget _renderTrackPointMoving() {
     ModelTrackPoint tp = _Cache.trackPoint!;
 
     Widget body =
@@ -354,7 +464,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   }
 
   ///
-  Widget renderTrackPointStanding() {
+  Widget _renderTrackPointStanding() {
     ModelTrackPoint tp = _Cache.trackPoint!;
     Widget body =
         Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -449,7 +559,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   }
 
   ///
-  List<Widget> taskCheckboxes() {
+  List<Widget> _taskCheckboxes() {
     var referenceList = _Cache.trackPoint!.taskIds;
     var checkBoxes = <Widget>[];
     for (var model in _Cache.trackPoint!.taskModels) {
@@ -546,8 +656,9 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         child: ListTile(
           trailing: const Icon(Icons.menu),
           title: Text(dropdownTasksIsOpen ? '' : 'Tasks:$tasks'),
-          subtitle:
-              !dropdownTasksIsOpen ? null : Column(children: taskCheckboxes()),
+          subtitle: !dropdownTasksIsOpen
+              ? null
+              : const Column(children: [AppWidgets.empty]),
         ),
         onPressed: () {
           dropdownTasksIsOpen = !dropdownTasksIsOpen;
@@ -571,7 +682,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
             //expands: true,
             maxLines: null,
             minLines: 2,
-            controller: _notesController,
+            controller: _userNotesController,
             onChanged: (String? s) async {
               render();
             }));

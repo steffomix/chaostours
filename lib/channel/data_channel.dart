@@ -28,6 +28,10 @@ import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/model/model_alias.dart';
+import 'package:chaostours/model/model_user.dart';
+import 'package:chaostours/model/model_task.dart';
+
+typedef Callback = void Function();
 
 enum DataChannelKey {
   tick,
@@ -56,6 +60,7 @@ class DataChannel {
   GPS? gpsLastStatusStanding;
   GPS? gpsLastStatusMoving;
 
+  /// computed values
   TrackingStatus trackingStatus = TrackingStatus.standing;
 
   int distanceMoving = 0;
@@ -68,9 +73,57 @@ class DataChannel {
   int distanceTreshold = 0; // meter
   Duration durationTreshold = Duration.zero;
 
-  List<ModelAlias> aliasList = [];
-
   String lastAddress = '';
+
+  List<ModelAlias> _aliasList = [];
+  List<ModelUser> _userList = [];
+  List<ModelTask> _taskList = [];
+  String _notes = '';
+  List<ModelAlias> get aliasList => _aliasList;
+  List<ModelUser> get userList => _userList;
+  List<ModelTask> get taskList => _taskList;
+  String get notes => _notes;
+
+  setAliasList(List<ModelAlias> models, [Callback? callback]) {
+    Cache.backgroundAliasIdList
+        .save<List<int>>(models.map((e) => e.id).toList())
+        .then(
+      (value) {
+        _aliasList = models;
+      },
+    );
+    callback?.call();
+  }
+
+  setUserList(List<ModelUser> models, [Callback? callback]) {
+    Cache.backgroundUserIdList
+        .save<List<int>>(models.map((e) => e.id).toList())
+        .then(
+      (value) {
+        _userList = models;
+      },
+    );
+    callback?.call();
+  }
+
+  setTaskList(List<ModelTask> models, [Callback? callback]) {
+    Cache.backgroundUserIdList
+        .save<List<int>>(models.map((e) => e.id).toList())
+        .then(
+      (value) {
+        _taskList = models;
+      },
+    );
+    callback?.call();
+  }
+
+  set notes(String text) {
+    Cache.backgroundTrackPointUserNotes.save<String>(notes).then(
+      (value) {
+        _notes = text;
+      },
+    );
+  }
 
   DataChannel._() {
     if (_instance == null) {
@@ -79,6 +132,7 @@ class DataChannel {
             .on(BackgroundChannelCommand.onTracking.toString())) {
           tick++;
           try {
+            /// stream values
             gps = TypeAdapter.deserializeGps(
                 data?[DataChannelKey.gps.toString()]);
             gpsPoints = TypeAdapter.deserializeGpsList(
@@ -99,10 +153,10 @@ class DataChannel {
                     data?[DataChannelKey.trackingStatus.toString()]) ??
                 TrackingStatus.standing;
 
+            /// compute values
             final bool statusChanged = status != trackingStatus;
             trackingStatus = status;
 
-            /// computed values
             distanceMoving = gpsPoints.isNotEmpty
                 ? GPS.distanceOverTrackList(gpsPoints).round()
                 : 0;
@@ -113,17 +167,28 @@ class DataChannel {
             Cache cache = Cache.appSettingDistanceTreshold;
             distanceTreshold = await cache
                 .load<int>(AppUserSetting(cache).defaultValue as int);
-            aliasList = gps == null
+
+            /// load from database
+            _aliasList = gps == null
                 ? []
                 : await ModelAlias.byRadius(
                     gps: gps!, radius: distanceTreshold);
 
+            List<int> ids;
+            ids = await Cache.backgroundUserIdList.load<List<int>>([]);
+            _userList = await ModelUser.byIdList(ids);
+
+            ids = await Cache.backgroundTaskIdList.load<List<int>>([]);
+            _taskList = await ModelTask.byIdList(ids);
+
+            /// fire events
             EventManager.fire<DataChannel>(_instance!);
 
             if (statusChanged) {
               EventManager.fire<TrackingStatus>(trackingStatus);
             }
 
+            /// notify user
             var notificationConfiguration = (statusChanged
                 ? NotificationChannel.trackingStatusChangedConfiguration
                 : NotificationChannel.ongoigTrackingUpdateConfiguration);

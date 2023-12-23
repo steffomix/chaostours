@@ -420,7 +420,8 @@ enum TableTask {
   id('id'),
   idTaskGroup('id_task_group'),
   isActive('active'),
-  isPreselected('isPreselected'),
+  isSelectable('selectable'),
+  isPreselected('preselected'),
   sortOrder('sort'),
   title('title'),
   description('description');
@@ -441,6 +442,7 @@ enum TableTask {
 	${primaryKey.column}	INTEGER NOT NULL,
 	${idTaskGroup.column}	INTEGER NOT NULL DEFAULT 1,
 	${isActive.column}	INTEGER DEFAULT 1,
+	${isSelectable.column}	INTEGER DEFAULT 1,
 	${isPreselected.column}	INTEGER DEFAULT 0,
 	${sortOrder.column}	TEXT,
 	${title.column}	TEXT NOT NULL,
@@ -506,6 +508,8 @@ enum TableUser {
   id('id'),
   idUserGroup('id_user_group'),
   isActive('active'),
+  isSelectable('selectable'),
+  isPreselected('preselected'),
   sortOrder('sort'),
   phone('phone'),
   address('address'),
@@ -528,6 +532,8 @@ enum TableUser {
 	${primaryKey.column}	INTEGER NOT NULL,
 	${idUserGroup.column}	INTEGER NOT NULL DEFAULT 1,
 	${isActive.column}	INTEGER DEFAULT 1,
+	${isSelectable.column}	INTEGER DEFAULT 1,
+	${isPreselected.column}	INTEGER DEFAULT 0,
 	${sortOrder.column}	TEXT,
 	${phone.column}	TEXT,
 	${address.column}	TEXT,
@@ -545,7 +551,8 @@ enum TableUser {
 enum TableTaskGroup {
   id('id'),
   isActive('active'),
-  selectable('selectable'),
+  isSelectable('selectable'),
+  isPreselected('preselected'),
   sortOrder('sort'),
   title('title'),
   description('description');
@@ -565,7 +572,8 @@ enum TableTaskGroup {
   static String get schema => '''CREATE TABLE IF NOT EXISTS $table (
 	${primaryKey.column} INTEGER NOT NULL,
 	${isActive.column} INTEGER DEFAULT 1,
-	${selectable.column} INTEGER DEFAULT 1,
+	${isSelectable.column} INTEGER DEFAULT 1,
+	${isPreselected.column} INTEGER DEFAULT 0,
 	${sortOrder.column}	TEXT,
 	${title.column}	TEXT NOT NULL,
 	${description.column}	TEXT,
@@ -581,7 +589,8 @@ enum TableTaskGroup {
 enum TableUserGroup {
   id('id'),
   isActive('active'),
-  selectable('selectable'),
+  isSelectable('selectable'),
+  isPreselected('preselected'),
   sortOrder('sort'),
   title('title'),
   description('description');
@@ -601,7 +610,8 @@ enum TableUserGroup {
   static String get schema => '''CREATE TABLE IF NOT EXISTS $table (
 	${primaryKey.column}	INTEGER NOT NULL,
 	${isActive.column}	INTEGER DEFAULT 1,
-	${selectable.column} INTEGER DEFAULT 1,
+	${isSelectable.column} INTEGER DEFAULT 1,
+	${isPreselected.column} INTEGER DEFAULT 0,
 	${sortOrder.column}	TEXT,
 	${title.column}	TEXT,
 	${description.column}	TEXT,
@@ -675,6 +685,7 @@ enum TableAliasGroup {
   id('id'),
   idCalendar('id_calendar'),
   isActive('active'),
+  isSelectable('active'),
   visibility('sort'),
   title('title'),
   description('description');
@@ -695,6 +706,7 @@ enum TableAliasGroup {
 	${primaryKey.column}	INTEGER NOT NULL,
 	${idCalendar.column}	TEXT,
 	${isActive.column}	INTEGER DEFAULT 1,
+	${isSelectable.column}	INTEGER DEFAULT 1,
 	${visibility.column}	INTEGER,
 	${title.column}	TEXT,
 	${description.column}	TEXT,

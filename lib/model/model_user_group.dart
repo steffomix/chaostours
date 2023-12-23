@@ -24,12 +24,16 @@ class ModelUserGroup {
   int _id = 0;
   int get id => _id;
   bool isActive = true;
+  bool isSelectable = true;
+  bool isPreselected = false;
   String sortOrder = '';
   String title = '';
   String description = '';
 
   ModelUserGroup(
       {this.isActive = true,
+      this.isSelectable = true,
+      this.isPreselected = false,
       this.sortOrder = '',
       this.title = '',
       this.description = ''});
@@ -38,6 +42,8 @@ class ModelUserGroup {
     return <String, Object?>{
       TableUserGroup.primaryKey.column: id,
       TableUserGroup.isActive.column: DB.boolToInt(isActive),
+      TableUserGroup.isSelectable.column: DB.boolToInt(isSelectable),
+      TableUserGroup.isPreselected.column: DB.boolToInt(isPreselected),
       TableUserGroup.sortOrder.column: sortOrder,
       TableUserGroup.title.column: title,
       TableUserGroup.description.column: description
@@ -47,6 +53,8 @@ class ModelUserGroup {
   static ModelUserGroup fromMap(Map<String, Object?> map) {
     var model = ModelUserGroup(
         isActive: DB.parseBool(map[TableUserGroup.isActive.column]),
+        isSelectable: DB.parseBool(map[TableUserGroup.isSelectable.column]),
+        isPreselected: DB.parseBool(map[TableUserGroup.isPreselected.column]),
         sortOrder: DB.parseString(map[TableUserGroup.sortOrder.column]),
         title: DB.parseString(map[TableUserGroup.title.column]),
         description: DB.parseString(map[TableUserGroup.description.column]));

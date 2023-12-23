@@ -28,6 +28,8 @@ class ModelUser {
   int groupId = 1;
   String sortOrder = '';
   bool isActive = true;
+  bool isSelectable = true;
+  bool isPreselected = false;
   String title = '';
   String description = '';
   String phone = '';
@@ -37,6 +39,8 @@ class ModelUser {
       {this.groupId = 1,
       this.sortOrder = '',
       this.isActive = true,
+      this.isSelectable = true,
+      this.isPreselected = false,
       this.title = '',
       this.description = '',
       this.phone = '',
@@ -44,11 +48,16 @@ class ModelUser {
 
   static ModelUser fromMap(Map<String, Object?> map) {
     var model = ModelUser(
-        groupId: DB.parseInt(map[TableUser.idUserGroup.column], fallback: 1),
-        isActive: DB.parseBool(map[TableUser.isActive.column]),
-        sortOrder: DB.parseString(map[TableUser.sortOrder.column]),
-        title: DB.parseString(map[TableUser.title.column]),
-        description: DB.parseString(map[TableUser.description.column]));
+      groupId: DB.parseInt(map[TableUser.idUserGroup.column], fallback: 1),
+      isActive: DB.parseBool(map[TableUser.isActive.column]),
+      isSelectable: DB.parseBool(map[TableUser.isSelectable.column]),
+      isPreselected: DB.parseBool(map[TableUser.isPreselected.column]),
+      sortOrder: DB.parseString(map[TableUser.sortOrder.column]),
+      title: DB.parseString(map[TableUser.title.column]),
+      description: DB.parseString(map[TableUser.description.column]),
+      phone: DB.parseString(map[TableUser.phone.column]),
+      address: DB.parseString(map[TableUser.address.column]),
+    );
     model._id = DB.parseInt(map[TableUser.primaryKey.column]);
     return model;
   }
@@ -260,6 +269,39 @@ class ModelUser {
             'UPDATE ${TableUser.table} SET ${TableUser.sortOrder.column} = ${TableUser.primaryKey.column} WHERE 1');
       },
     );
+  }
+
+  static Future<List<ModelUser>> preselected() async {
+    final rows = await DB.execute((txn) async {
+      final q = '''
+      SELECT ${TableUser.columns} FROM ${TableUserUserGroup.table}
+      LEFT JOIN ${TableUserUserGroup.table} ON ${TableUserUserGroup.idUserGroup} = ${TableUserGroup.id}
+      LEFT JOIN ${TableUser.table} ON ${TableUserUserGroup.idUser} = ${TableUser.id}
+      WHERE ${TableUserGroup.isPreselected} = ? OR ${TableUser.isPreselected} = ?
+      GROUP BY ${TableUser.id}
+      ORDER BY ${TableUser.sortOrder}
+''';
+
+      final param = DB.boolToInt(true);
+      return await txn.rawQuery(q, [param, param]);
+    });
+    return rows.map((e) => fromMap(e)).toList();
+  }
+
+  static Future<List<ModelUser>> selectable() async {
+    final rows = await DB.execute((txn) async {
+      final q = '''
+      SELECT ${TableUser.columns} FROM ${TableUserUserGroup.table}
+      LEFT JOIN ${TableUserUserGroup.table} ON ${TableUserUserGroup.idUserGroup} = ${TableUserGroup.id}
+      LEFT JOIN ${TableUser.table} ON ${TableUserUserGroup.idUser} = ${TableUser.id}
+      WHERE ${TableUserGroup.isSelectable} = ? OR ${TableUser.isSelectable} = ?
+      GROUP BY ${TableUser.id}
+      ORDER BY ${TableUser.sortOrder}
+''';
+      final param = DB.boolToInt(true);
+      return await txn.rawQuery(q, [param, param]);
+    });
+    return rows.map((e) => fromMap(e)).toList();
   }
 
   ModelUser clone() {

@@ -139,7 +139,7 @@ class _WidgetUserGroupEdit extends State<WidgetUserGroupEdit> {
               padding: const EdgeInsets.all(10),
               child: TextField(
                 keyboardType: TextInputType.multiline,
-                decoration: const InputDecoration(label: Text('Notizen')),
+                decoration: const InputDecoration(label: Text('Notes')),
                 maxLines: null,
                 minLines: 3,
                 controller: _notesController,
@@ -150,11 +150,29 @@ class _WidgetUserGroupEdit extends State<WidgetUserGroupEdit> {
               ))),
       AppWidgets.divider(),
 
-      /// deleted
+      /// isSelectable
       ListTile(
-          title: const Text('Deaktiviert / gelöscht'),
+          title: const Text('Selectable'),
           subtitle: const Text(
-            'Wenn deaktiviert bzw. gelöscht, wird dieser User behandelt wie ein "gelöschter" Fakebook Account.',
+            'If checked this group appears in Live Tracking lists',
+            softWrap: true,
+          ),
+          leading: Checkbox(
+            value: _model?.isSelectable ?? false,
+            onChanged: (val) {
+              _model?.isSelectable = val ?? false;
+              _model?.update().then((value) => render());
+            },
+          )),
+
+      AppWidgets.divider(),
+
+      /// isPreselected
+      ListTile(
+          title: const Text('Preselected'),
+          subtitle: const Text(
+            'If checked this group is already selected in Live Tracking lists.\n '
+            'However, you can always uncheck preselected tasks.',
             softWrap: true,
           ),
           leading: Checkbox(
@@ -175,6 +193,23 @@ class _WidgetUserGroupEdit extends State<WidgetUserGroupEdit> {
                 arguments: _model?.id);
             render();
           }),
+
+      AppWidgets.divider(),
+
+      /// deleted
+      ListTile(
+          title: const Text('Deaktivated'),
+          subtitle: const Text(
+            'Deaktivated Items have no functionality and appear only in Trash views.',
+            softWrap: true,
+          ),
+          leading: Checkbox(
+            value: _model?.isActive ?? false,
+            onChanged: (val) {
+              _model?.isActive = val ?? false;
+              _model?.update().then((value) => render());
+            },
+          )),
     ]);
   }
 }

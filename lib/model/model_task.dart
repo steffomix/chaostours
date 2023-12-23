@@ -26,8 +26,10 @@ class ModelTask {
   int _id = 0;
   int get id => _id;
   int groupId;
-  String sortOrder;
   bool isActive;
+  bool isSelectable = true;
+  bool isPreselected = false;
+  String sortOrder;
   String title;
   String description;
 
@@ -35,6 +37,8 @@ class ModelTask {
       {this.groupId = 1,
       this.sortOrder = '',
       this.isActive = true,
+      this.isSelectable = true,
+      this.isPreselected = false,
       this.title = '',
       this.description = ''});
 
@@ -42,6 +46,8 @@ class ModelTask {
     var model = ModelTask(
         groupId: DB.parseInt(map[TableTask.idTaskGroup.column], fallback: 1),
         isActive: DB.parseBool(map[TableTask.isActive.column]),
+        isSelectable: DB.parseBool(map[TableTask.isSelectable.column]),
+        isPreselected: DB.parseBool(map[TableTask.isPreselected.column]),
         sortOrder: DB.parseString(map[TableTask.sortOrder.column]),
         title: DB.parseString(map[TableTask.title.column]),
         description: DB.parseString(map[TableTask.description.column]));
@@ -54,6 +60,8 @@ class ModelTask {
       TableTask.primaryKey.column: id,
       TableTask.idTaskGroup.column: groupId,
       TableTask.isActive.column: DB.boolToInt(isActive),
+      TableTask.isSelectable.column: DB.boolToInt(isSelectable),
+      TableTask.isPreselected.column: DB.boolToInt(isPreselected),
       TableTask.sortOrder.column: sortOrder,
       TableTask.title.column: title,
       TableTask.description.column: description
@@ -254,6 +262,39 @@ class ModelTask {
             'UPDATE ${TableTask.table} SET ${TableTask.sortOrder.column} = ${TableTask.primaryKey.column} WHERE 1');
       },
     );
+  }
+
+  static Future<List<ModelTask>> preselected() async {
+    final rows = await DB.execute((txn) async {
+      final q = '''
+      SELECT ${TableTask.columns} FROM ${TableTaskTaskGroup.table}
+      LEFT JOIN ${TableTaskTaskGroup.table} ON ${TableTaskTaskGroup.idTaskGroup} = ${TableTaskGroup.id}
+      LEFT JOIN ${TableTask.table} ON ${TableTaskTaskGroup.idTask} = ${TableTask.id}
+      WHERE ${TableTaskGroup.isPreselected} = ? OR ${TableTask.isPreselected} = ?
+      GROUP BY ${TableTask.id}
+      ORDER BY ${TableTask.sortOrder}
+''';
+
+      final param = DB.boolToInt(true);
+      return await txn.rawQuery(q, [param, param]);
+    });
+    return rows.map((e) => fromMap(e)).toList();
+  }
+
+  static Future<List<ModelTask>> selectable() async {
+    final rows = await DB.execute((txn) async {
+      final q = '''
+      SELECT ${TableTask.columns} FROM ${TableTaskTaskGroup.table}
+      LEFT JOIN ${TableTaskTaskGroup.table} ON ${TableTaskTaskGroup.idTaskGroup} = ${TableTaskGroup.id}
+      LEFT JOIN ${TableTask.table} ON ${TableTaskTaskGroup.idTask} = ${TableTask.id}
+      WHERE ${TableTaskGroup.isSelectable} = ? OR ${TableTask.isSelectable} = ?
+      GROUP BY ${TableTask.id}
+      ORDER BY ${TableTask.sortOrder}
+''';
+      final param = DB.boolToInt(true);
+      return await txn.rawQuery(q, [param, param]);
+    });
+    return rows.map((e) => fromMap(e)).toList();
   }
 
   ModelTask clone() {

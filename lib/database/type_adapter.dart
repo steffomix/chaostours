@@ -151,4 +151,9 @@ class TypeAdapter {
   static String serializeDateFormat(DateFormat value) => value.name;
   static DateFormat? deserializeDateFormat(String? value) =>
       value == null ? DateFormat.yyyymmdd : DateFormat.values.byName(value);
+
+  /// GpsPrecision
+  static String serializeGpsPrecision(GpsPrecision value) => value.name;
+  static GpsPrecision? deserializeGpsPrecision(String? value) =>
+      value == null ? GpsPrecision.best : GpsPrecision.values.byName(value);
 }

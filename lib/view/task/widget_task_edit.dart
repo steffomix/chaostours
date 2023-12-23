@@ -140,6 +140,41 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
                 },
               ))),
 
+      /// isSelectable
+      ListTile(
+          title: const Text('Selectable'),
+          subtitle: const Text(
+            'If checked this group appears in Live Tracking lists',
+            softWrap: true,
+          ),
+          leading: Checkbox(
+            value: _model?.isSelectable ?? false,
+            onChanged: (val) {
+              _model?.isSelectable = val ?? false;
+              _model?.update().then((value) => render());
+            },
+          )),
+
+      AppWidgets.divider(),
+
+      /// isPreselected
+      ListTile(
+          title: const Text('Preselected'),
+          subtitle: const Text(
+            'If checked this group is already selected in Live Tracking lists.\n '
+            'However, you can always uncheck preselected tasks.',
+            softWrap: true,
+          ),
+          leading: Checkbox(
+            value: _model?.isActive ?? false,
+            onChanged: (val) {
+              _model?.isActive = val ?? false;
+              _model?.update().then((value) => render());
+            },
+          )),
+
+      AppWidgets.divider(),
+
       /// sort order
       Container(
           padding: const EdgeInsets.all(10),
