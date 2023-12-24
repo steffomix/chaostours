@@ -43,14 +43,16 @@ enum DataChannelKey {
   gpsLastStatusStanding,
   gpsLastStatusMoving,
   trackingStatus,
-  lastAddress;
+  lastAddress,
+  lastFullAddress;
 }
 
 class DataChannel {
   static final Logger logger = Logger.logger<DataChannel>();
   static DataChannel? _instance;
   factory DataChannel() => _instance ??= DataChannel._();
-
+  bool _initialized = false;
+  bool get initalized => _initialized;
   int tick = 0;
   GPS? gps;
   List<GPS> gpsPoints = [];
@@ -63,8 +65,14 @@ class DataChannel {
   /// computed values
   TrackingStatus trackingStatus = TrackingStatus.standing;
 
+  TrackingStatus statusTrigger = TrackingStatus.none;
+
   int distanceMoving = 0;
   int distanceStanding = 0;
+
+  int get distance => trackingStatus == TrackingStatus.standing
+      ? distanceStanding
+      : distanceMoving;
 
   Duration get duration => gpsPoints.isEmpty
       ? Duration.zero
@@ -73,7 +81,8 @@ class DataChannel {
   int distanceTreshold = 0; // meter
   Duration durationTreshold = Duration.zero;
 
-  String lastAddress = '';
+  String address = '';
+  String fullAddress = '';
 
   List<ModelAlias> _aliasList = [];
   List<ModelUser> _userList = [];
@@ -130,6 +139,7 @@ class DataChannel {
       Future.microtask(() async {
         await for (var data in FlutterBackgroundService()
             .on(BackgroundChannelCommand.onTracking.toString())) {
+          _initialized = true;
           tick++;
           try {
             /// stream values
@@ -147,7 +157,9 @@ class DataChannel {
                 data?[DataChannelKey.gpsLastStatusStanding.toString()]);
             gpsLastStatusMoving = TypeAdapter.deserializeGps(
                 data?[DataChannelKey.gpsLastStatusMoving.toString()]);
-            lastAddress = DataChannelKey.lastAddress.toString();
+            address = data?[DataChannelKey.lastAddress.toString()] ?? '-';
+            fullAddress =
+                data?[DataChannelKey.lastFullAddress.toString()] ?? '-';
 
             final TrackingStatus status = TypeAdapter.deserializeTrackingStatus(
                     data?[DataChannelKey.trackingStatus.toString()]) ??

@@ -15,6 +15,8 @@ limitations under the License.
 */
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_background_service/flutter_background_service.dart';
 import 'dart:math' as math;
 
 ///
@@ -23,8 +25,9 @@ import 'package:chaostours/channel/background_channel.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/conf/app_user_settings.dart';
 import 'package:chaostours/database/cache.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_background_service/flutter_background_service.dart';
+import 'package:chaostours/conf/license.dart';
+import 'package:chaostours/util.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 enum AliasRequired {
   yes(true),
@@ -73,39 +76,31 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
   Future<bool> renderWidgets() async {
     await updateDebugValues();
     _renderedWidgets.clear();
-    _renderedWidgets.addAll([
+    _renderedWidgets.addAll(intersperse(divider, [
       await booleanSetting(Cache.appSettingBackgroundTrackingEnabled, onChange:
           ({required AppUserSetting setting, required bool value}) async {
         value
             ? await BackgroundChannel.start()
             : await BackgroundChannel.stop();
       }),
-      divider,
       await booleanSetting(Cache.appSettingAutocreateAlias),
-      divider,
       await booleanSetting(Cache.appSettingStatusStandingRequireAlias),
-      divider,
       await booleanSetting(Cache.appSettingPublishToCalendar),
-      divider,
       await integerSetting(Cache.appSettingForegroundUpdateInterval),
-      divider,
       await integerSetting(Cache.appSettingDistanceTreshold),
-      divider,
       await integerSetting(Cache.appSettingCacheGpsTime),
-      divider,
       await settingOsmlookupCondition(),
       Container(
           decoration: BoxDecoration(border: Border.all()),
           margin: const EdgeInsets.all(10),
           child: Column(
-            children: [
+            children: intersperse(divider, [
               const ListTile(
                   title: Text('Tracking calculating settings'),
                   subtitle: Text(
                       'These Settings depend on each other from top to bottom.\n'
                       'It is strongly recommended to modify the values in that order, because '
                       'the System will auto-adjust them if neccecary.')),
-              divider,
               await integerSetting(Cache.appSettingBackgroundTrackingInterval,
                   onChange: (
                       {required AppUserSetting setting,
@@ -127,7 +122,6 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                     ?.value++;
                 valueNotifiers[Cache.appSettingGpsPointsSmoothCount]?.value++;
               }),
-              divider,
               await integerSetting(Cache.appSettingAutocreateAliasDuration,
                   onChange: (
                       {required AppUserSetting setting,
@@ -138,16 +132,19 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                 // valueNotifiers[Cache.appSettingAutocreateAliasDuration]?.value++;
                 valueNotifiers[Cache.appSettingGpsPointsSmoothCount]?.value++;
               }),
-              divider,
               await integerSetting(Cache.appSettingGpsPointsSmoothCount),
-            ],
+            ]).toList(),
           )),
       await radioSetting<DateFormat>(
           Cache.appSettingDateFormat, DateFormat.values),
       await radioSetting<Weekdays>(Cache.appSettingWeekdays, Weekdays.values),
       await radioSetting<GpsPrecision>(
           Cache.appSettingGpsPrecision, GpsPrecision.values),
-    ]);
+      await requestChaosToursLicense(),
+      await requestOsmLicense(),
+      const SizedBox(height: 30)
+    ]));
+
     return true;
   }
 
@@ -236,6 +233,115 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
     fn.call();
     FlutterBackgroundService()
         .invoke(BackgroundChannelCommand.reloadUserSettings.toString());
+  }
+
+  final _licenceConsentChaosTours = ValueNotifier<bool>(false);
+  Future<Widget> requestChaosToursLicense() async {
+    _licenceConsentChaosTours.value =
+        await Cache.licenseConsentChaosTours.load<bool>(false);
+
+    return ListTile(
+      title: const Text('Chaos Tours License'),
+      leading: ValueListenableBuilder(
+        valueListenable: _licenceConsentChaosTours,
+        builder: (context, value, child) {
+          return _licenceConsentChaosTours.value
+              ? const Icon(Icons.check)
+              : const Icon(Icons.warning);
+        },
+      ),
+      trailing: IconButton(
+        icon: const Icon(Icons.settings),
+        onPressed: () {
+          AppWidgets.dialog(context: context, contents: [
+            widgetChaosToursLicense
+            /* TextButton(
+              child: Text('\nhttps://www.openstreetmap.org/copyright\n'),
+              onPressed: () {
+                launchUrl(Uri(
+                    scheme: 'https',
+                    host: 'www.openstreetmap.org',
+                    path: 'copyright'));
+              },
+            ) */
+          ], buttons: [
+            TextButton(
+                child: const Text('Decline'),
+                onPressed: () async {
+                  await Cache.licenseConsentChaosTours.save<bool>(false);
+                  _licenceConsentChaosTours.value = false;
+                  if (mounted) {
+                    Navigator.pop(context);
+                  }
+                }),
+            TextButton(
+              child: const Text('Consent'),
+              onPressed: () async {
+                await Cache.licenseConsentChaosTours.save<bool>(true);
+                _licenceConsentChaosTours.value = true;
+                if (mounted) {
+                  Navigator.pop(context);
+                }
+              },
+            )
+          ]);
+        },
+      ),
+    );
+  }
+
+  final _licenceConsentOsm = ValueNotifier<bool>(false);
+  Future<Widget> requestOsmLicense() async {
+    _licenceConsentOsm.value = await Cache.licenseConsentOsm.load<bool>(false);
+
+    return ListTile(
+      title: const Text('OpenStreetMap License'),
+      leading: ValueListenableBuilder(
+        valueListenable: _licenceConsentOsm,
+        builder: (context, value, child) {
+          return _licenceConsentOsm.value
+              ? const Icon(Icons.check)
+              : const Icon(Icons.warning);
+        },
+      ),
+      trailing: IconButton(
+        icon: const Icon(Icons.settings),
+        onPressed: () {
+          AppWidgets.dialog(context: context, contents: [
+            Text(osmLicense),
+            TextButton(
+              child: const Text('\nhttps://www.openstreetmap.org/copyright\n'),
+              onPressed: () {
+                launchUrl(Uri(
+                    scheme: 'https',
+                    host: 'www.openstreetmap.org',
+                    path: 'copyright'));
+              },
+            )
+          ], buttons: [
+            TextButton(
+                child: const Text('Decline'),
+                onPressed: () async {
+                  await Cache.licenseConsentOsm.save<bool>(false);
+                  _licenceConsentOsm.value = false;
+                  if (mounted) {
+                    Navigator.pop(context);
+                  }
+                }),
+            TextButton(
+              child: const Text('Consent'),
+              onPressed: () async {
+                await Cache.licenseConsentOsm.save<bool>(true);
+                _licenceConsentOsm.value = true;
+                if (mounted) {
+                  Navigator.pop(context);
+                }
+              },
+            )
+          ]);
+        },
+      ),
+    );
   }
 
   Future<Widget> booleanSetting(Cache cache, {OnChangedBool? onChange}) async {

@@ -72,7 +72,7 @@ class Address {
       final body = _response!.body;
       final json = jsonDecode(body);
 
-      Map<String, String> jsonParts = json['address'] ?? <String, String>{};
+      Map<String, dynamic> jsonParts = json['address'] ?? <String, dynamic>{};
       List<String> parts = [];
       for (var key in jsonParts.keys) {
         parts.add('$key: ${jsonParts[key]}');

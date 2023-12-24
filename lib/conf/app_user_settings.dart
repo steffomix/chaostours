@@ -51,7 +51,8 @@ enum OsmLookupConditions implements EnumUserSetting<OsmLookupConditions> {
   Future<bool> allowLookup() async {
     OsmLookupConditions setting = await Cache.appSettingOsmLookupCondition
         .load<OsmLookupConditions>(OsmLookupConditions.never);
-    return setting.index > 0 && index <= setting.index;
+    bool licenseConsent = await Cache.licenseConsentOsm.load<bool>(false);
+    return licenseConsent && setting.index > 0 && index <= setting.index;
   }
 }
 
@@ -518,23 +519,23 @@ class AppUserSetting {
 
   Future<void> save(String? data) async {
     switch (cache.cacheType) {
-      case String:
+      case const (String):
         String value = data?.trim() ?? defaultValue as String;
         await cache.save<String>(value);
         break;
 
-      case int:
+      case const (int):
         int value = await pruneInt(data ?? defaultValue.toString());
         await cache.save<int>(value);
         break;
 
-      case bool:
+      case const (bool):
         bool value =
             (data != null && (data == '1' || data == 'true')) ? true : false;
         await cache.save<bool>(value);
         break;
 
-      case Duration:
+      case const (Duration):
         int value = await pruneInt(data ??
             ((defaultValue as Duration).inSeconds / unit.multiplicator)
                 .round()
@@ -542,7 +543,7 @@ class AppUserSetting {
         await cache.save<Duration>(Duration(seconds: value));
         break;
 
-      case OsmLookupConditions:
+      case const (OsmLookupConditions):
         var value = OsmLookupConditions.byName(
                 data ?? (defaultValue as OsmLookupConditions).name) ??
             (defaultValue as OsmLookupConditions);

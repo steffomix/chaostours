@@ -22,7 +22,7 @@ import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/view/app_base_widget.dart';
 
 class WidgetPattern extends BaseWidget {
-  const WidgetPattern({Key? key}) : super(key: key);
+  const WidgetPattern({super.key});
   @override
   State<WidgetPattern> createState() => _WidgetPattern();
 }

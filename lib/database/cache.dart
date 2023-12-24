@@ -124,6 +124,7 @@ enum Cache {
 
   /// startup consent
   licenseConsentChaosTours(CacheModulId.sharedPreferences, bool, expireNever),
+  licenseConsentOsm(CacheModulId.sharedPreferences, bool, expireNever),
   licenseConsentRequestedOsm(CacheModulId.sharedPreferences, bool, expireNever),
   useOfOsmAddressLookupRequested(
       CacheModulId.sharedPreferences, bool, expireNever),

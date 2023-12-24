@@ -1,5 +1,3 @@
-// ignore_for_file: unused_import
-
 /*
 Copyright 2023 Stefan Brinkmann <st.brinkmann@gmail.com>
 
@@ -16,28 +14,23 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// required for sqflite
+// required for sqflite?
 // ignore: depend_on_referenced_packages
 // import 'package:path_provider_android/path_provider_android.dart';
+// import 'package:flutter_background_service_android/flutter_background_service_android.dart';
 
-// ignore: depend_on_referenced_packages
-import 'package:chaostours/channel/data_channel.dart';
-import 'package:chaostours/database/type_adapter.dart';
-import 'package:flutter_background_service_android/flutter_background_service_android.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'dart:io';
 import 'dart:ui';
-import 'package:chaostours/conf/app_user_settings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 
 ///
-import 'package:chaostours/util.dart' as util;
-import 'package:chaostours/database/database.dart';
 import 'package:chaostours/logger.dart';
-import 'package:chaostours/database/cache.dart';
-import 'package:chaostours/channel/notification_channel.dart';
+import 'package:chaostours/conf/app_user_settings.dart';
 import 'package:chaostours/tracking.dart';
+import 'package:chaostours/database/cache.dart';
+import 'package:chaostours/database/database.dart';
+import 'package:chaostours/channel/notification_channel.dart';
 
 enum BackgroundChannelCommand {
   startService,
@@ -73,6 +66,10 @@ class BackgroundChannel {
       //PathProviderIOS.registerWith();
     }
     bool serviceIsRunning = true;
+    Tracker tracker = Tracker();
+
+    await DB.openDatabase();
+
     service.on(BackgroundChannelCommand.stopService.toString()).listen((_) {
       serviceIsRunning = false;
       service.stopSelf();
@@ -84,8 +81,6 @@ class BackgroundChannel {
       Cache.reload();
     });
 
-    await DB.openDatabase();
-    Tracker tracker = Tracker();
     try {
       const Cache cache = Cache.appSettingBackgroundTrackingInterval;
       while (serviceIsRunning) {
@@ -99,8 +94,17 @@ class BackgroundChannel {
           await Future.delayed(await cache
               .load<Duration>(AppUserSetting(cache).defaultValue as Duration));
         } catch (e) {
-          logger.warn('Background interval delay failed. Fallback to default');
-          Future.delayed(AppUserSetting(cache).defaultValue as Duration);
+          try {
+            logger.warn(
+                'Fetching background interval delay failed. Fallback to default');
+            Future.delayed(AppUserSetting(cache).defaultValue as Duration);
+          } catch (e) {
+            const inv = 30;
+            logger.error(
+                'Get default background interval delay failed. Fallback to fixed $inv seconds',
+                StackTrace.current);
+            Future.delayed(const Duration(seconds: inv));
+          }
         }
       }
     } catch (e, stk) {

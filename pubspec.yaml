@@ -61,6 +61,8 @@ dependencies:
   # https://pub.dev/packages/path_provider
   path_provider: ^2.0.13
 
+  path: any
+
   # https://pub.dev/packages/external_path
   external_path: ^1.0.3
 

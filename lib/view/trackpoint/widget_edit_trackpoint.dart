@@ -25,7 +25,6 @@ import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/calendar.dart';
 import 'package:chaostours/view/app_widgets.dart';
-import 'package:chaostours/util.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/screen.dart';
 import 'package:chaostours/gps.dart';
@@ -104,7 +103,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
   }
 
   List<Widget> taskCheckboxes() {
-    var referenceList = tpTasks;
+    //var referenceList = tpTasks;
     var checkBoxes = <Widget>[];
     for (var model in allTaskModels) {
       if (model.isActive) {
@@ -126,7 +125,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
   }
 
   List<Widget> userCheckboxes() {
-    var referenceList = tpUsers;
+    //var referenceList = tpUsers;
     var checkBoxes = <Widget>[];
     for (var model in allUserModels) {
       if (model.isActive) {

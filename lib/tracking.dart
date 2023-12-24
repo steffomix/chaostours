@@ -90,6 +90,7 @@ class Tracker {
       DataChannelKey.trackingStatus.toString():
           TypeAdapter.serializeTrackingStatus(trackingStatus),
       DataChannelKey.lastAddress.toString(): address?.alias ?? '-',
+      DataChannelKey.lastFullAddress.toString(): address?.description ?? '-',
     };
   }
 

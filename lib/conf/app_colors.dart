@@ -28,6 +28,10 @@ enum AppColors {
   ///Background
   white(Color(0xFFDDDDDD)),
 
+  /// warning Background
+  warningBackground(Colors.amber),
+  warningForeground(Colors.black87),
+
   /// transparent background
   white54(Colors.white54),
 

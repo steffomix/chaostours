@@ -26,7 +26,7 @@ import 'package:chaostours/view/app_base_widget.dart';
 typedef ModelRow = Map<String, Object?>;
 
 class WidgetDatabaseExplorer extends BaseWidget {
-  const WidgetDatabaseExplorer({Key? key}) : super(key: key);
+  const WidgetDatabaseExplorer({super.key});
   @override
   State<WidgetDatabaseExplorer> createState() => _WidgetDatabaseExplorer();
 }

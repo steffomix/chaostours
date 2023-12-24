@@ -18,7 +18,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:chaostours/conf/app_user_settings.dart';
 import 'package:chaostours/database/cache.dart';
-import 'package:flutter/material.dart';
 //
 
 Codec<String, String> base64Codec() => utf8.fuse(base64);

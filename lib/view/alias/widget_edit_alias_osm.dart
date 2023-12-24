@@ -424,7 +424,6 @@ class _WidgetOsm extends State<WidgetOsm> {
   }
 
   OSMFlutter? _osmFlutter;
-  OsmObserver? _osmObserver;
   MapController? _mapController;
   MapController get mapController => _mapController!;
 

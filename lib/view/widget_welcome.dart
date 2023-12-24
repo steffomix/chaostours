@@ -636,13 +636,14 @@ class _WelcomeState extends State<Welcome> {
           TextButton(
             child: const Text('Yes'),
             onPressed: () async {
+              await Cache.useOfOsmAddressLookupRequested.save<bool>(true);
               if (!(await Cache.licenseConsentRequestedOsm.load<bool>(false))) {
                 if (await osmLicenseConsent()) {
                   await Cache.appSettingOsmLookupCondition
                       .save<OsmLookupConditions>(
                           OsmLookupConditions.onAutoCreateAlias);
                   await Cache.licenseConsentRequestedOsm.save<bool>(true);
-                  await Cache.useOfOsmAddressLookupRequested.save<bool>(true);
+                  await Cache.licenseConsentOsm.save<bool>(true);
                 }
               }
               if (mounted) {

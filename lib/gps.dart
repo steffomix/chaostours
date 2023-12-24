@@ -17,6 +17,7 @@ limitations under the License.
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:chaostours/database/cache.dart';
+// ignore: depend_on_referenced_packages
 import 'package:vector_math/vector_math.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:android_intent_plus/android_intent.dart';
@@ -116,8 +117,7 @@ class GpsArea {
       The variable your_meters can contain a positive or a negative value.
   */
     var earth = 6378.137, //radius of the earth in kilometer
-        pi = math.pi,
-        m = (1 / ((2 * pi / 360) * earth)) / 1000; //1 meter in degree
+        pi = math.pi;
 
     // new_latitude  = latitude  + (dy / r_earth) * (180 / pi);
     // new_longitude = longitude + (dx / r_earth) * (180 / pi) / cos(latitude * pi / 180);
