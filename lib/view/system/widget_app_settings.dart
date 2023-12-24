@@ -146,7 +146,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
           Cache.appSettingDateFormat, DateFormat.values),
       await radioSetting<Weekdays>(Cache.appSettingWeekdays, Weekdays.values),
       await radioSetting<GpsPrecision>(
-          Cache.appSettingWeekdays, GpsPrecision.values),
+          Cache.appSettingGpsPrecision, GpsPrecision.values),
     ]);
     return true;
   }
@@ -244,9 +244,9 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
     }
     final setting = AppUserSetting(cache);
 
-    Widget checkbox = AppWidgets.checkBox(
+    Widget checkbox = AppWidgets.checkbox(
         value: await cache.load<bool>(false),
-        onToggle: (value) async {
+        onChanged: (value) async {
           onSettingChanged(() async {
             await save<bool>(cache, value ?? false);
             await onChange?.call(setting: setting, value: value ?? false);

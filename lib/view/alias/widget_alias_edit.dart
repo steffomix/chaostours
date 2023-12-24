@@ -209,6 +209,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
               ))),
       AppWidgets.divider(),
 
+      /// GPS
       ListTile(
         trailing: IconButton(
             icon: const Icon(Icons.copy),
@@ -216,19 +217,12 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
               Clipboard.setData(
                   ClipboardData(text: '${alias.gps.lat}, ${alias.gps.lon}'));
             }),
-        title: const Text('Edit GPS Location'),
+        title: const Text('GPS Location'),
         subtitle: Padding(
             padding: const EdgeInsets.all(_paddingSide),
             child: ElevatedButton(
-              child: ListTile(
-                  leading: IconButton(
-                      icon: const Icon(Icons.copy),
-                      onPressed: () {
-                        Clipboard.setData(ClipboardData(
-                            text: '${alias.gps.lat}, ${alias.gps.lon}'));
-                      }),
-                  title: Text(
-                      'Latitude, Longitude:\n${alias.gps.lat}, ${alias.gps.lon}')),
+              child: Text(
+                  'Latitude, Longitude:\n${alias.gps.lat}, ${alias.gps.lon}'),
               onPressed: () {
                 Navigator.pushNamed(context, AppRoutes.osm.route,
                         arguments: alias.id)
@@ -246,39 +240,6 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
               },
             )),
       ),
-
-      AppWidgets.divider(),
-
-      // groups
-      Padding(
-          padding: const EdgeInsets.all(_paddingSide),
-          child: ElevatedButton(
-              child: Column(children: [
-                const Text('Groups', style: TextStyle(height: 2)),
-                ..._groups.map(
-                  (model) {
-                    return ListTile(
-                      title: Text(
-                        model.title,
-                      ),
-                      subtitle: Text(model.description),
-                    );
-                  },
-                  // ignore: unnecessary_to_list_in_spreads
-                ).toList()
-              ]),
-              onPressed: () {
-                Navigator.pushNamed(
-                        context, AppRoutes.listAliasGroupsFromAlias.route,
-                        arguments: _modelAlias?.id)
-                    .then(
-                  (value) {
-                    render();
-                  },
-                );
-              })),
-
-      AppWidgets.divider(),
 
       /// radius
       ListTile(
@@ -318,6 +279,46 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                 minLines: 1,
                 controller: _radiusController,
               ))),
+
+      AppWidgets.divider(),
+
+      // groups
+      Padding(
+          padding: const EdgeInsets.all(_paddingSide),
+          child: ListTile(
+            trailing: IconButton(
+                icon: const Icon(Icons.edit),
+                onPressed: () {
+                  Navigator.pushNamed(
+                          context, AppRoutes.listAliasGroupsFromAlias.route,
+                          arguments: _modelAlias?.id)
+                      .then(
+                    (value) {
+                      render();
+                    },
+                  );
+                }),
+            title: const Text('Groups', style: TextStyle(height: 2)),
+            subtitle: Column(
+                children: _groups.map(
+              (model) {
+                return ElevatedButton(
+                  child: ListTile(
+                    title: Text(model.title),
+                    subtitle: Text(model.description),
+                  ),
+                  onPressed: () {
+                    Navigator.pushNamed(context, AppRoutes.editAliasGroup.route,
+                            arguments: model.id)
+                        .then(
+                      (value) => render(),
+                    );
+                  },
+                );
+              },
+              // ignore: unnecessary_to_list_in_spreads
+            ).toList()),
+          )),
 
       AppWidgets.divider(),
 
@@ -403,9 +404,9 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
             'If inactive this Alias has no functionality and is visible in garbage list only.',
             softWrap: true,
           ),
-          leading: AppWidgets.checkBox(
+          leading: AppWidgets.checkbox(
             value: alias.isActive,
-            onToggle: (state) async {
+            onChanged: (state) async {
               alias.isActive = state ?? false;
               await alias.update();
             },

@@ -67,9 +67,13 @@ class ModelUser {
       TableUser.primaryKey.column: id,
       TableUser.idUserGroup.column: groupId,
       TableUser.isActive.column: DB.boolToInt(isActive),
+      TableUser.isSelectable.column: DB.boolToInt(isSelectable),
+      TableUser.isPreselected.column: DB.boolToInt(isPreselected),
       TableUser.sortOrder.column: sortOrder,
       TableUser.title.column: title,
-      TableUser.description.column: description
+      TableUser.description.column: description,
+      TableUser.phone.column: phone,
+      TableUser.address.column: address
     };
   }
 
@@ -244,6 +248,10 @@ class ModelUser {
     await DB.execute(
       (Transaction txn) async {
         _id = await txn.insert(TableUser.table, map);
+        await txn.insert(TableUserUserGroup.table, {
+          TableUserUserGroup.idUser.column: _id,
+          TableUserUserGroup.idUserGroup.column: 1
+        });
       },
     );
     return this;

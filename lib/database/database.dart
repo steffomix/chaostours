@@ -685,7 +685,6 @@ enum TableAliasGroup {
   id('id'),
   idCalendar('id_calendar'),
   isActive('active'),
-  isSelectable('active'),
   visibility('sort'),
   title('title'),
   description('description');
@@ -706,7 +705,6 @@ enum TableAliasGroup {
 	${primaryKey.column}	INTEGER NOT NULL,
 	${idCalendar.column}	TEXT,
 	${isActive.column}	INTEGER DEFAULT 1,
-	${isSelectable.column}	INTEGER DEFAULT 1,
 	${visibility.column}	INTEGER,
 	${title.column}	TEXT,
 	${description.column}	TEXT,
@@ -799,8 +797,8 @@ CREATE INDEX IF NOT EXISTS ${TableTaskTaskGroup.table}_index ON ${TableTaskTaskG
   ];
 
   static final List<String> inserts = [
-    '''INSERT INTO ${TableTaskGroup.table} VALUES (1,1,1,1,"Default Taskgroup",NULL)''',
-    '''INSERT INTO ${TableUserGroup.table} VALUES (1,1,1,1,"Default Usergroup",NULL)''',
+    '''INSERT INTO ${TableTaskGroup.table} VALUES (1,1,1,0,NULL,"Default Taskgroup",NULL)''',
+    '''INSERT INTO ${TableUserGroup.table} VALUES (1,1,1,0,NULL,"Default Usergroup",NULL)''',
     '''INSERT INTO ${TableAliasGroup.table} VALUES (1,NULL,1,1,"Default Aliasgroup",NULL)''',
   ];
 }

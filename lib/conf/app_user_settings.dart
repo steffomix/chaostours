@@ -77,8 +77,9 @@ enum DateFormat implements EnumUserSetting<OsmLookupConditions> {
 }
 
 enum GpsPrecision implements EnumUserSetting<OsmLookupConditions> {
+  best(Text('Best')),
   coarse(Text('Coarse')),
-  best(Text('Best'));
+  ;
 
   @override
   final Widget title;
@@ -463,6 +464,18 @@ class AppUserSetting {
             resetToDefault: () async {
           await cache
               .save<Duration>(AppUserSetting(cache).defaultValue as Duration);
+        });
+
+      case Cache.appSettingGpsPrecision:
+        return _appUserSettings[cache] ??= AppUserSetting._option(cache,
+            title: const Text('GPS precision'),
+            description:
+                const Text('Higher GPS precision consumes more battery power'),
+            unit: Unit.piece,
+            defaultValue: GpsPrecision.best, //
+            resetToDefault: () async {
+          await cache.save<GpsPrecision>(
+              AppUserSetting(cache).defaultValue as GpsPrecision);
         });
 
       case Cache.appSettingTimeZone:

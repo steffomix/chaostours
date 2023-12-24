@@ -67,12 +67,32 @@ class _WidgetTaskGroupsFromTaskList
   }
 
   Widget renderRow(ModelTaskGroup model) {
-    return ListTile(
-      leading: editButton(model),
-      trailing: checkBox(model),
-      title: title(model),
-      subtitle: subtitle(model),
-    );
+    return Column(children: [
+      ListTile(
+        leading: editButton(model),
+        trailing: checkBox(model),
+        title: title(model),
+        subtitle: subtitle(model),
+      ),
+      settings(model),
+    ]);
+  }
+
+  Widget settings(ModelTaskGroup model) {
+    return Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+      Text(
+        'selectable',
+        style: model.isSelectable
+            ? null
+            : const TextStyle(decoration: TextDecoration.lineThrough),
+      ),
+      Text(
+        'preselected',
+        style: model.isPreselected
+            ? null
+            : const TextStyle(decoration: TextDecoration.lineThrough),
+      )
+    ]);
   }
 
   Widget title(ModelTaskGroup model) {

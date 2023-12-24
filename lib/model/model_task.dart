@@ -237,6 +237,10 @@ class ModelTask {
     await DB.execute(
       (Transaction txn) async {
         _id = await txn.insert(TableTask.table, map);
+        await txn.insert(TableTaskTaskGroup.table, {
+          TableTaskTaskGroup.idTask.column: _id,
+          TableTaskTaskGroup.idTaskGroup.column: 1
+        });
       },
     );
     return this;

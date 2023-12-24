@@ -62,7 +62,7 @@ class _WidgetOsm extends State<WidgetOsm> {
   //late SizeChangedLayoutNotifier screenListener;
 
   /// osm tools to draw circles
-  final _AliasTrackingRenderer osmTools = _AliasTrackingRenderer();
+  final _AliasTrackingRenderer aliasRenderer = _AliasTrackingRenderer();
 
   /// alias id
   int _id = 0;
@@ -91,7 +91,7 @@ class _WidgetOsm extends State<WidgetOsm> {
     _addressNotifier.dispose();
     _loading.dispose();
     _textController.dispose();
-    mapController.dispose();
+    _mapController?.dispose();
     super.dispose();
   }
 
@@ -102,7 +102,7 @@ class _WidgetOsm extends State<WidgetOsm> {
   }
 
   void onTracking(DataChannel e) async {
-    osmTools.renderAlias(mapController);
+    aliasRenderer.renderAlias(mapController);
   }
 
   Future<void> lookupGps([String? query]) async {
@@ -423,6 +423,7 @@ class _WidgetOsm extends State<WidgetOsm> {
         });
   }
 
+  OSMFlutter? _osmFlutter;
   OsmObserver? _osmObserver;
   MapController? _mapController;
   MapController get mapController => _mapController!;
@@ -446,7 +447,9 @@ class _WidgetOsm extends State<WidgetOsm> {
       initPosition: GeoPoint(latitude: _gps!.lat, longitude: _gps!.lon),
     );
 
-    _mapController!.addObserver(_osmObserver ??= OsmObserver(_mapController!));
+    _mapController?.listenerRegionIsChanging.addListener(() {
+      MapCenter.draw(mapController);
+    });
 
     return true;
   }
@@ -461,7 +464,13 @@ class _WidgetOsm extends State<WidgetOsm> {
       builder: (context, snapshot) {
         Widget? check = AppWidgets.checkSnapshot(context, snapshot);
         if (check == null) {
-          OSMFlutter osmFlutter = OSMFlutter(
+          _osmFlutter ??= OSMFlutter(
+            onMapIsReady: (bool ready) {
+              Future.delayed(const Duration(seconds: 2), () {
+                MapCenter.draw(mapController);
+                aliasRenderer.renderAlias(mapController);
+              });
+            },
             osmOption: const OSMOption(
               isPicker: false,
               zoomOption: ZoomOption(
@@ -473,14 +482,10 @@ class _WidgetOsm extends State<WidgetOsm> {
             ),
             controller: mapController,
           );
-          Future.delayed(const Duration(seconds: 1), () {
-            MapCenter.draw(mapController);
-            osmTools.renderAlias(mapController);
-          });
           return AppWidgets.scaffold(context,
               appBar: AppBar(title: const Text('OSM & Alias')),
               body: Stack(
-                  children: [osmFlutter, searchResultContainer(), infoBox()]),
+                  children: [_osmFlutter!, searchResultContainer(), infoBox()]),
               navBar: navBar(context));
         } else {
           return check;
@@ -611,7 +616,7 @@ class MapCenter {
   }
 
   static Future<void> draw(MapController controller) async {
-    double zoom = await controller.getZoom();
+    var zoom = await controller.getZoom();
     String oldId = _id.toString();
     controller.drawCircle(CircleOSM(
       key: id,

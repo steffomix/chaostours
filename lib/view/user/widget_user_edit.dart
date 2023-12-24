@@ -32,6 +32,8 @@ class WidgetUserEdit extends StatefulWidget {
 class _WidgetUserEdit extends State<WidgetUserEdit> {
   //static final Logger logger = Logger.logger<WidgetUserEdit>();
 
+  static const double _paddingSide = 10.0;
+
   ModelUser? _model;
   List<ModelUserGroup> _groups = [];
 
@@ -198,34 +200,75 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
 
       AppWidgets.divider(),
 
+      // groups
+      Padding(
+          padding: const EdgeInsets.all(_paddingSide),
+          child: ListTile(
+            trailing: IconButton(
+                icon: const Icon(Icons.edit),
+                onPressed: () {
+                  Navigator.pushNamed(
+                          context, AppRoutes.listUserGroupsFromUser.route,
+                          arguments: _model?.id)
+                      .then(
+                    (value) {
+                      render();
+                    },
+                  );
+                }),
+            title: const Text('Groups', style: TextStyle(height: 2)),
+            subtitle: Column(
+                children: _groups.map(
+              (model) {
+                return ElevatedButton(
+                  child: ListTile(
+                    title: Text(model.title),
+                    subtitle: Text(model.description),
+                  ),
+                  onPressed: () {
+                    Navigator.pushNamed(context, AppRoutes.editUserGroup.route,
+                            arguments: model.id)
+                        .then(
+                      (value) => render(),
+                    );
+                  },
+                );
+              },
+              // ignore: unnecessary_to_list_in_spreads
+            ).toList()),
+          )),
+
+      AppWidgets.divider(),
+
       /// isSelectable
       ListTile(
-          title: const Text('Selectable'),
-          subtitle: const Text(
-            'If checked this group appears in Live Tracking lists',
-            softWrap: true,
-          ),
-          leading: Checkbox(
-            value: _model?.isSelectable ?? false,
-            onChanged: (val) {
-              _model?.isSelectable = val ?? false;
-              _model?.update().then((value) => render());
-            },
-          )),
+        title: const Text('Selectable'),
+        subtitle: const Text(
+          'If checked this group appears in Live Tracking lists.',
+          softWrap: true,
+        ),
+        leading: AppWidgets.checkbox(
+          value: _model?.isSelectable ?? false,
+          onChanged: (state) async {
+            _model?.isSelectable = state ?? false;
+            await _model?.update();
+          },
+        ),
+      ),
 
       /// isPreselected
       ListTile(
           title: const Text('Preselected'),
           subtitle: const Text(
             'If checked this group is already selected in Live Tracking lists.\n '
-            'However, you can always uncheck preselected tasks.',
+            'However, you can always uncheck preselected tasks in Live Tracking view.',
             softWrap: true,
           ),
-          leading: Checkbox(
-            value: _model?.isActive ?? false,
-            onChanged: (val) {
-              _model?.isActive = val ?? false;
-              _model?.update().then((value) => render());
+          leading: AppWidgets.checkbox(
+            value: _model?.isPreselected ?? false,
+            onChanged: (val) async {
+              _model?.isPreselected = val ?? false;
+              await _model?.update();
             },
           )),
 
@@ -257,34 +300,6 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
                   _model?.update();
                 },
               ))),
-
-      // groups
-      Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          child: ElevatedButton(
-              child: Column(children: [
-                const Text('Groups', style: TextStyle(height: 2)),
-                ..._groups.map(
-                  (model) {
-                    return ListTile(
-                      title: Text(
-                        model.title,
-                      ),
-                      subtitle: Text(model.description),
-                    );
-                  },
-                )
-              ]),
-              onPressed: () {
-                Navigator.pushNamed(
-                        context, AppRoutes.listUserGroupsFromUser.route,
-                        arguments: _model?.id)
-                    .then(
-                  (value) {
-                    render();
-                  },
-                );
-              })),
 
       AppWidgets.divider(),
 

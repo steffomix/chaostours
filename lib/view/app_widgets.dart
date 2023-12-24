@@ -306,8 +306,8 @@ class AppWidgets {
     );
   }
 
-  static Widget checkBox(
-      {required bool value, required dynamic Function(bool? state) onToggle}) {
+  static Widget checkbox(
+      {required bool value, required dynamic Function(bool? state) onChanged}) {
     final notifier = ValueNotifier<int>(0);
     return ValueListenableBuilder(
       valueListenable: notifier,
@@ -315,7 +315,7 @@ class AppWidgets {
         return Checkbox(
           value: value,
           onChanged: (bool? state) async {
-            await onToggle(state);
+            await onChanged(state);
             value = state ?? false;
             notifier.value++;
           },

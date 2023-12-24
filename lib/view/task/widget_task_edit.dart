@@ -32,6 +32,8 @@ class WidgetTaskEdit extends StatefulWidget {
 class _WidgetTaskEdit extends State<WidgetTaskEdit> {
   //static final Logger logger = Logger.logger<WidgetTaskEdit>();
 
+  static const double _paddingSide = 10.0;
+
   final _titleController = TextEditingController();
   final _titleUndoController = UndoHistoryController();
 
@@ -140,11 +142,51 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
                 },
               ))),
 
+      // groups
+      Padding(
+          padding: const EdgeInsets.all(_paddingSide),
+          child: ListTile(
+            trailing: IconButton(
+                icon: const Icon(Icons.edit),
+                onPressed: () {
+                  Navigator.pushNamed(
+                          context, AppRoutes.listTaskGroupsFromTask.route,
+                          arguments: _model?.id)
+                      .then(
+                    (value) {
+                      render();
+                    },
+                  );
+                }),
+            title: const Text('Groups', style: TextStyle(height: 2)),
+            subtitle: Column(
+                children: _groups.map(
+              (model) {
+                return ElevatedButton(
+                  child: ListTile(
+                    title: Text(model.title),
+                    subtitle: Text(model.description),
+                  ),
+                  onPressed: () {
+                    Navigator.pushNamed(context, AppRoutes.editTaskGroup.route,
+                            arguments: model.id)
+                        .then(
+                      (value) => render(),
+                    );
+                  },
+                );
+              },
+              // ignore: unnecessary_to_list_in_spreads
+            ).toList()),
+          )),
+
+      AppWidgets.divider(),
+
       /// isSelectable
       ListTile(
           title: const Text('Selectable'),
           subtitle: const Text(
-            'If checked this group appears in Live Tracking lists',
+            'If checked this group appears in Live Tracking lists.',
             softWrap: true,
           ),
           leading: Checkbox(
@@ -155,19 +197,17 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
             },
           )),
 
-      AppWidgets.divider(),
-
       /// isPreselected
       ListTile(
           title: const Text('Preselected'),
           subtitle: const Text(
             'If checked this group is already selected in Live Tracking lists.\n '
-            'However, you can always uncheck preselected tasks.',
+            'However, you can always uncheck preselected tasks in Live Tracking view.',
             softWrap: true,
           ),
-          leading: Checkbox(
+          leading: AppWidgets.checkbox(
             value: _model?.isActive ?? false,
-            onChanged: (val) {
+            onChanged: (val) async {
               _model?.isActive = val ?? false;
               _model?.update().then((value) => render());
             },
@@ -186,35 +226,6 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
               _model?.update();
             },
           )),
-
-      // groups
-      Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          child: ElevatedButton(
-              child: Column(children: [
-                const Text('Groups', style: TextStyle(height: 2)),
-                ..._groups.map(
-                  (model) {
-                    return ListTile(
-                      title: Text(
-                        model.title,
-                      ),
-                      subtitle: Text(model.description),
-                    );
-                  },
-                )
-              ]),
-              onPressed: () {
-                Navigator.pushNamed(
-                        context, AppRoutes.listTaskGroupsFromTask.route,
-                        arguments: _model?.id)
-                    .then(
-                  (value) {
-                    render();
-                  },
-                );
-              })),
-
       AppWidgets.divider(),
 
       /// deleted

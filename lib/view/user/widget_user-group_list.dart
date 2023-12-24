@@ -72,7 +72,25 @@ class _WidgetUserGroupList extends BaseWidgetState<WidgetUserGroupList> {
                   (value) => resetLoader(),
                 );
               })),
+      settings(model),
       AppWidgets.divider()
+    ]);
+  }
+
+  Widget settings(ModelUserGroup model) {
+    return Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+      Text(
+        'selectable',
+        style: model.isSelectable
+            ? null
+            : const TextStyle(decoration: TextDecoration.lineThrough),
+      ),
+      Text(
+        'preselected',
+        style: model.isPreselected
+            ? null
+            : const TextStyle(decoration: TextDecoration.lineThrough),
+      )
     ]);
   }
 
