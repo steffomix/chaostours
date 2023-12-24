@@ -22,6 +22,7 @@ import 'package:chaostours/logger.dart';
 import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/model/model_user_group.dart';
+import 'package:chaostours/util.dart';
 
 class WidgetUserGroupList extends BaseWidget {
   const WidgetUserGroupList({super.key});
@@ -54,11 +55,12 @@ class _WidgetUserGroupList extends BaseWidgetState<WidgetUserGroupList> {
     List<ModelUserGroup> newItems = await ModelUserGroup.select(
         offset: offset, limit: limit, search: _searchTextController.text);
 
-    _loadedItems.addAll(newItems.map((e) => renderItem(e)).toList());
+    _loadedItems.addAll(
+        intersperse(AppWidgets.divider(), newItems.map((e) => renderRow(e))));
     return newItems.length;
   }
 
-  Widget renderItem(ModelUserGroup model) {
+  Widget renderRow(ModelUserGroup model) {
     return Column(children: [
       ListTile(
           title: Text(model.title),
@@ -73,7 +75,6 @@ class _WidgetUserGroupList extends BaseWidgetState<WidgetUserGroupList> {
                 );
               })),
       settings(model),
-      AppWidgets.divider()
     ]);
   }
 
@@ -83,13 +84,19 @@ class _WidgetUserGroupList extends BaseWidgetState<WidgetUserGroupList> {
         'selectable',
         style: model.isSelectable
             ? null
-            : const TextStyle(decoration: TextDecoration.lineThrough),
+            : TextStyle(
+                decoration: TextDecoration.lineThrough,
+                color: Theme.of(context).disabledColor,
+                decorationColor: Theme.of(context).disabledColor),
       ),
       Text(
         'preselected',
         style: model.isPreselected
             ? null
-            : const TextStyle(decoration: TextDecoration.lineThrough),
+            : TextStyle(
+                decoration: TextDecoration.lineThrough,
+                color: Theme.of(context).disabledColor,
+                decorationColor: Theme.of(context).disabledColor),
       )
     ]);
   }

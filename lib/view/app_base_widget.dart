@@ -101,9 +101,11 @@ class BaseWidgetState<T extends BaseWidget> extends State<T>
   }
 
   Future<void> _load() async {
-    await widgetLoader.load(
-        fnLoad: loadItems, fnCount: loadCount, limit: loaderLimit());
-    render();
+    if (mounted) {
+      await widgetLoader.load(
+          fnLoad: loadItems, fnCount: loadCount, limit: loaderLimit());
+      render();
+    }
   }
 
   Future<void> _measureBody(BoxConstraints constrains) async {

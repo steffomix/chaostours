@@ -157,11 +157,11 @@ class _WidgetUserGroupEdit extends State<WidgetUserGroupEdit> {
             'If checked this group appears in Live Tracking lists',
             softWrap: true,
           ),
-          leading: Checkbox(
+          leading: AppWidgets.checkbox(
             value: _model?.isSelectable ?? false,
-            onChanged: (val) {
+            onChanged: (val) async {
               _model?.isSelectable = val ?? false;
-              _model?.update().then((value) => render());
+              await _model?.update();
             },
           )),
 
@@ -172,14 +172,14 @@ class _WidgetUserGroupEdit extends State<WidgetUserGroupEdit> {
           title: const Text('Preselected'),
           subtitle: const Text(
             'If checked this group is already selected in Live Tracking lists.\n '
-            'However, you can always uncheck preselected tasks.',
+            'However, you can uncheck preselected tasks unless Selectable is disabled.',
             softWrap: true,
           ),
-          leading: Checkbox(
-            value: _model?.isActive ?? false,
-            onChanged: (val) {
-              _model?.isActive = val ?? false;
-              _model?.update().then((value) => render());
+          leading: AppWidgets.checkbox(
+            value: _model?.isPreselected ?? false,
+            onChanged: (val) async {
+              _model?.isPreselected = val ?? false;
+              await _model?.update();
             },
           )),
 

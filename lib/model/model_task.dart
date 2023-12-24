@@ -276,11 +276,9 @@ class ModelTask {
       LEFT JOIN ${TableTask.table} ON ${TableTaskTaskGroup.idTask} = ${TableTask.id}
       WHERE ${TableTaskGroup.isPreselected} = ? OR ${TableTask.isPreselected} = ?
       GROUP BY ${TableTask.id}
-      ORDER BY ${TableTask.sortOrder}
+      ORDER BY ${TableTask.sortOrder}, ${TableTask.title} NULLS LAST
 ''';
-
-      final param = DB.boolToInt(true);
-      return await txn.rawQuery(q, [param, param]);
+      return await txn.rawQuery(q, List.filled(2, DB.boolToInt(true)));
     });
     return rows.map((e) => fromMap(e)).toList();
   }
@@ -291,12 +289,11 @@ class ModelTask {
       SELECT ${TableTask.columns} FROM ${TableTaskTaskGroup.table}
       LEFT JOIN ${TableTaskTaskGroup.table} ON ${TableTaskTaskGroup.idTaskGroup} = ${TableTaskGroup.id}
       LEFT JOIN ${TableTask.table} ON ${TableTaskTaskGroup.idTask} = ${TableTask.id}
-      WHERE ${TableTaskGroup.isSelectable} = ? OR ${TableTask.isSelectable} = ?
+      WHERE ${TableTaskGroup.isSelectable} = ? OR ${TableTask.isSelectable} = ? OR ${TableTaskGroup.isPreselected} = ? OR ${TableTask.isPreselected} = ?
       GROUP BY ${TableTask.id}
-      ORDER BY ${TableTask.sortOrder}
+      ORDER BY ${TableTask.sortOrder}, ${TableTask.title} NULLS LAST
 ''';
-      final param = DB.boolToInt(true);
-      return await txn.rawQuery(q, [param, param]);
+      return await txn.rawQuery(q, List.filled(4, DB.boolToInt(true)));
     });
     return rows.map((e) => fromMap(e)).toList();
   }

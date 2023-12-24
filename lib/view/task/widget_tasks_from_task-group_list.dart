@@ -23,6 +23,7 @@ import 'package:chaostours/logger.dart';
 import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/model/model_task_group.dart';
 import 'package:chaostours/model/model_task.dart';
+import 'package:chaostours/util.dart';
 
 class WidgetTasksFromTaskGroupList extends BaseWidget {
   const WidgetTasksFromTaskGroupList({super.key});
@@ -55,7 +56,8 @@ class _WidgetTasksFromTaskGroupList
     var newItems = await ModelTask.select(
         limit: limit, offset: offset, search: _searchTextController.text);
 
-    _loadedWidgets.addAll(newItems.map((e) => renderRow(e)).toList());
+    _loadedWidgets.addAll(
+        intersperse(AppWidgets.divider(), newItems.map((e) => renderRow(e))));
     return newItems.length;
   }
 
@@ -76,10 +78,7 @@ class _WidgetTasksFromTaskGroupList
   }
 
   Widget title(ModelTask model) {
-    return ListTile(
-      title: Text(model.title),
-      subtitle: Text(model.description),
-    );
+    return Text(model.title);
   }
 
   Widget subtitle(ModelTask model) {

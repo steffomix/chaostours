@@ -23,6 +23,7 @@ import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/view/app_base_widget.dart';
 import 'package:chaostours/gps.dart';
+import 'package:chaostours/util.dart';
 
 enum _DisplayMode {
   list,
@@ -79,7 +80,8 @@ class _WidgetAliasList extends BaseWidgetState<WidgetAliasList>
           lastVisited: _lastVisited,
           search: _searchTextController.text));
     }
-    _loadedItems.addAll(newItems.map((e) => renderItem(e)).toList());
+    _loadedItems.addAll(
+        intersperse(AppWidgets.divider(), newItems.map((e) => renderRow(e))));
     return newItems.length;
   }
 
@@ -128,7 +130,7 @@ class _WidgetAliasList extends BaseWidgetState<WidgetAliasList>
     );
   }
 
-  Widget renderItem(ModelAlias model) {
+  Widget renderRow(ModelAlias model) {
     return ListTile(
         leading: showTrackpoints(model),
         title: itemTitle(model),

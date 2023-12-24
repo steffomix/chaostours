@@ -108,7 +108,9 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
     var checkBoxes = <Widget>[];
     for (var model in allTaskModels) {
       if (model.isActive) {
-        checkBoxes.add(AppWidgets.checkboxListTile(CheckboxController(
+        checkBoxes.add(const Text('under contruction')
+
+            /* AppWidgets.checkboxListTile(CheckboxController(
             idReference: model.id,
             referenceList: referenceList,
             isActive: model.isActive,
@@ -116,7 +118,8 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
             subtitle: model.description,
             onToggle: (bool? checked) {
               modify();
-            })));
+            })) */
+            );
       }
     }
     return checkBoxes;
@@ -127,7 +130,8 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
     var checkBoxes = <Widget>[];
     for (var model in allUserModels) {
       if (model.isActive) {
-        checkBoxes.add(AppWidgets.checkboxListTile(CheckboxController(
+        checkBoxes.add(const Text(
+                'under contruction') /* AppWidgets.checkboxListTile(CheckboxController(
             idReference: model.id,
             referenceList: referenceList,
             isActive: model.isActive,
@@ -135,7 +139,8 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
             subtitle: model.description,
             onToggle: (bool? checked) {
               modify();
-            })));
+            })) */
+            );
       }
     }
     return checkBoxes;

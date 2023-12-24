@@ -627,6 +627,7 @@ class _WelcomeState extends State<Welcome> {
               await Cache.appSettingOsmLookupCondition
                   .save<OsmLookupConditions>(OsmLookupConditions.never);
               await Cache.licenseConsentRequestedOsm.save<bool>(false);
+              await Cache.useOfOsmAddressLookupRequested.save<bool>(true);
               if (mounted) {
                 Navigator.pop(context);
               }
@@ -641,6 +642,7 @@ class _WelcomeState extends State<Welcome> {
                       .save<OsmLookupConditions>(
                           OsmLookupConditions.onAutoCreateAlias);
                   await Cache.licenseConsentRequestedOsm.save<bool>(true);
+                  await Cache.useOfOsmAddressLookupRequested.save<bool>(true);
                 }
               }
               if (mounted) {

@@ -53,85 +53,26 @@ String formatDate(DateTime t) {
   return '$date - ${twoDigits(t.hour)}:${twoDigits(t.minute)}::${twoDigits(t.second)}';
 }
 
-///
-/// Model for multiple checkboxes embedded in a ListTile
-/// ```
-///   List<Widget> checkBoxes = ModelTask.getAll().map((ModelTask task) {
-///     List<int> referenceList = [1,2,3,4];
-///     return createCheckbox(CheckboxModel(
-///       idReference: task.id,
-///       referenceList: referenceList,
-///       title: task.task,
-///       subtitle: task.subtitle));
-///   }).toList();
-///
-///   ... ListTile using title and subTitle
-///   createCheckbox(CheckboxModel model)
-///     return Checkbox(
-///       value: model.checked,
-///       onChanged: (_) {
-///         setState(() => model.handler()?.call());
-///       },
-///     );
-///   }
-///
-/// ```
-class CheckboxController {
-  final int idReference;
-  final List<int> referenceList;
-  bool isActive;
-  bool checked;
-  String title;
-  String subtitle;
-  Function(bool? toggle)? onToggle;
-  CheckboxController({
-    required this.idReference,
-    required this.referenceList,
-    this.title = '',
-    this.onToggle,
-    this.checked = false,
-    this.subtitle = '',
-    this.isActive = true,
-  }) {
-    checked = referenceList.contains(idReference);
-  }
-
-  /// this method is called from CheckBox
-  void toggle(bool? state) {
-    if (!isActive) {
-      return;
+/// credits: https://pub.dev/packages/intersperse
+Iterable<T> intersperse<T>(T element, Iterable<T> iterable) sync* {
+  final iterator = iterable.iterator;
+  if (iterator.moveNext()) {
+    yield iterator.current;
+    while (iterator.moveNext()) {
+      yield element;
+      yield iterator.current;
     }
-    checked = state ?? false;
-    if (checked) {
-      if (!referenceList.contains(idReference)) {
-        referenceList.add(idReference);
-      }
-    } else {
-      referenceList.removeWhere((i) => i == idReference);
-    }
-    onToggle?.call(checked);
   }
+}
 
-  /// render multiple checkboxes
-  static Widget createCheckboxListTile(CheckboxController model) {
-    TextStyle style = TextStyle(
-        color: model.isActive ? Colors.black : Colors.grey,
-        decoration:
-            model.isActive ? TextDecoration.none : TextDecoration.lineThrough);
-
-    return ListTile(
-      subtitle: model.subtitle.trim().isEmpty
-          ? null
-          : Text(model.subtitle, style: const TextStyle(color: Colors.grey)),
-      title: Text(
-        model.title,
-        style: style,
-      ),
-      leading: Checkbox(value: model.checked, onChanged: model.toggle),
-    );
+/// credits: https://pub.dev/packages/intersperse
+Iterable<T> intersperseOuter<T>(T element, Iterable<T> iterable) sync* {
+  final iterator = iterable.iterator;
+  if (iterable.isNotEmpty) {
+    yield element;
   }
-
-  static Widget createCheckbox(CheckboxController model) {
-    return Checkbox(value: model.checked, onChanged: model.toggle);
+  while (iterator.moveNext()) {
+    yield iterator.current;
+    yield element;
   }
 }

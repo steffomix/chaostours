@@ -22,6 +22,7 @@ import 'package:flutter/material.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/model/model_task.dart';
+import 'package:chaostours/util.dart';
 
 class WidgetTaskList extends BaseWidget {
   const WidgetTaskList({super.key});
@@ -57,7 +58,8 @@ class _WidgetTaskList extends BaseWidgetState<WidgetTaskList> {
         activated: _navBarBuilder.showActivated,
         search: _textController.text);
 
-    _loadedItems.addAll(newItems.map((e) => renderListItem(e)).toList());
+    _loadedItems.addAll(
+        intersperse(AppWidgets.divider(), newItems.map((e) => renderRow(e))));
     return newItems.length;
   }
 
@@ -104,7 +106,7 @@ class _WidgetTaskList extends BaseWidgetState<WidgetTaskList> {
         onSwitch: (context) => resetLoader());
   }
 
-  Widget renderListItem(ModelTask model) {
+  Widget renderRow(ModelTask model) {
     return ListTile(
         title: Text(model.title,
             style: TextStyle(

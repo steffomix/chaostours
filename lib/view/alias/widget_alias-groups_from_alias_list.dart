@@ -23,6 +23,7 @@ import 'package:chaostours/logger.dart';
 import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/model/model_alias_group.dart';
 import 'package:chaostours/model/model_alias.dart';
+import 'package:chaostours/util.dart';
 
 class WidgetAliasGroupsFromAliasList extends BaseWidget {
   const WidgetAliasGroupsFromAliasList({super.key});
@@ -59,7 +60,8 @@ class _WidgetAliasGroupsFromAliasList
         search: _searchTextController.text,
         activated: _navBarBuilder.showActivated);
 
-    _loadedWidgets.addAll(newItems.map((e) => renderRow(e)).toList());
+    _loadedWidgets.addAll(
+        intersperse(AppWidgets.divider(), newItems.map((e) => renderRow(e))));
     return newItems.length;
   }
 

@@ -25,6 +25,7 @@ import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/view/app_base_widget.dart';
 import 'package:chaostours/model/model_alias_group.dart';
 import 'package:chaostours/model/model_alias.dart';
+import 'package:chaostours/util.dart';
 
 typedef CalendarEntry = Map<String?, Calendar>;
 
@@ -72,7 +73,8 @@ class _WidgetAliasesFromAliasGroupList
         search: _searchTextController.text,
         activated: _navBarBuilder.showActivated);
 
-    _loadedWidgets.addAll(newItems.map((e) => renderRow(e)).toList());
+    _loadedWidgets.addAll(
+        intersperse(AppWidgets.divider(), newItems.map((e) => renderRow(e))));
     return newItems.length;
   }
 

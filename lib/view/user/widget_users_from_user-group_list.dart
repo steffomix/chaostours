@@ -23,6 +23,7 @@ import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/view/app_base_widget.dart';
 import 'package:chaostours/model/model_user_group.dart';
 import 'package:chaostours/model/model_user.dart';
+import 'package:chaostours/util.dart';
 
 class WidgetUsersFromUserGroupList extends BaseWidget {
   const WidgetUsersFromUserGroupList({super.key});
@@ -55,7 +56,8 @@ class _WidgetUsersFromUserGroupList
     var newItems = await ModelUser.select(
         limit: limit, offset: offset, search: _searchTextController.text);
 
-    _loadedWidgets.addAll(newItems.map((e) => renderRow(e)).toList());
+    _loadedWidgets.addAll(
+        intersperse(AppWidgets.divider(), newItems.map((e) => renderRow(e))));
     return newItems.length;
   }
 

@@ -276,9 +276,6 @@ class AppWidgets {
     }
   }
 
-  static Widget checkboxListTile(util.CheckboxController controller) =>
-      util.CheckboxController.createCheckboxListTile(controller);
-
   static Widget multiCheckbox(
       {required int id,
       required List<int> idList,

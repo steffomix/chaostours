@@ -21,6 +21,7 @@ import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/view/app_base_widget.dart';
 import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/model/model_User.dart';
+import 'package:chaostours/util.dart';
 
 class WidgetUserList extends BaseWidget {
   const WidgetUserList({super.key});
@@ -56,7 +57,8 @@ class _WidgetUserList extends BaseWidgetState<WidgetUserList> {
         activated: _navBarBuilder.showActivated,
         search: _textController.text);
 
-    _loadedItems.addAll(newItems.map((e) => renderListItem(e)).toList());
+    _loadedItems.addAll(
+        intersperse(AppWidgets.divider(), newItems.map((e) => renderRow(e))));
     return newItems.length;
   }
 
@@ -103,7 +105,7 @@ class _WidgetUserList extends BaseWidgetState<WidgetUserList> {
         onSwitch: (context) => resetLoader());
   }
 
-  Widget renderListItem(ModelUser model) {
+  Widget renderRow(ModelUser model) {
     return ListTile(
         title: Text(model.title,
             style: TextStyle(

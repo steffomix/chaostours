@@ -329,7 +329,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
             const ListTile(
               title: Text('Typ'),
               subtitle: Text(
-                'Definiert ob und wie Haltepunkte verarbeitet werden.',
+                'Defines Alias and Trackpoints privacy and functionalty.',
                 softWrap: true,
               ),
             ),
@@ -361,7 +361,8 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                           color: Colors.white,
                         ))),
                 subtitle: const Text(
-                    'This Alias is reduced to app internal futures only.'),
+                    'This Alias is reduced to app internal futures only.\n'
+                    'However, Database exports will include all informations!'),
                 leading: ValueListenableBuilder(
                     valueListenable: _visibility,
                     builder: (context, value, child) {
@@ -381,7 +382,8 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                           color: Colors.white,
                         ))),
                 subtitle: const Text(
-                    'This Alias functionality is reduced to be visible in apps map.'),
+                    'This Alias functionality is reduced to be visible in apps map.\n'
+                    'However, Database exports will include all informations!'),
                 leading: ValueListenableBuilder(
                   valueListenable: _visibility,
                   builder: (context, value, child) {

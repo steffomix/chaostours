@@ -23,6 +23,7 @@ import 'package:chaostours/view/app_base_widget.dart';
 import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/model/model_user_group.dart';
 import 'package:chaostours/model/model_user.dart';
+import 'package:chaostours/util.dart';
 
 class WidgetUserGroupsFromUserList extends BaseWidget {
   const WidgetUserGroupsFromUserList({super.key});
@@ -55,7 +56,8 @@ class _WidgetUserGroupsFromUserList
     var newItems = await ModelUserGroup.select(
         limit: limit, offset: offset, search: _searchTextController.text);
 
-    _loadedWidgets.addAll(newItems.map((e) => renderRow(e)).toList());
+    _loadedWidgets.addAll(
+        intersperse(AppWidgets.divider(), newItems.map((e) => renderRow(e))));
     return newItems.length;
   }
 
@@ -84,13 +86,19 @@ class _WidgetUserGroupsFromUserList
         'selectable',
         style: model.isSelectable
             ? null
-            : const TextStyle(decoration: TextDecoration.lineThrough),
+            : TextStyle(
+                decoration: TextDecoration.lineThrough,
+                color: Theme.of(context).disabledColor,
+                decorationColor: Theme.of(context).disabledColor),
       ),
       Text(
         'preselected',
         style: model.isPreselected
             ? null
-            : const TextStyle(decoration: TextDecoration.lineThrough),
+            : TextStyle(
+                decoration: TextDecoration.lineThrough,
+                color: Theme.of(context).disabledColor,
+                decorationColor: Theme.of(context).disabledColor),
       )
     ]);
   }

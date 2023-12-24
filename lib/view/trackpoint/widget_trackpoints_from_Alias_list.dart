@@ -65,9 +65,8 @@ class _WidgetAliasTrackpoint extends BaseWidgetState<WidgetAliasTrackpoint> {
   @override
   Future<int> loadItems({required int offset, int limit = 20}) async {
     List<ModelTrackPoint> newItems = await _modelAlias?.trackpoints() ?? [];
-    _loadedWidgets.addAll(newItems.map(
-      (e) => renderTrackPoint(e),
-    ));
+    _loadedWidgets.addAll(
+        intersperse(AppWidgets.divider(), newItems.map((e) => renderRow(e))));
     return newItems.length;
   }
 
@@ -144,7 +143,7 @@ class _WidgetAliasTrackpoint extends BaseWidgetState<WidgetAliasTrackpoint> {
         ));
   }
 
-  Widget renderTrackPoint(ModelTrackPoint tp) {
+  Widget renderRow(ModelTrackPoint tp) {
     var date = '${weekdays.weekdays[tp.timeStart.weekday]}. '
         '${tp.timeStart.day}.${tp.timeStart.month}.${tp.timeStart.year}';
     var dur = formatDuration(tp.duration);
@@ -191,7 +190,6 @@ class _WidgetAliasTrackpoint extends BaseWidgetState<WidgetAliasTrackpoint> {
               onPressed: () =>
                   Clipboard.setData(ClipboardData(text: tp.notes.trim())))));
     }
-    widgets.add(AppWidgets.divider());
     return Column(children: widgets);
   }
 }

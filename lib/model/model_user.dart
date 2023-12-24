@@ -287,11 +287,10 @@ class ModelUser {
       LEFT JOIN ${TableUser.table} ON ${TableUserUserGroup.idUser} = ${TableUser.id}
       WHERE ${TableUserGroup.isPreselected} = ? OR ${TableUser.isPreselected} = ?
       GROUP BY ${TableUser.id}
-      ORDER BY ${TableUser.sortOrder}
+      ORDER BY ${TableUser.sortOrder}, ${TableUser.title} NULLS LAST
 ''';
 
-      final param = DB.boolToInt(true);
-      return await txn.rawQuery(q, [param, param]);
+      return await txn.rawQuery(q, List.filled(2, DB.boolToInt(true)));
     });
     return rows.map((e) => fromMap(e)).toList();
   }
@@ -302,12 +301,11 @@ class ModelUser {
       SELECT ${TableUser.columns} FROM ${TableUserUserGroup.table}
       LEFT JOIN ${TableUserUserGroup.table} ON ${TableUserUserGroup.idUserGroup} = ${TableUserGroup.id}
       LEFT JOIN ${TableUser.table} ON ${TableUserUserGroup.idUser} = ${TableUser.id}
-      WHERE ${TableUserGroup.isSelectable} = ? OR ${TableUser.isSelectable} = ?
+      WHERE ${TableUserGroup.isSelectable} = ? OR ${TableUser.isSelectable} = ? OR ${TableUserGroup.isPreselected} = ? OR ${TableUser.isPreselected} = ?
       GROUP BY ${TableUser.id}
-      ORDER BY ${TableUser.sortOrder}
+      ORDER BY ${TableUser.sortOrder}, ${TableUser.title} NULLS LAST
 ''';
-      final param = DB.boolToInt(true);
-      return await txn.rawQuery(q, [param, param]);
+      return await txn.rawQuery(q, List.filled(4, DB.boolToInt(true)));
     });
     return rows.map((e) => fromMap(e)).toList();
   }
