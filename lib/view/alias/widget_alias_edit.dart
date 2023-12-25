@@ -78,8 +78,8 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
     var model = ModelAlias(
         gps: gps,
         lastVisited: DateTime.now(),
-        title: address.alias,
-        description: address.description);
+        title: address.alias ?? '',
+        description: address.description ?? '');
     await model.insert();
     return model;
   }

@@ -230,8 +230,6 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
               final GPS gps = await GPS.gps();
               final Address address =
                   await Address(gps).lookup(OsmLookupConditions.onUserRequest);
-              dataChannel.address = address.alias;
-              dataChannel.fullAddress = address.description;
             } catch (e, stk) {
               logger.error('update address: $e', stk);
             }

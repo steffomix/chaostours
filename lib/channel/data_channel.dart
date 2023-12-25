@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 import 'package:chaostours/channel/notification_channel.dart';
+import 'package:chaostours/shared/shared_trackpoint_alias.dart';
 import 'package:chaostours/tracking.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 
@@ -87,6 +88,7 @@ class DataChannel {
   List<ModelAlias> _aliasList = [];
   List<ModelUser> _userList = [];
   List<ModelTask> _taskList = [];
+
   String _notes = '';
   List<ModelAlias> get aliasList => _aliasList;
   List<ModelUser> get userList => _userList;
@@ -105,7 +107,7 @@ class DataChannel {
   }
 
   setUserList(List<ModelUser> models, [Callback? callback]) {
-    Cache.backgroundUserIdList
+    Cache.backgroundSharedUserList
         .save<List<int>>(models.map((e) => e.id).toList())
         .then(
       (value) {
@@ -116,7 +118,7 @@ class DataChannel {
   }
 
   setTaskList(List<ModelTask> models, [Callback? callback]) {
-    Cache.backgroundUserIdList
+    Cache.backgroundSharedUserList
         .save<List<int>>(models.map((e) => e.id).toList())
         .then(
       (value) {
@@ -180,17 +182,22 @@ class DataChannel {
             distanceTreshold = await cache
                 .load<int>(AppUserSetting(cache).defaultValue as int);
 
+            /// parse to Shared
+            final sharedAliasList = SharedTrackpointAlias.toObjectList(
+                (await Cache.backgroundSharedUserList.load<List<String>>([])));
+
             /// load from database
-            _aliasList = gps == null
-                ? []
-                : await ModelAlias.byRadius(
-                    gps: gps!, radius: distanceTreshold);
+            _aliasList = await ModelAlias.byIdList(sharedAliasList
+                .map(
+                  (e) => e.id,
+                )
+                .toList());
 
             List<int> ids;
-            ids = await Cache.backgroundUserIdList.load<List<int>>([]);
+            ids = await Cache.backgroundSharedUserList.load<List<int>>([]);
             _userList = await ModelUser.byIdList(ids);
 
-            ids = await Cache.backgroundTaskIdList.load<List<int>>([]);
+            ids = await Cache.backgroundSharedTaskList.load<List<int>>([]);
             _taskList = await ModelTask.byIdList(ids);
 
             /// fire events

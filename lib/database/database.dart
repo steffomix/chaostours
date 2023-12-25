@@ -95,20 +95,24 @@ class DB {
   ///    return await txn.query(...);
   ///  });
   /// </pre>
+  static int _runningTransactions = 0;
   static Future<T> execute<T>(
       Future<T> Function(flite.Transaction txn) action) async {
     return await Future.microtask(() async {
       int trys = 0;
       do {
+        _runningTransactions++;
         try {
           return await _database!.transaction<T>(action);
         } on flite.DatabaseException catch (e) {
           if (e.toString().contains('transaction')) {
-            await Future.delayed(const Duration(seconds: 1));
+            await Future.delayed(
+                Duration(milliseconds: 100 * _runningTransactions));
             trys++;
           }
         }
-      } while (trys < 3);
+        _runningTransactions--;
+      } while (trys < 10);
 
       throw ('DB::execute unknown error');
     });
@@ -255,7 +259,8 @@ enum TableTrackPoint {
 
 enum TableTrackPointAlias {
   idTrackPoint('id_trackpoint'),
-  idAlias('id_alias');
+  idAlias('id_alias'),
+  notes('notes');
 
   static const String table = 'trackpoint_alias';
 
@@ -267,7 +272,8 @@ enum TableTrackPointAlias {
 
   static String get schema => '''CREATE TABLE IF NOT EXISTS $table (
 	${idTrackPoint.column}	INTEGER NOT NULL,
-	${idAlias.column}	INTEGER NOT NULL
+	${idAlias.column}	INTEGER NOT NULL,
+  ${notes.column} Text
 );''';
 
   @override
@@ -278,7 +284,8 @@ enum TableTrackPointAlias {
 
 enum TableTrackPointTask {
   idTrackPoint('id_trackpoint'),
-  idTask('id_task');
+  idTask('id_task'),
+  notes('notes');
 
   static const String table = 'trackpoint_task';
 
@@ -290,7 +297,8 @@ enum TableTrackPointTask {
 
   static String get schema => '''CREATE TABLE IF NOT EXISTS $table (
 	${idTrackPoint.column}	INTEGER NOT NULL,
-	${idTask.column}	INTEGER NOT NULL
+	${idTask.column}	INTEGER NOT NULL,
+  ${notes.column} Text
 );''';
 
   @override
@@ -301,7 +309,8 @@ enum TableTrackPointTask {
 
 enum TableTrackPointUser {
   idTrackPoint('id_trackpoint'),
-  idUser('id_user');
+  idUser('id_user'),
+  notes('notes');
 
   static const String table = 'trackpoint_user';
 
@@ -313,7 +322,8 @@ enum TableTrackPointUser {
 
   static String get schema => '''CREATE TABLE IF NOT EXISTS $table (
 	${idTrackPoint.column}	INTEGER NOT NULL,
-	${idUser.column}	INTEGER NOT NULL
+	${idUser.column}	INTEGER NOT NULL,
+  ${notes.column} Text
 );''';
 
   @override

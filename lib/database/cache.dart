@@ -92,10 +92,13 @@ enum Cache {
   /// user input
   backgroundAliasIdList(
       CacheModulId.sharedPreferences, List<int>, expireAfterOneSecond),
-  backgroundUserIdList(
-      CacheModulId.sharedPreferences, List<int>, expireAfterOneSecond),
-  backgroundTaskIdList(
-      CacheModulId.sharedPreferences, List<int>, expireAfterOneSecond),
+  backgroundSharedAliasList(
+      CacheModulId.sharedPreferences, List<String>, expireAfterOneSecond),
+  backgroundSharedUserList(
+      CacheModulId.sharedPreferences, List<String>, expireAfterOneSecond),
+  backgroundSharedTaskList(
+      CacheModulId.sharedPreferences, List<String>, expireAfterOneSecond),
+
   backgroundTrackPointUserNotes(
       CacheModulId.sharedPreferences, String, expireAfterOneSecond),
 

@@ -377,7 +377,7 @@ class Tracker {
           }
 
           /// reset user data
-          await Cache.backgroundTaskIdList.save<List<int>>([]);
+          await Cache.backgroundSharedTaskList.save<List<int>>([]);
           await Cache.backgroundTrackPointUserNotes.save<String>('');
           logger.log('status MOVING finished');
         } else {

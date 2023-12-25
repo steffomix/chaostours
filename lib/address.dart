@@ -36,6 +36,12 @@ class Address {
   ValueExpired? lastResponse;
   http.Response? _response;
 
+  bool? _permissionGranted;
+  bool? get permissionGranted => _permissionGranted;
+
+  OsmLookupConditions? _lookupCondition;
+  OsmLookupConditions? _lookupConditionRequired;
+
   Address(this._gps);
 
   double get lat => _gps.lat;
@@ -43,30 +49,33 @@ class Address {
   GPS get gps => _gps;
 
   String? _alias;
-  String get alias {
+  String? get alias {
     if (_alias != null) {
       return _alias!;
     }
-    if (!_checkResponse()) {
-      return _msgOSMFailed;
+    String? checkResponse = _checkResponse();
+    if (checkResponse != null) {
+      return checkResponse;
     }
     try {
       final body = _response!.body;
       var json = jsonDecode(body);
       return _alias = (json['display_name'] ?? _msgOSMFailed);
     } catch (e, stk) {
-      logger.error('get address alias: $e', stk);
-      return _msgOSMFailed;
+      _alias = 'Parse OSM Result failed: $e';
+      logger.error(_alias, stk);
+      return _alias;
     }
   }
 
   String? _description;
-  String get description {
+  String? get description {
     if (_description != null) {
       return _description!;
     }
-    if (!_checkResponse()) {
-      return _msgOSMFailed;
+    String? checkResponse = _checkResponse();
+    if (checkResponse != null) {
+      return checkResponse;
     }
     try {
       final body = _response!.body;
@@ -78,53 +87,63 @@ class Address {
         parts.add('$key: ${jsonParts[key]}');
       }
       parts.add(
-          '\nData © OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright');
+          '\nData © OpenStreetMap contributors, ODbL 1.0. www.openstreetmap.org/copyright');
       return _description = parts.join('\n');
     } catch (e, stk) {
-      logger.error('get address description: $e', stk);
-      return _msgOSMFailed;
+      _description = 'Parse OSM Result failed: $e';
+      logger.error(_description, stk);
+      return _description;
     }
   }
 
-  bool _checkResponse() {
+  String? _checkResponse() {
+    if (!(_permissionGranted ?? false)) {
+      return 'OSM Request permission required: ${_lookupConditionRequired?.name}, given: ${_lookupCondition?.name}';
+    }
     if (_response == null) {
-      logger.error('_response is Null', StackTrace.current);
-      return false;
+      return 'OSM request failed for unknown reason, Response is NULL.';
     }
     if (_response!.statusCode != 200) {
-      logger.error(
-          '_response status code is != 200 (actually ${_response?.statusCode ?? 'unknown'})',
-          StackTrace.current);
-      return false;
+      return 'Response status code is != 200 (actually ${_response?.statusCode ?? 'unknown'})';
     }
-    return true;
+    return null;
+  }
+
+  // OpenStreeMap limit of one request per second
+  Future<void> requestLimit() async {
+    while (await Cache.addressLastLookup.load<int>(0) + 1000 >
+        DateTime.now().millisecondsSinceEpoch) {
+      await Future.delayed(const Duration(milliseconds: 200));
+    }
   }
 
   Future<Address> lookup(OsmLookupConditions condition,
       {bool saveToCache = false}) async {
+    _lookupCondition = condition;
+    if (_response != null) {
+      return this;
+    }
+    _lookupConditionRequired = await Cache.appSettingOsmLookupCondition
+        .load<OsmLookupConditions>(OsmLookupConditions.never);
+
     if (await condition.allowLookup()) {
+      _permissionGranted = true;
       final url = Uri.https('nominatim.openstreetmap.org', '/reverse', {
         'lat': gps.lat.toString(),
         'lon': gps.lon.toString(),
         'format': 'json'
       });
 
-      Future<int> lastLookup() async {
-        return await Cache.addressLastLookup.load<int>(0);
-      }
+      await requestLimit();
 
-      while (
-          (await lastLookup()) + 1000 > DateTime.now().millisecondsSinceEpoch) {
-        await Future.delayed(const Duration(milliseconds: 200));
-      }
-
-      /// don't wait for it
-      Cache.addressLastLookup.save<int>(DateTime.now().millisecondsSinceEpoch);
+      await Cache.addressLastLookup
+          .save<int>(DateTime.now().millisecondsSinceEpoch);
       _response = await http.get(url);
       if (saveToCache) {
-        await Cache.backgroundAddress.save<String>(alias);
+        await Cache.backgroundAddress.save<String>(alias ?? '');
       }
     } else {
+      _permissionGranted = false;
       _alias = messageDenyAddressLookup;
       _description = '';
     }

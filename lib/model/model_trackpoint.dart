@@ -21,6 +21,10 @@ import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/gps.dart';
+import 'package:chaostours/shared/shared_trackpoint_alias.dart';
+import 'package:chaostours/shared/shared_trackpoint_asset.dart';
+import 'package:chaostours/shared/shared_trackpoint_task.dart';
+import 'package:chaostours/shared/shared_trackpoint_user.dart';
 import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/logger.dart';
 import 'package:sqflite/sqflite.dart';
@@ -164,36 +168,30 @@ class ModelTrackPoint {
       _id = await txn.insert(TableTrackPoint.table, map);
     });
 
-    final aliasIdList = await Cache.backgroundAliasIdList.load<List<int>>([]);
-    final taskIdList = await Cache.backgroundTaskIdList.load<List<int>>([]);
-    final userIdList = await Cache.backgroundUserIdList.load<List<int>>([]);
+    final sharedAlias = await Cache.backgroundSharedAliasList
+        .load<List<SharedTrackpointAlias>>([]);
+    final sharedTasks = await Cache.backgroundSharedTaskList
+        .load<List<SharedTrackpointTask>>([]);
+    final sharedUsers = await Cache.backgroundSharedUserList
+        .load<List<SharedTrackpointUser>>([]);
     await DB.execute((Transaction txn) async {
-      for (var id in aliasIdList) {
+      for (var alias in sharedAlias) {
         try {
-          await txn.insert(TableTrackPointAlias.table, {
-            TableTrackPointAlias.idAlias.column: id,
-            TableTrackPointAlias.idTrackPoint.column: _id
-          });
+          addAlias(alias, txn);
         } catch (e, stk) {
           logger.error('insert idAlias: $e', stk);
         }
       }
-      for (var id in taskIdList) {
+      for (var task in sharedTasks) {
         try {
-          await txn.insert(TableTrackPointTask.table, {
-            TableTrackPointTask.idTask.column: id,
-            TableTrackPointTask.idTrackPoint.column: _id
-          });
+          addTask(task, txn);
         } catch (e, stk) {
           logger.error('insert idTask: $e', stk);
         }
       }
-      for (var id in userIdList) {
+      for (var user in sharedUsers) {
         try {
-          await txn.insert(TableTrackPointUser.table, {
-            TableTrackPointUser.idUser.column: id,
-            TableTrackPointUser.idTrackPoint.column: _id
-          });
+          addUser(user, txn);
         } catch (e, stk) {
           logger.error('insert idUser: $e', stk);
         }
@@ -223,82 +221,103 @@ class ModelTrackPoint {
     });
   }
 
-  Future<bool> _addAsset(
+  Future<int> _addOrUpdateAsset(
       {required String table,
       required String columnTrackPoint,
       required String columnForeign,
-      required int idForeign}) async {
+      required String columnNotes,
+      required SharedTrackpointAsset shared,
+      required Transaction txn}) async {
     try {
-      await DB.execute<int>((Transaction txn) async {
-        return await txn
-            .insert(table, {columnTrackPoint: id, columnForeign: idForeign});
-      });
-      return true;
+      final rows = await txn.query(table,
+          columns: ['COUNT(*) as ct'],
+          where: '$columnTrackPoint = ? AND $columnForeign = ?',
+          whereArgs: [id, shared.id],
+          limit: 1);
+
+      final bool insert = rows.isEmpty;
+
+      return insert
+          ? await txn.insert(table, {
+              columnTrackPoint: id,
+              columnForeign: shared.id,
+              columnNotes: shared.notes
+            })
+          : await txn.update(table, {columnNotes: shared.notes},
+              where: '$columnTrackPoint = ? AND $columnForeign = ?',
+              whereArgs: [id, shared.id]);
     } catch (e) {
       logger.warn('addAlias: $e');
-      return false;
+      return 0;
     }
   }
 
-  Future<bool> addAlias(ModelAlias m) async {
-    return await _addAsset(
+  Future<int> addAlias(SharedTrackpointAlias shared, Transaction txn) async {
+    return await _addOrUpdateAsset(
         table: TableTrackPointAlias.table,
         columnTrackPoint: TableTrackPointAlias.idTrackPoint.column,
         columnForeign: TableTrackPointAlias.idAlias.column,
-        idForeign: m.id);
+        columnNotes: TableTrackPointAlias.notes.column,
+        shared: shared,
+        txn: txn);
   }
 
-  Future<bool> addTask(ModelTask m) async {
-    return await _addAsset(
+  Future<int> addTask(SharedTrackpointTask shared, Transaction txn) async {
+    return await _addOrUpdateAsset(
         table: TableTrackPointTask.table,
         columnTrackPoint: TableTrackPointTask.idTrackPoint.column,
         columnForeign: TableTrackPointTask.idTask.column,
-        idForeign: m.id);
+        columnNotes: TableTrackPointTask.notes.column,
+        shared: shared,
+        txn: txn);
   }
 
-  Future<bool> addUser(ModelUser m) async {
-    return await _addAsset(
+  Future<int> addUser(SharedTrackpointUser shared, Transaction txn) async {
+    return await _addOrUpdateAsset(
         table: TableTrackPointUser.table,
         columnTrackPoint: TableTrackPointUser.idTrackPoint.column,
         columnForeign: TableTrackPointUser.idUser.column,
-        idForeign: m.id);
+        columnNotes: TableTrackPointUser.notes.column,
+        shared: shared,
+        txn: txn);
   }
 
-  Future<bool> _removeAsset(
+  Future<int> _removeAsset(
       {required String table,
       required String columnTrackPoint,
       required String columnForeign,
-      required int idForeign}) async {
-    var i = await DB.execute<int>((Transaction txn) async {
-      return await txn.delete(table,
-          where: '$columnTrackPoint = ? AND $columnForeign = ?',
-          whereArgs: [id, idForeign]);
-    });
-    return i > 0;
+      required SharedTrackpointAsset shared,
+      required Transaction txn}) async {
+    return await txn.delete(table,
+        where: '$columnTrackPoint = ? AND $columnForeign = ?',
+        whereArgs: [id, shared.id]);
   }
 
-  Future<bool> removeAlias(ModelAlias m) async {
+  Future<int> removeAlias(SharedTrackpointAlias shared, Transaction txn) async {
     return await _removeAsset(
         table: TableTrackPointAlias.table,
         columnTrackPoint: TableTrackPointAlias.idTrackPoint.column,
         columnForeign: TableTrackPointAlias.idAlias.column,
-        idForeign: m.id);
+        shared: shared,
+        txn: txn);
   }
 
-  Future<bool> removeTask(ModelTask m) async {
+  Future<int> removeTask(SharedTrackpointTask shared, Transaction txn) async {
     return await _removeAsset(
         table: TableTrackPointTask.table,
         columnTrackPoint: TableTrackPointTask.idTrackPoint.column,
         columnForeign: TableTrackPointTask.idTask.column,
-        idForeign: m.id);
+        shared: shared,
+        txn: txn);
   }
 
-  Future<bool> removeUser(ModelUser m) async {
+  Future<int> removeUser(SharedTrackpointUser shared, Transaction txn) async {
     return await _removeAsset(
         table: TableTrackPointUser.table,
         columnTrackPoint: TableTrackPointUser.idTrackPoint.column,
         columnForeign: TableTrackPointUser.idUser.column,
-        idForeign: m.id);
+        shared: shared,
+        txn: txn);
   }
 
   Future _getAssetIds(
@@ -401,9 +420,9 @@ class ModelTrackPoint {
         notes: await Cache.backgroundTrackPointUserNotes.load<String>(''));
     newTrackPoint.aliasModels = aliases;
     newTrackPoint.taskModels = await ModelTask.byIdList(
-        await Cache.backgroundTaskIdList.load<List<int>>([]));
+        await Cache.backgroundSharedTaskList.load<List<int>>([]));
     newTrackPoint.userModels = await ModelUser.byIdList(
-        await Cache.backgroundUserIdList.load<List<int>>([]));
+        await Cache.backgroundSharedUserList.load<List<int>>([]));
     return newTrackPoint;
   }
 
