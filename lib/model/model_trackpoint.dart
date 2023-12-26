@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/Location.dart';
 import 'package:chaostours/database/cache.dart';
 import 'package:chaostours/calendar.dart';
 import 'package:chaostours/database/database.dart';
@@ -401,28 +402,30 @@ class ModelTrackPoint {
     userModels = await loadUserList();
   }
 
-  static Future<ModelTrackPoint> fromCache(GPS gps) async {
-    List<ModelAlias> aliasesByArea =
-        await ModelAlias.byArea(gps: gps, includeInactive: false);
-    List<ModelAlias> aliases = [];
-    for (var model in aliasesByArea) {
-      if (GPS.distance(gps, model.gps) <= model.radius) {
-        aliases.add(model);
-      }
-    }
+  static Future<ModelTrackPoint> fromLocation(Location location) async {
     ModelTrackPoint newTrackPoint = ModelTrackPoint(
-        gps: gps,
-        timeStart: (await Cache.backgroundGpsStartStanding.load<GPS>(gps)).time,
-        timeEnd: gps.time,
+        gps: location.gps,
+        timeStart:
+            (await Cache.backgroundGpsStartStanding.load<GPS>(location.gps))
+                .time,
+        timeEnd: location.gps.time,
         calendarEventIds: await Cache.backgroundCalendarLastEventIds
             .load<List<CalendarEventId>>([]),
         address: await Cache.backgroundLastStandingAddress.load<String>(''),
         notes: await Cache.backgroundTrackPointUserNotes.load<String>(''));
-    newTrackPoint.aliasModels = aliases;
-    newTrackPoint.taskModels = await ModelTask.byIdList(
-        await Cache.backgroundSharedTaskList.load<List<int>>([]));
-    newTrackPoint.userModels = await ModelUser.byIdList(
-        await Cache.backgroundSharedUserList.load<List<int>>([]));
+    newTrackPoint.aliasModels = location.aliasModels;
+    newTrackPoint.taskModels = await ModelTask.byIdList((await Cache
+            .backgroundSharedTaskList
+            .load<List<SharedTrackpointTask>>([]))
+        .map((e) => e.id)
+        .toList());
+    newTrackPoint.userModels = await ModelUser.byIdList((await Cache
+            .backgroundSharedUserList
+            .load<List<SharedTrackpointUser>>([]))
+        .map(
+          (e) => e.id,
+        )
+        .toList());
     return newTrackPoint;
   }
 

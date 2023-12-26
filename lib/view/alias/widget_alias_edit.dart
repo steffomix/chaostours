@@ -329,68 +329,92 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
             const ListTile(
               title: Text('Typ'),
               subtitle: Text(
-                'Defines Alias and Trackpoints privacy and functionalty.',
+                'Defines Alias and Trackpoints privacy level and functionalty.',
                 softWrap: true,
               ),
             ),
             ListTile(
                 title: Container(
-                    color: AliasVisibility.public.color,
+                    color: AliasPrivacy.public.color,
                     padding: const EdgeInsets.all(3),
                     child: const Text('  Public',
                         style: TextStyle(
                           color: Colors.white,
                         ))),
-                subtitle: const Text('This Alias supports all app futures.'),
+                subtitle: const Text('This Alias supports all app futures:\n'
+                    '- Send Notification if permission granted\n- Lookup Address if permitted\n- make a Database record\n- publish to Device Calendar if activated in App Settings.'),
                 leading: ValueListenableBuilder(
                     valueListenable: _privacy,
                     builder: (context, value, child) {
-                      return Radio<AliasVisibility>(
-                          value: AliasVisibility.public,
+                      return Radio<AliasPrivacy>(
+                          value: AliasPrivacy.public,
                           groupValue: alias.privacy,
-                          onChanged: (AliasVisibility? val) {
+                          onChanged: (AliasPrivacy? val) {
                             setStatus(val);
                           });
                     })),
             ListTile(
                 title: Container(
-                    color: AliasVisibility.privat.color,
+                    color: AliasPrivacy.privat.color,
                     padding: const EdgeInsets.all(3),
                     child: const Text('  Private',
                         style: TextStyle(
                           color: Colors.white,
                         ))),
                 subtitle: const Text(
-                    'This Alias is reduced to app internal futures only.\n'
-                    'However, Database exports will include all informations!'),
+                    'This Alias is reduced to app internal futures only:\n'
+                    '- Send Notification if permission granted\n- Lookup Address if permitted\n- make a Database record'),
                 leading: ValueListenableBuilder(
                     valueListenable: _privacy,
                     builder: (context, value, child) {
-                      return Radio<AliasVisibility>(
-                          value: AliasVisibility.privat,
+                      return Radio<AliasPrivacy>(
+                          value: AliasPrivacy.privat,
                           groupValue: alias.privacy,
-                          onChanged: (AliasVisibility? val) {
+                          onChanged: (AliasPrivacy? val) {
                             setStatus(val);
                           });
                     })),
             ListTile(
                 title: Container(
-                    color: AliasVisibility.restricted.color,
+                    color: AliasPrivacy.restricted.color,
                     padding: const EdgeInsets.all(3),
                     child: const Text('  Restricted ',
                         style: TextStyle(
                           color: Colors.white,
                         ))),
                 subtitle: const Text(
-                    'This Alias functionality is reduced to be visible in apps map.\n'
-                    'However, Database exports will include all informations!'),
+                    'This Alias functionality is reduced to be visible in apps map and:\n'
+                    '- Send Notification if permission granted'),
                 leading: ValueListenableBuilder(
                   valueListenable: _privacy,
                   builder: (context, value, child) {
-                    return Radio<AliasVisibility>(
-                        value: AliasVisibility.restricted,
+                    return Radio<AliasPrivacy>(
+                        value: AliasPrivacy.restricted,
                         groupValue: alias.privacy,
-                        onChanged: (AliasVisibility? state) {
+                        onChanged: (AliasPrivacy? state) {
+                          _privacy.value = !_privacy.value;
+                          setStatus(state);
+                        });
+                  },
+                )),
+            ListTile(
+                title: Container(
+                    color: const Color.fromARGB(255, 0, 0, 0),
+                    padding: const EdgeInsets.all(3),
+                    child: const Text('  None ',
+                        style: TextStyle(
+                          color: Colors.white,
+                        ))),
+                subtitle: const Text(
+                    'This Alias functionality is reduced to be visible in apps map and:\n'
+                    '- does nothing else'),
+                leading: ValueListenableBuilder(
+                  valueListenable: _privacy,
+                  builder: (context, value, child) {
+                    return Radio<AliasPrivacy>(
+                        value: AliasPrivacy.none,
+                        groupValue: alias.privacy,
+                        onChanged: (AliasPrivacy? state) {
                           _privacy.value = !_privacy.value;
                           setStatus(state);
                         });
@@ -422,8 +446,8 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
     }
   }
 
-  void setStatus(AliasVisibility? state) {
-    _modelAlias?.privacy = (state ?? AliasVisibility.restricted);
+  void setStatus(AliasPrivacy? state) {
+    _modelAlias?.privacy = (state ?? AliasPrivacy.restricted);
     _modelAlias?.update();
     _privacy.value = !_privacy.value;
   }

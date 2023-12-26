@@ -15,9 +15,7 @@ limitations under the License.
 */
 
 import 'package:chaostours/logger.dart';
-import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/shared/shared_trackpoint_asset.dart';
-import 'package:chaostours/database/cache.dart';
 
 class SharedTrackpointUser extends SharedTrackpointAsset {
   static final Logger logger = Logger.logger<SharedTrackpointUser>();
@@ -25,61 +23,10 @@ class SharedTrackpointUser extends SharedTrackpointAsset {
   static final RegExp _regExp = RegExp([r'([0-9]+)', r'(.*)'].join(separator),
       dotAll: true, multiLine: true, caseSensitive: false);
 
-  static SharedTrackpointUser _toObject(String value) {
+  static SharedTrackpointUser toObject(String value) {
     String id = _regExp.firstMatch(value)?.group(1) ?? '';
     String desc = _regExp.firstMatch(value)?.group(2) ?? '';
     return SharedTrackpointUser(id: int.parse(id), notes: desc);
-  }
-
-  static List<SharedTrackpointUser> _toObjectList(List<String> list) {
-    List<SharedTrackpointUser> objects = [];
-    for (var value in list) {
-      try {
-        objects.add(_toObject(value));
-      } catch (e, stk) {
-        logger.error('parse deatil: $e', stk);
-      }
-    }
-    return objects;
-  }
-
-  static Future<void> add(ModelUser model, {String notes = ''}) async {
-    var tasks = await loadSharedList();
-    for (var task in tasks) {
-      if (task.id == model.id) {
-        return;
-      }
-    }
-    tasks.add(SharedTrackpointUser(id: model.id, notes: notes));
-    await save(tasks);
-  }
-
-  static Future<void> remove(int id) async {
-    var tasks = await loadSharedList();
-    tasks.removeWhere((task) => task.id == id);
-    await save(tasks);
-  }
-
-  static Future<List<SharedTrackpointUser>> loadSharedList() async {
-    return _toObjectList(
-        await Cache.backgroundSharedUserList.load<List<String>>([]));
-  }
-
-  static Future<List<ModelUser>> loadModelList() async {
-    return await ModelUser.byIdList(
-        (await SharedTrackpointUser.loadSharedList())
-            .map(
-              (shared) => shared.id,
-            )
-            .toList());
-  }
-
-  static Future<List<String>> save(List<SharedTrackpointUser> tasks) async {
-    return await Cache.backgroundSharedUserList.save<List<String>>(tasks
-        .map(
-          (e) => e.toString(),
-        )
-        .toList());
   }
 
   SharedTrackpointUser({required super.id, required super.notes});

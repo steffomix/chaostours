@@ -24,6 +24,9 @@ import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/tracking.dart';
+import 'package:chaostours/shared/shared_trackpoint_alias.dart';
+import 'package:chaostours/shared/shared_trackpoint_task.dart';
+import 'package:chaostours/shared/shared_trackpoint_user.dart';
 import 'package:geolocator/geolocator.dart';
 
 class TypeAdapter {
@@ -40,6 +43,15 @@ class TypeAdapter {
   static DateTime? deserializeDateTime(String? value) =>
       value == null ? null : DateTime.parse(value);
 
+  /// trackingstatus
+  static String serializeTrackingStatus(TrackingStatus value) {
+    return value.name;
+  }
+
+  static TrackingStatus? deserializeTrackingStatus(String? value) {
+    return value == null ? null : TrackingStatus.values.byName(value);
+  }
+
   /// Duration
   static int serializeDuration(Duration value) => value.inSeconds;
   static Duration? deserializeDuration(int? value) =>
@@ -55,36 +67,94 @@ class TypeAdapter {
           : value.map((value) => CalendarEventId.toObject(value)).toList();
 
   /// gps List
-  static List<String> serializeGpsList(List<GPS> value) {
-    return value.map((e) => e.toString()).toList();
-  }
-
-  static List<GPS> deserializeGpsList(List<String>? value) {
-    return value == null ? [] : value.map((e) => GPS.toObject(e)).toList();
-  }
+  static List<String> serializeGpsList(List<GPS> value) =>
+      value.map((e) => e.toString()).toList();
+  static List<GPS> deserializeGpsList(List<String>? value) =>
+      value == null ? [] : value.map((e) => GPS.toObject(e)).toList();
 
   /// DateTime value
-  static List<String> serializeDateTimeList(List<DateTime> value) {
-    return value.map((e) => e.toIso8601String()).toList();
-  }
-
-  static List<DateTime>? deserializeDateTimeList(List<String>? value) {
-    return value == null ? [] : value.map((e) => DateTime.parse(e)).toList();
-  }
+  static List<String> serializeDateTimeList(List<DateTime> value) =>
+      value.map((e) => e.toIso8601String()).toList();
+  static List<DateTime>? deserializeDateTimeList(List<String>? value) =>
+      value == null ? [] : value.map((e) => DateTime.parse(e)).toList();
 
   /// GPS
   static String serializeGps(GPS value) => value.toString();
   static GPS? deserializeGps(String? value) =>
       value == null ? null : GPS.toObject(value);
 
-  /// trackingstatus
-  static String serializeTrackingStatus(TrackingStatus value) {
-    return value.name;
-  }
+  /// OSMLookup
+  static String serializeOsmLookup(OsmLookupConditions value) => value.name;
+  static OsmLookupConditions? deserializeOsmLookup(String? value) =>
+      value == null
+          ? OsmLookupConditions.never
+          : OsmLookupConditions.values.byName(value);
 
-  static TrackingStatus? deserializeTrackingStatus(String? value) {
-    return value == null ? null : TrackingStatus.values.byName(value);
-  }
+  /// Location Accuracy
+  static String serializeLocationAccuracy(LocationAccuracy value) => value.name;
+  static LocationAccuracy? deserializeLocationAccuracy(String? value) =>
+      value == null
+          ? LocationAccuracy.best
+          : LocationAccuracy.values.byName(value);
+
+  /// OSMWeekdays
+  static String serializeWeekdays(Weekdays value) => value.name;
+  static Weekdays? deserializeWeekdays(String? value) =>
+      value == null ? Weekdays.mondayFirst : Weekdays.values.byName(value);
+
+  /// DateFormat
+  static String serializeDateFormat(DateFormat value) => value.name;
+  static DateFormat? deserializeDateFormat(String? value) =>
+      value == null ? DateFormat.yyyymmdd : DateFormat.values.byName(value);
+
+  /// GpsPrecision
+  static String serializeGpsPrecision(GpsPrecision value) => value.name;
+  static GpsPrecision? deserializeGpsPrecision(String? value) =>
+      value == null ? GpsPrecision.best : GpsPrecision.values.byName(value);
+
+  /// List<SharedTrackpointAlias>
+  static List<String> serializeSharedTrackpointAliasList(
+          List<SharedTrackpointAlias> value) =>
+      value
+          .map(
+            (e) => e.toString(),
+          )
+          .toList();
+  static List<SharedTrackpointAlias> desrializeSharedrackpointAlias(
+          List<String>? value) =>
+      value == null
+          ? []
+          : value.map((e) => SharedTrackpointAlias.toObject(e)).toList();
+
+  /// List<SharedTrackpointUser>
+  static List<String> serializeSharedTrackpointUserList(
+          List<SharedTrackpointUser> value) =>
+      value
+          .map(
+            (e) => e.toString(),
+          )
+          .toList();
+  static List<SharedTrackpointUser> desrializeSharedrackpointUser(
+          List<String>? value) =>
+      value == null
+          ? []
+          : value.map((e) => SharedTrackpointUser.toObject(e)).toList();
+
+  /// List<SharedTrackpointTask>
+  static List<String> serializeSharedTrackpointTaskList(
+          List<SharedTrackpointTask> value) =>
+      value
+          .map(
+            (e) => e.toString(),
+          )
+          .toList();
+  static List<SharedTrackpointTask> desrializeSharedrackpointTask(
+          List<String>? value) =>
+      value == null
+          ? []
+          : value.map((e) => SharedTrackpointTask.toObject(e)).toList();
+
+/* 
 
   // ModelTrackPoint
   static String serializeModelTrackPoint(ModelTrackPoint value) =>
@@ -127,33 +197,5 @@ class TypeAdapter {
           : value
               .map((e) => ModelTrackPoint.fromMap(Model.fromJson(e)))
               .toList();
-
-  /// OSMLookup
-  static String serializeOsmLookup(OsmLookupConditions value) => value.name;
-  static OsmLookupConditions? deserializeOsmLookup(String? value) =>
-      value == null
-          ? OsmLookupConditions.never
-          : OsmLookupConditions.values.byName(value);
-
-  /// Location Accuracy
-  static String serializeLocationAccuracy(LocationAccuracy value) => value.name;
-  static LocationAccuracy? deserializeLocationAccuracy(String? value) =>
-      value == null
-          ? LocationAccuracy.best
-          : LocationAccuracy.values.byName(value);
-
-  /// OSMWeekdays
-  static String serializeWeekdays(Weekdays value) => value.name;
-  static Weekdays? deserializeWeekdays(String? value) =>
-      value == null ? Weekdays.mondayFirst : Weekdays.values.byName(value);
-
-  /// DateFormat
-  static String serializeDateFormat(DateFormat value) => value.name;
-  static DateFormat? deserializeDateFormat(String? value) =>
-      value == null ? DateFormat.yyyymmdd : DateFormat.values.byName(value);
-
-  /// GpsPrecision
-  static String serializeGpsPrecision(GpsPrecision value) => value.name;
-  static GpsPrecision? deserializeGpsPrecision(String? value) =>
-      value == null ? GpsPrecision.best : GpsPrecision.values.byName(value);
+ */
 }

@@ -292,7 +292,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         listenable: widgetNotifiers['aliases'] ??= ValueNotifier<int>(0),
         builder: (context, child) {
           List<Widget> list = [];
-          for (var model in dataChannel.aliasList) {
+          for (var model in dataChannel.modelAliasList) {
             list.add(TextButton(
                 onPressed: () {
                   Navigator.pushNamed(context, AppRoutes.editAlias.route,
@@ -329,7 +329,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
               },
             ),
             title: Column(
-              children: dataChannel.userList.map<Widget>(
+              children: dataChannel.modelUserList.map<Widget>(
                 (model) {
                   return TextButton(
                     child: Text(model.title),
@@ -361,7 +361,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                 },
               ),
               title: Column(
-                children: dataChannel.taskList.map<Widget>(
+                children: dataChannel.modelTaskList.map<Widget>(
                   (model) {
                     return TextButton(
                       child: Text(model.title),

@@ -19,6 +19,9 @@ import 'package:chaostours/database/type_adapter.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/conf/app_user_settings.dart';
 import 'package:chaostours/gps.dart';
+import 'package:chaostours/shared/shared_trackpoint_alias.dart';
+import 'package:chaostours/shared/shared_trackpoint_task.dart';
+import 'package:chaostours/shared/shared_trackpoint_user.dart';
 import 'package:chaostours/tracking.dart';
 import 'package:chaostours/calendar.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
@@ -300,6 +303,7 @@ enum Cache {
           await cacheModul.setString(key,
               TypeAdapter.serializeTrackingStatus(value as TrackingStatus));
           break;
+        /* 
         case const (ModelTrackPoint):
           await cacheModul.setString(key,
               TypeAdapter.serializeModelTrackPoint(value as ModelTrackPoint));
@@ -321,7 +325,7 @@ enum Cache {
         case const (List<ModelUser>):
           await cacheModul.setStringList(key,
               TypeAdapter.serializeModelUserList(value as List<ModelUser>));
-          break;
+          break; */
         case const (OsmLookupConditions):
           await cacheModul.setString(key,
               TypeAdapter.serializeOsmLookup(value as OsmLookupConditions));
@@ -341,6 +345,24 @@ enum Cache {
         case const (GpsPrecision):
           await cacheModul.setString(
               key, TypeAdapter.serializeGpsPrecision(value as GpsPrecision));
+          break;
+        case const (List<SharedTrackpointAlias>):
+          await cacheModul.setStringList(
+              key,
+              TypeAdapter.serializeSharedTrackpointAliasList(
+                  value as List<SharedTrackpointAlias>));
+          break;
+        case const (List<SharedTrackpointUser>):
+          await cacheModul.setStringList(
+              key,
+              TypeAdapter.serializeSharedTrackpointUserList(
+                  value as List<SharedTrackpointUser>));
+          break;
+        case const (List<SharedTrackpointTask>):
+          await cacheModul.setStringList(
+              key,
+              TypeAdapter.serializeSharedTrackpointTaskList(
+                  value as List<SharedTrackpointTask>));
           break;
         // ignore: prefer_void_to_null
         case const (Null):
@@ -406,6 +428,7 @@ enum Cache {
           return TypeAdapter.deserializeTrackingStatus(
                   await cacheModul.getString(key)) as T? ??
               defaultValue;
+        /* 
         case const (ModelTrackPoint):
           return TypeAdapter.deserializeModelTrackPoint(
                   await cacheModul.getString(key)) as T? ??
@@ -425,7 +448,7 @@ enum Cache {
         case const (List<ModelUser>):
           return TypeAdapter.deserializeModelUserList(
                   await cacheModul.getStringList(key)) as T? ??
-              defaultValue;
+              defaultValue; */
         case const (OsmLookupConditions):
           return TypeAdapter.deserializeOsmLookup(
                   await cacheModul.getString(key)) as T? ??
@@ -445,6 +468,18 @@ enum Cache {
         case const (GpsPrecision):
           return TypeAdapter.deserializeGpsPrecision(
                   await cacheModul.getString(key)) as T? ??
+              defaultValue;
+        case const (List<SharedTrackpointAlias>):
+          return TypeAdapter.deserializeGpsList(
+                  await cacheModul.getStringList(key)) as T? ??
+              defaultValue;
+        case const (List<SharedTrackpointUser>):
+          return TypeAdapter.deserializeGpsList(
+                  await cacheModul.getStringList(key)) as T? ??
+              defaultValue;
+        case const (List<SharedTrackpointTask>):
+          return TypeAdapter.deserializeGpsList(
+                  await cacheModul.getStringList(key)) as T? ??
               defaultValue;
         default:
           throw "Unsupported data type $T";

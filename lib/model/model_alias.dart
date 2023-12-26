@@ -25,29 +25,37 @@ import 'package:chaostours/logger.dart';
 import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 
-enum AliasVisibility {
+enum AliasPrivacy {
+  /// send notification, make record, publish to calendar
   public(1, Color.fromARGB(255, 0, 166, 0)),
-  privat(2, Color.fromARGB(255, 0, 0, 166)),
-  restricted(3, Color.fromARGB(255, 166, 0, 166));
 
-  static final Logger logger = Logger.logger<AliasVisibility>();
+  /// send notification, make record
+  privat(2, Color.fromARGB(255, 0, 0, 166)),
+
+  /// send notification
+  restricted(3, Color.fromARGB(255, 166, 0, 166)),
+
+  /// do nothing
+  none(4, Colors.black); // no alias found
+
+  static final Logger logger = Logger.logger<AliasPrivacy>();
   final int level;
   final Color color;
-  const AliasVisibility(this.level, this.color);
-  static final int _saveId = AliasVisibility.restricted.level;
+  const AliasPrivacy(this.level, this.color);
+  static final int _saveId = AliasPrivacy.restricted.level;
 
-  static AliasVisibility byId(Object? value) {
+  static AliasPrivacy byId(Object? value) {
     int id = DB.parseInt(value, fallback: 3);
     int idChecked = max(1, min(3, id));
     return byValue(idChecked == id ? idChecked : _saveId);
   }
 
-  static AliasVisibility byValue(int id) {
+  static AliasPrivacy byValue(int id) {
     try {
-      return AliasVisibility.values.firstWhere((status) => status.level == id);
+      return AliasPrivacy.values.firstWhere((status) => status.level == id);
     } catch (e, stk) {
       logger.error('invalid value $id: $e', stk);
-      return AliasVisibility.restricted;
+      return AliasPrivacy.restricted;
     }
   }
 }
@@ -67,7 +75,7 @@ class ModelAlias {
   String description = '';
 
   /// group values
-  AliasVisibility privacy = AliasVisibility.restricted;
+  AliasPrivacy privacy = AliasPrivacy.restricted;
   bool isActive = true;
 
   /// temporary set during search for nearest Alias
@@ -80,7 +88,7 @@ class ModelAlias {
     required this.lastVisited,
     required this.title,
     this.isActive = true,
-    this.privacy = AliasVisibility.public,
+    this.privacy = AliasPrivacy.public,
     this.radius = 50,
     this.timesVisited = 0,
     this.description = '',
@@ -93,7 +101,7 @@ class ModelAlias {
         gps: GPS(DB.parseDouble(map[TableAlias.latitude.column]),
             DB.parseDouble(map[TableAlias.longitude.column])),
         radius: DB.parseInt(map[TableAlias.radius.column], fallback: 10),
-        privacy: AliasVisibility.byId(map[TableAlias.privacy.column]),
+        privacy: AliasPrivacy.byId(map[TableAlias.privacy.column]),
         lastVisited: DB.intToTime(map[TableAlias.lastVisited.column]),
         timesVisited: DB.parseInt(map[TableAlias.timesVisited.column]),
         title: DB.parseString(map[TableAlias.title.column]),

@@ -25,14 +25,14 @@ class ModelAliasGroup {
   int get id => _id;
   bool isActive = true;
   String idCalendar = '';
-  AliasVisibility privacy = AliasVisibility.public;
+  AliasPrivacy privacy = AliasPrivacy.public;
   String title = '';
   String description = '';
 
   ModelAliasGroup(
       {this.idCalendar = '',
       this.isActive = true,
-      this.privacy = AliasVisibility.public,
+      this.privacy = AliasPrivacy.public,
       this.title = '',
       this.description = ''});
 
@@ -51,7 +51,7 @@ class ModelAliasGroup {
     var model = ModelAliasGroup(
         idCalendar: DB.parseString(map[TableAliasGroup.idCalendar.column]),
         isActive: DB.parseBool(map[TableAliasGroup.isActive.column]),
-        privacy: AliasVisibility.byId(map[TableAliasGroup.privacy.column]),
+        privacy: AliasPrivacy.byId(map[TableAliasGroup.privacy.column]),
         title: DB.parseString(map[TableAliasGroup.title.column]),
         description: DB.parseString(map[TableAliasGroup.description.column]));
     model._id = DB.parseInt(map[TableAliasGroup.primaryKey.column]);

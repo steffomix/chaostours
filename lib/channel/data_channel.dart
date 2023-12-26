@@ -86,24 +86,18 @@ class DataChannel {
   String address = '';
   String fullAddress = '';
 
-  List<ModelAlias> _aliasList = [];
-  List<ModelUser> _userList = [];
-  List<ModelTask> _taskList = [];
+  List<ModelAlias> modelAliasList = [];
+  List<ModelUser> modelUserList = [];
+  List<ModelTask> modelTaskList = [];
 
-  String _notes = '';
+  List<SharedTrackpointAlias> sharedAliasList = [];
+  List<SharedTrackpointUser> sharedUserList = [];
+  List<SharedTrackpointTask> sharedTaskList = [];
 
-  /// use SharedTrackpointAlias.add / .remove to modify
-  List<ModelAlias> get aliasList => _aliasList;
-
-  /// use SharedTrackpointUser.add / .remove to modify
-  List<ModelUser> get userList => _userList;
-
-  /// use SharedTrackpointTask.add / .remove to modify
-  List<ModelTask> get taskList => _taskList;
-  String get notes => _notes;
+  String notes = '';
 
   Future<String> setTrackpointNotes(String text) async {
-    return _notes =
+    return notes =
         await Cache.backgroundTrackPointUserNotes.save<String>(notes);
   }
 
@@ -157,10 +151,29 @@ class DataChannel {
             distanceTreshold = await cache
                 .load<int>(AppUserSetting(cache).defaultValue as int);
 
-            /// load from database
-            _aliasList = await SharedTrackpointAlias.loadModelList();
-            _userList = await SharedTrackpointUser.loadModelList();
-            _taskList = await SharedTrackpointTask.loadModelList();
+            /// load ids from shared and database
+            sharedAliasList = await Cache.backgroundSharedAliasList
+                .load<List<SharedTrackpointAlias>>([]);
+            sharedUserList = await Cache.backgroundSharedUserList
+                .load<List<SharedTrackpointUser>>([]);
+            sharedTaskList = await Cache.backgroundSharedTaskList
+                .load<List<SharedTrackpointTask>>([]);
+
+            modelAliasList = await ModelAlias.byIdList(sharedAliasList
+                .map(
+                  (e) => e.id,
+                )
+                .toList());
+            modelUserList = await ModelUser.byIdList(sharedUserList
+                .map(
+                  (e) => e.id,
+                )
+                .toList());
+            modelTaskList = await ModelTask.byIdList(sharedTaskList
+                .map(
+                  (e) => e.id,
+                )
+                .toList());
 
             /// fire events
             EventManager.fire<DataChannel>(_instance!);
@@ -169,17 +182,12 @@ class DataChannel {
               EventManager.fire<TrackingStatus>(trackingStatus);
             }
 
-            /// notify user
-            var notificationConfiguration = (statusChanged
-                ? NotificationChannel.trackingStatusChangedConfiguration
-                : NotificationChannel.ongoigTrackingUpdateConfiguration);
-
             NotificationChannel.sendTrackingUpdateNotification(
                 title: 'Tick Update',
                 message:
                     'T$tick ${statusChanged ? 'New Status' : 'Status'}: ${trackingStatus.name.toUpperCase()}'
                     ' since ${util.formatDuration(duration)}',
-                details: notificationConfiguration);
+                details: NotificationChannel.ongoigTrackingUpdateConfiguration);
             logger.log('Datachannel finished');
           } catch (e, stk) {
             logger.error('Deserialize Channel Data: $e', stk);
