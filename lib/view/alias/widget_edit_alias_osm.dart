@@ -88,10 +88,6 @@ class _WidgetOsm extends State<WidgetOsm> {
   @override
   void dispose() {
     EventManager.remove<DataChannel>(onTracking);
-    _addressNotifier.dispose();
-    _loading.dispose();
-    _textController.dispose();
-    _mapController?.dispose();
     super.dispose();
   }
 

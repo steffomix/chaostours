@@ -96,10 +96,13 @@ class DB {
   ///  });
   /// </pre>
   static int _runningTransactions = 0;
+  static int _transactionsTotal = 0;
+  static int get transactionsTotal => _transactionsTotal;
   static Future<T> execute<T>(
       Future<T> Function(flite.Transaction txn) action) async {
     return await Future.microtask(() async {
       int trys = 0;
+      _transactionsTotal++;
       do {
         _runningTransactions++;
         try {
@@ -107,7 +110,7 @@ class DB {
         } on flite.DatabaseException catch (e) {
           if (e.toString().contains('transaction')) {
             await Future.delayed(
-                Duration(milliseconds: 100 * _runningTransactions));
+                Duration(milliseconds: 10 * _runningTransactions));
             trys++;
           }
         }

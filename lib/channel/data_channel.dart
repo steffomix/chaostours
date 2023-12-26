@@ -16,6 +16,8 @@ limitations under the License.
 
 import 'package:chaostours/channel/notification_channel.dart';
 import 'package:chaostours/shared/shared_trackpoint_alias.dart';
+import 'package:chaostours/shared/shared_trackpoint_task.dart';
+import 'package:chaostours/shared/shared_trackpoint_user.dart';
 import 'package:chaostours/tracking.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 
@@ -75,9 +77,8 @@ class DataChannel {
       ? distanceStanding
       : distanceMoving;
 
-  Duration get duration => gpsPoints.isEmpty
-      ? Duration.zero
-      : gpsPoints.first.time.difference(gpsPoints.last.time).abs();
+  Duration _duration = Duration.zero;
+  Duration get duration => _duration;
 
   int distanceTreshold = 0; // meter
   Duration durationTreshold = Duration.zero;
@@ -90,50 +91,20 @@ class DataChannel {
   List<ModelTask> _taskList = [];
 
   String _notes = '';
+
+  /// use SharedTrackpointAlias.add / .remove to modify
   List<ModelAlias> get aliasList => _aliasList;
+
+  /// use SharedTrackpointUser.add / .remove to modify
   List<ModelUser> get userList => _userList;
+
+  /// use SharedTrackpointTask.add / .remove to modify
   List<ModelTask> get taskList => _taskList;
   String get notes => _notes;
 
-  setAliasList(List<ModelAlias> models, [Callback? callback]) {
-    Cache.backgroundAliasIdList
-        .save<List<int>>(models.map((e) => e.id).toList())
-        .then(
-      (value) {
-        _aliasList = models;
-      },
-    );
-    callback?.call();
-  }
-
-  setUserList(List<ModelUser> models, [Callback? callback]) {
-    Cache.backgroundSharedUserList
-        .save<List<int>>(models.map((e) => e.id).toList())
-        .then(
-      (value) {
-        _userList = models;
-      },
-    );
-    callback?.call();
-  }
-
-  setTaskList(List<ModelTask> models, [Callback? callback]) {
-    Cache.backgroundSharedUserList
-        .save<List<int>>(models.map((e) => e.id).toList())
-        .then(
-      (value) {
-        _taskList = models;
-      },
-    );
-    callback?.call();
-  }
-
-  set notes(String text) {
-    Cache.backgroundTrackPointUserNotes.save<String>(notes).then(
-      (value) {
-        _notes = text;
-      },
-    );
+  Future<String> setTrackpointNotes(String text) async {
+    return _notes =
+        await Cache.backgroundTrackPointUserNotes.save<String>(notes);
   }
 
   DataChannel._() {
@@ -168,6 +139,10 @@ class DataChannel {
                 TrackingStatus.standing;
 
             /// compute values
+            _duration =
+                gpsLastStatusChange?.time.difference(DateTime.now()).abs() ??
+                    Duration.zero;
+
             final bool statusChanged = status != trackingStatus;
             trackingStatus = status;
 
@@ -182,23 +157,10 @@ class DataChannel {
             distanceTreshold = await cache
                 .load<int>(AppUserSetting(cache).defaultValue as int);
 
-            /// parse to Shared
-            final sharedAliasList = SharedTrackpointAlias.toObjectList(
-                (await Cache.backgroundSharedUserList.load<List<String>>([])));
-
             /// load from database
-            _aliasList = await ModelAlias.byIdList(sharedAliasList
-                .map(
-                  (e) => e.id,
-                )
-                .toList());
-
-            List<int> ids;
-            ids = await Cache.backgroundSharedUserList.load<List<int>>([]);
-            _userList = await ModelUser.byIdList(ids);
-
-            ids = await Cache.backgroundSharedTaskList.load<List<int>>([]);
-            _taskList = await ModelTask.byIdList(ids);
+            _aliasList = await SharedTrackpointAlias.loadModelList();
+            _userList = await SharedTrackpointUser.loadModelList();
+            _taskList = await SharedTrackpointTask.loadModelList();
 
             /// fire events
             EventManager.fire<DataChannel>(_instance!);
@@ -218,6 +180,7 @@ class DataChannel {
                     'T$tick ${statusChanged ? 'New Status' : 'Status'}: ${trackingStatus.name.toUpperCase()}'
                     ' since ${util.formatDuration(duration)}',
                 details: notificationConfiguration);
+            logger.log('Datachannel finished');
           } catch (e, stk) {
             logger.error('Deserialize Channel Data: $e', stk);
           }

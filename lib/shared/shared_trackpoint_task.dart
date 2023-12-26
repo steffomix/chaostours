@@ -25,53 +25,61 @@ class SharedTrackpointTask extends SharedTrackpointAsset {
   static final RegExp _regExp = RegExp([r'([0-9]+)', r'(.*)'].join(separator),
       dotAll: true, multiLine: true, caseSensitive: false);
 
-  static SharedTrackpointTask toObject(String value) {
+  static SharedTrackpointTask _toObject(String value) {
     String id = _regExp.firstMatch(value)?.group(1) ?? '';
     String desc = _regExp.firstMatch(value)?.group(2) ?? '';
     return SharedTrackpointTask(id: int.parse(id), notes: desc);
-  }
-
-  static Future<void> addTask(ModelTask model, {String notes = ''}) async {
-    var tasks = await loadTasks();
-    for (var task in tasks) {
-      if (task.id == model.id) {
-        return;
-      }
-    }
-    tasks.add(SharedTrackpointTask(id: model.id, notes: notes));
-    await saveTasks(tasks);
-  }
-
-  static Future<void> removeTask(int id) async {
-    var tasks = await loadTasks();
-    tasks.removeWhere((task) => task.id == id);
-    await saveTasks(tasks);
-  }
-
-  static Future<List<SharedTrackpointTask>> loadTasks() async {
-    return toObjectList(
-        await Cache.backgroundSharedTaskList.load<List<String>>([]));
-  }
-
-  static Future<List<String>> saveTasks(
-      List<SharedTrackpointTask> tasks) async {
-    return await Cache.backgroundSharedTaskList.save<List<String>>(tasks
-        .map(
-          (e) => e.toString(),
-        )
-        .toList());
   }
 
   static List<SharedTrackpointTask> toObjectList(List<String> list) {
     List<SharedTrackpointTask> objects = [];
     for (var value in list) {
       try {
-        objects.add(toObject(value));
+        objects.add(_toObject(value));
       } catch (e, stk) {
         logger.error('parse deatil: $e', stk);
       }
     }
     return objects;
+  }
+
+  static Future<void> add(ModelTask model, {String notes = ''}) async {
+    var tasks = await loadSharedList();
+    for (var task in tasks) {
+      if (task.id == model.id) {
+        return;
+      }
+    }
+    tasks.add(SharedTrackpointTask(id: model.id, notes: notes));
+    await save(tasks);
+  }
+
+  static Future<void> remove(int id) async {
+    var tasks = await loadSharedList();
+    tasks.removeWhere((task) => task.id == id);
+    await save(tasks);
+  }
+
+  static Future<List<SharedTrackpointTask>> loadSharedList() async {
+    return toObjectList(
+        await Cache.backgroundSharedTaskList.load<List<String>>([]));
+  }
+
+  static Future<List<ModelTask>> loadModelList() async {
+    return await ModelTask.byIdList(
+        (await SharedTrackpointTask.loadSharedList())
+            .map(
+              (shared) => shared.id,
+            )
+            .toList());
+  }
+
+  static Future<List<String>> save(List<SharedTrackpointTask> tasks) async {
+    return await Cache.backgroundSharedTaskList.save<List<String>>(tasks
+        .map(
+          (e) => e.toString(),
+        )
+        .toList());
   }
 
   SharedTrackpointTask({required super.id, required super.notes});

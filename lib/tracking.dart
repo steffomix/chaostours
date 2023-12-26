@@ -55,21 +55,23 @@ class Tracker {
   Tracker._();
   factory Tracker() => _instance ??= Tracker._();
 
-  GPS? gpsLastStatusChange;
-  GPS? gpsLastStatusStanding;
-  GPS? gpsLastStatusMoving;
   List<GPS> gpsPoints = [];
   List<GPS> gpsSmoothPoints = [];
   List<GPS> gpsCalcPoints = [];
 
   /// initials
   TrackingStatus oldTrackingStatus = TrackingStatus.standing;
-  TrackingStatus trackingStatus = TrackingStatus.standing;
+  TrackingStatus? trackingStatus;
+
+  GPS? gpsLastStatusChange;
+
+  GPS? gpsLastStatusStanding;
+  GPS? gpsLastStatusMoving;
 
   Address? address;
 
   Map<String, dynamic> serializeState(GPS gps) {
-    return {
+    Map<String, dynamic> serialized = {
       DataChannelKey.gps.toString(): TypeAdapter.serializeGps(gps),
       DataChannelKey.gpsPoints.toString():
           TypeAdapter.serializeGpsList(gpsPoints),
@@ -88,30 +90,31 @@ class Tracker {
               ? null
               : TypeAdapter.serializeGps(gpsLastStatusStanding!),
       DataChannelKey.trackingStatus.toString():
-          TypeAdapter.serializeTrackingStatus(trackingStatus),
+          TypeAdapter.serializeTrackingStatus(trackingStatus!),
       DataChannelKey.lastAddress.toString(): address?.alias ?? '-',
       DataChannelKey.lastFullAddress.toString(): address?.description ?? '-',
     };
+    return serialized;
   }
 
   Future<Map<String, dynamic>> track() async {
     /// create gpsPoint
     GPS gps = await GPS.gps();
 
-    if (await Cache.backgroundTrackingStatus.load(TrackingStatus.none) ==
-        TrackingStatus.none) {
-      /// initialize basic events if not set
-      /// this must be done before loading last session
-      await Cache.backgroundGpsStartMoving.save<GPS>(gps);
-      await Cache.backgroundGpsStartStanding.save<GPS>(gps);
-      await Cache.backgroundGpsLastStatusChange.save<GPS>(gps);
-
-      /// app start, no status yet
-      await Cache.backgroundTrackingStatus
-          .save<TrackingStatus>(TrackingStatus.standing);
+    // make sure there are no old gps data
+    if (trackingStatus == null) {
+      gpsPoints = await Cache.backgroundGpsPoints.save<List<GPS>>([]);
     }
 
-    bool appSettingStatusStandingRequireAlias = await Cache
+    trackingStatus ??= await Cache.backgroundTrackingStatus
+        .save<TrackingStatus>(TrackingStatus.standing);
+    gpsLastStatusMoving ??= await Cache.backgroundGpsStartMoving.save<GPS>(gps);
+    gpsLastStatusStanding ??=
+        await Cache.backgroundGpsStartStanding.save<GPS>(gps);
+    gpsLastStatusChange ??=
+        await Cache.backgroundGpsLastStatusChange.save<GPS>(gps);
+
+    bool statusStandingRequireAlias = await Cache
         .appSettingStatusStandingRequireAlias
         .load<bool>(AppUserSetting(Cache.appSettingStatusStandingRequireAlias)
             .defaultValue as bool);
@@ -120,27 +123,26 @@ class Tracker {
         AppUserSetting(Cache.appSettingAutocreateAliasDuration).defaultValue
             as Duration;
 
-    Duration appSettingAutoCreateAliasDuration = await Cache
+    Duration autoCreateAliasDuration = await Cache
         .appSettingAutocreateAliasDuration
         .load<Duration>(autoCreateAliasDefault);
 
-    Duration appSettingsTrackpointInterval =
+    Duration trackpointInterval =
         await Cache.appSettingBackgroundTrackingInterval.load<Duration>(
             AppUserSetting(Cache.appSettingBackgroundTrackingInterval)
                 .defaultValue as Duration);
 
-    Duration appSettingTimeRangeTreshold =
-        await Cache.appSettingTimeRangeTreshold.load<Duration>(
-            AppUserSetting(Cache.appSettingTimeRangeTreshold).defaultValue
-                as Duration);
+    Duration timeRangeTreshold = await Cache.appSettingTimeRangeTreshold
+        .load<Duration>(AppUserSetting(Cache.appSettingTimeRangeTreshold)
+            .defaultValue as Duration);
 
     bool publishToCalendar = await Cache.appSettingPublishToCalendar.load<bool>(
         AppUserSetting(Cache.appSettingPublishToCalendar).defaultValue as bool);
 
-    int maxGpsPoints = ((appSettingAutoCreateAliasDuration.inSeconds == 0
+    int maxGpsPoints = ((autoCreateAliasDuration.inSeconds == 0
                 ? autoCreateAliasDefault.inSeconds
-                : appSettingAutoCreateAliasDuration.inSeconds) /
-            appSettingsTrackpointInterval.inSeconds)
+                : autoCreateAliasDuration.inSeconds) /
+            trackpointInterval.inSeconds)
         .ceil();
 
     gpsPoints.insert(0, gps);
@@ -149,7 +151,7 @@ class Tracker {
       /// prefill gpsPoints
       while (gpsPoints.length <= maxGpsPoints) {
         var gpsFiller = GPS(gps.lat, gps.lon);
-        gpsFiller.time = gpsPoints.last.time.add(appSettingsTrackpointInterval);
+        gpsFiller.time = gpsPoints.last.time.add(trackpointInterval);
         gpsPoints.add(gpsFiller);
       }
 
@@ -168,8 +170,7 @@ class Tracker {
             0,
             math.min(
                 gpsSmoothPoints.length - 1,
-                (appSettingTimeRangeTreshold.inSeconds /
-                        appSettingsTrackpointInterval.inSeconds)
+                (timeRangeTreshold.inSeconds / trackpointInterval.inSeconds)
                     .ceil()))
         .toList();
 
@@ -178,9 +179,11 @@ class Tracker {
 
     /// all gps points calculated, save them
     await Cache.backgroundLastGps.save<GPS>(gps);
-    await Cache.backgroundGpsPoints.save<List<GPS>>(gpsPoints);
-    await Cache.backgroundGpsSmoothPoints.save<List<GPS>>(gpsSmoothPoints);
-    await Cache.backgroundGpsCalcPoints.save<List<GPS>>(gpsCalcPoints);
+    gpsPoints = await Cache.backgroundGpsPoints.save<List<GPS>>(gpsPoints);
+    gpsSmoothPoints =
+        await Cache.backgroundGpsSmoothPoints.save<List<GPS>>(gpsSmoothPoints);
+    gpsCalcPoints =
+        await Cache.backgroundGpsCalcPoints.save<List<GPS>>(gpsCalcPoints);
 
     /// collect gps related data
     Location gpsLocation = await Location.location(gps);
@@ -240,15 +243,14 @@ class Tracker {
         }
       } else if (oldTrackingStatus == TrackingStatus.moving) {
         /// autocreate alias?
-        if (appSettingStatusStandingRequireAlias && !gpsLocation.hasAlias) {
+        if (statusStandingRequireAlias && !gpsLocation.hasAlias) {
           try {
             /// autocreate must be activated
-            if (appSettingAutoCreateAliasDuration.inMinutes > 0) {
+            if (autoCreateAliasDuration.inMinutes > 0) {
               /// check if enough time has passed
               if ((await Cache.backgroundGpsStartMoving.load<GPS>(gps))
                   .time
-                  .isBefore(
-                      gps.time.subtract(appSettingAutoCreateAliasDuration))) {
+                  .isBefore(gps.time.subtract(autoCreateAliasDuration))) {
                 /// check if all points are in radius
                 bool checkAllPointsInside = true;
                 for (var sm in gpsSmoothPoints) {
@@ -274,10 +276,10 @@ class Tracker {
                       gps: createAliasGps,
                       lastVisited: gpsSmoothPoints.last.time,
                       timesVisited: 1,
-                      title: address?.alias ?? Address.messageDenyAddressLookup,
-                      description: address?.description ?? '',
+                      title: address!.alias,
+                      description: address!.description,
                       radius: distanceTreshold);
-                  logger.warn('auto create new alias');
+                  logger.log('auto create new alias');
                   await newAlias.insert();
 
                   /// recreate location with new alias
@@ -296,10 +298,22 @@ class Tracker {
           } catch (e, stk) {
             logger.error('autocreate alias: $e', stk);
           }
-        } else {
-          if (GPS.distanceOverTrackList(gpsCalcPoints) < distanceTreshold) {
-            await cacheNewStatusStanding(gps);
+        }
+        var treshold =
+            gpsLocation.aliasModels.firstOrNull?.radius ?? distanceTreshold;
+        bool checkAllPointsInside = true;
+        for (var cp in gpsCalcPoints) {
+          if (GPS.distance(cp, gps) > treshold) {
+            checkAllPointsInside = false;
+            break;
           }
+        }
+        if (checkAllPointsInside) {
+          if (gpsLocation.hasAlias) {}
+        }
+
+        if (GPS.distanceOverTrackList(gpsCalcPoints) < distanceTreshold) {
+          await cacheNewStatusStanding(gps);
         }
       }
     }
@@ -316,10 +330,6 @@ class Tracker {
       ///
       ///
     } else {
-      /// update osm address
-      address = await Address(gps)
-          .lookup(OsmLookupConditions.onStatusChanged, saveToCache: true);
-
       /// we started moving
       if (newTrackingStatus == TrackingStatus.moving) {
         logger.log('tracking status MOVING');
@@ -330,8 +340,8 @@ class Tracker {
         ///
         ///     --- insert and update database entrys ---
         ///
-        if (!appSettingStatusStandingRequireAlias ||
-            (appSettingStatusStandingRequireAlias && aliases.isNotEmpty)) {
+        if (!statusStandingRequireAlias ||
+            (statusStandingRequireAlias && aliases.isNotEmpty)) {
           /// create and insert new trackpoint
           ModelTrackPoint newTrackPoint = ModelTrackPoint(
               gps: gps,
@@ -340,7 +350,7 @@ class Tracker {
               timeEnd: gps.time,
               calendarEventIds: await Cache.backgroundCalendarLastEventIds
                   .load<List<CalendarEventId>>([CalendarEventId()]),
-              address: address?.alias ?? Address.messageDenyAddressLookup,
+              address: address!.alias,
               notes:
                   await Cache.backgroundTrackPointUserNotes.load<String>(''));
 
@@ -350,8 +360,8 @@ class Tracker {
           /// execute calendar
           if (publishToCalendar &&
               !gpsLocation.isPrivate &&
-              (!appSettingStatusStandingRequireAlias ||
-                  (appSettingStatusStandingRequireAlias &&
+              (!statusStandingRequireAlias ||
+                  (statusStandingRequireAlias &&
                       newTrackPoint.aliasModels.isNotEmpty))) {
             try {
               var calendar = AppCalendar();
@@ -389,6 +399,10 @@ class Tracker {
       } else if (newTrackingStatus == TrackingStatus.standing) {
         logger.log('new tracking status STANDING');
 
+        /// update osm address
+        address = await Address(gps)
+            .lookup(OsmLookupConditions.onStatusChanged, saveToCache: true);
+
         /// cache alias id list
         await Cache.backgroundAliasIdList.save<List<int>>(gpsLocation.aliasIds);
 
@@ -399,9 +413,8 @@ class Tracker {
         /// create calendar entry from cache data
         if (publishToCalendar &&
             !gpsLocation.isPrivate &&
-            (!appSettingStatusStandingRequireAlias ||
-                (appSettingStatusStandingRequireAlias &&
-                    gpsLocation.hasAlias))) {
+            (!statusStandingRequireAlias ||
+                (statusStandingRequireAlias && gpsLocation.hasAlias))) {
           logger.log('create new calendar event');
           try {
             await AppCalendar()

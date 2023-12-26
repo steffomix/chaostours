@@ -41,42 +41,25 @@ class Location {
       required this.isRestricted});
 
   static Future<Location> location(GPS gps) async {
-    /// location defaults
-    List<ModelAlias> models = [];
-    AliasVisibility visibility = AliasVisibility.public;
-    bool isRestricted = false;
-    bool isPrivate = false;
-    bool isPublic = true;
-    try {
-      models.addAll(await ModelAlias.byArea(
-          gps: gps,
-          area: await Cache.appSettingDistanceTreshold.load(
-              AppUserSetting(Cache.appSettingDistanceTreshold).defaultValue
-                  as int)));
+    List<ModelAlias> models = await ModelAlias.byArea(
+        gps: gps,
+        area: await Cache.appSettingDistanceTreshold.load(
+            AppUserSetting(Cache.appSettingDistanceTreshold).defaultValue
+                as int));
 
-      for (var model in models) {
-        if (model.visibility == AliasVisibility.restricted) {
-          visibility = AliasVisibility.restricted;
-          isRestricted = true;
-          isPrivate = true;
-          isPublic = false;
-        }
-        if (model.visibility == AliasVisibility.privat) {
-          visibility = AliasVisibility.privat;
-          isRestricted = false;
-          isPrivate = true;
-          isPublic = false;
-        }
+    AliasVisibility visibility = AliasVisibility.public;
+    for (var model in models) {
+      if (model.visibility.level > visibility.level) {
+        visibility = model.visibility;
       }
-    } catch (e, stk) {
-      logger.error('create location: $e', stk);
     }
+
     return Location(
         aliasModels: models,
         gps: gps,
         visibility: visibility,
-        isPrivate: isPrivate,
-        isPublic: isPublic,
-        isRestricted: isRestricted);
+        isPublic: visibility.level == AliasVisibility.public.level,
+        isPrivate: visibility.level == AliasVisibility.privat.level,
+        isRestricted: visibility.level == AliasVisibility.restricted.level);
   }
 }

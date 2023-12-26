@@ -41,7 +41,7 @@ class ModelAliasGroup {
       TableAliasGroup.primaryKey.column: id,
       TableAliasGroup.idCalendar.column: idCalendar,
       TableAliasGroup.isActive.column: DB.boolToInt(isActive),
-      TableAliasGroup.visibility.column: visibility.value,
+      TableAliasGroup.visibility.column: visibility.level,
       TableAliasGroup.title.column: title,
       TableAliasGroup.description.column: description
     };

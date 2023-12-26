@@ -31,10 +31,10 @@ enum AliasVisibility {
   restricted(3, Color.fromARGB(255, 166, 0, 166));
 
   static final Logger logger = Logger.logger<AliasVisibility>();
-  final int value;
+  final int level;
   final Color color;
-  const AliasVisibility(this.value, this.color);
-  static final int _saveId = AliasVisibility.restricted.value;
+  const AliasVisibility(this.level, this.color);
+  static final int _saveId = AliasVisibility.restricted.level;
 
   static AliasVisibility byId(Object? value) {
     int id = DB.parseInt(value, fallback: 3);
@@ -44,7 +44,7 @@ enum AliasVisibility {
 
   static AliasVisibility byValue(int id) {
     try {
-      return AliasVisibility.values.firstWhere((status) => status.value == id);
+      return AliasVisibility.values.firstWhere((status) => status.level == id);
     } catch (e, stk) {
       logger.error('invalid value $id: $e', stk);
       return AliasVisibility.restricted;
@@ -109,7 +109,7 @@ class ModelAlias {
       TableAlias.latitude.column: gps.lat,
       TableAlias.longitude.column: gps.lon,
       TableAlias.radius.column: radius,
-      TableAlias.visibility.column: visibility.value,
+      TableAlias.visibility.column: visibility.level,
       TableAlias.lastVisited.column: DB.timeToInt(lastVisited),
       TableAlias.timesVisited.column: timesVisited,
       TableAlias.title.column: title,

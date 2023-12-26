@@ -230,6 +230,34 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
               final GPS gps = await GPS.gps();
               final Address address =
                   await Address(gps).lookup(OsmLookupConditions.onUserRequest);
+              if (mounted) {
+                AppWidgets.dialog(context: context, contents: [
+                  ListTile(
+                      title: const Text('Address'),
+                      subtitle: Text(address.alias),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.copy),
+                        onPressed: () {
+                          Clipboard.setData(ClipboardData(text: address.alias));
+                        },
+                      )),
+                  ListTile(
+                      title: const Text('Address Details'),
+                      subtitle: Text(address.description),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.copy),
+                        onPressed: () {
+                          Clipboard.setData(
+                              ClipboardData(text: address.description));
+                        },
+                      )),
+                ], buttons: [
+                  TextButton(
+                    child: const Text('OK'),
+                    onPressed: () => Navigator.pop(context),
+                  )
+                ]);
+              }
             } catch (e, stk) {
               logger.error('update address: $e', stk);
             }
@@ -373,8 +401,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
           maxLines: 6,
           decoration: const InputDecoration(hintText: 'Notes'),
           onEditingComplete: () async {
-            dataChannel.notes =
-                await Cache.backgroundTrackPointUserNotes.load<String>('');
+            dataChannel.setTrackpointNotes(_userNotesController?.text ?? '');
           },
         ));
   }
