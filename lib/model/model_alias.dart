@@ -67,7 +67,7 @@ class ModelAlias {
   String description = '';
 
   /// group values
-  AliasVisibility visibility = AliasVisibility.restricted;
+  AliasVisibility privacy = AliasVisibility.restricted;
   bool isActive = true;
 
   /// temporary set during search for nearest Alias
@@ -80,7 +80,7 @@ class ModelAlias {
     required this.lastVisited,
     required this.title,
     this.isActive = true,
-    this.visibility = AliasVisibility.public,
+    this.privacy = AliasVisibility.public,
     this.radius = 50,
     this.timesVisited = 0,
     this.description = '',
@@ -93,7 +93,7 @@ class ModelAlias {
         gps: GPS(DB.parseDouble(map[TableAlias.latitude.column]),
             DB.parseDouble(map[TableAlias.longitude.column])),
         radius: DB.parseInt(map[TableAlias.radius.column], fallback: 10),
-        visibility: AliasVisibility.byId(map[TableAlias.visibility.column]),
+        privacy: AliasVisibility.byId(map[TableAlias.privacy.column]),
         lastVisited: DB.intToTime(map[TableAlias.lastVisited.column]),
         timesVisited: DB.parseInt(map[TableAlias.timesVisited.column]),
         title: DB.parseString(map[TableAlias.title.column]),
@@ -109,7 +109,7 @@ class ModelAlias {
       TableAlias.latitude.column: gps.lat,
       TableAlias.longitude.column: gps.lon,
       TableAlias.radius.column: radius,
-      TableAlias.visibility.column: visibility.level,
+      TableAlias.privacy.column: privacy.level,
       TableAlias.lastVisited.column: DB.timeToInt(lastVisited),
       TableAlias.timesVisited.column: timesVisited,
       TableAlias.title.column: title,

@@ -50,7 +50,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
   final _radiusController = TextEditingController();
   final _radiusUndoController = UndoHistoryController();
 
-  final _visibility = ValueNotifier<bool>(false);
+  final _privacy = ValueNotifier<bool>(false);
   ModelAlias? _modelAlias;
 
   List<ModelAliasGroup> _groups = [];
@@ -343,11 +343,11 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                         ))),
                 subtitle: const Text('This Alias supports all app futures.'),
                 leading: ValueListenableBuilder(
-                    valueListenable: _visibility,
+                    valueListenable: _privacy,
                     builder: (context, value, child) {
                       return Radio<AliasVisibility>(
                           value: AliasVisibility.public,
-                          groupValue: alias.visibility,
+                          groupValue: alias.privacy,
                           onChanged: (AliasVisibility? val) {
                             setStatus(val);
                           });
@@ -364,11 +364,11 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                     'This Alias is reduced to app internal futures only.\n'
                     'However, Database exports will include all informations!'),
                 leading: ValueListenableBuilder(
-                    valueListenable: _visibility,
+                    valueListenable: _privacy,
                     builder: (context, value, child) {
                       return Radio<AliasVisibility>(
                           value: AliasVisibility.privat,
-                          groupValue: alias.visibility,
+                          groupValue: alias.privacy,
                           onChanged: (AliasVisibility? val) {
                             setStatus(val);
                           });
@@ -385,13 +385,13 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                     'This Alias functionality is reduced to be visible in apps map.\n'
                     'However, Database exports will include all informations!'),
                 leading: ValueListenableBuilder(
-                  valueListenable: _visibility,
+                  valueListenable: _privacy,
                   builder: (context, value, child) {
                     return Radio<AliasVisibility>(
                         value: AliasVisibility.restricted,
-                        groupValue: alias.visibility,
+                        groupValue: alias.privacy,
                         onChanged: (AliasVisibility? state) {
-                          _visibility.value = !_visibility.value;
+                          _privacy.value = !_privacy.value;
                           setStatus(state);
                         });
                   },
@@ -423,8 +423,8 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
   }
 
   void setStatus(AliasVisibility? state) {
-    _modelAlias?.visibility = (state ?? AliasVisibility.restricted);
+    _modelAlias?.privacy = (state ?? AliasVisibility.restricted);
     _modelAlias?.update();
-    _visibility.value = !_visibility.value;
+    _privacy.value = !_privacy.value;
   }
 }

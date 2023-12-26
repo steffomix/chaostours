@@ -29,12 +29,12 @@ class Location {
   final bool isPublic;
   final bool isPrivate;
   final bool isRestricted;
-  final AliasVisibility visibility;
+  final AliasVisibility privacy;
   bool get hasAlias => aliasModels.isNotEmpty;
 
   Location(
       {required this.gps,
-      required this.visibility,
+      required this.privacy,
       required this.aliasModels,
       required this.isPublic,
       required this.isPrivate,
@@ -47,19 +47,19 @@ class Location {
             AppUserSetting(Cache.appSettingDistanceTreshold).defaultValue
                 as int));
 
-    AliasVisibility visibility = AliasVisibility.public;
+    AliasVisibility privacy = AliasVisibility.public;
     for (var model in models) {
-      if (model.visibility.level > visibility.level) {
-        visibility = model.visibility;
+      if (model.privacy.level > privacy.level) {
+        privacy = model.privacy;
       }
     }
 
     return Location(
         aliasModels: models,
         gps: gps,
-        visibility: visibility,
-        isPublic: visibility.level == AliasVisibility.public.level,
-        isPrivate: visibility.level == AliasVisibility.privat.level,
-        isRestricted: visibility.level == AliasVisibility.restricted.level);
+        privacy: privacy,
+        isPublic: privacy.level == AliasVisibility.public.level,
+        isPrivate: privacy.level == AliasVisibility.privat.level,
+        isRestricted: privacy.level == AliasVisibility.restricted.level);
   }
 }

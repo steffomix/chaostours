@@ -548,7 +548,7 @@ class _AliasTrackingRenderer {
           centerPoint:
               GeoPoint(latitude: alias.gps.lat, longitude: alias.gps.lon),
           radius: alias.radius.toDouble(),
-          color: alias.visibility.color,
+          color: alias.privacy.color,
           strokeWidth: 10,
         ));
       } catch (e, stk) {

@@ -475,7 +475,7 @@ enum TableAlias {
   isActive('active'),
   calendarId('calendar_id'),
   radius('radius'),
-  visibility('visibilty'),
+  privacy('privacy'),
   lastVisited('last_visited'),
   timesVisited('times_visited'),
   latitude('latitude'),
@@ -501,7 +501,7 @@ enum TableAlias {
 	${isActive.column}	INTEGER DEFAULT 1,
   ${calendarId.column} TEXT,
   ${radius.column} INTEGER,
-	${visibility.column}	INTEGER,
+	${privacy.column}	INTEGER,
 	${latitude.column}	NUMERIC NOT NULL,
 	${longitude.column}	NUMERIC NOT NULL,
 	${lastVisited.column}	TEXT,
@@ -698,7 +698,7 @@ enum TableAliasGroup {
   id('id'),
   idCalendar('id_calendar'),
   isActive('active'),
-  visibility('sort'),
+  privacy('sort'),
   title('title'),
   description('description');
 
@@ -718,7 +718,7 @@ enum TableAliasGroup {
 	${primaryKey.column}	INTEGER NOT NULL,
 	${idCalendar.column}	TEXT,
 	${isActive.column}	INTEGER DEFAULT 1,
-	${visibility.column}	INTEGER,
+	${privacy.column}	INTEGER,
 	${title.column}	TEXT,
 	${description.column}	TEXT,
 	PRIMARY KEY(${primaryKey.column} AUTOINCREMENT)

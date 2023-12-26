@@ -305,7 +305,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                 },
                 child: Text('${dataChannel.distance}m: ${model.title}',
                     style: TextStyle(
-                        color: model.visibility.color,
+                        color: model.privacy.color,
                         backgroundColor: Colors.grey))));
           }
           return Column(

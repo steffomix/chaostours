@@ -130,7 +130,7 @@ class _WidgetAliasTrackpoint extends BaseWidgetState<WidgetAliasTrackpoint> {
         subtitle: Text(alias.description),
         leading: Text('${alias.timesVisited}x',
             style: TextStyle(
-                color: Colors.white, backgroundColor: alias.visibility.color)),
+                color: Colors.white, backgroundColor: alias.privacy.color)),
         trailing: IconButton(
           icon: Icon(Icons.edit, size: 30, color: AppColors.black.color),
           onPressed: () {
