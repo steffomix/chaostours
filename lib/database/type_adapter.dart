@@ -123,7 +123,7 @@ class TypeAdapter {
             (e) => e.toString(),
           )
           .toList();
-  static List<SharedTrackpointAlias> desrializeSharedrackpointAlias(
+  static List<SharedTrackpointAlias> desrializeSharedrackpointAliasList(
           List<String>? value) =>
       value == null
           ? []
@@ -137,7 +137,7 @@ class TypeAdapter {
             (e) => e.toString(),
           )
           .toList();
-  static List<SharedTrackpointUser> desrializeSharedrackpointUser(
+  static List<SharedTrackpointUser> desrializeSharedrackpointUserList(
           List<String>? value) =>
       value == null
           ? []
@@ -151,7 +151,7 @@ class TypeAdapter {
             (e) => e.toString(),
           )
           .toList();
-  static List<SharedTrackpointTask> desrializeSharedrackpointTask(
+  static List<SharedTrackpointTask> desrializeSharedrackpointTaskList(
           List<String>? value) =>
       value == null
           ? []

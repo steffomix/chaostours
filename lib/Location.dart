@@ -87,6 +87,7 @@ class Location {
 
     location._privacy = priv;
     location.radius = rad;
+    await location.updateSharedAliasList();
     return location;
   }
 

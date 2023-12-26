@@ -94,12 +94,12 @@ enum Cache {
   backgroundTrackingStatus(
       CacheModulId.sharedPreferences, TrackingStatus, expireAfterOneSecond),
 
-  backgroundSharedAliasList(
-      CacheModulId.sharedPreferences, List<String>, expireAfterOneSecond),
-  backgroundSharedUserList(
-      CacheModulId.sharedPreferences, List<String>, expireAfterOneSecond),
-  backgroundSharedTaskList(
-      CacheModulId.sharedPreferences, List<String>, expireAfterOneSecond),
+  backgroundSharedAliasList(CacheModulId.sharedPreferences,
+      List<SharedTrackpointAlias>, expireAfterOneSecond),
+  backgroundSharedUserList(CacheModulId.sharedPreferences,
+      List<SharedTrackpointUser>, expireAfterOneSecond),
+  backgroundSharedTaskList(CacheModulId.sharedPreferences,
+      List<SharedTrackpointTask>, expireAfterOneSecond),
 
   backgroundTrackPointUserNotes(
       CacheModulId.sharedPreferences, String, expireAfterOneSecond),
@@ -241,7 +241,7 @@ enum Cache {
 
   static void _checkType<T>(Cache key) {
     if (T != key.cacheType) {
-      throw 'setValue::value with type $T on key $key doesn\'t match required type ${key.cacheType}';
+      throw 'setValue::value with type $T on key $key doesn\'t match required type ${key.cacheType} as specified in Cache.enum parameters.';
     }
   }
 
@@ -469,15 +469,15 @@ enum Cache {
                   await cacheModul.getString(key)) as T? ??
               defaultValue;
         case const (List<SharedTrackpointAlias>):
-          return TypeAdapter.deserializeGpsList(
+          return TypeAdapter.desrializeSharedrackpointAliasList(
                   await cacheModul.getStringList(key)) as T? ??
               defaultValue;
         case const (List<SharedTrackpointUser>):
-          return TypeAdapter.deserializeGpsList(
+          return TypeAdapter.desrializeSharedrackpointUserList(
                   await cacheModul.getStringList(key)) as T? ??
               defaultValue;
         case const (List<SharedTrackpointTask>):
-          return TypeAdapter.deserializeGpsList(
+          return TypeAdapter.desrializeSharedrackpointTaskList(
                   await cacheModul.getStringList(key)) as T? ??
               defaultValue;
         default:
