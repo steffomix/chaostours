@@ -24,12 +24,14 @@ import 'package:chaostours/shared/shared_trackpoint_task.dart';
 import 'package:chaostours/shared/shared_trackpoint_user.dart';
 import 'package:chaostours/tracking.dart';
 import 'package:chaostours/calendar.dart';
+import 'package:chaostours/value_expired.dart';
+import 'package:geolocator/geolocator.dart';
+/* 
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_task.dart';
-import 'package:chaostours/model/model_user.dart';
-import 'package:chaostours/value_expired.dart';
-import 'package:geolocator/geolocator.dart';
+import 'package:chaostours/model/model_user.dart'; 
+*/
 
 abstract class CacheModul {
   Future<void> setString(Cache key, String value);
@@ -92,9 +94,6 @@ enum Cache {
   backgroundTrackingStatus(
       CacheModulId.sharedPreferences, TrackingStatus, expireAfterOneSecond),
 
-  /// user input
-  backgroundAliasIdList(
-      CacheModulId.sharedPreferences, List<int>, expireAfterOneSecond),
   backgroundSharedAliasList(
       CacheModulId.sharedPreferences, List<String>, expireAfterOneSecond),
   backgroundSharedUserList(

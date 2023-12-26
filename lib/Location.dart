@@ -235,7 +235,7 @@ class Location {
   }
 
   Future<void> _publishStanding() async {
-    ModelTrackPoint tp = await ModelTrackPoint.fromLocation(this);
+    ModelTrackPoint tp = await createTrackPoint();
     // check privacy
     if (privacy.level > AliasPrivacy.public.level) {
       return;

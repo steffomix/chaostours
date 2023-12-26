@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import 'package:chaostours/Location.dart';
 import 'package:chaostours/database/cache.dart';
 import 'package:chaostours/calendar.dart';
 import 'package:chaostours/database/database.dart';
@@ -400,33 +399,6 @@ class ModelTrackPoint {
     aliasModels = await loadAliasList();
     taskModels = await loadTaskList();
     userModels = await loadUserList();
-  }
-
-  static Future<ModelTrackPoint> fromLocation(Location location) async {
-    ModelTrackPoint newTrackPoint = ModelTrackPoint(
-        gps: location.gps,
-        timeStart:
-            (await Cache.backgroundGpsStartStanding.load<GPS>(location.gps))
-                .time,
-        timeEnd: location.gps.time,
-        calendarEventIds: await Cache.backgroundCalendarLastEventIds
-            .load<List<CalendarEventId>>([]),
-        address: await Cache.backgroundLastStandingAddress.load<String>(''),
-        notes: await Cache.backgroundTrackPointUserNotes.load<String>(''));
-    newTrackPoint.aliasModels = location.aliasModels;
-    newTrackPoint.taskModels = await ModelTask.byIdList((await Cache
-            .backgroundSharedTaskList
-            .load<List<SharedTrackpointTask>>([]))
-        .map((e) => e.id)
-        .toList());
-    newTrackPoint.userModels = await ModelUser.byIdList((await Cache
-            .backgroundSharedUserList
-            .load<List<SharedTrackpointUser>>([]))
-        .map(
-          (e) => e.id,
-        )
-        .toList());
-    return newTrackPoint;
   }
 
   static Future<ModelTrackPoint?> byId(int id) async {

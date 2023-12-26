@@ -24,29 +24,29 @@ import 'package:chaostours/view/system/widget_database_explorer.dart';
 //
 import 'package:chaostours/view/alias/widget_alias_list.dart';
 import 'package:chaostours/view/alias/widget_alias_edit.dart';
-import 'package:chaostours/view/alias/widget_alias-group_edit.dart';
-import 'package:chaostours/view/alias/widget_alias-group_list.dart';
-import 'package:chaostours/view/alias/widget_aliases_from_alias-group_list.dart';
-import 'package:chaostours/view/alias/widget_alias-groups_from_alias_list.dart';
+import 'package:chaostours/view/alias/widget_alias__group_edit.dart';
+import 'package:chaostours/view/alias/widget_alias__group_list.dart';
+import 'package:chaostours/view/alias/widget_aliases_from_alias__group_list.dart';
+import 'package:chaostours/view/alias/widget_alias__groups_from_alias_list.dart';
 import 'package:chaostours/view/alias/widget_edit_alias_osm.dart';
 //
 import 'package:chaostours/view/user/widget_user_list.dart';
 import 'package:chaostours/view/user/widget_user_edit.dart';
-import 'package:chaostours/view/user/widget_user-group_edit.dart';
-import 'package:chaostours/view/user/widget_user-group_list.dart';
-import 'package:chaostours/view/user/widget_users_from_user-group_list.dart';
-import 'package:chaostours/view/user/widget_user-groups_from_user_list.dart';
+import 'package:chaostours/view/user/widget_user__group_edit.dart';
+import 'package:chaostours/view/user/widget_user__group_list.dart';
+import 'package:chaostours/view/user/widget_users_from_user__group_list.dart';
+import 'package:chaostours/view/user/widget_user__groups_from_user_list.dart';
 //
 import 'package:chaostours/view/task/widget_task_list.dart';
 import 'package:chaostours/view/task/widget_task_edit.dart';
-import 'package:chaostours/view/task/widget_task-group_edit.dart';
-import 'package:chaostours/view/task/widget_task-group_list.dart';
-import 'package:chaostours/view/task/widget_tasks_from_task-group_list.dart';
-import 'package:chaostours/view/task/widget_task-groups_from_task_list.dart';
+import 'package:chaostours/view/task/widget_task__group_edit.dart';
+import 'package:chaostours/view/task/widget_task__group_list.dart';
+import 'package:chaostours/view/task/widget_tasks_from_task__group_list.dart';
+import 'package:chaostours/view/task/widget_task__groups_from_task_list.dart';
 //
 import 'package:chaostours/view/trackpoint/widget_live_tracking.dart';
 import 'package:chaostours/view/trackpoint/widget_trackpoints.dart';
-import 'package:chaostours/view/trackpoint/widget_trackpoints_from_Alias_list.dart';
+import 'package:chaostours/view/trackpoint/widget_trackpoints_from_alias_list.dart';
 import 'package:chaostours/view/trackpoint/widget_edit_trackpoint.dart';
 //
 import 'package:chaostours/view/widget_manage_calendar.dart';

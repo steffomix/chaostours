@@ -30,7 +30,7 @@ import 'package:chaostours/util.dart';
 typedef CalendarEntry = Map<String?, Calendar>;
 
 class WidgetAliasesFromAliasGroupList extends BaseWidget {
-  const WidgetAliasesFromAliasGroupList({Key? key}) : super(key: key);
+  const WidgetAliasesFromAliasGroupList({super.key});
   @override
   State<WidgetAliasesFromAliasGroupList> createState() =>
       _WidgetAliasesFromAliasGroupList();

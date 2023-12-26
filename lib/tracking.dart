@@ -14,25 +14,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-//import 'package:background_location_tracker/background_location_dart';
-import 'package:chaostours/address.dart';
-import 'package:chaostours/channel/data_channel.dart';
-import 'package:chaostours/database/cache_modules.dart';
 import 'dart:math' as math;
 
 ///
+//import 'package:background_location_tracker/background_location_dart';
+import 'package:chaostours/address.dart';
+import 'package:chaostours/channel/data_channel.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/conf/app_user_settings.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/database/cache.dart';
 import 'package:chaostours/location.dart';
-import 'package:chaostours/calendar.dart';
-//import 'package:chaostours/database.dart';
-import 'package:chaostours/model/model_trackpoint.dart';
-import 'package:chaostours/model/model_alias.dart';
-import 'package:chaostours/shared/shared_trackpoint_alias.dart';
-
-import 'database/type_adapter.dart';
+import 'package:chaostours/database/type_adapter.dart';
 
 enum TrackingStatus {
   none(0),
