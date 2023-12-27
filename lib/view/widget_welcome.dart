@@ -35,7 +35,7 @@ import 'package:chaostours/logger.dart';
 import 'package:chaostours/database/database.dart';
 import 'package:chaostours/runtime_data.dart';
 import 'package:chaostours/view/app_widgets.dart';
-import 'package:chaostours/tracking.dart';
+import 'package:chaostours/channel/tracking.dart';
 //import 'package:chaostours/logger.dart';
 
 class Welcome extends StatefulWidget {
@@ -60,7 +60,6 @@ class _WelcomeState extends State<Welcome> {
   bool permissionIgnoreBatteryOptimizationsIsGranted = false;
   bool permissionStorageIsGrantd = false;
   bool permissionManageExternalStorageIsGranted = false;
-  bool permissionNotificationIsGranted = false;
   bool permissionCalendarIsGranted = false;
 
   //
@@ -97,6 +96,7 @@ class _WelcomeState extends State<Welcome> {
     await Permission.location.request();
   }
 
+/* 
   Future<void> requestLocationAlways() async {
     var status = await Permission.locationAlways.request();
     if ((status.isDenied || status.isPermanentlyDenied) && mounted) {
@@ -106,7 +106,11 @@ class _WelcomeState extends State<Welcome> {
       ], buttons: [
         TextButton(
           child: const Text('Cancel'),
-          onPressed: () {},
+          onPressed: () {
+            if (mounted) {
+              Navigator.pop(context);
+            }
+          },
         ),
         TextButton(
           child: const Text('OK'),
@@ -121,7 +125,7 @@ class _WelcomeState extends State<Welcome> {
       ]);
     }
   }
-
+ */
   Future<void> requestBatteryOptimization() async {
     if (await Permission.ignoreBatteryOptimizations.isPermanentlyDenied) {
       await AppSettings.openAppSettings(
@@ -164,8 +168,8 @@ class _WelcomeState extends State<Welcome> {
   }
 
   Future<void> requestAllPermissions() async {
-    await requestLocation();
-    await requestLocationAlways();
+    await requestLocation(); /* 
+    await requestLocationAlways(); */
     await requestBatteryOptimization();
     await requestStorage();
     await requestExternalStorage();
@@ -199,20 +203,9 @@ class _WelcomeState extends State<Welcome> {
     bool granted = false;
     try {
       granted = (permissionLocationIsGranted =
-                  await Permission.location.isGranted) &&
-              (permissionLocationAlwaysIsGranted =
-                  await Permission.locationAlways.isGranted) &&
-              (permissionIgnoreBatteryOptimizationsIsGranted =
-                  await Permission.ignoreBatteryOptimizations.isGranted) &&
-              (permissionNotificationIsGranted =
-                  await Permission.notification.isGranted)
-          /* &&
-          (permissionManageExternalStorageIsGranted =
-              await Permission.manageExternalStorage.isGranted) &&
-          (permissionNotificationIsGranted =
-              await Permission.notification.isGranted) &&
-          (permissionCalendarIsGranted = await Permission.calendar.isGranted)*/
-          ;
+              await Permission.location.isGranted) &&
+          (permissionIgnoreBatteryOptimizationsIsGranted =
+              await Permission.ignoreBatteryOptimizations.isGranted);
     } catch (e) {
       // ignore
     }
@@ -228,19 +221,10 @@ class _WelcomeState extends State<Welcome> {
   Future<bool> checkAllOptionalPermissions() async {
     bool granted = false;
     try {
-      granted = /* (permissionLocationIsGranted =
-              await Permission.location.isGranted) &&
-          (permissionLocationAlwaysIsGranted =
-              await Permission.locationAlways.isGranted) &&
-          (permissionIgnoreBatteryOptimizationsIsGranted =
-              await Permission.ignoreBatteryOptimizations.isGranted) &&
-              (permissionNotificationIsGranted =
-                  await Permission.notification.isGranted) &&
-               */
-          (permissionManageExternalStorageIsGranted =
-                  await Permission.manageExternalStorage.isGranted) &&
-              (permissionCalendarIsGranted =
-                  await Permission.calendarFullAccess.isGranted);
+      granted = (permissionManageExternalStorageIsGranted =
+              await Permission.manageExternalStorage.isGranted) &&
+          (permissionCalendarIsGranted =
+              await Permission.calendarFullAccess.isGranted);
     } catch (e) {
       // ignore
     }
@@ -292,28 +276,28 @@ class _WelcomeState extends State<Welcome> {
     permissionItemsOptional.clear();
     permissionItemsRequired.clear();
     trackingItems.clear();
-
-    if (permissionLocationAlwaysIsGranted) {
-      trackingItems.add(ListTile(
-          leading: isTracking
-              ? const Icon(Icons.done, color: Colors.green)
-              : const Icon(Icons.error_outline, color: Colors.red),
-          title: const Text('Background GPS Tracking Status'),
-          subtitle: const Text('Start / Stop'),
-          trailing: IconButton(
-            icon: isTracking
-                ? const Icon(Icons.stop)
-                : const Icon(Icons.play_arrow),
-            onPressed: () async {
-              if (isTracking) {
-                await BackgroundChannel.stop();
-              } else {
-                await BackgroundChannel.start();
-              }
-              updatePermission();
-            },
-          )));
-    }
+/* 
+    if (permissionLocationAlwaysIsGranted) { */
+    trackingItems.add(ListTile(
+        leading: isTracking
+            ? const Icon(Icons.done, color: Colors.green)
+            : const Icon(Icons.error_outline, color: Colors.red),
+        title: const Text('Background GPS Tracking Status'),
+        subtitle: const Text('Start / Stop'),
+        trailing: IconButton(
+          icon: isTracking
+              ? const Icon(Icons.stop)
+              : const Icon(Icons.play_arrow),
+          onPressed: () async {
+            if (isTracking) {
+              await BackgroundChannel.stop();
+            } else {
+              await BackgroundChannel.start();
+            }
+            updatePermission();
+          },
+        )));
+    /* } */
 
     if (isTracking) {
       trackingItems.add(Padding(
@@ -339,20 +323,6 @@ class _WelcomeState extends State<Welcome> {
             },
           )));
     }
-    if (!permissionLocationAlwaysIsGranted) {
-      permissionItemsRequired.add(ListTile(
-          title: const Text('Background GPS Tracking'),
-          subtitle: const Text(
-              'Needed to detect Move and Stop detection and its locations.'),
-          trailing: IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () async {
-              await requestLocation();
-              updatePermission();
-            },
-          )));
-    }
-
     if (!permissionIgnoreBatteryOptimizationsIsGranted) {
       permissionItemsRequired.add(ListTile(
           title: const Text('Ignore Battery optimization.'),
@@ -362,19 +332,6 @@ class _WelcomeState extends State<Welcome> {
             icon: const Icon(Icons.settings),
             onPressed: () async {
               await requestBatteryOptimization();
-              updatePermission();
-            },
-          )));
-    }
-    if (!permissionNotificationIsGranted) {
-      permissionItemsRequired.add(ListTile(
-          title: const Text('Show notifications.'),
-          subtitle: const Text(
-              'Needed to inform you about automatic alias creation or Moving/Standing Status changes.'),
-          trailing: IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () async {
-              await requestNotification();
               updatePermission();
             },
           )));
@@ -459,9 +416,10 @@ class _WelcomeState extends State<Welcome> {
                   return [
                     header('ChaosTours main Settings'),
                     divider,
+                    /* 
                     ...permissionLocationAlwaysIsGranted
                         ? [divider, header('Background Tracking status')]
-                        : [divider],
+                        : [divider], */
                     ...trackingItems,
                     ...[divider, divider],
                     permissionItemsRequired.isNotEmpty
@@ -560,17 +518,11 @@ class _WelcomeState extends State<Welcome> {
 
       if (!(await Permission.notification.isGranted) && mounted) {
         await AppWidgets.dialog(context: context, contents: [
-          const Text('Chaos Tours requires\n'
-              'Notification permission granted\n'
-              'to be able to track GPS in background mode.\n'
-              'Do you want to track GPS while this App is closed?')
+          const Text('Chaos Tours requires Notifications '
+              'to be able to track GPS in background.')
         ], buttons: [
           TextButton(
-            child: const Text('No'),
-            onPressed: () => Navigator.pop(context),
-          ),
-          TextButton(
-            child: const Text('Yes'),
+            child: const Text('OK'),
             onPressed: () async {
               await requestNotification();
               if (await Permission.notification.isGranted) {
@@ -583,20 +535,43 @@ class _WelcomeState extends State<Welcome> {
           )
         ]);
       }
-
-      if (await Cache.appSettingBackgroundTrackingEnabled.load<bool>(false)) {
-        // request gps always
-        if (!(await Permission.locationAlways.isGranted) && mounted) {
+      if (!(await Cache.requestBatteryOptimization.load<bool>(false))) {
+        if (!(await Permission.ignoreBatteryOptimizations.isGranted) &&
+            mounted) {
           await AppWidgets.dialog(context: context, contents: [
-            const Text(
-                'For Background GPS Tracking the app need GPS permission "Always". '
-                'Please tap OK to get to the permission request.')
+            const Text('Disable Battery Optimization?\n\n'
+                'To make this App run in background it is strongly recommended to disable Battery optimization.\n'
+                'Otherwise the System will put the App to sleep after some minutes.'),
+            TextButton(
+              child: const Text(
+                  'For more Informations please https://developer.android.com'),
+              onPressed: () async {
+                await launchUrl(Uri(
+                    scheme: 'https',
+                    host: 'developer.android.com',
+                    pathSegments: [
+                      'training',
+                      'monitoring-device-state',
+                      'doze-standby'
+                    ]));
+              },
+            )
           ], buttons: [
             TextButton(
-              child: const Text('OK'),
+              child: const Text('No'),
               onPressed: () async {
-                await requestLocationAlways();
-                if (await Permission.locationAlways.isGranted && mounted) {
+                await Cache.requestBatteryOptimization.save<bool>(true);
+                if (mounted) {
+                  Navigator.pop(context);
+                }
+              },
+            ),
+            TextButton(
+              child: const Text('Yes'),
+              onPressed: () async {
+                await requestBatteryOptimization();
+                await Cache.requestBatteryOptimization.save<bool>(true);
+                if (mounted) {
                   Navigator.pop(context);
                 }
               },
@@ -605,11 +580,10 @@ class _WelcomeState extends State<Welcome> {
         }
       }
 
-      if (!(await Cache.useOfOsmAddressLookupRequested.load<bool>(false)) &&
-          mounted) {
+      if (!(await Cache.requestOsmAddressLookup.load<bool>(false)) && mounted) {
         await AppWidgets.dialog(context: context, contents: [
-          const Text('Do you want to use the GPS-to-Address Future?\n'
-              'This future sends your GPS location to the free service of OpenStreetMap.com and receives an Address you can use.'),
+          const Text('Enable GPS-to-Address?\n\n'
+              'This future sends your GPS location to OpenStreetMap.com and receives an Address you can use.'),
           TextButton(
             child: const Text(
                 'For more Informations please visit OpenStreetMap.com'),
@@ -626,8 +600,8 @@ class _WelcomeState extends State<Welcome> {
             onPressed: () async {
               await Cache.appSettingOsmLookupCondition
                   .save<OsmLookupConditions>(OsmLookupConditions.never);
-              await Cache.licenseConsentRequestedOsm.save<bool>(false);
-              await Cache.useOfOsmAddressLookupRequested.save<bool>(true);
+              await Cache.requestLicenseConsentOsm.save<bool>(false);
+              await Cache.requestOsmAddressLookup.save<bool>(true);
               if (mounted) {
                 Navigator.pop(context);
               }
@@ -636,13 +610,13 @@ class _WelcomeState extends State<Welcome> {
           TextButton(
             child: const Text('Yes'),
             onPressed: () async {
-              await Cache.useOfOsmAddressLookupRequested.save<bool>(true);
-              if (!(await Cache.licenseConsentRequestedOsm.load<bool>(false))) {
+              await Cache.requestOsmAddressLookup.save<bool>(true);
+              if (!(await Cache.requestLicenseConsentOsm.load<bool>(false))) {
                 if (await osmLicenseConsent()) {
                   await Cache.appSettingOsmLookupCondition
                       .save<OsmLookupConditions>(
                           OsmLookupConditions.onAutoCreateAlias);
-                  await Cache.licenseConsentRequestedOsm.save<bool>(true);
+                  await Cache.requestLicenseConsentOsm.save<bool>(true);
                   await Cache.licenseConsentOsm.save<bool>(true);
                 }
               }
@@ -655,20 +629,17 @@ class _WelcomeState extends State<Welcome> {
       }
 
       if (await Permission.notification.isGranted) {
+        await addPreloadMessage(const Text('Initialize Notifications'));
         await NotificationChannel.initialize();
         if (await Permission.location.isGranted) {
+          var cache = Cache.appSettingBackgroundTrackingInterval;
+          var dur = await cache
+              .load<Duration>(AppUserSetting(cache).defaultValue as Duration);
+          await addPreloadMessage(
+              Text('Initialize background trackig with ${dur.inSeconds} sec.'));
           await BackgroundChannel.initialize();
         }
       }
-
-      await loadWebSSLKey();
-
-      var cache = Cache.appSettingBackgroundTrackingInterval;
-      var dur = await cache
-          .load<Duration>(AppUserSetting(cache).defaultValue as Duration);
-      await addPreloadMessage(
-          Text('Initialize background trackig with ${dur.inSeconds} sec.'));
-      await BackgroundChannel.initialize();
 
       //
       //await BackgroundTracking.initialize();
@@ -680,6 +651,9 @@ class _WelcomeState extends State<Welcome> {
             const Text('Background tracking not enabled, skip start tracking'));
       }
 
+      await addPreloadMessage(const Text('Load Web SSL key.'));
+      await loadWebSSLKey();
+
       // init and start app tickers
       await addPreloadMessage(const Text('Start foreground interval'));
       RuntimeData();
@@ -687,12 +661,15 @@ class _WelcomeState extends State<Welcome> {
       await addPreloadMessage(const Text('Check Permissions...'));
 
       bool perm = await checkAllRequiredPermissions();
-      await checkAllOptionalPermissions();
+
+      await addPreloadMessage(const Text('Start App...'));
       if (perm) {
         preloadFinished = true;
         if (mounted) {
           Navigator.popAndPushNamed(context, AppRoutes.liveTracking.route);
         }
+      } else if (mounted) {
+        Navigator.popAndPushNamed(context, AppRoutes.permissions.route);
       }
     } catch (e, stk) {
       await addPreloadMessage(ListTile(

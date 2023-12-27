@@ -14,15 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import 'package:chaostours/channel/notification_channel.dart';
-import 'package:chaostours/shared/shared_trackpoint_alias.dart';
-import 'package:chaostours/shared/shared_trackpoint_task.dart';
-import 'package:chaostours/shared/shared_trackpoint_user.dart';
-import 'package:chaostours/tracking.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 
 ///
-import 'package:chaostours/util.dart' as util;
+import 'package:chaostours/shared/shared_trackpoint_alias.dart';
+import 'package:chaostours/shared/shared_trackpoint_task.dart';
+import 'package:chaostours/shared/shared_trackpoint_user.dart';
+import 'package:chaostours/channel/tracking.dart';
 import 'package:chaostours/channel/background_channel.dart';
 import 'package:chaostours/conf/app_user_settings.dart';
 import 'package:chaostours/database/cache.dart';
@@ -46,6 +44,7 @@ enum DataChannelKey {
   gpsLastStatusStanding,
   gpsLastStatusMoving,
   trackingStatus,
+  statusDuration,
   lastAddress,
   lastFullAddress;
 }
@@ -97,8 +96,7 @@ class DataChannel {
   String notes = '';
 
   Future<String> setTrackpointNotes(String text) async {
-    return notes =
-        await Cache.backgroundTrackPointUserNotes.save<String>(notes);
+    return notes = await Cache.backgroundTrackPointUserNotes.save<String>(text);
   }
 
   DataChannel._() {
@@ -108,6 +106,7 @@ class DataChannel {
             .on(BackgroundChannelCommand.onTracking.toString())) {
           _initialized = true;
           tick++;
+          Cache.reload();
           try {
             /// stream values
             gps = TypeAdapter.deserializeGps(
@@ -175,6 +174,8 @@ class DataChannel {
                 )
                 .toList());
 
+            notes = await Cache.backgroundTrackPointUserNotes.load<String>('');
+
             /// fire events
             EventManager.fire<DataChannel>(_instance!);
 
@@ -182,12 +183,6 @@ class DataChannel {
               EventManager.fire<TrackingStatus>(trackingStatus);
             }
 
-            NotificationChannel.sendTrackingUpdateNotification(
-                title: 'Tick Update',
-                message:
-                    'T$tick ${statusChanged ? 'New Status' : 'Status'}: ${trackingStatus.name.toUpperCase()}'
-                    ' since ${util.formatDuration(duration)}',
-                details: NotificationChannel.ongoigTrackingUpdateConfiguration);
             logger.log('Datachannel finished');
           } catch (e, stk) {
             logger.error('Deserialize Channel Data: $e', stk);

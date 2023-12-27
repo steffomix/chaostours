@@ -54,6 +54,8 @@ class Tracker {
   List<GPS> gpsSmoothPoints = [];
   List<GPS> gpsCalcPoints = [];
 
+  Duration statusDuration = Duration.zero;
+
   /// initials
   TrackingStatus oldTrackingStatus = TrackingStatus.standing;
   TrackingStatus? trackingStatus;
@@ -65,7 +67,10 @@ class Tracker {
 
   Address? address;
 
-  Map<String, dynamic> serializeState(GPS gps) {
+  Future<Map<String, dynamic>> serializeState(GPS gps) async {
+    statusDuration = (gpsLastStatusChange?.time ?? DateTime.now())
+        .difference(DateTime.now())
+        .abs();
     Map<String, dynamic> serialized = {
       DataChannelKey.gps.toString(): TypeAdapter.serializeGps(gps),
       DataChannelKey.gpsPoints.toString():
@@ -88,7 +93,10 @@ class Tracker {
           TypeAdapter.serializeTrackingStatus(trackingStatus!),
       DataChannelKey.lastAddress.toString(): address?.alias ?? '-',
       DataChannelKey.lastFullAddress.toString(): address?.description ?? '-',
+      DataChannelKey.statusDuration.toString():
+          TypeAdapter.serializeDuration(statusDuration)
     };
+    await Cache.backgroundGpsPoints.save<List<GPS>>(gpsPoints);
     return serialized;
   }
 
@@ -96,9 +104,9 @@ class Tracker {
     /// create gpsPoint
     GPS gps = await GPS.gps();
 
-    // make sure there are no old gps data
+    // load old gps points
     if (trackingStatus == null) {
-      gpsPoints = await Cache.backgroundGpsPoints.save<List<GPS>>([]);
+      gpsPoints = await Cache.backgroundGpsPoints.load<List<GPS>>([]);
     }
 
     trackingStatus ??= await Cache.backgroundTrackingStatus
@@ -210,7 +218,7 @@ class Tracker {
       }
     }
 
-    return serializeState(gps);
+    return await serializeState(gps);
   }
 
   Future<GPS> claculateGPSPoints(GPS gps) async {

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import 'package:chaostours/tracking.dart';
+import 'package:chaostours/channel/tracking.dart';
 
 class EventOnTrackingStatusChanged extends EventOn {
   final TrackingStatus oldStatus;

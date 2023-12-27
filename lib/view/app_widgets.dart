@@ -333,15 +333,17 @@ class AppWidgets {
         context: context,
         builder: (contextDialog) {
           return Dialog(
-              child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-                  child: Column(mainAxisSize: MainAxisSize.min, children: [
-                    ...contents,
-                    Wrap(
-                        spacing: 40,
-                        direction: Axis.horizontal,
-                        children: buttons)
-                  ])));
+              child: ListView(children: [
+            Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  ...contents,
+                  Wrap(
+                      spacing: 40,
+                      direction: Axis.horizontal,
+                      children: buttons)
+                ]))
+          ]));
         });
 
     return dialog;

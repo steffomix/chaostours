@@ -34,7 +34,7 @@ import 'package:chaostours/gps.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
-import 'package:chaostours/tracking.dart';
+import 'package:chaostours/channel/tracking.dart';
 import 'package:chaostours/util.dart' as util;
 
 class Location {
@@ -217,8 +217,8 @@ class Location {
 
     NotificationChannel.sendTrackingUpdateNotification(
         title: 'Tick Update',
-        message: 'New Status: ${tracker.trackingStatus?.name.toUpperCase()}\n'
-            '${tracker.address?.alias}',
+        message: 'New Status: ${tracker.trackingStatus?.name.toUpperCase()}'
+            '${tracker.address != null ? '\n${tracker.address?.alias}' : ''}',
         details: NotificationChannel.trackingStatusChangedConfiguration);
   }
 

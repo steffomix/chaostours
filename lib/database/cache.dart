@@ -22,7 +22,7 @@ import 'package:chaostours/gps.dart';
 import 'package:chaostours/shared/shared_trackpoint_alias.dart';
 import 'package:chaostours/shared/shared_trackpoint_task.dart';
 import 'package:chaostours/shared/shared_trackpoint_user.dart';
-import 'package:chaostours/tracking.dart';
+import 'package:chaostours/channel/tracking.dart';
 import 'package:chaostours/calendar.dart';
 import 'package:chaostours/value_expired.dart';
 import 'package:geolocator/geolocator.dart';
@@ -129,10 +129,11 @@ enum Cache {
 
   /// startup consent
   licenseConsentChaosTours(CacheModulId.sharedPreferences, bool, expireNever),
+
+  requestLicenseConsentOsm(CacheModulId.sharedPreferences, bool, expireNever),
   licenseConsentOsm(CacheModulId.sharedPreferences, bool, expireNever),
-  licenseConsentRequestedOsm(CacheModulId.sharedPreferences, bool, expireNever),
-  useOfOsmAddressLookupRequested(
-      CacheModulId.sharedPreferences, bool, expireNever),
+  requestOsmAddressLookup(CacheModulId.sharedPreferences, bool, expireNever),
+  requestBatteryOptimization(CacheModulId.sharedPreferences, bool, expireNever),
 
   /// webSSLKey
   ///

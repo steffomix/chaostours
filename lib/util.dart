@@ -34,7 +34,7 @@ String formatDuration(Duration duration) {
   String twoDigitHours = twoDigits(duration.inHours.remainder(24).abs());
   String twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60).abs());
   String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60).abs());
-  return "$negativeSign${twoDigits(duration.inDays)}d:${twoDigitHours}h:${twoDigitMinutes}m:${twoDigitSeconds}s";
+  return "$negativeSign${twoDigits(duration.inDays)}d : ${twoDigitHours}h : ${twoDigitMinutes}m : ${twoDigitSeconds}s";
 }
 
 String formatTimeRange(DateTime timeStart, DateTime timeEnd) {
@@ -49,7 +49,7 @@ String formatDate(DateTime t) {
   } else {
     date = '${t.day}.${twoDigits(t.month)}.${twoDigits(t.year)}';
   }
-  return '$date - ${twoDigits(t.hour)}:${twoDigits(t.minute)}::${twoDigits(t.second)}';
+  return '$date  ${twoDigits(t.hour)}:${twoDigits(t.minute)}::${twoDigits(t.second)}';
 }
 
 /// credits: https://pub.dev/packages/intersperse

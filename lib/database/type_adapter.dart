@@ -18,7 +18,7 @@ import 'package:chaostours/calendar.dart';
 import 'package:chaostours/conf/app_user_settings.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/logger.dart';
-import 'package:chaostours/tracking.dart';
+import 'package:chaostours/channel/tracking.dart';
 import 'package:chaostours/shared/shared_trackpoint_alias.dart';
 import 'package:chaostours/shared/shared_trackpoint_task.dart';
 import 'package:chaostours/shared/shared_trackpoint_user.dart';

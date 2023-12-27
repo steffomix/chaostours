@@ -14,7 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/database/cache.dart';
 import 'package:chaostours/logger.dart';
+import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/shared/shared_trackpoint_asset.dart';
 
 class SharedTrackpointUser extends SharedTrackpointAsset {
@@ -27,6 +29,35 @@ class SharedTrackpointUser extends SharedTrackpointAsset {
     String id = _regExp.firstMatch(value)?.group(1) ?? '';
     String desc = _regExp.firstMatch(value)?.group(2) ?? '';
     return SharedTrackpointUser(id: int.parse(id), notes: desc);
+  }
+
+  static Future<List<SharedTrackpointUser>> add(ModelUser model,
+      {String notes = ''}) async {
+    var models = await load();
+    for (var m in models) {
+      if (m.id == model.id) {
+        return models;
+      }
+    }
+    models.add(SharedTrackpointUser(id: model.id, notes: notes));
+    return await save(models);
+  }
+
+  static Future<List<SharedTrackpointUser>> remove(ModelUser model) async {
+    var models = await load();
+    models.removeWhere((m) => m.id == model.id);
+    return await save(models);
+  }
+
+  static Future<List<SharedTrackpointUser>> load() async {
+    return await Cache.backgroundSharedUserList
+        .load<List<SharedTrackpointUser>>([]);
+  }
+
+  static Future<List<SharedTrackpointUser>> save(
+      List<SharedTrackpointUser> models) async {
+    return await Cache.backgroundSharedUserList
+        .save<List<SharedTrackpointUser>>(models);
   }
 
   SharedTrackpointUser({required super.id, required super.notes});

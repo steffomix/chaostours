@@ -30,15 +30,8 @@ dependencies:
   flutter:
     sdk: flutter
 
-  #path: ^1.8.3
-  #http: ^0.13.5
-  #vector_math: ^2.1.4
-  #logger: ^1.1.0
-  #loading_animation_widget: ^1.2.0
-  #confirm_dialog: ^1.0.2
-  #provider: ^6.0.5
+  # https://pub.dev/packages/sprintf
   sprintf: ^7.0.0
-
 
   # https://pub.dev/packages/flutter_background_service
   flutter_background_service: ^5.0.5

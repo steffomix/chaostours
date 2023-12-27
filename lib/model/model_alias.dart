@@ -16,6 +16,8 @@ limitations under the License.
 
 import 'dart:math';
 
+import 'package:chaostours/model/model.dart';
+
 ///
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_alias_group.dart';
@@ -60,7 +62,7 @@ enum AliasPrivacy {
   }
 }
 
-class ModelAlias {
+class ModelAlias implements Model {
   static Logger logger = Logger.logger<ModelAlias>();
   int _id = 0;
   int get id => _id;

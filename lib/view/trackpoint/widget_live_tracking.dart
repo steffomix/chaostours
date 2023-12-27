@@ -23,7 +23,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
 import 'package:chaostours/channel/data_channel.dart';
-import 'package:chaostours/tracking.dart';
+import 'package:chaostours/channel/tracking.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/conf/app_colors.dart';
 import 'package:chaostours/conf/app_routes.dart';
@@ -53,8 +53,6 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       GlobalKey(debugLabel: 'Life Tracking VisibilityDetectorKey');
 
   TextEditingController? _userNotesController;
-  final trackingListener = ValueNotifier<int>(0);
-  final renderListener = ValueNotifier<int>(0);
   final addressIsLoading = ValueNotifier<bool>(false);
 
   final Map<String, ValueNotifier<int>> widgetNotifiers = {};
@@ -68,9 +66,6 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   ///
   @override
   void initState() {
-    renderListener.addListener(() {});
-    trackingListener.addListener(() {});
-
     EventManager.listen<DataChannel>(onTracking);
     EventManager.listen<EventOnRender>(onRender);
     super.initState();
@@ -79,11 +74,10 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   ///
   @override
   void dispose() {
-    renderListener.dispose();
-    trackingListener.dispose();
     widgetNotifiers.values.map(
       (e) => e.dispose,
     );
+    EventManager.remove<EventOnRender>(onRender);
     EventManager.remove<DataChannel>(onTracking);
     super.dispose();
   }
@@ -91,10 +85,11 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   ///
   void onTracking(DataChannel dataChannel) {
     if (mounted) {
+      setState(() {});
       if (_visibleFraction < .5) {
         return;
       }
-      trackingListener.value++;
+      widgetNotifiers.values.map((e) => e.value++);
     }
   }
 
@@ -104,34 +99,58 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       if (_visibleFraction < .5) {
         return;
       }
-      renderListener.value++;
+      widgetNotifiers.values.map((e) => e.value++);
     }
   }
 
   ///
   @override
   Widget build(BuildContext context) {
-    Widget widget = VisibilityDetector(
+    //return AppWidgets.scaffold(context, body: AppWidgets.empty);
+    /* Widget widget = VisibilityDetector(
         key: _visibilityDetectorKey,
-        child: ListView(
-          children: [
-            initialized(),
-            Column(crossAxisAlignment: CrossAxisAlignment.center, children: [
-              widgetDate(),
-              widgetTrackingStatus(),
-              ListTile(leading: statusTrigger(), title: widgetDuration()),
-              widgetAliases(),
-              widgetAddress(),
-              widgetselectedUsers(),
-              widgetselectedTasks(),
-              widgetUserNotes()
-            ])
-          ],
-        ),
+        child: Column(children: [
+          Center(child: initialized()),
+          Column(children: [
+            ListTile(
+                leading: statusTrigger(),
+                title: widgetTrackingStatus(),
+                subtitle: Column(
+                  children: [widgetDate(), widgetDuration()],
+                ))
+          ]),
+          widgetAliases(),
+          widgetAddress(),
+          widgetselectedUsers(),
+          widgetselectedTasks(),
+          widgetUserNotes()
+        ]),
         onVisibilityChanged: (VisibilityInfo info) {
           _visibleFraction = info.visibleFraction;
         });
+ */
 
+    Widget widget = ListView(children: [
+      initialized(),
+      ListTile(
+          titleTextStyle: Theme.of(context).textTheme.titleLarge,
+          subtitleTextStyle: Theme.of(context).textTheme.titleLarge,
+          leading: statusTrigger(),
+          trailing: const SizedBox(height: 10, width: 10),
+          title: widgetTrackingStatus(),
+          subtitle: Column(
+            children: [widgetDate(), widgetDuration()],
+          )),
+      AppWidgets.divider(),
+      widgetAddress(),
+      ListTile(
+          title: Column(children: [
+        widgetAliases(),
+        widgetselectedUsers(),
+        widgetselectedTasks(),
+        widgetUserNotes()
+      ]))
+    ]);
     return AppWidgets.scaffold(context,
         body: widget,
         navBar: bottomNavBar(context),
@@ -188,11 +207,13 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   }
 
   Widget widgetTrackingStatus() {
-    return ListenableBuilder(
-        listenable: widgetNotifiers['trackingStatus'] ??= ValueNotifier<int>(0),
-        builder: (context, child) {
-          return Text(dataChannel.trackingStatus.name.toUpperCase());
-        });
+    return Center(
+        child: ListenableBuilder(
+            listenable: widgetNotifiers['trackingStatus'] ??=
+                ValueNotifier<int>(0),
+            builder: (context, child) {
+              return Text('${dataChannel.trackingStatus.name.toUpperCase()}\n');
+            }));
   }
 
   Widget widgetDate() {
@@ -204,11 +225,12 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   }
 
   Widget widgetDuration() {
-    return ListenableBuilder(
-        listenable: widgetNotifiers['duration'] ??= ValueNotifier<int>(0),
-        builder: (context, child) {
-          return Text(util.formatDuration(dataChannel.duration));
-        });
+    return Center(
+        child: ListenableBuilder(
+            listenable: widgetNotifiers['duration'] ??= ValueNotifier<int>(0),
+            builder: (context, child) {
+              return Text(util.formatDuration(dataChannel.duration));
+            }));
   }
 
   Widget widgetAddress() {
@@ -230,6 +252,11 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
               final GPS gps = await GPS.gps();
               final Address address =
                   await Address(gps).lookup(OsmLookupConditions.onUserRequest);
+
+              dataChannel.address =
+                  await Cache.backgroundAddress.save<String>(address.alias);
+              dataChannel.fullAddress =
+                  await Cache.backgroundAddress.save<String>(address.alias);
               if (mounted) {
                 AppWidgets.dialog(context: context, contents: [
                   ListTile(
@@ -258,55 +285,68 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                   )
                 ]);
               }
+              addressIsLoading.value = false;
             } catch (e, stk) {
               logger.error('update address: $e', stk);
             }
-            addressIsLoading.value = false;
           },
         ),
-        title: TextButton(
-          child: Text(dataChannel.address),
-          onPressed: () {
-            AppWidgets.dialog(context: context, contents: [
-              ListTile(
-                  title: Text(dataChannel.fullAddress),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.copy),
-                    onPressed: () {
-                      Clipboard.setData(
-                          ClipboardData(text: dataChannel.fullAddress));
-                    },
-                  ))
-            ], buttons: [
-              TextButton(
-                child: const Text('OK'),
-                onPressed: () => Navigator.pop(context),
-              )
-            ]);
-          },
-        ));
+        title: Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton(
+              child: Text(dataChannel.address),
+              onPressed: () {
+                AppWidgets.dialog(context: context, contents: [
+                  ListTile(
+                      title: Text(dataChannel.fullAddress),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.copy),
+                        onPressed: () {
+                          Clipboard.setData(
+                              ClipboardData(text: dataChannel.fullAddress));
+                        },
+                      ))
+                ], buttons: [
+                  TextButton(
+                    child: const Text('OK'),
+                    onPressed: () => Navigator.pop(context),
+                  )
+                ]);
+              },
+            )));
   }
 
   Widget widgetAliases() {
     return ListenableBuilder(
         listenable: widgetNotifiers['aliases'] ??= ValueNotifier<int>(0),
         builder: (context, child) {
-          List<Widget> list = [];
+          List<Widget> list = [const Center(child: Text('Alias'))];
+          var i = 0;
           for (var model in dataChannel.modelAliasList) {
-            list.add(TextButton(
-                onPressed: () {
-                  Navigator.pushNamed(context, AppRoutes.editAlias.route,
-                          arguments: model.id)
-                      .then(
-                    (value) {
-                      render();
-                    },
-                  );
-                },
-                child: Text('${dataChannel.distance}m: ${model.title}',
-                    style: TextStyle(
-                        color: model.privacy.color,
-                        backgroundColor: Colors.grey))));
+            i++;
+            list.add(ListTile(
+                leading: Icon(Icons.square, color: model.privacy.color),
+                title: Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton(
+                        onPressed: () {
+                          Navigator.pushNamed(
+                                  context, AppRoutes.editAlias.route,
+                                  arguments: model.id)
+                              .then(
+                            (value) {
+                              render();
+                            },
+                          );
+                        },
+                        child: Text(
+                          style: i > 1
+                              ? null
+                              : const TextStyle(
+                                  decoration: TextDecoration.underline,
+                                  fontWeight: FontWeight.bold),
+                          '${dataChannel.distance}m: ${model.title}',
+                        )))));
           }
           return Column(
               mainAxisSize: MainAxisSize.min,
@@ -384,6 +424,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         trailing: ListenableBuilder(
             listenable: widgetNotifiers['userNotes'] ??= ValueNotifier<int>(0),
             builder: (context, child) {
+              _userNotesController?.text = dataChannel.notes;
               return IconButton(
                 icon: const Icon(Icons.undo),
                 onPressed: _userNotesUndoController.value.canUndo
@@ -400,8 +441,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
           minLines: 2,
           maxLines: 6,
           decoration: const InputDecoration(hintText: 'Notes'),
-          onEditingComplete: () async {
-            dataChannel.setTrackpointNotes(_userNotesController?.text ?? '');
+          onChanged: (text) async {
+            await dataChannel.setTrackpointNotes(text);
           },
         ));
   }

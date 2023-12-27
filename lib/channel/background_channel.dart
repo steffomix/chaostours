@@ -27,10 +27,11 @@ import 'package:flutter_background_service/flutter_background_service.dart';
 ///
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/conf/app_user_settings.dart';
-import 'package:chaostours/tracking.dart';
+import 'package:chaostours/channel/tracking.dart';
 import 'package:chaostours/database/cache.dart';
 import 'package:chaostours/database/database.dart';
 import 'package:chaostours/channel/notification_channel.dart';
+import 'package:chaostours/util.dart' as util;
 
 enum BackgroundChannelCommand {
   startService,
@@ -80,16 +81,32 @@ class BackgroundChannel {
         .listen((_) {
       Cache.reload();
     });
+    int tick = 0;
+
+    Future<void> executeTracker() async {
+      try {
+        service.invoke(BackgroundChannelCommand.onTracking.toString(),
+            await tracker.track());
+      } catch (e, stk) {
+        logger.error('background tracking: $e', stk);
+      }
+      try {
+        NotificationChannel.sendTrackingUpdateNotification(
+            title: 'Tick Update',
+            message:
+                'T$tick; Status: ${tracker.trackingStatus?.name.toUpperCase()}'
+                ' since ${util.formatDuration(tracker.statusDuration)}',
+            details: NotificationChannel.ongoigTrackingUpdateConfiguration);
+      } catch (e) {
+        logger.warn('send Notification: $e');
+      }
+    }
 
     try {
       const Cache cache = Cache.appSettingBackgroundTrackingInterval;
       while (serviceIsRunning) {
-        try {
-          service.invoke(BackgroundChannelCommand.onTracking.toString(),
-              await tracker.track());
-        } catch (e, stk) {
-          logger.error('background tracking: $e', stk);
-        }
+        tick++;
+        await Future.microtask(executeTracker);
         try {
           await Future.delayed(await cache
               .load<Duration>(AppUserSetting(cache).defaultValue as Duration));

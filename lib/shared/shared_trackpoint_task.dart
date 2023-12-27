@@ -14,7 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/database/cache.dart';
 import 'package:chaostours/logger.dart';
+import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/shared/shared_trackpoint_asset.dart';
 
 class SharedTrackpointTask extends SharedTrackpointAsset {
@@ -27,6 +29,35 @@ class SharedTrackpointTask extends SharedTrackpointAsset {
     String id = _regExp.firstMatch(value)?.group(1) ?? '';
     String desc = _regExp.firstMatch(value)?.group(2) ?? '';
     return SharedTrackpointTask(id: int.parse(id), notes: desc);
+  }
+
+  static Future<List<SharedTrackpointTask>> add(ModelTask model,
+      {String notes = ''}) async {
+    var models = await load();
+    for (var m in models) {
+      if (m.id == model.id) {
+        return models;
+      }
+    }
+    models.add(SharedTrackpointTask(id: model.id, notes: notes));
+    return await save(models);
+  }
+
+  static Future<List<SharedTrackpointTask>> remove(ModelTask model) async {
+    var models = await load();
+    models.removeWhere((m) => m.id == model.id);
+    return await save(models);
+  }
+
+  static Future<List<SharedTrackpointTask>> load() async {
+    return await Cache.backgroundSharedTaskList
+        .load<List<SharedTrackpointTask>>([]);
+  }
+
+  static Future<List<SharedTrackpointTask>> save(
+      List<SharedTrackpointTask> models) async {
+    return await Cache.backgroundSharedTaskList
+        .save<List<SharedTrackpointTask>>(models);
   }
 
   SharedTrackpointTask({required super.id, required super.notes});
