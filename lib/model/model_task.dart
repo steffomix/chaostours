@@ -31,7 +31,7 @@ class ModelTask implements Model {
   bool isActive;
   bool isSelectable = true;
   bool isPreselected = false;
-  String sortOrder;
+  String? sortOrder;
   @override
   String title;
   @override
@@ -47,12 +47,13 @@ class ModelTask implements Model {
       this.description = ''});
 
   static ModelTask fromMap(Map<String, Object?> map) {
+    final so = DB.parseString(map[TableTask.sortOrder.column]);
     var model = ModelTask(
         groupId: DB.parseInt(map[TableTask.idTaskGroup.column], fallback: 1),
         isActive: DB.parseBool(map[TableTask.isActive.column]),
         isSelectable: DB.parseBool(map[TableTask.isSelectable.column]),
         isPreselected: DB.parseBool(map[TableTask.isPreselected.column]),
-        sortOrder: DB.parseString(map[TableTask.sortOrder.column]),
+        sortOrder: so.isEmpty ? null : so.toString(),
         title: DB.parseString(map[TableTask.title.column]),
         description: DB.parseString(map[TableTask.description.column]));
     model._id = DB.parseInt(map[TableTask.primaryKey.column]);

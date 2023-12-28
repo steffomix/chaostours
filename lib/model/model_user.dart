@@ -28,7 +28,7 @@ class ModelUser implements Model {
   @override
   int get id => _id;
   int groupId = 1;
-  String sortOrder = '';
+  String? sortOrder;
   bool isActive = true;
   bool isSelectable = true;
   bool isPreselected = false;
@@ -51,12 +51,13 @@ class ModelUser implements Model {
       this.address = ''});
 
   static ModelUser fromMap(Map<String, Object?> map) {
+    final so = DB.parseString(map[TableUser.sortOrder.column]);
     var model = ModelUser(
       groupId: DB.parseInt(map[TableUser.idUserGroup.column], fallback: 1),
       isActive: DB.parseBool(map[TableUser.isActive.column]),
       isSelectable: DB.parseBool(map[TableUser.isSelectable.column]),
       isPreselected: DB.parseBool(map[TableUser.isPreselected.column]),
-      sortOrder: DB.parseString(map[TableUser.sortOrder.column]),
+      sortOrder: so.isEmpty ? null : so.toString(),
       title: DB.parseString(map[TableUser.title.column]),
       description: DB.parseString(map[TableUser.description.column]),
       phone: DB.parseString(map[TableUser.phone.column]),

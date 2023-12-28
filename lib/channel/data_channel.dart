@@ -49,6 +49,30 @@ enum DataChannelKey {
   lastFullAddress;
 }
 
+class ChannelAlias {
+  final int id;
+  final ModelAlias model;
+  final SharedTrackpointAlias shared;
+
+  ChannelAlias({required this.id, required this.model, required this.shared});
+}
+
+class ChannelUser {
+  final int id;
+  final ModelUser model;
+  final SharedTrackpointUser shared;
+
+  ChannelUser({required this.id, required this.model, required this.shared});
+}
+
+class ChannelTask {
+  final int id;
+  final ModelTask model;
+  final SharedTrackpointTask shared;
+
+  ChannelTask({required this.id, required this.model, required this.shared});
+}
+
 class DataChannel {
   static final Logger logger = Logger.logger<DataChannel>();
   static DataChannel? _instance;
@@ -85,13 +109,9 @@ class DataChannel {
   String address = '';
   String fullAddress = '';
 
-  List<ModelAlias> modelAliasList = [];
-  List<ModelUser> modelUserList = [];
-  List<ModelTask> modelTaskList = [];
-
-  List<SharedTrackpointAlias> sharedAliasList = [];
-  List<SharedTrackpointUser> sharedUserList = [];
-  List<SharedTrackpointTask> sharedTaskList = [];
+  List<ChannelAlias> aliasList = [];
+  List<ChannelUser> userList = [];
+  List<ChannelTask> taskList = [];
 
   String notes = '';
 
@@ -150,29 +170,9 @@ class DataChannel {
             distanceTreshold = await cache
                 .load<int>(AppUserSetting(cache).defaultValue as int);
 
-            /// load ids from shared and database
-            sharedAliasList = await Cache.backgroundSharedAliasList
-                .load<List<SharedTrackpointAlias>>([]);
-            sharedUserList = await Cache.backgroundSharedUserList
-                .load<List<SharedTrackpointUser>>([]);
-            sharedTaskList = await Cache.backgroundSharedTaskList
-                .load<List<SharedTrackpointTask>>([]);
-
-            modelAliasList = await ModelAlias.byIdList(sharedAliasList
-                .map(
-                  (e) => e.id,
-                )
-                .toList());
-            modelUserList = await ModelUser.byIdList(sharedUserList
-                .map(
-                  (e) => e.id,
-                )
-                .toList());
-            modelTaskList = await ModelTask.byIdList(sharedTaskList
-                .map(
-                  (e) => e.id,
-                )
-                .toList());
+            await updateAliasList();
+            await updateUserList();
+            await updateTaskList();
 
             notes = await Cache.backgroundTrackPointUserNotes.load<String>('');
 
@@ -198,5 +198,114 @@ class DataChannel {
       cast.add(dyn.toString());
     }
     return cast;
+  }
+
+  void sortUser() {
+    userList.sort((modelA, modelB) {
+      final a = modelA.model.sortOrder;
+      final b = modelB.model.sortOrder;
+      if (a == null && b == null) {
+        return 0;
+      }
+      if (a == null) {
+        return -1;
+      }
+      if (b == null) {
+        return 1;
+      }
+      return a.compareTo(b);
+    });
+  }
+
+  void sortTask() {
+    taskList.sort((modelA, modelB) {
+      final a = modelA.model.sortOrder;
+      final b = modelB.model.sortOrder;
+      if (a == null && b == null) {
+        return 0;
+      }
+      if (a == null) {
+        return -1;
+      }
+      if (b == null) {
+        return 1;
+      }
+      return a.compareTo(b);
+    });
+  }
+
+  Future<void> updateAssets() async {
+    await updateAliasList();
+    await updateUserList();
+    await updateTaskList();
+  }
+
+  Future<void> updateAliasList() async {
+    /// load ids from shared and database
+    final sharedAliasList = await Cache.backgroundSharedAliasList
+        .load<List<SharedTrackpointAlias>>([]);
+    final modelAliasList = await ModelAlias.byIdList(sharedAliasList
+        .map(
+          (e) => e.id,
+        )
+        .toList());
+    List<ChannelAlias> list = [];
+    for (var shared in sharedAliasList) {
+      try {
+        list.add(ChannelAlias(
+            id: shared.id,
+            model: modelAliasList.firstWhere((model) => model.id == shared.id),
+            shared: shared));
+      } catch (e) {
+        /// ignore and skip element
+      }
+    }
+    aliasList = list;
+  }
+
+  Future<void> updateUserList() async {
+    /// load ids from shared and database
+    final sharedUserList = await Cache.backgroundSharedUserList
+        .load<List<SharedTrackpointUser>>([]);
+    final modelUserList = await ModelUser.byIdList(sharedUserList
+        .map(
+          (e) => e.id,
+        )
+        .toList());
+    List<ChannelUser> list = [];
+    for (var shared in sharedUserList) {
+      try {
+        list.add(ChannelUser(
+            id: shared.id,
+            model: modelUserList.firstWhere((model) => model.id == shared.id),
+            shared: shared));
+      } catch (e) {
+        /// ignore and skip element
+      }
+    }
+    userList = list;
+  }
+
+  Future<void> updateTaskList() async {
+    /// load ids from shared and database
+    final sharedTaskList = await Cache.backgroundSharedTaskList
+        .load<List<SharedTrackpointTask>>([]);
+    final modelTaskList = await ModelTask.byIdList(sharedTaskList
+        .map(
+          (e) => e.id,
+        )
+        .toList());
+    List<ChannelTask> list = [];
+    for (var shared in sharedTaskList) {
+      try {
+        list.add(ChannelTask(
+            id: shared.id,
+            model: modelTaskList.firstWhere((model) => model.id == shared.id),
+            shared: shared));
+      } catch (e) {
+        /// ignore and skip element
+      }
+    }
+    taskList = list;
   }
 }
