@@ -75,3 +75,10 @@ Iterable<T> intersperseOuter<T>(T element, Iterable<T> iterable) sync* {
     yield element;
   }
 }
+
+String cutString(String text, int maxLength) {
+  if (text.length <= maxLength) {
+    return text;
+  }
+  return '${text.substring(1, maxLength)}...';
+}

@@ -132,7 +132,7 @@ class _WidgetDrawer extends State<WidgetDrawer> {
         description:
             'Chaos Tours has more then just Locations and Trackpoints.'),
     _Menu(
-        title: 'Alias',
+        title: 'Location Alias',
         description: 'Manage your saved Locations.',
         route: AppRoutes.listAlias),
     _Menu(
@@ -163,18 +163,6 @@ class _WidgetDrawer extends State<WidgetDrawer> {
         route: AppRoutes.listUserGroup),
     _Divider(),
     _Header(
-        title: 'External sources',
-        description: 'Import Locations from the Web or as Text File.'),
-    _Menu(
-        title: 'Import locations from Web (Todo)', route: AppRoutes.listAlias),
-    _Menu(
-        title: 'Import locations from File (Todo)', route: AppRoutes.listAlias),
-    _Menu(
-        title: 'Import & Export',
-        description: 'Make Data Backups ot import Data from friends.',
-        route: AppRoutes.importExport),
-    _Divider(),
-    _Header(
         title: 'App Configuration',
         description: 'Configure Chaos Tours to fit your needs.'),
     _Menu(
@@ -192,6 +180,18 @@ class _WidgetDrawer extends State<WidgetDrawer> {
             'This App needs tons of permissions to unfold its full potential.',
         route: AppRoutes.welcome,
         routeArguments: ''),
+    _Divider(),
+    _Header(
+        title: 'External sources',
+        description: 'Import Locations from the Web or as Text File.'),
+    _Menu(
+        title: 'Import locations from Web (Todo)', route: AppRoutes.listAlias),
+    _Menu(
+        title: 'Import locations from File (Todo)', route: AppRoutes.listAlias),
+    _Menu(
+        title: 'Import & Export',
+        description: 'Make Data Backups ot import Data from friends.',
+        route: AppRoutes.importExport),
     _Divider(),
     _Header(
         title: 'App Backstage',

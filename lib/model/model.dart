@@ -22,7 +22,11 @@ import 'package:sqflite/sqflite.dart';
 var decode = Uri.decodeFull; // util.base64Codec().decode;
 var encode = Uri.encodeFull;
 
-class Model {
+abstract class Model {
+  int get id;
+  String title = '';
+  String description = '';
+
   static final Logger logger = Logger.logger<Model>();
   static const String lineSep = '\n';
 

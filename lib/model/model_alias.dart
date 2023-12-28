@@ -65,6 +65,7 @@ enum AliasPrivacy {
 class ModelAlias implements Model {
   static Logger logger = Logger.logger<ModelAlias>();
   int _id = 0;
+  @override
   int get id => _id;
   // lazy loaded group
   List<ModelAliasGroup> aliasGroups = [];
@@ -73,7 +74,9 @@ class ModelAlias implements Model {
   DateTime lastVisited;
   int timesVisited = 0;
   String calendarId = '';
+  @override
   String title = '';
+  @override
   String description = '';
 
   /// group values

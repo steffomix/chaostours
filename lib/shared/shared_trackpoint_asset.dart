@@ -26,7 +26,7 @@ abstract class SharedTrackpointAsset {
   }
 
   final int id;
-  final String notes;
+  String notes;
 
   SharedTrackpointAsset({required this.id, required this.notes});
 }

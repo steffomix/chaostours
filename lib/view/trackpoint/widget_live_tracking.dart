@@ -17,6 +17,9 @@ limitations under the License.
 import 'package:chaostours/address.dart';
 import 'package:chaostours/conf/app_user_settings.dart';
 import 'package:chaostours/gps.dart';
+import 'package:chaostours/model/model.dart';
+import 'package:chaostours/model/model_user.dart';
+import 'package:chaostours/shared/shared_trackpoint_user.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -55,7 +58,15 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   TextEditingController? _userNotesController;
   final addressIsLoading = ValueNotifier<bool>(false);
 
-  final Map<String, ValueNotifier<int>> widgetNotifiers = {};
+  final _listenableStatusTrigger = ValueNotifier<bool>(false);
+  final _listenableTrackingStatus = ValueNotifier<bool>(false);
+  final _listenableDate = ValueNotifier<bool>(false);
+  final _listenableDuration = ValueNotifier<bool>(false);
+  final _listenableUndoUserNotes = ValueNotifier<bool>(false);
+
+  void notify(ValueNotifier<bool> notifier) {
+    notifier.value != notifier.value;
+  }
 
   Future<void> render() async {
     if (mounted) {
@@ -74,9 +85,6 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   ///
   @override
   void dispose() {
-    widgetNotifiers.values.map(
-      (e) => e.dispose,
-    );
     EventManager.remove<EventOnRender>(onRender);
     EventManager.remove<DataChannel>(onTracking);
     super.dispose();
@@ -89,7 +97,6 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       if (_visibleFraction < .5) {
         return;
       }
-      widgetNotifiers.values.map((e) => e.value++);
     }
   }
 
@@ -99,7 +106,6 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       if (_visibleFraction < .5) {
         return;
       }
-      widgetNotifiers.values.map((e) => e.value++);
     }
   }
 
@@ -168,7 +174,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
   Widget statusTrigger() {
     return ListenableBuilder(
-      listenable: widgetNotifiers['statusTrigger'] ??= ValueNotifier<int>(0),
+      listenable: _listenableStatusTrigger,
       builder: (context, child) {
         return dataChannel.trackingStatus == TrackingStatus.standing
             ? IconButton(
@@ -182,7 +188,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                   dataChannel.statusTrigger = await Cache
                       .trackingStatusTriggered
                       .save(TrackingStatus.moving);
-                  widgetNotifiers['statusTrigger']?.value++;
+                  notify(_listenableStatusTrigger);
                 })
             : IconButton(
                 icon: const Icon(Icons.flag),
@@ -209,8 +215,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   Widget widgetTrackingStatus() {
     return Center(
         child: ListenableBuilder(
-            listenable: widgetNotifiers['trackingStatus'] ??=
-                ValueNotifier<int>(0),
+            listenable: _listenableTrackingStatus,
             builder: (context, child) {
               return Text('${dataChannel.trackingStatus.name.toUpperCase()}\n');
             }));
@@ -218,7 +223,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
   Widget widgetDate() {
     return ListenableBuilder(
-        listenable: widgetNotifiers['date'] ??= ValueNotifier<int>(0),
+        listenable: _listenableDate,
         builder: (context, child) {
           return Text(util.formatDate(DateTime.now()));
         });
@@ -227,7 +232,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   Widget widgetDuration() {
     return Center(
         child: ListenableBuilder(
-            listenable: widgetNotifiers['duration'] ??= ValueNotifier<int>(0),
+            listenable: _listenableDuration,
             builder: (context, child) {
               return Text(util.formatDuration(dataChannel.duration));
             }));
@@ -317,114 +322,141 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   }
 
   Widget widgetAliases() {
-    return ListenableBuilder(
-        listenable: widgetNotifiers['aliases'] ??= ValueNotifier<int>(0),
-        builder: (context, child) {
-          List<Widget> list = [const Center(child: Text('Alias'))];
-          var i = 0;
-          for (var model in dataChannel.modelAliasList) {
-            i++;
-            list.add(ListTile(
-                leading: Icon(Icons.square, color: model.privacy.color),
-                title: Align(
-                    alignment: Alignment.centerLeft,
-                    child: TextButton(
-                        onPressed: () {
-                          Navigator.pushNamed(
-                                  context, AppRoutes.editAlias.route,
-                                  arguments: model.id)
-                              .then(
-                            (value) {
-                              render();
-                            },
-                          );
-                        },
-                        child: Text(
-                          style: i > 1
-                              ? null
-                              : const TextStyle(
-                                  decoration: TextDecoration.underline,
-                                  fontWeight: FontWeight.bold),
-                          '${dataChannel.distance}m: ${model.title}',
-                        )))));
-          }
-          return Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: list);
-        });
+    ///
+    List<Widget> list = [const Center(child: Text('Location Alias'))];
+    var i = 0;
+    for (var model in dataChannel.modelAliasList) {
+      i++;
+      list.add(ListTile(
+          leading: Icon(Icons.square, color: model.privacy.color),
+          title: Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton(
+                  onPressed: () {
+                    Navigator.pushNamed(context, AppRoutes.editAlias.route,
+                            arguments: model.id)
+                        .then(
+                      (value) {
+                        render();
+                      },
+                    );
+                  },
+                  child: Text(
+                    style: i > 1
+                        ? null
+                        : const TextStyle(
+                            decoration: TextDecoration.underline,
+                            fontWeight: FontWeight.bold),
+                    '${dataChannel.distance}m: ${model.title}',
+                  )))));
+    }
+    return Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: list);
   }
 
   Widget widgetselectedUsers() {
-    const listenerId = 'selectedUsers';
-    return ListenableBuilder(
-      listenable: widgetNotifiers[listenerId] ??= ValueNotifier<int>(0),
-      builder: (context, child) {
-        return ListTile(
-            trailing: IconButton(
-              icon: const Icon(Icons.edit),
-              onPressed: () async {
-                await editSelectedUsers();
-                widgetNotifiers[listenerId]?.value++;
-              },
-            ),
-            title: Column(
-              children: dataChannel.modelUserList.map<Widget>(
-                (model) {
-                  return TextButton(
-                    child: Text(model.title),
-                    onPressed: () {
-                      Navigator.pushNamed(context, AppRoutes.editUser.route,
-                              arguments: model.id)
-                          .then(
-                              (value) => widgetNotifiers[listenerId]?.value++);
-                    },
-                  );
-                },
-              ).toList(),
-            ));
-      },
+    return ListTile(
+      trailing: IconButton(
+        icon: const Icon(Icons.edit),
+        onPressed: () async {
+          await dialogSelectUser();
+        },
+      ),
+      subtitle: Column(
+        children: dataChannel.modelUserList.map<Widget>(
+          (model) {
+            return Align(
+                alignment: Alignment.centerLeft,
+                child: ListTile(
+                    title: Text(model.title),
+                    leading: IconButton(
+                      icon: const Icon(Icons.note),
+                      onPressed: () {
+                        AppWidgets.dialog(
+                            context: context,
+                            isDismissible: true,
+                            title: Text('#${model.id} Notes'),
+                            contents: [
+                              TextField(
+                                  minLines: 3,
+                                  maxLines: 8,
+                                  onChanged: (text) async {
+                                    SharedTrackpointUser.addOrUpdate(model,
+                                        notes: text);
+                                  })
+                            ],
+                            buttons: [
+                              TextButton(
+                                child: const Text('OK'),
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                },
+                              )
+                            ]);
+                        Navigator.pushNamed(context, AppRoutes.editUser.route,
+                                arguments: model.id)
+                            .then((value) {
+                          if (mounted) {
+                            setState(() {});
+                          }
+                        });
+                      },
+                    )));
+          },
+        ).toList(),
+      ),
+      title: const Text('Selected Members'),
     );
   }
 
   Widget widgetselectedTasks() {
-    const listenerId = 'seletedTsaks';
-    return ListenableBuilder(
-        listenable: widgetNotifiers[listenerId] ??= ValueNotifier<int>(0),
-        builder: (context, child) {
-          return ListTile(
-              trailing: IconButton(
-                icon: const Icon(Icons.edit),
-                onPressed: () async {
-                  await editSelectedTasks();
-                  widgetNotifiers[listenerId]?.value++;
-                },
-              ),
-              title: Column(
-                children: dataChannel.modelTaskList.map<Widget>(
-                  (model) {
-                    return TextButton(
-                      child: Text(model.title),
-                      onPressed: () {
-                        Navigator.pushNamed(context, AppRoutes.editUser.route,
-                                arguments: model.id)
-                            .then((value) =>
-                                widgetNotifiers[listenerId]?.value++);
-                      },
-                    );
-                  },
-                ).toList(),
-              ));
-        });
+    return ListTile(
+      trailing: IconButton(
+        icon: const Icon(Icons.edit),
+        onPressed: () async {
+          await dialogSelectTasks();
+          if (mounted) {
+            setState(() {});
+          }
+        },
+      ),
+      title: Column(
+        children: dataChannel.modelTaskList.map<Widget>(
+          (model) {
+            return TextButton(
+              child: Text(model.title),
+              onPressed: () {
+                Navigator.pushNamed(context, AppRoutes.editUser.route,
+                        arguments: model.id)
+                    .then((value) {
+                  if (mounted) {
+                    setState(() {});
+                  }
+                });
+              },
+            );
+          },
+        ).toList(),
+      ),
+      subtitle: Column(
+          children: dataChannel.modelTaskList.map<Widget>((model) {
+        return ListTile(
+          title: Text(model.title),
+          subtitle: Text(util.cutString(model.description, 100)),
+        );
+      }).toList()),
+    );
   }
 
   final _userNotesUndoController = UndoHistoryController();
   Widget widgetUserNotes() {
+    _userNotesController?.text = dataChannel.notes;
     return ListTile(
         trailing: ListenableBuilder(
-            listenable: widgetNotifiers['userNotes'] ??= ValueNotifier<int>(0),
+            listenable: _listenableUndoUserNotes,
             builder: (context, child) {
-              _userNotesController?.text = dataChannel.notes;
               return IconButton(
                 icon: const Icon(Icons.undo),
                 onPressed: _userNotesUndoController.value.canUndo
@@ -443,12 +475,50 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
           decoration: const InputDecoration(hintText: 'Notes'),
           onChanged: (text) async {
             await dataChannel.setTrackpointNotes(text);
+            notify(_listenableUndoUserNotes);
           },
         ));
   }
 
-  Future<void> editSelectedUsers() async {}
-  Future<void> editSelectedTasks() async {}
+  Future<void> dialogSelectUser() async {
+    List<int> modelIds =
+        dataChannel.modelUserList.map<int>((e) => e.id).toList();
+    List<ModelUser> selectables = await ModelUser.selectable();
+    List<Widget> contents = (selectables).map<Widget>(
+      (model) {
+        return ListTile(
+            title: Text(model.title),
+            subtitle: Padding(
+                padding: const EdgeInsets.only(left: 10),
+                child: Text(util.cutString(model.description, 100))),
+            trailing: AppWidgets.checkbox(
+                value: modelIds.contains(model.id),
+                onChanged: (bool? state) async {
+                  await ((state ??= false)
+                      ? SharedTrackpointUser.addOrUpdate(model)
+                      : SharedTrackpointUser.remove(model));
+                  render();
+                }));
+      },
+    ).toList();
+    if (mounted) {
+      AppWidgets.dialog(
+          title: const Text('Select Users'),
+          context: context,
+          contents: contents,
+          buttons: [
+            TextButton(
+              child: const Text('Close'),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+            )
+          ],
+          isDismissible: true);
+    }
+  }
+
+  Future<void> dialogSelectTasks() async {}
 
   ///
   BottomNavigationBar bottomNavBar(BuildContext context) {

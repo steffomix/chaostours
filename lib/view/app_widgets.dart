@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/conf/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -321,32 +322,28 @@ class AppWidgets {
     );
   }
 
-  static Future<T?> dialog<T>(
+  static Future dialog(
       {required BuildContext context,
+      Widget? title,
       required List<Widget> contents,
       required List<Widget> buttons,
-      bool isDismissible = false}) {
-    var dialog = showDialog<T>(
+      bool isDismissible = false}) async {
+    return await showDialog(
         barrierDismissible: isDismissible,
-        barrierColor:
-            !isDismissible ? const Color.fromARGB(164, 0, 0, 0) : null,
+        barrierColor: !isDismissible ? AppColors.dialogBarrirer.color : null,
         context: context,
         builder: (contextDialog) {
-          return Dialog(
-              child: ListView(children: [
-            Padding(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-                child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  ...contents,
-                  Wrap(
-                      spacing: 40,
-                      direction: Axis.horizontal,
-                      children: buttons)
-                ]))
-          ]));
-        });
+          Widget content =
+              Column(mainAxisSize: MainAxisSize.min, children: contents);
 
-    return dialog;
+          content = SingleChildScrollView(child: content);
+
+          return AlertDialog(
+            title: title,
+            content: content,
+            actions: buttons,
+          );
+        });
   }
 
   static Widget searchTile(
@@ -391,94 +388,6 @@ class AppWidgets {
       },
     );
   }
-/*
-  static ListTile trackPointInfo(BuildContext context, ModelTrackPoint tp) {
-    var alias = tp.aliasModels.map((model) => model.title);
-    var tasks = tp.taskModels.map((model) => model.title);
-    var users = tp.userModels.map((model) => model.title);
-    return ListTile(
-      title: ListBody(children: [
-        Center(
-            heightFactor: 2,
-            child: alias.isEmpty
-                ? Text('OSM Addr: ${tp.address}')
-                : Text('Alias: - ${alias.join('\n- ')}')),
-        Center(child: Text(AppWidgets.timeInfo(tp.timeStart, tp.timeEnd))),
-        divider(),
-        Text(
-            'Tasks:${tasks.isEmpty ? ' -' : '\n   - ${tasks.join('\n   - ')}'}'),
-        divider(),
-        Text(
-            'Users:${users.isEmpty ? ' -' : '\n   - ${users.join('\n   - ')}'}'),
-        divider(),
-        const Text('Notes:'),
-        Text(tp.notes),
-      ]),
-      leading: IconButton(
-          icon: const Icon(Icons.edit_note),
-          onPressed: () {
-            Navigator.pushNamed(context, AppRoutes.editTrackPoint.route,
-                arguments: tp.id);
-          }),
-    );
-  }
-*/
-/*
-  /// time based recent and location based lastVisited
-  static Widget renderTrackPointSearchList(
-      {required BuildContext context,
-      required TextEditingController textController,
-      required void Function() onUpdate,
-      GPS? gps}) {
-    return FutureBuilder<List<ModelTrackPoint>>(
-      future: ModelTrackPoint.search(textController.text),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return AppWidgets.loading(const Text(''));
-        } else if (snapshot.hasError) {
-          logger.error(
-              'renderTrackPointSearchList ${snapshot.error ?? 'unknow error'}',
-              StackTrace.current);
-          return AppWidgets.loading(
-              Text('FutureBuilder Error: ${snapshot.error ?? 'unknow error'}'));
-        } else {
-          if (snapshot.hasData) {
-            var data = snapshot.data!;
-            if (data.isEmpty) {
-              return ListView(children: const [
-                Text('\n\nNoch keine Haltepunkte erstellt')
-              ]);
-            } else {
-              var searchWidget = ListTile(
-                  subtitle: Text('Count: ${data.length}'),
-                  title: AppWidgets.searchWidget(
-                    context: context,
-                    controller: textController,
-                    onChange: (String value) {
-                      if (value != textController.text) {
-                        textController.text = value;
-                        onUpdate();
-                      }
-                    },
-                  ));
-              return ListView.builder(
-                  itemCount: data.length + 1,
-                  itemBuilder: (context, index) {
-                    if (index == 0) {
-                      return searchWidget;
-                    }
-                    return AppWidgets.trackPointInfo(context, data[index - 1]);
-                  });
-            }
-          } else {
-            logger.warn('renderTrackPointSearchList FutureBuilder no data');
-            return ListView(children: const [Text('\n\nNo Data')]);
-          }
-        }
-      },
-    );
-  }
-    */
 
   /// loads calendars if not provided
   static Widget calendarSelector(

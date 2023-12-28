@@ -32,6 +32,8 @@ enum AppColors {
   warningBackground(Colors.amber),
   warningForeground(Colors.black87),
 
+  dialogBarrirer(Color.fromARGB(164, 0, 0, 0)),
+
   /// transparent background
   white54(Colors.white54),
 

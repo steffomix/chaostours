@@ -31,11 +31,14 @@ class SharedTrackpointUser extends SharedTrackpointAsset {
     return SharedTrackpointUser(id: int.parse(id), notes: desc);
   }
 
-  static Future<List<SharedTrackpointUser>> add(ModelUser model,
+  static Future<List<SharedTrackpointUser>> addOrUpdate(ModelUser model,
       {String notes = ''}) async {
     var models = await load();
     for (var m in models) {
       if (m.id == model.id) {
+        m.notes = notes;
+        await Cache.backgroundSharedUserList
+            .save<List<SharedTrackpointUser>>(models);
         return models;
       }
     }

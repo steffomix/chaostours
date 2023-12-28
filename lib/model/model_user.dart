@@ -14,23 +14,27 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/model/model.dart';
 import 'package:sqflite/sqflite.dart';
 //
 import 'package:chaostours/database/database.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/model/model_user_group.dart';
 
-class ModelUser {
+class ModelUser implements Model {
   static Logger logger = Logger.logger<ModelUser>();
 
   int _id = 0;
+  @override
   int get id => _id;
   int groupId = 1;
   String sortOrder = '';
   bool isActive = true;
   bool isSelectable = true;
   bool isPreselected = false;
+  @override
   String title = '';
+  @override
   String description = '';
   String phone = '';
   String address = '';
@@ -282,7 +286,7 @@ class ModelUser {
   static Future<List<ModelUser>> preselected() async {
     final rows = await DB.execute((txn) async {
       final q = '''
-      SELECT ${TableUser.columns} FROM ${TableUserUserGroup.table}
+      SELECT ${TableUser.columns.join(', ')} FROM ${TableUserUserGroup.table}
       LEFT JOIN ${TableUserUserGroup.table} ON ${TableUserUserGroup.idUserGroup} = ${TableUserGroup.id}
       LEFT JOIN ${TableUser.table} ON ${TableUserUserGroup.idUser} = ${TableUser.id}
       WHERE ${TableUserGroup.isPreselected} = ? OR ${TableUser.isPreselected} = ?
@@ -298,9 +302,9 @@ class ModelUser {
   static Future<List<ModelUser>> selectable() async {
     final rows = await DB.execute((txn) async {
       final q = '''
-      SELECT ${TableUser.columns} FROM ${TableUserUserGroup.table}
-      LEFT JOIN ${TableUserUserGroup.table} ON ${TableUserUserGroup.idUserGroup} = ${TableUserGroup.id}
-      LEFT JOIN ${TableUser.table} ON ${TableUserUserGroup.idUser} = ${TableUser.id}
+      SELECT ${TableUser.columns.join(', ')} FROM ${TableUser.table}
+      LEFT JOIN ${TableUserUserGroup.table} ON ${TableUserUserGroup.idUser} = ${TableUser.id}
+      LEFT JOIN ${TableUserGroup.table} ON ${TableUserUserGroup.idUserGroup} = ${TableUserGroup.id}
       WHERE ${TableUserGroup.isSelectable} = ? OR ${TableUser.isSelectable} = ? OR ${TableUserGroup.isPreselected} = ? OR ${TableUser.isPreselected} = ?
       GROUP BY ${TableUser.id}
       ORDER BY ${TableUser.sortOrder}, ${TableUser.title} NULLS LAST

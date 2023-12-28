@@ -100,7 +100,8 @@ class DB {
   static int get transactionsTotal => _transactionsTotal;
   static Future<T> execute<T>(
       Future<T> Function(flite.Transaction txn) action) async {
-    return await Future.microtask(() async {
+    return await _database!.transaction<T>(action);
+    /* return await Future.microtask(() async {
       int trys = 0;
       _transactionsTotal++;
       do {
@@ -118,7 +119,7 @@ class DB {
       } while (trys < 10);
 
       throw ('DB::execute unknown error');
-    });
+    }); */
   }
 
   static int parseInt(Object? value, {int fallback = 0}) {

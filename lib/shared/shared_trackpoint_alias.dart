@@ -31,11 +31,14 @@ class SharedTrackpointAlias extends SharedTrackpointAsset {
     return SharedTrackpointAlias(id: int.parse(id), notes: notes);
   }
 
-  static Future<List<SharedTrackpointAlias>> add(ModelAlias model,
+  static Future<List<SharedTrackpointAlias>> addOrUpdate(ModelAlias model,
       {String notes = ''}) async {
     var models = await load();
     for (var m in models) {
       if (m.id == model.id) {
+        m.notes = notes;
+        await Cache.backgroundSharedAliasList
+            .save<List<SharedTrackpointAlias>>(models);
         return models;
       }
     }

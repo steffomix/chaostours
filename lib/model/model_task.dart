@@ -14,23 +14,27 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/model/model.dart';
 import 'package:sqflite/sqflite.dart';
 //
 import 'package:chaostours/database/database.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/model/model_task_group.dart';
 
-class ModelTask {
+class ModelTask implements Model {
   static Logger logger = Logger.logger<ModelTask>();
 
   int _id = 0;
+  @override
   int get id => _id;
   int groupId;
   bool isActive;
   bool isSelectable = true;
   bool isPreselected = false;
   String sortOrder;
+  @override
   String title;
+  @override
   String description;
 
   ModelTask(
