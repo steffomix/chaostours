@@ -114,10 +114,11 @@ enum Cache {
       CacheModulId.sharedPreferences, List<GPS>, expireAfterOneSecond),
 
   /// stores last lookup to prevent more than one osm lookups per second
-  addressLastLookup(CacheModulId.sharedPreferences, int, expireAfterOneSecond),
+  addressTimeLastLookup(
+      CacheModulId.sharedPreferences, int, expireAfterOneSecond),
 
   /// address updated on each background tick - if permission granted
-  backgroundAddress(CacheModulId.sharedPreferences, String, expireImmediately),
+  AddressMostRecent(CacheModulId.sharedPreferences, String, expireImmediately),
 
   /// address updated on status change - if activated
   backgroundLastStandingAddress(

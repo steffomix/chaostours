@@ -95,12 +95,11 @@ class _WidgetAliasGroupList extends BaseWidgetState<WidgetAliasGroupList>
           subtitle: Text(model.description),
           trailing: IconButton(
               icon: const Icon(Icons.edit),
-              onPressed: () {
-                Navigator.pushNamed(context, AppRoutes.editAliasGroup.route,
-                        arguments: model.id)
-                    .then(
-                  (value) => resetLoader(),
-                );
+              onPressed: () async {
+                await Navigator.pushNamed(
+                    context, AppRoutes.editAliasGroup.route,
+                    arguments: model.id);
+                resetLoader();
               })),
       AppWidgets.calendar(_calendars[model.idCalendar]),
     ]);

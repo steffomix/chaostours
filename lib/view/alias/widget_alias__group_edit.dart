@@ -227,11 +227,11 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
             'This Group is active and visible',
             softWrap: true,
           ),
-          leading: Checkbox(
+          leading: AppWidgets.checkbox(
             value: _modelAliasGroup?.isActive ?? false,
             onChanged: (val) {
               _modelAliasGroup?.isActive = val ?? false;
-              _modelAliasGroup?.update().then((value) => render());
+              _modelAliasGroup?.update();
             },
           )),
 

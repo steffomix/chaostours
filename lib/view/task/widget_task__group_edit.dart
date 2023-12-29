@@ -159,11 +159,11 @@ class _WidgetTaskGroupEdit extends State<WidgetTaskGroupEdit> {
             'If checked this group appears in Live Tracking lists',
             softWrap: true,
           ),
-          leading: Checkbox(
+          leading: AppWidgets.checkbox(
             value: _model?.isSelectable ?? false,
             onChanged: (val) {
               _model?.isSelectable = val ?? false;
-              _model?.update().then((value) => render());
+              _model?.update();
             },
           )),
 
@@ -205,11 +205,11 @@ class _WidgetTaskGroupEdit extends State<WidgetTaskGroupEdit> {
             'Deaktivated Items have no functionality and appear only in Trash views.',
             softWrap: true,
           ),
-          leading: Checkbox(
+          leading: AppWidgets.checkbox(
             value: _model?.isActive ?? false,
             onChanged: (val) {
               _model?.isActive = val ?? false;
-              _model?.update().then((value) => render());
+              _model?.update();
             },
           )),
     ]);

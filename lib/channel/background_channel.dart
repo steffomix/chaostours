@@ -40,6 +40,7 @@ enum BackgroundChannelCommand {
   gotoBackground,
   reloadUserSettings,
   onTracking,
+  track,
   notify,
   ;
 
@@ -74,6 +75,16 @@ class BackgroundChannel {
     service.on(BackgroundChannelCommand.stopService.toString()).listen((_) {
       serviceIsRunning = false;
       service.stopSelf();
+    });
+    service
+        .on(BackgroundChannelCommand.stopService.toString())
+        .listen((_) async {
+      try {
+        service.invoke(BackgroundChannelCommand.onTracking.toString(),
+            await tracker.track());
+      } catch (e, stk) {
+        logger.error('background tracking: $e', stk);
+      }
     });
 
     service

@@ -15,16 +15,18 @@ limitations under the License.
 */
 
 import 'package:chaostours/address.dart';
+import 'package:chaostours/channel/background_channel.dart';
 import 'package:chaostours/conf/app_user_settings.dart';
 import 'package:chaostours/gps.dart';
-import 'package:chaostours/model/model.dart';
+import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/shared/shared_trackpoint_task.dart';
 import 'package:chaostours/shared/shared_trackpoint_user.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:visibility_detector/visibility_detector.dart';
+//import 'package:visibility_detector/visibility_detector.dart';
 
 import 'package:chaostours/channel/data_channel.dart';
 import 'package:chaostours/channel/tracking.dart';
@@ -81,6 +83,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   ///
   @override
   void initState() {
+    FlutterBackgroundService()
+        .invoke(BackgroundChannelCommand.track.toString());
     EventManager.listen<DataChannel>(onTracking);
     EventManager.listen<EventOnRender>(onRender);
     super.initState();
@@ -156,8 +160,10 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       ListTile(
           title: Column(children: [
         widgetAliases(),
+        AppWidgets.divider(),
+        widgetSelectedTasks(),
         widgetSelectedUsers(),
-        widgetselectedTasks(),
+        AppWidgets.divider(),
         widgetTrackpointNotes()
       ]))
     ]);
@@ -182,35 +188,84 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       builder: (context, child) {
         return dataChannel.trackingStatus == TrackingStatus.standing
             ? IconButton(
-                icon: Icon(dataChannel.statusTrigger == TrackingStatus.moving
-                    ? Icons.drive_eta
-                    : Icons.drive_eta_outlined),
+                icon: Icon(
+                    dataChannel.trackingStatusTrigger != TrackingStatus.none
+                        ? Icons.drive_eta
+                        : Icons.drive_eta_outlined),
                 onPressed: () async {
-                  if (dataChannel.statusTrigger != TrackingStatus.moving) {
-                    Fluttertoast.showToast(msg: 'Moving sheduled');
-                  }
-                  dataChannel.statusTrigger = await Cache
-                      .trackingStatusTriggered
-                      .save(TrackingStatus.moving);
-                  notify(_listenableStatusTrigger);
+                  ///start
+
+                  AppWidgets.dialog(
+                      context: context,
+                      title: const Text('Start?'),
+                      contents: [
+                        const Text(
+                            'This action will trigger Start and save a trackpoint of this location. '
+                            'Usualy the Status moves back to Standing with the next interval.')
+                      ],
+                      buttons: [
+                        TextButton(
+                          child: const Text('Yes'),
+                          onPressed: () async {
+                            Navigator.pop(context);
+                            dataChannel.trackingStatusTrigger = await Cache
+                                .trackingStatusTriggered
+                                .save<TrackingStatus>(TrackingStatus.moving);
+                            FlutterBackgroundService().invoke(
+                                BackgroundChannelCommand.reloadUserSettings
+                                    .toString());
+                            if (dataChannel.trackingStatusTrigger !=
+                                TrackingStatus.moving) {
+                              Fluttertoast.showToast(msg: 'Stop sheduled');
+                            }
+                            notify(_listenableStatusTrigger);
+                          },
+                        ),
+                        TextButton(
+                          child: const Text('Cancel'),
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                        )
+                      ]);
+
+                  ///end
                 })
             : IconButton(
                 icon: const Icon(Icons.flag),
                 onPressed: () async {
-                  AppWidgets.dialog(context: context, contents: [
-                    const Text('Create Trackpoint right here?')
-                  ], buttons: [
-                    TextButton(
-                      child: const Text('Yes'),
-                      onPressed: () {},
-                    ),
-                    TextButton(
-                      child: const Text('Cancel'),
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                    )
-                  ]);
+                  AppWidgets.dialog(
+                      context: context,
+                      title: const Text('Stop?'),
+                      contents: [
+                        const Text(
+                            'This action will trigger Stop and reset all measurement points to this current location.')
+                      ],
+                      buttons: [
+                        TextButton(
+                          child: const Text('Yes'),
+                          onPressed: () async {
+                            Navigator.pop(context);
+                            dataChannel.trackingStatusTrigger = await Cache
+                                .trackingStatusTriggered
+                                .save<TrackingStatus>(TrackingStatus.moving);
+                            FlutterBackgroundService().invoke(
+                                BackgroundChannelCommand.reloadUserSettings
+                                    .toString());
+                            if (dataChannel.trackingStatusTrigger !=
+                                TrackingStatus.moving) {
+                              Fluttertoast.showToast(msg: 'Start sheduled');
+                            }
+                            notify(_listenableStatusTrigger);
+                          },
+                        ),
+                        TextButton(
+                          child: const Text('Cancel'),
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                        )
+                      ]);
                 });
       },
     );
@@ -242,6 +297,10 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
             }));
   }
 
+  /// address
+  ///
+  ///
+  ///
   Widget widgetAddress() {
     return ListTile(
         trailing: IconButton(
@@ -263,9 +322,9 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                   await Address(gps).lookup(OsmLookupConditions.onUserRequest);
 
               dataChannel.address =
-                  await Cache.backgroundAddress.save<String>(address.alias);
+                  await Cache.AddressMostRecent.save<String>(address.alias);
               dataChannel.fullAddress =
-                  await Cache.backgroundAddress.save<String>(address.alias);
+                  await Cache.AddressMostRecent.save<String>(address.alias);
               if (mounted) {
                 AppWidgets.dialog(context: context, contents: [
                   ListTile(
@@ -325,9 +384,13 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
             )));
   }
 
+  /// aliasList
+  ///
+  ///
+  ///
   Widget widgetAliases() {
     ///
-    List<Widget> list = [const Center(child: Text('Location Alias'))];
+    List<Widget> list = [];
     var i = 0;
     for (var channelModel in dataChannel.aliasList) {
       i++;
@@ -351,7 +414,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                         : const TextStyle(
                             decoration: TextDecoration.underline,
                             fontWeight: FontWeight.bold),
-                    '${dataChannel.distance}m: ${channelModel.model.title}',
+                    '${channelModel.distance}m: ${channelModel.model.title}',
                   )))));
     }
     return Column(
@@ -360,17 +423,30 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         children: list);
   }
 
+  /// users
+  ///
+  ///
+  ///
   Widget widgetSelectedUsers() {
+    dataChannel.sortUser();
     return _isUsersExpanded
         ? widgetselectedUsersExpanded()
-        : widgetselectedUsersCollapsed();
+        : widgetSelectedUsersCollapsed();
   }
 
-  Widget widgetselectedUsersCollapsed() {
-    dataChannel.sortUser();
+  Widget widgetSelectedUsersCollapsed() {
     return ListTile(
       trailing: IconButton(
-        icon: const Icon(Icons.edit),
+        icon: _isUsersExpanded
+            ? const Icon(Icons.cancel_rounded)
+            : const Icon(Icons.menu_open),
+        onPressed: () async {
+          _isUsersExpanded = !_isUsersExpanded;
+          setState(() {});
+        },
+      ),
+      title: ElevatedButton(
+        child: const Text('Edit selected Users'),
         onPressed: () async {
           await dialogSelectUser();
           await dataChannel.updateAssets();
@@ -379,29 +455,32 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
           }
         },
       ),
-      title: ElevatedButton(
-        child: const Text('Open selected Members'),
-        onPressed: () {
-          _isUsersExpanded = true;
-          setState(() {});
-        },
-      ),
-      subtitle: Column(
-          children: dataChannel.userList.map<Widget>(
-        (channelModel) {
-          return Align(
-              alignment: Alignment.centerLeft,
-              child: Text(channelModel.model.title));
-        },
-      ).toList()),
+      subtitle: dataChannel.userList.isEmpty
+          ? const Text('Nothing selected')
+          : Column(
+              children: dataChannel.userList.map<Widget>(
+              (channelModel) {
+                return Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(channelModel.model.title));
+              },
+            ).toList()),
     );
   }
 
   Widget widgetselectedUsersExpanded() {
-    dataChannel.sortUser();
     return ListTile(
       trailing: IconButton(
-        icon: const Icon(Icons.edit),
+        icon: _isUsersExpanded
+            ? const Icon(Icons.cancel_rounded)
+            : const Icon(Icons.menu_open),
+        onPressed: () async {
+          _isUsersExpanded = !_isUsersExpanded;
+          setState(() {});
+        },
+      ),
+      title: ElevatedButton(
+        child: const Text('Edit selected Users'),
         onPressed: () async {
           await dialogSelectUser();
           await dataChannel.updateAssets();
@@ -410,50 +489,43 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
           }
         },
       ),
-      title: ElevatedButton(
-        child: const Text('Close selected Members'),
-        onPressed: () {
-          _isUsersExpanded = false;
-          if (mounted) {
-            setState(() {});
-          }
-        },
-      ),
-      subtitle: Column(
-        children: dataChannel.userList.map<Widget>(
-          (channelModel) {
-            return Align(
-                alignment: Alignment.centerLeft,
-                child: ListTile(
-                    title: Align(
-                        alignment: Alignment.centerLeft,
-                        child: TextButton(
-                          child: Text(channelModel.model.title),
-                          onPressed: () {
-                            Navigator.pushNamed(
-                                    context, AppRoutes.editUser.route,
-                                    arguments: channelModel.id)
-                                .then((value) {
-                              if (mounted) {
-                                render();
-                              }
-                            });
-                          },
-                        )),
-                    subtitle: channelModel.shared.notes.isEmpty
-                        ? null
-                        : Text(channelModel.shared.notes,
-                            style: Theme.of(context).textTheme.bodySmall),
-                    leading: IconButton(
-                      icon: const Icon(Icons.note),
-                      onPressed: () async {
-                        await editUserNotes(channelModel);
-                        render();
-                      },
-                    )));
-          },
-        ).toList(),
-      ),
+      subtitle: dataChannel.userList.isEmpty
+          ? const Text('Nothing selected')
+          : Column(
+              children: dataChannel.userList.map<Widget>(
+                (channelModel) {
+                  return Align(
+                      alignment: Alignment.centerLeft,
+                      child: ListTile(
+                          title: Align(
+                              alignment: Alignment.centerLeft,
+                              child: TextButton(
+                                child: Text(channelModel.model.title),
+                                onPressed: () {
+                                  Navigator.pushNamed(
+                                          context, AppRoutes.editUser.route,
+                                          arguments: channelModel.id)
+                                      .then((value) {
+                                    if (mounted) {
+                                      render();
+                                    }
+                                  });
+                                },
+                              )),
+                          subtitle: channelModel.shared.notes.isEmpty
+                              ? null
+                              : Text(channelModel.shared.notes,
+                                  style: Theme.of(context).textTheme.bodySmall),
+                          leading: IconButton(
+                            icon: const Icon(Icons.note),
+                            onPressed: () async {
+                              await editUserNotes(channelModel);
+                              render();
+                            },
+                          )));
+                },
+              ).toList(),
+            ),
     );
   }
 
@@ -487,95 +559,6 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
             },
           )
         ]);
-  }
-
-  Widget widgetselectedTasks() {
-    return ListTile(
-      trailing: IconButton(
-        icon: const Icon(Icons.edit),
-        onPressed: () async {
-          await dialogSelectTask();
-        },
-      ),
-      subtitle: Column(
-        children: dataChannel.taskList.map<Widget>(
-          (channelModel) {
-            return Align(
-                alignment: Alignment.centerLeft,
-                child: ListTile(
-                    title: Text(channelModel.model.title),
-                    leading: IconButton(
-                      icon: const Icon(Icons.note),
-                      onPressed: () {
-                        AppWidgets.dialog(
-                            context: context,
-                            isDismissible: true,
-                            title: Text('#${channelModel.id} Notes'),
-                            contents: [
-                              TextField(
-                                  minLines: 3,
-                                  maxLines: 8,
-                                  onChanged: (text) async {
-                                    SharedTrackpointTask.addOrUpdate(
-                                        channelModel.model,
-                                        notes: text);
-                                  })
-                            ],
-                            buttons: [
-                              TextButton(
-                                child: const Text('OK'),
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                },
-                              )
-                            ]);
-                        Navigator.pushNamed(context, AppRoutes.editTask.route,
-                                arguments: channelModel.id)
-                            .then((value) {
-                          if (mounted) {
-                            setState(() {});
-                          }
-                        });
-                      },
-                    )));
-          },
-        ).toList(),
-      ),
-      title: const Text('Selected Members'),
-    );
-  }
-
-  final _userNotesUndoController = UndoHistoryController();
-  Widget widgetTrackpointNotes() {
-    _userNotesController?.text = dataChannel.notes;
-    return ListTile(
-        trailing: ListenableBuilder(
-            listenable: _listenableUndoUserNotes,
-            builder: (context, child) {
-              return IconButton(
-                icon: const Icon(Icons.undo),
-                onPressed: _userNotesUndoController.value.canUndo
-                    ? () {
-                        _userNotesUndoController.undo();
-                      }
-                    : null,
-              );
-            }),
-        title: TextField(
-          controller: _userNotesController ??=
-              TextEditingController(text: dataChannel.notes),
-          undoController: _userNotesUndoController,
-          minLines: 2,
-          maxLines: 6,
-          decoration: const InputDecoration(hintText: 'Notes'),
-          onChanged: (text) async {
-            await dataChannel.setTrackpointNotes(text);
-            if (mounted) {
-              notify(_listenableUndoUserNotes);
-              setState(() {});
-            }
-          },
-        ));
   }
 
   Future<void> dialogSelectUser() async {
@@ -615,7 +598,218 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     }
   }
 
-  Future<void> dialogSelectTask() async {}
+  /// tasks
+  ///
+  ///
+  ///
+
+  Widget widgetSelectedTasks() {
+    dataChannel.sortTask();
+    return _isTasksExpanded
+        ? widgetselectedTasksExpanded()
+        : widgetselectedTasksCollapsed();
+  }
+
+  Widget widgetselectedTasksCollapsed() {
+    return ListTile(
+      trailing: IconButton(
+        icon: _isUsersExpanded
+            ? const Icon(Icons.cancel_rounded)
+            : const Icon(Icons.menu_open),
+        onPressed: () async {
+          _isTasksExpanded = !_isTasksExpanded;
+          setState(() {});
+        },
+      ),
+      title: ElevatedButton(
+        child: const Text('Edit selected Tasks'),
+        onPressed: () async {
+          await dialogSelectTask();
+          await dataChannel.updateAssets();
+          if (mounted) {
+            setState(() {});
+          }
+        },
+      ),
+      subtitle: dataChannel.taskList.isEmpty
+          ? const Text('Nothing selected')
+          : Column(
+              children: dataChannel.taskList.map<Widget>(
+              (channelModel) {
+                return Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(channelModel.model.title));
+              },
+            ).toList()),
+    );
+  }
+
+  Widget widgetselectedTasksExpanded() {
+    return ListTile(
+      trailing: IconButton(
+        icon: _isUsersExpanded
+            ? const Icon(Icons.cancel_rounded)
+            : const Icon(Icons.menu_open),
+        onPressed: () async {
+          _isTasksExpanded = !_isTasksExpanded;
+          setState(() {});
+        },
+      ),
+      title: ElevatedButton(
+        child: const Text('Close selected Tasks'),
+        onPressed: () async {
+          await dialogSelectTask();
+          await dataChannel.updateAssets();
+          if (mounted) {
+            setState(() {});
+          }
+        },
+      ),
+      subtitle: dataChannel.taskList.isEmpty
+          ? const Text('Nothing selected')
+          : Column(
+              children: dataChannel.taskList.map<Widget>(
+                (channelModel) {
+                  return Align(
+                      alignment: Alignment.centerLeft,
+                      child: ListTile(
+                          title: Align(
+                              alignment: Alignment.centerLeft,
+                              child: TextButton(
+                                child: Text(channelModel.model.title),
+                                onPressed: () {
+                                  Navigator.pushNamed(
+                                          context, AppRoutes.editTask.route,
+                                          arguments: channelModel.id)
+                                      .then((value) {
+                                    if (mounted) {
+                                      render();
+                                    }
+                                  });
+                                },
+                              )),
+                          subtitle: channelModel.shared.notes.isEmpty
+                              ? null
+                              : Text(channelModel.shared.notes,
+                                  style: Theme.of(context).textTheme.bodySmall),
+                          leading: IconButton(
+                            icon: const Icon(Icons.note),
+                            onPressed: () async {
+                              await editTaskNotes(channelModel);
+                              render();
+                            },
+                          )));
+                },
+              ).toList(),
+            ),
+    );
+  }
+
+  Future<void> editTaskNotes(ChannelTask channelModel) async {
+    await AppWidgets.dialog(
+        context: context,
+        isDismissible: true,
+        title: const Text('Notes'),
+        contents: [
+          Align(
+              alignment: Alignment.centerLeft,
+              child: Text(channelModel.model.title)),
+          TextField(
+              controller:
+                  TextEditingController(text: channelModel.shared.notes),
+              minLines: 3,
+              maxLines: 8,
+              onChanged: (text) async {
+                SharedTrackpointTask.addOrUpdate(channelModel.model,
+                    notes: text);
+              })
+        ],
+        buttons: [
+          TextButton(
+            child: const Text('OK'),
+            onPressed: () async {
+              await dataChannel.updateAssets();
+              if (mounted) {
+                Navigator.pop(context);
+              }
+            },
+          )
+        ]);
+  }
+
+  Future<void> dialogSelectTask() async {
+    List<int> modelIds = dataChannel.taskList.map<int>((e) => e.id).toList();
+    List<ModelTask> selectables = await ModelTask.selectable();
+    List<Widget> contents = (selectables).map<Widget>(
+      (model) {
+        return ListTile(
+            title: Text(model.title),
+            subtitle: Padding(
+                padding: const EdgeInsets.only(left: 10),
+                child: Text(util.cutString(model.description, 100))),
+            trailing: AppWidgets.checkbox(
+                value: modelIds.contains(model.id),
+                onChanged: (bool? state) async {
+                  await ((state ??= false)
+                      ? SharedTrackpointTask.addOrUpdate(model)
+                      : SharedTrackpointTask.remove(model));
+                  render();
+                }));
+      },
+    ).toList();
+    if (mounted) {
+      await AppWidgets.dialog(
+          title: const Text('Select Tasks'),
+          context: context,
+          contents: contents,
+          buttons: [
+            TextButton(
+              child: const Text('Close'),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+            )
+          ],
+          isDismissible: true);
+    }
+  }
+
+  /// notes
+  ///
+  ///
+  ///
+  final _userNotesUndoController = UndoHistoryController();
+  Widget widgetTrackpointNotes() {
+    _userNotesController?.text = dataChannel.notes;
+    return ListTile(
+        trailing: ListenableBuilder(
+            listenable: _listenableUndoUserNotes,
+            builder: (context, child) {
+              return IconButton(
+                icon: const Icon(Icons.undo),
+                onPressed: _userNotesUndoController.value.canUndo
+                    ? () {
+                        _userNotesUndoController.undo();
+                      }
+                    : null,
+              );
+            }),
+        title: TextField(
+          controller: _userNotesController ??=
+              TextEditingController(text: dataChannel.notes),
+          undoController: _userNotesUndoController,
+          minLines: 2,
+          maxLines: 6,
+          decoration: const InputDecoration(hintText: 'Notes'),
+          onChanged: (text) async {
+            await dataChannel.setTrackpointNotes(text);
+            if (mounted) {
+              //notify(_listenableUndoUserNotes);
+              //setState(() {});
+            }
+          },
+        ));
+  }
 
   ///
   BottomNavigationBar bottomNavBar(BuildContext context) {

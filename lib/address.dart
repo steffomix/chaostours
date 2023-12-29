@@ -56,7 +56,7 @@ class Address {
     try {
       final body = _response?.body;
       var json = jsonDecode(body ?? '{}');
-      return (json['display_name'] ?? 'No Address found');
+      return (json['display_name'] ?? '');
     } catch (e, stk) {
       String msg = 'Parse OSM Result failed: $e';
       logger.error(msg, stk);
@@ -76,7 +76,7 @@ class Address {
           json['address'] ?? <String, dynamic>{};
       List<String> parts = [];
       if (addressParts.keys.isEmpty) {
-        return 'No Address found';
+        return '';
       }
       for (var key in addressParts.keys) {
         parts.add('$key: ${addressParts[key]}');
@@ -110,11 +110,11 @@ class Address {
 
   // OpenStreeMap limit of one request per second
   Future<void> requestLimit() async {
-    while (await Cache.addressLastLookup.load<int>(0) + 1000 >
+    while (await Cache.addressTimeLastLookup.load<int>(0) + 1000 >
         DateTime.now().millisecondsSinceEpoch) {
       await Future.delayed(const Duration(milliseconds: 200));
     }
-    await Cache.addressLastLookup
+    await Cache.addressTimeLastLookup
         .save<int>(DateTime.now().millisecondsSinceEpoch);
   }
 
@@ -146,7 +146,7 @@ class Address {
     }
     _lastResponse = _response = response;
     if (saveToCache) {
-      await Cache.backgroundAddress.save<String>(alias);
+      await Cache.AddressMostRecent.save<String>(alias);
     }
     return this;
   }

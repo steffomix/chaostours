@@ -101,7 +101,7 @@ class _WidgetTasksFromTaskGroupList
           if (mounted) {
             await Navigator.pushNamed(context, AppRoutes.editTask.route,
                 arguments: model.id);
-            render();
+            resetLoader();
           }
         }));
   }

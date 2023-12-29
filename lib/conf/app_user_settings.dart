@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/address.dart';
 import 'package:flutter/material.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/database/cache.dart';
@@ -35,6 +36,7 @@ enum OsmLookupConditions implements EnumUserSetting<OsmLookupConditions> {
   onBackgroundGps(Text('On every background GPS interval')),
   always(Text('Always, no restrictions'));
 
+  static Map<OsmLookupConditions, Address> address = {};
   @override
   final Widget title;
   const OsmLookupConditions(this.title);

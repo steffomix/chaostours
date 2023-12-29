@@ -101,10 +101,14 @@ class BaseWidgetState<T extends BaseWidget> extends State<T>
   }
 
   Future<void> _load() async {
-    if (mounted) {
-      await widgetLoader.load(
-          fnLoad: loadItems, fnCount: loadCount, limit: loaderLimit());
-      render();
+    try {
+      if (mounted) {
+        await widgetLoader.load(
+            fnLoad: loadItems, fnCount: loadCount, limit: loaderLimit());
+        render();
+      }
+    } catch (e, stk) {
+      logger.error('_load: $e', stk);
     }
   }
 

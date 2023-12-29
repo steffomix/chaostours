@@ -521,6 +521,11 @@ class _AliasTrackingRenderer {
     if (channel.gpsPoints.isEmpty) {
       return;
     }
+    try {
+      GeoPoint geoPoint = await controller.centerMap;
+    } catch (e) {
+      return;
+    }
     GeoPoint geoPoint = await controller.centerMap;
     GPS currentGps = channel.gps ?? GPS(geoPoint.latitude, geoPoint.longitude);
     List<GPS> gpsPoints = getRange(channel.gpsPoints);

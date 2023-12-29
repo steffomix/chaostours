@@ -28,7 +28,7 @@ class ModelUser implements Model {
   @override
   int get id => _id;
   int groupId = 1;
-  String? sortOrder;
+  String sortOrder;
   bool isActive = true;
   bool isSelectable = true;
   bool isPreselected = false;
@@ -51,13 +51,12 @@ class ModelUser implements Model {
       this.address = ''});
 
   static ModelUser fromMap(Map<String, Object?> map) {
-    final so = DB.parseString(map[TableUser.sortOrder.column]);
     var model = ModelUser(
       groupId: DB.parseInt(map[TableUser.idUserGroup.column], fallback: 1),
       isActive: DB.parseBool(map[TableUser.isActive.column]),
       isSelectable: DB.parseBool(map[TableUser.isSelectable.column]),
       isPreselected: DB.parseBool(map[TableUser.isPreselected.column]),
-      sortOrder: so.isEmpty ? null : so.toString(),
+      sortOrder: DB.parseString(map[TableUser.sortOrder.column]),
       title: DB.parseString(map[TableUser.title.column]),
       description: DB.parseString(map[TableUser.description.column]),
       phone: DB.parseString(map[TableUser.phone.column]),
@@ -285,14 +284,19 @@ class ModelUser implements Model {
   }
 
   static Future<List<ModelUser>> preselected() async {
+    const nullsort = 'nullsort';
+    var columns = [...TableUser.columns];
+    columns.add(
+        '''CASE WHEN ${TableUser.sortOrder} IS '' THEN 2 ELSE 1 END AS $nullsort''');
+
     final rows = await DB.execute((txn) async {
       final q = '''
-      SELECT ${TableUser.columns.join(', ')} FROM ${TableUserUserGroup.table}
-      LEFT JOIN ${TableUserUserGroup.table} ON ${TableUserUserGroup.idUserGroup} = ${TableUserGroup.id}
-      LEFT JOIN ${TableUser.table} ON ${TableUserUserGroup.idUser} = ${TableUser.id}
+      SELECT ${columns.join(', ')} FROM ${TableUser.table}
+      LEFT JOIN ${TableUserUserGroup.table} ON ${TableUserUserGroup.idUser} = ${TableUser.id}
+      LEFT JOIN ${TableUserGroup.table} ON ${TableUserUserGroup.idUserGroup} = ${TableUserGroup.id}
       WHERE ${TableUserGroup.isPreselected} = ? OR ${TableUser.isPreselected} = ?
       GROUP BY ${TableUser.id}
-      ORDER BY ${TableUser.sortOrder}, ${TableUser.title} NULLS LAST
+      ORDER BY $nullsort, ${TableUser.sortOrder}, ${TableUser.title}
 ''';
 
       return await txn.rawQuery(q, List.filled(2, DB.boolToInt(true)));
@@ -301,14 +305,19 @@ class ModelUser implements Model {
   }
 
   static Future<List<ModelUser>> selectable() async {
+    const nullsort = 'nullsort';
+    var columns = [...TableUser.columns];
+    columns.add(
+        '''CASE WHEN ${TableUser.sortOrder} IS '' THEN 2 ELSE 1 END AS $nullsort''');
+
     final rows = await DB.execute((txn) async {
       final q = '''
-      SELECT ${TableUser.columns.join(', ')} FROM ${TableUser.table}
+      SELECT ${columns.join(', ')} FROM ${TableUser.table}
       LEFT JOIN ${TableUserUserGroup.table} ON ${TableUserUserGroup.idUser} = ${TableUser.id}
       LEFT JOIN ${TableUserGroup.table} ON ${TableUserUserGroup.idUserGroup} = ${TableUserGroup.id}
       WHERE ${TableUserGroup.isSelectable} = ? OR ${TableUser.isSelectable} = ? OR ${TableUserGroup.isPreselected} = ? OR ${TableUser.isPreselected} = ?
       GROUP BY ${TableUser.id}
-      ORDER BY ${TableUser.sortOrder}, ${TableUser.title} NULLS LAST
+      ORDER BY $nullsort, ${TableUser.sortOrder}, ${TableUser.title}
 ''';
       return await txn.rawQuery(q, List.filled(4, DB.boolToInt(true)));
     });

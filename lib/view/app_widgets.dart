@@ -130,7 +130,7 @@ class AppWidgets {
     while (Navigator.canPop(context)) {
       Navigator.pop(context);
     }
-    Navigator.pushNamed(context, route.route, arguments: arguments);
+    Navigator.popAndPushNamed(context, route.route, arguments: arguments);
   }
 
   static Scaffold scaffold(BuildContext context,
@@ -322,7 +322,7 @@ class AppWidgets {
     );
   }
 
-  static Future dialog(
+  static Future<void> dialog(
       {required BuildContext context,
       Widget? title,
       required List<Widget> contents,

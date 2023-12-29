@@ -120,7 +120,8 @@ class ModelTrackPoint {
           (timeStart.millisecondsSinceEpoch / 1000).round(),
       TableTrackPoint.timeEnd.column:
           (timeEnd.millisecondsSinceEpoch / 1000).round(),
-      TableTrackPoint.address.column: address
+      TableTrackPoint.address.column: address,
+      TableTrackPoint.notes.column: notes
     };
   }
 
@@ -229,13 +230,15 @@ class ModelTrackPoint {
       required SharedTrackpointAsset shared,
       required Transaction txn}) async {
     try {
+      const count = 'ct';
       final rows = await txn.query(table,
-          columns: ['COUNT(*) as ct'],
+          columns: ['COUNT(*) as $count'],
           where: '$columnTrackPoint = ? AND $columnForeign = ?',
           whereArgs: [id, shared.id],
           limit: 1);
 
-      final bool insert = rows.isEmpty;
+      final bool insert =
+          DB.parseInt(rows.firstOrNull?[count], fallback: 0) == 0;
 
       return insert
           ? await txn.insert(table, {

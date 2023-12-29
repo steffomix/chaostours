@@ -61,7 +61,7 @@ class Location {
                 AppUserSetting(Cache.appSettingDistanceTreshold).defaultValue
                     as int)));
 
-    AliasPrivacy priv = AliasPrivacy.none;
+    AliasPrivacy? priv;
     List<ModelAlias> models = [];
     int rad = 0;
     for (var model in allModels) {
@@ -69,6 +69,7 @@ class Location {
         model.sortDistance = model.radius;
         models.add(model);
         rad = math.max(rad, model.radius);
+        priv ??= model.privacy;
         if (model.privacy.level > priv.level) {
           priv = model.privacy;
         }
@@ -227,6 +228,9 @@ class Location {
     if (privacy.level > AliasPrivacy.privat.level) {
       return;
     }
+    tracker.address = await Address(tracker.gpsLastStatusStanding ?? gps)
+        .lookup(OsmLookupConditions.onStatusChanged, saveToCache: true);
+
     // update last visited
     for (var model in aliasModels) {
       model.lastVisited =

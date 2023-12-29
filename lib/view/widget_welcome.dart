@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/address.dart';
+import 'package:chaostours/channel/data_channel.dart';
 import 'package:chaostours/channel/notification_channel.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -446,6 +448,9 @@ class _WelcomeState extends State<Welcome> {
   ///
   /// preload recources
   Future<bool> preload() async {
+    GPS? gps;
+    Address? address;
+    DataChannel channel = DataChannel();
     try {
       if (!(await Cache.licenseConsentChaosTours.load<bool>(false))) {
         bool consent = await chaosToursLicenseConsent();
@@ -497,10 +502,9 @@ class _WelcomeState extends State<Welcome> {
           }
 
           await addPreloadMessage(const Text('Lookup GPS'));
-          GPS gps = await GPS.gps();
           await addPreloadMessage(const Text('Create initial alias'));
           await ModelAlias(
-                  gps: gps,
+                  gps: (gps = await GPS.gps()),
                   lastVisited: DateTime.now(),
                   title: 'Initial Alias',
                   description: 'Initial Alias created by System on first run.'
@@ -618,6 +622,13 @@ class _WelcomeState extends State<Welcome> {
                           OsmLookupConditions.onAutoCreateAlias);
                   await Cache.requestLicenseConsentOsm.save<bool>(true);
                   await Cache.licenseConsentOsm.save<bool>(true);
+                  await addPreloadMessage(const Text('Lookup Address...'));
+                  address = await Address(gps ?? await GPS.gps()).lookup(
+                      OsmLookupConditions.onStatusChanged,
+                      saveToCache: true);
+                  channel.address = address?.alias ?? '';
+                  channel.fullAddress = address?.description ?? '';
+                  await addPreloadMessage(Text(channel.fullAddress));
                 }
               }
               if (mounted) {
@@ -661,6 +672,20 @@ class _WelcomeState extends State<Welcome> {
       await addPreloadMessage(const Text('Check Permissions...'));
 
       bool perm = await checkAllRequiredPermissions();
+
+      if (gps == null && (await Permission.location.isGranted)) {
+        await addPreloadMessage(const Text('Lookup GPS'));
+        gps = await GPS.gps();
+      }
+      if (gps != null &&
+          (await OsmLookupConditions.onStatusChanged.allowLookup()) &&
+          address == null) {
+        await addPreloadMessage(const Text('Lookup Address'));
+        address = await Address(gps)
+            .lookup(OsmLookupConditions.onStatusChanged, saveToCache: true);
+        channel.address = address?.alias ?? '';
+        channel.fullAddress = address?.description ?? '';
+      }
 
       await addPreloadMessage(const Text('Start App...'));
       if (perm) {

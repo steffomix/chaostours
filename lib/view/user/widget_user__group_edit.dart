@@ -203,11 +203,11 @@ class _WidgetUserGroupEdit extends State<WidgetUserGroupEdit> {
             'Deaktivated Items have no functionality and appear only in Trash views.',
             softWrap: true,
           ),
-          leading: Checkbox(
+          leading: AppWidgets.checkbox(
             value: _model?.isActive ?? false,
             onChanged: (val) {
               _model?.isActive = val ?? false;
-              _model?.update().then((value) => render());
+              _model?.update();
             },
           )),
     ]);

@@ -31,7 +31,7 @@ class ModelTask implements Model {
   bool isActive;
   bool isSelectable = true;
   bool isPreselected = false;
-  String? sortOrder;
+  String sortOrder;
   @override
   String title;
   @override
@@ -47,13 +47,12 @@ class ModelTask implements Model {
       this.description = ''});
 
   static ModelTask fromMap(Map<String, Object?> map) {
-    final so = DB.parseString(map[TableTask.sortOrder.column]);
     var model = ModelTask(
         groupId: DB.parseInt(map[TableTask.idTaskGroup.column], fallback: 1),
         isActive: DB.parseBool(map[TableTask.isActive.column]),
         isSelectable: DB.parseBool(map[TableTask.isSelectable.column]),
         isPreselected: DB.parseBool(map[TableTask.isPreselected.column]),
-        sortOrder: so.isEmpty ? null : so.toString(),
+        sortOrder: DB.parseString(map[TableTask.sortOrder.column]),
         title: DB.parseString(map[TableTask.title.column]),
         description: DB.parseString(map[TableTask.description.column]));
     model._id = DB.parseInt(map[TableTask.primaryKey.column]);
@@ -274,14 +273,19 @@ class ModelTask implements Model {
   }
 
   static Future<List<ModelTask>> preselected() async {
+    const nullsort = 'nullsort';
+    var columns = [...TableTask.columns];
+    columns.add(
+        '''CASE WHEN ${TableTask.sortOrder} IS '' THEN 2 ELSE 1 END AS $nullsort''');
+
     final rows = await DB.execute((txn) async {
       final q = '''
-      SELECT ${TableTask.columns} FROM ${TableTaskTaskGroup.table}
-      LEFT JOIN ${TableTaskTaskGroup.table} ON ${TableTaskTaskGroup.idTaskGroup} = ${TableTaskGroup.id}
-      LEFT JOIN ${TableTask.table} ON ${TableTaskTaskGroup.idTask} = ${TableTask.id}
+      SELECT ${columns.join(', ')} FROM ${TableTask.table}
+      LEFT JOIN ${TableTaskTaskGroup.table} ON ${TableTaskTaskGroup.idTask} = ${TableTask.id}
+      LEFT JOIN ${TableTaskGroup.table} ON ${TableTaskTaskGroup.idTaskGroup} = ${TableTaskGroup.id}
       WHERE ${TableTaskGroup.isPreselected} = ? OR ${TableTask.isPreselected} = ?
       GROUP BY ${TableTask.id}
-      ORDER BY ${TableTask.sortOrder}, ${TableTask.title} NULLS LAST
+      ORDER BY $nullsort, ${TableTask.sortOrder}, ${TableTask.title}
 ''';
       return await txn.rawQuery(q, List.filled(2, DB.boolToInt(true)));
     });
@@ -289,14 +293,19 @@ class ModelTask implements Model {
   }
 
   static Future<List<ModelTask>> selectable() async {
+    const nullsort = 'nullsort';
+    var columns = [...TableTask.columns];
+    columns.add(
+        '''CASE WHEN ${TableTask.sortOrder} IS '' THEN 2 ELSE 1 END AS $nullsort''');
+
     final rows = await DB.execute((txn) async {
       final q = '''
-      SELECT ${TableTask.columns} FROM ${TableTaskTaskGroup.table}
-      LEFT JOIN ${TableTaskTaskGroup.table} ON ${TableTaskTaskGroup.idTaskGroup} = ${TableTaskGroup.id}
-      LEFT JOIN ${TableTask.table} ON ${TableTaskTaskGroup.idTask} = ${TableTask.id}
+      SELECT ${columns.join(', ')} FROM ${TableTask.table}
+      LEFT JOIN ${TableTaskTaskGroup.table} ON ${TableTaskTaskGroup.idTask} = ${TableTask.id}
+      LEFT JOIN ${TableTaskGroup.table} ON ${TableTaskTaskGroup.idTaskGroup} = ${TableTaskGroup.id}
       WHERE ${TableTaskGroup.isSelectable} = ? OR ${TableTask.isSelectable} = ? OR ${TableTaskGroup.isPreselected} = ? OR ${TableTask.isPreselected} = ?
       GROUP BY ${TableTask.id}
-      ORDER BY ${TableTask.sortOrder}, ${TableTask.title} NULLS LAST
+      ORDER BY $nullsort, ${TableTask.sortOrder}, ${TableTask.title}
 ''';
       return await txn.rawQuery(q, List.filled(4, DB.boolToInt(true)));
     });

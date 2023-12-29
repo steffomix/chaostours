@@ -120,7 +120,7 @@ class _WidgetTaskGroupList extends BaseWidgetState<WidgetTaskGroupList>
           if (mounted) {
             await Navigator.pushNamed(context, AppRoutes.editTaskGroup.route,
                 arguments: model.id);
-            render();
+            resetLoader();
           }
         }));
   }

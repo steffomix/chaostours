@@ -49,28 +49,43 @@ enum DataChannelKey {
   lastFullAddress;
 }
 
+abstract class ChannelAsset {
+  String? get sortOrder;
+}
+
 class ChannelAlias {
+  final int distance;
   final int id;
   final ModelAlias model;
   final SharedTrackpointAlias shared;
 
-  ChannelAlias({required this.id, required this.model, required this.shared});
+  ChannelAlias(
+      {required this.id,
+      required this.model,
+      required this.shared,
+      required this.distance});
 }
 
-class ChannelUser {
+class ChannelUser implements ChannelAsset {
   final int id;
   final ModelUser model;
   final SharedTrackpointUser shared;
 
   ChannelUser({required this.id, required this.model, required this.shared});
+
+  @override
+  String get sortOrder => model.sortOrder;
 }
 
-class ChannelTask {
+class ChannelTask implements ChannelAsset {
   final int id;
   final ModelTask model;
   final SharedTrackpointTask shared;
 
   ChannelTask({required this.id, required this.model, required this.shared});
+
+  @override
+  String get sortOrder => model.sortOrder;
 }
 
 class DataChannel {
@@ -91,7 +106,7 @@ class DataChannel {
   /// computed values
   TrackingStatus trackingStatus = TrackingStatus.standing;
 
-  TrackingStatus statusTrigger = TrackingStatus.none;
+  TrackingStatus trackingStatusTrigger = TrackingStatus.none;
 
   int distanceMoving = 0;
   int distanceStanding = 0;
@@ -116,7 +131,8 @@ class DataChannel {
   String notes = '';
 
   Future<String> setTrackpointNotes(String text) async {
-    return notes = await Cache.backgroundTrackPointUserNotes.save<String>(text);
+    return (notes =
+        await Cache.backgroundTrackPointUserNotes.save<String>(text));
   }
 
   DataChannel._() {
@@ -128,7 +144,7 @@ class DataChannel {
           tick++;
           Cache.reload();
           try {
-            /// stream values
+            /// serialized values
             gps = TypeAdapter.deserializeGps(
                 data?[DataChannelKey.gps.toString()]);
             gpsPoints = TypeAdapter.deserializeGpsList(
@@ -143,21 +159,40 @@ class DataChannel {
                 data?[DataChannelKey.gpsLastStatusStanding.toString()]);
             gpsLastStatusMoving = TypeAdapter.deserializeGps(
                 data?[DataChannelKey.gpsLastStatusMoving.toString()]);
-            address = data?[DataChannelKey.lastAddress.toString()] ?? '-';
-            fullAddress =
-                data?[DataChannelKey.lastFullAddress.toString()] ?? '-';
-
-            final TrackingStatus status = TypeAdapter.deserializeTrackingStatus(
+            final oldTrackingStatus = trackingStatus;
+            trackingStatus = TypeAdapter.deserializeTrackingStatus(
                     data?[DataChannelKey.trackingStatus.toString()]) ??
                 TrackingStatus.standing;
 
-            /// compute values
+            /// conditioned string values
+            final addr = data?[DataChannelKey.lastAddress.toString()] ?? '';
+            if (addr.isNotEmpty) {
+              address = addr;
+            } else {
+              final cachedAddr =
+                  await Cache.addressTimeLastLookup.load<String>('');
+              if (cachedAddr.isNotEmpty) {
+                address =
+                    'Most Recent: ${await Cache.AddressMostRecent.load<String>('-')}';
+              }
+
+              /// load from cache?
+            }
+            final fullAddr =
+                data?[DataChannelKey.lastFullAddress.toString()] ?? '';
+            if (fullAddr.isNotEmpty) {
+              fullAddress = fullAddr;
+            }
+
+            /// Cached values
+            trackingStatusTrigger = await Cache.trackingStatusTriggered
+                .load<TrackingStatus>(TrackingStatus.standing);
+            notes = await Cache.backgroundTrackPointUserNotes.load<String>('');
+
+            /// computed values
             _duration =
                 gpsLastStatusChange?.time.difference(DateTime.now()).abs() ??
                     Duration.zero;
-
-            final bool statusChanged = status != trackingStatus;
-            trackingStatus = status;
 
             distanceMoving = gpsPoints.isNotEmpty
                 ? GPS.distanceOverTrackList(gpsPoints).round()
@@ -174,12 +209,10 @@ class DataChannel {
             await updateUserList();
             await updateTaskList();
 
-            notes = await Cache.backgroundTrackPointUserNotes.load<String>('');
-
             /// fire events
             EventManager.fire<DataChannel>(_instance!);
 
-            if (statusChanged) {
+            if (oldTrackingStatus != trackingStatus) {
               EventManager.fire<TrackingStatus>(trackingStatus);
             }
 
@@ -204,16 +237,18 @@ class DataChannel {
     userList.sort((modelA, modelB) {
       final a = modelA.model.sortOrder;
       final b = modelB.model.sortOrder;
-      if (a == null && b == null) {
-        return 0;
+      int result;
+      if (a.isEmpty && b.isEmpty) {
+        result = 0;
+      } else if (a.isEmpty) {
+        result = 1;
+      } else if (b.isEmpty) {
+        result = -1;
+      } else {
+        // Ascending Order
+        result = a.compareTo(b);
       }
-      if (a == null) {
-        return -1;
-      }
-      if (b == null) {
-        return 1;
-      }
-      return a.compareTo(b);
+      return result;
     });
   }
 
@@ -221,16 +256,16 @@ class DataChannel {
     taskList.sort((modelA, modelB) {
       final a = modelA.model.sortOrder;
       final b = modelB.model.sortOrder;
-      if (a == null && b == null) {
-        return 0;
+      int result;
+      if (a.isEmpty) {
+        result = 1;
+      } else if (b.isEmpty) {
+        result = -1;
+      } else {
+        // Ascending Order
+        result = a.compareTo(b);
       }
-      if (a == null) {
-        return -1;
-      }
-      if (b == null) {
-        return 1;
-      }
-      return a.compareTo(b);
+      return result;
     });
   }
 
@@ -250,12 +285,21 @@ class DataChannel {
         )
         .toList());
     List<ChannelAlias> list = [];
+    final g = gps ?? await GPS.gps();
     for (var shared in sharedAliasList) {
+      ModelAlias model;
+      try {
+        model = modelAliasList.firstWhere((model) => model.id == shared.id);
+      } catch (e) {
+        continue;
+      }
+      int distance = GPS.distance(g, model.gps).round();
       try {
         list.add(ChannelAlias(
             id: shared.id,
             model: modelAliasList.firstWhere((model) => model.id == shared.id),
-            shared: shared));
+            shared: shared,
+            distance: distance));
       } catch (e) {
         /// ignore and skip element
       }

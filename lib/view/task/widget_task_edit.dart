@@ -189,11 +189,11 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
             'If checked this group appears in Live Tracking lists.',
             softWrap: true,
           ),
-          leading: Checkbox(
+          leading: AppWidgets.checkbox(
             value: _model?.isSelectable ?? false,
-            onChanged: (val) {
+            onChanged: (val) async {
               _model?.isSelectable = val ?? false;
-              _model?.update().then((value) => render());
+              await _model?.update();
             },
           )),
 
@@ -208,8 +208,8 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
           leading: AppWidgets.checkbox(
             value: _model?.isActive ?? false,
             onChanged: (val) async {
-              _model?.isActive = val ?? false;
-              _model?.update().then((value) => render());
+              _model?.isPreselected = val ?? false;
+              await _model?.update();
             },
           )),
 
@@ -221,9 +221,9 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
           child: TextField(
             decoration: const InputDecoration(label: Text('Sort order')),
             controller: TextEditingController(text: _model?.sortOrder),
-            onChanged: (val) {
+            onChanged: (val) async {
               _model?.sortOrder = val;
-              _model?.update();
+              await _model?.update();
             },
           )),
       AppWidgets.divider(),
@@ -233,15 +233,11 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
           title: const Text('Active'),
           subtitle:
               const Text('Defines if this Task is visible and used or not.'),
-          leading: Checkbox(
+          leading: AppWidgets.checkbox(
             value: _model?.isActive ?? false,
-            onChanged: (val) {
+            onChanged: (val) async {
               _model?.isActive = val ?? false;
-              _model?.update().then(
-                (value) {
-                  render();
-                },
-              );
+              await _model?.update();
             },
           ))
     ]);

@@ -91,17 +91,19 @@ class Tracker {
               : TypeAdapter.serializeGps(gpsLastStatusStanding!),
       DataChannelKey.trackingStatus.toString():
           TypeAdapter.serializeTrackingStatus(trackingStatus!),
-      DataChannelKey.lastAddress.toString(): address?.alias ?? '-',
-      DataChannelKey.lastFullAddress.toString(): address?.description ?? '-',
+      DataChannelKey.lastAddress.toString(): address?.alias ?? '',
+      DataChannelKey.lastFullAddress.toString(): address?.description ?? '',
       DataChannelKey.statusDuration.toString():
           TypeAdapter.serializeDuration(statusDuration)
     };
+    address = null;
     await Cache.backgroundGpsPoints.save<List<GPS>>(gpsPoints);
     return serialized;
   }
 
   Future<Map<String, dynamic>> track() async {
     /// create gpsPoint
+    ///
     GPS gps = await GPS.gps();
 
     // load old gps points
@@ -136,13 +138,13 @@ class Tracker {
         .load<TrackingStatus>(TrackingStatus.none);
 
     if (triggeredTrackingStatus != TrackingStatus.none) {
-      /// reset trigger
-      await Cache.trackingStatusTriggered
-          .save<TrackingStatus>(TrackingStatus.none);
-
       newTrackingStatus = (triggeredTrackingStatus == TrackingStatus.standing)
           ? await cacheNewStatusStanding(gps)
           : await cacheNewStatusMoving(gps);
+
+      /// reset trigger
+      await Cache.trackingStatusTriggered
+          .save<TrackingStatus>(TrackingStatus.none);
     } else {
       /// check for standing
       if (oldTrackingStatus == TrackingStatus.standing) {
