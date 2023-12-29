@@ -322,9 +322,10 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                   await Address(gps).lookup(OsmLookupConditions.onUserRequest);
 
               dataChannel.address =
-                  await Cache.AddressMostRecent.save<String>(address.alias);
-              dataChannel.fullAddress =
-                  await Cache.AddressMostRecent.save<String>(address.alias);
+                  await Cache.addressMostRecent.save<String>(address.alias);
+              dataChannel.fullAddress = await Cache.addressFullMostRecent
+                  .save<String>(address.description);
+              setState(() {});
               if (mounted) {
                 AppWidgets.dialog(context: context, contents: [
                   ListTile(
@@ -435,18 +436,20 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   }
 
   Widget widgetSelectedUsersCollapsed() {
+    Color? color =
+        dataChannel.userList.isEmpty ? const Color.fromARGB(0, 0, 0, 0) : null;
     return ListTile(
       trailing: IconButton(
         icon: _isUsersExpanded
-            ? const Icon(Icons.cancel_rounded)
-            : const Icon(Icons.menu_open),
+            ? Icon(Icons.cancel_rounded, color: color)
+            : Icon(Icons.menu_open, color: color),
         onPressed: () async {
           _isUsersExpanded = !_isUsersExpanded;
           setState(() {});
         },
       ),
       title: ElevatedButton(
-        child: const Text('Edit selected Users'),
+        child: const Text('Members'),
         onPressed: () async {
           await dialogSelectUser();
           await dataChannel.updateAssets();
@@ -456,7 +459,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         },
       ),
       subtitle: dataChannel.userList.isEmpty
-          ? const Text('Nothing selected')
+          ? const Text('-')
           : Column(
               children: dataChannel.userList.map<Widget>(
               (channelModel) {
@@ -469,18 +472,20 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   }
 
   Widget widgetselectedUsersExpanded() {
+    Color? color =
+        dataChannel.userList.isEmpty ? const Color.fromARGB(0, 0, 0, 0) : null;
     return ListTile(
       trailing: IconButton(
         icon: _isUsersExpanded
-            ? const Icon(Icons.cancel_rounded)
-            : const Icon(Icons.menu_open),
+            ? Icon(Icons.cancel_rounded, color: color)
+            : Icon(Icons.menu_open, color: color),
         onPressed: () async {
           _isUsersExpanded = !_isUsersExpanded;
           setState(() {});
         },
       ),
       title: ElevatedButton(
-        child: const Text('Edit selected Users'),
+        child: const Text('Members'),
         onPressed: () async {
           await dialogSelectUser();
           await dataChannel.updateAssets();
@@ -490,7 +495,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         },
       ),
       subtitle: dataChannel.userList.isEmpty
-          ? const Text('Nothing selected')
+          ? const Text('-')
           : Column(
               children: dataChannel.userList.map<Widget>(
                 (channelModel) {
@@ -577,6 +582,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                   await ((state ??= false)
                       ? SharedTrackpointUser.addOrUpdate(model)
                       : SharedTrackpointUser.remove(model));
+                  await dataChannel.updateUserList();
                   render();
                 }));
       },
@@ -602,7 +608,6 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   ///
   ///
   ///
-
   Widget widgetSelectedTasks() {
     dataChannel.sortTask();
     return _isTasksExpanded
@@ -611,18 +616,21 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   }
 
   Widget widgetselectedTasksCollapsed() {
+    Color? color =
+        dataChannel.taskList.isEmpty ? const Color.fromARGB(0, 0, 0, 0) : null;
     return ListTile(
       trailing: IconButton(
-        icon: _isUsersExpanded
-            ? const Icon(Icons.cancel_rounded)
-            : const Icon(Icons.menu_open),
+        icon: _isTasksExpanded
+            ? Icon(Icons.cancel_rounded, color: color)
+            : Icon(Icons.menu_open, color: color),
         onPressed: () async {
-          _isTasksExpanded = !_isTasksExpanded;
+          _isTasksExpanded =
+              dataChannel.taskList.isEmpty ? false : !_isTasksExpanded;
           setState(() {});
         },
       ),
       title: ElevatedButton(
-        child: const Text('Edit selected Tasks'),
+        child: const Text('Tasks'),
         onPressed: () async {
           await dialogSelectTask();
           await dataChannel.updateAssets();
@@ -632,7 +640,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         },
       ),
       subtitle: dataChannel.taskList.isEmpty
-          ? const Text('Nothing selected')
+          ? const Text('-')
           : Column(
               children: dataChannel.taskList.map<Widget>(
               (channelModel) {
@@ -645,18 +653,20 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   }
 
   Widget widgetselectedTasksExpanded() {
+    Color? color =
+        dataChannel.taskList.isEmpty ? Color.fromARGB(0, 0, 0, 0) : null;
     return ListTile(
       trailing: IconButton(
-        icon: _isUsersExpanded
-            ? const Icon(Icons.cancel_rounded)
-            : const Icon(Icons.menu_open),
+        icon: _isTasksExpanded
+            ? Icon(Icons.cancel_rounded, color: color)
+            : Icon(Icons.menu_open, color: color),
         onPressed: () async {
           _isTasksExpanded = !_isTasksExpanded;
           setState(() {});
         },
       ),
       title: ElevatedButton(
-        child: const Text('Close selected Tasks'),
+        child: const Text('Tasks'),
         onPressed: () async {
           await dialogSelectTask();
           await dataChannel.updateAssets();
@@ -666,7 +676,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         },
       ),
       subtitle: dataChannel.taskList.isEmpty
-          ? const Text('Nothing selected')
+          ? const Text('-')
           : Column(
               children: dataChannel.taskList.map<Widget>(
                 (channelModel) {
@@ -753,6 +763,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                   await ((state ??= false)
                       ? SharedTrackpointTask.addOrUpdate(model)
                       : SharedTrackpointTask.remove(model));
+                  await dataChannel.updateTaskList();
                   render();
                 }));
       },

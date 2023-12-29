@@ -118,7 +118,10 @@ enum Cache {
       CacheModulId.sharedPreferences, int, expireAfterOneSecond),
 
   /// address updated on each background tick - if permission granted
-  AddressMostRecent(CacheModulId.sharedPreferences, String, expireImmediately),
+  addressMostRecent(
+      CacheModulId.sharedPreferences, String, expireAfterOneSecond),
+  addressFullMostRecent(
+      CacheModulId.sharedPreferences, String, expireAfterOneSecond),
 
   /// address updated on status change - if activated
   backgroundLastStandingAddress(

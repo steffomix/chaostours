@@ -169,11 +169,10 @@ class DataChannel {
             if (addr.isNotEmpty) {
               address = addr;
             } else {
-              final cachedAddr =
-                  await Cache.addressTimeLastLookup.load<String>('');
+              final cachedAddr = await Cache.addressMostRecent.load<String>('');
               if (cachedAddr.isNotEmpty) {
                 address =
-                    'Most Recent: ${await Cache.AddressMostRecent.load<String>('-')}';
+                    'Most Recent: ${await Cache.addressMostRecent.load<String>('-')}';
               }
 
               /// load from cache?

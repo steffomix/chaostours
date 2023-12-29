@@ -93,13 +93,15 @@ class Location {
   }
 
   Future<ModelTrackPoint> createTrackPoint() async {
+    final Address address = await Address(gps)
+        .lookup(OsmLookupConditions.onStatusChanged, saveToCache: true);
     ModelTrackPoint tp = ModelTrackPoint(
         gps: gps,
         timeStart: (await Cache.backgroundGpsStartStanding.load<GPS>(gps)).time,
         timeEnd: gps.time,
         calendarEventIds: await Cache.backgroundCalendarLastEventIds
             .load<List<CalendarEventId>>([]),
-        address: await Cache.backgroundLastStandingAddress.load<String>(''),
+        address: address.alias,
         notes: await Cache.backgroundTrackPointUserNotes.load<String>(''));
     tp.aliasModels = aliasModels;
     tp.taskModels = await ModelTask.byIdList((await Cache
@@ -331,13 +333,16 @@ class Location {
       return null;
     }
 
+    final Address address = await Address(gps)
+        .lookup(OsmLookupConditions.onStatusChanged, saveToCache: true);
+
     ModelTrackPoint newTrackPoint = ModelTrackPoint(
         gps: gps,
         timeStart: (await Cache.backgroundGpsStartStanding.load<GPS>(gps)).time,
         timeEnd: gps.time,
         calendarEventIds: await Cache.backgroundCalendarLastEventIds
             .load<List<CalendarEventId>>([]),
-        address: tracker.address?.alias ?? '-',
+        address: address.alias,
         notes: await Cache.backgroundTrackPointUserNotes.load<String>(''));
 
     /// save new TrackPoint with user- and task ids

@@ -146,7 +146,8 @@ class Address {
     }
     _lastResponse = _response = response;
     if (saveToCache) {
-      await Cache.AddressMostRecent.save<String>(alias);
+      await Cache.addressMostRecent.save<String>(alias);
+      await Cache.addressFullMostRecent.save<String>(description);
     }
     return this;
   }
