@@ -36,6 +36,9 @@ class Loader {
   bool _hadLoadRequest = false;
   bool get hadLoadRequest => _hadLoadRequest;
 
+  bool _disposed = false;
+  void dispose() => _disposed = true;
+
   Loader({this.defaultLimit = 20});
 
   Future<void> resetLoader() async {
@@ -53,6 +56,9 @@ class Loader {
           fnLoad,
       Future<int?> Function()? fnCount,
       int? limit}) async {
+    if (_disposed) {
+      return 0;
+    }
     // check if finished
     if (_isFinished) {
       logger.warn('load already finished');
@@ -84,7 +90,7 @@ class Loader {
       logger.error('load: $e', stk);
       _hadLoadRequest = false;
       _isFinished = true;
-      rethrow;
+      //rethrow;
     }
     _hadLoadRequest = false;
     _isLoading = false;

@@ -54,10 +54,6 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
   final divider = AppWidgets.divider();
 
-  double _visibleFraction = 100.0;
-  final _visibilityDetectorKey =
-      GlobalKey(debugLabel: 'Life Tracking VisibilityDetectorKey');
-
   TextEditingController? _userNotesController;
   final addressIsLoading = ValueNotifier<bool>(false);
 
@@ -102,18 +98,13 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   void onTracking(DataChannel dataChannel) {
     if (mounted) {
       setState(() {});
-      if (_visibleFraction < .5) {
-        return;
-      }
     }
   }
 
   ///
   void onRender(EventOnRender _) {
     if (mounted) {
-      if (_visibleFraction < .5) {
-        return;
-      }
+      setState(() {});
     }
   }
 

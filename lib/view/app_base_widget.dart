@@ -53,8 +53,17 @@ class BaseWidgetState<T extends BaseWidget> extends State<T>
   @override
   @mustCallSuper
   void initState() {
-    scrollContainer.onBottom = _load;
     super.initState();
+    Future.microtask(
+      () => scrollContainer.onBottom = _load,
+    );
+  }
+
+  @override
+  void dispose() {
+    scrollContainer.dispose();
+    widgetLoader.dispose();
+    super.dispose();
   }
 
   void render({void Function()? fn}) {
@@ -101,10 +110,11 @@ class BaseWidgetState<T extends BaseWidget> extends State<T>
   }
 
   Future<void> _load() async {
+    logger.log('_load');
     try {
+      await widgetLoader.load(
+          fnLoad: loadItems, fnCount: loadCount, limit: loaderLimit());
       if (mounted) {
-        await widgetLoader.load(
-            fnLoad: loadItems, fnCount: loadCount, limit: loaderLimit());
         render();
       }
     } catch (e, stk) {

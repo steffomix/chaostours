@@ -339,7 +339,9 @@ enum TableTrackPointUser {
 enum TableTrackPointCalendar {
   idTrackPoint('id_trackpoint'),
   idCalendar('id_calendar'),
-  idEvent('id_event');
+  idEvent('id_event'),
+  title('title'),
+  body('body');
 
   static const String table = 'trackpoint_calendar';
 
@@ -352,7 +354,9 @@ enum TableTrackPointCalendar {
   static String get schema => '''CREATE TABLE IF NOT EXISTS $table (
 	${idTrackPoint.column}	INTEGER NOT NULL,
 	${idCalendar.column}	TEXT,
-	${idEvent.column}	TEXT
+	${idEvent.column}	TEXT,
+	${title.column}	TEXT,
+	${body.column} TEXT
 );''';
 
   @override

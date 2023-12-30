@@ -17,6 +17,7 @@ limitations under the License.
 import 'package:chaostours/database/cache.dart';
 import 'package:chaostours/calendar.dart';
 import 'package:chaostours/database/database.dart';
+import 'package:chaostours/location.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_user.dart';
@@ -44,27 +45,27 @@ class ModelTrackPoint {
   String notes = ''; // calendarId;calendarEventId
 
   /// "id,id,..." needs to be sorted by distance
+  List<ModelAlias> aliasModels = [];
   List<int> get aliasIds => aliasModels
       .map(
         (e) => e.id,
       )
       .toList();
-  List<ModelAlias> aliasModels = [];
 
+  List<ModelUser> userModels = [];
   List<int> get userIds => userModels
       .map(
         (e) => e.id,
       )
       .toList();
-  List<ModelUser> userModels = [];
 
   /// "id,id,..." needs to be ordered by user
+  List<ModelTask> taskModels = [];
   List<int> get taskIds => taskModels
       .map(
         (e) => e.id,
       )
       .toList();
-  List<ModelTask> taskModels = [];
 
   List<CalendarEventId> calendarEventIds = [];
 
@@ -558,9 +559,78 @@ class ModelTrackPoint {
     return models;
   }
 
-  static Future<List<ModelTrackPoint>> search(String search) async {
+  static Future<List<ModelTrackPoint>> search(String search,
+      {int limit = 20, int offset = 0}) async {
+    String aliasIds = 'col1';
+    String userIds = 'col2';
+    String taskIds = 'col3';
+
+    String sql = '''SELECT 
+            ${TableTrackPoint.columns.join(', ')}, 
+            GROUP_CONCAT(${TableAlias.id},',') AS $aliasIds, 
+            GROUP_CONCAT(${TableUser.id},',') AS $userIds, 
+            GROUP_CONCAT(${TableTask.id},',') AS $taskIds
+        FROM ${TableTrackPoint.table}
+        -- join alias
+        LEFT JOIN ${TableTrackPointAlias.table} ON ${TableTrackPointAlias.idTrackPoint} = ${TableTrackPoint.id}
+        LEFT JOIN ${TableAlias.table} ON ${TableAlias.id} = ${TableTrackPointAlias.idAlias}
+        -- join users
+        LEFT JOIN ${TableTrackPointUser.table} ON ${TableTrackPointUser.idTrackPoint} = ${TableTrackPoint.id}
+        LEFT JOIN ${TableUser.table} ON ${TableUser.id} = ${TableTrackPointUser.idUser}
+        -- join tasks
+        LEFT JOIN ${TableTrackPointTask.table} ON ${TableTrackPointTask.idTrackPoint} = ${TableTrackPoint.id}
+        LEFT JOIN ${TableTask.table} ON ${TableTask.id} = ${TableTrackPointTask.idTask}
+        -- where notes
+        WHERE ${TableTrackPoint.notes} like ?
+        -- where alias title address
+        OR ${TableAlias.title} like ? OR  ${TableAlias.description} like ?
+        -- where users
+        OR ${TableUser.title} like ? OR ${TableUser.description} like ?
+        -- where tasks
+        OR ${TableTask.title} like ? OR ${TableTask.description} like ?
+        -- query
+        ORDER BY ${TableTrackPoint.id} DESC
+        LIMIT ?
+        OFFSET ?
+''';
+    var rx = RegExp(r'\?', multiLine: true);
+    int qmCount = rx.allMatches(sql).length - 2; // exclute limit and offset
+
+    var rows =
+        await DB.execute<List<Map<String, Object?>>>((Transaction txn) async {
+      return await txn
+          .rawQuery(sql, [...List.filled(qmCount, '%$search%'), limit, offset]);
+    });
+
+    List<ModelTrackPoint> trackpoints = [];
+
+    List<int> parseIds(String list) {
+      if (list.isEmpty) {
+        return [];
+      }
+      return list.split(',').map((e) => int.parse(e)).toList();
+    }
+
+    for (var row in rows) {
+      try {
+        ModelTrackPoint point = fromMap(row);
+        point.aliasModels =
+            await ModelAlias.byIdList(parseIds(DB.parseString(row[aliasIds])));
+        point.userModels =
+            await ModelUser.byIdList(parseIds(DB.parseString(row[userIds])));
+        point.taskModels =
+            await ModelTask.byIdList(parseIds(DB.parseString(row[taskIds])));
+        trackpoints.add(point);
+      } catch (e) {
+        logger.warn('search: $e');
+      }
+    }
+
+    return trackpoints;
+
+/* 
     const idcol = 'id';
-    var aliasModels = await ModelAlias.select(search: search, limit: 50);
+    var aliasModels = await ModelAlias.select(search: search, limit: limit);
     var aliasIdRows = await DB.execute<List<Map<String, Object?>>>(
       (Transaction txn) async {
         return await txn.query(TableTrackPointAlias.table,
@@ -572,26 +642,30 @@ class ModelTrackPoint {
     );
 
     ///
-    var taskModels = await ModelTask.select(search: search, limit: 50);
+    var taskModels = await ModelTask.select(search: search, limit: limit);
     var taskIdRows = await DB.execute<List<Map<String, Object?>>>(
       (Transaction txn) async {
         return await txn.query(TableTrackPointTask.table,
             columns: ['${TableTrackPointTask.idTrackPoint} as $idcol'],
             where:
                 '${TableTrackPointTask.idTask.column} IN (${List.filled(taskModels.length, '?').join(', ')})',
-            whereArgs: taskModels.map((e) => e.id).toList());
+            whereArgs: taskModels.map((e) => e.id).toList(),
+            limit: limit,
+            offset: offset);
       },
     );
 
     ///
-    var userModels = await ModelUser.select(search: search, limit: 50);
+    var userModels = await ModelUser.select(search: search, limit: limit);
     var userIdRows = await DB.execute<List<Map<String, Object?>>>(
       (Transaction txn) async {
         return await txn.query(TableTrackPointUser.table,
             columns: ['${TableTrackPointUser.idTrackPoint} as $idcol'],
             where:
                 '${TableTrackPointUser.idUser.column} IN (${List.filled(userModels.length, '?').join(', ')})',
-            whereArgs: userModels.map((e) => e.id).toList());
+            whereArgs: userModels.map((e) => e.id).toList(),
+            limit: limit,
+            offset: offset);
       },
     );
 
@@ -613,7 +687,9 @@ class ModelTrackPoint {
             where: '${TableTrackPoint.address.column} like ? OR '
                 '${TableTrackPoint.primaryKey.column} IN (${List.filled(ids.length, '?').join(',')})',
             whereArgs: ['%$search%', ...ids],
-            orderBy: '${TableTrackPoint.timeStart.column} DESC');
+            orderBy: '${TableTrackPoint.timeStart.column} DESC',
+            limit: limit,
+            offset: offset);
       },
     );
     var models = <ModelTrackPoint>[];
@@ -626,6 +702,6 @@ class ModelTrackPoint {
         logger.error('search at parse models: $e', stk);
       }
     }
-    return models;
+    return models; */
   }
 }

@@ -34,11 +34,13 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
 
   static const double _paddingSide = 10.0;
 
-  final _titleController = TextEditingController();
-  final _titleUndoController = UndoHistoryController();
+  TextEditingController? _titleController;
+  TextEditingController? _notesController;
+  TextEditingController? _sortController;
 
-  final _notesController = TextEditingController();
+  final _titleUndoController = UndoHistoryController();
   final _notesUndoController = UndoHistoryController();
+  final _sortUndoController = UndoHistoryController();
 
   ModelTask? _model;
   List<ModelTaskGroup> _groups = [];
@@ -94,7 +96,7 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
                 icon: const Icon(Icons.undo),
                 onPressed: value.canUndo
                     ? () {
-                        _titleUndoController.undo();
+                        _titleUndoController?.undo();
                       }
                     : null,
               );
@@ -110,7 +112,9 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
                 }),
                 minLines: 1,
                 maxLines: 5,
-                controller: _titleController,
+                controller: _titleController ??=
+                    TextEditingController(text: _model?.title),
+                undoController: _titleUndoController,
               ))),
 
       /// notes
@@ -135,11 +139,13 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
                 decoration: const InputDecoration(label: Text('Notes')),
                 maxLines: null,
                 minLines: 5,
-                controller: _notesController,
                 onChanged: (val) {
                   _model?.description = val;
                   _model?.update();
                 },
+                controller: _notesController ??=
+                    TextEditingController(text: _model?.description),
+                undoController: _notesUndoController,
               ))),
 
       // groups
@@ -218,14 +224,20 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
       /// sort order
       Container(
           padding: const EdgeInsets.all(10),
-          child: TextField(
-            decoration: const InputDecoration(label: Text('Sort order')),
-            controller: TextEditingController(text: _model?.sortOrder),
-            onChanged: (val) async {
-              _model?.sortOrder = val;
-              await _model?.update();
-            },
-          )),
+          child: ValueListenableBuilder<UndoHistoryValue>(
+              valueListenable: _notesUndoController,
+              builder: (context, value, child) {
+                return TextField(
+                  decoration: const InputDecoration(label: Text('Sort order')),
+                  onChanged: (val) async {
+                    _model?.sortOrder = val;
+                    await _model?.update();
+                  },
+                  controller: _sortController ??=
+                      TextEditingController(text: _model?.sortOrder),
+                  undoController: _sortUndoController,
+                );
+              })),
       AppWidgets.divider(),
 
       /// deleted

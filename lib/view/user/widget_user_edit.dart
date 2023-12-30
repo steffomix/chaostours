@@ -37,6 +37,12 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
   ModelUser? _model;
   List<ModelUserGroup> _groups = [];
 
+  TextEditingController? _titleController;
+  TextEditingController? _notesController;
+  TextEditingController? _sortController;
+  TextEditingController? _phoneController;
+  TextEditingController? _addressController;
+
   final _titleUndoController = UndoHistoryController();
   final _notesUndoController = UndoHistoryController();
   final _sortUndoController = UndoHistoryController();
@@ -84,7 +90,7 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
 
   Widget renderBody() {
     return ListView(children: [
-      /// taskname
+      /// username
       ListTile(
           dense: true,
           trailing: ValueListenableBuilder<UndoHistoryValue>(
@@ -110,7 +116,9 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
                 }),
                 minLines: 1,
                 maxLines: 5,
-                controller: TextEditingController(text: _model?.title),
+                undoController: _titleUndoController,
+                controller: _titleController ??=
+                    TextEditingController(text: _model?.title),
               ))),
 
       /// notes
@@ -135,11 +143,13 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
                 decoration: const InputDecoration(label: Text('Notes')),
                 maxLines: null,
                 minLines: 5,
-                controller: TextEditingController(text: _model?.description),
                 onChanged: (val) {
                   _model?.description = val;
                   _model?.update();
                 },
+                controller: _notesController ??=
+                    TextEditingController(text: _model?.description),
+                undoController: _notesUndoController,
               ))),
 
       /// phone
@@ -162,11 +172,13 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
               padding: const EdgeInsets.all(10),
               child: TextField(
                 decoration: const InputDecoration(label: Text('Phone')),
-                controller: TextEditingController(text: _model?.phone),
                 onChanged: (val) {
                   _model?.phone = val;
                   _model?.update();
                 },
+                controller: _phoneController ??=
+                    TextEditingController(text: _model?.phone),
+                undoController: _phoneUndoController,
               ))),
 
       /// address
@@ -189,13 +201,15 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
               padding: const EdgeInsets.all(10),
               child: TextField(
                 decoration: const InputDecoration(label: Text('Address')),
-                controller: TextEditingController(text: _model?.address),
                 maxLines: null,
                 minLines: 5,
                 onChanged: (val) {
                   _model?.address = val;
                   _model?.update();
                 },
+                controller: _addressController ??=
+                    TextEditingController(text: _model?.address),
+                undoController: _addressUndoController,
               ))),
 
       AppWidgets.divider(),
@@ -294,11 +308,13 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
               padding: const EdgeInsets.all(10),
               child: TextField(
                 decoration: const InputDecoration(label: Text('Sort order')),
-                controller: TextEditingController(text: _model?.sortOrder),
                 onChanged: (val) async {
                   _model?.sortOrder = val;
                   await _model?.update();
                 },
+                controller: _sortController ??=
+                    TextEditingController(text: _model?.sortOrder),
+                undoController: _sortUndoController,
               ))),
 
       AppWidgets.divider(),

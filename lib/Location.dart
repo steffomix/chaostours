@@ -17,7 +17,6 @@ limitations under the License.
 import 'dart:math' as math;
 import 'package:chaostours/channel/notification_channel.dart';
 import 'package:chaostours/database/database.dart';
-import 'package:chaostours/model/model_alias_group.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/shared/shared_trackpoint_alias.dart';
@@ -257,16 +256,7 @@ class Location {
       return;
     }
 
-    final aliasGroups = await ModelAliasGroup.groups(tp.aliasModels);
-    List<CalendarEventId> calendarEvents = aliasGroups
-        .map(
-          (e) => CalendarEventId(calendarId: e.idCalendar),
-        )
-        .toSet()
-        .toList();
-    if (calendarEvents.isEmpty) {
-      return;
-    }
+    List<CalendarEventId> calendarEvents = await mergedCalendarEvents();
 
     GPS lastStatusChange =
         await Cache.backgroundGpsLastStatusChange.load<GPS>(tp.gps);
@@ -358,14 +348,15 @@ class Location {
     if (privacy.level > AliasPrivacy.public.level) {
       return;
     }
+
     bool publishActivated = await Cache.appSettingPublishToCalendar.load<bool>(
         AppUserSetting(Cache.appSettingPublishToCalendar).defaultValue as bool);
     if (!publishActivated) {
       return;
     }
-    List<CalendarEventId> calIds = await Cache.backgroundCalendarLastEventIds
-        .load<List<CalendarEventId>>([]);
-    if (calIds.isEmpty) {
+
+    List<CalendarEventId> sharedCalendars = await mergedCalendarEvents();
+    if (sharedCalendars.isEmpty) {
       return;
     }
 
@@ -393,7 +384,7 @@ class Location {
             ).join(', ')}\n\n'
         'Notes: ${tp.notes.isEmpty ? '-' : tp.notes}';
 
-    for (var calId in calIds) {
+    for (CalendarEventId calId in sharedCalendars) {
       Calendar? calendar = await appCalendar.calendarById(calId.calendarId);
       if (calendar == null) {
         continue;
@@ -411,7 +402,7 @@ class Location {
       // save for edit trackpoint
       await DB.execute(
         (txn) async {
-          for (var calId in calIds) {
+          for (CalendarEventId calId in sharedCalendars) {
             await txn.insert(TableTrackPointCalendar.table, {
               TableTrackPointCalendar.idTrackPoint.column: tp.id,
               TableTrackPointCalendar.idCalendar.column: calId.calendarId,
@@ -425,5 +416,32 @@ class Location {
     // clear calendar cache
     await Cache.backgroundCalendarLastEventIds.save<List<CalendarEventId>>([]);
     tp.calendarEventIds.clear();
+  }
+
+  Future<List<CalendarEventId>> mergedCalendarEvents() async {
+    if (privacy.level > AliasPrivacy.public.level) {
+      return [];
+    }
+    final sharedCalendarList = await Cache.backgroundCalendarLastEventIds
+        .load<List<CalendarEventId>>([]);
+
+    bool sharedContains(CalendarEventId calendar) {
+      for (var cal in sharedCalendarList) {
+        if (cal.calendarId == calendar.calendarId) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    final dbCalendarList = await ModelAlias.calendarIds(aliasModels);
+
+    List<CalendarEventId> result = [...sharedCalendarList];
+    for (var id in dbCalendarList) {
+      if (!sharedContains(id)) {
+        result.add(id);
+      }
+    }
+    return result;
   }
 }

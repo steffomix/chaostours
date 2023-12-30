@@ -130,7 +130,7 @@ class AppWidgets {
     while (Navigator.canPop(context)) {
       Navigator.pop(context);
     }
-    Navigator.popAndPushNamed(context, route.route, arguments: arguments);
+    Navigator.pushNamed(context, route.route, arguments: arguments);
   }
 
   static Scaffold scaffold(BuildContext context,
@@ -431,7 +431,7 @@ class AppWidgets {
 class NavBarWithTrash {
   bool _showActivated = true;
   bool get showActivated => _showActivated;
-  BottomNavigationBar navBar(BuildContext context,
+  BottomNavigationBar navBar(BuildContext dialogContext,
       {required String name,
       required void Function(BuildContext context) onCreate,
       required void Function(BuildContext context) onSwitch}) {
@@ -450,21 +450,25 @@ class NavBarWithTrash {
         ],
         onTap: (int id) async {
           if (id == 0) {
-            AppWidgets.dialog(context: context, contents: [
+            AppWidgets.dialog(context: dialogContext, contents: [
               Text('Create new $name?')
             ], buttons: [
               TextButton(
                 child: const Text('Cancel'),
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => Navigator.pop(dialogContext),
               ),
               TextButton(
-                  onPressed: () => onCreate(context), child: const Text('Yes'))
+                  onPressed: () {
+                    Navigator.pop(dialogContext);
+                    onCreate(dialogContext);
+                  },
+                  child: const Text('Yes'))
             ]);
           } else if (id == 1) {
             _showActivated = !_showActivated;
-            onSwitch(context);
+            onSwitch(dialogContext);
           } else {
-            Navigator.pop(context);
+            Navigator.pop(dialogContext);
           }
         });
   }

@@ -16,6 +16,7 @@ limitations under the License.
 
 import 'dart:math';
 
+import 'package:chaostours/calendar.dart';
 import 'package:chaostours/model/model.dart';
 
 ///
@@ -482,5 +483,36 @@ WHERE $isActiveCol = ? AND $whereArea
         return 0;
       }
     });
+  }
+
+  static Future<List<CalendarEventId>> calendarIds(
+      List<ModelAlias> models) async {
+    List<int> ids = models
+        .map(
+          (e) => e.id,
+        )
+        .toList();
+    List<String> qms = List.filled(ids.length, '?');
+    const idKey = 'id';
+
+    final q =
+        '''SELECT NULLIF(${TableAliasGroup.idCalendar}, '') as $idKey FROM ${TableAlias.table}
+    LEFT JOIN ${TableAliasAliasGroup.table} ON ${TableAlias.id} = ${TableAliasAliasGroup.idAlias}
+    LEFT JOIN ${TableAliasGroup.table} ON ${TableAliasAliasGroup.idAliasGroup} = ${TableAliasGroup.id}
+    WHERE ${TableAliasGroup.idCalendar} IS NOT NULL
+    AND ${TableAlias.id} IN (${qms.join(', ')})
+    GROUP BY ${TableAliasGroup.idCalendar}
+''';
+    final idRows = await DB.execute((txn) async {
+      return await txn.rawQuery(q, ids);
+    });
+    List<CalendarEventId> result = [];
+    for (var id in idRows) {
+      String parsedId = DB.parseString(id[idKey]);
+      if (parsedId.isNotEmpty) {
+        result.add(CalendarEventId(calendarId: parsedId));
+      }
+    }
+    return result;
   }
 }
