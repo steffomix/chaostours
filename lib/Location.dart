@@ -18,6 +18,7 @@ import 'dart:math' as math;
 import 'package:chaostours/channel/notification_channel.dart';
 import 'package:chaostours/database/database.dart';
 import 'package:chaostours/model/model_task.dart';
+import 'package:chaostours/model/model_trackpoint_asset.dart';
 import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/shared/shared_trackpoint_alias.dart';
 import 'package:chaostours/shared/shared_trackpoint_task.dart';
@@ -335,10 +336,38 @@ class Location {
         address: address.alias,
         notes: await Cache.backgroundTrackPointUserNotes.load<String>(''));
 
+    final sharedAlias = await Cache.backgroundSharedAliasList
+        .load<List<SharedTrackpointAlias>>([]);
+    final sharedUsers = await Cache.backgroundSharedUserList
+        .load<List<SharedTrackpointUser>>([]);
+    final sharedTasks = await Cache.backgroundSharedTaskList
+        .load<List<SharedTrackpointTask>>([]);
+
+    newTrackPoint.aliasTrackpoints = sharedAlias
+        .map((e) =>
+            ModelTrackpointAsset(trackpointId: 0, id: e.id, notes: e.notes))
+        .toList();
+    newTrackPoint.userTrackpoints = sharedUsers
+        .map((e) =>
+            ModelTrackpointAsset(trackpointId: 0, id: e.id, notes: e.notes))
+        .toList();
+    newTrackPoint.taskTrackpoints = sharedTasks
+        .map((e) =>
+            ModelTrackpointAsset(trackpointId: 0, id: e.id, notes: e.notes))
+        .toList();
+
     /// save new TrackPoint with user- and task ids
     await newTrackPoint.insert();
+    //_debugInsert(newTrackPoint);
     return newTrackPoint;
   }
+/* 
+  _debugInsert(ModelTrackPoint tp) async {
+    for (var i = 1; i < 10000; i++) {
+      tp.insert();
+      await Future.delayed(const Duration(milliseconds: 100));
+    }
+  } */
 
   // finish standing event
   Future<void> _publishMoving(ModelTrackPoint? tp) async {

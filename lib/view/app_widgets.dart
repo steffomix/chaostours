@@ -65,7 +65,7 @@ class AppWidgets {
       // use a lower package version, some properties may not be supported.
       // In that case remove them after copying this theme to your app.
       theme: FlexThemeData.light(
-        scheme: FlexScheme.mango,
+        scheme: FlexScheme.amber,
         surfaceMode: FlexSurfaceMode.levelSurfacesLowScaffold,
         blendLevel: 7,
         subThemesData: const FlexSubThemesData(

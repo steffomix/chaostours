@@ -36,6 +36,8 @@ class ModelTask implements Model {
   String title;
   @override
   String description;
+  @override
+  String trackpointNotes = '';
 
   ModelTask(
       {this.groupId = 1,

@@ -138,9 +138,13 @@ class Tracker {
         .load<TrackingStatus>(TrackingStatus.none);
 
     if (triggeredTrackingStatus != TrackingStatus.none) {
-      newTrackingStatus = (triggeredTrackingStatus == TrackingStatus.standing)
-          ? await cacheNewStatusStanding(gps)
-          : await cacheNewStatusMoving(gps);
+      if (triggeredTrackingStatus == TrackingStatus.moving) {
+        newTrackingStatus = await cacheNewStatusMoving(gps);
+      } else if (triggeredTrackingStatus == TrackingStatus.standing) {
+        gpsPoints.clear();
+        gps = await claculateGPSPoints(gps);
+        newTrackingStatus = await cacheNewStatusStanding(gps);
+      }
 
       /// reset trigger
       await Cache.trackingStatusTriggered

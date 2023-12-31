@@ -14,18 +14,21 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_background_service/flutter_background_service.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'dart:math' as math;
+
 import 'package:chaostours/address.dart';
 import 'package:chaostours/channel/background_channel.dart';
 import 'package:chaostours/conf/app_user_settings.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_user.dart';
+import 'package:chaostours/screen.dart';
 import 'package:chaostours/shared/shared_trackpoint_task.dart';
 import 'package:chaostours/shared/shared_trackpoint_user.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_background_service/flutter_background_service.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 //import 'package:visibility_detector/visibility_detector.dart';
 
 import 'package:chaostours/channel/data_channel.dart';
@@ -111,30 +114,6 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   ///
   @override
   Widget build(BuildContext context) {
-    //return AppWidgets.scaffold(context, body: AppWidgets.empty);
-    /* Widget widget = VisibilityDetector(
-        key: _visibilityDetectorKey,
-        child: Column(children: [
-          Center(child: initialized()),
-          Column(children: [
-            ListTile(
-                leading: statusTrigger(),
-                title: widgetTrackingStatus(),
-                subtitle: Column(
-                  children: [widgetDate(), widgetDuration()],
-                ))
-          ]),
-          widgetAliases(),
-          widgetAddress(),
-          widgetselectedUsers(),
-          widgetselectedTasks(),
-          widgetUserNotes()
-        ]),
-        onVisibilityChanged: (VisibilityInfo info) {
-          _visibleFraction = info.visibleFraction;
-        });
- */
-
     Widget widget = ListView(children: [
       initialized(),
       ListTile(
@@ -174,15 +153,22 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   }
 
   Widget statusTrigger() {
+    double? size = Theme.of(context).iconTheme.size;
+    if (size != null) {
+      size *= 2;
+    }
+    Screen screen = Screen(context);
+    size = math.min(screen.width, screen.height) / 15;
     return ListenableBuilder(
       listenable: _listenableStatusTrigger,
       builder: (context, child) {
         return dataChannel.trackingStatus == TrackingStatus.standing
             ? IconButton(
                 icon: Icon(
-                    dataChannel.trackingStatusTrigger != TrackingStatus.none
-                        ? Icons.drive_eta
-                        : Icons.drive_eta_outlined),
+                    dataChannel.trackingStatusTrigger == TrackingStatus.none
+                        ? Icons.flag
+                        : Icons.hourglass_top,
+                    size: size),
                 onPressed: () async {
                   ///start
 
@@ -199,16 +185,16 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                           child: const Text('Yes'),
                           onPressed: () async {
                             Navigator.pop(context);
-                            dataChannel.trackingStatusTrigger = await Cache
-                                .trackingStatusTriggered
-                                .save<TrackingStatus>(TrackingStatus.moving);
                             FlutterBackgroundService().invoke(
                                 BackgroundChannelCommand.reloadUserSettings
                                     .toString());
                             if (dataChannel.trackingStatusTrigger !=
                                 TrackingStatus.moving) {
-                              Fluttertoast.showToast(msg: 'Stop sheduled');
+                              Fluttertoast.showToast(msg: 'Start sheduled');
                             }
+                            dataChannel.trackingStatusTrigger = await Cache
+                                .trackingStatusTriggered
+                                .save<TrackingStatus>(TrackingStatus.moving);
                             notify(_listenableStatusTrigger);
                           },
                         ),
@@ -223,7 +209,10 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                   ///end
                 })
             : IconButton(
-                icon: const Icon(Icons.flag),
+                icon: Icon(
+                    dataChannel.trackingStatusTrigger != TrackingStatus.none
+                        ? Icons.drive_eta
+                        : Icons.hourglass_top),
                 onPressed: () async {
                   AppWidgets.dialog(
                       context: context,
@@ -237,16 +226,16 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                           child: const Text('Yes'),
                           onPressed: () async {
                             Navigator.pop(context);
-                            dataChannel.trackingStatusTrigger = await Cache
-                                .trackingStatusTriggered
-                                .save<TrackingStatus>(TrackingStatus.moving);
                             FlutterBackgroundService().invoke(
                                 BackgroundChannelCommand.reloadUserSettings
                                     .toString());
                             if (dataChannel.trackingStatusTrigger !=
-                                TrackingStatus.moving) {
-                              Fluttertoast.showToast(msg: 'Start sheduled');
+                                TrackingStatus.standing) {
+                              Fluttertoast.showToast(msg: 'Stop sheduled');
                             }
+                            dataChannel.trackingStatusTrigger = await Cache
+                                .trackingStatusTriggered
+                                .save<TrackingStatus>(TrackingStatus.moving);
                             notify(_listenableStatusTrigger);
                           },
                         ),

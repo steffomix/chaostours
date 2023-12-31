@@ -14,12 +14,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/model/model.dart';
+import 'package:chaostours/model/model_trackpoint_alias.dart';
+import 'package:chaostours/model/model_trackpoint_asset.dart';
+import 'package:sqflite/sqflite.dart';
+
+///
 import 'package:chaostours/database/cache.dart';
 import 'package:chaostours/calendar.dart';
 import 'package:chaostours/database/database.dart';
-import 'package:chaostours/location.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_alias.dart';
+import 'package:chaostours/model/model_trackpoint_task.dart';
+import 'package:chaostours/model/model_trackpoint_user.dart';
 import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/shared/shared_trackpoint_alias.dart';
@@ -28,7 +35,6 @@ import 'package:chaostours/shared/shared_trackpoint_task.dart';
 import 'package:chaostours/shared/shared_trackpoint_user.dart';
 import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/logger.dart';
-import 'package:sqflite/sqflite.dart';
 
 class ModelTrackPoint {
   static Logger logger = Logger.logger<ModelTrackPoint>();
@@ -43,6 +49,10 @@ class ModelTrackPoint {
   ///
   String address = '';
   String notes = ''; // calendarId;calendarEventId
+
+  List<ModelTrackpointAsset> aliasTrackpoints = [];
+  List<ModelTrackpointAsset> userTrackpoints = [];
+  List<ModelTrackpointAsset> taskTrackpoints = [];
 
   /// "id,id,..." needs to be sorted by distance
   List<ModelAlias> aliasModels = [];
@@ -170,28 +180,22 @@ class ModelTrackPoint {
       _id = await txn.insert(TableTrackPoint.table, map);
     });
 
-    final sharedAlias = await Cache.backgroundSharedAliasList
-        .load<List<SharedTrackpointAlias>>([]);
-    final sharedTasks = await Cache.backgroundSharedTaskList
-        .load<List<SharedTrackpointTask>>([]);
-    final sharedUsers = await Cache.backgroundSharedUserList
-        .load<List<SharedTrackpointUser>>([]);
     await DB.execute((Transaction txn) async {
-      for (var alias in sharedAlias) {
+      for (var alias in aliasTrackpoints) {
         try {
           addAlias(alias, txn);
         } catch (e, stk) {
           logger.error('insert idAlias: $e', stk);
         }
       }
-      for (var task in sharedTasks) {
+      for (var task in taskTrackpoints) {
         try {
           addTask(task, txn);
         } catch (e, stk) {
           logger.error('insert idTask: $e', stk);
         }
       }
-      for (var user in sharedUsers) {
+      for (var user in userTrackpoints) {
         try {
           addUser(user, txn);
         } catch (e, stk) {
@@ -228,7 +232,7 @@ class ModelTrackPoint {
       required String columnTrackPoint,
       required String columnForeign,
       required String columnNotes,
-      required SharedTrackpointAsset shared,
+      required ModelTrackpointAsset shared,
       required Transaction txn}) async {
     try {
       const count = 'ct';
@@ -256,7 +260,7 @@ class ModelTrackPoint {
     }
   }
 
-  Future<int> addAlias(SharedTrackpointAlias shared, Transaction txn) async {
+  Future<int> addAlias(ModelTrackpointAsset shared, Transaction txn) async {
     return await _addOrUpdateAsset(
         table: TableTrackPointAlias.table,
         columnTrackPoint: TableTrackPointAlias.idTrackPoint.column,
@@ -266,7 +270,7 @@ class ModelTrackPoint {
         txn: txn);
   }
 
-  Future<int> addTask(SharedTrackpointTask shared, Transaction txn) async {
+  Future<int> addTask(ModelTrackpointAsset shared, Transaction txn) async {
     return await _addOrUpdateAsset(
         table: TableTrackPointTask.table,
         columnTrackPoint: TableTrackPointTask.idTrackPoint.column,
@@ -276,7 +280,7 @@ class ModelTrackPoint {
         txn: txn);
   }
 
-  Future<int> addUser(SharedTrackpointUser shared, Transaction txn) async {
+  Future<int> addUser(ModelTrackpointAsset shared, Transaction txn) async {
     return await _addOrUpdateAsset(
         table: TableTrackPointUser.table,
         columnTrackPoint: TableTrackPointUser.idTrackPoint.column,
@@ -290,14 +294,14 @@ class ModelTrackPoint {
       {required String table,
       required String columnTrackPoint,
       required String columnForeign,
-      required SharedTrackpointAsset shared,
+      required ModelTrackpointAsset shared,
       required Transaction txn}) async {
     return await txn.delete(table,
         where: '$columnTrackPoint = ? AND $columnForeign = ?',
         whereArgs: [id, shared.id]);
   }
 
-  Future<int> removeAlias(SharedTrackpointAlias shared, Transaction txn) async {
+  Future<int> removeAlias(ModelTrackpointAsset shared, Transaction txn) async {
     return await _removeAsset(
         table: TableTrackPointAlias.table,
         columnTrackPoint: TableTrackPointAlias.idTrackPoint.column,
@@ -306,7 +310,7 @@ class ModelTrackPoint {
         txn: txn);
   }
 
-  Future<int> removeTask(SharedTrackpointTask shared, Transaction txn) async {
+  Future<int> removeTask(ModelTrackpointAsset shared, Transaction txn) async {
     return await _removeAsset(
         table: TableTrackPointTask.table,
         columnTrackPoint: TableTrackPointTask.idTrackPoint.column,
@@ -315,7 +319,7 @@ class ModelTrackPoint {
         txn: txn);
   }
 
-  Future<int> removeUser(SharedTrackpointUser shared, Transaction txn) async {
+  Future<int> removeUser(ModelTrackpointAsset shared, Transaction txn) async {
     return await _removeAsset(
         table: TableTrackPointUser.table,
         columnTrackPoint: TableTrackPointUser.idTrackPoint.column,
@@ -565,11 +569,12 @@ class ModelTrackPoint {
     String userIds = 'col2';
     String taskIds = 'col3';
 
-    String sql = '''SELECT 
-            ${TableTrackPoint.columns.join(', ')}, 
-            GROUP_CONCAT(${TableAlias.id},',') AS $aliasIds, 
-            GROUP_CONCAT(${TableUser.id},',') AS $userIds, 
-            GROUP_CONCAT(${TableTask.id},',') AS $taskIds
+    String sql = '''
+        SELECT 
+          ${TableTrackPoint.columns.join(', ')}, 
+          GROUP_CONCAT(${TableAlias.id},',') AS $aliasIds, 
+          GROUP_CONCAT(${TableUser.id},',') AS $userIds, 
+          GROUP_CONCAT(${TableTask.id},',') AS $taskIds
         FROM ${TableTrackPoint.table}
         -- join alias
         LEFT JOIN ${TableTrackPointAlias.table} ON ${TableTrackPointAlias.idTrackPoint} = ${TableTrackPoint.id}
@@ -581,14 +586,21 @@ class ModelTrackPoint {
         LEFT JOIN ${TableTrackPointTask.table} ON ${TableTrackPointTask.idTrackPoint} = ${TableTrackPoint.id}
         LEFT JOIN ${TableTask.table} ON ${TableTask.id} = ${TableTrackPointTask.idTask}
         -- where notes
-        WHERE ${TableTrackPoint.notes} like ?
-        -- where alias title address
-        OR ${TableAlias.title} like ? OR  ${TableAlias.description} like ?
+        WHERE ${TableTrackPoint.notes} LIKE ?
+        -- where osm address
+        OR ${TableTrackPoint.address} LIKE ?
+        -- where alias
+        OR ${TableAlias.title} LIKE ? OR  ${TableAlias.description} LIKE ?
         -- where users
-        OR ${TableUser.title} like ? OR ${TableUser.description} like ?
+        OR ${TableUser.title} LIKE ? OR ${TableUser.description} LIKE ?
         -- where tasks
-        OR ${TableTask.title} like ? OR ${TableTask.description} like ?
+        OR ${TableTask.title} LIKE ? OR ${TableTask.description} LIKE ?
+        -- where user notes
+        OR ${TableTrackPointUser.notes} LIKE ?
+        -- where task notes
+        OR ${TableTrackPointTask.notes} LIKE ?
         -- query
+        GROUP BY ${TableTrackPoint.id}
         ORDER BY ${TableTrackPoint.id} DESC
         LIMIT ?
         OFFSET ?
@@ -611,15 +623,35 @@ class ModelTrackPoint {
       return list.split(',').map((e) => int.parse(e)).toList();
     }
 
+    void addNotes(
+        List<Model> models, List<ModelTrackpointAsset> trackpointModels) {
+      for (var model in models) {
+        for (var trackpoint in trackpointModels) {
+          if (model.id == trackpoint.id) {
+            model.trackpointNotes = trackpoint.notes;
+          }
+        }
+      }
+    }
+
+    /// select models
     for (var row in rows) {
       try {
         ModelTrackPoint point = fromMap(row);
+
+        /// add models
         point.aliasModels =
             await ModelAlias.byIdList(parseIds(DB.parseString(row[aliasIds])));
         point.userModels =
             await ModelUser.byIdList(parseIds(DB.parseString(row[userIds])));
         point.taskModels =
             await ModelTask.byIdList(parseIds(DB.parseString(row[taskIds])));
+
+        addNotes(point.userModels, await ModelTrackpointUser.select(point));
+        addNotes(point.taskModels, await ModelTrackpointTask.select(point));
+
+        /// add model notes
+
         trackpoints.add(point);
       } catch (e) {
         logger.warn('search: $e');

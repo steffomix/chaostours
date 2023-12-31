@@ -256,7 +256,9 @@ class DataChannel {
       final a = modelA.model.sortOrder;
       final b = modelB.model.sortOrder;
       int result;
-      if (a.isEmpty) {
+      if (a.isEmpty && b.isEmpty) {
+        result = 0;
+      } else if (a.isEmpty) {
         result = 1;
       } else if (b.isEmpty) {
         result = -1;

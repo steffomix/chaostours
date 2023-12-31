@@ -45,7 +45,7 @@ import 'package:chaostours/view/task/widget_tasks_from_task__group_list.dart';
 import 'package:chaostours/view/task/widget_task__groups_from_task_list.dart';
 //
 import 'package:chaostours/view/trackpoint/widget_live_tracking.dart';
-import 'package:chaostours/view/trackpoint/widget_trackpoints.dart';
+import 'package:chaostours/view/trackpoint/widget_trackpoint_list.dart';
 import 'package:chaostours/view/trackpoint/widget_trackpoints_from_alias_list.dart';
 import 'package:chaostours/view/trackpoint/widget_edit_trackpoint.dart';
 //

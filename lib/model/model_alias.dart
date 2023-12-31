@@ -79,6 +79,8 @@ class ModelAlias implements Model {
   String title = '';
   @override
   String description = '';
+  @override
+  String trackpointNotes = '';
 
   /// group values
   AliasPrivacy privacy = AliasPrivacy.restricted;

@@ -38,6 +38,8 @@ class ModelUser implements Model {
   String description = '';
   String phone = '';
   String address = '';
+  @override
+  String trackpointNotes = '';
 
   ModelUser(
       {this.groupId = 1,

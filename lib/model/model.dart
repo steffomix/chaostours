@@ -26,6 +26,7 @@ abstract class Model {
   int get id;
   String title = '';
   String description = '';
+  String trackpointNotes = '';
 
   static final Logger logger = Logger.logger<Model>();
   static const String lineSep = '\n';

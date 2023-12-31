@@ -61,7 +61,7 @@ class BackgroundChannel {
 
   @pragma('vm:entry-point')
   static void onStart(ServiceInstance service) async {
-    DartPluginRegistrant.ensureInitialized();
+    //DartPluginRegistrant.ensureInitialized();
     if (Platform.isAndroid) {
       //PathProviderAndroid.registerWith();
     } else if (Platform.isIOS) {
