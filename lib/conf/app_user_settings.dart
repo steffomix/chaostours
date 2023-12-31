@@ -162,7 +162,7 @@ class AppUserSetting {
           description: const Text('A higher value consumes less battery, '
               'but it also takes longer to measure the status of stopping or moving.\n'
               'NOTE:\n'
-              'To activate changes restart the App you must!\nCompletely!\nInclusive the background process!'),
+              'The tracking execution time can take some seconds and will be added.'),
           unit: Unit.second,
           minValue: 3,
           defaultValue: const Duration(seconds: 30),

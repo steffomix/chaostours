@@ -28,7 +28,7 @@ class WidgetPattern extends BaseWidget {
 }
 
 class _WidgetPattern extends BaseWidgetState<WidgetPattern>
-    implements BaseWidgetPattern {
+    implements BaseWidgetInterface {
   //static final Logger logger = Logger.logger<WidgetPattern>();
 
   final List<Widget> loadedItems = [];

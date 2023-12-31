@@ -88,6 +88,12 @@ class DB {
     }
   }
 
+  /* 
+  static int _runningTransactions = 0;
+  static int _transactionsTotal = 0; 
+  static int get transactionsTotal => _transactionsTotal;
+  */
+
   /// <pre>
   /// // example
   ///
@@ -95,9 +101,6 @@ class DB {
   ///    return await txn.query(...);
   ///  });
   /// </pre>
-  static int _runningTransactions = 0;
-  static int _transactionsTotal = 0;
-  static int get transactionsTotal => _transactionsTotal;
   static Future<T> execute<T>(
       Future<T> Function(flite.Transaction txn) action) async {
     return await _database!.transaction<T>(action);

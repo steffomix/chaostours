@@ -38,7 +38,7 @@ class WidgetAliasesFromAliasGroupList extends BaseWidget {
 
 class _WidgetAliasesFromAliasGroupList
     extends BaseWidgetState<WidgetAliasesFromAliasGroupList>
-    implements BaseWidgetPattern {
+    implements BaseWidgetInterface {
   static final Logger logger = Logger.logger<WidgetAliasesFromAliasGroupList>();
 
   final CalendarEntry _calendars = {};

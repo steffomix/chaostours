@@ -32,7 +32,7 @@ class WidgetDatabaseExplorer extends BaseWidget {
 }
 
 class _WidgetDatabaseExplorer extends BaseWidgetState<WidgetDatabaseExplorer>
-    implements BaseWidgetPattern {
+    implements BaseWidgetInterface {
   //static final Logger logger = Logger.logger<WidgetDatabaseExplorer>();
   DbTable _table = DbTable.tables[0];
 

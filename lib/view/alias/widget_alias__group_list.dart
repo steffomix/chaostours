@@ -36,7 +36,7 @@ class WidgetAliasGroupList extends BaseWidget {
 }
 
 class _WidgetAliasGroupList extends BaseWidgetState<WidgetAliasGroupList>
-    implements BaseWidgetPattern {
+    implements BaseWidgetInterface {
   // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetAliasGroupList>();
 

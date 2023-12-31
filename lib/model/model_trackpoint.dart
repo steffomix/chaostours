@@ -15,12 +15,10 @@ limitations under the License.
 */
 
 import 'package:chaostours/model/model.dart';
-import 'package:chaostours/model/model_trackpoint_alias.dart';
 import 'package:chaostours/model/model_trackpoint_asset.dart';
 import 'package:sqflite/sqflite.dart';
 
 ///
-import 'package:chaostours/database/cache.dart';
 import 'package:chaostours/calendar.dart';
 import 'package:chaostours/database/database.dart';
 import 'package:chaostours/model/model_task.dart';
@@ -29,10 +27,6 @@ import 'package:chaostours/model/model_trackpoint_task.dart';
 import 'package:chaostours/model/model_trackpoint_user.dart';
 import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/gps.dart';
-import 'package:chaostours/shared/shared_trackpoint_alias.dart';
-import 'package:chaostours/shared/shared_trackpoint_asset.dart';
-import 'package:chaostours/shared/shared_trackpoint_task.dart';
-import 'package:chaostours/shared/shared_trackpoint_user.dart';
 import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/logger.dart';
 
@@ -564,10 +558,50 @@ class ModelTrackPoint {
   }
 
   static Future<List<ModelTrackPoint>> search(String search,
-      {int limit = 20, int offset = 0}) async {
+      {int limit = 20,
+      int offset = 0,
+      int? idAlias,
+      int? idUser,
+      int? idTask}) async {
     String aliasIds = 'col1';
     String userIds = 'col2';
     String taskIds = 'col3';
+
+    String? whereAsset(String? table) =>
+        table == null ? null : 'WHERE $table == ? AND';
+
+    String? table;
+    int? idAsset;
+    if (idAlias != null) {
+      table = TableAlias.id.toString();
+      idAsset = idAlias;
+    } else if (idUser != null) {
+      table = TableUser.id.toString();
+      idAsset = idUser;
+    } else if (idTask != null) {
+      table = TableTask.id.toString();
+      idAsset = idTask;
+    }
+
+    String sqlSearch = search.isEmpty
+        ? ''
+        : '''
+        ${table == null ? 'WHERE ' : 'AND'}
+        -- where notes
+        ( ${TableTrackPoint.notes} LIKE ?
+        -- where osm address
+        OR ${TableTrackPoint.address} LIKE ?
+        -- where alias
+        OR ${TableAlias.title} LIKE ? OR  ${TableAlias.description} LIKE ?
+        -- where users
+        OR ${TableUser.title} LIKE ? OR ${TableUser.description} LIKE ?
+        -- where tasks
+        OR ${TableTask.title} LIKE ? OR ${TableTask.description} LIKE ?
+        -- where user notes
+        OR ${TableTrackPointUser.notes} LIKE ?
+        -- where task notes
+        OR ${TableTrackPointTask.notes} LIKE ? )
+''';
 
     String sql = '''
         SELECT 
@@ -585,20 +619,8 @@ class ModelTrackPoint {
         -- join tasks
         LEFT JOIN ${TableTrackPointTask.table} ON ${TableTrackPointTask.idTrackPoint} = ${TableTrackPoint.id}
         LEFT JOIN ${TableTask.table} ON ${TableTask.id} = ${TableTrackPointTask.idTask}
-        -- where notes
-        WHERE ${TableTrackPoint.notes} LIKE ?
-        -- where osm address
-        OR ${TableTrackPoint.address} LIKE ?
-        -- where alias
-        OR ${TableAlias.title} LIKE ? OR  ${TableAlias.description} LIKE ?
-        -- where users
-        OR ${TableUser.title} LIKE ? OR ${TableUser.description} LIKE ?
-        -- where tasks
-        OR ${TableTask.title} LIKE ? OR ${TableTask.description} LIKE ?
-        -- where user notes
-        OR ${TableTrackPointUser.notes} LIKE ?
-        -- where task notes
-        OR ${TableTrackPointTask.notes} LIKE ?
+        ${table == null ? '' : 'WHERE $table == ? '} 
+        $sqlSearch
         -- query
         GROUP BY ${TableTrackPoint.id}
         ORDER BY ${TableTrackPoint.id} DESC
@@ -610,8 +632,12 @@ class ModelTrackPoint {
 
     var rows =
         await DB.execute<List<Map<String, Object?>>>((Transaction txn) async {
-      return await txn
-          .rawQuery(sql, [...List.filled(qmCount, '%$search%'), limit, offset]);
+      return await txn.rawQuery(sql, [
+        ...(table == null ? [] : [idAsset]),
+        ...List.filled(qmCount - (table == null ? 0 : 1), '%$search%'),
+        limit,
+        offset,
+      ]);
     });
 
     List<ModelTrackPoint> trackpoints = [];

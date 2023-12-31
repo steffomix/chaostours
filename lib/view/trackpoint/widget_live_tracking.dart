@@ -634,7 +634,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
   Widget widgetselectedTasksExpanded() {
     Color? color =
-        dataChannel.taskList.isEmpty ? Color.fromARGB(0, 0, 0, 0) : null;
+        dataChannel.taskList.isEmpty ? const Color.fromARGB(0, 0, 0, 0) : null;
     return ListTile(
       trailing: IconButton(
         icon: _isTasksExpanded

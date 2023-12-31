@@ -32,7 +32,7 @@ class WidgetTaskGroupList extends BaseWidget {
 }
 
 class _WidgetTaskGroupList extends BaseWidgetState<WidgetTaskGroupList>
-    implements BaseWidgetPattern {
+    implements BaseWidgetInterface {
   // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetTaskGroupList>();
 

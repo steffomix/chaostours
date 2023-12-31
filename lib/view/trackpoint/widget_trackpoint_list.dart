@@ -14,19 +14,25 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:flutter/material.dart';
+
+///
+import 'package:chaostours/logger.dart';
 import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/model/model.dart';
 import 'package:chaostours/model/model_alias.dart';
-import 'package:chaostours/model/model_user.dart';
-import 'package:flutter/material.dart';
-
-//
-import 'package:chaostours/view/app_base_widget.dart';
-//import 'package:chaostours/logger.dart';
-import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
+import 'package:chaostours/view/app_base_widget.dart';
+import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/util.dart';
+
+enum TrackpointListMode {
+  none,
+  alias,
+  user,
+  task;
+}
 
 class WidgetTrackPoints extends BaseWidget {
   const WidgetTrackPoints({super.key});
@@ -36,7 +42,7 @@ class WidgetTrackPoints extends BaseWidget {
 }
 
 class _WidgetTrackPointsState extends BaseWidgetState<WidgetTrackPoints> {
-  //static final Logger logger = Logger.logger();
+  static final Logger logger = Logger.logger();
   TextEditingController tpSearch = TextEditingController();
 
   final _searchController = TextEditingController();
@@ -44,9 +50,42 @@ class _WidgetTrackPointsState extends BaseWidgetState<WidgetTrackPoints> {
 
   int getLimit() => 20;
 
+  TrackpointListMode mode = TrackpointListMode.none;
+  int? idAlias;
+  int? idUser;
+  int? idTask;
+
+  @override
+  Future<void> initialize(BuildContext context, Object? args) async {
+    if (args == null) {
+      return;
+    }
+    String query = args.toString();
+    try {
+      final parts = query.split(';');
+      int id = int.parse(parts[0]);
+      if (id < 1) {
+        throw 'id must be > 1, given is $id in "$query"';
+      }
+      String key = parts[1];
+      if (key == TrackpointListMode.alias.name) {
+        idAlias = id;
+      } else if (key == TrackpointListMode.user.name) {
+        idUser = id;
+      } else if (key == TrackpointListMode.task.name) {
+        idTask = id;
+      } else {
+        throw 'malformed query';
+      }
+    } catch (e, stk) {
+      logger.error(' "$args": $e', stk);
+    }
+  }
+
   @override
   Future<int> loadItems({int limit = 50, required int offset}) async {
-    var items = await ModelTrackPoint.search(_searchController.text);
+    var items = await ModelTrackPoint.search(_searchController.text,
+        idAlias: idAlias, idUser: idUser, idTask: idTask);
     if (_loadedItems.isNotEmpty) {
       _loadedItems.add(AppWidgets.divider());
     }

@@ -17,7 +17,6 @@ limitations under the License.
 import 'package:chaostours/conf/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:device_calendar/device_calendar.dart';
 
 ///
@@ -90,7 +89,7 @@ class AppWidgets {
         useMaterial3: true,
         swapLegacyOnMaterial3: true,
         // To use the Playground font, add GoogleFonts package and uncomment
-        fontFamily: GoogleFonts.notoSans().fontFamily,
+        // fontFamily: GoogleFonts.notoSans().fontFamily,
       ),
       darkTheme: FlexThemeData.dark(
         scheme: FlexScheme.mango,
@@ -117,7 +116,7 @@ class AppWidgets {
         useMaterial3: true,
         swapLegacyOnMaterial3: true,
         // To use the Playground font, add GoogleFonts package and uncomment
-        fontFamily: GoogleFonts.notoSans().fontFamily,
+        // fontFamily: GoogleFonts.notoSans().fontFamily,
       ),
 // If you do not have a themeMode switch, uncomment this line
 // to let the device system mode control the theme mode:

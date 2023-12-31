@@ -96,7 +96,7 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
                 icon: const Icon(Icons.undo),
                 onPressed: value.canUndo
                     ? () {
-                        _titleUndoController?.undo();
+                        _titleUndoController.undo();
                       }
                     : null,
               );

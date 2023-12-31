@@ -22,7 +22,7 @@ import 'package:chaostours/view/app_widgets.dart';
 
 typedef DbRow = Map<String, Object?>;
 
-abstract class BaseWidgetPattern {
+abstract class BaseWidgetInterface {
   @mustCallSuper
   Future<void> resetLoader();
   int loaderLimit() => 20;
@@ -42,7 +42,7 @@ class BaseWidget extends StatefulWidget {
 }
 
 class BaseWidgetState<T extends BaseWidget> extends State<T>
-    implements BaseWidgetPattern {
+    implements BaseWidgetInterface {
   static final Logger logger = Logger.logger<BaseWidgetState>();
   final Loader widgetLoader = Loader();
   final ScrollContainer scrollContainer = ScrollContainer();
@@ -108,7 +108,6 @@ class BaseWidgetState<T extends BaseWidget> extends State<T>
   }
 
   Future<void> _load() async {
-    print('## _load');
     try {
       await widgetLoader.load(
           fnLoad: loadItems, fnCount: loadCount, limit: loaderLimit());

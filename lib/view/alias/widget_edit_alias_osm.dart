@@ -522,6 +522,7 @@ class _AliasTrackingRenderer {
       return;
     }
     try {
+      // ignore: unused_local_variable
       GeoPoint geoPoint = await controller.centerMap;
     } catch (e) {
       return;
