@@ -80,6 +80,10 @@ class _WidgetAliasList extends BaseWidgetState<WidgetAliasList>
           lastVisited: _lastVisited,
           search: _searchTextController.text));
     }
+
+    if (_loadedItems.isNotEmpty) {
+      _loadedItems.add(AppWidgets.divider());
+    }
     _loadedItems.addAll(
         intersperse(AppWidgets.divider(), newItems.map((e) => renderRow(e))));
     return newItems.length;

@@ -58,6 +58,9 @@ class _WidgetTaskList extends BaseWidgetState<WidgetTaskList> {
         activated: _navBarBuilder.showActivated,
         search: _textController.text);
 
+    if (_loadedItems.isNotEmpty) {
+      _loadedItems.add(AppWidgets.divider());
+    }
     _loadedItems.addAll(
         intersperse(AppWidgets.divider(), newItems.map((e) => renderRow(e))));
     return newItems.length;

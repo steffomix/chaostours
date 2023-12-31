@@ -56,6 +56,9 @@ class _WidgetUserGroupsFromUserList
     var newItems = await ModelUserGroup.select(
         limit: limit, offset: offset, search: _searchTextController.text);
 
+    if (_loadedWidgets.isNotEmpty) {
+      _loadedWidgets.add(AppWidgets.divider());
+    }
     _loadedWidgets.addAll(
         intersperse(AppWidgets.divider(), newItems.map((e) => renderRow(e))));
     return newItems.length;

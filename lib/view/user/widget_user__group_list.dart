@@ -55,6 +55,9 @@ class _WidgetUserGroupList extends BaseWidgetState<WidgetUserGroupList> {
     List<ModelUserGroup> newItems = await ModelUserGroup.select(
         offset: offset, limit: limit, search: _searchTextController.text);
 
+    if (_loadedItems.isNotEmpty) {
+      _loadedItems.add(AppWidgets.divider());
+    }
     _loadedItems.addAll(
         intersperse(AppWidgets.divider(), newItems.map((e) => renderRow(e))));
     return newItems.length;

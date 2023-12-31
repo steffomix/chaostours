@@ -78,6 +78,9 @@ class _WidgetAliasGroupList extends BaseWidgetState<WidgetAliasGroupList>
         search: _searchTextController.text,
         activated: _navBarBuilder.showActivated);
 
+    if (_loadedItems.isNotEmpty) {
+      _loadedItems.add(AppWidgets.divider());
+    }
     _loadedItems.addAll(
         intersperse(AppWidgets.divider(), newItems.map((e) => renderRow(e))));
     return newItems.length;

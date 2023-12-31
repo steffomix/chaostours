@@ -127,10 +127,11 @@ class AppWidgets {
 
   static Future<void> navigate(BuildContext context, AppRoutes route,
       [Object? arguments]) async {
-    while (Navigator.canPop(context)) {
-      Navigator.pop(context);
+    Navigator.of(context).pushNamedAndRemoveUntil(
+        AppRoutes.liveTracking.route, (Route<dynamic> route) => false);
+    if (route != AppRoutes.liveTracking) {
+      Navigator.pushNamed(context, route.route);
     }
-    Navigator.pushNamed(context, route.route, arguments: arguments);
   }
 
   static Scaffold scaffold(BuildContext context,

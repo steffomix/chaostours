@@ -54,9 +54,7 @@ class BaseWidgetState<T extends BaseWidget> extends State<T>
   @mustCallSuper
   void initState() {
     super.initState();
-    Future.microtask(
-      () => scrollContainer.onBottom = _load,
-    );
+    scrollContainer.onBottom = _load;
   }
 
   @override
@@ -110,7 +108,7 @@ class BaseWidgetState<T extends BaseWidget> extends State<T>
   }
 
   Future<void> _load() async {
-    logger.log('_load');
+    print('## _load');
     try {
       await widgetLoader.load(
           fnLoad: loadItems, fnCount: loadCount, limit: loaderLimit());
@@ -133,6 +131,7 @@ class BaseWidgetState<T extends BaseWidget> extends State<T>
 
       if ((size?.height ?? 0) > 0) {
         if (!widgetLoader.isFinished) {
+          //Future.microtask(() => _load);
           _load();
         }
       }

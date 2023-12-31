@@ -65,6 +65,10 @@ class _WidgetAliasTrackpoint extends BaseWidgetState<WidgetAliasTrackpoint> {
   @override
   Future<int> loadItems({required int offset, int limit = 20}) async {
     List<ModelTrackPoint> newItems = await _modelAlias?.trackpoints() ?? [];
+
+    if (_loadedWidgets.isNotEmpty) {
+      _loadedWidgets.add(AppWidgets.divider());
+    }
     _loadedWidgets.addAll(
         intersperse(AppWidgets.divider(), newItems.map((e) => renderRow(e))));
     return newItems.length;

@@ -73,6 +73,9 @@ class _WidgetAliasesFromAliasGroupList
         search: _searchTextController.text,
         activated: _navBarBuilder.showActivated);
 
+    if (_loadedWidgets.isNotEmpty) {
+      _loadedWidgets.add(AppWidgets.divider());
+    }
     _loadedWidgets.addAll(
         intersperse(AppWidgets.divider(), newItems.map((e) => renderRow(e))));
     return newItems.length;
