@@ -14,19 +14,21 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import 'package:chaostours/conf/app_user_settings.dart';
-import 'package:chaostours/view/app_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+///
+import 'package:chaostours/conf/app_user_settings.dart';
+import 'package:chaostours/model/model_alias_statistics.dart';
+import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/address.dart';
-
-///
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_alias_group.dart';
+import 'package:chaostours/view/trackpoint/widget_trackpoint_list.dart';
 import 'package:chaostours/conf/app_routes.dart';
+import 'package:chaostours/util.dart' as util;
 
 class WidgetAliasEdit extends StatefulWidget {
   const WidgetAliasEdit({super.key});
@@ -78,8 +80,8 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
     var model = ModelAlias(
         gps: gps,
         lastVisited: DateTime.now(),
-        title: address.alias,
-        description: address.description);
+        title: address.address,
+        description: address.addressDetails);
     await model.insert();
     return model;
   }
@@ -144,10 +146,95 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
         body: body);
   }
 
+  void statistics(
+      {required ModelAliasStatistics stats, required ModelAlias model}) {
+    AppWidgets.dialog(
+        context: context,
+        title: const Text('Statistics'),
+        contents: [
+          SingleChildScrollView(
+              controller: ScrollController(),
+              scrollDirection: Axis.horizontal,
+              child: DataTable(showBottomBorder: true, columns: const [
+                DataColumn(label: SizedBox.shrink()),
+                DataColumn(label: Text(''))
+              ], rows: [
+                DataRow(cells: [
+                  const DataCell(Text('First Trackpoint')),
+                  DataCell(Text(util.formatDate(stats.timeStart)))
+                ]),
+                DataRow(cells: [
+                  const DataCell(Text('Last Trackpoint')),
+                  DataCell(Text(util.formatDate(stats.timeEnd)))
+                ]),
+                DataRow(cells: [
+                  const DataCell(Text('Times visited')),
+                  DataCell(Text(stats.count.toString()))
+                ]),
+                DataRow(cells: [
+                  const DataCell(Text('Duration Min.')),
+                  DataCell(Text(util.formatDuration(stats.durationMin)))
+                ]),
+                DataRow(cells: [
+                  const DataCell(Text('Duration Max.')),
+                  DataCell(Text(util.formatDuration(stats.durationMax)))
+                ]),
+                DataRow(cells: [
+                  const DataCell(Text('Duration Total')),
+                  DataCell(Text(util.formatDuration(stats.durationTotal)))
+                ]),
+              ]))
+        ],
+        buttons: [
+          TextButton(
+            child: const Icon(Icons.copy),
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: '''
+Location Alias; ${model.title}
+
+First visited; ${util.formatDate(stats.timeStart)}
+Last visited; ${util.formatDate(stats.timeEnd)}
+Times visited; ${stats.count}
+
+Min. duration; ${util.formatDuration(stats.durationMin)}
+Max. duration; ${util.formatDuration(stats.durationMax)}
+Duration total; ${util.formatDuration(stats.durationTotal)}
+
+Location Description; ${model.description}
+'''));
+              Navigator.pop(context);
+            },
+          ),
+          TextButton(
+            child: const Text('OK'),
+            onPressed: () {
+              Navigator.pop(context);
+            },
+          )
+        ]);
+  }
+
   Widget body(ModelAlias alias) {
     return ListView(children: [
-      /// aliasname
+      /// Trackpoints button
+      Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          ElevatedButton(
+              onPressed: () => Navigator.pushNamed(
+                  context, AppRoutes.listTrackpoints.route,
+                  arguments: argumentsTrackpointAliasList(alias.id)),
+              child: const Text('Alias Trackpoints')),
+          ElevatedButton(
+              onPressed: () async {
+                var model = await ModelAliasStatistics.statistics(alias);
+                statistics(stats: model, model: alias);
+              },
+              child: const Text('Alias Statistics'))
+        ],
+      ),
 
+      /// aliasname
       ListTile(
           dense: true,
           trailing: ValueListenableBuilder<UndoHistoryValue>(

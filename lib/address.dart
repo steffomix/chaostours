@@ -50,7 +50,7 @@ class Address {
   GPS get gps => _gps;
 
   String? _alias;
-  String get alias => _alias ??= _parseAlias();
+  String get address => _alias ??= _parseAlias();
 
   String _parseAlias() {
     try {
@@ -65,7 +65,7 @@ class Address {
   }
 
   String? _description;
-  String get description => _description ??= _parseDescription();
+  String get addressDetails => _description ??= _parseDescription();
 
   String _parseDescription() {
     try {
@@ -146,8 +146,8 @@ class Address {
     }
     _lastResponse = _response = response;
     if (saveToCache) {
-      await Cache.addressMostRecent.save<String>(alias);
-      await Cache.addressFullMostRecent.save<String>(description);
+      await Cache.addressMostRecent.save<String>(address);
+      await Cache.addressFullMostRecent.save<String>(addressDetails);
     }
     return this;
   }

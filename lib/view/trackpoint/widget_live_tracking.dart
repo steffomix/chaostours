@@ -302,29 +302,30 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                   await Address(gps).lookup(OsmLookupConditions.onUserRequest);
 
               dataChannel.address =
-                  await Cache.addressMostRecent.save<String>(address.alias);
+                  await Cache.addressMostRecent.save<String>(address.address);
               dataChannel.fullAddress = await Cache.addressFullMostRecent
-                  .save<String>(address.description);
+                  .save<String>(address.addressDetails);
               setState(() {});
               if (mounted) {
                 AppWidgets.dialog(context: context, contents: [
                   ListTile(
                       title: const Text('Address'),
-                      subtitle: Text(address.alias),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.copy),
-                        onPressed: () {
-                          Clipboard.setData(ClipboardData(text: address.alias));
-                        },
-                      )),
-                  ListTile(
-                      title: const Text('Address Details'),
-                      subtitle: Text(address.description),
+                      subtitle: Text(address.address),
                       trailing: IconButton(
                         icon: const Icon(Icons.copy),
                         onPressed: () {
                           Clipboard.setData(
-                              ClipboardData(text: address.description));
+                              ClipboardData(text: address.address));
+                        },
+                      )),
+                  ListTile(
+                      title: const Text('Address Details'),
+                      subtitle: Text(address.addressDetails),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.copy),
+                        onPressed: () {
+                          Clipboard.setData(
+                              ClipboardData(text: address.addressDetails));
                         },
                       )),
                 ], buttons: [

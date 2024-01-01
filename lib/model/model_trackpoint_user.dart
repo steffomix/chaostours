@@ -22,7 +22,8 @@ class ModelTrackpointUser extends ModelTrackpointAsset {
   ModelTrackpointUser(
       {required super.trackpointId, required super.id, required super.notes});
 
-  static Future<List<ModelTrackpointUser>> select(
+  /// select list of members from this trackpoint
+  static Future<List<ModelTrackpointUser>> userNotesFromTrackpoint(
       ModelTrackPoint trackpoint) async {
     final rows = await DB.execute((txn) async {
       return await txn.query(TableTrackPointUser.table,

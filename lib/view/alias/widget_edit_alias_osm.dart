@@ -210,7 +210,7 @@ class _WidgetOsm extends State<WidgetOsm> {
                 addr.Address address = await addr.Address(gps)
                     .lookup(OsmLookupConditions.onUserRequest);
 
-                _addressNotifier.value = address.alias;
+                _addressNotifier.value = address.address;
               }),
 
           /// _address value
@@ -353,8 +353,8 @@ class _WidgetOsm extends State<WidgetOsm> {
 
             ModelAlias alias = ModelAlias(
                 gps: GPS(pos.latitude, pos.longitude),
-                title: address.alias,
-                description: address.description,
+                title: address.address,
+                description: address.addressDetails,
                 radius: await Cache.appSettingDistanceTreshold.load<int>(
                     AppUserSetting(Cache.appSettingDistanceTreshold)
                         .defaultValue as int),

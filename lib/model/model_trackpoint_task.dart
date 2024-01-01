@@ -22,7 +22,7 @@ class ModelTrackpointTask extends ModelTrackpointAsset {
   ModelTrackpointTask(
       {required super.trackpointId, required super.id, required super.notes});
 
-  static Future<List<ModelTrackpointTask>> select(
+  static Future<List<ModelTrackpointTask>> taskNotesFromTrackpoint(
       ModelTrackPoint trackpoint) async {
     final rows = await DB.execute((txn) async {
       return await txn.query(TableTrackPointTask.table,

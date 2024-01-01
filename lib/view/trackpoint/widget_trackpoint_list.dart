@@ -25,9 +25,21 @@ import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/view/app_base_widget.dart';
 import 'package:chaostours/view/app_widgets.dart';
-import 'package:chaostours/util.dart';
+import 'package:chaostours/util.dart' as util;
 
-enum TrackpointListMode {
+String argumentsTrackpointAliasList(int aliasId) {
+  return '$aliasId;${_TrackpointListMode.alias.name}';
+}
+
+String argumentsTrackpointUserList(int userId) {
+  return '$userId;${_TrackpointListMode.user.name}';
+}
+
+String argumentsTrackpointTaskList(int taskId) {
+  return '$taskId;${_TrackpointListMode.task.name}';
+}
+
+enum _TrackpointListMode {
   none,
   alias,
   user,
@@ -50,7 +62,7 @@ class _WidgetTrackPointsState extends BaseWidgetState<WidgetTrackPoints> {
 
   int getLimit() => 20;
 
-  TrackpointListMode mode = TrackpointListMode.none;
+  _TrackpointListMode mode = _TrackpointListMode.none;
   int? idAlias;
   int? idUser;
   int? idTask;
@@ -68,11 +80,11 @@ class _WidgetTrackPointsState extends BaseWidgetState<WidgetTrackPoints> {
         throw 'id must be > 1, given is $id in "$query"';
       }
       String key = parts[1];
-      if (key == TrackpointListMode.alias.name) {
+      if (key == _TrackpointListMode.alias.name) {
         idAlias = id;
-      } else if (key == TrackpointListMode.user.name) {
+      } else if (key == _TrackpointListMode.user.name) {
         idUser = id;
-      } else if (key == TrackpointListMode.task.name) {
+      } else if (key == _TrackpointListMode.task.name) {
         idTask = id;
       } else {
         throw 'malformed query';
@@ -89,7 +101,7 @@ class _WidgetTrackPointsState extends BaseWidgetState<WidgetTrackPoints> {
     if (_loadedItems.isNotEmpty) {
       _loadedItems.add(AppWidgets.divider());
     }
-    _loadedItems.addAll(intersperse(
+    _loadedItems.addAll(util.intersperse(
         AppWidgets.divider(),
         items.map(
           (e) => renderItem(e),
@@ -217,7 +229,13 @@ class _WidgetTrackPointsState extends BaseWidgetState<WidgetTrackPoints> {
         Text(
           '#${model.id}',
         ),
-        Center(heightFactor: 2, child: Text('OSM Addr: ${model.address}')),
+        Center(
+            child: Text(
+                '${util.formatDate(model.timeStart)} - ${util.formatDate(model.timeStart)}')),
+        Center(child: Text(util.formatDuration(model.duration))),
+        Align(
+            alignment: Alignment.centerLeft,
+            child: Text('OSM Addr: ${model.address}')),
         Column(
           children: [
             const Text('Location Alias'),

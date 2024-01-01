@@ -567,9 +567,6 @@ class ModelTrackPoint {
     String userIds = 'col2';
     String taskIds = 'col3';
 
-    String? whereAsset(String? table) =>
-        table == null ? null : 'WHERE $table == ? AND';
-
     String? table;
     int? idAsset;
     if (idAlias != null) {
@@ -673,8 +670,10 @@ class ModelTrackPoint {
         point.taskModels =
             await ModelTask.byIdList(parseIds(DB.parseString(row[taskIds])));
 
-        addNotes(point.userModels, await ModelTrackpointUser.select(point));
-        addNotes(point.taskModels, await ModelTrackpointTask.select(point));
+        addNotes(point.userModels,
+            await ModelTrackpointUser.userNotesFromTrackpoint(point));
+        addNotes(point.taskModels,
+            await ModelTrackpointTask.taskNotesFromTrackpoint(point));
 
         /// add model notes
 
@@ -685,81 +684,5 @@ class ModelTrackPoint {
     }
 
     return trackpoints;
-
-/* 
-    const idcol = 'id';
-    var aliasModels = await ModelAlias.select(search: search, limit: limit);
-    var aliasIdRows = await DB.execute<List<Map<String, Object?>>>(
-      (Transaction txn) async {
-        return await txn.query(TableTrackPointAlias.table,
-            columns: ['${TableTrackPointAlias.idTrackPoint} as $idcol'],
-            where:
-                '${TableTrackPointAlias.idAlias.column} IN (${List.filled(aliasModels.length, '?').join(', ')})',
-            whereArgs: aliasModels.map((e) => e.id).toList());
-      },
-    );
-
-    ///
-    var taskModels = await ModelTask.select(search: search, limit: limit);
-    var taskIdRows = await DB.execute<List<Map<String, Object?>>>(
-      (Transaction txn) async {
-        return await txn.query(TableTrackPointTask.table,
-            columns: ['${TableTrackPointTask.idTrackPoint} as $idcol'],
-            where:
-                '${TableTrackPointTask.idTask.column} IN (${List.filled(taskModels.length, '?').join(', ')})',
-            whereArgs: taskModels.map((e) => e.id).toList(),
-            limit: limit,
-            offset: offset);
-      },
-    );
-
-    ///
-    var userModels = await ModelUser.select(search: search, limit: limit);
-    var userIdRows = await DB.execute<List<Map<String, Object?>>>(
-      (Transaction txn) async {
-        return await txn.query(TableTrackPointUser.table,
-            columns: ['${TableTrackPointUser.idTrackPoint} as $idcol'],
-            where:
-                '${TableTrackPointUser.idUser.column} IN (${List.filled(userModels.length, '?').join(', ')})',
-            whereArgs: userModels.map((e) => e.id).toList(),
-            limit: limit,
-            offset: offset);
-      },
-    );
-
-    ///
-    Set<int> ids = {};
-    for (var row in <Map<String, Object?>>[
-      ...aliasIdRows,
-      ...taskIdRows,
-      ...userIdRows
-    ]) {
-      ids.add(DB.parseInt(row[idcol]));
-    }
-
-    ///
-    var rows = await DB.execute<List<Map<String, Object?>>>(
-      (Transaction txn) async {
-        return await txn.query(TableTrackPoint.table,
-            columns: TableTrackPoint.columns,
-            where: '${TableTrackPoint.address.column} like ? OR '
-                '${TableTrackPoint.primaryKey.column} IN (${List.filled(ids.length, '?').join(',')})',
-            whereArgs: ['%$search%', ...ids],
-            orderBy: '${TableTrackPoint.timeStart.column} DESC',
-            limit: limit,
-            offset: offset);
-      },
-    );
-    var models = <ModelTrackPoint>[];
-    for (var row in rows) {
-      var model = fromMap(row);
-      await model.loadAssets();
-      try {
-        models.add(fromMap(row));
-      } catch (e, stk) {
-        logger.error('search at parse models: $e', stk);
-      }
-    }
-    return models; */
   }
 }

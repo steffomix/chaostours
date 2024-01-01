@@ -195,9 +195,19 @@ class DB {
     return (time.millisecondsSinceEpoch / 1000).round();
   }
 
-  static DateTime intToTime(Object? i) {
-    return DateTime.fromMillisecondsSinceEpoch(parseInt(i) * 1000);
+  static DateTime intToTime(Object? i, {int fallback = 0}) {
+    int t = parseInt(i, fallback: fallback);
+
+    return t == 0
+        ? DateTime.now()
+        : DateTime.fromMillisecondsSinceEpoch(parseInt(t) * 1000);
   }
+
+  static Duration intToDuration(Object? i, {int fallback = 0}) {
+    return Duration(seconds: parseInt(i, fallback: fallback));
+  }
+
+  static int durationToInt(Duration d) => d.inSeconds;
 }
 
 enum CacheData {
@@ -250,12 +260,12 @@ enum TableTrackPoint {
 	${primaryKey.column}	INTEGER NOT NULL,
 	${latitude.column}	NUMERIC NOT NULL,
 	${longitude.column}	NUMERIC NOT NULL,
-	${timeStart.column}	TEXT NOT NULL,
-	${timeEnd.column}	TEXT NOT NULL,
+	${timeStart.column}	NUMERIC NOT NULL,
+	${timeEnd.column}	NUMERIC NOT NULL,
 	${address.column}	TEXT,
 	${notes.column}	TEXT,
 	PRIMARY KEY(${primaryKey.column} AUTOINCREMENT)
-  );;
+  );
 ''';
 
   @override

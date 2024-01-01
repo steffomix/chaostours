@@ -101,7 +101,7 @@ class Location {
         timeEnd: gps.time,
         calendarEventIds: await Cache.backgroundCalendarLastEventIds
             .load<List<CalendarEventId>>([]),
-        address: address.alias,
+        address: address.address,
         notes: await Cache.backgroundTrackPointUserNotes.load<String>(''));
     tp.aliasModels = aliasModels;
     tp.taskModels = await ModelTask.byIdList((await Cache
@@ -147,8 +147,8 @@ class Location {
         gps: gps,
         lastVisited: tracker.gpsCalcPoints.lastOrNull?.time ?? gps.time,
         timesVisited: 1,
-        title: tracker.address?.alias ?? '',
-        description: tracker.address?.description ?? '',
+        title: tracker.address?.address ?? '',
+        description: tracker.address?.addressDetails ?? '',
         radius: radius);
 
     await newAlias.insert();
@@ -221,7 +221,7 @@ class Location {
     NotificationChannel.sendTrackingUpdateNotification(
         title: 'Tick Update',
         message: 'New Status: ${tracker.trackingStatus?.name.toUpperCase()}'
-            '${tracker.address != null ? '\n${tracker.address?.alias}' : ''}',
+            '${tracker.address != null ? '\n${tracker.address?.address}' : ''}',
         details: NotificationChannel.trackingStatusChangedConfiguration);
   }
 
@@ -333,7 +333,7 @@ class Location {
         timeEnd: gps.time,
         calendarEventIds: await Cache.backgroundCalendarLastEventIds
             .load<List<CalendarEventId>>([]),
-        address: address.alias,
+        address: address.address,
         notes: await Cache.backgroundTrackPointUserNotes.load<String>(''));
 
     final sharedAlias = await Cache.backgroundSharedAliasList

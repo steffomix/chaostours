@@ -91,8 +91,8 @@ class Tracker {
               : TypeAdapter.serializeGps(gpsLastStatusStanding!),
       DataChannelKey.trackingStatus.toString():
           TypeAdapter.serializeTrackingStatus(trackingStatus!),
-      DataChannelKey.lastAddress.toString(): address?.alias ?? '',
-      DataChannelKey.lastFullAddress.toString(): address?.description ?? '',
+      DataChannelKey.lastAddress.toString(): address?.address ?? '',
+      DataChannelKey.lastFullAddress.toString(): address?.addressDetails ?? '',
       DataChannelKey.statusDuration.toString():
           TypeAdapter.serializeDuration(statusDuration)
     };

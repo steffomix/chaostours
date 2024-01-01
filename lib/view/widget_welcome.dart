@@ -626,8 +626,8 @@ class _WelcomeState extends State<Welcome> {
                   address = await Address(gps ?? await GPS.gps()).lookup(
                       OsmLookupConditions.onStatusChanged,
                       saveToCache: true);
-                  channel.address = address?.alias ?? '';
-                  channel.fullAddress = address?.description ?? '';
+                  channel.address = address?.address ?? '';
+                  channel.fullAddress = address?.addressDetails ?? '';
                   await addPreloadMessage(Text(channel.fullAddress));
                 }
               }
@@ -683,8 +683,8 @@ class _WelcomeState extends State<Welcome> {
         await addPreloadMessage(const Text('Lookup Address'));
         address = await Address(gps)
             .lookup(OsmLookupConditions.onStatusChanged, saveToCache: true);
-        channel.address = address?.alias ?? '';
-        channel.fullAddress = address?.description ?? '';
+        channel.address = address?.address ?? '';
+        channel.fullAddress = address?.addressDetails ?? '';
       }
 
       await addPreloadMessage(const Text('Start App...'));

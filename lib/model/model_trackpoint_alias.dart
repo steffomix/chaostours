@@ -22,7 +22,7 @@ class ModelTrackpointAlias extends ModelTrackpointAsset {
   ModelTrackpointAlias(
       {required super.trackpointId, required super.id, required super.notes});
 
-  static Future<List<ModelTrackpointAlias>> select(
+  static Future<List<ModelTrackpointAlias>> aliasNotesFromTrackpoint(
       ModelTrackPoint trackpoint) async {
     final rows = await DB.execute((txn) async {
       return await txn.query(TableTrackPointAlias.table,
