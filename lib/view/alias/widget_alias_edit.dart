@@ -149,6 +149,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
   void statistics(
       {required ModelAliasStatistics stats, required ModelAlias model}) {
     AppWidgets.dialog(
+        isDismissible: true,
         context: context,
         title: const Text('Statistics'),
         contents: [
@@ -161,11 +162,11 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
               ], rows: [
                 DataRow(cells: [
                   const DataCell(Text('First Trackpoint')),
-                  DataCell(Text(util.formatDate(stats.timeStart)))
+                  DataCell(Text(util.formatDate(stats.firstVisited)))
                 ]),
                 DataRow(cells: [
                   const DataCell(Text('Last Trackpoint')),
-                  DataCell(Text(util.formatDate(stats.timeEnd)))
+                  DataCell(Text(util.formatDate(stats.lastVisited)))
                 ]),
                 DataRow(cells: [
                   const DataCell(Text('Times visited')),
@@ -192,13 +193,13 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
               Clipboard.setData(ClipboardData(text: '''
 Location Alias; ${model.title}
 
-First visited; ${util.formatDate(stats.timeStart)}
-Last visited; ${util.formatDate(stats.timeEnd)}
-Times visited; ${stats.count}
+First Visited; ${util.formatDate(stats.firstVisited)}
+Last Visited; ${util.formatDate(stats.lastVisited)}
+Times Visited; ${stats.count}
 
-Min. duration; ${util.formatDuration(stats.durationMin)}
-Max. duration; ${util.formatDuration(stats.durationMax)}
-Duration total; ${util.formatDuration(stats.durationTotal)}
+Min. Duration; ${util.formatDuration(stats.durationMin)}
+Max. Duration; ${util.formatDuration(stats.durationMax)}
+Duration Total; ${util.formatDuration(stats.durationTotal)}
 
 Location Description; ${model.description}
 '''));

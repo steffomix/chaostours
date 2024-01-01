@@ -29,8 +29,8 @@ class ModelTaskStatistics {
   Duration durationTotal = Duration.zero;
   Duration durationMin = Duration.zero;
   Duration durationMax = Duration.zero;
-  late DateTime timeStart;
-  late DateTime timeEnd;
+  late DateTime firstVisited;
+  late DateTime lastVisited;
 
   ModelTaskStatistics({
     this.count = 0,
@@ -40,8 +40,8 @@ class ModelTaskStatistics {
     required DateTime tStart,
     required DateTime tEnd,
   }) {
-    timeStart = tStart;
-    timeEnd = tEnd;
+    firstVisited = tStart;
+    lastVisited = tEnd;
   }
 
   static ModelTaskStatistics fromMap(Map<String, Object?> map) {

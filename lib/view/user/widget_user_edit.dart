@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/model/model_user_statistics.dart';
+import 'package:chaostours/view/trackpoint/widget_trackpoint_list.dart';
 import 'package:flutter/material.dart';
 
 //import 'package:chaostours/logger.dart';
@@ -21,6 +23,8 @@ import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/model/model_user_group.dart';
+import 'package:chaostours/util.dart' as util;
+import 'package:flutter/services.dart';
 
 class WidgetUserEdit extends StatefulWidget {
   const WidgetUserEdit({super.key});
@@ -66,7 +70,6 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<ModelUser?>(
-        initialData: _model,
         future:
             loadUser(ModalRoute.of(context)?.settings.arguments as int? ?? 0),
         builder: (context, snapshot) {
@@ -88,8 +91,95 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
         });
   }
 
+  void statistics(
+      {required ModelUserStatistics stats, required ModelUser model}) {
+    AppWidgets.dialog(
+        isDismissible: true,
+        context: context,
+        title: const Text('Statistics'),
+        contents: [
+          SingleChildScrollView(
+              controller: ScrollController(),
+              scrollDirection: Axis.horizontal,
+              child: DataTable(showBottomBorder: true, columns: const [
+                DataColumn(label: SizedBox.shrink()),
+                DataColumn(label: Text(''))
+              ], rows: [
+                DataRow(cells: [
+                  const DataCell(Text('First Trackpoint')),
+                  DataCell(Text(util.formatDate(stats.firstVisited)))
+                ]),
+                DataRow(cells: [
+                  const DataCell(Text('Last Trackpoint')),
+                  DataCell(Text(util.formatDate(stats.lastVisited)))
+                ]),
+                DataRow(cells: [
+                  const DataCell(Text('Count Trackpoints')),
+                  DataCell(Text(stats.count.toString()))
+                ]),
+                DataRow(cells: [
+                  const DataCell(Text('Duration Min.')),
+                  DataCell(Text(util.formatDuration(stats.durationMin)))
+                ]),
+                DataRow(cells: [
+                  const DataCell(Text('Duration Max.')),
+                  DataCell(Text(util.formatDuration(stats.durationMax)))
+                ]),
+                DataRow(cells: [
+                  const DataCell(Text('Duration Total')),
+                  DataCell(Text(util.formatDuration(stats.durationTotal)))
+                ]),
+              ]))
+        ],
+        buttons: [
+          TextButton(
+            child: const Icon(Icons.copy),
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: '''
+User; ${model.title}
+
+First Trackpoint; ${util.formatDate(stats.firstVisited)}
+Last Trackpoint; ${util.formatDate(stats.lastVisited)}
+Count Trackpoints; ${stats.count}
+
+Min. Duration; ${util.formatDuration(stats.durationMin)}
+Max. Duration; ${util.formatDuration(stats.durationMax)}
+Duration Total; ${util.formatDuration(stats.durationTotal)}
+
+User Description; ${model.description}
+'''));
+              Navigator.pop(context);
+            },
+          ),
+          TextButton(
+            child: const Text('OK'),
+            onPressed: () {
+              Navigator.pop(context);
+            },
+          )
+        ]);
+  }
+
   Widget renderBody() {
     return ListView(children: [
+      /// Trackpoints button
+      Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          ElevatedButton(
+              onPressed: () => Navigator.pushNamed(
+                  context, AppRoutes.listTrackpoints.route,
+                  arguments: argumentsTrackpointAliasList(_model!.id)),
+              child: const Text('User Trackpoints')),
+          ElevatedButton(
+              onPressed: () async {
+                var model = await ModelUserStatistics.statistics(_model!);
+                statistics(stats: model, model: _model!);
+              },
+              child: const Text('User Statistics'))
+        ],
+      ),
+
       /// username
       ListTile(
           dense: true,

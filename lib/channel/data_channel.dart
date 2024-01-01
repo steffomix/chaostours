@@ -185,7 +185,7 @@ class DataChannel {
 
             /// Cached values
             trackingStatusTrigger = await Cache.trackingStatusTriggered
-                .load<TrackingStatus>(TrackingStatus.standing);
+                .load<TrackingStatus>(TrackingStatus.none);
             notes = await Cache.backgroundTrackPointUserNotes.load<String>('');
 
             /// computed values
