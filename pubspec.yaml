@@ -86,6 +86,9 @@ dependencies:
   # https://pub.dev/packages/file_manager
   file_manager: ^1.0.2
 
+  # https://pub.dev/packages/file_picker
+  file_picker: ^6.1.1
+
   # https://pub.dev/packages/fluttertoast
   fluttertoast: ^8.2.2
 

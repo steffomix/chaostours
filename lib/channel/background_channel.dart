@@ -42,7 +42,7 @@ enum BackgroundChannelCommand {
   onTracking,
   track,
   notify,
-  ;
+  closeDatabase;
 
   @override
   String toString() => name;
@@ -91,6 +91,10 @@ class BackgroundChannel {
         .on(BackgroundChannelCommand.reloadUserSettings.toString())
         .listen((_) {
       Cache.reload();
+    });
+
+    service.on(BackgroundChannelCommand.closeDatabase.toString()).listen((_) {
+      DB.closeDatabase();
     });
     int tick = 0;
 
@@ -151,6 +155,11 @@ class BackgroundChannel {
       FlutterBackgroundService()
           .invoke(BackgroundChannelCommand.stopService.toString());
     }
+  }
+
+  static void invoke(BackgroundChannelCommand command,
+      [Map<String, dynamic>? arg]) {
+    FlutterBackgroundService().invoke(command.toString(), arg);
   }
 
   static Future<bool> isRunning() async =>

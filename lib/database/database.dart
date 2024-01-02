@@ -15,6 +15,13 @@ limitations under the License.
 */
 import 'dart:async';
 import 'dart:io' as io;
+import 'dart:io';
+import 'package:chaostours/channel/background_channel.dart';
+import 'package:chaostours/conf/app_routes.dart';
+import 'package:chaostours/main.dart';
+import 'package:chaostours/view/app_widgets.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart' as flite;
 
@@ -25,20 +32,25 @@ class DB {
   static final Logger logger = Logger.logger<DB>();
 
   static const dbVersion = 1;
-  static const dbFile = 'chaostours_$dbVersion.sqlite';
+  static const dbFile = 'chaostours_database_v$dbVersion.sqlite';
   static String? _dbFullPath;
   static flite.Database? _database;
+
+  // lock unlock for import export operations
+  static bool _isClosed = true;
+  static bool _isClosedPermanently = false;
 
   static Future<io.Directory> getDBDir() async {
     return io.Directory(await flite.getDatabasesPath());
   }
 
   /// /data/user/0/com..../databases/chaostours.sqlite
-  static Future<String> getDBFilePath() async {
+  static Future<String> getDBFullPath() async {
     _dbFullPath ??= join(await flite.getDatabasesPath(), dbFile);
     return _dbFullPath!;
   }
 
+/* 
   static Future<void> dbToFile() async {
     var dbDir = await DB.getDBDir();
     var downloadDir = io.Directory('/storage/emulated/0/Download');
@@ -50,11 +62,15 @@ class DB {
     var downloadDir = io.Directory('/storage/emulated/0/Download');
     io.File('${downloadDir.path}/${DB.dbFile}').copy(dbDir.path);
   }
-
-  static Future<void> openDatabase({bool create = false}) async {
+ */
+  static Future<flite.Database> openDatabase({bool create = false}) async {
+    if (_isClosedPermanently) {
+      throw 'Database has been closed an can not be opened again. Restart App instead.';
+    }
+    _isClosed = false;
     try {
-      var path = await getDBFilePath();
-      _database ??= await flite.openDatabase(path,
+      var path = await getDBFullPath();
+      return await flite.openDatabase(path,
           version: dbVersion,
           singleInstance: true,
           onCreate: !create
@@ -88,41 +104,119 @@ class DB {
     }
   }
 
-  /* 
-  static int _runningTransactions = 0;
-  static int _transactionsTotal = 0; 
-  static int get transactionsTotal => _transactionsTotal;
-  */
+  static Future<void> closeDatabase() async {
+    _isClosedPermanently = _isClosed = true;
+    await _database?.close();
+  }
 
-  /// <pre>
-  /// // example
-  ///
-  /// var rows = await DB.execute<List<Map<String, Object?>>>((Transaction txn) async {
-  ///    return await txn.query(...);
-  ///  });
-  /// </pre>
+  static Future<void> _delay(int ms) =>
+      Future.delayed(Duration(milliseconds: ms));
+
+  static Stream<Widget> exportDatabase(
+      BuildContext context, Directory dir) async* {
+    try {
+      String dbPath = await DB.getDBFullPath();
+      File dbFile = File(dbPath);
+      String target = join(dir.path, DB.dbFile);
+
+      if (await File(target).exists()) {
+        yield Text('File already exist: $target');
+        yield TextButton(
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          child: const Text('Export canceld'),
+        );
+        return;
+      }
+      bool channelIsRunning = await BackgroundChannel.isRunning();
+      yield const Text('Lock Database');
+      _isClosed = true;
+      if (channelIsRunning) {
+        yield const Text('Stop Background Channel');
+        await BackgroundChannel.stop();
+        await _delay(1000);
+        BackgroundChannel.invoke(BackgroundChannelCommand.closeDatabase);
+      }
+      yield const Text('Close Database');
+      BackgroundChannel.invoke(BackgroundChannelCommand.closeDatabase);
+      await DB.closeDatabase();
+      int maxDelays = 10;
+      int delayCount = 0;
+      while ((_database?.isOpen ?? false) && delayCount <= maxDelays) {
+        await _delay(300);
+        delayCount++;
+      }
+
+      yield Text('Copy Database to $target');
+      await dbFile.copy(target);
+      await _delay(100);
+      yield TextButton(
+          onPressed: () {
+            AppWidgets.navigate(context, AppRoutes.liveTracking);
+          },
+          child: const Text('Export finished'));
+    } catch (e, stk) {
+      yield TextButton(
+          onPressed: () {
+            SystemNavigator.pop();
+          },
+          child: Text('Export Error: $e'));
+      _isClosed = false;
+      logger.error('export db.sqlite: $e', stk);
+    }
+    _isClosed = false;
+  }
+
+  static Stream<String> importDatabase(Directory dir) async* {
+    try {
+      String target = await getDBFullPath();
+      File file = File(join(dir.path, DB.dbFile));
+      if (!file.existsSync()) {
+        yield 'File not found: ${file.path}';
+        yield 'Import canceled.';
+      }
+      bool channelIsRunning = await BackgroundChannel.isRunning();
+      if (channelIsRunning) {
+        yield 'Stop Background Channel';
+        await BackgroundChannel.stop();
+        await _delay(1000);
+      }
+
+      yield 'Lock Database';
+      DB._isClosed = true;
+
+      yield 'Close Database';
+      await DB.closeDatabase();
+      await _delay(300);
+
+      yield 'Copy Database to $target';
+      await file.copy(await DB.getDBFullPath());
+      await _delay(300);
+
+      await Future.delayed(const Duration(milliseconds: 200));
+      yield 'Open Database';
+      await DB.openDatabase();
+
+      yield 'Unlock Database';
+      DB._isClosed = false;
+
+      await _delay(300);
+      yield 'Exit';
+      exit(0);
+    } catch (e, stk) {
+      yield 'Import Error: $e';
+      logger.error('import db.sqlite: $e', stk);
+    }
+    _isClosed = false;
+  }
+
   static Future<T> execute<T>(
       Future<T> Function(flite.Transaction txn) action) async {
-    return await _database!.transaction<T>(action);
-    /* return await Future.microtask(() async {
-      int trys = 0;
-      _transactionsTotal++;
-      do {
-        _runningTransactions++;
-        try {
-          return await _database!.transaction<T>(action);
-        } on flite.DatabaseException catch (e) {
-          if (e.toString().contains('transaction')) {
-            await Future.delayed(
-                Duration(milliseconds: 10 * _runningTransactions));
-            trys++;
-          }
-        }
-        _runningTransactions--;
-      } while (trys < 10);
-
-      throw ('DB::execute unknown error');
-    }); */
+    if (_isClosed) {
+      throw 'Database is closed for import-export operations';
+    }
+    return await (_database ??= await openDatabase()).transaction<T>(action);
   }
 
   static int parseInt(Object? value, {int fallback = 0}) {
