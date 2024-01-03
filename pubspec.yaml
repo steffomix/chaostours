@@ -30,9 +30,6 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # https://pub.dev/packages/sprintf
-  sprintf: ^7.0.0
-
   # https://pub.dev/packages/flutter_background_service
   flutter_background_service: ^5.0.5
 
@@ -101,8 +98,14 @@ dependencies:
   # https://pub.dev/packages/flex_color_scheme
   flex_color_scheme: ^7.3.1
 
+  # https://pub.dev/packages/sprintf
+  sprintf: ^7.0.0
+
+  # https://pub.dev/packages/styled_text
+  styled_text: ^8.1.0
+
   # https://pub.dev/packages/google_fonts
-  # google_fonts: ^6.1.0
+  google_fonts: ^6.1.0
 
   # https://pub.dev/packages/visibility_detector
   visibility_detector: ^0.4.0+2
@@ -136,6 +139,7 @@ flutter:
   assets:
     # https://letsencrypt.org/certs/lets-encrypt-r3.pem
     - assets/lets-encrypt-r3.pem
+    - google_fonts/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware

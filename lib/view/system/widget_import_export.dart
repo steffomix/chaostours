@@ -14,8 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/conf/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:file_manager/file_manager.dart';
+import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:file_picker/file_picker.dart';
@@ -35,6 +37,7 @@ import 'package:chaostours/logger.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:path/path.dart';
 import 'package:chaostours/database/database.dart';
+import 'package:chaostours/util.dart' as util;
 
 class WidgetImportExport extends StatefulWidget {
   const WidgetImportExport({super.key});
@@ -63,349 +66,260 @@ class _WidgetImportExport extends State<WidgetImportExport> {
     super.initState();
   }
 
-  ValueNotifier<bool> isBaseDir = ValueNotifier(true);
-  ValueNotifier<bool> hasImportFiles = ValueNotifier(false);
-  String trackPointFilename = 'trackpoint';
-  String userFilename = 'user';
-  String taskFilename = 'task';
-  String aliasFilename = 'alias';
-
   FileManagerController fileManagerController = FileManagerController();
   @override
   Widget build(BuildContext context) {
-    FloatingActionButton? floatingActionButton;
-    Permission.manageExternalStorage.isGranted.then((bool granted) {
-      if (!granted) {
-        floatingActionButton = FloatingActionButton.extended(
-            onPressed: () async {
-              AppWidgets.navigate(context, AppRoutes.permissions);
-            },
-            label: const Text("Check File Permission"));
-        setState(() {});
-      }
-    });
+    return Scaffold(
+        appBar: AppBar(
+            leading: IconButton(onPressed: () {}, icon: Icon(Icons.stop)),
+            title: const Text('Export / Import Database')),
 
-    return ControlBackButton(
-      controller: fileManagerController,
-      child: Scaffold(
-          bottomNavigationBar: BottomNavigationBar(
-              currentIndex: 1,
-              type: BottomNavigationBarType.fixed,
-              items: const [
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.file_download),
-                  label: 'Export',
-                ),
-                BottomNavigationBarItem(
-                    icon: Icon(Icons.cancel), label: 'Cancel'),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.file_upload),
-                  label: 'Import',
-                ),
-              ],
-              onTap: (int id) async {
-                /// export here
-                var dir = fileManagerController.getCurrentDirectory;
+        ///
+        ///
+        /// body
+        ///
+        ///
+        body: ListView(
+          padding: const EdgeInsets.all(10),
+          children: [
+            ///
+            /// export
+            ///
+            centerMultiline([
+              '',
+              'Warning!',
+              'Export will stop Database and Background Tracking!',
+              'In consequence you will need to restart the App to make it work again.',
+              ''
+            ], style: danger, color: danger.backgroundColor),
+            Container(
+                padding: const EdgeInsets.all(5),
+                color: AppColors.black.color,
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  ElevatedButton(
+                    child: const Text('EXPORT SQLite Database'),
+                    onPressed: () async {
+                      _export(context);
+                    },
+                  )
+                ])),
+            Container(
+                padding: const EdgeInsets.all(10), child: AppWidgets.divider()),
 
-                /// export database
-                if (id == 0) {
-                  final notifier =
-                      ValueNotifier<Widget>(const SizedBox.shrink());
-                  final List<Widget> log = [];
-                  AppWidgets.dialog(
-                      context: context,
-                      isDismissible: false,
-                      title: const Text('Export Database'),
-                      contents: [
-                        ValueListenableBuilder(
-                          valueListenable: notifier,
-                          builder: (context, widget, child) {
-                            log.add(widget);
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: log,
-                            );
-                          },
-                        )
-                      ],
-                      buttons: []);
-                  await for (var msg in DB.exportDatabase(context, dir)) {
-                    notifier.value = msg;
-                  }
-                }
+            ///
+            /// import
+            ///
+            centerMultiline([
+              '',
+              '* * * DANGER ZONE * * *',
+              'IMPORT WILL ***DELETE*** ALL DATA!',
+              '!!! F O R E V E R !!!',
+              'There is NO WAY to undo this action',
+              'Import will stop Database and Background Tracking!',
+              'In consequence you will need to restart the App to make it work again.',
+              ''
+            ], style: danger, color: danger.backgroundColor),
+            Container(
+                padding: const EdgeInsets.all(5),
+                color: AppColors.black.color,
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  ElevatedButton(
+                    child: const Text('IMPORT SQLite Database'),
+                    onPressed: () async {
+                      _export(context);
+                    },
+                  )
+                ])),
+            Container(
+                padding: const EdgeInsets.all(10), child: AppWidgets.divider()),
 
-                /// import database
-                if (id == 2) {
-                  var result = await FilePicker.platform.getDirectoryPath();
-
-                  /* await for (Widget msg in DB.exportDatabase(context, dir)) {
-                    print('### $msg');
-                  } */
-                  Fluttertoast.showToast(msg: 'Database exported');
-                }
-
-                /// return
-                if (id == 1) {
-                  if (mounted) {
-                    AppWidgets.navigate(context, AppRoutes.liveTracking);
-                  }
-                }
-              }),
-          appBar: appBar(context),
-          body: FileManager(
-            controller: fileManagerController,
-            builder: (context, snapshot) {
-              fileManagerController
-                  .isRootDirectory()
-                  .then((value) => isBaseDir.value = value);
-              Future.microtask(() async {
-                try {
-                  var isRoot = await fileManagerController.isRootDirectory();
-
-                  var path = fileManagerController.getCurrentPath;
-                  bool tp =
-                      File(join(path, '$trackPointFilename.tsv')).existsSync();
-                  bool usr = File(join(path, '$userFilename.tsv')).existsSync();
-                  bool tsk = File(join(path, '$taskFilename.tsv')).existsSync();
-                  bool als =
-                      File(join(path, '$aliasFilename.tsv')).existsSync();
-                  if (mounted) {
-                    hasImportFiles.value = (tp || usr || tsk || als);
-                    isBaseDir.value = isRoot;
-                  }
-                } catch (e, stk) {
-                  logger.error(e, stk);
-                }
-              });
-
-              final List<FileSystemEntity> entities = snapshot;
-              return ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 0),
-                itemCount: entities.length,
-                itemBuilder: (context, index) {
-                  FileSystemEntity entity = entities[index];
-                  return Card(
-                    child: ListTile(
-                      leading: FileManager.isFile(entity)
-                          ? const Icon(Icons.feed_outlined)
-                          : const Icon(Icons.folder),
-                      title: Text(FileManager.basename(
-                        entity,
-                        showFileExtension: true,
-                      )),
-                      subtitle: subtitle(entity),
-                      onTap: () async {
-                        if (FileManager.isDirectory(entity)) {
-                          fileManagerController.openDirectory(entity);
-                        }
-                      },
-                    ),
-                  );
-                },
-              );
-            },
-          ),
-          floatingActionButton: floatingActionButton),
-    );
+            ///
+            /// reset
+            ///
+            centerMultiline([
+              '',
+              '* * * DANGER ZONE * * *',
+              'RESET WILL ***DELETE*** ALL DATA!',
+              '!!! F O R E V E R !!!',
+              'There is NO WAY to undo this action',
+              'Reset will stop Database and Background Tracking!',
+              'In consequence you will need to restart the App to make it work again.',
+              ''
+            ], style: danger, color: danger.backgroundColor),
+            Container(
+                padding: const EdgeInsets.all(5),
+                color: AppColors.black.color,
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  ElevatedButton(
+                    child: const Text('DELETE AND RESET SQLite Database'),
+                    onPressed: () async {
+                      _reset(context);
+                    },
+                  )
+                ])),
+            Container(
+                padding: const EdgeInsets.all(10), child: AppWidgets.divider()),
+          ],
+        ));
   }
 
-  AppBar appBar(BuildContext context) {
-    return AppBar(
-      actions: [
-        IconButton(
-          onPressed: () {
-            AppWidgets.navigate(context, AppRoutes.liveTracking);
+  Center center(String text, {TextStyle? style}) {
+    return Center(child: Text(text, style: style));
+  }
+
+  Widget centerMultiline(List<String> lines, {Color? color, TextStyle? style}) {
+    return Container(
+        color: color,
+        child: Column(
+            children: lines.map((line) => Text(line, style: style)).toList()));
+  }
+
+  final danger = TextStyle(
+      color: AppColors.danger.color,
+      backgroundColor: Colors.black,
+      fontWeight: FontWeight.bold);
+  final warn = TextStyle(
+      color: AppColors.warning.color,
+      backgroundColor: Colors.black,
+      fontWeight: FontWeight.bold);
+
+  Future<void> dialogActionLog(BuildContext context, String title,
+      Stream<Widget> Function() action) async {
+    final notifier = ValueNotifier<Widget>(const SizedBox.shrink());
+    final List<Widget> log = [];
+    await AppWidgets.dialog(
+        context: context,
+        isDismissible: false,
+        title: Text(title),
+        contents: [
+          ValueListenableBuilder(
+            valueListenable: notifier,
+            builder: (context, widget, child) {
+              log.add(widget);
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: log,
+              );
+            },
+          )
+        ],
+        buttons: []);
+    await for (var msg in action.call()) {
+      notifier.value = msg;
+    }
+  }
+
+  final _formKey = GlobalKey<FormState>();
+  Future<void> dialogShutdown(BuildContext context) async {
+    AppWidgets.dialog(
+        context: context,
+        isDismissible: false,
+        buttons: [],
+        contents: [const Text('Shutting down Chaostours...')]);
+    Future.delayed(const Duration(milliseconds: 1500), () {
+      SystemNavigator.pop();
+    });
+  }
+
+  final filenameNotifier = ValueNotifier<String>('');
+  final textController = TextEditingController();
+  final maxChars = 80;
+
+  final submitNotifier = ValueNotifier<bool>(true);
+
+  Future<void> _export(BuildContext context) async {
+    String? path = await FilePicker.platform.getDirectoryPath();
+
+    if (!mounted || path == null || path == '/') {
+      return;
+    }
+
+    const prefix = 'chaostours_${DB.dbFile}';
+    final suffix = '${util.formatDateFilename(DateTime.now())}.dart';
+
+    final regex = RegExp(r'[A-Za-z0-9_]*');
+    String? validateFilename(String? value) {
+      if (value == null || value.isEmpty) {
+        return null;
+      }
+      if (value.length > 100) {
+        return 'Filename is too long';
+      }
+      String match = regex.allMatches(value).first.group(0) ?? '';
+      if (match != value) {
+        return 'Filename contains restricted chars';
+      }
+      return null;
+    }
+
+    String generateFullPath(String value) {
+      bool isValid = validateFilename(value) == null;
+      value = isValid ? '_${value.toLowerCase()}_' : '_';
+      String filename = '$prefix${value.isEmpty ? '_' : value}$suffix';
+      return join(path, filename);
+    }
+
+    await AppWidgets.dialog(
+      context: context,
+      title: const Text('Export Database'),
+      contents: [
+        const Text('Please enter filename with [A-Za-z0-9_]'),
+        TextFormField(
+          autovalidateMode: AutovalidateMode.always,
+          //key: _formKey,
+          autofocus: true,
+          controller: textController,
+          onChanged: (value) {
+            filenameNotifier.value = value;
           },
-          icon: const Icon(Icons.navigation),
+          validator: validateFilename,
         ),
-        IconButton(
-          onPressed: () {
-            AppWidgets.navigate(context, AppRoutes.importExport);
+        ValueListenableBuilder(
+          valueListenable: filenameNotifier,
+          builder: (context, value, child) {
+            String fullPath = generateFullPath(value);
+
+            File file = File(fullPath);
+            bool fileExists = file.existsSync();
+
+            TextStyle? style = fileExists
+                ? null
+                : const TextStyle(
+                    color: Colors.red, backgroundColor: Colors.black);
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Align(
+                  alignment: Alignment.topRight,
+                  child: Text(
+                      (maxChars - filenameNotifier.value.length).toString()),
+                ),
+                Text('Full path will be:\n$fullPath'),
+                Padding(
+                    padding: EdgeInsets.only(top: 10),
+                    child: Center(
+                        child: ElevatedButton(
+                      child: Text('Export'),
+                      onPressed: validateFilename(value) == null
+                          ? () {
+                              DB.exportDatabase(context, fullPath);
+                            }
+                          : null,
+                    )))
+              ],
+            );
           },
-          icon: const Icon(Icons.home),
-        ),
-        IconButton(
-          onPressed: () => createFolder(context),
-          icon: const Icon(Icons.create_new_folder_outlined),
-        ),
-        IconButton(
-          onPressed: () => sort(context),
-          icon: const Icon(Icons.sort_rounded),
-        ),
-        IconButton(
-          onPressed: () => selectStorage(context),
-          icon: const Icon(Icons.sd_storage_rounded),
         )
       ],
-      title: ValueListenableBuilder<String>(
-        valueListenable: fileManagerController.titleNotifier,
-        builder: (context, title, _) => Text(title),
-      ),
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back),
-        onPressed: () async {
-          fileManagerController.isRootDirectory().then((bool isRoot) async {
-            if (isRoot) {
-              AppWidgets.navigate(context, AppRoutes.liveTracking);
-            } else {
-              await fileManagerController.goToParentDirectory();
-            }
-          });
-        },
-      ),
+      buttons: [],
     );
   }
 
-  Widget subtitle(FileSystemEntity entity) {
-    return FutureBuilder<FileStat>(
-      future: entity.stat(),
-      builder: (context, snapshot) {
-        if (snapshot.hasData) {
-          if (entity is File) {
-            int size = snapshot.data!.size;
-
-            return Text(
-              FileManager.formatBytes(size),
-            );
-          }
-          return Text(
-            "${snapshot.data!.modified}".substring(0, 10),
-          );
-        } else {
-          return const Text("");
-        }
-      },
-    );
+  Future<void> _import(BuildContext context) async {
+    String? path = await FilePicker.platform.getDirectoryPath();
   }
 
-  Future<List<Directory>> dbPath() async {
-    return Future.delayed(
-        const Duration(milliseconds: 10),
-        () async => <Directory>[
-              //Directory('/data/user/0/com.stefanbrinkmann.chaosToursUnlimited'),
-              ...await FileManager.getStorageList()
-            ]);
-  }
-
-  Future<void> selectStorage(BuildContext context) async {
-    return showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        child: FutureBuilder<List<Directory>>(
-          future: dbPath(), //FileManager.getStorageList(),
-          builder: (context, snapshot) {
-            if (snapshot.hasData) {
-              final List<FileSystemEntity> storageList = snapshot.data!;
-              return Padding(
-                padding: const EdgeInsets.all(10.0),
-                child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: storageList
-                        .map((e) => ListTile(
-                              title: Text(
-                                FileManager.basename(e),
-                              ),
-                              onTap: () {
-                                fileManagerController.openDirectory(Directory(
-                                    '/data/user/0/com.stefanbrinkmann.chaosToursUnlimited'));
-                                Navigator.pop(context);
-                              },
-                            ))
-                        .toList()),
-              );
-            }
-
-            return Container(
-                height: 200,
-                padding: const EdgeInsets.all(10.0),
-                child: AppWidgets.loading(const Text('Waiting for Data')));
-          },
-        ),
-      ),
-    );
-  }
-
-  sort(BuildContext context) async {
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        child: Container(
-          padding: const EdgeInsets.all(10),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                  title: const Text("Name"),
-                  onTap: () {
-                    fileManagerController.sortBy(SortBy.name);
-                    Navigator.pop(context);
-                  }),
-              ListTile(
-                  title: const Text("Size"),
-                  onTap: () {
-                    fileManagerController.sortBy(SortBy.size);
-                    Navigator.pop(context);
-                  }),
-              ListTile(
-                  title: const Text("Date"),
-                  onTap: () {
-                    fileManagerController.sortBy(SortBy.date);
-                    Navigator.pop(context);
-                  }),
-              ListTile(
-                  title: const Text("type"),
-                  onTap: () {
-                    fileManagerController.sortBy(SortBy.type);
-                    Navigator.pop(context);
-                  }),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  createFolder(BuildContext context) async {
-    showDialog(
-      context: context,
-      builder: (context2) {
-        TextEditingController folderName = TextEditingController();
-        return Dialog(
-          child: Container(
-            padding: const EdgeInsets.all(10),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  title: TextField(
-                    controller: folderName,
-                  ),
-                ),
-                ElevatedButton(
-                  onPressed: () async {
-                    try {
-                      // Create Folder
-                      await FileManager.createFolder(
-                          fileManagerController.getCurrentPath,
-                          folderName.text);
-                      // Open Created Folder
-                      fileManagerController.setCurrentPath = join(
-                          fileManagerController.getCurrentPath,
-                          folderName.text);
-                    } catch (e) {
-                      // ignore
-                    }
-                    if (mounted) {
-                      Navigator.pop(context2);
-                    }
-                  },
-                  child: const Text('Create Folder'),
-                )
-              ],
-            ),
-          ),
-        );
-      },
-    );
+  Future<void> _reset(BuildContext context) async {
+    String? path = await FilePicker.platform.getDirectoryPath();
   }
 }

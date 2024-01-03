@@ -294,7 +294,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
                           size: 30,
                           color: modified.value == true
                               ? AppColors.green.color
-                              : AppColors.white54.color);
+                              : AppColors.iconDisabled.color);
                     })),
                 label: 'Speichern'),
             // 1 nearest

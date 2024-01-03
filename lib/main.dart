@@ -16,10 +16,10 @@ limitations under the License.
 
 import 'package:flutter/material.dart';
 import 'package:chaostours/view/app_widgets.dart';
-import 'package:chaostours/runtime_data.dart';
+//import 'package:chaostours/runtime_data.dart';
 
 void main() async {
-  RuntimeData.widgetsFlutterBinding = WidgetsFlutterBinding.ensureInitialized();
+  //RuntimeData.widgetsFlutterBinding = WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
 }
 

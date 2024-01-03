@@ -23,19 +23,16 @@ enum AppColors {
   green(Color(0xFF4b830d)),
 
   /// icons
-  black(Color.fromARGB(255, 51, 51, 51)),
-
-  ///Background
-  white(Color(0xFFDDDDDD)),
+  black(Colors.black87),
 
   /// warning Background
-  warningBackground(Colors.amber),
-  warningForeground(Colors.black87),
+  danger(Colors.red),
+  warning(Colors.amber),
 
   dialogBarrirer(Color.fromARGB(164, 0, 0, 0)),
 
   /// transparent background
-  white54(Colors.white54),
+  iconDisabled(Colors.white54),
 
   /// alias colors
   aliasRestricted(Colors.red),

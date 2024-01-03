@@ -113,11 +113,10 @@ class DB {
       Future.delayed(Duration(milliseconds: ms));
 
   static Stream<Widget> exportDatabase(
-      BuildContext context, Directory dir) async* {
+      BuildContext context, String target) async* {
     try {
       String dbPath = await DB.getDBFullPath();
       File dbFile = File(dbPath);
-      String target = join(dir.path, DB.dbFile);
 
       if (await File(target).exists()) {
         yield Text('File already exist: $target');

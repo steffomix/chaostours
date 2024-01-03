@@ -52,6 +52,16 @@ String formatDate(DateTime t) {
   return '$date  ${twoDigits(t.hour)}:${twoDigits(t.minute)}::${twoDigits(t.second)}';
 }
 
+String formatDateFilename(DateTime t) {
+  String date;
+  if (StaticCache.dateFormat == DateFormat.yyyymmdd) {
+    date = '${t.year}_${twoDigits(t.month)}_${twoDigits(t.day)}';
+  } else {
+    date = '${t.day}_${twoDigits(t.month)}_${twoDigits(t.year)}';
+  }
+  return '${date}__${twoDigits(t.hour)}_${twoDigits(t.minute)}_${twoDigits(t.second)}';
+}
+
 /// credits: https://pub.dev/packages/intersperse
 Iterable<T> intersperse<T>(T element, Iterable<T> iterable) sync* {
   final iterator = iterable.iterator;

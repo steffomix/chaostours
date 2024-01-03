@@ -27,6 +27,7 @@ import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/calendar.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/conf/app_routes.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:sprintf/sprintf.dart';
 
 class Translate {
@@ -52,6 +53,7 @@ class AppWidgets {
   static final Logger logger = Logger.logger<AppWidgets>();
 
   static Widget materialApp(BuildContext context) {
+    GoogleFonts.config.allowRuntimeFetching = false;
     return MaterialApp(
       key: RuntimeData.globalKey,
       debugShowCheckedModeBanner: false,
@@ -89,7 +91,7 @@ class AppWidgets {
         useMaterial3: true,
         swapLegacyOnMaterial3: true,
         // To use the Playground font, add GoogleFonts package and uncomment
-        // fontFamily: GoogleFonts.notoSans().fontFamily,
+        fontFamily: GoogleFonts.openSans().fontFamily,
       ),
       darkTheme: FlexThemeData.dark(
         scheme: FlexScheme.mango,
@@ -116,7 +118,7 @@ class AppWidgets {
         useMaterial3: true,
         swapLegacyOnMaterial3: true,
         // To use the Playground font, add GoogleFonts package and uncomment
-        // fontFamily: GoogleFonts.notoSans().fontFamily,
+        fontFamily: GoogleFonts.openSans().fontFamily,
       ),
 // If you do not have a themeMode switch, uncomment this line
 // to let the device system mode control the theme mode:

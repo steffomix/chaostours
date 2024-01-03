@@ -148,8 +148,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         ? const SizedBox.shrink()
         : Text('Waiting for first GPS...',
             style: TextStyle(
-                backgroundColor: AppColors.warningBackground.color,
-                color: AppColors.warningForeground.color));
+                backgroundColor: AppColors.warning.color,
+                color: AppColors.black.color));
   }
 
   Widget statusTrigger() {
