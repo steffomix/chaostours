@@ -16,6 +16,7 @@ limitations under the License.
 
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 import 'package:chaostours/conf/app_user_settings.dart';
 import 'package:chaostours/database/cache.dart';
 //
@@ -86,9 +87,11 @@ Iterable<T> intersperseOuter<T>(T element, Iterable<T> iterable) sync* {
   }
 }
 
-String cutString(String text, int maxLength) {
-  if (text.length <= maxLength) {
-    return text;
-  }
-  return '${text.substring(1, maxLength)}...';
-}
+String cutString(String text, int maxLength) =>
+    text.length <= maxLength ? text : '${text.substring(1, maxLength)}...';
+
+const _chars = 'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890';
+Random _rnd = Random();
+
+String getRandomString(int length) => String.fromCharCodes(Iterable.generate(
+    length, (_) => _chars.codeUnitAt(_rnd.nextInt(_chars.length))));

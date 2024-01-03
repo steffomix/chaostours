@@ -477,7 +477,17 @@ class _WelcomeState extends State<Welcome> {
       //
       await addPreloadMessage(const Text('Open Database...'));
       // open database
-      await DB.openDatabase(create: true);
+      try {
+        throw 'test';
+        await DB.openDatabase(create: true);
+      } catch (e) {
+        await addPreloadMessage(Text('Error $e'));
+        await Future.delayed(const Duration(seconds: 1), () {
+          AppWidgets.navigate(context, AppRoutes.importExport, e);
+        });
+
+        return false;
+      }
       await addPreloadMessage(const Text('Database opened'));
 
       var count = await ModelAlias.count();

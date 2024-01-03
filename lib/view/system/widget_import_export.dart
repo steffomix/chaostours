@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 import 'package:chaostours/conf/app_colors.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:file_manager/file_manager.dart';
 import 'package:flutter/services.dart';
@@ -22,6 +23,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
+import 'dart:math' as math;
 
 ///
 import 'package:chaostours/conf/app_routes.dart';
@@ -56,22 +58,38 @@ class _WidgetImportExport extends State<WidgetImportExport> {
   // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetImportExport>();
 
+  bool counterIsRunning = true;
+  final counter = ValueNotifier<int>(0);
   @override
   void dispose() {
+    counterIsRunning = false;
     super.dispose();
   }
 
   @override
   void initState() {
+    Future.microtask(
+      () async {
+        while (counterIsRunning) {
+          if (counter.value > 0) {
+            counter.value--;
+          }
+          await Future.delayed(const Duration(seconds: 1));
+        }
+      },
+    );
     super.initState();
   }
 
   FileManagerController fileManagerController = FileManagerController();
   @override
   Widget build(BuildContext context) {
+    String? databaseOpenError =
+        ModalRoute.of(context)?.settings.arguments as String?;
+
     return Scaffold(
         appBar: AppBar(
-            leading: IconButton(onPressed: () {}, icon: Icon(Icons.stop)),
+            leading: IconButton(onPressed: () {}, icon: const Icon(Icons.stop)),
             title: const Text('Export / Import Database')),
 
         ///
@@ -82,6 +100,22 @@ class _WidgetImportExport extends State<WidgetImportExport> {
         body: ListView(
           padding: const EdgeInsets.all(10),
           children: [
+            ...(databaseOpenError == null
+                ? []
+                : [
+                    ListTile(
+                        title: Text(
+                          'Open Database throwed Error:\n$databaseOpenError',
+                        ),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.copy),
+                          onPressed: () {
+                            Clipboard.setData(
+                                ClipboardData(text: databaseOpenError));
+                          },
+                        ))
+                  ]),
+
             ///
             /// export
             ///
@@ -126,7 +160,7 @@ class _WidgetImportExport extends State<WidgetImportExport> {
                   ElevatedButton(
                     child: const Text('IMPORT SQLite Database'),
                     onPressed: () async {
-                      _export(context);
+                      _import(context);
                     },
                   )
                 ])),
@@ -175,16 +209,16 @@ class _WidgetImportExport extends State<WidgetImportExport> {
   }
 
   final danger = TextStyle(
-      color: AppColors.danger.color,
-      backgroundColor: Colors.black,
+      color: AppColors.black.color,
+      backgroundColor: AppColors.danger.color,
       fontWeight: FontWeight.bold);
   final warn = TextStyle(
-      color: AppColors.warning.color,
-      backgroundColor: Colors.black,
+      color: AppColors.black.color,
+      backgroundColor: AppColors.warning.color,
       fontWeight: FontWeight.bold);
 
-  Future<void> dialogActionLog(BuildContext context, String title,
-      Stream<Widget> Function() action) async {
+  Future<void> dialogActionLog(
+      BuildContext context, String title, Stream<Widget> stream) async {
     final notifier = ValueNotifier<Widget>(const SizedBox.shrink());
     final List<Widget> log = [];
     await AppWidgets.dialog(
@@ -204,12 +238,11 @@ class _WidgetImportExport extends State<WidgetImportExport> {
           )
         ],
         buttons: []);
-    await for (var msg in action.call()) {
+    await for (var msg in stream) {
       notifier.value = msg;
     }
   }
 
-  final _formKey = GlobalKey<FormState>();
   Future<void> dialogShutdown(BuildContext context) async {
     AppWidgets.dialog(
         context: context,
@@ -221,11 +254,16 @@ class _WidgetImportExport extends State<WidgetImportExport> {
     });
   }
 
-  final filenameNotifier = ValueNotifier<String>('');
-  final textController = TextEditingController();
+  final textInputNotifier = ValueNotifier<String>('');
+  final textFilenameController = TextEditingController();
+  final textImportCodeController = TextEditingController();
+  final textResetCodeController = TextEditingController();
   final maxChars = 80;
 
   final submitNotifier = ValueNotifier<bool>(true);
+
+  final prefix = 'chaostours_database_v${DB.dbVersion}';
+  String get suffix => '${util.formatDateFilename(DateTime.now())}.sqlite';
 
   Future<void> _export(BuildContext context) async {
     String? path = await FilePicker.platform.getDirectoryPath();
@@ -233,16 +271,15 @@ class _WidgetImportExport extends State<WidgetImportExport> {
     if (!mounted || path == null || path == '/') {
       return;
     }
-
-    const prefix = 'chaostours_${DB.dbFile}';
-    final suffix = '${util.formatDateFilename(DateTime.now())}.dart';
+    textFilenameController.text = '';
+    textInputNotifier.value = '';
 
     final regex = RegExp(r'[A-Za-z0-9_]*');
     String? validateFilename(String? value) {
       if (value == null || value.isEmpty) {
         return null;
       }
-      if (value.length > 100) {
+      if (value.length > maxChars) {
         return 'Filename is too long';
       }
       String match = regex.allMatches(value).first.group(0) ?? '';
@@ -268,43 +305,41 @@ class _WidgetImportExport extends State<WidgetImportExport> {
           autovalidateMode: AutovalidateMode.always,
           //key: _formKey,
           autofocus: true,
-          controller: textController,
+          controller: textFilenameController,
           onChanged: (value) {
-            filenameNotifier.value = value;
+            textInputNotifier.value = value;
           },
           validator: validateFilename,
         ),
         ValueListenableBuilder(
-          valueListenable: filenameNotifier,
+          valueListenable: textInputNotifier,
           builder: (context, value, child) {
             String fullPath = generateFullPath(value);
 
             File file = File(fullPath);
             bool fileExists = file.existsSync();
 
-            TextStyle? style = fileExists
-                ? null
-                : const TextStyle(
-                    color: Colors.red, backgroundColor: Colors.black);
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Align(
                   alignment: Alignment.topRight,
                   child: Text(
-                      (maxChars - filenameNotifier.value.length).toString()),
+                      (maxChars - textInputNotifier.value.length).toString()),
                 ),
                 Text('Full path will be:\n$fullPath'),
                 Padding(
-                    padding: EdgeInsets.only(top: 10),
+                    padding: const EdgeInsets.only(top: 10),
                     child: Center(
                         child: ElevatedButton(
-                      child: Text('Export'),
-                      onPressed: validateFilename(value) == null
+                      onPressed: validateFilename(value) == null && !fileExists
                           ? () {
-                              DB.exportDatabase(context, fullPath);
+                              dialogActionLog(context, 'Export Database',
+                                  DB.exportDatabase(context, fullPath));
                             }
                           : null,
+                      child:
+                          Text(fileExists ? 'File already exists' : 'Export'),
                     )))
               ],
             );
@@ -316,7 +351,92 @@ class _WidgetImportExport extends State<WidgetImportExport> {
   }
 
   Future<void> _import(BuildContext context) async {
-    String? path = await FilePicker.platform.getDirectoryPath();
+    FilePickerResult? result = await FilePicker.platform.pickFiles();
+    if (!mounted || result == null || result.count == 0) {
+      return;
+    }
+    var path = join(result.files.first.path!, result.files.first.name);
+
+    textFilenameController.text = '';
+    textInputNotifier.value = '';
+    int randomLength = 10;
+    String code = util.getRandomString(randomLength);
+
+    String? validateCode(String? value) {
+      if (value == null || value.isEmpty) {
+        return null;
+      }
+      return value == code ? null : 'Incorrect Code';
+    }
+
+    AppWidgets.dialog(
+        context: context,
+        title: const Text('Import Database'),
+        contents: [
+          ValueListenableBuilder(
+            valueListenable: counter,
+            builder: (context, value, child) {
+              var text = Text('Please Type this code: $code');
+              if (value == 1) {
+                code = util.getRandomString(randomLength);
+              }
+              return text;
+            },
+          ),
+          TextFormField(
+            autovalidateMode: AutovalidateMode.always,
+            //key: _formKey,
+            autofocus: true,
+            controller: textImportCodeController,
+            onChanged: (value) {
+              counter.value = randomLength * 2;
+              textInputNotifier.value = value;
+            },
+            validator: validateCode,
+          ),
+        ],
+        buttons: [
+          ValueListenableBuilder(
+              valueListenable: counter,
+              builder: (context, value, child) {
+                bool isValid = true ||
+                    validateCode(textImportCodeController.text) == null &&
+                        counter.value > 0;
+                return Column(
+                  children: [
+                    Align(
+                      alignment: Alignment.topRight,
+                      child: Text(counter.value == 0
+                          ? ''
+                          : 'Edit Countdown: ${counter.value.toString()}'),
+                    ),
+                    Column(children: [
+                      isValid
+                          ? Container(
+                              color: AppColors.danger.color,
+                              padding: const EdgeInsets.all(3),
+                              child: Text(
+                                'Last Warning! You WILL loose all data forever!',
+                                style: danger,
+                              ))
+                          : const SizedBox.shrink(),
+                      Center(
+                          child: ElevatedButton(
+                        onPressed: isValid
+                            ? () {
+                                /* dialogActionLog(
+                                          context,
+                                          'Import Database',
+                                          DB.importDatabase(path)); */
+                              }
+                            : null,
+                        child: const Text('Import Database'),
+                      ))
+                    ])
+                  ],
+                );
+              })
+        ]);
   }
 
   Future<void> _reset(BuildContext context) async {

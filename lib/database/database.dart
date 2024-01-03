@@ -18,7 +18,6 @@ import 'dart:io' as io;
 import 'dart:io';
 import 'package:chaostours/channel/background_channel.dart';
 import 'package:chaostours/conf/app_routes.dart';
-import 'package:chaostours/main.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -167,44 +166,44 @@ class DB {
     _isClosed = false;
   }
 
-  static Stream<String> importDatabase(Directory dir) async* {
+  static Stream<Widget> importDatabase(String path) async* {
     try {
       String target = await getDBFullPath();
-      File file = File(join(dir.path, DB.dbFile));
+      File file = File(path);
       if (!file.existsSync()) {
-        yield 'File not found: ${file.path}';
-        yield 'Import canceled.';
+        yield Text('File not found: $path');
+        yield const Text('Import canceled.');
       }
       bool channelIsRunning = await BackgroundChannel.isRunning();
       if (channelIsRunning) {
-        yield 'Stop Background Channel';
+        yield const Text('Stop Background Channel');
         await BackgroundChannel.stop();
         await _delay(1000);
       }
 
-      yield 'Lock Database';
+      yield const Text('Lock Database');
       DB._isClosed = true;
 
-      yield 'Close Database';
+      yield const Text('Close Database');
       await DB.closeDatabase();
       await _delay(300);
 
-      yield 'Copy Database to $target';
+      yield Text('Copy Database to $target');
       await file.copy(await DB.getDBFullPath());
       await _delay(300);
 
       await Future.delayed(const Duration(milliseconds: 200));
-      yield 'Open Database';
+      yield const Text('Open Database');
       await DB.openDatabase();
 
-      yield 'Unlock Database';
+      yield const Text('Unlock Database');
       DB._isClosed = false;
 
       await _delay(300);
-      yield 'Exit';
+      yield const Text('Exit');
       exit(0);
     } catch (e, stk) {
-      yield 'Import Error: $e';
+      yield Text('Import Error: $e');
       logger.error('import db.sqlite: $e', stk);
     }
     _isClosed = false;

@@ -131,7 +131,7 @@ class AppWidgets {
     Navigator.of(context).pushNamedAndRemoveUntil(
         AppRoutes.liveTracking.route, (Route<dynamic> route) => false);
     if (route != AppRoutes.liveTracking) {
-      Navigator.pushNamed(context, route.route);
+      Navigator.pushNamed(context, route.route, arguments: arguments);
     }
   }
 
