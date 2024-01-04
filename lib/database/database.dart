@@ -17,12 +17,11 @@ import 'dart:async';
 import 'dart:io' as io;
 import 'dart:io';
 import 'package:chaostours/channel/background_channel.dart';
-import 'package:chaostours/conf/app_routes.dart';
-import 'package:chaostours/view/app_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart' as flite;
+import 'package:chaostours/util.dart' show returnDelayed;
 
 ///
 import 'package:chaostours/logger.dart';
@@ -108,105 +107,100 @@ class DB {
     await _database?.close();
   }
 
-  static Future<void> _delay(int ms) =>
-      Future.delayed(Duration(milliseconds: ms));
-
-  static Stream<Widget> exportDatabase(
-      BuildContext context, String target) async* {
+  static Stream<Widget> exportDatabase(String target,
+      {Function()? onSuccess, Function()? onError}) async* {
     try {
       String dbPath = await DB.getDBFullPath();
       File dbFile = File(dbPath);
 
       if (await File(target).exists()) {
-        yield Text('File already exist: $target');
-        yield TextButton(
-          onPressed: () {
-            Navigator.pop(context);
-          },
-          child: const Text('Export canceld'),
-        );
+        yield await returnDelayed(Text('File already exist: $target'));
+        yield await returnDelayed(const Text('Cancel Export'));
+        onError?.call();
         return;
       }
+
       bool channelIsRunning = await BackgroundChannel.isRunning();
-      yield const Text('Lock Database');
-      _isClosed = true;
       if (channelIsRunning) {
-        yield const Text('Stop Background Channel');
+        yield await returnDelayed(const Text('Stop Background Channel'));
         await BackgroundChannel.stop();
-        await _delay(1000);
-        BackgroundChannel.invoke(BackgroundChannelCommand.closeDatabase);
       }
-      yield const Text('Close Database');
+
+      yield await returnDelayed(const Text('Close Database'));
       BackgroundChannel.invoke(BackgroundChannelCommand.closeDatabase);
       await DB.closeDatabase();
-      int maxDelays = 10;
-      int delayCount = 0;
-      while ((_database?.isOpen ?? false) && delayCount <= maxDelays) {
-        await _delay(300);
-        delayCount++;
-      }
 
-      yield Text('Copy Database to $target');
+      yield await returnDelayed(Text('Copy Database to $target'));
       await dbFile.copy(target);
-      await _delay(100);
-      yield TextButton(
-          onPressed: () {
-            AppWidgets.navigate(context, AppRoutes.liveTracking);
-          },
-          child: const Text('Export finished'));
+
+      yield await returnDelayed(Center(
+          child: ElevatedButton(
+              onPressed: () {
+                SystemNavigator.pop();
+              },
+              child: const Text('Export finished. Shutting down App...'))));
     } catch (e, stk) {
-      yield TextButton(
-          onPressed: () {
-            SystemNavigator.pop();
-          },
-          child: Text('Export Error: $e'));
-      _isClosed = false;
-      logger.error('export db.sqlite: $e', stk);
+      yield await returnDelayed(Text('Import Error: $e'));
+      logger.error('import db.sqlite: $e', stk);
+      onError?.call();
     }
-    _isClosed = false;
+    onSuccess?.call();
   }
 
-  static Stream<Widget> importDatabase(String path) async* {
+  static Stream<Widget> importDatabase(String path,
+      {Function()? onSuccess, Function()? onError}) async* {
     try {
       String target = await getDBFullPath();
       File file = File(path);
       if (!file.existsSync()) {
-        yield Text('File not found: $path');
-        yield const Text('Import canceled.');
+        yield await returnDelayed(Text('File not found: $path'));
+        yield await returnDelayed(const Text('Import canceled.'));
+        onError?.call();
+        return;
       }
       bool channelIsRunning = await BackgroundChannel.isRunning();
       if (channelIsRunning) {
-        yield const Text('Stop Background Channel');
+        yield await returnDelayed(const Text('Stop Background Channel'));
         await BackgroundChannel.stop();
-        await _delay(1000);
       }
 
-      yield const Text('Lock Database');
+      yield await returnDelayed(const Text('Lock Database'));
       DB._isClosed = true;
 
-      yield const Text('Close Database');
+      yield await returnDelayed(const Text('Close Database'));
       await DB.closeDatabase();
-      await _delay(300);
 
-      yield Text('Copy Database to $target');
+      yield await returnDelayed(Text('Copy Database to $target'));
       await file.copy(await DB.getDBFullPath());
-      await _delay(300);
 
-      await Future.delayed(const Duration(milliseconds: 200));
-      yield const Text('Open Database');
-      await DB.openDatabase();
-
-      yield const Text('Unlock Database');
-      DB._isClosed = false;
-
-      await _delay(300);
-      yield const Text('Exit');
-      exit(0);
+      yield await returnDelayed(Center(
+          child: ElevatedButton(
+              onPressed: () {
+                SystemNavigator.pop();
+              },
+              child: const Text('Export finished. Shutting down App...'))));
     } catch (e, stk) {
-      yield Text('Import Error: $e');
+      yield await returnDelayed(Text('Import Error: $e'));
       logger.error('import db.sqlite: $e', stk);
+      onError?.call();
     }
-    _isClosed = false;
+    onSuccess?.call();
+  }
+
+  static Stream<Widget> deleteDatabase(
+      {Function()? onSuccess, Function()? onError}) async* {
+    yield await returnDelayed(Text('Delete Database: ${getDBFullPath()}'));
+    try {
+      File file = File(await getDBFullPath());
+      file.deleteSync();
+      yield await returnDelayed(const Text('Database deleted.'));
+      yield await returnDelayed(
+          const Text('A brand new one will be created on restart.'));
+    } catch (e) {
+      yield await returnDelayed(Text('Error Reset Database: $e'));
+      onError?.call();
+    }
+    onSuccess?.call();
   }
 
   static Future<T> execute<T>(

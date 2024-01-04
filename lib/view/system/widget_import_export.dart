@@ -14,27 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'dart:io';
+
+///
 import 'package:chaostours/conf/app_colors.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:file_manager/file_manager.dart';
 import 'package:flutter/services.dart';
-import 'package:fluttertoast/fluttertoast.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:file_picker/file_picker.dart';
-import 'dart:io';
-import 'dart:math' as math;
-
-///
-import 'package:chaostours/conf/app_routes.dart';
-/*
-import 'package:chaostours/model/model.dart';
-import 'package:chaostours/model/model_alias.dart';
-import 'package:chaostours/model/model_task.dart';
-import 'package:chaostours/model/model_trackpoint.dart';
-import 'package:chaostours/model/model_user.dart';
-import 'package:chaostours/cache.dart';
-*/
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:path/path.dart';
@@ -85,7 +72,7 @@ class _WidgetImportExport extends State<WidgetImportExport> {
   @override
   Widget build(BuildContext context) {
     String? databaseOpenError =
-        ModalRoute.of(context)?.settings.arguments as String?;
+        ModalRoute.of(context)?.settings.arguments as String? ?? '';
 
     return Scaffold(
         appBar: AppBar(
@@ -100,7 +87,7 @@ class _WidgetImportExport extends State<WidgetImportExport> {
         body: ListView(
           padding: const EdgeInsets.all(10),
           children: [
-            ...(databaseOpenError == null
+            ...(databaseOpenError.isEmpty
                 ? []
                 : [
                     ListTile(
@@ -125,7 +112,7 @@ class _WidgetImportExport extends State<WidgetImportExport> {
               'Export will stop Database and Background Tracking!',
               'In consequence you will need to restart the App to make it work again.',
               ''
-            ], style: danger, color: danger.backgroundColor),
+            ], style: warn, color: warn.backgroundColor),
             Container(
                 padding: const EdgeInsets.all(5),
                 color: AppColors.black.color,
@@ -148,7 +135,7 @@ class _WidgetImportExport extends State<WidgetImportExport> {
               '* * * DANGER ZONE * * *',
               'IMPORT WILL ***DELETE*** ALL DATA!',
               '!!! F O R E V E R !!!',
-              'There is NO WAY to undo this action',
+              'There is NO WAY to undo this action.',
               'Import will stop Database and Background Tracking!',
               'In consequence you will need to restart the App to make it work again.',
               ''
@@ -158,7 +145,8 @@ class _WidgetImportExport extends State<WidgetImportExport> {
                 color: AppColors.black.color,
                 child: Column(mainAxisSize: MainAxisSize.min, children: [
                   ElevatedButton(
-                    child: const Text('IMPORT SQLite Database'),
+                    child:
+                        const Text('IMPORT SQLite Database and loose all Data'),
                     onPressed: () async {
                       _import(context);
                     },
@@ -175,7 +163,7 @@ class _WidgetImportExport extends State<WidgetImportExport> {
               '* * * DANGER ZONE * * *',
               'RESET WILL ***DELETE*** ALL DATA!',
               '!!! F O R E V E R !!!',
-              'There is NO WAY to undo this action',
+              'There is NO WAY to undo this action.',
               'Reset will stop Database and Background Tracking!',
               'In consequence you will need to restart the App to make it work again.',
               ''
@@ -185,7 +173,8 @@ class _WidgetImportExport extends State<WidgetImportExport> {
                 color: AppColors.black.color,
                 child: Column(mainAxisSize: MainAxisSize.min, children: [
                   ElevatedButton(
-                    child: const Text('DELETE AND RESET SQLite Database'),
+                    child:
+                        const Text('RESET SQLite Database and loose all Data'),
                     onPressed: () async {
                       _reset(context);
                     },
@@ -221,7 +210,7 @@ class _WidgetImportExport extends State<WidgetImportExport> {
       BuildContext context, String title, Stream<Widget> stream) async {
     final notifier = ValueNotifier<Widget>(const SizedBox.shrink());
     final List<Widget> log = [];
-    await AppWidgets.dialog(
+    AppWidgets.dialog(
         context: context,
         isDismissible: false,
         title: Text(title),
@@ -238,9 +227,11 @@ class _WidgetImportExport extends State<WidgetImportExport> {
           )
         ],
         buttons: []);
-    await for (var msg in stream) {
-      notifier.value = msg;
-    }
+    Future.delayed(const Duration(milliseconds: 300), () async {
+      await for (var msg in stream) {
+        notifier.value = msg;
+      }
+    });
   }
 
   Future<void> dialogShutdown(BuildContext context) async {
@@ -319,6 +310,8 @@ class _WidgetImportExport extends State<WidgetImportExport> {
             File file = File(fullPath);
             bool fileExists = file.existsSync();
 
+            bool isValid = validateFilename(value) == null && !fileExists;
+
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -330,17 +323,36 @@ class _WidgetImportExport extends State<WidgetImportExport> {
                 Text('Full path will be:\n$fullPath'),
                 Padding(
                     padding: const EdgeInsets.only(top: 10),
-                    child: Center(
-                        child: ElevatedButton(
-                      onPressed: validateFilename(value) == null && !fileExists
-                          ? () {
-                              dialogActionLog(context, 'Export Database',
-                                  DB.exportDatabase(context, fullPath));
-                            }
-                          : null,
-                      child:
-                          Text(fileExists ? 'File already exists' : 'Export'),
-                    )))
+                    child: Column(children: [
+                      isValid
+                          ? Container(
+                              color: AppColors.danger.color,
+                              padding: const EdgeInsets.all(3),
+                              child: Text(
+                                'Last WARNING! You WILL loose all data forever!',
+                                style: danger,
+                              ))
+                          : const SizedBox.shrink(),
+                      Center(
+                          child: ElevatedButton(
+                        onPressed:
+                            validateFilename(value) == null && !fileExists
+                                ? () {
+                                    dialogActionLog(
+                                        context,
+                                        'Export Database',
+                                        DB.exportDatabase(fullPath,
+                                            onSuccess: () =>
+                                                dialogShutdown(context),
+                                            onError: () => Future.delayed(
+                                                const Duration(seconds: 2),
+                                                () => Navigator.pop(context))));
+                                  }
+                                : null,
+                        child:
+                            Text(fileExists ? 'File already exists' : 'Export'),
+                      ))
+                    ]))
               ],
             );
           },
@@ -350,16 +362,19 @@ class _WidgetImportExport extends State<WidgetImportExport> {
     );
   }
 
+  final int randomLength = 10;
   Future<void> _import(BuildContext context) async {
     FilePickerResult? result = await FilePicker.platform.pickFiles();
     if (!mounted || result == null || result.count == 0) {
       return;
     }
-    var path = join(result.files.first.path!, result.files.first.name);
+    String path = result.files.firstOrNull?.path ?? '';
+    if (path == '/') {
+      return;
+    }
 
     textFilenameController.text = '';
     textInputNotifier.value = '';
-    int randomLength = 10;
     String code = util.getRandomString(randomLength);
 
     String? validateCode(String? value) {
@@ -399,7 +414,7 @@ class _WidgetImportExport extends State<WidgetImportExport> {
           ValueListenableBuilder(
               valueListenable: counter,
               builder: (context, value, child) {
-                bool isValid = true ||
+                bool isValid =
                     validateCode(textImportCodeController.text) == null &&
                         counter.value > 0;
                 return Column(
@@ -416,7 +431,7 @@ class _WidgetImportExport extends State<WidgetImportExport> {
                               color: AppColors.danger.color,
                               padding: const EdgeInsets.all(3),
                               child: Text(
-                                'Last Warning! You WILL loose all data forever!',
+                                'Last WARNING! You WILL loose all data forever!',
                                 style: danger,
                               ))
                           : const SizedBox.shrink(),
@@ -424,10 +439,15 @@ class _WidgetImportExport extends State<WidgetImportExport> {
                           child: ElevatedButton(
                         onPressed: isValid
                             ? () {
-                                /* dialogActionLog(
-                                          context,
-                                          'Import Database',
-                                          DB.importDatabase(path)); */
+                                dialogActionLog(
+                                    context,
+                                    'Import Database',
+                                    DB.importDatabase(path,
+                                        onSuccess: () =>
+                                            dialogShutdown(context),
+                                        onError: () => Future.delayed(
+                                            const Duration(seconds: 2),
+                                            () => Navigator.pop(context))));
                               }
                             : null,
                         child: const Text('Import Database'),
@@ -440,6 +460,88 @@ class _WidgetImportExport extends State<WidgetImportExport> {
   }
 
   Future<void> _reset(BuildContext context) async {
-    String? path = await FilePicker.platform.getDirectoryPath();
+    textInputNotifier.value = '';
+    String code = util.getRandomString(randomLength);
+
+    String? validateCode(String? value) {
+      if (value == null || value.isEmpty) {
+        return null;
+      }
+      return value == code ? null : 'Incorrect Code';
+    }
+
+    AppWidgets.dialog(
+        context: context,
+        title: const Text('Import Database'),
+        contents: [
+          ValueListenableBuilder(
+            valueListenable: counter,
+            builder: (context, value, child) {
+              var text = Text('Please Type this code: $code');
+              if (value == 1) {
+                code = util.getRandomString(randomLength);
+              }
+              return text;
+            },
+          ),
+          TextFormField(
+            autovalidateMode: AutovalidateMode.always,
+            //key: _formKey,
+            autofocus: true,
+            controller: textImportCodeController,
+            onChanged: (value) {
+              counter.value = randomLength * 2;
+              textInputNotifier.value = value;
+            },
+            validator: validateCode,
+          ),
+        ],
+        buttons: [
+          ValueListenableBuilder(
+              valueListenable: counter,
+              builder: (context, value, child) {
+                bool isValid =
+                    validateCode(textImportCodeController.text) == null &&
+                        counter.value > 0;
+                return Column(
+                  children: [
+                    Align(
+                      alignment: Alignment.topRight,
+                      child: Text(counter.value == 0
+                          ? ''
+                          : 'Edit Countdown: ${counter.value.toString()}'),
+                    ),
+                    Column(children: [
+                      isValid
+                          ? Container(
+                              color: AppColors.danger.color,
+                              padding: const EdgeInsets.all(3),
+                              child: Text(
+                                'Last WARNING! You WILL loose all data forever!',
+                                style: danger,
+                              ))
+                          : const SizedBox.shrink(),
+                      Center(
+                          child: ElevatedButton(
+                        onPressed: isValid
+                            ? () async {
+                                dialogActionLog(
+                                    context,
+                                    'Import Database',
+                                    DB.deleteDatabase(
+                                        onSuccess: () =>
+                                            dialogShutdown(context),
+                                        onError: () => Future.delayed(
+                                            const Duration(seconds: 2),
+                                            () => Navigator.pop(context))));
+                              }
+                            : null,
+                        child: const Text('Import Database'),
+                      ))
+                    ])
+                  ],
+                );
+              })
+        ]);
   }
 }

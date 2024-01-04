@@ -478,12 +478,11 @@ class _WelcomeState extends State<Welcome> {
       await addPreloadMessage(const Text('Open Database...'));
       // open database
       try {
-        throw 'test';
         await DB.openDatabase(create: true);
       } catch (e) {
         await addPreloadMessage(Text('Error $e'));
         await Future.delayed(const Duration(seconds: 1), () {
-          AppWidgets.navigate(context, AppRoutes.importExport, e);
+          AppRoutes.navigate(context, AppRoutes.importExport, e);
         });
 
         return false;

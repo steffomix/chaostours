@@ -59,7 +59,7 @@ class _Element {
           subtitle: Text(description,
               style: TextStyle(color: Theme.of(context).hintColor)),
           onTap: () {
-            AppWidgets.navigate(context, route, routeArguments);
+            AppRoutes.navigate(context, route, routeArguments);
           },
         );
 

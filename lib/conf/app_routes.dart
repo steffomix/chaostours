@@ -101,6 +101,15 @@ enum AppRoutes {
 
   String get route => name.toLowerCase();
 
+  static Future<void> navigate(BuildContext context, AppRoutes route,
+      [Object? arguments]) async {
+    Navigator.of(context).pushNamedAndRemoveUntil(
+        AppRoutes.liveTracking.route, (Route<dynamic> route) => false);
+    if (route != AppRoutes.liveTracking) {
+      Navigator.pushNamed(context, route.route, arguments: arguments);
+    }
+  }
+
   static Map<String, Widget Function(BuildContext)>? _routes;
   static get routes {
     return _routes ??= <String, Widget Function(BuildContext)>{
