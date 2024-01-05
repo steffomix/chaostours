@@ -48,19 +48,6 @@ class DB {
     return _dbFullPath!;
   }
 
-/* 
-  static Future<void> dbToFile() async {
-    var dbDir = await DB.getDBDir();
-    var downloadDir = io.Directory('/storage/emulated/0/Download');
-    io.File(dbDir.path).copy('${downloadDir.path}/${DB.dbFile}');
-  }
-
-  static Future<void> fileToDb() async {
-    var dbDir = await DB.getDBDir();
-    var downloadDir = io.Directory('/storage/emulated/0/Download');
-    io.File('${downloadDir.path}/${DB.dbFile}').copy(dbDir.path);
-  }
- */
   static Future<flite.Database> openDatabase({bool create = false}) async {
     if (_isClosedPermanently) {
       throw 'Database has been closed an can not be opened again. Restart App instead.';
