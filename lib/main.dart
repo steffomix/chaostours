@@ -14,20 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import 'package:flutter/material.dart';
-import 'package:chaostours/view/app_widgets.dart';
+import 'package:chaostours/chaos_tours.dart';
 //import 'package:chaostours/runtime_data.dart';
 
 void main() async {
-  //RuntimeData.widgetsFlutterBinding = WidgetsFlutterBinding.ensureInitialized();
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return AppWidgets.materialApp(context);
-  }
+  ChaosTours.start();
 }

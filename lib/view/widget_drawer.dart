@@ -55,12 +55,14 @@ class _Element {
     switch (type) {
       case _MenuType.menu:
         return ListTile(
-          title: Text(title),
+          title: FilledButton(
+            child: Text(title),
+            onPressed: () {
+              AppRoutes.navigate(context, route, routeArguments);
+            },
+          ),
           subtitle: Text(description,
               style: TextStyle(color: Theme.of(context).hintColor)),
-          onTap: () {
-            AppRoutes.navigate(context, route, routeArguments);
-          },
         );
 
       case _MenuType.header:

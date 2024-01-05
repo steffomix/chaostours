@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
@@ -69,6 +71,9 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   bool _isUsersExpanded = false;
   bool _isTasksExpanded = false;
 
+  // clock update
+  Timer? _timer;
+
   void notify(ValueNotifier<bool> notifier) {
     notifier.value != notifier.value;
   }
@@ -82,6 +87,17 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   ///
   @override
   void initState() {
+    () {
+      var second = DateTime.now().second;
+      _timer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
+        if (mounted && DateTime.now().second != second) {
+          second = DateTime.now().second;
+          _listenableDate.value = !_listenableDate.value;
+          _listenableDuration.value = !_listenableDuration.value;
+        }
+      });
+    }();
+
     FlutterBackgroundService()
         .invoke(BackgroundChannelCommand.track.toString());
     EventManager.listen<DataChannel>(onTracking);
@@ -92,6 +108,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   ///
   @override
   void dispose() {
+    _timer?.cancel();
     EventManager.remove<EventOnRender>(onRender);
     EventManager.remove<DataChannel>(onTracking);
     super.dispose();
@@ -116,15 +133,13 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   Widget build(BuildContext context) {
     Widget widget = ListView(children: [
       initialized(),
-      ListTile(
-          titleTextStyle: Theme.of(context).textTheme.titleLarge,
-          subtitleTextStyle: Theme.of(context).textTheme.titleLarge,
-          leading: statusTrigger(),
-          trailing: const SizedBox(height: 10, width: 10),
-          title: widgetTrackingStatus(),
-          subtitle: Column(
-            children: [widgetDate(), widgetDuration()],
-          )),
+      Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+        statusTriggerIcon(),
+        widgetTrackingStatus(),
+        const Icon(Icons.stop, color: Colors.transparent),
+      ]),
+      Center(child: widgetDate()),
+      Center(child: widgetDuration()),
       AppWidgets.divider(),
       widgetAddress(),
       ListTile(
@@ -152,10 +167,10 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                 color: AppColors.black.color));
   }
 
-  Widget statusTrigger() {
+  Widget statusTriggerIcon() {
     double? size = Theme.of(context).iconTheme.size;
     if (size != null) {
-      size *= 2;
+      size *= 3;
     }
     Screen screen = Screen(context);
     size = math.min(screen.width, screen.height) / 15;
@@ -168,7 +183,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                     dataChannel.trackingStatusTrigger == TrackingStatus.none
                         ? Icons.flag
                         : Icons.hourglass_top,
-                    size: size),
+                    size: 50),
                 onPressed: () async {
                   ///start
 
@@ -256,7 +271,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         child: ListenableBuilder(
             listenable: _listenableTrackingStatus,
             builder: (context, child) {
-              return Text('${dataChannel.trackingStatus.name.toUpperCase()}\n');
+              return Text('${dataChannel.trackingStatus.name.toUpperCase()}\n',
+                  style: Theme.of(context).textTheme.titleLarge);
             }));
   }
 

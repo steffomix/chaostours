@@ -16,6 +16,7 @@
 
     <uses-permission android:name="android.permission.READ_CALENDAR"/>
     <uses-permission android:name="android.permission.WRITE_CALENDAR"/>
+
     <uses-permission-sdk-23 android:name="android.permission.READ_CALENDAR"/>
     <uses-permission-sdk-23 android:name="android.permission.WRITE_CALENDAR"/>
 
@@ -49,11 +50,12 @@
             </intent-filter>
         </activity>
         
-        <!-- needed for api level 34 and above -->
+        <!-- needed for api level 34 and above 
         <service
             android:name="id.flutter.flutter_background_service.BackgroundService"
             android:foregroundServiceType="location"
         />
+        -->
         
         <!-- Enable WAL for SQFlite -->
         <meta-data

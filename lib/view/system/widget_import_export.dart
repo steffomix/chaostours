@@ -310,8 +310,6 @@ class _WidgetImportExport extends State<WidgetImportExport> {
             File file = File(fullPath);
             bool fileExists = file.existsSync();
 
-            bool isValid = validateFilename(value) == null && !fileExists;
-
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -323,36 +321,23 @@ class _WidgetImportExport extends State<WidgetImportExport> {
                 Text('Full path will be:\n$fullPath'),
                 Padding(
                     padding: const EdgeInsets.only(top: 10),
-                    child: Column(children: [
-                      isValid
-                          ? Container(
-                              color: AppColors.danger.color,
-                              padding: const EdgeInsets.all(3),
-                              child: Text(
-                                'Last WARNING! You WILL loose all data forever!',
-                                style: danger,
-                              ))
-                          : const SizedBox.shrink(),
-                      Center(
-                          child: ElevatedButton(
-                        onPressed:
-                            validateFilename(value) == null && !fileExists
-                                ? () {
-                                    dialogActionLog(
-                                        context,
-                                        'Export Database',
-                                        DB.exportDatabase(fullPath,
-                                            onSuccess: () =>
-                                                dialogShutdown(context),
-                                            onError: () => Future.delayed(
-                                                const Duration(seconds: 2),
-                                                () => Navigator.pop(context))));
-                                  }
-                                : null,
-                        child:
-                            Text(fileExists ? 'File already exists' : 'Export'),
-                      ))
-                    ]))
+                    child: Center(
+                        child: ElevatedButton(
+                      onPressed: validateFilename(value) == null && !fileExists
+                          ? () {
+                              dialogActionLog(
+                                  context,
+                                  'Export Database',
+                                  DB.exportDatabase(fullPath,
+                                      onSuccess: () => dialogShutdown(context),
+                                      onError: () => Future.delayed(
+                                          const Duration(seconds: 2),
+                                          () => Navigator.pop(context))));
+                            }
+                          : null,
+                      child:
+                          Text(fileExists ? 'File already exists' : 'Export'),
+                    )))
               ],
             );
           },

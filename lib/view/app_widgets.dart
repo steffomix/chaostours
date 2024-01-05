@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:app_settings/app_settings_platform_interface.dart';
 import 'package:chaostours/conf/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
@@ -22,12 +23,12 @@ import 'package:device_calendar/device_calendar.dart';
 ///
 
 import 'package:chaostours/view/widget_drawer.dart';
-import 'package:chaostours/runtime_data.dart';
 import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/calendar.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/conf/app_routes.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:sprintf/sprintf.dart';
 
 class Translate {
@@ -55,7 +56,6 @@ class AppWidgets {
   static Widget materialApp(BuildContext context) {
     GoogleFonts.config.allowRuntimeFetching = false;
     return MaterialApp(
-      key: RuntimeData.globalKey,
       debugShowCheckedModeBanner: false,
       //themeMode: ThemeMode.system,
       title: 'Chaos Tours',
@@ -95,7 +95,8 @@ class AppWidgets {
       ),
       darkTheme: FlexThemeData.dark(
         scheme: FlexScheme.mango,
-        surfaceMode: FlexSurfaceMode.levelSurfacesLowScaffold,
+        surfaceMode: FlexSurfaceMode
+            .highScaffoldLowSurface, // .levelSurfacesLowScaffold,
         blendLevel: 13,
         subThemesData: const FlexSubThemesData(
           blendOnLevel: 20,
@@ -187,6 +188,27 @@ class AppWidgets {
             //
           }
         });
+  }
+
+  static Future<bool> requestLocation(BuildContext context) async {
+    bool permDenied = await Permission.location.isPermanentlyDenied;
+    if (!permDenied) {
+      Permission.location.request();
+    } else if (context.mounted) {
+      await AppWidgets.dialog(context: context, contents: [
+        const Text(
+            'You have permanently denied Location service for this app \n'
+            'and must go to the App Settings of your device to enable ist again:')
+      ], buttons: [
+        ElevatedButton(
+          child: const Text('Go to App Settings'),
+          onPressed: () {
+            AppSettingsPlatform.instance.openAppSettings();
+          },
+        )
+      ]);
+    }
+    return await Permission.location.isGranted;
   }
 
   static Widget bottomButton(

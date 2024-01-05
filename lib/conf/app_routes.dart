@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import 'package:flutter/material.dart';
-import 'package:chaostours/view/widget_welcome.dart';
+import 'package:chaostours/view/boot.dart';
 //
 import 'package:chaostours/view/system/widget_permissions_page.dart';
 import 'package:chaostours/view/system/widget_import_export.dart';

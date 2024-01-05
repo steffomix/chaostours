@@ -115,8 +115,9 @@ class DataChannel {
       ? distanceStanding
       : distanceMoving;
 
-  Duration _duration = Duration.zero;
-  Duration get duration => _duration;
+  Duration get duration =>
+      gpsLastStatusChange?.time.difference(DateTime.now()).abs() ??
+      Duration.zero;
 
   int distanceTreshold = 0; // meter
   Duration durationTreshold = Duration.zero;
@@ -187,11 +188,6 @@ class DataChannel {
             trackingStatusTrigger = await Cache.trackingStatusTriggered
                 .load<TrackingStatus>(TrackingStatus.none);
             notes = await Cache.backgroundTrackPointUserNotes.load<String>('');
-
-            /// computed values
-            _duration =
-                gpsLastStatusChange?.time.difference(DateTime.now()).abs() ??
-                    Duration.zero;
 
             distanceMoving = gpsPoints.isNotEmpty
                 ? GPS.distanceOverTrackList(gpsPoints).round()

@@ -38,9 +38,9 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
   List<Widget> items = [];
 
   bool permLocation = false;
-  bool permLocationAlways = false;
+  //bool permLocationAlways = false;
   bool permIgnoreBattery = false;
-  bool permManageExternalStorage = false;
+  //bool permManageExternalStorage = false;
   bool permNotification = false;
   bool permCalendar = false;
 
@@ -60,16 +60,7 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
     if (!(await Permission.location.isGranted)) {
       return false;
     }
-    if (!(await Permission.locationAlways.isGranted)) {
-      return false;
-    }
     if (!(await Permission.ignoreBatteryOptimizations.isGranted)) {
-      return false;
-    }
-    if (!(await Permission.storage.isGranted)) {
-      return false;
-    }
-    if (!(await Permission.manageExternalStorage.isGranted)) {
       return false;
     }
     if (!(await Permission.notification.isGranted)) {
@@ -89,10 +80,7 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
 
   Future<void> requestAll() async {
     await Permission.location.request();
-    await Permission.locationAlways.request();
     await Permission.ignoreBatteryOptimizations.request();
-    await Permission.storage.request();
-    await Permission.manageExternalStorage.request();
     await Permission.notification.request();
     try {
       await Permission.calendar.request();
@@ -127,8 +115,8 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
         leading: isTracking
             ? const Icon(Icons.done, color: Colors.green)
             : const Icon(Icons.error_outline, color: Colors.red),
-        title: const Text('Status Hintergrund GPS'),
-        subtitle: const Text('Hintergrund GPS starten/stoppen'),
+        title: const Text('State of Background Tracking'),
+        subtitle: const Text('Start/Stop Tracking.'),
         trailing: IconButton(
           icon: isTracking
               ? const Icon(Icons.stop)
@@ -175,54 +163,25 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
         leading: permLocation
             ? const Icon(Icons.done, color: Colors.green)
             : const Icon(Icons.error_outline, color: Colors.red),
-        title: const Text('Einfache (Vordergrund) GPS Ortung.'),
-        subtitle: const Text(
-            'Wird für für die Karte und Sortierung der Orte benötigt.'),
+        title: const Text('Common foreground GPS.'),
+        subtitle: const Text('Used in foreground tasks like OpenStreetMap.'),
         trailing: IconButton(
           icon: const Icon(Icons.settings),
-          onPressed: () {
-            Permission.location.request();
+          onPressed: () async {
+            AppWidgets.requestLocation(context);
           },
         )));
 
     items.add(ListTile(
-        leading: permLocationAlways
-            ? const Icon(Icons.done, color: Colors.green)
-            : const Icon(Icons.error_outline, color: Colors.red),
-        title: const Text('Hintergrund GPS Ortung.'),
-        subtitle: const Text('Das Herz dieser App. Wird für die Ortung, '
-            'Status Halten und Status Fahren benötigt.'),
-        trailing: IconButton(
-          icon: const Icon(Icons.settings),
-          onPressed: () {
-            Permission.locationAlways.request();
-          },
-        )));
-    items.add(ListTile(
         leading: permIgnoreBattery
             ? const Icon(Icons.done, color: Colors.green)
             : const Icon(Icons.error_outline, color: Colors.red),
-        title: const Text('Ignorieren der Batterieoptimierung.'),
-        subtitle: const Text(
-            'Sorgt dafür dass die App nicht vom Android-System abgeschaltet wird.'),
+        title: const Text('Ignore battery optimization.'),
+        subtitle: const Text('Prevents your device to put the App to sleep.'),
         trailing: IconButton(
           icon: const Icon(Icons.settings),
           onPressed: () {
             Permission.ignoreBatteryOptimizations.request();
-          },
-        )));
-    items.add(ListTile(
-        leading: permManageExternalStorage
-            ? const Icon(Icons.done, color: Colors.green)
-            : const Icon(Icons.error_outline, color: Colors.red),
-        title: const Text('Zugriff auf App-Externes Dateisystem.'),
-        subtitle: const Text(
-            'Wird benötigt wenn sie auf ihre Daten von außerhalb diese App zugreifen wollen. '
-            'Schauen sie im Hauptmenü unter "Speicherorte" für weitere Optionen.'),
-        trailing: IconButton(
-          icon: const Icon(Icons.settings),
-          onPressed: () {
-            Permission.manageExternalStorage.request();
           },
         )));
 
@@ -230,9 +189,9 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
         leading: permNotification
             ? const Icon(Icons.done, color: Colors.green)
             : const Icon(Icons.error_outline, color: Colors.red),
-        title: const Text('Anzeige von App-Meldungen.'),
+        title: const Text('Notifications.'),
         subtitle: const Text(
-            'Wird benötigt wenn sie über Statuswechsel informiert werden wollen.'),
+            'Used to keep the running and inform you about new and ongoing app states.'),
         trailing: IconButton(
           icon: const Icon(Icons.settings),
           onPressed: () {
@@ -244,9 +203,8 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
         leading: permCalendar
             ? const Icon(Icons.done, color: Colors.green)
             : const Icon(Icons.error_outline, color: Colors.red),
-        title: const Text('Zugriff auf Geräte-Kalender.'),
-        subtitle: const Text(
-            'Wird benötigt, wenn sie Statusereignisse in ihren Kalender eintragen lassen wollen.'),
+        title: const Text('(Optional) Device calendar.'),
+        subtitle: const Text('Used to pl.'),
         trailing: IconButton(
           icon: const Icon(Icons.settings),
           onPressed: () async {
@@ -271,33 +229,9 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
         }));
     await Future.delayed(wait);
     permLocation = await Permission.location.isGranted;
-
-    Future.microtask(() => setState(() {
-          updatePermissionsInfo('Check Permission GPS Loation Always');
-        }));
-    await Future.delayed(wait);
-    permLocationAlways = await Permission.locationAlways.isGranted;
-
-    Future.microtask(() => setState(() {
-          updatePermissionsInfo(
-              'Check Permission Ignore Battery Optimizations');
-        }));
     await Future.delayed(wait);
     permIgnoreBattery = await Permission.ignoreBatteryOptimizations.isGranted;
-
-    Future.microtask(() => setState(() {
-          updatePermissionsInfo('Check Permission general Storage access');
-        }));
     await Future.delayed(wait);
-    permManageExternalStorage = await Permission.storage.isGranted;
-
-    Future.microtask(() => setState(() {
-          updatePermissionsInfo('Check Permission Manage External Storage');
-        }));
-    await Future.delayed(wait);
-    permManageExternalStorage =
-        await Permission.manageExternalStorage.isGranted;
-
     Future.microtask(() => setState(() {
           updatePermissionsInfo('Check Permission Notification');
         }));
