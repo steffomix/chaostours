@@ -237,7 +237,7 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
 
       AppWidgets.divider(),
 
-      ElevatedButton(
+      FilledButton(
         child: Text('Show $_countAlias Aliases from this group'),
         onPressed: () => Navigator.pushNamed(
                 context, AppRoutes.listAliasesFromAliasGroup.route,
@@ -249,7 +249,7 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
 
       AppWidgets.divider(),
 
-      ElevatedButton(
+      FilledButton(
         child: const Text('Export Group to file for sharing'),
         onPressed: () => Navigator.pushNamed(
                 context, AppRoutes.listAliasesFromAliasGroup.route,

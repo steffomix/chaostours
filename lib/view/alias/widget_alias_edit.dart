@@ -221,12 +221,12 @@ Location Description; ${model.description}
       Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          ElevatedButton(
+          FilledButton(
               onPressed: () => Navigator.pushNamed(
                   context, AppRoutes.listTrackpoints.route,
                   arguments: argumentsTrackpointAliasList(alias.id)),
               child: const Text('Alias Trackpoints')),
-          ElevatedButton(
+          FilledButton(
               onPressed: () async {
                 var model = await ModelAliasStatistics.statistics(alias);
                 statistics(stats: model, model: alias);
@@ -308,7 +308,7 @@ Location Description; ${model.description}
         title: const Text('GPS Location'),
         subtitle: Padding(
             padding: const EdgeInsets.all(_paddingSide),
-            child: ElevatedButton(
+            child: FilledButton(
               child: Text(
                   'Latitude, Longitude:\n${alias.gps.lat}, ${alias.gps.lon}'),
               onPressed: () {
@@ -390,7 +390,7 @@ Location Description; ${model.description}
             subtitle: Column(
                 children: _groups.map(
               (model) {
-                return ElevatedButton(
+                return FilledButton(
                   child: ListTile(
                     title: Text(model.title),
                     subtitle: Text(model.description),

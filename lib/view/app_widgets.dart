@@ -123,7 +123,7 @@ class AppWidgets {
       ),
 // If you do not have a themeMode switch, uncomment this line
 // to let the device system mode control the theme mode:
-      themeMode: ThemeMode.light,
+      themeMode: ThemeMode.system,
     );
   }
 
@@ -200,7 +200,7 @@ class AppWidgets {
             'You have permanently denied Location service for this app \n'
             'and must go to the App Settings of your device to enable ist again:')
       ], buttons: [
-        ElevatedButton(
+        FilledButton(
           child: const Text('Go to App Settings'),
           onPressed: () {
             AppSettingsPlatform.instance.openAppSettings();

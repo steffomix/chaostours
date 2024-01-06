@@ -157,7 +157,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
 
     /// dropdown menu botten with selected users
     List<Widget> items = [
-      ElevatedButton(
+      FilledButton(
         child: ListTile(
             trailing: const Icon(Icons.menu), title: Text('Personal:$users')),
         onPressed: () {
@@ -185,7 +185,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
 
     /// dropdown menu botten with selected tasks
     List<Widget> items = [
-      ElevatedButton(
+      FilledButton(
         child: ListTile(
             trailing: const Icon(Icons.menu), title: Text('Arbeiten:$tasks')),
         onPressed: () {

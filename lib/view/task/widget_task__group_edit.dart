@@ -187,7 +187,7 @@ class _WidgetTaskGroupEdit extends State<WidgetTaskGroupEdit> {
 
       AppWidgets.divider(),
 
-      ElevatedButton(
+      FilledButton(
           child: const Text('Show Tasks from this group'),
           onPressed: () async {
             await Navigator.pushNamed(

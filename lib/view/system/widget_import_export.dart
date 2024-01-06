@@ -117,7 +117,7 @@ class _WidgetImportExport extends State<WidgetImportExport> {
                 padding: const EdgeInsets.all(5),
                 color: AppColors.black.color,
                 child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  ElevatedButton(
+                  FilledButton(
                     child: const Text('EXPORT SQLite Database'),
                     onPressed: () async {
                       _export(context);
@@ -144,7 +144,7 @@ class _WidgetImportExport extends State<WidgetImportExport> {
                 padding: const EdgeInsets.all(5),
                 color: AppColors.black.color,
                 child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  ElevatedButton(
+                  FilledButton(
                     child:
                         const Text('IMPORT SQLite Database and loose all Data'),
                     onPressed: () async {
@@ -172,7 +172,7 @@ class _WidgetImportExport extends State<WidgetImportExport> {
                 padding: const EdgeInsets.all(5),
                 color: AppColors.black.color,
                 child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  ElevatedButton(
+                  FilledButton(
                     child:
                         const Text('RESET SQLite Database and loose all Data'),
                     onPressed: () async {
@@ -322,7 +322,7 @@ class _WidgetImportExport extends State<WidgetImportExport> {
                 Padding(
                     padding: const EdgeInsets.only(top: 10),
                     child: Center(
-                        child: ElevatedButton(
+                        child: FilledButton(
                       onPressed: validateFilename(value) == null && !fileExists
                           ? () {
                               dialogActionLog(
@@ -421,7 +421,7 @@ class _WidgetImportExport extends State<WidgetImportExport> {
                               ))
                           : const SizedBox.shrink(),
                       Center(
-                          child: ElevatedButton(
+                          child: FilledButton(
                         onPressed: isValid
                             ? () {
                                 dialogActionLog(
@@ -507,7 +507,7 @@ class _WidgetImportExport extends State<WidgetImportExport> {
                               ))
                           : const SizedBox.shrink(),
                       Center(
-                          child: ElevatedButton(
+                          child: FilledButton(
                         onPressed: isValid
                             ? () async {
                                 dialogActionLog(

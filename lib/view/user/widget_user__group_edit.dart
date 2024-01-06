@@ -185,7 +185,7 @@ class _WidgetUserGroupEdit extends State<WidgetUserGroupEdit> {
 
       AppWidgets.divider(),
 
-      ElevatedButton(
+      FilledButton(
           child: const Text('Show Users from this group'),
           onPressed: () async {
             await Navigator.pushNamed(

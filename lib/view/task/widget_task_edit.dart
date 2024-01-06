@@ -162,12 +162,12 @@ Task Description; ${model.description}
       Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          ElevatedButton(
+          FilledButton(
               onPressed: () => Navigator.pushNamed(
                   context, AppRoutes.listTrackpoints.route,
                   arguments: argumentsTrackpointTaskList(_model!.id)),
               child: const Text('Task Trackpoints')),
-          ElevatedButton(
+          FilledButton(
               onPressed: () async {
                 var model = await ModelTaskStatistics.statistics(_model!);
                 statistics(stats: model, model: _model!);
@@ -258,7 +258,7 @@ Task Description; ${model.description}
             subtitle: Column(
                 children: _groups.map(
               (model) {
-                return ElevatedButton(
+                return FilledButton(
                   child: ListTile(
                     title: Text(model.title),
                     subtitle: Text(model.description),

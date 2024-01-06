@@ -144,7 +144,7 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
     ///
     ///
     items.add(Center(
-        child: ElevatedButton(
+        child: FilledButton(
             onPressed: () {
               _permissionItems(checkPermissions: true).then((_) {
                 renderBody();
@@ -153,7 +153,7 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
             child: const Text('Repeat Check Permissions'))));
     if (!await checkAll()) {
       items.add(Center(
-          child: ElevatedButton(
+          child: FilledButton(
               onPressed: () async {
                 requestAll();
               },

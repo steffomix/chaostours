@@ -445,7 +445,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
           setState(() {});
         },
       ),
-      title: ElevatedButton(
+      title: FilledButton(
         child: const Text('Members'),
         onPressed: () async {
           await dialogSelectUser();
@@ -481,7 +481,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
           setState(() {});
         },
       ),
-      title: ElevatedButton(
+      title: FilledButton(
         child: const Text('Members'),
         onPressed: () async {
           await dialogSelectUser();
@@ -626,7 +626,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
           setState(() {});
         },
       ),
-      title: ElevatedButton(
+      title: FilledButton(
         child: const Text('Tasks'),
         onPressed: () async {
           await dialogSelectTask();
@@ -662,7 +662,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
           setState(() {});
         },
       ),
-      title: ElevatedButton(
+      title: FilledButton(
         child: const Text('Tasks'),
         onPressed: () async {
           await dialogSelectTask();

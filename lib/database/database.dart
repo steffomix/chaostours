@@ -121,7 +121,7 @@ class DB {
       await dbFile.copy(target);
 
       yield await returnDelayed(Center(
-          child: ElevatedButton(
+          child: FilledButton(
               onPressed: () {
                 SystemNavigator.pop();
               },
@@ -161,7 +161,7 @@ class DB {
       await file.copy(await DB.getDBFullPath());
 
       yield await returnDelayed(Center(
-          child: ElevatedButton(
+          child: FilledButton(
               onPressed: () {
                 SystemNavigator.pop();
               },
