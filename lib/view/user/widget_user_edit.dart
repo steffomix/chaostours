@@ -126,6 +126,10 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
                   DataCell(Text(util.formatDuration(stats.durationMax)))
                 ]),
                 DataRow(cells: [
+                  const DataCell(Text('Duration Avg.')),
+                  DataCell(Text(util.formatDuration(stats.durationAverage)))
+                ]),
+                DataRow(cells: [
                   const DataCell(Text('Duration Total')),
                   DataCell(Text(util.formatDuration(stats.durationTotal)))
                 ]),
@@ -136,17 +140,18 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
             child: const Icon(Icons.copy),
             onPressed: () {
               Clipboard.setData(ClipboardData(text: '''
-User; ${model.title}
+User:\t ${model.title}
 
-First Trackpoint; ${util.formatDate(stats.firstVisited)}
-Last Trackpoint; ${util.formatDate(stats.lastVisited)}
-Count Trackpoints; ${stats.count}
+First Trackpoint:\t ${util.formatDate(stats.firstVisited)}
+Last Trackpoint:\t ${util.formatDate(stats.lastVisited)}
+Count Trackpoints:\t ${stats.count}
 
-Min. Duration; ${util.formatDuration(stats.durationMin)}
-Max. Duration; ${util.formatDuration(stats.durationMax)}
-Duration Total; ${util.formatDuration(stats.durationTotal)}
+Min. Duration:\t ${util.formatDuration(stats.durationMin)}
+Max. Duration:\t ${util.formatDuration(stats.durationMax)}
+Avg. Duration:\t ${util.formatDuration(stats.durationAverage)}
+Duration Total:\t ${util.formatDuration(stats.durationTotal)}
 
-User Description; ${model.description}
+User Description:\t ${model.description}
 '''));
               Navigator.pop(context);
             },

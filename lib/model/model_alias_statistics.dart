@@ -22,6 +22,8 @@ class ModelAliasStatistics {
   static const columnDurationTotal = 'durationTotal';
   static const columnDurationMin = 'durationMin';
   static const columnDurationMax = 'durationMax';
+  static const columnDurationAverage = 'durationAverage';
+
   static const columnFirstVisited = 'tStart';
   static const columnLastVisited = 'tEnd';
 
@@ -29,6 +31,7 @@ class ModelAliasStatistics {
   Duration durationTotal = Duration.zero;
   Duration durationMin = Duration.zero;
   Duration durationMax = Duration.zero;
+  Duration durationAverage = Duration.zero;
   late DateTime firstVisited;
   late DateTime lastVisited;
 
@@ -37,6 +40,7 @@ class ModelAliasStatistics {
     this.durationTotal = Duration.zero,
     this.durationMin = Duration.zero,
     this.durationMax = Duration.zero,
+    this.durationAverage = Duration.zero,
     required DateTime tStart,
     required DateTime tEnd,
   }) {
@@ -50,6 +54,8 @@ class ModelAliasStatistics {
         durationTotal: Duration(seconds: DB.parseInt(map[columnDurationTotal])),
         durationMin: Duration(seconds: DB.parseInt(map[columnDurationMin])),
         durationMax: Duration(seconds: DB.parseInt(map[columnDurationMax])),
+        durationAverage:
+            Duration(seconds: DB.parseInt(map[columnDurationAverage])),
         tStart: DB.intToTime(map[columnFirstVisited]),
         tEnd: DB.intToTime(map[columnLastVisited]));
   }
@@ -59,6 +65,7 @@ class ModelAliasStatistics {
     SELECT SUM(${TableTrackPoint.timeEnd.column} - ${TableTrackPoint.timeStart.column}) AS $columnDurationTotal,
       MIN(${TableTrackPoint.timeEnd.column} - ${TableTrackPoint.timeStart.column}) AS $columnDurationMin,
       MAX(${TableTrackPoint.timeEnd.column} - ${TableTrackPoint.timeStart.column}) AS $columnDurationMax,
+      ROUND(AVG(${TableTrackPoint.timeEnd.column} - ${TableTrackPoint.timeStart.column})) AS $columnDurationAverage,
       MIN( ${TableTrackPoint.timeStart.column}) AS $columnFirstVisited,
       MAX( ${TableTrackPoint.timeStart.column}) AS $columnLastVisited,
       COUNT(*) AS $columnCount

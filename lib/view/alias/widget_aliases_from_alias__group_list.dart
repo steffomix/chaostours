@@ -42,7 +42,7 @@ class _WidgetAliasesFromAliasGroupList
   static final Logger logger = Logger.logger<WidgetAliasesFromAliasGroupList>();
 
   final CalendarEntry _calendars = {};
-  final _navBarBuilder = NavBarWithTrash();
+  final _navBarBuilder = NavBarWithBin();
 
   final TextEditingController _searchTextController = TextEditingController();
   final List<Widget> _loadedWidgets = [];

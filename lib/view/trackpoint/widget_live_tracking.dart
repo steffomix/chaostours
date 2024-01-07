@@ -140,7 +140,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       ]),
       Center(child: widgetDate()),
       Center(child: widgetDuration()),
-      AppWidgets.divider(),
+      skipRecord(),
+      //AppWidgets.divider(),
       widgetAddress(),
       ListTile(
           title: Column(children: [
@@ -149,7 +150,9 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         widgetSelectedTasks(),
         widgetSelectedUsers(),
         AppWidgets.divider(),
-        widgetTrackpointNotes()
+        widgetTrackpointNotes(),
+        AppWidgets.divider(),
+        Text('', style: Theme.of(context).textTheme.bodySmall)
       ]))
     ]);
     return AppWidgets.scaffold(context,
@@ -225,7 +228,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                 })
             : IconButton(
                 icon: Icon(
-                    dataChannel.trackingStatusTrigger != TrackingStatus.none
+                    dataChannel.trackingStatusTrigger == TrackingStatus.none
                         ? Icons.drive_eta
                         : Icons.hourglass_top),
                 onPressed: () async {
@@ -264,6 +267,35 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                 });
       },
     );
+  }
+
+  Widget skipRecord() {
+    return ListTile(
+        leading: AppWidgets.checkbox(
+            value: dataChannel.skipTracking,
+            onChanged: (state) async {
+              dataChannel.skipTracking = await Cache
+                  .backgroundTrackPointSkipRecordOnce
+                  .save<bool>(state ?? false);
+            }),
+        title: const Text('Skip Record'),
+        trailing: IconButton(
+          icon: const Icon(Icons.question_mark),
+          onPressed: () {
+            AppWidgets.dialog(
+                context: context,
+                title: const Text('Skip Record'),
+                contents: [
+                  const Text(
+                      'Pause record and publish trackpoints until you have started moving from a known location alias.')
+                ],
+                buttons: [
+                  FilledButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('OK'))
+                ]);
+          },
+        ));
   }
 
   Widget widgetTrackingStatus() {
@@ -323,33 +355,37 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                   .save<String>(address.addressDetails);
               setState(() {});
               if (mounted) {
-                AppWidgets.dialog(context: context, contents: [
-                  ListTile(
-                      title: const Text('Address'),
-                      subtitle: Text(address.address),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.copy),
-                        onPressed: () {
-                          Clipboard.setData(
-                              ClipboardData(text: address.address));
-                        },
-                      )),
-                  ListTile(
-                      title: const Text('Address Details'),
-                      subtitle: Text(address.addressDetails),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.copy),
-                        onPressed: () {
-                          Clipboard.setData(
-                              ClipboardData(text: address.addressDetails));
-                        },
-                      )),
-                ], buttons: [
-                  TextButton(
-                    child: const Text('OK'),
-                    onPressed: () => Navigator.pop(context),
-                  )
-                ]);
+                AppWidgets.dialog(
+                    isDismissible: true,
+                    context: context,
+                    contents: [
+                      ListTile(
+                          title: const Text('Address'),
+                          subtitle: Text(address.address),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.copy),
+                            onPressed: () {
+                              Clipboard.setData(
+                                  ClipboardData(text: address.address));
+                            },
+                          )),
+                      ListTile(
+                          title: const Text('Address Details'),
+                          subtitle: Text(address.addressDetails),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.copy),
+                            onPressed: () {
+                              Clipboard.setData(
+                                  ClipboardData(text: address.addressDetails));
+                            },
+                          )),
+                    ],
+                    buttons: [
+                      TextButton(
+                        child: const Text('OK'),
+                        onPressed: () => Navigator.pop(context),
+                      )
+                    ]);
               }
               addressIsLoading.value = false;
             } catch (e, stk) {
@@ -360,24 +396,38 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         title: Align(
             alignment: Alignment.centerLeft,
             child: TextButton(
-              child: Text(dataChannel.address),
+              child: Text(util.cutString(dataChannel.address, 80)),
               onPressed: () {
-                AppWidgets.dialog(context: context, contents: [
-                  ListTile(
-                      title: Text(dataChannel.fullAddress),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.copy),
-                        onPressed: () {
-                          Clipboard.setData(
-                              ClipboardData(text: dataChannel.fullAddress));
-                        },
-                      ))
-                ], buttons: [
-                  TextButton(
-                    child: const Text('OK'),
-                    onPressed: () => Navigator.pop(context),
-                  )
-                ]);
+                AppWidgets.dialog(
+                    isDismissible: true,
+                    context: context,
+                    contents: [
+                      ListTile(
+                          title: Text(dataChannel.address),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.copy),
+                            onPressed: () {
+                              Clipboard.setData(
+                                  ClipboardData(text: dataChannel.address));
+                            },
+                          )),
+                      AppWidgets.divider(),
+                      ListTile(
+                          title: Text(dataChannel.fullAddress),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.copy),
+                            onPressed: () {
+                              Clipboard.setData(
+                                  ClipboardData(text: dataChannel.fullAddress));
+                            },
+                          ))
+                    ],
+                    buttons: [
+                      TextButton(
+                        child: const Text('OK'),
+                        onPressed: () => Navigator.pop(context),
+                      )
+                    ]);
               },
             )));
   }
@@ -412,7 +462,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                         : const TextStyle(
                             decoration: TextDecoration.underline,
                             fontWeight: FontWeight.bold),
-                    '${channelModel.distance}m: ${channelModel.model.title}',
+                    '${channelModel.distance}m: ${util.cutString(channelModel.model.title, 80)}',
                   )))));
     }
     return Column(
@@ -564,6 +614,13 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   }
 
   Future<void> dialogSelectUser() async {
+    if (await ModelUser.count() == 0 && mounted) {
+      await AppWidgets.createUser(context);
+      if (await ModelUser.count() == 0) {
+        return;
+      }
+    }
+
     List<int> modelIds = dataChannel.userList.map<int>((e) => e.id).toList();
     List<ModelUser> selectables = await ModelUser.selectable();
     List<Widget> contents = (selectables).map<Widget>(
@@ -745,6 +802,13 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   }
 
   Future<void> dialogSelectTask() async {
+    if (await ModelTask.count() == 0 && mounted) {
+      await AppWidgets.createTask(context);
+      if (await ModelTask.count() == 0) {
+        return;
+      }
+    }
+
     List<int> modelIds = dataChannel.taskList.map<int>((e) => e.id).toList();
     List<ModelTask> selectables = await ModelTask.selectable();
     List<Widget> contents = (selectables).map<Widget>(

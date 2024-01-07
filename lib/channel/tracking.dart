@@ -139,10 +139,12 @@ class Tracker {
 
     if (triggeredTrackingStatus != TrackingStatus.none) {
       if (triggeredTrackingStatus == TrackingStatus.moving) {
+        // status changed by user
         newTrackingStatus = await cacheNewStatusMoving(gps);
       } else if (triggeredTrackingStatus == TrackingStatus.standing) {
         gpsPoints.clear();
         gps = await claculateGPSPoints(gps);
+        // status changed by user
         newTrackingStatus = await cacheNewStatusStanding(gps);
       }
 
@@ -190,6 +192,7 @@ class Tracker {
                             .defaultValue as Duration)))) {
                   gps = GPS.average(gpsCalcPoints);
                   gps.time = DateTime.now();
+
                   gpsLocation = await gpsLocation.autocreateAlias(gps);
                 }
               }
@@ -211,20 +214,39 @@ class Tracker {
     } else {
       /// we started moving
       if (newTrackingStatus == TrackingStatus.moving) {
-        logger.log('tracking status MOVING');
+        // skip tracking by user
 
-        await gpsLocation.executeStatusMoving();
+        // skip tracking by user
+        if (!(await checkSkipTrackingByUser(stopSkip: true))) {
+          logger.log('tracking status MOVING');
+
+          await gpsLocation.executeStatusMoving();
+        }
 
         ///
       } else if (newTrackingStatus == TrackingStatus.standing) {
-        logger.log('new tracking status STANDING');
+        // skip tracking by user
+        if (!(await checkSkipTrackingByUser())) {
+          logger.log('new tracking status STANDING');
 
-        await gpsLocation.executeStatusStanding();
-        logger.log('tracking status STANDING finished');
+          await gpsLocation.executeStatusStanding();
+          logger.log('tracking status STANDING finished');
+        }
       }
     }
 
     return await serializeState(gps);
+  }
+
+  Future<bool> checkSkipTrackingByUser({bool stopSkip = false}) async {
+    // skip tracking by user
+    if (await Cache.backgroundTrackPointSkipRecordOnce.load<bool>(false)) {
+      if (stopSkip) {
+        await Cache.backgroundTrackPointSkipRecordOnce.save<bool>(false);
+      }
+      return true;
+    }
+    return false;
   }
 
   Future<GPS> claculateGPSPoints(GPS gps) async {

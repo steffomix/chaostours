@@ -16,6 +16,8 @@ limitations under the License.
 
 import 'package:app_settings/app_settings_platform_interface.dart';
 import 'package:chaostours/conf/app_colors.dart';
+import 'package:chaostours/model/model_task.dart';
+import 'package:chaostours/model/model_user.dart';
 import 'package:flutter/material.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:device_calendar/device_calendar.dart';
@@ -27,6 +29,7 @@ import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/calendar.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/conf/app_routes.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:sprintf/sprintf.dart';
@@ -440,9 +443,87 @@ class AppWidgets {
       },
     );
   }
+
+  static Future<void> createUser(BuildContext context) async {
+    final controller = TextEditingController(text: '');
+    final nextId = (await ModelUser.count()) + 1;
+    if (!context.mounted) {
+      return;
+    }
+    await AppWidgets.dialog(
+        isDismissible: true,
+        context: context,
+        title: const Text('Create new User'),
+        contents: [
+          Padding(
+              padding: const EdgeInsets.all(10),
+              child: TextField(
+                decoration: const InputDecoration(label: Text('Username')),
+                controller: controller,
+              )),
+        ],
+        buttons: [
+          FilledButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('Cancel')),
+          FilledButton(
+              onPressed: () async {
+                await ModelUser(
+                        title: controller.text.isEmpty
+                            ? '#$nextId'
+                            : controller.text)
+                    .insert();
+                if (context.mounted) {
+                  Navigator.pop(context);
+                }
+              },
+              child: const Text('Create')),
+        ]);
+  }
+
+  static Future<void> createTask(BuildContext context) async {
+    final controller = TextEditingController(text: '');
+    final nextId = (await ModelTask.count()) + 1;
+    if (!context.mounted) {
+      return;
+    }
+    await AppWidgets.dialog(
+        isDismissible: true,
+        context: context,
+        title: const Text('Create new Task'),
+        contents: [
+          Padding(
+              padding: const EdgeInsets.all(10),
+              child: TextField(
+                decoration: const InputDecoration(label: Text('Taskname')),
+                controller: controller,
+              )),
+        ],
+        buttons: [
+          FilledButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('Cancel')),
+          FilledButton(
+              onPressed: () async {
+                await ModelTask(
+                        title: controller.text.isEmpty
+                            ? '#$nextId'
+                            : controller.text)
+                    .insert();
+                if (context.mounted) {
+                  Navigator.pop(context);
+                }
+              },
+              child: const Text('Create')),
+        ]);
+  }
 }
 
-class NavBarWithTrash {
+class NavBarWithBin {
   bool _showActivated = true;
   bool get showActivated => _showActivated;
   BottomNavigationBar navBar(BuildContext dialogContext,

@@ -131,6 +131,8 @@ class DataChannel {
 
   String notes = '';
 
+  bool skipTracking = false;
+
   Future<String> setTrackpointNotes(String text) async {
     return (notes =
         await Cache.backgroundTrackPointUserNotes.save<String>(text));
@@ -175,19 +177,27 @@ class DataChannel {
                 address =
                     'Most Recent: ${await Cache.addressMostRecent.load<String>('-')}';
               }
-
-              /// load from cache?
             }
             final fullAddr =
                 data?[DataChannelKey.lastFullAddress.toString()] ?? '';
             if (fullAddr.isNotEmpty) {
               fullAddress = fullAddr;
+            } else {
+              final cachedFullAddr =
+                  await Cache.addressMostRecent.load<String>('');
+              if (cachedFullAddr.isNotEmpty) {
+                fullAddress =
+                    'Most Recent: ${await Cache.addressFullMostRecent.load<String>('-')}';
+              }
             }
 
             /// Cached values
             trackingStatusTrigger = await Cache.trackingStatusTriggered
                 .load<TrackingStatus>(TrackingStatus.none);
             notes = await Cache.backgroundTrackPointUserNotes.load<String>('');
+
+            skipTracking = await Cache.backgroundTrackPointSkipRecordOnce
+                .load<bool>(false);
 
             distanceMoving = gpsPoints.isNotEmpty
                 ? GPS.distanceOverTrackList(gpsPoints).round()

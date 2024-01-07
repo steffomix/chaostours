@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/channel/background_channel.dart';
+import 'package:chaostours/database/cache.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -250,6 +252,10 @@ class _WidgetDrawer extends State<WidgetDrawer> {
     _Header(title: 'Credits')
   ];
 
+  Future<bool> isTrackingEnabled() async {
+    return await Cache.appSettingBackgroundTrackingEnabled.load<bool>(false);
+  }
+
   @override
   Widget build(BuildContext context) {
     var items = menuItems
@@ -257,6 +263,31 @@ class _WidgetDrawer extends State<WidgetDrawer> {
           (e) => e.render(context),
         )
         .toList();
+    items.insert(
+        0,
+        FutureBuilder(
+          future: isTrackingEnabled(),
+          initialData: false,
+          builder: (context, snapshot) {
+            bool enabled = snapshot.data ?? false;
+            return ListTile(
+                title: const Text('Tracking enabled'),
+                leading: AppWidgets.checkbox(
+                    value: enabled,
+                    onChanged: (state) async {
+                      bool isRunning = await BackgroundChannel.isRunning();
+                      if (isRunning != state) {
+                        if (state ?? false) {
+                          BackgroundChannel.start();
+                        } else {
+                          BackgroundChannel.stop();
+                        }
+                        await Cache.appSettingBackgroundTrackingEnabled
+                            .save<bool>(enabled);
+                      }
+                    }));
+          },
+        ));
     return Drawer(
       child: ListView(children: items),
     );

@@ -35,7 +35,7 @@ class _WidgetTaskList extends BaseWidgetState<WidgetTaskList> {
   // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetTaskList>();
 
-  final _navBarBuilder = NavBarWithTrash();
+  final _navBarBuilder = NavBarWithBin();
   final _textController = TextEditingController();
 
   final List<Widget> _loadedItems = [];

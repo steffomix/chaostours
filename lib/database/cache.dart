@@ -106,6 +106,9 @@ enum Cache {
   backgroundTrackPointUserNotes(
       CacheModulId.sharedPreferences, String, expireAfterOneSecond),
 
+  backgroundTrackPointSkipRecordOnce(
+      CacheModulId.sharedPreferences, bool, expireAfterOneSecond),
+
   /// tracking detection
   backgroundLastGps(CacheModulId.sharedPreferences, GPS, expireAfterOneSecond),
   backgroundGpsPoints(

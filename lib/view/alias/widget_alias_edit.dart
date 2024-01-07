@@ -153,6 +153,13 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
         context: context,
         title: const Text('Statistics'),
         contents: [
+          TextButton(
+            child: Text('date'),
+            onPressed: () => showDatePicker(
+                context: context,
+                firstDate: stats.firstVisited,
+                lastDate: stats.lastVisited),
+          ),
           SingleChildScrollView(
               controller: ScrollController(),
               scrollDirection: Axis.horizontal,
@@ -181,6 +188,10 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                   DataCell(Text(util.formatDuration(stats.durationMax)))
                 ]),
                 DataRow(cells: [
+                  const DataCell(Text('Duration Avg.')),
+                  DataCell(Text(util.formatDuration(stats.durationAverage)))
+                ]),
+                DataRow(cells: [
                   const DataCell(Text('Duration Total')),
                   DataCell(Text(util.formatDuration(stats.durationTotal)))
                 ]),
@@ -191,17 +202,18 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
             child: const Icon(Icons.copy),
             onPressed: () {
               Clipboard.setData(ClipboardData(text: '''
-Location Alias; ${model.title}
+Location Alias:\t ${model.title}
 
-First Visited; ${util.formatDate(stats.firstVisited)}
-Last Visited; ${util.formatDate(stats.lastVisited)}
-Times Visited; ${stats.count}
+First Visited:\t ${util.formatDate(stats.firstVisited)}
+Last Visited:\t ${util.formatDate(stats.lastVisited)}
+Times Visited:\t ${stats.count}
 
-Min. Duration; ${util.formatDuration(stats.durationMin)}
-Max. Duration; ${util.formatDuration(stats.durationMax)}
-Duration Total; ${util.formatDuration(stats.durationTotal)}
+Min. Duration:\t ${util.formatDuration(stats.durationMin)}
+Max. Duration:\t ${util.formatDuration(stats.durationMax)}
+Avg. Duration:\t ${util.formatDuration(stats.durationAverage)}
+Duration Total:\t ${util.formatDuration(stats.durationTotal)}
 
-Location Description; ${model.description}
+Location Description:\t ${model.description}
 '''));
               Navigator.pop(context);
             },

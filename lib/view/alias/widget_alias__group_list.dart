@@ -40,7 +40,7 @@ class _WidgetAliasGroupList extends BaseWidgetState<WidgetAliasGroupList>
   // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetAliasGroupList>();
 
-  final _navBarBuilder = NavBarWithTrash();
+  final _navBarBuilder = NavBarWithBin();
   final CalendarEntry _calendars = {};
 
   List<Widget> _loadedItems = [];

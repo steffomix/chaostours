@@ -95,12 +95,20 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
           margin: const EdgeInsets.all(10),
           child: Column(
             children: intersperse(divider, [
-              const ListTile(
-                  title: Text('Tracking calculating settings'),
-                  subtitle: Text(
-                      'These Settings depend on each other from top to bottom.\n'
-                      'It is strongly recommended to modify the values in that order, because '
-                      'the System will auto-adjust them if neccecary.')),
+              ListTile(
+                  title: const Text('Tracking calculating settings'),
+                  subtitle: Column(children: [
+                    const Text(
+                        'These Settings depend on each other from top to bottom.\n'
+                        'It is strongly recommended to modify the values in that order, because '
+                        'the System will auto-adjust them if neccecary.'),
+                    Container(
+                        color: Colors.red,
+                        child: const Text(
+                          'WARNING! Too many trackpoints can cause Chaos Tours to never leave the satus MOVING!',
+                          style: TextStyle(color: Colors.white),
+                        ))
+                  ])),
               await integerSetting(Cache.appSettingBackgroundTrackingInterval,
                   onChange: (
                       {required AppUserSetting setting,
@@ -512,21 +520,18 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
             ),
             ...OsmLookupConditions.values.map(
               (condition) {
-                return Padding(
-                    padding: const EdgeInsets.only(left: 20),
-                    child: Row(children: [
-                      Checkbox(
-                        value: _currentOsmCondition.index >= condition.index,
-                        onChanged: (value) async {
-                          onSettingChanged(() async {
-                            _currentOsmCondition =
-                                await save<OsmLookupConditions>(
-                                    cache, condition);
-                          });
-                        },
-                      ),
-                      condition.title
-                    ]));
+                return ListTile(
+                  title: condition.title,
+                  leading: Checkbox(
+                    value: _currentOsmCondition.index >= condition.index,
+                    onChanged: (value) async {
+                      onSettingChanged(() async {
+                        _currentOsmCondition =
+                            await save<OsmLookupConditions>(cache, condition);
+                      });
+                    },
+                  ),
+                );
               },
             )
           ],

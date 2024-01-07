@@ -40,7 +40,7 @@ class _WidgetAliasGroupsFromAliasList
 
   final TextEditingController _searchTextController = TextEditingController();
   final List<Widget> _loadedWidgets = [];
-  final _navBarBuilder = NavBarWithTrash();
+  final _navBarBuilder = NavBarWithBin();
   ModelAlias? _model;
   List<int>? _ids;
   // items per page

@@ -34,7 +34,7 @@ class _WidgetUserList extends BaseWidgetState<WidgetUserList> {
   // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetUserList>();
 
-  final _navBarBuilder = NavBarWithTrash();
+  final _navBarBuilder = NavBarWithBin();
   final _textController = TextEditingController();
 
   final List<Widget> _loadedItems = [];

@@ -294,7 +294,7 @@ class AppUserSetting {
           description: const Text(
               'Compensates for inaccurate GPS by calculating the average of the given number of GPS points. '
               'The maximum possible number of smooth points is calculated with the '
-              'ceiling of "(Time Range Treshold" / "Background GPS Tracking Interval Duration) -1"'
+              'ceiling of "(Time Range Treshold" / "Background GPS Tracking Interval Duration) -1". '
               'A value below 2 disables this future.'),
           unit: Unit.piece,
           defaultValue: 3,
