@@ -138,8 +138,8 @@ class _WidgetAliasesFromAliasGroupList
   List<Widget> renderHeader(BoxConstraints constrains) {
     return [
       ListTile(
-        title: Text(_model?.title ?? ''),
-        subtitle: Text(_model?.description ?? '',
+        title: Text(cutString(_model?.title ?? '')),
+        subtitle: Text(cutString(_model?.description ?? ''),
             style: TextStyle(color: Theme.of(context).hintColor)),
       ),
       AppWidgets.calendar(_calendars[_model?.idCalendar]),

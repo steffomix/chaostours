@@ -23,7 +23,7 @@ import 'package:chaostours/logger.dart';
 import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/model/model_alias_group.dart';
 import 'package:chaostours/model/model_alias.dart';
-import 'package:chaostours/util.dart';
+import 'package:chaostours/util.dart' as util;
 
 class WidgetAliasGroupsFromAliasList extends BaseWidget {
   const WidgetAliasGroupsFromAliasList({super.key});
@@ -63,8 +63,8 @@ class _WidgetAliasGroupsFromAliasList
     if (_loadedWidgets.isNotEmpty) {
       _loadedWidgets.add(AppWidgets.divider());
     }
-    _loadedWidgets.addAll(
-        intersperse(AppWidgets.divider(), newItems.map((e) => renderRow(e))));
+    _loadedWidgets.addAll(util.intersperse(
+        AppWidgets.divider(), newItems.map((e) => renderRow(e))));
     return newItems.length;
   }
 
@@ -147,8 +147,8 @@ class _WidgetAliasGroupsFromAliasList
   List<Widget> renderHeader(BoxConstraints constrains) {
     return [
       ListTile(
-        title: Text(_model?.title ?? ''),
-        subtitle: Text(_model?.description ?? ''),
+        title: Text(util.cutString(_model?.title ?? '')),
+        subtitle: Text(util.cutString(_model?.description ?? '')),
       ),
       AppWidgets.searchTile(
           context: context,

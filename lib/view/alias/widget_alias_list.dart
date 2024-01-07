@@ -23,7 +23,7 @@ import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/view/app_base_widget.dart';
 import 'package:chaostours/gps.dart';
-import 'package:chaostours/util.dart';
+import 'package:chaostours/util.dart' as util;
 
 enum _DisplayMode {
   list,
@@ -84,8 +84,8 @@ class _WidgetAliasList extends BaseWidgetState<WidgetAliasList>
     if (_loadedItems.isNotEmpty) {
       _loadedItems.add(AppWidgets.divider());
     }
-    _loadedItems.addAll(
-        intersperse(AppWidgets.divider(), newItems.map((e) => renderRow(e))));
+    _loadedItems.addAll(util.intersperse(
+        AppWidgets.divider(), newItems.map((e) => renderRow(e))));
     return newItems.length;
   }
 
@@ -94,7 +94,7 @@ class _WidgetAliasList extends BaseWidgetState<WidgetAliasList>
     int count = model.timesVisited;
     var subStyle = Theme.of(context).listTileTheme.subtitleTextStyle;
     return Column(children: [
-      Text(model.title,
+      Text(util.cutString(model.title),
           style: model.isActive
               ? null
               : const TextStyle(decoration: TextDecoration.lineThrough)),
@@ -104,21 +104,17 @@ class _WidgetAliasList extends BaseWidgetState<WidgetAliasList>
   }
 
   Widget itemSubtitle(ModelAlias model) {
-    return Text(model.description,
+    return Text(util.cutString(model.description),
         style: Theme.of(context).listTileTheme.subtitleTextStyle);
   }
 
-  Widget showTrackpoints(ModelAlias model) {
+  Widget googleMaps(ModelAlias model) {
     return IconButton(
-      icon: const Icon(Icons.list),
-      onPressed: () {
-        Navigator.pushNamed(context, AppRoutes.trackpointsFromAliasList.route,
-                arguments: model.id)
-            .then((_) {
-          render();
+        icon: const Icon(Icons.map),
+        onPressed: () async {
+          GPS gps = await GPS.gps();
+          GPS.launchGoogleMaps(gps.lat, gps.lon, model.gps.lat, model.gps.lon);
         });
-      },
-    );
   }
 
   Widget edit(ModelAlias model) {
@@ -136,7 +132,7 @@ class _WidgetAliasList extends BaseWidgetState<WidgetAliasList>
 
   Widget renderRow(ModelAlias model) {
     return ListTile(
-        leading: showTrackpoints(model),
+        leading: googleMaps(model),
         title: itemTitle(model),
         subtitle: itemSubtitle(model),
         trailing: edit(model));

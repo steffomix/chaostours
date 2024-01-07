@@ -400,11 +400,14 @@ class _WidgetOsm extends State<WidgetOsm> {
               // search for alias
               mapController.centerMap.then((GeoPoint pos) {
                 ModelAlias.byArea(gps: GPS(pos.latitude, pos.longitude))
-                    .then((List<ModelAlias> models) {
+                    .then((List<ModelAlias> models) async {
                   if (models.isNotEmpty && mounted) {
-                    Navigator.pushNamed(
-                        context, AppRoutes.trackpointsFromAliasList.route,
+                    await Navigator.pushNamed(
+                        context, AppRoutes.editAlias.route,
                         arguments: models.first.id);
+                    if (mounted) {
+                      aliasRenderer.renderAlias(mapController);
+                    }
                   }
                 });
               });

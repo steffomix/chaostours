@@ -77,6 +77,8 @@ class StaticCache {
 }
 
 enum Cache {
+  cacheInitialized(CacheModulId.sharedPreferences, bool, expireNever),
+
   /// trigger off == TrackingStatus.none
   /// triggered by user, set to none in background
   trackingStatusTriggered(
@@ -131,13 +133,17 @@ enum Cache {
   backgroundCalendarLastEventIds(
       CacheModulId.sharedPreferences, List<CalendarEventId>, expireImmediately),
 
-  /// startup consent
-  licenseConsentChaosTours(CacheModulId.sharedPreferences, bool, expireNever),
+  useOfCalendarRequested(CacheModulId.sharedPreferences, bool, expireNever),
 
-  requestLicenseConsentOsm(CacheModulId.sharedPreferences, bool, expireNever),
-  licenseConsentOsm(CacheModulId.sharedPreferences, bool, expireNever),
-  requestOsmAddressLookup(CacheModulId.sharedPreferences, bool, expireNever),
-  requestBatteryOptimization(CacheModulId.sharedPreferences, bool, expireNever),
+  /// startup consent
+  chaosToursLicenseAccepted(CacheModulId.sharedPreferences, bool, expireNever),
+
+  osmLicenseAccepted(CacheModulId.sharedPreferences, bool, expireNever),
+  osmLicenseRequested(CacheModulId.sharedPreferences, bool, expireNever),
+
+  /// battery
+  batteryOptimizationRequested(
+      CacheModulId.sharedPreferences, bool, expireNever),
 
   /// webSSLKey
   ///

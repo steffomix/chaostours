@@ -41,6 +41,7 @@ class Location {
   static final Logger logger = Logger.logger<Location>();
 
   final GPS gps;
+  Address? address;
   AliasPrivacy get privacy => _privacy ?? AliasPrivacy.none;
   AliasPrivacy? _privacy;
   int radius = 0;
@@ -93,7 +94,7 @@ class Location {
   }
 
   Future<ModelTrackPoint> createTrackPoint() async {
-    final Address address = await Address(gps)
+    address ??= await Address(gps)
         .lookup(OsmLookupConditions.onStatusChanged, saveToCache: true);
     ModelTrackPoint tp = ModelTrackPoint(
         gps: gps,
@@ -101,7 +102,7 @@ class Location {
         timeEnd: gps.time,
         calendarEventIds: await Cache.backgroundCalendarLastEventIds
             .load<List<CalendarEventId>>([]),
-        address: address.address,
+        address: address?.address ?? '',
         notes: await Cache.backgroundTrackPointUserNotes.load<String>(''));
     tp.aliasModels = aliasModels;
     tp.taskModels = await ModelTask.byIdList((await Cache

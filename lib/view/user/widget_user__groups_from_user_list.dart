@@ -175,8 +175,8 @@ class _WidgetUserGroupsFromUserList
   List<Widget> renderHeader(BoxConstraints constrains) {
     return [
       ListTile(
-        title: Text(_model?.title ?? ''),
-        subtitle: Text(_model?.description ?? ''),
+        title: Text(cutString(_model?.title ?? '')),
+        subtitle: Text(cutString(_model?.description ?? '')),
       ),
       AppWidgets.searchTile(
           context: context,

@@ -46,7 +46,6 @@ import 'package:chaostours/view/task/widget_task__groups_from_task_list.dart';
 //
 import 'package:chaostours/view/trackpoint/widget_live_tracking.dart';
 import 'package:chaostours/view/trackpoint/widget_trackpoint_list.dart';
-import 'package:chaostours/view/trackpoint/widget_trackpoints_from_alias_list.dart';
 import 'package:chaostours/view/trackpoint/widget_edit_trackpoint.dart';
 //
 import 'package:chaostours/view/widget_manage_calendar.dart';
@@ -63,7 +62,6 @@ enum AppRoutes {
   liveTracking,
   listTrackpoints,
   editTrackPoint,
-  trackpointsFromAliasList,
 
   // alias
   listAlias,
@@ -166,8 +164,6 @@ enum AppRoutes {
 
       // trackPoint events
       AppRoutes.selectCalendar.route: (context) => const WidgetManageCalendar(),
-      AppRoutes.trackpointsFromAliasList.route: (context) =>
-          const WidgetAliasTrackpoint(),
       // osm
       AppRoutes.osm.route: (context) => const WidgetOsm(),
     };

@@ -15,6 +15,13 @@ limitations under the License.
 */
 
 import 'dart:async';
+import 'dart:io';
+import 'package:chaostours/location.dart';
+import 'package:chaostours/model/model_task.dart';
+import 'package:chaostours/model/model_user.dart';
+import 'package:chaostours/shared/shared_trackpoint_alias.dart';
+import 'package:chaostours/shared/shared_trackpoint_task.dart';
+import 'package:chaostours/shared/shared_trackpoint_user.dart';
 import 'package:http/http.dart' as http;
 import 'dart:io' as io;
 import 'package:flutter/material.dart';
@@ -36,7 +43,6 @@ import 'package:chaostours/channel/background_channel.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/database/database.dart';
 import 'package:chaostours/view/app_widgets.dart';
-import 'package:chaostours/channel/tracking.dart';
 
 class Welcome extends StatefulWidget {
   const Welcome({super.key});
@@ -83,20 +89,22 @@ class _WelcomeState extends State<Welcome> {
   Sink get sink => _stream.sink;
   Stream get stream => _stream.stream;
 
+  GPS? gps;
+  Address? address;
+  DataChannel channel = DataChannel();
+  bool isFirstRun = false;
+
   ///
   /// preload recources
   Future<void> preload() async {
-    GPS? gps;
-    Address? address;
-    DataChannel channel = DataChannel();
-
     try {
-      if (!(await Cache.licenseConsentChaosTours.load<bool>(false))) {
+      // check chaosTours license
+      if (!(await Cache.chaosToursLicenseAccepted.load<bool>(false))) {
         bool consent = await chaosToursLicenseConsent();
         if (consent) {
-          await Cache.licenseConsentChaosTours.save<bool>(true);
+          await Cache.chaosToursLicenseAccepted.save<bool>(true);
         } else {
-          await Cache.licenseConsentChaosTours.save<bool>(false);
+          await Cache.chaosToursLicenseAccepted.save<bool>(false);
           sinkNext(const Text('App stopped due to rejected License consent.'));
           Future.delayed(
               const Duration(seconds: 2), () => SystemNavigator.pop());
@@ -106,72 +114,66 @@ class _WelcomeState extends State<Welcome> {
       Logger.globalLogLevel = LogLevel.verbose;
       sinkNext(const Text('Start Initialization...'));
 
-      //
-      sinkNext(const Text('Open Database...'));
       // open database
+      sinkNext(const Text('Open Database...'));
       try {
         await DB.openDatabase(create: true);
-      } catch (e) {
+      } catch (e, stk) {
         sinkNext(Text('Error $e'));
-        await Future.delayed(const Duration(seconds: 1), () {
-          AppRoutes.navigate(context, AppRoutes.importExport, e);
-        });
-
+        if (!mounted) {
+          exit(1);
+        }
+        await AppWidgets.dialog(
+            context: context,
+            isDismissible: false,
+            title: const Text('Database Error'),
+            contents: [
+              Text(
+                  'Open Database from ${await DB.getDBFullPath()} caused an Error:'),
+              Text('\n $e'),
+              Text('\n$stk')
+            ],
+            buttons: [
+              FilledButton(
+                child: const Text('Manage Database'),
+                onPressed: () {
+                  AppRoutes.navigate(context, AppRoutes.importExport, e);
+                  Navigator.pop(context);
+                },
+              )
+            ]);
+        sinkNext(Text('Database Error $e. Start ChaosTours failed'));
         return;
       }
       sinkNext(const Text('Database opened'));
 
-      var count = await ModelAlias.count();
-      if (count == 0) {
-        sinkNext(const Text('Initalize user settings'));
-
-        /// UserSettings initialize
-        await AppUserSetting.resetAllToDefault();
-
-        sinkNext(const Text('Request GPS permission'));
+      sinkNext(const Text('Lookup GPS'));
+      await Permission.location.request();
+      if (await Permission.location.isPermanentlyDenied) {
+        if (!mounted) {
+          exit(1);
+        }
         if (mounted) {
           await AppWidgets.requestLocation(context);
         }
+      }
+      await Permission.location.request();
+      if (await Permission.location.isDenied) {
+        exit(1);
+      }
+      gps = await GPS.gps();
 
-        try {
-          if (!await Permission.location.isGranted) {
-            if (mounted) {
-              await AppWidgets.requestLocation(context);
-            }
-            if (!await Permission.location.isGranted) {
-              if (mounted) {
-                await AppWidgets.requestLocation(context);
-              }
-              sinkNext(const Text('This app is based on GPS location tracking. '
-                  '\nTherefore you should at least grant some GPS location permissions.'));
-            }
-          }
-
-          sinkNext(const Text('Lookup GPS'));
-          gps = await GPS.gps();
-
-          sinkNext(const Text('Create initial alias'));
-          await ModelAlias(
-                  gps: (gps),
-                  lastVisited: DateTime.now(),
-                  title: 'Initial Alias',
-                  description: 'Initial Alias created by System on first run.'
-                      '\nFeel free to change it for your needs.')
-              .insert();
-
-          sinkNext(
-              const Text('Execute first background tracking from foreground'));
-          await Tracker().track();
-        } catch (e) {
-          sinkNext(const Text(
-              'Create initial location alias failed. No GPS Permissions granted?'));
-        }
+      if (!(await Cache.cacheInitialized.load<bool>(false))) {
+        isFirstRun = true;
+        sinkNext(const Text('Initalize app setting defaults.'));
+        await AppUserSetting.resetAllToDefault();
+        await Cache.cacheInitialized.save<bool>(true);
       }
 
       if (!(await Permission.notification.isGranted) && mounted) {
         await AppWidgets.dialog(context: context, contents: [
           const Text('Chaos Tours requires Notifications '
-              'to be able to track GPS in background.')
+              'to be able to track GPS while app is closed.')
         ], buttons: [
           TextButton(
             child: const Text('OK'),
@@ -187,7 +189,8 @@ class _WelcomeState extends State<Welcome> {
           )
         ]);
       }
-      if (!(await Cache.requestBatteryOptimization.load<bool>(false))) {
+
+      if (!(await Cache.batteryOptimizationRequested.load<bool>(false))) {
         if (!(await Permission.ignoreBatteryOptimizations.isGranted) &&
             mounted) {
           await AppWidgets.dialog(context: context, contents: [
@@ -212,7 +215,7 @@ class _WelcomeState extends State<Welcome> {
             TextButton(
               child: const Text('No'),
               onPressed: () async {
-                await Cache.requestBatteryOptimization.save<bool>(true);
+                await Cache.batteryOptimizationRequested.save<bool>(true);
                 if (mounted) {
                   Navigator.pop(context);
                 }
@@ -222,7 +225,7 @@ class _WelcomeState extends State<Welcome> {
               child: const Text('Yes'),
               onPressed: () async {
                 await Permission.ignoreBatteryOptimizations.request();
-                await Cache.requestBatteryOptimization.save<bool>(true);
+                await Cache.batteryOptimizationRequested.save<bool>(true);
                 if (mounted) {
                   Navigator.pop(context);
                 }
@@ -232,59 +235,64 @@ class _WelcomeState extends State<Welcome> {
         }
       }
 
-      if (!(await Cache.requestOsmAddressLookup.load<bool>(false)) && mounted) {
-        await AppWidgets.dialog(context: context, contents: [
-          const Text('Enable GPS-to-Address?\n\n'
-              'This future sends your GPS location to OpenStreetMap.com and receives an Address you can use.'),
-          TextButton(
-            child: const Text(
-                'For more Informations please visit OpenStreetMap.com'),
-            onPressed: () async {
-              await launchUrl(Uri(
-                scheme: 'https',
-                host: 'openstreetmap.com',
-              ));
-            },
-          )
-        ], buttons: [
-          TextButton(
-            child: const Text('No'),
-            onPressed: () async {
-              await Cache.appSettingOsmLookupCondition
-                  .save<OsmLookupConditions>(OsmLookupConditions.never);
-              await Cache.requestLicenseConsentOsm.save<bool>(false);
-              await Cache.requestOsmAddressLookup.save<bool>(true);
-              if (mounted) {
-                Navigator.pop(context);
-              }
-            },
-          ),
-          TextButton(
-            child: const Text('Yes'),
-            onPressed: () async {
-              await Cache.requestOsmAddressLookup.save<bool>(true);
-              if (!(await Cache.requestLicenseConsentOsm.load<bool>(false))) {
-                if (await osmLicenseConsent()) {
+      if (!(await Cache.osmLicenseRequested.load<bool>(false)) && mounted) {
+        await AppWidgets.dialog(
+            context: context,
+            title: const Text('Address Lookup'),
+            contents: [
+              const Text('Enable GPS-to-Address service?\n\n'
+                  'This future sends your GPS location over an end-to-end encrypted connection to OpenStreetMap.com and receives an Address you can use.'),
+              const Text(
+                  'The service is cost free with a maximum of one request per second.'),
+              TextButton(
+                child: const Text(
+                    'For more Informations please visit OpenStreetMap.com'),
+                onPressed: () async {
+                  await launchUrl(Uri(
+                    scheme: 'https',
+                    host: 'openstreetmap.com',
+                  ));
+                },
+              )
+            ],
+            buttons: [
+              TextButton(
+                child: const Text('No'),
+                onPressed: () async {
                   await Cache.appSettingOsmLookupCondition
-                      .save<OsmLookupConditions>(
-                          OsmLookupConditions.onAutoCreateAlias);
-                  await Cache.requestLicenseConsentOsm.save<bool>(true);
-                  await Cache.licenseConsentOsm.save<bool>(true);
-                  sinkNext(const Text('Lookup Address...'));
-                  address = await Address(gps ?? await GPS.gps()).lookup(
-                      OsmLookupConditions.onUserRequest,
-                      saveToCache: true);
-                  channel.address = address?.address ?? '';
-                  channel.fullAddress = address?.addressDetails ?? '';
-                  sinkNext(Text(channel.fullAddress));
-                }
-              }
-              if (mounted) {
-                Navigator.pop(context);
-              }
-            },
-          )
-        ]);
+                      .save<OsmLookupConditions>(OsmLookupConditions.never);
+                  await Cache.osmLicenseRequested.save<bool>(true);
+                  await Cache.osmLicenseAccepted.save<bool>(false);
+                  if (mounted) {
+                    Navigator.pop(context);
+                  }
+                },
+              ),
+              TextButton(
+                child: const Text('Yes'),
+                onPressed: () async {
+                  await Cache.osmLicenseRequested.save<bool>(true);
+                  if (!(await Cache.osmLicenseAccepted.load<bool>(false))) {
+                    if (await osmLicenseConsent()) {
+                      await Cache.appSettingOsmLookupCondition
+                          .save<OsmLookupConditions>(
+                              OsmLookupConditions.onStatusChanged);
+                      await Cache.osmLicenseAccepted.save<bool>(true);
+                      sinkNext(const Text('Lookup Address...'));
+                      address = await Address(gps ?? await GPS.gps()).lookup(
+                          OsmLookupConditions.onUserRequest,
+                          saveToCache: true);
+                      channel.address = address?.address ?? '';
+                      channel.fullAddress = address?.addressDetails ?? '';
+                      sinkNext(Text(channel.fullAddress));
+                    }
+                  }
+                  if (mounted) {
+                    Navigator.pop(context);
+                  }
+                },
+              )
+            ]);
       }
 
       if (await Permission.notification.isGranted) {
@@ -294,14 +302,13 @@ class _WelcomeState extends State<Welcome> {
           var cache = Cache.appSettingBackgroundTrackingInterval;
           var dur = await cache
               .load<Duration>(AppUserSetting(cache).defaultValue as Duration);
-          sinkNext(
-              Text('Initialize background trackig with ${dur.inSeconds} sec.'));
+          sinkNext(Text(
+              'Initialize background trackig with ${dur.inSeconds} sec. interval'));
           await BackgroundChannel.initialize();
         }
       }
 
       //
-      //await BackgroundTracking.initialize();
       if (await Cache.appSettingBackgroundTrackingEnabled.load<bool>(true)) {
         sinkNext(const Text('Start background tracking'));
         await BackgroundChannel.start();
@@ -310,29 +317,68 @@ class _WelcomeState extends State<Welcome> {
             const Text('Background tracking not enabled, skip start tracking'));
       }
 
-      sinkNext(const Text('Load Web SSL key.'));
+      sinkNext(const Text('InitializeSSL key for end-to-end encryption'));
       await loadWebSSLKey();
 
-      sinkNext(const Text('Check Permissions...'));
-
-      bool perm = await checkAllRequiredPermissions();
-
-      if (gps == null && (await Permission.location.isGranted)) {
-        sinkNext(const Text('Lookup GPS'));
-        gps = await GPS.gps();
+      bool osm = await OsmLookupConditions.onUserRequest.allowLookup();
+      if (isFirstRun && mounted) {
+        AppWidgets.dialog(
+            context: context,
+            title: const Text('Install Data'),
+            contents: [
+              const Text(
+                  'Install some basic data so that everything doesn\'t so empty?'),
+              Text('This is \n- a Location Alias ${osm ? 'with address' : ''}\n'
+                  '- a user named "user 1" \n- a task named "task 1"'
+                  '- a trackpoint with "user 1", "task 1" and a note "Welcome to Chaos Tours"'),
+              const Text('You can of course edit everything every time.')
+            ],
+            buttons: [
+              FilledButton(
+                child: const Text('Install Data'),
+                onPressed: () async {
+                  await installData();
+                  if (mounted) {
+                    Navigator.pop(context);
+                  }
+                },
+              )
+            ]);
       }
-      if (gps != null &&
-          (await OsmLookupConditions.onStatusChanged.allowLookup()) &&
-          address == null) {
-        sinkNext(const Text('Lookup Address'));
-        address = await Address(gps)
-            .lookup(OsmLookupConditions.onStatusChanged, saveToCache: true);
-        channel.address = address?.address ?? '';
-        channel.fullAddress = address?.addressDetails ?? '';
+
+      if (!(await Cache.useOfCalendarRequested.load<bool>(false)) && mounted) {
+        sinkNext(const Text('Request use of device calendar'));
+        AppWidgets.dialog(
+            context: context,
+            title: const Text('Device Calendar'),
+            contents: [
+              const Text(
+                  'Publish trackpoints to your device calendar (if installed)?'),
+              const Text(
+                  'Use your device calendar to user groups as aditional database or to share your well beings with your friends and familiy.'),
+            ],
+            buttons: [
+              FilledButton(
+                  onPressed: () async {
+                    await Cache.appSettingPublishToCalendar.save<bool>(true);
+                    if (mounted) {
+                      Navigator.pop(context);
+                    }
+                  },
+                  child: const Text('Yes')),
+              FilledButton(
+                  onPressed: () async {
+                    await Cache.appSettingPublishToCalendar.save<bool>(false);
+                    if (mounted) {
+                      Navigator.pop(context);
+                    }
+                  },
+                  child: const Text('No'))
+            ]);
       }
 
       sinkNext(const Text('Start App...'));
-      if (perm) {
+      if (await checkAllRequiredPermissions()) {
         if (mounted) {
           Navigator.popAndPushNamed(context, AppRoutes.liveTracking.route);
         }
@@ -349,15 +395,44 @@ class _WelcomeState extends State<Welcome> {
     logger.important('Preload sequence finished without errors');
   }
 
+  Future<void> installData() async {
+    gps ??= await GPS.gps();
+    await ModelAlias(
+            gps: gps!, title: 'First Alias', lastVisited: DateTime.now())
+        .insert();
+    await ModelUser(title: 'Task 1').insert();
+    await ModelTask(title: 'Task 1').insert();
+
+    await Cache.backgroundSharedAliasList.save<SharedTrackpointAlias>(
+        SharedTrackpointAlias(
+            id: 1, notes: 'We was the nearby location most times.'));
+
+    await Cache.backgroundSharedUserList.save<SharedTrackpointUser>(
+        SharedTrackpointUser(id: 1, notes: 'User 1 was here.'));
+
+    await Cache.backgroundSharedTaskList.save<SharedTrackpointTask>(
+        SharedTrackpointTask(id: 1, notes: 'Had a nice time.'));
+
+    await Cache.backgroundTrackPointUserNotes
+        .save<String>('What a great location today!');
+
+    Location location = await Location.location(gps!);
+    location.address = address;
+
+    await location.createTrackPoint();
+  }
+
   ///
   /// load ssh key for https connections
   /// add cert for https requests you can download here:
   /// https://letsencrypt.org/certs/lets-encrypt-r3.pem
-  static Future<void> loadWebSSLKey() async {
+  Future<void> loadWebSSLKey() async {
     Uint8List cachedKey =
         Uint8List.fromList((await Cache.webSSLKey.load<String>('')).codeUnits);
 
     if (cachedKey.isEmpty) {
+      sinkNext(const Text(
+          'Load SSL key from letsencrypt.org/certs/lets-encrypt-r3.pem'));
       final uri = Uri.http('letsencrypt.org', '/certs/lets-encrypt-r3.pem');
       final response = await http.get(uri);
       if (response.statusCode == 200) {
@@ -366,6 +441,8 @@ class _WelcomeState extends State<Welcome> {
     }
 
     if (cachedKey.isEmpty) {
+      sinkNext(const Text(
+          'Load SSL key failed. Fallback to buil-in key. Please make sure you have a working internet connection.'));
       ByteData data =
           await PlatformAssetBundle().load('assets/lets-encrypt-r3.pem');
       cachedKey = data.buffer.asUint8List();
@@ -377,7 +454,8 @@ class _WelcomeState extends State<Welcome> {
   }
 
   Future<bool> chaosToursLicenseConsent() async {
-    var licenseConsent = await Cache.licenseConsentChaosTours.load<bool>(false);
+    var licenseConsent =
+        await Cache.chaosToursLicenseAccepted.load<bool>(false);
     var consentGiven = false;
     if (licenseConsent) {
       return true;
@@ -412,7 +490,8 @@ class _WelcomeState extends State<Welcome> {
   }
 
   Future<bool> osmLicenseConsent() async {
-    var licenseConsent = await Cache.licenseConsentChaosTours.load<bool>(false);
+    var licenseConsent =
+        await Cache.chaosToursLicenseAccepted.load<bool>(false);
     var consentGiven = false;
     if (licenseConsent) {
       return true;

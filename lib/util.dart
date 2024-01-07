@@ -87,8 +87,8 @@ Iterable<T> intersperseOuter<T>(T element, Iterable<T> iterable) sync* {
   }
 }
 
-String cutString(String text, int maxLength) =>
-    text.length <= maxLength ? text : '${text.substring(1, maxLength)}...';
+String cutString(String text, [int maxLength = 50]) =>
+    text.length <= maxLength ? text : '${text.substring(0, maxLength)}...';
 
 const _chars = 'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890';
 Random _rnd = Random();

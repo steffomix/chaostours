@@ -16,11 +16,14 @@ limitations under the License.
 
 import 'package:flutter/material.dart';
 import 'package:chaostours/view/app_widgets.dart';
+import 'package:google_fonts/google_fonts.dart';
 //import 'package:chaostours/runtime_data.dart';
 
 class ChaosTours extends StatelessWidget {
   static start() {
     WidgetsFlutterBinding.ensureInitialized();
+
+    GoogleFonts.config.allowRuntimeFetching = false;
     runApp(const ChaosTours());
   }
 

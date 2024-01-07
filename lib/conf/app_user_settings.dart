@@ -53,7 +53,7 @@ enum OsmLookupConditions implements EnumUserSetting<OsmLookupConditions> {
   Future<bool> allowLookup() async {
     OsmLookupConditions setting = await Cache.appSettingOsmLookupCondition
         .load<OsmLookupConditions>(OsmLookupConditions.never);
-    bool licenseConsent = await Cache.licenseConsentOsm.load<bool>(false);
+    bool licenseConsent = await Cache.osmLicenseAccepted.load<bool>(false);
     return licenseConsent && setting.index > 0 && index <= setting.index;
   }
 }

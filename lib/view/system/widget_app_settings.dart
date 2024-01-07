@@ -238,7 +238,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
   final _licenceConsentChaosTours = ValueNotifier<bool>(false);
   Future<Widget> requestChaosToursLicense() async {
     _licenceConsentChaosTours.value =
-        await Cache.licenseConsentChaosTours.load<bool>(false);
+        await Cache.chaosToursLicenseAccepted.load<bool>(false);
 
     return ListTile(
       title: const Text('Chaos Tours License'),
@@ -268,7 +268,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
             TextButton(
                 child: const Text('Decline'),
                 onPressed: () async {
-                  await Cache.licenseConsentChaosTours.save<bool>(false);
+                  await Cache.chaosToursLicenseAccepted.save<bool>(false);
                   _licenceConsentChaosTours.value = false;
                   if (mounted) {
                     Navigator.pop(context);
@@ -277,7 +277,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
             TextButton(
               child: const Text('Consent'),
               onPressed: () async {
-                await Cache.licenseConsentChaosTours.save<bool>(true);
+                await Cache.chaosToursLicenseAccepted.save<bool>(true);
                 _licenceConsentChaosTours.value = true;
                 if (mounted) {
                   Navigator.pop(context);
@@ -292,7 +292,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
 
   final _licenceConsentOsm = ValueNotifier<bool>(false);
   Future<Widget> requestOsmLicense() async {
-    _licenceConsentOsm.value = await Cache.licenseConsentOsm.load<bool>(false);
+    _licenceConsentOsm.value = await Cache.osmLicenseAccepted.load<bool>(false);
 
     return ListTile(
       title: const Text('OpenStreetMap License'),
@@ -322,7 +322,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
             TextButton(
                 child: const Text('Decline'),
                 onPressed: () async {
-                  await Cache.licenseConsentOsm.save<bool>(false);
+                  await Cache.osmLicenseAccepted.save<bool>(false);
                   _licenceConsentOsm.value = false;
                   if (mounted) {
                     Navigator.pop(context);
@@ -331,7 +331,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
             TextButton(
               child: const Text('Consent'),
               onPressed: () async {
-                await Cache.licenseConsentOsm.save<bool>(true);
+                await Cache.osmLicenseAccepted.save<bool>(true);
                 _licenceConsentOsm.value = true;
                 if (mounted) {
                   Navigator.pop(context);

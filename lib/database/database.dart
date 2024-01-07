@@ -299,8 +299,7 @@ enum CacheData {
   static String get schema => '''CREATE TABLE IF NOT EXISTS $table (
 	${id.column}	INTEGER NOT NULL,
 	${key.column}	TEXT NOT NULL,
-	${data.column}	TEXT
-);''';
+	${data.column}	TEXT)''';
 
   @override
   String toString() {
@@ -337,9 +336,7 @@ enum TableTrackPoint {
 	${timeEnd.column}	NUMERIC NOT NULL,
 	${address.column}	TEXT,
 	${notes.column}	TEXT,
-	PRIMARY KEY(${primaryKey.column} AUTOINCREMENT)
-  );
-''';
+	PRIMARY KEY(${primaryKey.column} AUTOINCREMENT))''';
 
   @override
   String toString() {
@@ -363,8 +360,7 @@ enum TableTrackPointAlias {
   static String get schema => '''CREATE TABLE IF NOT EXISTS $table (
 	${idTrackPoint.column}	INTEGER NOT NULL,
 	${idAlias.column}	INTEGER NOT NULL,
-  ${notes.column} Text
-);''';
+  ${notes.column} Text)''';
 
   @override
   String toString() {
@@ -388,8 +384,7 @@ enum TableTrackPointTask {
   static String get schema => '''CREATE TABLE IF NOT EXISTS $table (
 	${idTrackPoint.column}	INTEGER NOT NULL,
 	${idTask.column}	INTEGER NOT NULL,
-  ${notes.column} Text
-);''';
+  ${notes.column} Text)''';
 
   @override
   String toString() {
@@ -413,8 +408,7 @@ enum TableTrackPointUser {
   static String get schema => '''CREATE TABLE IF NOT EXISTS $table (
 	${idTrackPoint.column}	INTEGER NOT NULL,
 	${idUser.column}	INTEGER NOT NULL,
-  ${notes.column} Text
-);''';
+  ${notes.column} Text)''';
 
   @override
   String toString() {
@@ -442,8 +436,7 @@ enum TableTrackPointCalendar {
 	${idCalendar.column}	TEXT,
 	${idEvent.column}	TEXT,
 	${title.column}	TEXT,
-	${body.column} TEXT
-);''';
+	${body.column} TEXT)''';
 
   @override
   String toString() {
@@ -465,8 +458,7 @@ enum TableAliasAliasGroup {
 
   static String get schema => '''CREATE TABLE IF NOT EXISTS $table (
 	${idAlias.column}	INTEGER NOT NULL,
-	${idAliasGroup.column}	INTEGER NOT NULL
-);''';
+	${idAliasGroup.column}	INTEGER NOT NULL)''';
 
   @override
   String toString() {
@@ -488,8 +480,7 @@ enum TableUserUserGroup {
 
   static String get schema => '''CREATE TABLE IF NOT EXISTS $table (
 	${idUser.column}	INTEGER NOT NULL,
-	${idUserGroup.column}	INTEGER NOT NULL
-);''';
+	${idUserGroup.column}	INTEGER NOT NULL)''';
 
   @override
   String toString() {
@@ -511,8 +502,7 @@ enum TableTaskTaskGroup {
 
   static String get schema => '''CREATE TABLE IF NOT EXISTS $table (
 	${idTask.column}	INTEGER NOT NULL,
-	${idTaskGroup.column}	INTEGER NOT NULL
-);''';
+	${idTaskGroup.column}	INTEGER NOT NULL)''';
 
   @override
   String toString() {
@@ -551,8 +541,7 @@ enum TableTask {
 	${sortOrder.column}	TEXT,
 	${title.column}	TEXT NOT NULL,
 	${description.column}	TEXT,
-	PRIMARY KEY(${primaryKey.column} AUTOINCREMENT)
-);''';
+	PRIMARY KEY(${primaryKey.column} AUTOINCREMENT))''';
 
   @override
   String toString() {
@@ -597,8 +586,7 @@ enum TableAlias {
 	${timesVisited.column}	INTEGER,
 	${title.column}	TEXT,
 	${description.column}	TEXT,
-	PRIMARY KEY(${primaryKey.column} AUTOINCREMENT)
-);''';
+	PRIMARY KEY(${primaryKey.column} AUTOINCREMENT))''';
 
   @override
   String toString() {
@@ -641,8 +629,7 @@ enum TableUser {
 	${address.column}	TEXT,
 	${title.column}	TEXT,
 	${description.column}	TEXT,
-	PRIMARY KEY(${primaryKey.column} AUTOINCREMENT)
-);''';
+	PRIMARY KEY(${primaryKey.column} AUTOINCREMENT))''';
 
   @override
   String toString() {
@@ -679,8 +666,7 @@ enum TableTaskGroup {
 	${sortOrder.column}	TEXT,
 	${title.column}	TEXT NOT NULL,
 	${description.column}	TEXT,
-	PRIMARY KEY(${primaryKey.column} AUTOINCREMENT)
-);''';
+	PRIMARY KEY(${primaryKey.column} AUTOINCREMENT))''';
 
   @override
   String toString() {
@@ -717,8 +703,7 @@ enum TableUserGroup {
 	${sortOrder.column}	TEXT,
 	${title.column}	TEXT,
 	${description.column}	TEXT,
-	PRIMARY KEY(${primaryKey.column} AUTOINCREMENT)
-);''';
+	PRIMARY KEY(${primaryKey.column} AUTOINCREMENT))''';
 
   @override
   String toString() {
@@ -740,8 +725,7 @@ enum TableAliasTopic {
 
   static String get schema => '''CREATE TABLE IF NOT EXISTS $table (
 	${idAlias.column}	INTEGER,
-	${idTopic.column}	INTEGER
-);''';
+	${idTopic.column}	INTEGER)''';
 
   @override
   String toString() {
@@ -774,8 +758,7 @@ enum TableTopic {
 	${sortOrder.column}	TEXT,
 	${title.column}	TEXT,
 	${description.column}	TEXT,
-	PRIMARY KEY(${primaryKey.column} AUTOINCREMENT)
-);''';
+	PRIMARY KEY(${primaryKey.column} AUTOINCREMENT))''';
 
   @override
   String toString() {
@@ -810,8 +793,7 @@ enum TableAliasGroup {
 	${privacy.column}	INTEGER,
 	${title.column}	TEXT,
 	${description.column}	TEXT,
-	PRIMARY KEY(${primaryKey.column} AUTOINCREMENT)
-);''';
+	PRIMARY KEY(${primaryKey.column} AUTOINCREMENT))''';
 
   @override
   String toString() {
@@ -866,41 +848,65 @@ class DbTable {
   }
 
   static final List<String> indexes = [
-    '''
-CREATE INDEX IF NOT EXISTS ${TableTrackPointAlias.table}_index ON ${TableTrackPointAlias.table} (
-	${TableTrackPointAlias.idAlias.column}	ASC,
-	${TableTrackPointAlias.idTrackPoint.column} ASC
-);''',
-    '''
-CREATE INDEX IF NOT EXISTS ${TableTrackPoint.table}_gps ON ${TableTrackPoint.table} (
+    ///
+    /// GPS
+    ///
+    '''CREATE INDEX IF NOT EXISTS index_gps_${TableTrackPoint.table} ON ${TableTrackPoint.table} (
 	${TableTrackPoint.latitude.column}	ASC,
-	${TableTrackPoint.longitude.column} ASC
-);''',
-    '''
-CREATE INDEX IF NOT EXISTS ${TableAlias.table}_gps ON ${TableAlias.table} (
+	${TableTrackPoint.longitude.column} ASC)''',
+
+    '''CREATE INDEX IF NOT EXISTS index_gps_${TableAlias.table} ON ${TableAlias.table} (
 	${TableAlias.latitude.column} ASC,
-	${TableAlias.longitude.column}	ASC
-)''',
-    '''
-CREATE INDEX IF NOT EXISTS ${TableAliasAliasGroup.table}_index ON ${TableAliasAliasGroup.table} (
-	${TableAliasAliasGroup.idAliasGroup.column} ASC,
-	${TableAliasAliasGroup.idAlias.column}	ASC
-)''',
-    '''
-CREATE INDEX IF NOT EXISTS ${TableUserUserGroup.table}_index ON ${TableUserUserGroup.table} (
-	${TableUserUserGroup.idUserGroup.column} ASC,
-	${TableUserUserGroup.idUser.column}	ASC
-)''',
-    '''
-CREATE INDEX IF NOT EXISTS ${TableTaskTaskGroup.table}_index ON ${TableTaskTaskGroup.table} (
+	${TableAlias.longitude.column}	ASC)''',
+
+    /// calendar to trackpoint
+    /// ***not unique!***, calendar ids are text and can change unpredectable)
+    /// make a clean query on boot instead to remove doubles
+    /*
+    keep the last insert with max(rowid)
+    delete from *table* where rowid not in 
+      (select max(rowid) from *table* group by *table*.column1, *table*.column2 [,...])
+
+    https://stackoverflow.com/a/8190671/4823385
+    */
+    '''CREATE INDEX IF NOT EXISTS index_${TableTrackPointCalendar.table}_${TableTrackPointCalendar.table} ON ${TableTrackPointCalendar.table} (
+	${TableTrackPointCalendar.idCalendar.column}	ASC,
+	${TableTrackPointCalendar.idTrackPoint.column} ASC)''',
+
+    ///
+    /// asset to trackpoint
+    ///
+    '''CREATE UNIQUE INDEX IF NOT EXISTS index_${TableTrackPointAlias.table}_${TableTrackPointAlias.table} ON ${TableTrackPointAlias.table} (
+	${TableTrackPointAlias.idAlias.column}	ASC,
+	${TableTrackPointAlias.idTrackPoint.column} ASC)''',
+
+    '''CREATE UNIQUE INDEX IF NOT EXISTS index_${TableTrackPointUser.table}_${TableTrackPointUser.table} ON ${TableTrackPointUser.table} (
+	${TableTrackPointUser.idUser.column}	ASC,
+	${TableTrackPointUser.idTrackPoint.column} ASC)''',
+
+    '''CREATE UNIQUE INDEX IF NOT EXISTS index_${TableTrackPointTask.table}_${TableTrackPointTask.table} ON ${TableTrackPointTask.table} (
+	${TableTrackPointTask.idTask.column}	ASC,
+	${TableTrackPointTask.idTrackPoint.column} ASC)''',
+
+    ///
+    /// asset to group
+    ///
+    '''CREATE UNIQUE INDEX IF NOT EXISTS index_${TableAlias.table}_${TableAliasGroup.table} ON ${TableAliasAliasGroup.table} (
+	${TableAliasAliasGroup.idAlias.column}	ASC,
+	${TableAliasAliasGroup.idAliasGroup.column} ASC)''',
+
+    '''CREATE UNIQUE INDEX IF NOT EXISTS index_${TableUser.table}_${TableUserGroup.table} ON ${TableUserUserGroup.table} (
+	${TableUserUserGroup.idUser.column}	ASC,
+	${TableUserUserGroup.idUserGroup.column} ASC)''',
+
+    '''CREATE UNIQUE INDEX IF NOT EXISTS index_${TableTask.table}_${TableTaskGroup.table} ON ${TableTaskTaskGroup.table} (
 	${TableTaskTaskGroup.idTaskGroup.column} ASC,
-	${TableTaskTaskGroup.idTask.column}	ASC
-)'''
+	${TableTaskTaskGroup.idTask.column}	ASC)''',
   ];
 
   static final List<String> inserts = [
-    '''INSERT INTO ${TableTaskGroup.table} VALUES (1,1,1,0,NULL,"Default Taskgroup",NULL)''',
-    '''INSERT INTO ${TableUserGroup.table} VALUES (1,1,1,0,NULL,"Default Usergroup",NULL)''',
-    '''INSERT INTO ${TableAliasGroup.table} VALUES (1,NULL,1,1,"Default Aliasgroup",NULL)''',
+    'INSERT INTO ${TableAliasGroup.table} (title) VALUES ("Default Aliasgroup")',
+    'INSERT INTO ${TableUserGroup.table} (title) VALUES ("Default Usergroup")',
+    'INSERT INTO ${TableTaskGroup.table} (title) VALUES ("Default Taskgroup")',
   ];
 }

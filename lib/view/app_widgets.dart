@@ -54,7 +54,6 @@ class AppWidgets {
   static final Logger logger = Logger.logger<AppWidgets>();
 
   static Widget materialApp(BuildContext context) {
-    GoogleFonts.config.allowRuntimeFetching = false;
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       //themeMode: ThemeMode.system,
@@ -340,8 +339,8 @@ class AppWidgets {
   static Future<void> dialog(
       {required BuildContext context,
       Widget? title,
-      required List<Widget> contents,
-      required List<Widget> buttons,
+      List<Widget> contents = const [],
+      List<Widget> buttons = const [],
       bool isDismissible = false}) async {
     return await showDialog(
         barrierDismissible: isDismissible,
