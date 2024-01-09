@@ -97,6 +97,7 @@ class _WelcomeState extends State<Welcome> {
   ///
   /// preload recources
   Future<void> preload() async {
+    await Future.delayed(const Duration(milliseconds: 200));
     try {
       // check chaosTours license
       if (!(await Cache.chaosToursLicenseAccepted.load<bool>(false))) {
@@ -322,7 +323,7 @@ class _WelcomeState extends State<Welcome> {
 
       bool osm = await OsmLookupConditions.onUserRequest.allowLookup();
       if (isFirstRun && mounted) {
-        AppWidgets.dialog(
+        await AppWidgets.dialog(
             context: context,
             title: const Text('Install Data'),
             contents: [
@@ -348,7 +349,7 @@ class _WelcomeState extends State<Welcome> {
 
       if (!(await Cache.useOfCalendarRequested.load<bool>(false)) && mounted) {
         sinkNext(const Text('Request use of device calendar'));
-        AppWidgets.dialog(
+        await AppWidgets.dialog(
             context: context,
             title: const Text('Device Calendar'),
             contents: [

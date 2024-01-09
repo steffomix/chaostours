@@ -231,7 +231,7 @@ class _WidgetTrackPointsState extends BaseWidgetState<WidgetTrackPoints> {
         ),
         Center(
             child: Text(
-                '${util.formatDate(model.timeStart)} - ${util.formatDate(model.timeStart)}')),
+                '${util.formatDateTime(model.timeStart)} - ${util.formatDateTime(model.timeStart)}')),
         Center(child: Text(util.formatDuration(model.duration))),
         Align(
             alignment: Alignment.centerLeft,

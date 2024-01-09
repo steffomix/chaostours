@@ -312,7 +312,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     return ListenableBuilder(
         listenable: _listenableDate,
         builder: (context, child) {
-          return Text(util.formatDate(DateTime.now()));
+          return Text(util.formatDateTime(DateTime.now()));
         });
   }
 
@@ -556,7 +556,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                                 onPressed: () {
                                   Navigator.pushNamed(
                                           context, AppRoutes.editUser.route,
-                                          arguments: channelModel.id)
+                                          arguments: channelModel.model.id)
                                       .then((value) {
                                     if (mounted) {
                                       render();
@@ -621,7 +621,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       }
     }
 
-    List<int> modelIds = dataChannel.userList.map<int>((e) => e.id).toList();
+    List<int> modelIds =
+        dataChannel.userList.map<int>((e) => e.model.id).toList();
     List<ModelUser> selectables = await ModelUser.selectable();
     List<Widget> contents = (selectables).map<Widget>(
       (model) {
@@ -744,7 +745,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                                 onPressed: () {
                                   Navigator.pushNamed(
                                           context, AppRoutes.editTask.route,
-                                          arguments: channelModel.id)
+                                          arguments: channelModel.model.id)
                                       .then((value) {
                                     if (mounted) {
                                       render();
@@ -809,7 +810,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       }
     }
 
-    List<int> modelIds = dataChannel.taskList.map<int>((e) => e.id).toList();
+    List<int> modelIds =
+        dataChannel.taskList.map<int>((e) => e.model.id).toList();
     List<ModelTask> selectables = await ModelTask.selectable();
     List<Widget> contents = (selectables).map<Widget>(
       (model) {

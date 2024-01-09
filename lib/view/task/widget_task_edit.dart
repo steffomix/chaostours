@@ -14,17 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import 'package:chaostours/model/model_task_statistics.dart';
-import 'package:chaostours/view/trackpoint/widget_trackpoint_list.dart';
 import 'package:flutter/material.dart';
 
 //import 'package:chaostours/logger.dart';
+import 'package:chaostours/statistics/task_statistics.dart';
+import 'package:chaostours/view/trackpoint/widget_trackpoint_list.dart';
 import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_task_group.dart';
-import 'package:chaostours/util.dart' as util;
-import 'package:flutter/services.dart';
 
 class WidgetTaskEdit extends StatefulWidget {
   const WidgetTaskEdit({super.key});
@@ -87,80 +85,6 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
         });
   }
 
-  void statistics(
-      {required ModelTaskStatistics stats, required ModelTask model}) {
-    AppWidgets.dialog(
-        isDismissible: true,
-        context: context,
-        title: const Text('Statistics'),
-        contents: [
-          SingleChildScrollView(
-              controller: ScrollController(),
-              scrollDirection: Axis.horizontal,
-              child: DataTable(showBottomBorder: true, columns: const [
-                DataColumn(label: SizedBox.shrink()),
-                DataColumn(label: Text(''))
-              ], rows: [
-                DataRow(cells: [
-                  const DataCell(Text('First Trackpoint')),
-                  DataCell(Text(util.formatDate(stats.firstVisited)))
-                ]),
-                DataRow(cells: [
-                  const DataCell(Text('Last Trackpoint')),
-                  DataCell(Text(util.formatDate(stats.lastVisited)))
-                ]),
-                DataRow(cells: [
-                  const DataCell(Text('Count Trackpoints')),
-                  DataCell(Text(stats.count.toString()))
-                ]),
-                DataRow(cells: [
-                  const DataCell(Text('Duration Min.')),
-                  DataCell(Text(util.formatDuration(stats.durationMin)))
-                ]),
-                DataRow(cells: [
-                  const DataCell(Text('Duration Max.')),
-                  DataCell(Text(util.formatDuration(stats.durationMax)))
-                ]),
-                DataRow(cells: [
-                  const DataCell(Text('Duration Avg.')),
-                  DataCell(Text(util.formatDuration(stats.durationAverage)))
-                ]),
-                DataRow(cells: [
-                  const DataCell(Text('Duration Total')),
-                  DataCell(Text(util.formatDuration(stats.durationTotal)))
-                ]),
-              ]))
-        ],
-        buttons: [
-          TextButton(
-            child: const Icon(Icons.copy),
-            onPressed: () {
-              Clipboard.setData(ClipboardData(text: '''
-Task:\t ${model.title}
-
-First Trackpoint:\t ${util.formatDate(stats.firstVisited)}
-Last Trackpoint:\t ${util.formatDate(stats.lastVisited)}
-Count Trackpoints:\t ${stats.count}
-
-Min. Duration:\t ${util.formatDuration(stats.durationMin)}
-Max. Duration:\t ${util.formatDuration(stats.durationMax)}
-Avg. Duration:\t ${util.formatDuration(stats.durationAverage)}
-Duration Total:\t ${util.formatDuration(stats.durationTotal)}
-
-Task Description:\t ${model.description}
-'''));
-              Navigator.pop(context);
-            },
-          ),
-          TextButton(
-            child: const Text('OK'),
-            onPressed: () {
-              Navigator.pop(context);
-            },
-          )
-        ]);
-  }
-
   Widget renderBody() {
     return ListView(children: [
       /// Trackpoints button
@@ -174,8 +98,15 @@ Task Description:\t ${model.description}
               child: const Text('Task Trackpoints')),
           FilledButton(
               onPressed: () async {
-                var model = await ModelTaskStatistics.statistics(_model!);
-                statistics(stats: model, model: _model!);
+                var stats = await TaskStatistics.statistics(_model!);
+
+                if (mounted) {
+                  AppWidgets.statistics(context, stats: stats,
+                      reload: (DateTime start, DateTime end) async {
+                    return await TaskStatistics.statistics(stats.model,
+                        start: start, end: end);
+                  });
+                }
               },
               child: const Text('Task Statistics'))
         ],

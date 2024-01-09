@@ -309,11 +309,13 @@ enum CacheData {
 
 enum TableTrackPoint {
   id('id'),
+  ignore('ignore'),
   latitude('latitude'),
   longitude('longitude'),
   timeStart('datetime_start'),
   timeEnd('datetime_end'),
   address('address'),
+  fullAddress('fullAddress'),
   notes('notes');
 
   static const String table = 'trackpoint';
@@ -330,11 +332,13 @@ enum TableTrackPoint {
 
   static String get schema => '''CREATE TABLE IF NOT EXISTS $table (
 	${primaryKey.column}	INTEGER NOT NULL,
+  ${ignore.column} INTEGER,
 	${latitude.column}	NUMERIC NOT NULL,
 	${longitude.column}	NUMERIC NOT NULL,
-	${timeStart.column}	NUMERIC NOT NULL,
-	${timeEnd.column}	NUMERIC NOT NULL,
+	${timeStart.column}	INTEGER NOT NULL,
+	${timeEnd.column}	INTEGER NOT NULL,
 	${address.column}	TEXT,
+	${fullAddress.column}	TEXT,
 	${notes.column}	TEXT,
 	PRIMARY KEY(${primaryKey.column} AUTOINCREMENT))''';
 

@@ -457,7 +457,7 @@ class _WidgetImportExport extends State<WidgetImportExport> {
 
     AppWidgets.dialog(
         context: context,
-        title: const Text('Import Database'),
+        title: const Text('Reset Database'),
         contents: [
           ValueListenableBuilder(
             valueListenable: counter,
@@ -512,7 +512,7 @@ class _WidgetImportExport extends State<WidgetImportExport> {
                             ? () async {
                                 dialogActionLog(
                                     context,
-                                    'Import Database',
+                                    'Reset Database',
                                     DB.deleteDatabase(
                                         onSuccess: () =>
                                             dialogShutdown(context),
@@ -521,7 +521,7 @@ class _WidgetImportExport extends State<WidgetImportExport> {
                                             () => Navigator.pop(context))));
                               }
                             : null,
-                        child: const Text('Import Database'),
+                        child: const Text('Reset Database'),
                       ))
                     ])
                   ],

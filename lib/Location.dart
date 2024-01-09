@@ -335,6 +335,7 @@ class Location {
         calendarEventIds: await Cache.backgroundCalendarLastEventIds
             .load<List<CalendarEventId>>([]),
         address: address.address,
+        fullAddress: address.addressDetails,
         notes: await Cache.backgroundTrackPointUserNotes.load<String>(''));
 
     final sharedAlias = await Cache.backgroundSharedAliasList
@@ -436,7 +437,9 @@ class Location {
             await txn.insert(TableTrackPointCalendar.table, {
               TableTrackPointCalendar.idTrackPoint.column: tp.id,
               TableTrackPointCalendar.idCalendar.column: calId.calendarId,
-              TableTrackPointCalendar.idEvent.column: calId.eventId
+              TableTrackPointCalendar.idEvent.column: calId.eventId,
+              TableTrackPointCalendar.title.column: title,
+              TableTrackPointCalendar.body.column: description
             });
           }
         },

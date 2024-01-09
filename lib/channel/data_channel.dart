@@ -17,6 +17,10 @@ limitations under the License.
 import 'package:flutter_background_service/flutter_background_service.dart';
 
 ///
+import 'package:chaostours/channel/channel_alias.dart';
+import 'package:chaostours/channel/channel_task.dart';
+import 'package:chaostours/channel/channel_user.dart';
+import 'package:chaostours/channel/trackpoint_data.dart';
 import 'package:chaostours/shared/shared_trackpoint_alias.dart';
 import 'package:chaostours/shared/shared_trackpoint_task.dart';
 import 'package:chaostours/shared/shared_trackpoint_user.dart';
@@ -49,59 +53,13 @@ enum DataChannelKey {
   lastFullAddress;
 }
 
-abstract class ChannelAsset {
-  String? get sortOrder;
-}
-
-class ChannelAlias {
-  final int distance;
-  final int id;
-  final ModelAlias model;
-  final SharedTrackpointAlias shared;
-
-  ChannelAlias(
-      {required this.id,
-      required this.model,
-      required this.shared,
-      required this.distance});
-}
-
-class ChannelUser implements ChannelAsset {
-  final int id;
-  final ModelUser model;
-  final SharedTrackpointUser shared;
-
-  ChannelUser({required this.id, required this.model, required this.shared});
-
-  @override
-  String get sortOrder => model.sortOrder;
-}
-
-class ChannelTask implements ChannelAsset {
-  final int id;
-  final ModelTask model;
-  final SharedTrackpointTask shared;
-
-  ChannelTask({required this.id, required this.model, required this.shared});
-
-  @override
-  String get sortOrder => model.sortOrder;
-}
-
-class DataChannel {
+class DataChannel extends TrackPointData {
   static final Logger logger = Logger.logger<DataChannel>();
   static DataChannel? _instance;
   factory DataChannel() => _instance ??= DataChannel._();
   bool _initialized = false;
   bool get initalized => _initialized;
   int tick = 0;
-  GPS? gps;
-  List<GPS> gpsPoints = [];
-  List<GPS> gpsSmoothPoints = [];
-  List<GPS> gpsCalcPoints = [];
-  GPS? gpsLastStatusChange;
-  GPS? gpsLastStatusStanding;
-  GPS? gpsLastStatusMoving;
 
   /// computed values
   TrackingStatus trackingStatus = TrackingStatus.standing;
@@ -114,22 +72,6 @@ class DataChannel {
   int get distance => trackingStatus == TrackingStatus.standing
       ? distanceStanding
       : distanceMoving;
-
-  Duration get duration =>
-      gpsLastStatusChange?.time.difference(DateTime.now()).abs() ??
-      Duration.zero;
-
-  int distanceTreshold = 0; // meter
-  Duration durationTreshold = Duration.zero;
-
-  String address = '';
-  String fullAddress = '';
-
-  List<ChannelAlias> aliasList = [];
-  List<ChannelUser> userList = [];
-  List<ChannelTask> taskList = [];
-
-  String notes = '';
 
   bool skipTracking = false;
 
@@ -303,7 +245,6 @@ class DataChannel {
       int distance = GPS.distance(g, model.gps).round();
       try {
         list.add(ChannelAlias(
-            id: shared.id,
             model: modelAliasList.firstWhere((model) => model.id == shared.id),
             shared: shared,
             distance: distance));
@@ -327,7 +268,6 @@ class DataChannel {
     for (var shared in sharedUserList) {
       try {
         list.add(ChannelUser(
-            id: shared.id,
             model: modelUserList.firstWhere((model) => model.id == shared.id),
             shared: shared));
       } catch (e) {
@@ -350,7 +290,6 @@ class DataChannel {
     for (var shared in sharedTaskList) {
       try {
         list.add(ChannelTask(
-            id: shared.id,
             model: modelTaskList.firstWhere((model) => model.id == shared.id),
             shared: shared));
       } catch (e) {

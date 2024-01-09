@@ -42,6 +42,7 @@ class ModelTrackPoint {
 
   ///
   String address = '';
+  String fullAddress = '';
   String notes = ''; // calendarId;calendarEventId
 
   List<ModelTrackpointAsset> aliasTrackpoints = [];
@@ -83,10 +84,11 @@ class ModelTrackPoint {
   int sortDistance = 0;
 
   ModelTrackPoint(
-      {required this.timeStart,
+      {required this.gps,
+      required this.timeStart,
       required this.timeEnd,
-      required this.gps,
       this.address = '',
+      this.fullAddress = '',
       this.notes = '',
       this.calendarEventIds = const []});
 
@@ -126,6 +128,7 @@ class ModelTrackPoint {
       TableTrackPoint.timeEnd.column:
           (timeEnd.millisecondsSinceEpoch / 1000).round(),
       TableTrackPoint.address.column: address,
+      TableTrackPoint.fullAddress.column: fullAddress,
       TableTrackPoint.notes.column: notes
     };
   }
@@ -138,6 +141,7 @@ class ModelTrackPoint {
             DB.intToTime(DB.parseInt(map[TableTrackPoint.timeStart.column])),
         timeEnd: DB.intToTime(DB.parseInt(map[TableTrackPoint.timeEnd.column])),
         address: (map[TableTrackPoint.address.column] ?? '').toString(),
+        fullAddress: (map[TableTrackPoint.fullAddress.column] ?? '').toString(),
         notes: (map[TableTrackPoint.notes.column] ?? '').toString());
     model._id = DB.parseInt(map[TableTrackPoint.primaryKey.column]);
     return model;
@@ -196,6 +200,8 @@ class ModelTrackPoint {
           logger.error('insert idUser: $e', stk);
         }
       }
+      /* 
+      /// moved to Location
       for (var cal in calendarEventIds) {
         try {
           await txn.insert(TableTrackPointCalendar.table, {
@@ -206,7 +212,7 @@ class ModelTrackPoint {
         } catch (e, stk) {
           logger.error('insert idUser: $e', stk);
         }
-      }
+      } */
     });
     return this;
   }
@@ -557,12 +563,14 @@ class ModelTrackPoint {
     return models;
   }
 
-  static Future<List<ModelTrackPoint>> search(String search,
-      {int limit = 20,
-      int offset = 0,
-      int? idAlias,
-      int? idUser,
-      int? idTask}) async {
+  static Future<List<ModelTrackPoint>> search(
+    String search, {
+    int limit = 20,
+    int offset = 0,
+    int? idAlias,
+    int? idUser,
+    int? idTask,
+  }) async {
     String aliasIds = 'col1';
     String userIds = 'col2';
     String taskIds = 'col3';

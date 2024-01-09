@@ -16,6 +16,8 @@ limitations under the License.
 
 import 'package:app_settings/app_settings_platform_interface.dart';
 import 'package:chaostours/conf/app_colors.dart';
+import 'package:chaostours/model/model.dart';
+import 'package:chaostours/statistics/asset_statistics.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_user.dart';
 import 'package:flutter/material.dart';
@@ -68,7 +70,7 @@ class AppWidgets {
       // use a lower package version, some properties may not be supported.
       // In that case remove them after copying this theme to your app.
       theme: FlexThemeData.light(
-        scheme: FlexScheme.amber,
+        scheme: FlexScheme.gold,
         surfaceMode: FlexSurfaceMode.levelSurfacesLowScaffold,
         blendLevel: 7,
         subThemesData: const FlexSubThemesData(
@@ -241,7 +243,7 @@ class AppWidgets {
   }
 
   static String timeInfo(DateTime timeStart, DateTime timeEnd) {
-    var day = util.formatDate(timeStart);
+    var day = util.formatDateTime(timeStart);
     String duration = util.formatDuration(timeStart.difference(timeEnd).abs());
     return '$day\n${timeStart.hour}:${timeStart.minute}::${timeStart.second} - ${timeEnd.hour}:${timeEnd.minute}::${timeEnd.second}\nDuration: $duration';
   }
@@ -519,6 +521,155 @@ class AppWidgets {
                 }
               },
               child: const Text('Create')),
+        ]);
+  }
+
+  static void statistics(BuildContext context,
+      {required AssetStatistics stats,
+      required Future<AssetStatistics> Function(DateTime start, DateTime end)
+          reload}) {
+    final notify = ValueNotifier(stats);
+    final startBounds =
+        util.removeTime(stats.firstVisited.subtract(const Duration(days: 1)));
+    final endBounds =
+        util.removeTime(stats.lastVisited.add(const Duration(days: 1)));
+/* 
+    Widget dateStart = FilledButton(
+      child: Text(util.formatDate(stats.firstVisited)),
+      onPressed: () async {
+        stats = await reload(
+            await showDatePicker(
+                    context: context,
+                    firstDate: stats.firstVisited,
+                    lastDate: stats.lastVisited) ??
+                stats.firstVisited,
+            stats.lastVisited);
+      },
+    );
+    Widget dateEnd = FilledButton(
+      child: Text(util.formatDate(stats.lastVisited)),
+      onPressed: () async {
+        stats = await reload(
+          stats.firstVisited,
+          await showDatePicker(
+                  context: context,
+                  firstDate: stats.firstVisited,
+                  lastDate: stats.lastVisited) ??
+              stats.lastVisited,
+        );
+      },
+    );
+ */
+    Widget contents = ValueListenableBuilder(
+      valueListenable: notify,
+      builder: (context, value, child) {
+        stats = value;
+
+        return Column(children: [
+          TextButton(
+              child: const Text('Reset dates'),
+              onPressed: () async {
+                notify.value = await reload(startBounds, endBounds);
+              }),
+          SingleChildScrollView(
+              controller: ScrollController(),
+              scrollDirection: Axis.horizontal,
+              child: DataTable(showBottomBorder: true, columns: const [
+                DataColumn(label: SizedBox.shrink()),
+                DataColumn(label: Text(''))
+              ], rows: [
+                DataRow(cells: [
+                  const DataCell(Text('First Trackpoint')),
+                  DataCell(FilledButton(
+                    child: Text(util.formatDateTime(stats.firstVisited)),
+                    onPressed: () async {
+                      notify.value = await reload(
+                          util.removeTime(await showDatePicker(
+                                  helpText: 'Select start',
+                                  context: context,
+                                  firstDate: startBounds,
+                                  lastDate: endBounds) ??
+                              stats.firstVisited),
+                          stats.lastVisited);
+                    },
+                  ))
+                ]),
+                DataRow(cells: [
+                  const DataCell(Text('Last Trackpoint')),
+                  DataCell(FilledButton(
+                    child: Text(util.formatDateTime(stats.lastVisited)),
+                    onPressed: () async {
+                      notify.value = await reload(
+                        stats.firstVisited,
+                        util.removeTime(await showDatePicker(
+                                helpText: 'Select end',
+                                context: context,
+                                firstDate: startBounds,
+                                lastDate: endBounds) ??
+                            stats.lastVisited),
+                      );
+                    },
+                  ))
+                ]),
+                DataRow(cells: [
+                  const DataCell(Text('Times visited')),
+                  DataCell(Text(stats.count.toString()))
+                ]),
+                DataRow(cells: [
+                  const DataCell(Text('Duration Min.')),
+                  DataCell(Text(util.formatDuration(stats.durationMin)))
+                ]),
+                DataRow(cells: [
+                  const DataCell(Text('Duration Max.')),
+                  DataCell(Text(util.formatDuration(stats.durationMax)))
+                ]),
+                DataRow(cells: [
+                  const DataCell(Text('Duration Avg.')),
+                  DataCell(Text(util.formatDuration(stats.durationAverage)))
+                ]),
+                DataRow(cells: [
+                  const DataCell(Text('Duration Total')),
+                  DataCell(Text(util.formatDuration(stats.durationTotal)))
+                ]),
+              ]))
+        ]);
+      },
+    );
+
+    AppWidgets.dialog(
+        isDismissible: true,
+        context: context,
+        title: const Text('Statistics'),
+        contents: [
+          contents
+        ],
+        buttons: [
+          TextButton(
+            child: const Icon(Icons.copy),
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: '''
+Location Alias:\t ${stats.model.title}
+
+First Visited:\t ${util.formatDateTime(stats.firstVisited)}
+Last Visited:\t ${util.formatDateTime(stats.lastVisited)}
+Times Visited:\t ${stats.count}
+
+Min. Duration:\t ${util.formatDuration(stats.durationMin)}
+Max. Duration:\t ${util.formatDuration(stats.durationMax)}
+Avg. Duration:\t ${util.formatDuration(stats.durationAverage)}
+Duration Total:\t ${util.formatDuration(stats.durationTotal)}
+
+Location Description:\t ${stats.model.description}
+'''));
+              Navigator.pop(context);
+            },
+          ),
+          TextButton(
+            child: const Text('OK'),
+            onPressed: () {
+              Navigator.pop(context);
+            },
+          )
         ]);
   }
 }

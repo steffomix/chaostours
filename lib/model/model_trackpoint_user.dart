@@ -45,4 +45,16 @@ class ModelTrackpointUser extends ModelTrackpointAsset {
         id: DB.parseInt(map[TableTrackPointUser.idUser.column]),
         notes: DB.parseString(map[TableTrackPointUser.notes.column]));
   }
+
+  Future<int> update(String notes) async {
+    return await DB.execute<int>(
+      (txn) async {
+        return await txn.update(TableTrackPointUser.table,
+            {TableTrackPointUser.notes.column: notes},
+            where:
+                '${TableTrackPointUser.idTrackPoint.column} = ? AND ${TableTrackPointUser.idUser.column} = ?',
+            whereArgs: [trackpointId, id]);
+      },
+    );
+  }
 }

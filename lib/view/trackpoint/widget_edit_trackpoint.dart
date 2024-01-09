@@ -14,6 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/channel/data_channel.dart';
+import 'package:chaostours/location.dart';
+import 'package:chaostours/shared/shared_trackpoint_user.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 //
@@ -27,6 +30,7 @@ import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/screen.dart';
 import 'package:chaostours/gps.dart';
+import 'package:chaostours/util.dart' as util;
 
 ///
 /// CheckBox list
@@ -41,279 +45,327 @@ class WidgetEditTrackPoint extends StatefulWidget {
 class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
   Logger logger = Logger.logger<WidgetEditTrackPoint>();
 
-  /// editable fields
-  List<int> tpTasks = [];
-  List<int> tpUsers = [];
+  late ModelTrackPoint _model;
+  late Location _location;
 
-  List<ModelAlias> trackPointAliasModels = [];
+  TextEditingController? _addressController;
+  final _addressUndoController = UndoHistoryController();
 
-  List<ModelUser> allUserModels = [];
-  List<ModelTask> allTaskModels = [];
-  TextEditingController tpNotes = TextEditingController();
+  TextEditingController? _fullAddressController;
+  final _fullAddressUndoController = UndoHistoryController();
 
-  late ModelTrackPoint trackPoint;
-
-  bool initialized = false;
-
-  /// modify
-  ValueNotifier<bool> modified = ValueNotifier<bool>(false);
-  void modify() {
-    modified.value = true;
-  }
-
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
-  /// current trackpoint
-  Widget trackPointInfo(BuildContext context) {
-    return Container(
-        padding: const EdgeInsets.all(10),
-        child: ListBody(children: [
-          Center(
-              heightFactor: 2,
-              child: trackPointAliasModels.isEmpty
-                  ? TextButton(
-                      child: Text('OSM: ${trackPoint.address}'),
-                      onPressed: () async {
-                        GPS gps = await GPS.gps();
-                        await GPS.launchGoogleMaps(gps.lat, gps.lon,
-                            trackPoint.gps.lat, trackPoint.gps.lon);
-                      },
-                    )
-                  : TextButton(
-                      child: Text(
-                          'Alias: ${trackPointAliasModels.map((e) => e.title).join('\n- ')}'),
-                      onPressed: () async {
-                        int id = trackPointAliasModels.first.id;
-                        await Navigator.pushNamed(
-                            context, AppRoutes.editAlias.route,
-                            arguments: id);
-                      },
-                    )),
-          Text(AppWidgets.timeInfo(trackPoint.timeStart, trackPoint.timeEnd)),
-        ]));
-  }
-
-  List<Widget> taskCheckboxes() {
-    //var referenceList = tpTasks;
-    var checkBoxes = <Widget>[];
-    for (var model in allTaskModels) {
-      if (model.isActive) {
-        checkBoxes.add(const Text('under contruction')
-
-            /* AppWidgets.checkboxListTile(CheckboxController(
-            idReference: model.id,
-            referenceList: referenceList,
-            isActive: model.isActive,
-            title: model.title,
-            subtitle: model.description,
-            onToggle: (bool? checked) {
-              modify();
-            })) */
-            );
-      }
+  Future<ModelTrackPoint> loadModel(int id) async {
+    ModelTrackPoint? model = await ModelTrackPoint.byId(id);
+    if (model == null) {
+      throw 'Trackpoint #$id not found';
     }
-    return checkBoxes;
+    _location = await Location.location(model.gps);
+    return model;
   }
 
-  List<Widget> userCheckboxes() {
-    //var referenceList = tpUsers;
-    var checkBoxes = <Widget>[];
-    for (var model in allUserModels) {
-      if (model.isActive) {
-        checkBoxes.add(const Text(
-                'under contruction') /* AppWidgets.checkboxListTile(CheckboxController(
-            idReference: model.id,
-            referenceList: referenceList,
-            isActive: model.isActive,
-            title: model.title,
-            subtitle: model.description,
-            onToggle: (bool? checked) {
-              modify();
-            })) */
-            );
-      }
+  void render() {
+    if (mounted) {
+      render();
     }
-    return checkBoxes;
   }
 
-  bool dropdownUserIsOpen = false;
-  Widget dropdownUser() {
-    /// render selected users
-    List<String> userList = [];
-    for (var item in allUserModels) {
-      if (tpUsers.contains(item.id)) {
-        userList.add(item.title);
-      }
-    }
-    String users = userList.isNotEmpty ? '\n- ${userList.join('\n- ')}' : ' - ';
-
-    /// dropdown menu botten with selected users
-    List<Widget> items = [
-      FilledButton(
-        child: ListTile(
-            trailing: const Icon(Icons.menu), title: Text('Personal:$users')),
-        onPressed: () {
-          dropdownUserIsOpen = !dropdownUserIsOpen;
-          setState(() {});
-        },
-      ),
-      !dropdownUserIsOpen
-          ? const SizedBox.shrink()
-          : Column(children: userCheckboxes())
-    ];
-    return ListBody(children: items);
-  }
-
-  bool dropdownTasksIsOpen = false;
-  Widget dropdownTasks(context) {
-    /// render selected tasks
-    List<String> taskList = [];
-    for (var item in allTaskModels) {
-      if (tpTasks.contains(item.id)) {
-        taskList.add(item.title);
-      }
-    }
-    String tasks = taskList.isNotEmpty ? '\n- ${taskList.join('\n- ')}' : ' - ';
-
-    /// dropdown menu botten with selected tasks
-    List<Widget> items = [
-      FilledButton(
-        child: ListTile(
-            trailing: const Icon(Icons.menu), title: Text('Arbeiten:$tasks')),
-        onPressed: () {
-          dropdownTasksIsOpen = !dropdownTasksIsOpen;
-          setState(() {});
-        },
-      ),
-      !dropdownTasksIsOpen
-          ? const SizedBox.shrink()
-          : Column(children: taskCheckboxes())
-    ];
-    return ListBody(children: items);
-  }
-
-  Widget notes(BuildContext context) {
-    return Container(
-        padding: const EdgeInsets.all(10),
-        child: TextField(
-            decoration: const InputDecoration(
-                label: Text('Notizen'),
-                contentPadding: EdgeInsets.all(2),
-                border: InputBorder.none),
-            //expands: true,
-            maxLines: null,
-            minLines: 2,
-            controller: tpNotes,
-            onChanged: (String? s) {
-              modify();
-            }));
-  }
-
-  Widget map(context) {
-    Screen screen = Screen(context);
-    return SizedBox(
-        width: screen.width,
-        height: 25,
-        child: IconButton(
-            icon: const Icon(Icons.map),
-            onPressed: () async {
-              var gps = await GPS.gps();
-              var lat = gps.lat;
-              var lon = gps.lon;
-              var lat1 = trackPoint.gps.lat;
-              var lon1 = trackPoint.gps.lon;
-              GPS.launchGoogleMaps(lat, lon, lat1, lon1);
-            }));
-  }
-
-  ///
   @override
   Widget build(BuildContext context) {
-    Widget body;
-    try {
-      if (!initialized) {
-        final id = (ModalRoute.of(context)?.settings.arguments ?? 0) as int;
-        ModelTrackPoint.byId(id).then((ModelTrackPoint? trackPoint) async {
-          if (trackPoint != null) {
-            allUserModels = await ModelUser.select();
-            allTaskModels = await ModelTask.select();
-            trackPointAliasModels =
-                await ModelAlias.byIdList(trackPoint.aliasIds);
-            setState(() {
-              tpTasks = trackPoint.taskIds;
-              tpUsers = trackPoint.userIds;
-              tpNotes.text = trackPoint.notes;
-              initialized = true;
-            });
-          }
-        }).onError((error, stackTrace) {
-          logger.error('initialize build $error', stackTrace);
-        });
-        return AppWidgets.loading(const Text(''));
+    int id = ModalRoute.of(context)?.settings.arguments as int? ?? 0;
+    return FutureBuilder(
+      future: loadModel(id),
+      builder: (context, snapshot) {
+        return AppWidgets.checkSnapshot(context, snapshot) ??
+            AppWidgets.scaffold(context,
+                title: 'Edit Trackpoint', body: body());
+      },
+    );
+  }
+
+  Widget body() {
+    return ListView(padding: const EdgeInsets.all(5), children: []);
+  }
+
+  Widget address() {
+    return Column(children: [
+      TextField(
+        decoration: const InputDecoration(label: Text('Address')),
+        onChanged: ((value) {
+          _model.address = value;
+          _model.update();
+        }),
+        minLines: 1,
+        maxLines: 3,
+        controller: _addressController,
+        undoController: _addressUndoController,
+      ),
+      TextField(
+        decoration: const InputDecoration(label: Text('Address Details')),
+        onChanged: ((value) {
+          _model.fullAddress = value;
+          _model.update();
+        }),
+        minLines: 1,
+        maxLines: 3,
+        controller: _fullAddressController,
+        undoController: _fullAddressUndoController,
+      ),
+    ]);
+  }
+
+  Widget dateTime() {
+    final firstDate = DateTime.now().subtract(const Duration(days: 365 * 10));
+    final lastDate = DateTime.now().subtract(const Duration(days: 365 * 10));
+
+    return Column(children: [
+      Row(children: [
+        ///
+        /// date start
+        Transform.rotate(
+            angle: 0,
+            child: const Icon(
+              Icons.start,
+            )),
+        FilledButton(
+          child: Text(util.formatDate(_model.timeStart)),
+          onPressed: () async {
+            DateTime? date = await showDatePicker(
+                context: context,
+                firstDate: firstDate,
+                lastDate: lastDate,
+                initialDate: _model.timeStart);
+            if ((date != null)) {
+              _model.timeStart = date.add(util.extractTime(_model.timeStart));
+              await _model.update();
+              render();
+            }
+          },
+        ),
+
+        ///
+        /// time start
+        FilledButton(
+          child: Text(util.formatTime(_model.timeStart)),
+          onPressed: () async {
+            TimeOfDay? time = await showTimePicker(
+                context: context,
+                initialTime: TimeOfDay.fromDateTime(_model.timeStart));
+            if ((time != null)) {
+              _model.timeStart = util
+                  .removeTime(_model.timeStart)
+                  .add(Duration(hours: time.hour, minutes: time.minute));
+              await _model.update();
+              render();
+            }
+          },
+        )
+      ]),
+
+      ///
+      ///
+      ///
+      ///
+      Row(children: [
+        ///
+        /// date end
+        Transform.rotate(
+            angle: 0,
+            child: const Icon(
+              Icons.start,
+            )),
+        FilledButton(
+          child: Text(util.formatDate(_model.timeEnd)),
+          onPressed: () async {
+            DateTime? date = await showDatePicker(
+                context: context,
+                firstDate: firstDate,
+                lastDate: lastDate,
+                initialDate: _model.timeEnd);
+            if ((date != null)) {
+              _model.timeEnd = date.add(util.extractTime(_model.timeEnd));
+              await _model.update();
+              render();
+            }
+          },
+        ),
+
+        ///
+        /// time end
+        FilledButton(
+          child: Text(util.formatTime(_model.timeEnd)),
+          onPressed: () async {
+            TimeOfDay? time = await showTimePicker(
+                context: context,
+                initialTime: TimeOfDay.fromDateTime(_model.timeEnd));
+            if ((time != null)) {
+              _model.timeEnd = util
+                  .removeTime(_model.timeEnd)
+                  .add(Duration(hours: time.hour, minutes: time.minute));
+              await _model.update();
+              render();
+            }
+          },
+        )
+      ]),
+    ]);
+  }
+
+  Widget widgetAliases() {
+    ///
+    List<Widget> list = [];
+    var i = 0;
+    for (var model in _model.aliasModels) {
+      i++;
+      list.add(ListTile(
+          leading: Icon(Icons.square, color: model.privacy.color),
+          title: Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton(
+                  onPressed: () {
+                    Navigator.pushNamed(context, AppRoutes.editAlias.route,
+                            arguments: model.id)
+                        .then(
+                      (value) {
+                        render();
+                      },
+                    );
+                  },
+                  child: Text(
+                    style: i > 1
+                        ? null
+                        : const TextStyle(
+                            decoration: TextDecoration.underline,
+                            fontWeight: FontWeight.bold),
+                    util.cutString(model.title, 80),
+                  )))));
+    }
+    return Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: list);
+  }
+
+  Widget widgetselectedUsers() {
+    final models = _model.userTrackpoints;
+    Color? color = models.isEmpty ? const Color.fromARGB(0, 0, 0, 0) : null;
+    return ListTile(
+      title: FilledButton(
+        child: const Text('Members'),
+        onPressed: () async {
+          await dialogSelectUser();
+          render();
+        },
+      ),
+      subtitle: models.isEmpty
+          ? const Text('-')
+          : Column(
+              children: models.map<Widget>(
+                (model) {
+                  return Align(
+                      alignment: Alignment.centerLeft,
+                      child: ListTile(
+                          title: Align(
+                              alignment: Alignment.centerLeft,
+                              child: TextButton(
+                                child: Text(model.notes),
+                                onPressed: () {
+                                  Navigator.pushNamed(
+                                          context, AppRoutes.editUser.route,
+                                          arguments: model.id)
+                                      .then((value) {
+                                    if (mounted) {
+                                      render();
+                                    }
+                                  });
+                                },
+                              )),
+                          subtitle: model.notes.isEmpty
+                              ? null
+                              : Text(model.notes,
+                                  style: Theme.of(context).textTheme.bodySmall),
+                          leading: IconButton(
+                            icon: const Icon(Icons.note),
+                            onPressed: () async {
+                              await editUserNotes(model);
+                              render();
+                            },
+                          )));
+                },
+              ).toList(),
+            ),
+    );
+  }
+
+  Future<void> dialogSelectUser() async {
+    if (await ModelUser.count() == 0 && mounted) {
+      await AppWidgets.createUser(context);
+      if (await ModelUser.count() == 0) {
+        return;
       }
-      Widget divider = AppWidgets.divider();
-      body = ListView(children: [
-        /// current Trackpoint time info
-        map(context),
-        trackPointInfo(context),
-        divider,
-        dropdownTasks(context),
-        divider,
-        dropdownUser(),
-        divider,
-        notes(context),
-      ]);
-    } catch (e) {
-      body = AppWidgets.loading(const Text('No valid ID found'));
-      Future.delayed(const Duration(milliseconds: 500), () {
-        Navigator.pop(context);
-      });
     }
 
-    return AppWidgets.scaffold(
-      context,
-      body: body,
-      appBar: AppBar(title: const Text('Haltepunkt bearbeiten')),
-      navBar: BottomNavigationBar(
-          type: BottomNavigationBarType.fixed,
-          items: [
-            // 0 alphabethic
-            BottomNavigationBarItem(
-                icon: ValueListenableBuilder(
-                    valueListenable: modified,
-                    builder: ((context, value, child) {
-                      return Icon(Icons.done,
-                          size: 30,
-                          color: modified.value == true
-                              ? AppColors.green.color
-                              : AppColors.iconDisabled.color);
-                    })),
-                label: 'Speichern'),
-            // 1 nearest
-            const BottomNavigationBarItem(
-                icon: Icon(Icons.cancel), label: 'Abbrechen'),
+    List<int> modelIds = _model.userModels.map<int>((e) => e.id).toList();
+    List<ModelUser> selectables = await ModelUser.selectable();
+    List<Widget> contents = (selectables).map<Widget>(
+      (model) {
+        return ListTile(
+            title: Text(model.title),
+            subtitle: Padding(
+                padding: const EdgeInsets.only(left: 10),
+                child: Text(util.cutString(model.description, 100))),
+            trailing: AppWidgets.checkbox(
+                value: modelIds.contains(model.id),
+                onChanged: (bool? state) async {
+                  throw 'not implemented: add or remove user';
+                }));
+      },
+    ).toList();
+    if (mounted) {
+      await AppWidgets.dialog(
+          title: const Text('Select Users'),
+          context: context,
+          contents: contents,
+          buttons: [
+            TextButton(
+              child: const Text('Close'),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+            )
           ],
-          onTap: (int id) async {
-            if (id == 0 && modified.value) {
-              trackPoint.notes = tpNotes.text;
-              await trackPoint.update();
-              //await AppCalendar().completeCalendarEvent(trackPoint);
+          isDismissible: true);
+    }
+  }
+
+  Future<void> editUserNotes(ChannelUser channelModel) async {
+    await AppWidgets.dialog(
+        context: context,
+        isDismissible: true,
+        title: const Text('Notes'),
+        contents: [
+          Align(
+              alignment: Alignment.centerLeft,
+              child: Text(channelModel.model.title)),
+          TextField(
+              controller:
+                  TextEditingController(text: channelModel.shared.notes),
+              minLines: 3,
+              maxLines: 8,
+              onChanged: (text) async {
+                SharedTrackpointUser.addOrUpdate(channelModel.model,
+                    notes: text);
+              })
+        ],
+        buttons: [
+          TextButton(
+            child: const Text('OK'),
+            onPressed: () async {
+              await dataChannel.updateAssets();
               if (mounted) {
                 Navigator.pop(context);
               }
-              Fluttertoast.showToast(msg: 'Trackpoint updated');
-            } else {
-              Navigator.pop(context);
-            }
-          }),
-    );
+            },
+          )
+        ]);
   }
 }

@@ -43,7 +43,7 @@ String formatTimeRange(DateTime timeStart, DateTime timeEnd) {
       ' - ${twoDigits(timeEnd.hour)}:${twoDigits(timeEnd.minute)}::${twoDigits(timeEnd.second)}';
 }
 
-String formatDate(DateTime t) {
+String formatDateTime(DateTime t) {
   String date;
   if (StaticCache.dateFormat == DateFormat.yyyymmdd) {
     date = '${t.year}.${twoDigits(t.month)}.${twoDigits(t.day)}';
@@ -51,6 +51,35 @@ String formatDate(DateTime t) {
     date = '${t.day}.${twoDigits(t.month)}.${twoDigits(t.year)}';
   }
   return '$date  ${twoDigits(t.hour)}:${twoDigits(t.minute)}::${twoDigits(t.second)}';
+}
+
+String formatDate(DateTime t) {
+  if (StaticCache.dateFormat == DateFormat.yyyymmdd) {
+    return '${t.year}.${twoDigits(t.month)}.${twoDigits(t.day)}';
+  } else {
+    return '${t.day}.${twoDigits(t.month)}.${twoDigits(t.year)}';
+  }
+}
+
+String formatTime(DateTime t) =>
+    '${twoDigits(t.hour)}:${twoDigits(t.minute)}::${twoDigits(t.second)}';
+
+Duration extractTime(DateTime t) {
+  return Duration(
+      hours: t.hour,
+      minutes: t.minute,
+      seconds: t.second,
+      milliseconds: t.millisecond,
+      microseconds: t.microsecond);
+}
+
+DateTime removeTime(DateTime time) {
+  return time
+    ..subtract(Duration(hours: time.hour))
+    ..subtract(Duration(minutes: time.minute))
+    ..subtract(Duration(seconds: time.second))
+    ..subtract(Duration(milliseconds: time.millisecond))
+    ..subtract(Duration(microseconds: time.microsecond));
 }
 
 String formatDateFilename(DateTime t) {

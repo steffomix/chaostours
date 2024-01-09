@@ -84,8 +84,7 @@ class Address {
       if (_responseCheck != CheckResponseCodes.ok) {
         parts.add('Old (outdated Address) due to ${_responseCheck.name}');
       }
-      parts.add(
-          '\nData © OpenStreetMap contributors, ODbL 1.0. www.openstreetmap.org/copyright');
+      parts.add('\n© OpenStreetMap www.openstreetmap.org/copyright');
       return _description = parts.join('\n');
     } catch (e, stk) {
       _description = 'OSM Address parse Error: $e';

@@ -19,7 +19,7 @@ import 'package:flutter/services.dart';
 
 ///
 import 'package:chaostours/conf/app_user_settings.dart';
-import 'package:chaostours/model/model_alias_statistics.dart';
+import 'package:chaostours/statistics/alias_statistics.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/address.dart';
@@ -28,7 +28,6 @@ import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_alias_group.dart';
 import 'package:chaostours/view/trackpoint/widget_trackpoint_list.dart';
 import 'package:chaostours/conf/app_routes.dart';
-import 'package:chaostours/util.dart' as util;
 
 class WidgetAliasEdit extends StatefulWidget {
   const WidgetAliasEdit({super.key});
@@ -146,87 +145,6 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
         body: body);
   }
 
-  void statistics(
-      {required ModelAliasStatistics stats, required ModelAlias model}) {
-    AppWidgets.dialog(
-        isDismissible: true,
-        context: context,
-        title: const Text('Statistics'),
-        contents: [
-          TextButton(
-            child: Text('date'),
-            onPressed: () => showDatePicker(
-                context: context,
-                firstDate: stats.firstVisited,
-                lastDate: stats.lastVisited),
-          ),
-          SingleChildScrollView(
-              controller: ScrollController(),
-              scrollDirection: Axis.horizontal,
-              child: DataTable(showBottomBorder: true, columns: const [
-                DataColumn(label: SizedBox.shrink()),
-                DataColumn(label: Text(''))
-              ], rows: [
-                DataRow(cells: [
-                  const DataCell(Text('First Trackpoint')),
-                  DataCell(Text(util.formatDate(stats.firstVisited)))
-                ]),
-                DataRow(cells: [
-                  const DataCell(Text('Last Trackpoint')),
-                  DataCell(Text(util.formatDate(stats.lastVisited)))
-                ]),
-                DataRow(cells: [
-                  const DataCell(Text('Times visited')),
-                  DataCell(Text(stats.count.toString()))
-                ]),
-                DataRow(cells: [
-                  const DataCell(Text('Duration Min.')),
-                  DataCell(Text(util.formatDuration(stats.durationMin)))
-                ]),
-                DataRow(cells: [
-                  const DataCell(Text('Duration Max.')),
-                  DataCell(Text(util.formatDuration(stats.durationMax)))
-                ]),
-                DataRow(cells: [
-                  const DataCell(Text('Duration Avg.')),
-                  DataCell(Text(util.formatDuration(stats.durationAverage)))
-                ]),
-                DataRow(cells: [
-                  const DataCell(Text('Duration Total')),
-                  DataCell(Text(util.formatDuration(stats.durationTotal)))
-                ]),
-              ]))
-        ],
-        buttons: [
-          TextButton(
-            child: const Icon(Icons.copy),
-            onPressed: () {
-              Clipboard.setData(ClipboardData(text: '''
-Location Alias:\t ${model.title}
-
-First Visited:\t ${util.formatDate(stats.firstVisited)}
-Last Visited:\t ${util.formatDate(stats.lastVisited)}
-Times Visited:\t ${stats.count}
-
-Min. Duration:\t ${util.formatDuration(stats.durationMin)}
-Max. Duration:\t ${util.formatDuration(stats.durationMax)}
-Avg. Duration:\t ${util.formatDuration(stats.durationAverage)}
-Duration Total:\t ${util.formatDuration(stats.durationTotal)}
-
-Location Description:\t ${model.description}
-'''));
-              Navigator.pop(context);
-            },
-          ),
-          TextButton(
-            child: const Text('OK'),
-            onPressed: () {
-              Navigator.pop(context);
-            },
-          )
-        ]);
-  }
-
   Widget body(ModelAlias alias) {
     return ListView(children: [
       /// Trackpoints button
@@ -240,8 +158,15 @@ Location Description:\t ${model.description}
               child: const Text('Alias Trackpoints')),
           FilledButton(
               onPressed: () async {
-                var model = await ModelAliasStatistics.statistics(alias);
-                statistics(stats: model, model: alias);
+                var stats = await AliasStatistics.statistics(alias);
+
+                if (mounted) {
+                  AppWidgets.statistics(context, stats: stats,
+                      reload: (DateTime start, DateTime end) async {
+                    return await AliasStatistics.statistics(stats.model,
+                        start: start, end: end);
+                  });
+                }
               },
               child: const Text('Alias Statistics'))
         ],
