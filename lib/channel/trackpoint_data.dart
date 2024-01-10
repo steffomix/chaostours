@@ -14,10 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import 'package:chaostours/channel/channel_alias.dart';
-import 'package:chaostours/channel/channel_task.dart';
-import 'package:chaostours/channel/channel_user.dart';
 import 'package:chaostours/gps.dart';
+import 'package:chaostours/model/model_trackpoint_alias.dart';
+import 'package:chaostours/model/model_trackpoint_task.dart';
+import 'package:chaostours/model/model_trackpoint_user.dart';
 
 class TrackPointData {
   GPS? gps;
@@ -38,9 +38,9 @@ class TrackPointData {
   String address = '';
   String fullAddress = '';
 
-  List<ChannelAlias> aliasList = [];
-  List<ChannelUser> userList = [];
-  List<ChannelTask> taskList = [];
+  List<ModelTrackpointAlias> aliasList = [];
+  List<ModelTrackpointUser> userList = [];
+  List<ModelTrackpointTask> taskList = [];
 
   String notes = '';
 }

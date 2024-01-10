@@ -15,34 +15,42 @@ limitations under the License.
 */
 
 import 'package:chaostours/database/database.dart';
-import 'package:chaostours/model/model_trackpoint.dart';
+import 'package:chaostours/gps.dart';
 import 'package:chaostours/model/model_trackpoint_asset.dart';
+import 'package:chaostours/model/model_alias.dart';
 
-class ModelTrackpointAlias extends ModelTrackpointAsset {
-  ModelTrackpointAlias(
-      {required super.trackpointId, required super.id, required super.notes});
+class ModelTrackpointAlias implements ModelTrackpointAsset {
+  @override
+  final ModelAlias model;
 
-  static Future<List<ModelTrackpointAlias>> aliasNotesFromTrackpoint(
-      ModelTrackPoint trackpoint) async {
-    final rows = await DB.execute((txn) async {
-      return await txn.query(TableTrackPointAlias.table,
-          columns: TableTrackPointAlias.columns,
-          where: '${TableTrackPointAlias.idTrackPoint} = ?',
-          whereArgs: [trackpoint.id]);
+  @override
+  final int trackpointId;
+  @override
+  final String notes;
+
+  @override
+  int get id => model.id;
+  @override
+  String get sortOrder => '';
+  @override
+  String get title => model.title;
+  @override
+  String get description => model.description;
+
+  @override
+  Future<int> updateNotes(String notes) async {
+    return await DB.execute((txn) async {
+      return await txn.update(TableTrackPointAlias.table,
+          {TableTrackPointAlias.notes.column: notes},
+          where:
+              '${TableTrackPointAlias.idTrackPoint} = ? AND ${TableTrackPointAlias.idAlias} = ?',
+          whereArgs: [trackpointId, id]);
     });
-
-    return rows
-        .map(
-          (e) => _fromMap(e),
-        )
-        .toList();
   }
 
-  static ModelTrackpointAlias _fromMap(Map<String, Object?> map) {
-    return ModelTrackpointAlias(
-        trackpointId:
-            DB.parseInt(map[TableTrackPointAlias.idTrackPoint.column]),
-        id: DB.parseInt(map[TableTrackPointAlias.idAlias.column]),
-        notes: DB.parseString(map[TableTrackPointAlias.notes.column]));
-  }
+  ModelTrackpointAlias(
+      {required this.model, required this.trackpointId, required this.notes});
+
+  /// alias only
+  int distance(GPS gps) => GPS.distance(gps, model.gps).round();
 }

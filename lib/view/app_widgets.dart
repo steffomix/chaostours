@@ -16,7 +16,6 @@ limitations under the License.
 
 import 'package:app_settings/app_settings_platform_interface.dart';
 import 'package:chaostours/conf/app_colors.dart';
-import 'package:chaostours/model/model.dart';
 import 'package:chaostours/statistics/asset_statistics.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_user.dart';

@@ -16,10 +16,13 @@ limitations under the License.
 
 import 'dart:async';
 
+import 'package:chaostours/model/model_trackpoint_task.dart';
+import 'package:chaostours/model/model_trackpoint_user.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+//import 'package:visibility_detector/visibility_detector.dart';
 import 'dart:math' as math;
 
 import 'package:chaostours/address.dart';
@@ -31,8 +34,6 @@ import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/screen.dart';
 import 'package:chaostours/shared/shared_trackpoint_task.dart';
 import 'package:chaostours/shared/shared_trackpoint_user.dart';
-//import 'package:visibility_detector/visibility_detector.dart';
-
 import 'package:chaostours/channel/data_channel.dart';
 import 'package:chaostours/channel/tracking.dart';
 import 'package:chaostours/logger.dart';
@@ -66,7 +67,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   final _listenableTrackingStatus = ValueNotifier<bool>(false);
   final _listenableDate = ValueNotifier<bool>(false);
   final _listenableDuration = ValueNotifier<bool>(false);
-  final _listenableUndoUserNotes = ValueNotifier<bool>(false);
+
+  final _trackpointNotesUndoController = UndoHistoryController();
 
   bool _isUsersExpanded = false;
   bool _isTasksExpanded = false;
@@ -564,9 +566,9 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                                   });
                                 },
                               )),
-                          subtitle: channelModel.shared.notes.isEmpty
+                          subtitle: channelModel.notes.isEmpty
                               ? null
-                              : Text(channelModel.shared.notes,
+                              : Text(channelModel.notes,
                                   style: Theme.of(context).textTheme.bodySmall),
                           leading: IconButton(
                             icon: const Icon(Icons.note),
@@ -581,23 +583,20 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     );
   }
 
-  Future<void> editUserNotes(ChannelUser channelModel) async {
+  Future<void> editUserNotes(ModelTrackpointUser model) async {
     await AppWidgets.dialog(
         context: context,
         isDismissible: true,
         title: const Text('Notes'),
         contents: [
           Align(
-              alignment: Alignment.centerLeft,
-              child: Text(channelModel.model.title)),
+              alignment: Alignment.centerLeft, child: Text(model.model.title)),
           TextField(
-              controller:
-                  TextEditingController(text: channelModel.shared.notes),
+              controller: TextEditingController(text: model.notes),
               minLines: 3,
               maxLines: 8,
               onChanged: (text) async {
-                SharedTrackpointUser.addOrUpdate(channelModel.model,
-                    notes: text);
+                SharedTrackpointUser.addOrUpdate(model.model, notes: text);
               })
         ],
         buttons: [
@@ -753,9 +752,9 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                                   });
                                 },
                               )),
-                          subtitle: channelModel.shared.notes.isEmpty
+                          subtitle: channelModel.notes.isEmpty
                               ? null
-                              : Text(channelModel.shared.notes,
+                              : Text(channelModel.notes,
                                   style: Theme.of(context).textTheme.bodySmall),
                           leading: IconButton(
                             icon: const Icon(Icons.note),
@@ -770,23 +769,20 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     );
   }
 
-  Future<void> editTaskNotes(ChannelTask channelModel) async {
+  Future<void> editTaskNotes(ModelTrackpointTask model) async {
     await AppWidgets.dialog(
         context: context,
         isDismissible: true,
         title: const Text('Notes'),
         contents: [
           Align(
-              alignment: Alignment.centerLeft,
-              child: Text(channelModel.model.title)),
+              alignment: Alignment.centerLeft, child: Text(model.model.title)),
           TextField(
-              controller:
-                  TextEditingController(text: channelModel.shared.notes),
+              controller: TextEditingController(text: model.notes),
               minLines: 3,
               maxLines: 8,
               onChanged: (text) async {
-                SharedTrackpointTask.addOrUpdate(channelModel.model,
-                    notes: text);
+                SharedTrackpointTask.addOrUpdate(model.model, notes: text);
               })
         ],
         buttons: [
@@ -852,18 +848,17 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   ///
   ///
   ///
-  final _userNotesUndoController = UndoHistoryController();
   Widget widgetTrackpointNotes() {
     _userNotesController?.text = dataChannel.notes;
     return ListTile(
         trailing: ListenableBuilder(
-            listenable: _listenableUndoUserNotes,
+            listenable: _trackpointNotesUndoController,
             builder: (context, child) {
               return IconButton(
                 icon: const Icon(Icons.undo),
-                onPressed: _userNotesUndoController.value.canUndo
+                onPressed: _trackpointNotesUndoController.value.canUndo
                     ? () {
-                        _userNotesUndoController.undo();
+                        _trackpointNotesUndoController.undo();
                       }
                     : null,
               );
@@ -871,7 +866,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         title: TextField(
           controller: _userNotesController ??=
               TextEditingController(text: dataChannel.notes),
-          undoController: _userNotesUndoController,
+          undoController: _trackpointNotesUndoController,
           minLines: 2,
           maxLines: 6,
           decoration: const InputDecoration(hintText: 'Notes'),

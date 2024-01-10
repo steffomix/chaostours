@@ -19,9 +19,7 @@ import 'package:flutter/material.dart';
 ///
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/conf/app_routes.dart';
-import 'package:chaostours/gps.dart';
-import 'package:chaostours/model/model.dart';
-import 'package:chaostours/model/model_alias.dart';
+import 'package:chaostours/model/model_trackpoint_asset.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/view/app_base_widget.dart';
 import 'package:chaostours/view/app_widgets.dart';
@@ -141,26 +139,19 @@ class _WidgetTrackPointsState extends BaseWidgetState<WidgetTrackPoints> {
   }
 
   List<Widget> renderAliasList(
-      {required ModelTrackPoint trackpoint,
-      required List<ModelAlias> models,
-      int index = 0}) {
+      {required ModelTrackPoint trackpoint, int index = 0}) {
     List<Widget> widgets = [];
-    models = models.map(
-      (model) {
-        model.sortDistance = GPS.distance(model.gps, trackpoint.gps).round();
-        return model;
-      },
-    ).toList();
-    models.sort(
+
+    trackpoint.aliasModels.sort(
       (a, b) {
-        return a.sortDistance.compareTo(b.sortDistance);
+        return a.distance(trackpoint.gps).compareTo(b.distance(trackpoint.gps));
       },
     );
 
     int index = 0;
-    for (var model in models) {
+    for (var model in trackpoint.aliasModels) {
       widgets.add(ListTile(
-          leading: Icon(Icons.square, color: model.privacy.color),
+          leading: Icon(Icons.square, color: model.model.privacy.color),
           title: Align(
               alignment: Alignment.centerLeft,
               child: TextButton(
@@ -187,12 +178,12 @@ class _WidgetTrackPointsState extends BaseWidgetState<WidgetTrackPoints> {
   }
 
   List<Widget> renderAssetList(
-      {required List<Model> models, required AppRoutes route}) {
+      {required List<ModelTrackpointAsset> models, required AppRoutes route}) {
     List<Widget> widgets = [];
     for (var model in models) {
       widgets.add(Align(
         alignment: Alignment.centerLeft,
-        child: model.trackpointNotes.isEmpty
+        child: model.notes.isEmpty
             ? TextButton(
                 child: Text(model.title),
                 onPressed: () async {
@@ -212,9 +203,9 @@ class _WidgetTrackPointsState extends BaseWidgetState<WidgetTrackPoints> {
                         render();
                       },
                     )),
-                subtitle: model.trackpointNotes.isEmpty
+                subtitle: model.notes.isEmpty
                     ? null
-                    : Text(model.trackpointNotes,
+                    : Text(model.notes,
                         style: Theme.of(context).textTheme.bodySmall),
               ),
       ));
@@ -231,7 +222,7 @@ class _WidgetTrackPointsState extends BaseWidgetState<WidgetTrackPoints> {
         ),
         Center(
             child: Text(
-                '${util.formatDateTime(model.timeStart)} - ${util.formatDateTime(model.timeStart)}')),
+                '${util.formatDate(model.timeStart)} - ${util.formatDate(model.timeStart)}')),
         Center(child: Text(util.formatDuration(model.duration))),
         Align(
             alignment: Alignment.centerLeft,
@@ -239,7 +230,7 @@ class _WidgetTrackPointsState extends BaseWidgetState<WidgetTrackPoints> {
         Column(
           children: [
             const Text('Location Alias'),
-            ...renderAliasList(trackpoint: model, models: model.aliasModels)
+            ...renderAliasList(trackpoint: model)
           ],
         ),
         divider,

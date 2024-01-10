@@ -15,33 +15,38 @@ limitations under the License.
 */
 
 import 'package:chaostours/database/database.dart';
-import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_trackpoint_asset.dart';
+import 'package:chaostours/model/model_task.dart';
 
-class ModelTrackpointTask extends ModelTrackpointAsset {
-  ModelTrackpointTask(
-      {required super.trackpointId, required super.id, required super.notes});
+class ModelTrackpointTask implements ModelTrackpointAsset {
+  @override
+  final ModelTask model;
 
-  static Future<List<ModelTrackpointTask>> taskNotesFromTrackpoint(
-      ModelTrackPoint trackpoint) async {
-    final rows = await DB.execute((txn) async {
-      return await txn.query(TableTrackPointTask.table,
-          columns: TableTrackPointTask.columns,
-          where: '${TableTrackPointTask.idTrackPoint} = ?',
-          whereArgs: [trackpoint.id]);
+  @override
+  final int trackpointId;
+  @override
+  final String notes;
+
+  @override
+  int get id => model.id;
+  @override
+  String get sortOrder => '';
+  @override
+  String get title => model.title;
+  @override
+  String get description => model.description;
+
+  @override
+  Future<int> updateNotes(String notes) async {
+    return await DB.execute((txn) async {
+      return await txn.update(
+          TableTrackPointTask.table, {TableTrackPointTask.notes.column: notes},
+          where:
+              '${TableTrackPointTask.idTrackPoint} = ? AND ${TableTrackPointTask.idTask} = ?',
+          whereArgs: [trackpointId, id]);
     });
-
-    return rows
-        .map(
-          (e) => _fromMap(e),
-        )
-        .toList();
   }
 
-  static ModelTrackpointTask _fromMap(Map<String, Object?> map) {
-    return ModelTrackpointTask(
-        trackpointId: DB.parseInt(map[TableTrackPointTask.idTrackPoint.column]),
-        id: DB.parseInt(map[TableTrackPointTask.idTask.column]),
-        notes: DB.parseString(map[TableTrackPointTask.notes.column]));
-  }
+  ModelTrackpointTask(
+      {required this.model, required this.trackpointId, required this.notes});
 }

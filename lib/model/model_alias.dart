@@ -165,26 +165,23 @@ class ModelAlias implements Model {
   }
 
   ///
-  static Future<ModelAlias?> byId(int id) async {
-    final rows = await DB.execute<List<Map<String, Object?>>>(
-      (Transaction txn) async {
-        return await txn.query(TableAlias.table,
-            columns: TableAlias.columns,
-            where: '${TableAlias.primaryKey.column} = ?',
-            whereArgs: [id]);
-      },
-    );
-    if (rows.isNotEmpty) {
-      try {
-        var alias = fromMap(rows.first);
-        alias._countVisited = await ModelTrackPoint.count(alias: alias);
-        return alias;
-      } catch (e, stk) {
-        logger.error('byId: $e', stk);
-        return null;
-      }
+  static Future<ModelAlias?> byId(int id, [Transaction? txn]) async {
+    Future<ModelAlias?> select(Transaction txn) async {
+      final rows = await txn.query(TableAlias.table,
+          columns: TableAlias.columns,
+          where: '${TableAlias.primaryKey.column} = ?',
+          whereArgs: [id]);
+
+      return rows.isEmpty ? null : fromMap(rows.first);
     }
-    return null;
+
+    return txn != null
+        ? await select(txn)
+        : await DB.execute(
+            (Transaction txn) async {
+              return await select(txn);
+            },
+          );
   }
 
   ///

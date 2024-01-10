@@ -78,19 +78,23 @@ class ModelTaskGroup {
     );
   }
 
-  static Future<ModelTaskGroup?> byId(int id) async {
-    final rows = await DB.execute<List<Map<String, Object?>>>(
-      (Transaction txn) async {
-        return await txn.query(TableTaskGroup.table,
-            columns: TableTaskGroup.columns,
-            where: '${TableTaskGroup.primaryKey.column} = ?',
-            whereArgs: [id]);
-      },
-    );
-    if (rows.isNotEmpty) {
-      return fromMap(rows.first);
+  static Future<ModelTaskGroup?> byId(int id, [Transaction? txn]) async {
+    Future<ModelTaskGroup?> select(Transaction txn) async {
+      final rows = await txn.query(TableTaskGroup.table,
+          columns: TableTaskGroup.columns,
+          where: '${TableTaskGroup.primaryKey.column} = ?',
+          whereArgs: [id]);
+
+      return rows.isEmpty ? null : fromMap(rows.first);
     }
-    return null;
+
+    return txn != null
+        ? await select(txn)
+        : await DB.execute(
+            (Transaction txn) async {
+              return await select(txn);
+            },
+          );
   }
 
   static Future<List<ModelTaskGroup>> byIdList(List<int> ids) async {

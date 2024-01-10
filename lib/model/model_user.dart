@@ -99,26 +99,30 @@ class ModelUser implements Model {
     );
   }
 
-  static Future<ModelUser?> byId(int id) async {
-    final rows = await DB.execute<List<Map<String, Object?>>>(
-      (Transaction txn) async {
-        return await txn.query(TableUser.table,
-            columns: TableUser.columns,
-            where: '${TableUser.primaryKey.column} = ?',
-            whereArgs: [id]);
-      },
-    );
-    if (rows.isNotEmpty) {
-      return fromMap(rows.first);
+  static Future<ModelUser?> byId(int id, [Transaction? txn]) async {
+    Future<ModelUser?> select(Transaction txn) async {
+      final rows = await txn.query(TableUser.table,
+          columns: TableUser.columns,
+          where: '${TableUser.primaryKey.column} = ?',
+          whereArgs: [id]);
+
+      return rows.isEmpty ? null : fromMap(rows.first);
     }
-    return null;
+
+    return txn != null
+        ? await select(txn)
+        : await DB.execute(
+            (Transaction txn) async {
+              return await select(txn);
+            },
+          );
   }
 
   static Future<List<ModelUser>> byIdList(List<int> ids) async {
     if (ids.isEmpty) {
       return <ModelUser>[];
     }
-    final rows = await DB.execute<List<Map<String, Object?>>>(
+    final rows = await DB.execute(
       (Transaction txn) async {
         return await txn.query(TableUser.table,
             columns: TableUser.columns,

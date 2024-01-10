@@ -14,12 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/model/model_trackpoint_alias.dart';
+import 'package:chaostours/model/model_trackpoint_task.dart';
+import 'package:chaostours/model/model_trackpoint_user.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 
 ///
-import 'package:chaostours/channel/channel_alias.dart';
-import 'package:chaostours/channel/channel_task.dart';
-import 'package:chaostours/channel/channel_user.dart';
 import 'package:chaostours/channel/trackpoint_data.dart';
 import 'package:chaostours/shared/shared_trackpoint_alias.dart';
 import 'package:chaostours/shared/shared_trackpoint_task.dart';
@@ -233,8 +233,7 @@ class DataChannel extends TrackPointData {
           (e) => e.id,
         )
         .toList());
-    List<ChannelAlias> list = [];
-    final g = gps ?? await GPS.gps();
+    List<ModelTrackpointAlias> list = [];
     for (var shared in sharedAliasList) {
       ModelAlias model;
       try {
@@ -242,12 +241,9 @@ class DataChannel extends TrackPointData {
       } catch (e) {
         continue;
       }
-      int distance = GPS.distance(g, model.gps).round();
       try {
-        list.add(ChannelAlias(
-            model: modelAliasList.firstWhere((model) => model.id == shared.id),
-            shared: shared,
-            distance: distance));
+        list.add(ModelTrackpointAlias(
+            model: model, trackpointId: 0, notes: shared.notes));
       } catch (e) {
         /// ignore and skip element
       }
@@ -264,12 +260,13 @@ class DataChannel extends TrackPointData {
           (e) => e.id,
         )
         .toList());
-    List<ChannelUser> list = [];
+    List<ModelTrackpointUser> list = [];
     for (var shared in sharedUserList) {
       try {
-        list.add(ChannelUser(
+        list.add(ModelTrackpointUser(
             model: modelUserList.firstWhere((model) => model.id == shared.id),
-            shared: shared));
+            trackpointId: 0,
+            notes: shared.notes));
       } catch (e) {
         /// ignore and skip element
       }
@@ -286,12 +283,13 @@ class DataChannel extends TrackPointData {
           (e) => e.id,
         )
         .toList());
-    List<ChannelTask> list = [];
+    List<ModelTrackpointTask> list = [];
     for (var shared in sharedTaskList) {
       try {
-        list.add(ChannelTask(
+        list.add(ModelTrackpointTask(
             model: modelTaskList.firstWhere((model) => model.id == shared.id),
-            shared: shared));
+            trackpointId: 0,
+            notes: shared.notes));
       } catch (e) {
         /// ignore and skip element
       }

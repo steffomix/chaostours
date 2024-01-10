@@ -15,46 +15,38 @@ limitations under the License.
 */
 
 import 'package:chaostours/database/database.dart';
-import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_trackpoint_asset.dart';
+import 'package:chaostours/model/model_user.dart';
 
-class ModelTrackpointUser extends ModelTrackpointAsset {
-  ModelTrackpointUser(
-      {required super.trackpointId, required super.id, required super.notes});
+class ModelTrackpointUser implements ModelTrackpointAsset {
+  @override
+  final ModelUser model;
 
-  /// select list of members from this trackpoint
-  static Future<List<ModelTrackpointUser>> userNotesFromTrackpoint(
-      ModelTrackPoint trackpoint) async {
-    final rows = await DB.execute((txn) async {
-      return await txn.query(TableTrackPointUser.table,
-          columns: TableTrackPointUser.columns,
-          where: '${TableTrackPointUser.idTrackPoint} = ?',
-          whereArgs: [trackpoint.id]);
+  @override
+  final int trackpointId;
+  @override
+  final String notes;
+
+  @override
+  int get id => model.id;
+  @override
+  String get sortOrder => '';
+  @override
+  String get title => model.title;
+  @override
+  String get description => model.description;
+
+  @override
+  Future<int> updateNotes(String notes) async {
+    return await DB.execute((txn) async {
+      return await txn.update(
+          TableTrackPointUser.table, {TableTrackPointUser.notes.column: notes},
+          where:
+              '${TableTrackPointUser.idTrackPoint} = ? AND ${TableTrackPointUser.idUser} = ?',
+          whereArgs: [trackpointId, id]);
     });
-
-    return rows
-        .map(
-          (e) => _fromMap(e),
-        )
-        .toList();
   }
 
-  static ModelTrackpointUser _fromMap(Map<String, Object?> map) {
-    return ModelTrackpointUser(
-        trackpointId: DB.parseInt(map[TableTrackPointUser.idTrackPoint.column]),
-        id: DB.parseInt(map[TableTrackPointUser.idUser.column]),
-        notes: DB.parseString(map[TableTrackPointUser.notes.column]));
-  }
-
-  Future<int> update(String notes) async {
-    return await DB.execute<int>(
-      (txn) async {
-        return await txn.update(TableTrackPointUser.table,
-            {TableTrackPointUser.notes.column: notes},
-            where:
-                '${TableTrackPointUser.idTrackPoint.column} = ? AND ${TableTrackPointUser.idUser.column} = ?',
-            whereArgs: [trackpointId, id]);
-      },
-    );
-  }
+  ModelTrackpointUser(
+      {required this.model, required this.trackpointId, required this.notes});
 }

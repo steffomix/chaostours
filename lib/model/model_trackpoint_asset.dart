@@ -14,11 +14,22 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-class ModelTrackpointAsset {
-  final int trackpointId;
-  final int id;
-  final String notes;
+import 'package:chaostours/model/model.dart';
 
-  ModelTrackpointAsset(
-      {required this.trackpointId, required this.id, required this.notes});
+abstract class ModelTrackpointAsset {
+  static const separator = r';';
+
+  @override
+  String toString() {
+    return '$id$separator$notes';
+  }
+
+  Model get model;
+  int get id => model.id;
+  int get trackpointId;
+  String get sortOrder;
+  String get title => model.title;
+  String get description => model.description;
+  String get notes;
+  Future<int> updateNotes(String notes);
 }

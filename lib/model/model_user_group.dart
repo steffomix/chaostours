@@ -78,19 +78,23 @@ class ModelUserGroup {
     );
   }
 
-  static Future<ModelUserGroup?> byId(int id) async {
-    final rows = await DB.execute<List<Map<String, Object?>>>(
-      (Transaction txn) async {
-        return await txn.query(TableUserGroup.table,
-            columns: TableUserGroup.columns,
-            where: '${TableUserGroup.primaryKey.column} = ?',
-            whereArgs: [id]);
-      },
-    );
-    if (rows.isNotEmpty) {
-      return fromMap(rows.first);
+  static Future<ModelUserGroup?> byId(int id, [Transaction? txn]) async {
+    Future<ModelUserGroup?> select(Transaction txn) async {
+      final rows = await txn.query(TableUserGroup.table,
+          columns: TableUserGroup.columns,
+          where: '${TableUserGroup.primaryKey.column} = ?',
+          whereArgs: [id]);
+
+      return rows.isEmpty ? null : fromMap(rows.first);
     }
-    return null;
+
+    return txn != null
+        ? await select(txn)
+        : await DB.execute(
+            (Transaction txn) async {
+              return await select(txn);
+            },
+          );
   }
 
   static Future<List<ModelUserGroup>> byIdList(List<int> ids) async {

@@ -74,19 +74,23 @@ class ModelAliasGroup {
     );
   }
 
-  static Future<ModelAliasGroup?> byId(int id) async {
-    final rows = await DB.execute<List<Map<String, Object?>>>(
-      (Transaction txn) async {
-        return await txn.query(TableAliasGroup.table,
-            columns: TableAliasGroup.columns,
-            where: '${TableAliasGroup.primaryKey.column} = ?',
-            whereArgs: [id]);
-      },
-    );
-    if (rows.isNotEmpty) {
-      return fromMap(rows.first);
+  static Future<ModelAliasGroup?> byId(int id, [Transaction? txn]) async {
+    Future<ModelAliasGroup?> select(Transaction txn) async {
+      final rows = await txn.query(TableAliasGroup.table,
+          columns: TableAliasGroup.columns,
+          where: '${TableAliasGroup.primaryKey.column} = ?',
+          whereArgs: [id]);
+
+      return rows.isEmpty ? null : fromMap(rows.first);
     }
-    return null;
+
+    return txn != null
+        ? await select(txn)
+        : await DB.execute(
+            (Transaction txn) async {
+              return await select(txn);
+            },
+          );
   }
 
   static Future<List<ModelAliasGroup>> byIdList(List<int> ids) async {
