@@ -516,7 +516,6 @@ enum TableTaskTaskGroup {
 
 enum TableTask {
   id('id'),
-  idTaskGroup('id_task_group'),
   isActive('active'),
   isSelectable('selectable'),
   isPreselected('preselected'),
@@ -538,10 +537,10 @@ enum TableTask {
 
   static String get schema => '''CREATE TABLE IF NOT EXISTS $table (
 	${primaryKey.column}	INTEGER NOT NULL,
-	${idTaskGroup.column}	INTEGER NOT NULL DEFAULT 1,
 	${isActive.column}	INTEGER DEFAULT 1,
 	${isSelectable.column}	INTEGER DEFAULT 1,
 	${isPreselected.column}	INTEGER DEFAULT 0,
+
 	${sortOrder.column}	TEXT,
 	${title.column}	TEXT NOT NULL,
 	${description.column}	TEXT,
@@ -555,7 +554,6 @@ enum TableTask {
 
 enum TableAlias {
   id('id'),
-  idAliasGroup('id_alias_group'),
   isActive('active'),
   radius('radius'),
   privacy('privacy'),
@@ -580,7 +578,6 @@ enum TableAlias {
 
   static String get schema => '''CREATE TABLE IF NOT EXISTS $table (
 	${primaryKey.column}	INTEGER NOT NULL,
-	${idAliasGroup.column}	INTEGER NOT NULL DEFAULT 1,
 	${isActive.column}	INTEGER DEFAULT 1,
   ${radius.column} INTEGER,
 	${privacy.column}	INTEGER,
@@ -600,7 +597,6 @@ enum TableAlias {
 
 enum TableUser {
   id('id'),
-  idUserGroup('id_user_group'),
   isActive('active'),
   isSelectable('selectable'),
   isPreselected('preselected'),
@@ -624,7 +620,6 @@ enum TableUser {
 
   static String get schema => '''CREATE TABLE IF NOT EXISTS $table (
 	${primaryKey.column}	INTEGER NOT NULL,
-	${idUserGroup.column}	INTEGER NOT NULL DEFAULT 1,
 	${isActive.column}	INTEGER DEFAULT 1,
 	${isSelectable.column}	INTEGER DEFAULT 1,
 	${isPreselected.column}	INTEGER DEFAULT 0,
@@ -776,7 +771,25 @@ enum TableAliasGroup {
   isActive('active'),
   privacy('sort'),
   title('title'),
-  description('description');
+  description('description'),
+  withCalendarHtml('calendar_html'),
+  withCalendarGps('calendar_gps'),
+  withCalendarTimeStart('calendar_time_start'),
+  withCalendarTimeEnd('calendar_time_end'),
+  withCalendarDuration('calendar_duration'),
+  withCalendarAddress('calendar_address'),
+  withCalendarFullAddress('calendar_full_address'),
+  withCalendarTrackpointNotes('calendar_trackpoint_notes'),
+  withCalendarAlias('calendar_alias'),
+  withCalendarAliasNearby('calendar_alias_nearby'),
+  withCalendarAliasNotes('calendar_alias_notes'),
+  withCalendarAliasDescription('calendar_alias_description'),
+  withCalendarUsers('calendar_users'),
+  withCalendarUserNotes('calendar_user_notes'),
+  withCalendarUserDescription('calendar_user_description'),
+  withCalendarTasks('calendar_tasks'),
+  withCalendarTaskNotes('calendar_task_notes'),
+  withCalendarTaskDescription('calendar_task_description');
 
   static const String table = 'alias_group';
 
@@ -791,12 +804,30 @@ enum TableAliasGroup {
   const TableAliasGroup(this.column);
 
   static String get schema => '''CREATE TABLE IF NOT EXISTS $table (
-	${primaryKey.column}	INTEGER NOT NULL,
-	${idCalendar.column}	TEXT,
-	${isActive.column}	INTEGER DEFAULT 1,
-	${privacy.column}	INTEGER,
-	${title.column}	TEXT,
-	${description.column}	TEXT,
+	${primaryKey.column} INTEGER NOT NULL,
+	${idCalendar.column} TEXT,
+	${isActive.column} INTEGER DEFAULT 1,
+	${privacy.column} INTEGER,
+	${title.column} TEXT,
+	${description.column} TEXT,
+  ${withCalendarHtml.column} INTEGER,
+  ${withCalendarGps.column} INTEGER,
+  ${withCalendarTimeStart.column}	INTEGER,
+  ${withCalendarTimeEnd.column}	INTEGER,
+  ${withCalendarDuration.column} INTEGER,
+  ${withCalendarAddress.column}	INTEGER,
+  ${withCalendarFullAddress.column}	INTEGER,
+  ${withCalendarTrackpointNotes.column}	INTEGER,
+  ${withCalendarAlias.column}	INTEGER,
+  ${withCalendarAliasNearby.column}	INTEGER,
+  ${withCalendarAliasNotes.column} INTEGER,
+  ${withCalendarAliasDescription.column} INTEGER,
+  ${withCalendarUsers.column}	INTEGER,
+  ${withCalendarUserNotes.column}	INTEGER,
+  ${withCalendarUserDescription.column}	INTEGER,
+  ${withCalendarTasks.column}	INTEGER,
+  ${withCalendarTaskNotes.column}	INTEGER,
+  ${withCalendarTaskDescription.column}	INTEGER,
 	PRIMARY KEY(${primaryKey.column} AUTOINCREMENT))''';
 
   @override
