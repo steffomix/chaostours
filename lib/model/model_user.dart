@@ -27,7 +27,6 @@ class ModelUser implements Model {
   int _id = 0;
   @override
   int get id => _id;
-  int groupId = 1;
   String sortOrder;
   bool isActive = true;
   bool isSelectable = true;
@@ -42,8 +41,7 @@ class ModelUser implements Model {
   String trackpointNotes = '';
 
   ModelUser(
-      {this.groupId = 1,
-      this.sortOrder = '',
+      {this.sortOrder = '',
       this.isActive = true,
       this.isSelectable = true,
       this.isPreselected = false,
@@ -54,7 +52,6 @@ class ModelUser implements Model {
 
   static ModelUser fromMap(Map<String, Object?> map) {
     var model = ModelUser(
-      groupId: DB.parseInt(map[TableUser.idUserGroup.column], fallback: 1),
       isActive: DB.parseBool(map[TableUser.isActive.column]),
       isSelectable: DB.parseBool(map[TableUser.isSelectable.column]),
       isPreselected: DB.parseBool(map[TableUser.isPreselected.column]),
@@ -71,7 +68,6 @@ class ModelUser implements Model {
   Map<String, Object?> toMap() {
     return <String, Object?>{
       TableUser.primaryKey.column: id,
-      TableUser.idUserGroup.column: groupId,
       TableUser.isActive.column: DB.boolToInt(isActive),
       TableUser.isSelectable.column: DB.boolToInt(isSelectable),
       TableUser.isPreselected.column: DB.boolToInt(isPreselected),

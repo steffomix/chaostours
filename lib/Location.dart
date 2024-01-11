@@ -20,6 +20,7 @@ import 'package:chaostours/database/database.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/shared/shared_trackpoint_alias.dart';
+import 'package:chaostours/shared/shared_trackpoint_task.dart';
 import 'package:chaostours/shared/shared_trackpoint_user.dart';
 import 'package:device_calendar/device_calendar.dart';
 
@@ -55,7 +56,7 @@ class Location {
     List<ModelAlias> allModels = await ModelAlias.byArea(
         gps: gps,
         area: math.max(
-            500,
+            1000,
             await Cache.appSettingDistanceTreshold.load(
                 AppUserSetting(Cache.appSettingDistanceTreshold).defaultValue
                     as int)));
@@ -102,7 +103,7 @@ class Location {
             calendarEventIds: await Cache.backgroundCalendarLastEventIds
                 .load<List<CalendarEventId>>([]),
             address: address?.address ?? '',
-            notes: await Cache.backgroundTrackPointUserNotes.load<String>(''))
+            notes: await Cache.backgroundTrackPointNotes.load<String>(''))
         .addSharedAssets(gps);
   }
 
@@ -171,12 +172,12 @@ class Location {
       await _publishMoving(tp);
 
       // reset notes
-      await Cache.backgroundTrackPointUserNotes.save<String>('');
+      await Cache.backgroundTrackPointNotes.save<String>('');
       // reset tasks with preselected
       await Cache.backgroundSharedTaskList
           .save<List<String>>((await ModelTask.preselected())
               .map(
-                (e) => SharedTrackpointUser(id: e.id, notes: '').toString(),
+                (e) => SharedTrackpointTask(id: e.id, notes: '').toString(),
               )
               .toList());
       // reset users with preselected
@@ -323,7 +324,7 @@ class Location {
                 .load<List<CalendarEventId>>([]),
             address: address.address,
             fullAddress: address.addressDetails,
-            notes: await Cache.backgroundTrackPointUserNotes.load<String>(''))
+            notes: await Cache.backgroundTrackPointNotes.load<String>(''))
         .addSharedAssets(gps);
 
     /// save new TrackPoint with user- and task ids

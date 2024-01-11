@@ -33,7 +33,7 @@ class WidgetDrawer extends StatefulWidget {
 enum _MenuType {
   menu,
   header,
-  widget,
+  custom,
   divider;
 }
 
@@ -78,7 +78,7 @@ class _Element {
       case _MenuType.divider:
         return AppWidgets.divider();
 
-      case _MenuType.widget:
+      case _MenuType.custom:
         return widget;
 
       default:
@@ -114,83 +114,146 @@ class _Divider extends _Element {
             widget: const Text(''));
 }
 
-class _Widget extends _Element {
-  _Widget({required super.widget})
+class _Custom extends _Element {
+  _Custom({required super.widget})
       : super(
             title: '',
             description: '',
             route: AppRoutes.liveTracking,
-            type: _MenuType.widget);
+            type: _MenuType.custom);
 }
 
 class _WidgetDrawer extends State<WidgetDrawer> {
-  final List<_Element> menuItems = [
-    _Header(title: 'Tracking'),
-    _Menu(
-        title: 'Life Tracking',
-        description: 'What this App is all about.',
-        route: AppRoutes.liveTracking),
-    _Divider(),
-    _Header(
-        title: 'Assets',
-        description:
-            'Chaos Tours has more then just Locations and Trackpoints.'),
-    _Menu(
-        title: 'Location Alias',
-        description: 'Manage your saved Locations.',
-        route: AppRoutes.listAlias),
-    _Menu(
-        title: 'Trackpoints (todo)',
-        description: 'Manage the automatic saved Trackpoints.',
-        route: AppRoutes.listTrackpoints), // todo
-    _Menu(
-        title: 'Tasks',
-        description: 'Manage your tasks for your trackpoints.',
-        route: AppRoutes.listTask),
-    _Menu(
-        title: 'Users',
-        description: 'Manage your friends and mates for your trackpoints.',
-        route: AppRoutes.listUser),
-    _Divider(),
-    _Header(title: 'Asset Groups', description: 'Group your Tasks and Users.'),
-    _Menu(
-        title: 'Alias Groups',
-        description: 'Here you can set your Calendars',
-        route: AppRoutes.listAliasGroup),
-    _Menu(
-        title: 'Task Groups',
-        description: 'Group your Tasks into Seasons.',
-        route: AppRoutes.listTaskGroup),
-    _Menu(
-        title: 'User Groups',
-        description: 'Group your Users into Teams.',
-        route: AppRoutes.listUserGroup),
-    _Divider(),
-    _Header(
-        title: 'App Configuration',
-        description: 'Configure Chaos Tours to fit your needs.'),
-    _Menu(
-        title: 'Settings',
-        description:
-            'Sevaral Settings. Most of them are good to go but who knows...',
-        route: AppRoutes.appSettings),
-    _Menu(
-        title: 'Color Scheme (todo)',
-        description: 'Style your App.',
-        route: AppRoutes.appSettings),
-    _Menu(
-        title: 'Permissions',
-        description:
-            'This App needs tons of permissions to unfold its full potential.',
-        route: AppRoutes.welcome,
-        routeArguments: ''),
-    _Menu(
-        title: 'Import/Export Database',
-        description: 'Backup and restore your Data',
-        route: AppRoutes.importExport,
-        routeArguments: ''),
-    _Divider(),
-    /* 
+  @override
+  Widget build(BuildContext context) {
+    var items = menuItems()
+        .map(
+          (e) => e.render(context),
+        )
+        .toList();
+    return Drawer(
+      child: ListView(children: items),
+    );
+  }
+
+  List<_Element>? _menuItems;
+  List<_Element> menuItems() {
+    return _menuItems ??= [
+      _Custom(
+          widget: FutureBuilder(
+        future: Cache.appSettingBackgroundTrackingEnabled.load<bool>(false),
+        initialData: false,
+        builder: (context, snapshot) {
+          bool enabled = snapshot.data ?? false;
+          return ListTile(
+              title: const Text('Background tracking'),
+              leading: AppWidgets.checkbox(
+                  value: enabled,
+                  onChanged: (state) async {
+                    bool isRunning = await BackgroundChannel.isRunning();
+                    if (isRunning != state) {
+                      if (state ?? false) {
+                        BackgroundChannel.start();
+                      } else {
+                        BackgroundChannel.stop();
+                      }
+                      await Cache.appSettingBackgroundTrackingEnabled
+                          .save<bool>(enabled);
+                    }
+                  }));
+        },
+      )),
+      _Header(title: 'Tracking'),
+      _Menu(
+          title: 'Life Tracking',
+          //description: 'What this App is all about.',
+          route: AppRoutes.liveTracking),
+      _Custom(
+          widget: FutureBuilder(
+        future: Cache.appSettingStatusStandingRequireAlias.load<bool>(false),
+        initialData: false,
+        builder: (context, snapshot) {
+          bool enabled = snapshot.data ?? false;
+          return ListTile(
+              title: const Text('STOP require Alias'),
+              leading: AppWidgets.checkbox(
+                  value: enabled,
+                  onChanged: (state) async {
+                    bool isRunning = await BackgroundChannel.isRunning();
+                    if (isRunning != state) {
+                      if (state ?? false) {
+                        await Cache.appSettingStatusStandingRequireAlias
+                            .save<bool>(false);
+                      } else {
+                        await Cache.appSettingStatusStandingRequireAlias
+                            .save<bool>(false);
+                      }
+                    }
+                  }));
+        },
+      )),
+      _Menu(
+          title: 'Trackpoints',
+          description: 'Manage the automatic saved Trackpoints.',
+          route: AppRoutes.listTrackpoints),
+      _Divider(),
+      _Header(
+          title: 'Assets',
+          description:
+              'Chaos Tours has more then just Locations and Trackpoints.'),
+      _Menu(
+          title: 'Location Alias',
+          description: 'Manage your saved Locations.',
+          route: AppRoutes.listAlias), // todo
+      _Menu(
+          title: 'Tasks',
+          description: 'Manage your tasks for your trackpoints.',
+          route: AppRoutes.listTask),
+      _Menu(
+          title: 'Users',
+          description: 'Manage your friends and mates for your trackpoints.',
+          route: AppRoutes.listUser),
+      _Divider(),
+      _Header(
+          title: 'Asset Groups', description: 'Group your Tasks and Users.'),
+      _Menu(
+          title: 'Alias Groups',
+          description: 'Here you can set your Calendars',
+          route: AppRoutes.listAliasGroup),
+      _Menu(
+          title: 'Task Groups',
+          description: 'Group your Tasks into Seasons.',
+          route: AppRoutes.listTaskGroup),
+      _Menu(
+          title: 'User Groups',
+          description: 'Group your Users into Teams.',
+          route: AppRoutes.listUserGroup),
+      _Divider(),
+      _Header(
+          title: 'App Configuration',
+          description: 'Configure Chaos Tours to fit your needs.'),
+      _Menu(
+          title: 'Settings',
+          description:
+              'Sevaral Settings. Most of them are good to go but who knows...',
+          route: AppRoutes.appSettings),
+      _Menu(
+          title: 'Color Scheme (todo)',
+          description: 'Style your App.',
+          route: AppRoutes.appSettings),
+      _Menu(
+          title: 'Permissions',
+          description:
+              'This App needs tons of permissions to unfold its full potential.',
+          route: AppRoutes.welcome,
+          routeArguments: ''),
+      _Menu(
+          title: 'Import/Export Database',
+          description: 'Backup and restore your Data',
+          route: AppRoutes.importExport,
+          routeArguments: ''),
+      _Divider(),
+      /* 
     _Header(
         title: 'External sources',
         description: 'Import Locations from the Web or as Text File.'),
@@ -203,23 +266,25 @@ class _WidgetDrawer extends State<WidgetDrawer> {
         description: 'Make Data Backups ot import Data from friends.',
         route: AppRoutes.importExport),
     _Divider(), */
-    _Header(
-        title: 'App Backstage',
-        description: 'Explore your saved Data\nhot\'n raw from Backstage.'),
-    _Menu(
-        title: 'Database Explorer',
-        description: 'Your saved Data presented in a bloody raw style.',
-        route: AppRoutes.databaseExplorer),
-    _Menu(
-        title: 'Welcome Page',
-        description: 'App initialization routines and permission checks.',
-        route: AppRoutes.welcome,
-        routeArguments: 1),
-    _Divider(),
-    _Header(title: 'Licence ChaosTours'),
-    _Widget(
-        widget: TextButton(
-            child: Text('\n\nChaosTours\n'
+      _Header(
+          title: 'App Backstage',
+          description: 'Explore your saved Data\nhot\'n raw from Backstage.'),
+      _Menu(
+          title: 'Database Explorer',
+          description: 'Your saved Data presented in a bloody raw style.',
+          route: AppRoutes.databaseExplorer),
+      _Menu(
+          title: 'Welcome Page',
+          description: 'App initialization routines and permission checks.',
+          route: AppRoutes.welcome,
+          routeArguments: 1),
+      _Divider(),
+      _Custom(
+          widget: ListTile(
+        title: Text('Licence ChaosTours',
+            style: Theme.of(context).textTheme.titleLarge),
+        subtitle: TextButton(
+            child: Text('ChaosTours\n'
                 'Lizenz: Apache 2.0\n'
                 'Copyright ©${DateTime.now().year}\n'
                 'by Stefan Brinmann\n'
@@ -231,12 +296,16 @@ class _WidgetDrawer extends State<WidgetDrawer> {
               } catch (e) {
                 //
               }
-            })),
-    _Divider(),
-    _Header(title: 'Licence OpenStreetMap'),
-    _Widget(
-        widget: TextButton(
-            child: const Text('\n\nOpenStreetmap\n'
+            }),
+      )),
+
+      _Divider(),
+      _Custom(
+          widget: ListTile(
+        title: Text('Licence OpenStreetMap',
+            style: Theme.of(context).textTheme.titleLarge),
+        subtitle: TextButton(
+            child: const Text('OpenStreetmap\n'
                 'This App uses the free service from OpenStreetMap.org'
                 ' for Mmp display and reverse address lookup.\n'
                 'Tap on this text to get to:\n'
@@ -247,49 +316,10 @@ class _WidgetDrawer extends State<WidgetDrawer> {
               } catch (e) {
                 //
               }
-            })),
-    _Divider(),
-    _Header(title: 'Credits')
-  ];
-
-  Future<bool> isTrackingEnabled() async {
-    return await Cache.appSettingBackgroundTrackingEnabled.load<bool>(false);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    var items = menuItems
-        .map(
-          (e) => e.render(context),
-        )
-        .toList();
-    items.insert(
-        0,
-        FutureBuilder(
-          future: isTrackingEnabled(),
-          initialData: false,
-          builder: (context, snapshot) {
-            bool enabled = snapshot.data ?? false;
-            return ListTile(
-                title: const Text('Tracking enabled'),
-                leading: AppWidgets.checkbox(
-                    value: enabled,
-                    onChanged: (state) async {
-                      bool isRunning = await BackgroundChannel.isRunning();
-                      if (isRunning != state) {
-                        if (state ?? false) {
-                          BackgroundChannel.start();
-                        } else {
-                          BackgroundChannel.stop();
-                        }
-                        await Cache.appSettingBackgroundTrackingEnabled
-                            .save<bool>(enabled);
-                      }
-                    }));
-          },
-        ));
-    return Drawer(
-      child: ListView(children: items),
-    );
+            }),
+      )),
+      _Divider(),
+      _Header(title: 'Credits')
+    ];
   }
 }

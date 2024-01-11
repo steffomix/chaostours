@@ -103,7 +103,7 @@ enum Cache {
   backgroundSharedTaskList(CacheModulId.sharedPreferences,
       List<SharedTrackpointTask>, expireAfterOneSecond),
 
-  backgroundTrackPointUserNotes(
+  backgroundTrackPointNotes(
       CacheModulId.sharedPreferences, String, expireAfterOneSecond),
 
   backgroundTrackPointSkipRecordOnce(

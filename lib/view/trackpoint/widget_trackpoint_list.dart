@@ -14,7 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/screen.dart';
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 
 ///
 import 'package:chaostours/logger.dart';
@@ -214,51 +216,63 @@ class _WidgetTrackPointsState extends BaseWidgetState<WidgetTrackPoints> {
   }
 
   Widget renderItem(ModelTrackPoint model) {
+    Screen screen = Screen(context);
+    var size = math.min(screen.width, screen.height) / 10;
     var divider = AppWidgets.divider();
-    return ListTile(
-      title: Column(children: [
-        Text(
-          '#${model.id}',
-        ),
-        Center(
-            child: Text(
-                '${util.formatDate(model.timeStart)} - ${util.formatDate(model.timeStart)}')),
-        Center(child: Text(util.formatDuration(model.duration))),
-        Align(
-            alignment: Alignment.centerLeft,
-            child: Text('OSM Addr: ${model.address}')),
-        Column(
-          children: [
-            const Text('Location Alias'),
-            ...renderAliasList(trackpoint: model)
-          ],
-        ),
-        divider,
-        Column(
-          children: [
-            const Text('Members'),
-            ...renderAssetList(
-                models: model.userModels, route: AppRoutes.editUser)
-          ],
-        ),
-        divider,
-        Column(
-          children: [
-            const Text('Tasks'),
-            ...renderAssetList(
-                models: model.taskModels, route: AppRoutes.editTask)
-          ],
-        ),
-        divider,
-        const Text('Notes:'),
-        Text(model.notes),
-      ]),
-      leading: IconButton(
-          icon: const Icon(Icons.edit_note),
-          onPressed: () {
-            Navigator.pushNamed(context, AppRoutes.editTrackPoint.route,
-                arguments: model.id);
-          }),
-    );
+    return Column(children: [
+      ListTile(
+          leading: IconButton(
+              icon: Icon(
+                Icons.edit_note,
+                size: size,
+              ),
+              onPressed: () async {
+                await Navigator.pushNamed(
+                    context, AppRoutes.editTrackPoint.route,
+                    arguments: model.id);
+                render();
+              }),
+          title: Column(children: [
+            Text('#${model.id}',
+                style: Theme.of(context).textTheme.displaySmall),
+            Center(
+                child: Text(
+                    '${util.formatDate(model.timeStart)} - ${util.formatDate(model.timeStart)}')),
+            Center(child: Text(util.formatDuration(model.duration))),
+          ])),
+      Padding(
+          padding: EdgeInsets.symmetric(horizontal: 5),
+          child: Column(children: [
+            divider,
+            Align(
+                alignment: Alignment.centerLeft,
+                child: Text('OSM Addr: ${model.address}')),
+            Column(
+              children: [
+                const Text('Location Alias'),
+                ...renderAliasList(trackpoint: model)
+              ],
+            ),
+            divider,
+            Column(
+              children: [
+                const Text('Members'),
+                ...renderAssetList(
+                    models: model.userModels, route: AppRoutes.editUser)
+              ],
+            ),
+            divider,
+            Column(
+              children: [
+                const Text('Tasks'),
+                ...renderAssetList(
+                    models: model.taskModels, route: AppRoutes.editTask)
+              ],
+            ),
+            divider,
+            const Text('Notes:'),
+            Text(model.notes),
+          ])),
+    ]);
   }
 }

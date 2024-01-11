@@ -171,10 +171,7 @@ class _WidgetUserGroupEdit extends State<WidgetUserGroupEdit> {
       ListTile(
           title: const Text('Preselected'),
           subtitle: const Text(
-            'If checked this group is already selected in Live Tracking lists.\n '
-            'However, you can uncheck preselected tasks unless Selectable is disabled.',
-            softWrap: true,
-          ),
+              'If checked this group is already selected in Live Tracking lists.'),
           leading: AppWidgets.checkbox(
             value: _model?.isPreselected ?? false,
             onChanged: (val) async {
@@ -198,11 +195,8 @@ class _WidgetUserGroupEdit extends State<WidgetUserGroupEdit> {
 
       /// deleted
       ListTile(
-          title: const Text('Deaktivated'),
-          subtitle: const Text(
-            'Deaktivated Items have no functionality and appear only in Trash views.',
-            softWrap: true,
-          ),
+          title: const Text('Active'),
+          subtitle: const Text('This Group is active and visible'),
           leading: AppWidgets.checkbox(
             value: _model?.isActive ?? false,
             onChanged: (val) {

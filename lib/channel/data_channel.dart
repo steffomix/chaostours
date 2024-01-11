@@ -76,8 +76,7 @@ class DataChannel extends TrackPointData {
   bool skipTracking = false;
 
   Future<String> setTrackpointNotes(String text) async {
-    return (notes =
-        await Cache.backgroundTrackPointUserNotes.save<String>(text));
+    return (notes = await Cache.backgroundTrackPointNotes.save<String>(text));
   }
 
   DataChannel._() {
@@ -136,7 +135,7 @@ class DataChannel extends TrackPointData {
             /// Cached values
             trackingStatusTrigger = await Cache.trackingStatusTriggered
                 .load<TrackingStatus>(TrackingStatus.none);
-            notes = await Cache.backgroundTrackPointUserNotes.load<String>('');
+            notes = await Cache.backgroundTrackPointNotes.load<String>('');
 
             skipTracking = await Cache.backgroundTrackPointSkipRecordOnce
                 .load<bool>(false);

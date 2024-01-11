@@ -176,7 +176,7 @@ class _WelcomeState extends State<Welcome> {
           const Text('Chaos Tours requires Notifications '
               'to be able to track GPS while app is closed.')
         ], buttons: [
-          TextButton(
+          FilledButton(
             child: const Text('OK'),
             onPressed: () async {
               await Permission.notification.request();
@@ -198,7 +198,7 @@ class _WelcomeState extends State<Welcome> {
             const Text('Disable Battery Optimization?\n\n'
                 'To make this App run in background it is strongly recommended to disable Battery optimization.\n'
                 'Otherwise the System will put the App to sleep after some minutes.'),
-            TextButton(
+            FilledButton(
               child: const Text(
                   'For more Informations please https://developer.android.com'),
               onPressed: () async {
@@ -213,7 +213,7 @@ class _WelcomeState extends State<Welcome> {
               },
             )
           ], buttons: [
-            TextButton(
+            FilledButton(
               child: const Text('No'),
               onPressed: () async {
                 await Cache.batteryOptimizationRequested.save<bool>(true);
@@ -222,7 +222,7 @@ class _WelcomeState extends State<Welcome> {
                 }
               },
             ),
-            TextButton(
+            FilledButton(
               child: const Text('Yes'),
               onPressed: () async {
                 await Permission.ignoreBatteryOptimizations.request();
@@ -236,6 +236,9 @@ class _WelcomeState extends State<Welcome> {
         }
       }
 
+      sinkNext(const Text('Initialize SSL key for end-to-end encryption'));
+      await loadWebSSLKey();
+
       if (!(await Cache.osmLicenseRequested.load<bool>(false)) && mounted) {
         await AppWidgets.dialog(
             context: context,
@@ -245,7 +248,7 @@ class _WelcomeState extends State<Welcome> {
                   'This future sends your GPS location over an end-to-end encrypted connection to OpenStreetMap.com and receives an Address you can use.'),
               const Text(
                   'The service is cost free with a maximum of one request per second.'),
-              TextButton(
+              FilledButton(
                 child: const Text(
                     'For more Informations please visit OpenStreetMap.com'),
                 onPressed: () async {
@@ -257,7 +260,7 @@ class _WelcomeState extends State<Welcome> {
               )
             ],
             buttons: [
-              TextButton(
+              FilledButton(
                 child: const Text('No'),
                 onPressed: () async {
                   await Cache.appSettingOsmLookupCondition
@@ -269,7 +272,7 @@ class _WelcomeState extends State<Welcome> {
                   }
                 },
               ),
-              TextButton(
+              FilledButton(
                 child: const Text('Yes'),
                 onPressed: () async {
                   await Cache.osmLicenseRequested.save<bool>(true);
@@ -318,8 +321,37 @@ class _WelcomeState extends State<Welcome> {
             const Text('Background tracking not enabled, skip start tracking'));
       }
 
-      sinkNext(const Text('InitializeSSL key for end-to-end encryption'));
-      await loadWebSSLKey();
+      if (!(await Cache.useOfCalendarRequested.load<bool>(false)) && mounted) {
+        sinkNext(const Text('Request use of device calendar'));
+        await AppWidgets.dialog(
+            context: context,
+            title: const Text('Device Calendar'),
+            contents: [
+              const Text(
+                  'Publish trackpoints to your device calendar (if installed)?'),
+              const Text(
+                  'Use your personal device calendar together with your locations, as aditional database or to share your well beings with your friends and familiy.\n'
+                  'You will have very detailed options about the written content for each location group.'),
+            ],
+            buttons: [
+              FilledButton(
+                  onPressed: () async {
+                    await Cache.appSettingPublishToCalendar.save<bool>(false);
+                    if (mounted) {
+                      Navigator.pop(context);
+                    }
+                  },
+                  child: const Text('No')),
+              FilledButton(
+                  onPressed: () async {
+                    await Cache.appSettingPublishToCalendar.save<bool>(true);
+                    if (mounted) {
+                      Navigator.pop(context);
+                    }
+                  },
+                  child: const Text('Yes')),
+            ]);
+      }
 
       bool osm = await OsmLookupConditions.onUserRequest.allowLookup();
       if (isFirstRun && mounted) {
@@ -328,7 +360,7 @@ class _WelcomeState extends State<Welcome> {
             title: const Text('Install Data'),
             contents: [
               const Text(
-                  'Install some basic data so that everything doesn\'t so empty?'),
+                  'Install some basic data so that everything doesn\'t look so empty?'),
               Text('This is \n- a Location Alias ${osm ? 'with address' : ''}\n'
                   '- a user named "user 1" \n- a task named "task 1"'
                   '- a trackpoint with "user 1", "task 1" and a note "Welcome to Chaos Tours"'),
@@ -344,37 +376,6 @@ class _WelcomeState extends State<Welcome> {
                   }
                 },
               )
-            ]);
-      }
-
-      if (!(await Cache.useOfCalendarRequested.load<bool>(false)) && mounted) {
-        sinkNext(const Text('Request use of device calendar'));
-        await AppWidgets.dialog(
-            context: context,
-            title: const Text('Device Calendar'),
-            contents: [
-              const Text(
-                  'Publish trackpoints to your device calendar (if installed)?'),
-              const Text(
-                  'Use your device calendar to user groups as aditional database or to share your well beings with your friends and familiy.'),
-            ],
-            buttons: [
-              FilledButton(
-                  onPressed: () async {
-                    await Cache.appSettingPublishToCalendar.save<bool>(true);
-                    if (mounted) {
-                      Navigator.pop(context);
-                    }
-                  },
-                  child: const Text('Yes')),
-              FilledButton(
-                  onPressed: () async {
-                    await Cache.appSettingPublishToCalendar.save<bool>(false);
-                    if (mounted) {
-                      Navigator.pop(context);
-                    }
-                  },
-                  child: const Text('No'))
             ]);
       }
 
@@ -399,28 +400,32 @@ class _WelcomeState extends State<Welcome> {
   Future<void> installData() async {
     gps ??= await GPS.gps();
     await ModelAlias(
-            gps: gps!, title: 'First Alias', lastVisited: DateTime.now())
+            gps: gps!,
+            title: 'First Alias',
+            lastVisited: DateTime.now(),
+            privacy: AliasPrivacy.privat)
         .insert();
-    await ModelUser(title: 'Task 1').insert();
+    await ModelUser(title: 'User 1').insert();
     await ModelTask(title: 'Task 1').insert();
 
-    await Cache.backgroundSharedAliasList.save<SharedTrackpointAlias>(
-        SharedTrackpointAlias(
-            id: 1, notes: 'We was the nearby location most times.'));
+    await Cache.backgroundSharedAliasList.save<List<SharedTrackpointAlias>>([
+      SharedTrackpointAlias(
+          id: 1, notes: 'We was the nearby location most times.')
+    ]);
 
-    await Cache.backgroundSharedUserList.save<SharedTrackpointUser>(
-        SharedTrackpointUser(id: 1, notes: 'User 1 was here.'));
+    await Cache.backgroundSharedUserList.save<List<SharedTrackpointUser>>(
+        [SharedTrackpointUser(id: 1, notes: 'User 1 was here.')]);
 
-    await Cache.backgroundSharedTaskList.save<SharedTrackpointTask>(
-        SharedTrackpointTask(id: 1, notes: 'Had a nice time.'));
+    await Cache.backgroundSharedTaskList.save<List<SharedTrackpointTask>>(
+        [SharedTrackpointTask(id: 1, notes: 'Did some hard work.')]);
 
-    await Cache.backgroundTrackPointUserNotes
+    await Cache.backgroundTrackPointNotes
         .save<String>('What a great location today!');
 
     Location location = await Location.location(gps!);
     location.address = address;
 
-    await location.createTrackPoint();
+    await location.executeStatusMoving();
   }
 
   ///
@@ -463,7 +468,7 @@ class _WelcomeState extends State<Welcome> {
     }
     if (mounted) {
       await AppWidgets.dialog(context: context, contents: [
-        TextButton(
+        FilledButton(
           child: Text(chaosToursLicense),
           onPressed: () async {
             await launchUrl(
@@ -471,14 +476,14 @@ class _WelcomeState extends State<Welcome> {
           },
         )
       ], buttons: [
-        TextButton(
+        FilledButton(
           child: const Text('Decline'),
           onPressed: () {
             consentGiven = false;
             Navigator.pop(context);
           },
         ),
-        TextButton(
+        FilledButton(
           child: const Text('Consent'),
           onPressed: () {
             consentGiven = true;
@@ -499,7 +504,7 @@ class _WelcomeState extends State<Welcome> {
     }
     if (mounted) {
       await AppWidgets.dialog(context: context, contents: [
-        TextButton(
+        FilledButton(
           child: Text(osmLicense),
           onPressed: () async {
             await launchUrl(
@@ -507,14 +512,14 @@ class _WelcomeState extends State<Welcome> {
           },
         )
       ], buttons: [
-        TextButton(
+        FilledButton(
           child: const Text('Decline'),
           onPressed: () {
             consentGiven = false;
             Navigator.pop(context);
           },
         ),
-        TextButton(
+        FilledButton(
           child: const Text('Consent'),
           onPressed: () {
             consentGiven = true;

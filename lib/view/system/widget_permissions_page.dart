@@ -138,11 +138,6 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
 
     ///
     ///
-
-    items.add(AppWidgets.divider());
-
-    ///
-    ///
     items.add(Center(
         child: FilledButton(
             onPressed: () {
@@ -163,8 +158,8 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
         leading: permLocation
             ? const Icon(Icons.done, color: Colors.green)
             : const Icon(Icons.error_outline, color: Colors.red),
-        title: const Text('Common foreground GPS.'),
-        subtitle: const Text('Used in foreground tasks like OpenStreetMap.'),
+        title: const Text('GPS location'),
+        subtitle: const Text('Used for location lookup.'),
         trailing: IconButton(
           icon: const Icon(Icons.settings),
           onPressed: () async {
@@ -177,7 +172,7 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
             ? const Icon(Icons.done, color: Colors.green)
             : const Icon(Icons.error_outline, color: Colors.red),
         title: const Text('Ignore battery optimization.'),
-        subtitle: const Text('Prevents your device to put the App to sleep.'),
+        subtitle: const Text('Prevents your device to put this app to sleep.'),
         trailing: IconButton(
           icon: const Icon(Icons.settings),
           onPressed: () {
@@ -191,7 +186,7 @@ class _WidgetPermissionsPage extends State<WidgetPermissionsPage> {
             : const Icon(Icons.error_outline, color: Colors.red),
         title: const Text('Notifications.'),
         subtitle: const Text(
-            'Used to keep the running and inform you about new and ongoing app states.'),
+            'Keeps this app up and running and provides some app status information.'),
         trailing: IconButton(
           icon: const Icon(Icons.settings),
           onPressed: () {

@@ -27,7 +27,6 @@ class ModelTask implements Model {
   int _id = 0;
   @override
   int get id => _id;
-  int groupId;
   bool isActive;
   bool isSelectable = true;
   bool isPreselected = false;
@@ -40,8 +39,7 @@ class ModelTask implements Model {
   String trackpointNotes = '';
 
   ModelTask(
-      {this.groupId = 1,
-      this.sortOrder = '',
+      {this.sortOrder = '',
       this.isActive = true,
       this.isSelectable = true,
       this.isPreselected = false,
@@ -50,7 +48,6 @@ class ModelTask implements Model {
 
   static ModelTask fromMap(Map<String, Object?> map) {
     var model = ModelTask(
-        groupId: DB.parseInt(map[TableTask.idTaskGroup.column], fallback: 1),
         isActive: DB.parseBool(map[TableTask.isActive.column]),
         isSelectable: DB.parseBool(map[TableTask.isSelectable.column]),
         isPreselected: DB.parseBool(map[TableTask.isPreselected.column]),
@@ -64,7 +61,6 @@ class ModelTask implements Model {
   Map<String, Object?> toMap() {
     return <String, Object?>{
       TableTask.primaryKey.column: id,
-      TableTask.idTaskGroup.column: groupId,
       TableTask.isActive.column: DB.boolToInt(isActive),
       TableTask.isSelectable.column: DB.boolToInt(isSelectable),
       TableTask.isPreselected.column: DB.boolToInt(isPreselected),

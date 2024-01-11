@@ -218,6 +218,7 @@ class _WidgetOsm extends State<WidgetOsm> {
               valueListenable: _addressNotifier,
               builder: (context, value, child) => Text(
                     _addressNotifier.value,
+                    style: Theme.of(context).textTheme.bodySmall,
                     maxLines: 3,
                   )),
           leading: IconButton(
@@ -236,7 +237,7 @@ class _WidgetOsm extends State<WidgetOsm> {
         child: Container(
             alignment: Alignment.center,
             decoration: BoxDecoration(
-                color: const Color.fromARGB(92, 255, 255, 255),
+                color: Theme.of(context).cardColor.withAlpha(100),
                 border: Border.all()),
             child: boxContent));
   }

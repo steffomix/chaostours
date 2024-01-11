@@ -442,16 +442,16 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     ///
     List<Widget> list = [];
     var i = 0;
-    for (var channelModel in dataChannel.aliasList) {
+    for (var model in dataChannel.aliasList) {
       i++;
       list.add(ListTile(
-          leading: Icon(Icons.square, color: channelModel.model.privacy.color),
+          leading: Icon(Icons.square, color: model.model.privacy.color),
           title: Align(
               alignment: Alignment.centerLeft,
               child: TextButton(
                   onPressed: () {
                     Navigator.pushNamed(context, AppRoutes.editAlias.route,
-                            arguments: channelModel.model.id)
+                            arguments: model.model.id)
                         .then(
                       (value) {
                         render();
@@ -464,7 +464,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                         : const TextStyle(
                             decoration: TextDecoration.underline,
                             fontWeight: FontWeight.bold),
-                    '${channelModel.distance}m: ${util.cutString(channelModel.model.title, 80)}',
+                    '${dataChannel.gps == null ? '...' : model.distance(dataChannel.gps!)}m: ${util.cutString(model.model.title, 80)}',
                   )))));
     }
     return Column(

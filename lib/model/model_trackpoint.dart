@@ -252,15 +252,17 @@ class ModelTrackPoint {
           whereArgs: [id, asset.id],
           limit: 1);
 
-      return rows.isEmpty
-          ? await txn.insert(table, {
+      final isUpdate = DB.parseBool(rows.firstOrNull?[count]);
+
+      return isUpdate
+          ? await txn.update(table, {columnNotes: asset.notes},
+              where: '$columnTrackPoint = ? AND $columnForeign = ?',
+              whereArgs: [id, asset.id])
+          : await txn.insert(table, {
               columnTrackPoint: id,
               columnForeign: asset.id,
               columnNotes: asset.notes
-            })
-          : await txn.update(table, {columnNotes: asset.notes},
-              where: '$columnTrackPoint = ? AND $columnForeign = ?',
-              whereArgs: [id, asset.id]);
+            });
     }
 
     return txn != null
@@ -272,7 +274,7 @@ class ModelTrackPoint {
           );
   }
 
-  Future<int> addAlias(ModelTrackpointAsset asset, [Transaction? txn]) async {
+  Future<int> addAlias(ModelTrackpointAlias asset, [Transaction? txn]) async {
     return await _addOrUpdateAsset(
         table: TableTrackPointAlias.table,
         columnTrackPoint: TableTrackPointAlias.idTrackPoint.column,
@@ -282,7 +284,7 @@ class ModelTrackPoint {
         txn: txn);
   }
 
-  Future<int> addTask(ModelTrackpointAsset asset, [Transaction? txn]) async {
+  Future<int> addTask(ModelTrackpointTask asset, [Transaction? txn]) async {
     return await _addOrUpdateAsset(
         table: TableTrackPointTask.table,
         columnTrackPoint: TableTrackPointTask.idTrackPoint.column,
@@ -292,7 +294,7 @@ class ModelTrackPoint {
         txn: txn);
   }
 
-  Future<int> addUser(ModelTrackpointAsset asset, [Transaction? txn]) async {
+  Future<int> addUser(ModelTrackpointUser asset, [Transaction? txn]) async {
     return await _addOrUpdateAsset(
         table: TableTrackPointUser.table,
         columnTrackPoint: TableTrackPointUser.idTrackPoint.column,
@@ -321,7 +323,7 @@ class ModelTrackPoint {
           );
   }
 
-  Future<int> removeAlias(ModelTrackpointAsset asset,
+  Future<int> removeAlias(ModelTrackpointAlias asset,
       [Transaction? txn]) async {
     return await _removeAsset(
         table: TableTrackPointAlias.table,
@@ -331,7 +333,7 @@ class ModelTrackPoint {
         txn: txn);
   }
 
-  Future<int> removeTask(ModelTrackpointAsset asset, [Transaction? txn]) async {
+  Future<int> removeTask(ModelTrackpointTask asset, [Transaction? txn]) async {
     return await _removeAsset(
         table: TableTrackPointTask.table,
         columnTrackPoint: TableTrackPointTask.idTrackPoint.column,
@@ -340,7 +342,7 @@ class ModelTrackPoint {
         txn: txn);
   }
 
-  Future<int> removeUser(ModelTrackpointAsset asset, [Transaction? txn]) async {
+  Future<int> removeUser(ModelTrackpointUser asset, [Transaction? txn]) async {
     return await _removeAsset(
         table: TableTrackPointUser.table,
         columnTrackPoint: TableTrackPointUser.idTrackPoint.column,
@@ -354,10 +356,10 @@ class ModelTrackPoint {
     ids ??= [id];
     const notes = 'trackpoint_notes';
     final q =
-        '''SELECT ${TableTrackPoint.notes} as $notes, ${TableAlias.columns.join(',')} 
+        '''SELECT ${TableTrackPointAlias.notes} as $notes, ${TableAlias.columns.join(',')} 
     FROM ${TableTrackPoint.table}
-    LEFT JOIN ${TableTrackPointAlias.table} ON ${TableTrackPoint.id} = ${TableTrackPointAlias.idTrackPoint}
-    LEFT JOIN ${TableAlias.table} ON ${TableTrackPointAlias.idAlias} = ${TableAlias.id}
+    INNER JOIN ${TableTrackPointAlias.table} ON ${TableTrackPoint.id} = ${TableTrackPointAlias.idTrackPoint}
+    INNER JOIN ${TableAlias.table} ON ${TableTrackPointAlias.idAlias} = ${TableAlias.id}
     WHERE ${TableTrackPoint.id} IN (${List.filled(ids.length, '?').join(', ')})
 ''';
 
@@ -384,10 +386,10 @@ class ModelTrackPoint {
     ids ??= [id];
     const notes = 'trackpoint_notes';
     final q =
-        '''SELECT ${TableTrackPoint.notes} as $notes, ${TableTask.columns.join(',')} 
+        '''SELECT ${TableTrackPointTask.notes} as $notes, ${TableTask.columns.join(',')} 
     FROM ${TableTrackPoint.table}
-    LEFT JOIN ${TableTrackPointTask.table} ON ${TableTrackPoint.id} = ${TableTrackPointTask.idTrackPoint}
-    LEFT JOIN ${TableTask.table} ON ${TableTrackPointTask.idTask} = ${TableTask.id}
+    INNER JOIN ${TableTrackPointTask.table} ON ${TableTrackPoint.id} = ${TableTrackPointTask.idTrackPoint}
+    INNER JOIN ${TableTask.table} ON ${TableTrackPointTask.idTask} = ${TableTask.id}
     WHERE ${TableTrackPoint.id} IN (${List.filled(ids.length, '?').join(', ')})
 ''';
 
@@ -417,10 +419,10 @@ class ModelTrackPoint {
     ids ??= [id];
     const notes = 'trackpoint_notes';
     final q =
-        '''SELECT ${TableTrackPoint.notes} as $notes, ${TableUser.columns.join(',')} 
+        '''SELECT ${TableTrackPointUser.notes} as $notes, ${TableUser.columns.join(',')} 
     FROM ${TableTrackPoint.table}
-    LEFT JOIN ${TableTrackPointUser.table} ON ${TableTrackPoint.id} = ${TableTrackPointUser.idTrackPoint}
-    LEFT JOIN ${TableUser.table} ON ${TableTrackPointUser.idUser} = ${TableUser.id}
+    INNER JOIN ${TableTrackPointUser.table} ON ${TableTrackPointUser.idTrackPoint} = ${TableTrackPoint.id}
+    INNER JOIN ${TableUser.table} ON  ${TableUser.id} = ${TableTrackPointUser.idUser}
     WHERE ${TableTrackPoint.id} IN (${List.filled(ids.length, '?').join(', ')})
 ''';
 

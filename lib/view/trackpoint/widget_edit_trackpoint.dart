@@ -14,13 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'dart:math' as math;
+
+///
 import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_trackpoint_task.dart';
 import 'package:chaostours/model/model_trackpoint_user.dart';
 import 'package:chaostours/model/model_user.dart';
 import 'package:flutter/material.dart';
-//
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/logger.dart';
@@ -60,7 +62,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
 
   void render() {
     if (mounted) {
-      render();
+      setState(() {});
     }
   }
 
@@ -78,43 +80,63 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
   }
 
   Widget body() {
-    return ListView(padding: const EdgeInsets.all(5), children: [
+    return ListView(padding: const EdgeInsets.all(10), children: [
       dateTime(),
+      duration(),
+      AppWidgets.divider(),
       address(),
+      AppWidgets.divider(),
       widgetAliases(),
+      AppWidgets.divider(),
+      widgetUsers(),
+      widgetTasks(),
+      AppWidgets.divider(),
+      widgetTrackpointNotes()
     ]);
   }
 
   Widget address() {
     return Column(children: [
-      TextField(
-        decoration: const InputDecoration(label: Text('Address')),
-        onChanged: ((value) {
-          _model.address = value;
-          _model.update();
-        }),
-        minLines: 1,
-        maxLines: 3,
-        controller: _addressController,
-        undoController: _addressUndoController,
-      ),
-      TextField(
-        decoration: const InputDecoration(label: Text('Address Details')),
-        onChanged: ((value) {
-          _model.fullAddress = value;
-          _model.update();
-        }),
-        minLines: 1,
-        maxLines: 3,
-        controller: _fullAddressController,
-        undoController: _fullAddressUndoController,
-      ),
+      Padding(
+          padding: const EdgeInsets.symmetric(vertical: 5),
+          child: TextField(
+            decoration: const InputDecoration(label: Text('Address')),
+            onChanged: ((value) {
+              _model.address = value;
+              _model.update();
+            }),
+            minLines: 1,
+            maxLines: 3,
+            controller: _addressController ??=
+                TextEditingController(text: _model.address),
+            undoController: _addressUndoController,
+          )),
+      Padding(
+          padding: const EdgeInsets.symmetric(vertical: 5),
+          child: TextField(
+            decoration: const InputDecoration(label: Text('Address Details')),
+            onChanged: ((value) {
+              _model.fullAddress = value;
+              _model.update();
+            }),
+            minLines: 1,
+            maxLines: 3,
+            controller: _fullAddressController ??=
+                TextEditingController(text: _model.fullAddress),
+            undoController: _fullAddressUndoController,
+          )),
     ]);
   }
 
+  Widget duration() {
+    return Center(
+        child: Text(
+            util.formatDuration(_model.timeEnd.difference(_model.timeStart))));
+  }
+
   Widget dateTime() {
-    final firstDate = DateTime.now().subtract(const Duration(days: 365 * 10));
-    final lastDate = DateTime.now().subtract(const Duration(days: 365 * 10));
+    final firstDate = DateTime.now().subtract(const Duration(days: 365 * 100));
+    final lastDate = DateTime.now().add(const Duration(days: 365 * 100));
 
     return Column(children: [
       Row(children: [
@@ -143,21 +165,23 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
 
         ///
         /// time start
-        FilledButton(
-          child: Text(util.formatTime(_model.timeStart)),
-          onPressed: () async {
-            TimeOfDay? time = await showTimePicker(
-                context: context,
-                initialTime: TimeOfDay.fromDateTime(_model.timeStart));
-            if ((time != null)) {
-              _model.timeStart = util
-                  .removeTime(_model.timeStart)
-                  .add(Duration(hours: time.hour, minutes: time.minute));
-              await _model.update();
-              render();
-            }
-          },
-        )
+        Padding(
+            padding: const EdgeInsets.only(left: 5),
+            child: FilledButton(
+              child: Text(util.formatTime(_model.timeStart)),
+              onPressed: () async {
+                TimeOfDay? time = await showTimePicker(
+                    context: context,
+                    initialTime: TimeOfDay.fromDateTime(_model.timeStart));
+                if ((time != null)) {
+                  _model.timeStart = util
+                      .removeTime(_model.timeStart)
+                      .add(Duration(hours: time.hour, minutes: time.minute));
+                  await _model.update();
+                  render();
+                }
+              },
+            ))
       ]),
 
       ///
@@ -168,7 +192,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
         ///
         /// date end
         Transform.rotate(
-            angle: 0,
+            angle: math.pi,
             child: const Icon(
               Icons.start,
             )),
@@ -190,21 +214,23 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
 
         ///
         /// time end
-        FilledButton(
-          child: Text(util.formatTime(_model.timeEnd)),
-          onPressed: () async {
-            TimeOfDay? time = await showTimePicker(
-                context: context,
-                initialTime: TimeOfDay.fromDateTime(_model.timeEnd));
-            if ((time != null)) {
-              _model.timeEnd = util
-                  .removeTime(_model.timeEnd)
-                  .add(Duration(hours: time.hour, minutes: time.minute));
-              await _model.update();
-              render();
-            }
-          },
-        )
+        Padding(
+            padding: const EdgeInsets.only(left: 5),
+            child: FilledButton(
+              child: Text(util.formatTime(_model.timeEnd)),
+              onPressed: () async {
+                TimeOfDay? time = await showTimePicker(
+                    context: context,
+                    initialTime: TimeOfDay.fromDateTime(_model.timeEnd));
+                if ((time != null)) {
+                  _model.timeEnd = util
+                      .removeTime(_model.timeEnd)
+                      .add(Duration(hours: time.hour, minutes: time.minute));
+                  await _model.update();
+                  render();
+                }
+              },
+            ))
       ]),
     ]);
   }
@@ -239,7 +265,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
                         : const TextStyle(
                             decoration: TextDecoration.underline,
                             fontWeight: FontWeight.bold),
-                    '${model.distance}m: ${util.cutString(model.model.title, 80)}',
+                    '${model.distance(_model.gps)}m: ${util.cutString(model.model.title, 80)}',
                   )))));
     }
     return Column(
@@ -310,8 +336,8 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
               minLines: 3,
               maxLines: 8,
               onChanged: (text) async {
-                _model.notes = text;
-                await _model.update();
+                await model.updateNotes(text);
+                render();
               })
         ],
         buttons: [
@@ -365,6 +391,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
               child: const Text('Close'),
               onPressed: () {
                 Navigator.pop(context);
+                render();
               },
             )
           ],
@@ -470,10 +497,11 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
             trailing: AppWidgets.checkbox(
                 value: modelIds.contains(model.id),
                 onChanged: (bool? state) async {
-                  ///
-                  ///
-                  ///
-                  /// todo update task list
+                  var task = ModelTrackpointTask(
+                      model: model, trackpointId: _model.id, notes: '');
+                  await ((state ??= false)
+                      ? _model.addTask(task)
+                      : _model.removeTask(task));
                   render();
                 }));
       },
@@ -516,16 +544,15 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
               );
             }),
         title: TextField(
+          decoration: const InputDecoration(label: Text('Trackpoint notes')),
           controller: _trackpointNotesController ??=
               TextEditingController(text: _model.notes),
           undoController: _trackpointNotesUndoController,
           minLines: 2,
           maxLines: 6,
-          decoration: const InputDecoration(hintText: 'Notes'),
           onChanged: (text) async {
             _model.notes = text;
             _model.update();
-            render();
           },
         ));
   }

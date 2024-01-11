@@ -83,7 +83,7 @@ class ModelAlias implements Model {
   String trackpointNotes = '';
 
   /// group values
-  AliasPrivacy privacy = AliasPrivacy.restricted;
+  AliasPrivacy privacy = AliasPrivacy.privat;
   bool isActive = true;
 
   /// temporary set during search for nearest Alias
@@ -96,7 +96,7 @@ class ModelAlias implements Model {
     required this.lastVisited,
     required this.title,
     this.isActive = true,
-    this.privacy = AliasPrivacy.public,
+    this.privacy = AliasPrivacy.privat,
     this.radius = 50,
     this.timesVisited = 0,
     this.description = '',
@@ -384,6 +384,7 @@ WHERE ${TableAlias.isActive} = ? AND ${TableAliasGroup.isActive} = ?
       {required GPS gps,
       includeInactive = true,
       int area = 1000,
+      int limit = 300,
       int softLimit = 0}) async {
     var area =
         GpsArea(latitude: gps.lat, longitude: gps.lon, distanceInMeters: 1000);
@@ -393,29 +394,21 @@ WHERE ${TableAlias.isActive} = ? AND ${TableAliasGroup.isActive} = ?
         ' $latCol > ? AND $latCol < ? AND $lonCol > ? AND $lonCol < ? ';
     var isActiveCol = 'isActive';
     var rows = await DB.execute((txn) async {
-      if (!includeInactive) {
-        return await txn.rawQuery('''
+      return await txn.rawQuery('''
 SELECT ${TableAlias.columns.join(', ')}, ${TableAliasGroup.isActive} AS $isActiveCol  FROM ${TableAlias.table}
-LEFT JOIN ${TableAliasGroup.table} ON ${TableAlias.idAliasGroup} = ${TableAliasGroup.primaryKey}
+LEFT JOIN ${TableAliasAliasGroup.table} ON ${TableAlias.id} = ${TableAliasAliasGroup.idAlias}
+LEFT JOIN ${TableAliasGroup.table} ON ${TableAliasGroup.id} = ${TableAliasAliasGroup.idAliasGroup}
 WHERE $isActiveCol = ? AND $whereArea
-          ''', [
-          DB.boolToInt(includeInactive),
-          area.southLatitudeBorder,
-          area.northLatitudeBorder,
-          area.westLongitudeBorder,
-          area.eastLongitudeBorder
-        ]);
-      } else {
-        return await txn.query(TableAlias.table,
-            columns: TableAlias.columns,
-            where: whereArea,
-            whereArgs: [
-              area.southLatitudeBorder,
-              area.northLatitudeBorder,
-              area.westLongitudeBorder,
-              area.eastLongitudeBorder,
-            ]);
-      }
+GROUP BY ${TableAlias.id}
+LIMIT ?
+''', [
+        DB.boolToInt(includeInactive),
+        area.southLatitudeBorder,
+        area.northLatitudeBorder,
+        area.westLongitudeBorder,
+        area.eastLongitudeBorder,
+        limit
+      ]);
     });
     var models = <ModelAlias>[];
     for (var row in rows) {

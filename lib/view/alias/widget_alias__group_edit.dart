@@ -223,10 +223,7 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
       /// deleted
       ListTile(
           title: const Text('Active'),
-          subtitle: const Text(
-            'This Group is active and visible',
-            softWrap: true,
-          ),
+          subtitle: const Text('This Group is active and visible'),
           leading: AppWidgets.checkbox(
             value: _modelAliasGroup?.isActive ?? false,
             onChanged: (val) {

@@ -87,8 +87,8 @@ class AppCalendar {
         calendarsResult.errors.map((e) {
           err.add(e.errorMessage);
         });
-        var note = await Cache.backgroundTrackPointUserNotes.load<String>('');
-        await Cache.backgroundTrackPointUserNotes
+        var note = await Cache.backgroundTrackPointNotes.load<String>('');
+        await Cache.backgroundTrackPointNotes
             .save<String>('$note\n\n${err.join('\n\n')}');
       }
       var data = calendarsResult.data;
