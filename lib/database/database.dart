@@ -68,7 +68,7 @@ class DB {
                         for (var sql in [
                           ...DbTable.tables.map((e) => e.schema),
                           ...DbTable.indexes,
-                          ...DbTable.inserts
+                          ...DbTable.inserts,
                         ]) {
                           batch.rawQuery(sql);
                         }
@@ -555,7 +555,7 @@ enum TableTask {
 enum TableAlias {
   id('id'),
   isActive('active'),
-  radius('radius'),
+  radius('_radius'), // "radius" is sqlite reserved
   privacy('privacy'),
   lastVisited('last_visited'),
   timesVisited('times_visited'),
