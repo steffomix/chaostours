@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:android_intent_plus/android_intent.dart';
 import 'package:chaostours/channel/background_channel.dart';
 import 'package:chaostours/database/cache.dart';
 import 'package:flutter/material.dart';
@@ -228,6 +229,17 @@ class _WidgetDrawer extends State<WidgetDrawer> {
           title: 'User Groups',
           description: 'Group your Users into Teams.',
           route: AppRoutes.listUserGroup),
+      _Divider(),
+      _Custom(
+          widget: ListTile(
+        title: FilledButton(
+          child: const Text('Device calendar'),
+          onPressed: () {
+            launchUrl(Uri.parse('https://calendar.google.com'));
+          },
+        ),
+        subtitle: const Text('Open your device calendar direct from here.'),
+      )),
       _Divider(),
       _Header(
           title: 'App Configuration',

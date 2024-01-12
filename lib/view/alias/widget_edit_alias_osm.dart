@@ -551,7 +551,7 @@ class _AliasTrackingRenderer {
     ));
 
     for (var alias in await ModelAlias.byArea(
-        gps: GPS(geoPoint.latitude, geoPoint.longitude), area: 1000 * 50)) {
+        gps: GPS(geoPoint.latitude, geoPoint.longitude), gpsArea: 1000 * 50)) {
       try {
         controller.drawCircle(CircleOSM(
           key: key,

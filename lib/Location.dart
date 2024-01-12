@@ -55,7 +55,7 @@ class Location {
   static Future<Location> location(GPS gps) async {
     List<ModelAlias> allModels = await ModelAlias.byArea(
         gps: gps,
-        area: math.max(
+        gpsArea: math.max(
             1000,
             await Cache.appSettingDistanceTreshold.load(
                 AppUserSetting(Cache.appSettingDistanceTreshold).defaultValue

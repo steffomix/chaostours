@@ -82,12 +82,6 @@ class ModelTrackPoint {
 
   ModelTrackPoint clone() => fromMap(toMap());
 
-  /// creates an empty trackpoint with GPS(0,0)
-  static ModelTrackPoint createTrackPoint() {
-    var t = DateTime.now();
-    return ModelTrackPoint(gps: GPS(0, 0), timeStart: t, timeEnd: t);
-  }
-
   static Future<int> countAlias(int id) async {
     var table = TableTrackPointAlias.table;
     var idTrackPoint = TableTrackPointAlias.idTrackPoint;

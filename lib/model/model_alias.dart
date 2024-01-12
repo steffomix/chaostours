@@ -376,33 +376,35 @@ WHERE ${TableAlias.isActive} = ? AND ${TableAliasGroup.isActive} = ?
     return count;
   }
 
-  /// <pre>
-  /// select alias of an area in meters and sort the result by distance.
-  /// Does not work with paging
-  /// </pre>
   static Future<List<ModelAlias>> byArea(
       {required GPS gps,
       includeInactive = true,
-      int area = 1000,
+      int gpsArea = 1000,
       int limit = 300,
       int softLimit = 0}) async {
-    var area =
-        GpsArea(latitude: gps.lat, longitude: gps.lon, distanceInMeters: 1000);
+    var area = GpsArea(
+        latitude: gps.lat, longitude: gps.lon, distanceInMeters: gpsArea);
     var latCol = TableAlias.latitude.column;
     var lonCol = TableAlias.longitude.column;
     var whereArea =
         ' $latCol > ? AND $latCol < ? AND $lonCol > ? AND $lonCol < ? ';
     var isActiveCol = 'isActive';
     var rows = await DB.execute((txn) async {
-      return await txn.rawQuery('''
+      var q = '''
 SELECT ${TableAlias.columns.join(', ')}, ${TableAliasGroup.isActive} AS $isActiveCol  FROM ${TableAlias.table}
 LEFT JOIN ${TableAliasAliasGroup.table} ON ${TableAlias.id} = ${TableAliasAliasGroup.idAlias}
 LEFT JOIN ${TableAliasGroup.table} ON ${TableAliasGroup.id} = ${TableAliasAliasGroup.idAliasGroup}
-WHERE $isActiveCol = ? AND $whereArea
+WHERE -- $isActiveCol = ? AND 
+$whereArea
 GROUP BY ${TableAlias.id}
 LIMIT ?
-''', [
-        DB.boolToInt(includeInactive),
+
+''';
+/*
+
+*/
+      return await txn.rawQuery(q, [
+        // DB.boolToInt(includeInactive),
         area.southLatitudeBorder,
         area.northLatitudeBorder,
         area.westLongitudeBorder,

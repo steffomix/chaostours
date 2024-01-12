@@ -71,7 +71,7 @@ class _WidgetAliasList extends BaseWidgetState<WidgetAliasList>
     List<ModelAlias> newItems = [];
     if (_displayMode == _DisplayMode.nearest) {
       newItems.addAll(await ModelAlias.byArea(
-          gps: _gps ??= (await GPS.gps()), area: 10000));
+          gps: _gps ??= (await GPS.gps()), gpsArea: 10000));
     } else {
       newItems.addAll(await ModelAlias.select(
           offset: offset,

@@ -328,15 +328,22 @@ class _WelcomeState extends State<Welcome> {
             title: const Text('Device Calendar'),
             contents: [
               const Text(
-                  'Publish trackpoints to your device calendar (if installed)?'),
+                  'Write trackpoints to your personal device calendar (if installed)?'),
               const Text(
-                  'Use your personal device calendar together with your locations, as aditional database or to share your well beings with your friends and familiy.\n'
+                  'Use your personal device calendar together with Chaos Tours, as aditional database or to share your well beings with your friends and familiy.\n'
                   'You will have very detailed options about the written content for each location group.'),
+              FilledButton(
+                  onPressed: () {
+                    launchUrl(Uri.parse('https://calendar.google.com'));
+                  },
+                  child: const Text('For more information open\n'
+                      'https://calendar.google.com'))
             ],
             buttons: [
               FilledButton(
                   onPressed: () async {
                     await Cache.appSettingPublishToCalendar.save<bool>(false);
+                    await Cache.useOfCalendarRequested.save<bool>(true);
                     if (mounted) {
                       Navigator.pop(context);
                     }
@@ -345,8 +352,17 @@ class _WelcomeState extends State<Welcome> {
               FilledButton(
                   onPressed: () async {
                     await Cache.appSettingPublishToCalendar.save<bool>(true);
+                    await Cache.useOfCalendarRequested.save<bool>(true);
                     if (mounted) {
-                      Navigator.pop(context);
+                      try {
+                        await Permission.calendar.request();
+                      } catch (e) {
+                        //
+                      }
+                      await Permission.calendarFullAccess.request();
+                      if (mounted) {
+                        Navigator.pop(context);
+                      }
                     }
                   },
                   child: const Text('Yes')),
@@ -368,7 +384,13 @@ class _WelcomeState extends State<Welcome> {
             ],
             buttons: [
               FilledButton(
-                child: const Text('Install Data'),
+                child: const Text('No'),
+                onPressed: () async {
+                  Navigator.pop(context);
+                },
+              ),
+              FilledButton(
+                child: const Text('Yes'),
                 onPressed: () async {
                   await installData();
                   if (mounted) {
