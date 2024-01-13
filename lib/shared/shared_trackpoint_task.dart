@@ -37,8 +37,7 @@ class SharedTrackpointTask extends SharedTrackpointAsset {
     for (var m in models) {
       if (m.id == model.id) {
         m.notes = notes;
-        await Cache.backgroundSharedTaskList
-            .save<List<SharedTrackpointTask>>(models);
+        await save(models);
         return models;
       }
     }

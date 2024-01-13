@@ -193,7 +193,8 @@ class Tracker {
                   gps = GPS.average(gpsCalcPoints);
                   gps.time = DateTime.now();
 
-                  gpsLocation = await gpsLocation.autocreateAlias(gps);
+                  gpsLocation = await gpsLocation
+                      .autocreateAlias(gpsLastStatusStanding ?? gps);
                 }
               }
             } catch (e, stk) {
@@ -214,8 +215,6 @@ class Tracker {
     } else {
       /// we started moving
       if (newTrackingStatus == TrackingStatus.moving) {
-        // skip tracking by user
-
         // skip tracking by user
         if (!(await checkSkipTrackingByUser(stopSkip: true))) {
           logger.log('tracking status MOVING');

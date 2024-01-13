@@ -247,7 +247,7 @@ class ModelUser implements Model {
     return models;
   }
 
-  /// returns task id
+  /// returns user id
   Future<ModelUser> insert() async {
     var map = toMap();
     map.removeWhere((key, value) => key == TableUser.primaryKey.column);
@@ -296,12 +296,13 @@ class ModelUser implements Model {
       SELECT ${columns.join(', ')} FROM ${TableUser.table}
       LEFT JOIN ${TableUserUserGroup.table} ON ${TableUserUserGroup.idUser} = ${TableUser.id}
       LEFT JOIN ${TableUserGroup.table} ON ${TableUserUserGroup.idUserGroup} = ${TableUserGroup.id}
-      WHERE ${TableUserGroup.isPreselected} = ? OR ${TableUser.isPreselected} = ?
+      WHERE (${TableUserGroup.isActive} = ? AND  ${TableUserGroup.isPreselected} = ?)
+      OR (${TableUser.isActive} = ? AND ${TableUser.isPreselected} = ?)
       GROUP BY ${TableUser.id}
       ORDER BY $nullsort, ${TableUser.sortOrder}, ${TableUser.title}
 ''';
 
-      return await txn.rawQuery(q, List.filled(2, DB.boolToInt(true)));
+      return await txn.rawQuery(q, List.filled(3, DB.boolToInt(true)));
     });
     return rows.map((e) => fromMap(e)).toList();
   }
@@ -317,11 +318,12 @@ class ModelUser implements Model {
       SELECT ${columns.join(', ')} FROM ${TableUser.table}
       LEFT JOIN ${TableUserUserGroup.table} ON ${TableUserUserGroup.idUser} = ${TableUser.id}
       LEFT JOIN ${TableUserGroup.table} ON ${TableUserUserGroup.idUserGroup} = ${TableUserGroup.id}
-      WHERE ${TableUserGroup.isSelectable} = ? OR ${TableUser.isSelectable} = ? OR ${TableUserGroup.isPreselected} = ? OR ${TableUser.isPreselected} = ?
+      WHERE (${TableUserGroup.isActive} = ? AND (${TableUserGroup.isPreselected} = ? OR ${TableUserGroup.isSelectable} = ?))
+      OR (${TableUser.isActive} = ?   AND (${TableUser.isPreselected} = ?      OR  ${TableUser.isSelectable} = ?))
       GROUP BY ${TableUser.id}
       ORDER BY $nullsort, ${TableUser.sortOrder}, ${TableUser.title}
 ''';
-      return await txn.rawQuery(q, List.filled(4, DB.boolToInt(true)));
+      return await txn.rawQuery(q, List.filled(6, DB.boolToInt(true)));
     });
     return rows.map((e) => fromMap(e)).toList();
   }

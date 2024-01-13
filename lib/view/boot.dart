@@ -355,6 +355,7 @@ class _WelcomeState extends State<Welcome> {
                     await Cache.useOfCalendarRequested.save<bool>(true);
                     if (mounted) {
                       try {
+                        // ignore: deprecated_member_use
                         await Permission.calendar.request();
                       } catch (e) {
                         //

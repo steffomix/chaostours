@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/gps.dart';
 import 'package:chaostours/screen.dart';
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
@@ -95,6 +96,13 @@ class _WidgetTrackPointsState extends BaseWidgetState<WidgetTrackPoints> {
   }
 
   @override
+  Future<void> resetLoader() async {
+    _loadedItems.clear();
+    await super.resetLoader();
+    render();
+  }
+
+  @override
   Future<int> loadItems({int limit = 50, required int offset}) async {
     var items = await ModelTrackPoint.search(_searchController.text,
         idAlias: idAlias, idUser: idUser, idTask: idTask);
@@ -102,18 +110,53 @@ class _WidgetTrackPointsState extends BaseWidgetState<WidgetTrackPoints> {
       _loadedItems.add(AppWidgets.divider());
     }
     _loadedItems.addAll(util.intersperse(
-        AppWidgets.divider(),
+        const SizedBox(height: 20),
         items.map(
           (e) => renderItem(e),
         )));
     return items.length;
   }
 
-  @override
-  Future<void> resetLoader() async {
-    _loadedItems.clear();
-    await super.resetLoader();
-    render();
+  Widget renderItem(ModelTrackPoint model) {
+    var divider = AppWidgets.divider();
+    return Column(children: [
+      Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 5),
+          child: Column(children: [
+            renderId(model),
+            renderDateTime(model),
+            renderDuration(model),
+            divider,
+            Align(
+                alignment: Alignment.centerLeft,
+                child: Text('OSM Addr: ${model.address}')),
+            Column(
+              children: [
+                const Text('Location Alias'),
+                ...renderAliasList(trackpoint: model)
+              ],
+            ),
+            divider,
+            Column(
+              children: [
+                const Text('Members'),
+                ...renderAssetList(
+                    models: model.userModels, route: AppRoutes.editUser)
+              ],
+            ),
+            divider,
+            Column(
+              children: [
+                const Text('Tasks'),
+                ...renderAssetList(
+                    models: model.taskModels, route: AppRoutes.editTask)
+              ],
+            ),
+            divider,
+            const Text('Notes:'),
+            Text(model.notes),
+          ])),
+    ]);
   }
 
   @override
@@ -152,6 +195,7 @@ class _WidgetTrackPointsState extends BaseWidgetState<WidgetTrackPoints> {
 
     int index = 0;
     for (var model in trackpoint.aliasModels) {
+      int distance = GPS.distance(trackpoint.gps, model.model.gps).round();
       widgets.add(ListTile(
           leading: Icon(Icons.square, color: model.model.privacy.color),
           title: Align(
@@ -167,12 +211,12 @@ class _WidgetTrackPointsState extends BaseWidgetState<WidgetTrackPoints> {
                     );
                   },
                   child: Text(
-                    style: index > 1
+                    style: index > 0
                         ? null
                         : const TextStyle(
                             decoration: TextDecoration.underline,
                             fontWeight: FontWeight.bold),
-                    model.title,
+                    '${distance}m: ${model.title}',
                   )))));
       index++;
     }
@@ -215,64 +259,50 @@ class _WidgetTrackPointsState extends BaseWidgetState<WidgetTrackPoints> {
     return widgets;
   }
 
-  Widget renderItem(ModelTrackPoint model) {
-    Screen screen = Screen(context);
-    var size = math.min(screen.width, screen.height) / 10;
-    var divider = AppWidgets.divider();
-    return Column(children: [
-      ListTile(
-          leading: IconButton(
-              icon: Icon(
-                Icons.edit_note,
-                size: size,
+  Widget renderId(ModelTrackPoint model) {
+    return Center(
+        child: FilledButton(
+            onPressed: () async {
+              await Navigator.pushNamed(context, AppRoutes.editTrackPoint.route,
+                  arguments: model.id);
+              render();
+            },
+            child: ListTile(
+              leading: const Icon(
+                Icons.edit,
               ),
-              onPressed: () async {
-                await Navigator.pushNamed(
-                    context, AppRoutes.editTrackPoint.route,
-                    arguments: model.id);
-                render();
-              }),
-          title: Column(children: [
-            Text('#${model.id}',
-                style: Theme.of(context).textTheme.displaySmall),
-            Center(
-                child: Text(
-                    '${util.formatDate(model.timeStart)} - ${util.formatDate(model.timeStart)}')),
-            Center(child: Text(util.formatDuration(model.duration))),
-          ])),
-      Padding(
-          padding: EdgeInsets.symmetric(horizontal: 5),
-          child: Column(children: [
-            divider,
-            Align(
-                alignment: Alignment.centerLeft,
-                child: Text('OSM Addr: ${model.address}')),
-            Column(
-              children: [
-                const Text('Location Alias'),
-                ...renderAliasList(trackpoint: model)
-              ],
-            ),
-            divider,
-            Column(
-              children: [
-                const Text('Members'),
-                ...renderAssetList(
-                    models: model.userModels, route: AppRoutes.editUser)
-              ],
-            ),
-            divider,
-            Column(
-              children: [
-                const Text('Tasks'),
-                ...renderAssetList(
-                    models: model.taskModels, route: AppRoutes.editTask)
-              ],
-            ),
-            divider,
-            const Text('Notes:'),
-            Text(model.notes),
-          ])),
-    ]);
+              title: Text('#${model.id}',
+                  style: Theme.of(context).textTheme.headlineMedium),
+            )));
+  }
+
+  Widget renderDateTime(ModelTrackPoint model) {
+    return Center(
+        child: Column(children: [
+      Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+        Transform.rotate(
+            angle: 0,
+            child: const Icon(
+              Icons.start,
+            )),
+        Padding(
+            padding: const EdgeInsets.fromLTRB(5, 1, 0, 0),
+            child: Text(util.formatDateTime(model.timeStart))),
+      ]),
+      Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+        Transform.rotate(
+            angle: math.pi,
+            child: const Icon(
+              Icons.start,
+            )),
+        Padding(
+            padding: const EdgeInsets.fromLTRB(5, 1, 0, 0),
+            child: Text(util.formatDateTime(model.timeEnd))),
+      ]),
+    ]));
+  }
+
+  Widget renderDuration(ModelTrackPoint model) {
+    return Center(child: Text(util.formatDuration(model.duration)));
   }
 }

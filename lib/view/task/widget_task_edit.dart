@@ -70,6 +70,7 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
           return AppWidgets.checkSnapshot(context, snapshot,
                   build: (context, data) => _model = data) ??
               AppWidgets.scaffold(context,
+                  title: 'Edit Task',
                   body: renderBody(),
                   navBar: AppWidgets.navBarCreateItem(context, name: 'Task',
                       onCreate: () async {
@@ -91,24 +92,28 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
       Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          FilledButton(
-              onPressed: () => Navigator.pushNamed(
-                  context, AppRoutes.listTrackpoints.route,
-                  arguments: argumentsTrackpointTaskList(_model!.id)),
-              child: const Text('Task Trackpoints')),
-          FilledButton(
-              onPressed: () async {
-                var stats = await TaskStatistics.statistics(_model!);
+          Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 3),
+              child: FilledButton(
+                  onPressed: () => Navigator.pushNamed(
+                      context, AppRoutes.listTrackpoints.route,
+                      arguments: argumentsTrackpointTaskList(_model!.id)),
+                  child: const Text('Trackpoints'))),
+          Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 3),
+              child: FilledButton(
+                  onPressed: () async {
+                    var stats = await TaskStatistics.statistics(_model!);
 
-                if (mounted) {
-                  AppWidgets.statistics(context, stats: stats,
-                      reload: (DateTime start, DateTime end) async {
-                    return await TaskStatistics.statistics(stats.model,
-                        start: start, end: end);
-                  });
-                }
-              },
-              child: const Text('Task Statistics'))
+                    if (mounted) {
+                      AppWidgets.statistics(context, stats: stats,
+                          reload: (DateTime start, DateTime end) async {
+                        return await TaskStatistics.statistics(stats.model,
+                            start: start, end: end);
+                      });
+                    }
+                  },
+                  child: const Text('Statistics')))
         ],
       ),
 
@@ -238,7 +243,7 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
             softWrap: true,
           ),
           leading: AppWidgets.checkbox(
-            value: _model?.isActive ?? false,
+            value: _model?.isPreselected ?? false,
             onChanged: (val) async {
               _model?.isPreselected = val ?? false;
               await _model?.update();

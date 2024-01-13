@@ -95,11 +95,12 @@ class _WidgetTaskList extends BaseWidgetState<WidgetTaskList> {
     return _navBarBuilder.navBar(context,
         name: 'Task',
         onCreate: (context) async {
-          var count = await ModelTask.count();
-          var model = await ModelTask(title: '#${count + 1}').insert();
+          final newTask = await AppWidgets.createTask(context);
+          //var count = await ModelTask.count();
+          //var model = await ModelTask(title: '#${count + 1}').insert();
           if (mounted) {
             Navigator.pushNamed(context, AppRoutes.editTask.route,
-                    arguments: model.id)
+                    arguments: newTask?.id)
                 .then((value) {
               Navigator.pop(context);
               resetLoader();

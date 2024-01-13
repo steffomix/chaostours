@@ -82,41 +82,41 @@ enum Cache {
   /// trigger off == TrackingStatus.none
   /// triggered by user, set to none in background
   trackingStatusTriggered(
-      CacheModulId.sharedPreferences, TrackingStatus, expireAfterOneSecond),
+      CacheModulId.sharedPreferences, TrackingStatus, expireImmediately),
 
   /// status change events
   backgroundGpsStartMoving(
-      CacheModulId.sharedPreferences, GPS, expireAfterOneSecond),
+      CacheModulId.sharedPreferences, GPS, expireImmediately),
   backgroundGpsStartStanding(
-      CacheModulId.sharedPreferences, GPS, expireAfterOneSecond),
+      CacheModulId.sharedPreferences, GPS, expireImmediately),
   backgroundGpsLastStatusChange(
-      CacheModulId.sharedPreferences, GPS, expireAfterOneSecond),
+      CacheModulId.sharedPreferences, GPS, expireImmediately),
 
   /// cache background to forground
   backgroundTrackingStatus(
-      CacheModulId.sharedPreferences, TrackingStatus, expireAfterOneSecond),
+      CacheModulId.sharedPreferences, TrackingStatus, expireImmediately),
 
   backgroundSharedAliasList(CacheModulId.sharedPreferences,
-      List<SharedTrackpointAlias>, expireAfterOneSecond),
+      List<SharedTrackpointAlias>, expireImmediately),
   backgroundSharedUserList(CacheModulId.sharedPreferences,
-      List<SharedTrackpointUser>, expireAfterOneSecond),
+      List<SharedTrackpointUser>, expireImmediately),
   backgroundSharedTaskList(CacheModulId.sharedPreferences,
-      List<SharedTrackpointTask>, expireAfterOneSecond),
+      List<SharedTrackpointTask>, expireImmediately),
 
   backgroundTrackPointNotes(
-      CacheModulId.sharedPreferences, String, expireAfterOneSecond),
+      CacheModulId.sharedPreferences, String, expireImmediately),
 
   backgroundTrackPointSkipRecordOnce(
-      CacheModulId.sharedPreferences, bool, expireAfterOneSecond),
+      CacheModulId.sharedPreferences, bool, expireImmediately),
 
   /// tracking detection
-  backgroundLastGps(CacheModulId.sharedPreferences, GPS, expireAfterOneSecond),
+  backgroundLastGps(CacheModulId.sharedPreferences, GPS, expireImmediately),
   backgroundGpsPoints(
-      CacheModulId.sharedPreferences, List<GPS>, expireAfterOneSecond),
+      CacheModulId.sharedPreferences, List<GPS>, expireImmediately),
   backgroundGpsSmoothPoints(
-      CacheModulId.sharedPreferences, List<GPS>, expireAfterOneSecond),
+      CacheModulId.sharedPreferences, List<GPS>, expireImmediately),
   backgroundGpsCalcPoints(
-      CacheModulId.sharedPreferences, List<GPS>, expireAfterOneSecond),
+      CacheModulId.sharedPreferences, List<GPS>, expireImmediately),
 
   /// stores last lookup to prevent more than one osm lookups per second
   addressTimeLastLookup(

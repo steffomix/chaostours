@@ -379,7 +379,7 @@ WHERE ${TableAlias.isActive} = ? AND ${TableAliasGroup.isActive} = ?
   static Future<List<ModelAlias>> byArea(
       {required GPS gps,
       includeInactive = true,
-      int gpsArea = 1000,
+      int gpsArea = 10000,
       int limit = 300,
       int softLimit = 0}) async {
     var area = GpsArea(
@@ -394,17 +394,13 @@ WHERE ${TableAlias.isActive} = ? AND ${TableAliasGroup.isActive} = ?
 SELECT ${TableAlias.columns.join(', ')}, ${TableAliasGroup.isActive} AS $isActiveCol  FROM ${TableAlias.table}
 LEFT JOIN ${TableAliasAliasGroup.table} ON ${TableAlias.id} = ${TableAliasAliasGroup.idAlias}
 LEFT JOIN ${TableAliasGroup.table} ON ${TableAliasGroup.id} = ${TableAliasAliasGroup.idAliasGroup}
-WHERE -- $isActiveCol = ? AND 
+WHERE ${includeInactive ? '' : '$isActiveCol = ? AND'}
 $whereArea
 GROUP BY ${TableAlias.id}
 LIMIT ?
-
 ''';
-/*
-
-*/
       return await txn.rawQuery(q, [
-        // DB.boolToInt(includeInactive),
+        ...(includeInactive ? [] : [DB.boolToInt(true)]),
         area.southLatitudeBorder,
         area.northLatitudeBorder,
         area.westLongitudeBorder,

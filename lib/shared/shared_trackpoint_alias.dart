@@ -37,8 +37,7 @@ class SharedTrackpointAlias extends SharedTrackpointAsset {
     for (var m in models) {
       if (m.id == model.id) {
         m.notes = notes;
-        await Cache.backgroundSharedAliasList
-            .save<List<SharedTrackpointAlias>>(models);
+        await save(models);
         return models;
       }
     }

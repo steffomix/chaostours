@@ -23,6 +23,7 @@ import 'package:chaostours/logger.dart';
 import 'package:chaostours/model/model_alias_group.dart';
 import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/calendar.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 enum _DisplayMode {
   selectCalendar,
@@ -79,8 +80,10 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
       return null;
     } else {
       _countAlias = await _modelAliasGroup!.aliasCount();
-      _calendar =
-          await AppCalendar().calendarById(_modelAliasGroup?.idCalendar);
+      if (await Permission.calendarFullAccess.isGranted) {
+        _calendar =
+            await AppCalendar().calendarById(_modelAliasGroup?.idCalendar);
+      }
       return _modelAliasGroup;
     }
   }
@@ -243,18 +246,6 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
           render();
         }),
       ),
-
-      AppWidgets.divider(),
-
-      FilledButton(
-        child: const Text('Export Group to file for sharing'),
-        onPressed: () => Navigator.pushNamed(
-                context, AppRoutes.listAliasesFromAliasGroup.route,
-                arguments: _modelAliasGroup?.id)
-            .then((value) {
-          render();
-        }),
-      )
     ]);
   }
 }

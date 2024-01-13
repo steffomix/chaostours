@@ -114,6 +114,7 @@ class _WidgetUserGroupList extends BaseWidgetState<WidgetUserGroupList> {
   @override
   Scaffold renderScaffold(Widget body) {
     return AppWidgets.scaffold(context,
+        title: 'User Groups',
         body: body,
         navBar: AppWidgets.navBarCreateItem(context, name: 'User Group',
             onCreate: () async {

@@ -584,6 +584,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   }
 
   Future<void> editUserNotes(ModelTrackpointUser model) async {
+    final controller = TextEditingController(text: model.notes);
     await AppWidgets.dialog(
         context: context,
         isDismissible: true,
@@ -592,17 +593,17 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
           Align(
               alignment: Alignment.centerLeft, child: Text(model.model.title)),
           TextField(
-              controller: TextEditingController(text: model.notes),
+              controller: controller,
               minLines: 3,
               maxLines: 8,
-              onChanged: (text) async {
-                SharedTrackpointUser.addOrUpdate(model.model, notes: text);
-              })
+              onChanged: (text) async {})
         ],
         buttons: [
           TextButton(
             child: const Text('OK'),
             onPressed: () async {
+              await SharedTrackpointUser.addOrUpdate(model.model,
+                  notes: controller.text);
               await dataChannel.updateAssets();
               if (mounted) {
                 Navigator.pop(context);
@@ -770,6 +771,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   }
 
   Future<void> editTaskNotes(ModelTrackpointTask model) async {
+    final controller = TextEditingController(text: model.notes);
     await AppWidgets.dialog(
         context: context,
         isDismissible: true,
@@ -778,17 +780,17 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
           Align(
               alignment: Alignment.centerLeft, child: Text(model.model.title)),
           TextField(
-              controller: TextEditingController(text: model.notes),
-              minLines: 3,
-              maxLines: 8,
-              onChanged: (text) async {
-                SharedTrackpointTask.addOrUpdate(model.model, notes: text);
-              })
+            controller: controller,
+            minLines: 3,
+            maxLines: 8,
+          )
         ],
         buttons: [
           TextButton(
             child: const Text('OK'),
             onPressed: () async {
+              await SharedTrackpointTask.addOrUpdate(model.model,
+                  notes: controller.text);
               await dataChannel.updateAssets();
               if (mounted) {
                 Navigator.pop(context);

@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import 'package:android_intent_plus/android_intent.dart';
 import 'package:chaostours/channel/background_channel.dart';
 import 'package:chaostours/database/cache.dart';
 import 'package:flutter/material.dart';

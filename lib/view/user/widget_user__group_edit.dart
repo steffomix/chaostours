@@ -33,6 +33,9 @@ class _WidgetUserGroupEdit extends State<WidgetUserGroupEdit> {
   // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetUserGroupEdit>();
   ModelUserGroup? _model;
+
+  int _countUser = 0;
+
   final _titleController = TextEditingController();
   final _titleUndoController = UndoHistoryController();
 
@@ -50,12 +53,30 @@ class _WidgetUserGroupEdit extends State<WidgetUserGroupEdit> {
     }
   }
 
+  Future<ModelUserGroup?> loadUserGroup(int? id) async {
+    if (id == null) {
+      Future.microtask(() => Navigator.pop(context));
+      return null;
+    } else {
+      _model = await ModelUserGroup.byId(id);
+    }
+    if (_model == null) {
+      if (mounted) {
+        Future.microtask(() => Navigator.pop(context));
+      }
+      return null;
+    } else {
+      _countUser = await _model!.userCount();
+      return _model;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    int? id = ModalRoute.of(context)?.settings.arguments as int?;
     return FutureBuilder<ModelUserGroup?>(
       initialData: _model,
-      future: ModelUserGroup.byId(
-          ModalRoute.of(context)?.settings.arguments as int? ?? 0),
+      future: loadUserGroup(id),
       builder: (context, snapshot) {
         return AppWidgets.checkSnapshot(context, snapshot) ??
             body(snapshot.data!);
@@ -88,7 +109,7 @@ class _WidgetUserGroupEdit extends State<WidgetUserGroupEdit> {
 
   Widget renderBody() {
     return ListView(children: [
-      /// taskname
+      /// username
       ListTile(
           dense: true,
           trailing: ValueListenableBuilder<UndoHistoryValue>(
@@ -183,7 +204,7 @@ class _WidgetUserGroupEdit extends State<WidgetUserGroupEdit> {
       AppWidgets.divider(),
 
       FilledButton(
-          child: const Text('Show Users from this group'),
+          child: Text('Show $_countUser Users from this group'),
           onPressed: () async {
             await Navigator.pushNamed(
                 context, AppRoutes.listUsersFromUserGroup.route,

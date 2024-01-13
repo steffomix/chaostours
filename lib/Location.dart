@@ -316,16 +316,16 @@ class Location {
         .lookup(OsmLookupConditions.onStatusChanged, saveToCache: true);
 
     ModelTrackPoint newTrackPoint = await ModelTrackPoint(
-            gps: gps,
-            timeStart:
-                (await Cache.backgroundGpsStartStanding.load<GPS>(gps)).time,
-            timeEnd: gps.time,
-            calendarEventIds: await Cache.backgroundCalendarLastEventIds
-                .load<List<CalendarEventId>>([]),
-            address: address.address,
-            fullAddress: address.addressDetails,
-            notes: await Cache.backgroundTrackPointNotes.load<String>(''))
-        .addSharedAssets(gps);
+        gps: gps,
+        timeStart: (await Cache.backgroundGpsStartStanding.load<GPS>(gps)).time,
+        timeEnd: gps.time,
+        calendarEventIds: await Cache.backgroundCalendarLastEventIds
+            .load<List<CalendarEventId>>([]),
+        address: address.address,
+        fullAddress: address.addressDetails,
+        notes: await Cache.backgroundTrackPointNotes.load<String>(''));
+
+    await newTrackPoint.addSharedAssets(gps);
 
     /// save new TrackPoint with user- and task ids
     await newTrackPoint.insert();

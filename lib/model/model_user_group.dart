@@ -16,7 +16,6 @@ limitations under the License.
 
 import 'package:chaostours/database/database.dart';
 import 'package:chaostours/logger.dart';
-import 'package:chaostours/model/model_user.dart';
 import 'package:sqflite/sqflite.dart';
 
 class ModelUserGroup {
@@ -76,6 +75,17 @@ class ModelUserGroup {
         }
       },
     );
+  }
+
+  Future<int> userCount() async {
+    return await DB.execute<int>((txn) async {
+      var col = 'ct';
+      final rows = await txn.query(TableUserUserGroup.table,
+          columns: ['count(*) as $col'],
+          where: '${TableUserUserGroup.idUserGroup.column} = ?',
+          whereArgs: [id]);
+      return DB.parseInt(rows.firstOrNull?[col]);
+    });
   }
 
   static Future<ModelUserGroup?> byId(int id, [Transaction? txn]) async {
@@ -210,7 +220,7 @@ class ModelUserGroup {
     });
     return rows.map((e) => DB.parseInt(e[col])).toList();
   }
-
+/* 
   /// select a list of distinct Groups from a List of User IDs
   static Future<List<ModelUserGroup>> groups(List<ModelUser> models) async {
     final rows = await DB.execute<List<Map<String, Object?>>>((txn) async {
@@ -233,7 +243,7 @@ ORDER BY ${TableUserGroup.primaryKey}
           (e) => fromMap(e),
         )
         .toList();
-  }
+  } */
 
   ModelUserGroup clone() {
     return fromMap(toMap());

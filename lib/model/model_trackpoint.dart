@@ -127,6 +127,7 @@ class ModelTrackPoint {
 
   Future<ModelTrackPoint> addSharedAssets(GPS gps) async {
     aliasModels.clear();
+    Cache.reload();
 
     return await DB.execute((txn) async {
       for (var asset in await Cache.backgroundSharedAliasList

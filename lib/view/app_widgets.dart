@@ -15,16 +15,16 @@ limitations under the License.
 */
 
 import 'package:app_settings/app_settings_platform_interface.dart';
-import 'package:chaostours/conf/app_colors.dart';
-import 'package:chaostours/statistics/asset_statistics.dart';
-import 'package:chaostours/model/model_task.dart';
-import 'package:chaostours/model/model_user.dart';
 import 'package:flutter/material.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:device_calendar/device_calendar.dart';
 
 ///
 
+import 'package:chaostours/conf/app_colors.dart';
+import 'package:chaostours/statistics/asset_statistics.dart';
+import 'package:chaostours/model/model_task.dart';
+import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/view/widget_drawer.dart';
 import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/calendar.dart';
@@ -39,7 +39,7 @@ class Translate {
   //static final Logger logger = Logger.logger<Translate>();
   // static Map<String, List<Object?>> _t = {};
   static translate(String s, [List<Object?>? p]) {
-    s = '§$s';
+    //s = '$s';
     return p == null ? s : sprintf(s, p);
   }
 }
@@ -445,11 +445,12 @@ class AppWidgets {
     );
   }
 
-  static Future<void> createUser(BuildContext context) async {
+  static Future<ModelUser?> createUser(BuildContext context) async {
     final controller = TextEditingController(text: '');
     final nextId = (await ModelUser.count()) + 1;
+    ModelUser? newModel;
     if (!context.mounted) {
-      return;
+      return null;
     }
     await AppWidgets.dialog(
         isDismissible: true,
@@ -471,9 +472,9 @@ class AppWidgets {
               child: const Text('Cancel')),
           FilledButton(
               onPressed: () async {
-                await ModelUser(
+                newModel = await ModelUser(
                         title: controller.text.isEmpty
-                            ? '#$nextId'
+                            ? 'User #$nextId'
                             : controller.text)
                     .insert();
                 if (context.mounted) {
@@ -482,13 +483,15 @@ class AppWidgets {
               },
               child: const Text('Create')),
         ]);
+    return newModel;
   }
 
-  static Future<void> createTask(BuildContext context) async {
+  static Future<ModelTask?> createTask(BuildContext context) async {
     final controller = TextEditingController(text: '');
     final nextId = (await ModelTask.count()) + 1;
+    ModelTask? newModel;
     if (!context.mounted) {
-      return;
+      return null;
     }
     await AppWidgets.dialog(
         isDismissible: true,
@@ -510,9 +513,9 @@ class AppWidgets {
               child: const Text('Cancel')),
           FilledButton(
               onPressed: () async {
-                await ModelTask(
+                newModel = await ModelTask(
                         title: controller.text.isEmpty
-                            ? '#$nextId'
+                            ? 'Task #$nextId'
                             : controller.text)
                     .insert();
                 if (context.mounted) {
@@ -521,6 +524,7 @@ class AppWidgets {
               },
               child: const Text('Create')),
         ]);
+    return newModel;
   }
 
   static void statistics(BuildContext context,
@@ -676,7 +680,7 @@ Location Description:\t ${stats.model.description}
 class NavBarWithBin {
   bool _showActivated = true;
   bool get showActivated => _showActivated;
-  BottomNavigationBar navBar(BuildContext dialogContext,
+  BottomNavigationBar navBar(BuildContext context,
       {required String name,
       required void Function(BuildContext context) onCreate,
       required void Function(BuildContext context) onSwitch}) {
@@ -695,25 +699,25 @@ class NavBarWithBin {
         ],
         onTap: (int id) async {
           if (id == 0) {
-            AppWidgets.dialog(context: dialogContext, contents: [
+            AppWidgets.dialog(context: context, contents: [
               Text('Create new $name?')
             ], buttons: [
               TextButton(
                 child: const Text('Cancel'),
-                onPressed: () => Navigator.pop(dialogContext),
+                onPressed: () => Navigator.pop(context),
               ),
               TextButton(
                   onPressed: () {
-                    Navigator.pop(dialogContext);
-                    onCreate(dialogContext);
+                    Navigator.pop(context);
+                    onCreate(context);
                   },
                   child: const Text('Yes'))
             ]);
           } else if (id == 1) {
             _showActivated = !_showActivated;
-            onSwitch(dialogContext);
+            onSwitch(context);
           } else {
-            Navigator.pop(dialogContext);
+            Navigator.pop(context);
           }
         });
   }

@@ -148,7 +148,7 @@ class _WidgetAliasList extends BaseWidgetState<WidgetAliasList>
   @override
   Scaffold renderScaffold(Widget body) {
     return AppWidgets.scaffold(context,
-        body: body, navBar: navBar(context), title: 'Aliases');
+        body: body, navBar: navBar(context), title: 'Alias');
   }
 
   @override

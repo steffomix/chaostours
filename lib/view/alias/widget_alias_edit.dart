@@ -151,24 +151,28 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
       Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          FilledButton(
-              onPressed: () => Navigator.pushNamed(
-                  context, AppRoutes.listTrackpoints.route,
-                  arguments: argumentsTrackpointAliasList(alias.id)),
-              child: const Text('Alias Trackpoints')),
-          FilledButton(
-              onPressed: () async {
-                var stats = await AliasStatistics.statistics(alias);
+          Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 3),
+              child: FilledButton(
+                  onPressed: () => Navigator.pushNamed(
+                      context, AppRoutes.listTrackpoints.route,
+                      arguments: argumentsTrackpointAliasList(alias.id)),
+                  child: const Text('Trackpoints'))),
+          Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 3),
+              child: FilledButton(
+                  onPressed: () async {
+                    var stats = await AliasStatistics.statistics(alias);
 
-                if (mounted) {
-                  AppWidgets.statistics(context, stats: stats,
-                      reload: (DateTime start, DateTime end) async {
-                    return await AliasStatistics.statistics(stats.model,
-                        start: start, end: end);
-                  });
-                }
-              },
-              child: const Text('Alias Statistics'))
+                    if (mounted) {
+                      AppWidgets.statistics(context, stats: stats,
+                          reload: (DateTime start, DateTime end) async {
+                        return await AliasStatistics.statistics(stats.model,
+                            start: start, end: end);
+                      });
+                    }
+                  },
+                  child: const Text('Statistics')))
         ],
       ),
 

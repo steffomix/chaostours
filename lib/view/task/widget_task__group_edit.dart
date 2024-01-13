@@ -33,6 +33,8 @@ class _WidgetTaskGroupEdit extends State<WidgetTaskGroupEdit> {
   // ignore: unused_field
   static final Logger logger = Logger.logger<WidgetTaskGroupEdit>();
 
+  int _countTask = 0;
+
   final _titleController = TextEditingController();
   final _titleUndoController = UndoHistoryController();
 
@@ -52,12 +54,30 @@ class _WidgetTaskGroupEdit extends State<WidgetTaskGroupEdit> {
     }
   }
 
+  Future<ModelTaskGroup?> loadTaskGroup(int? id) async {
+    if (id == null) {
+      Future.microtask(() => Navigator.pop(context));
+      return null;
+    } else {
+      _model = await ModelTaskGroup.byId(id);
+    }
+    if (_model == null) {
+      if (mounted) {
+        Future.microtask(() => Navigator.pop(context));
+      }
+      return null;
+    } else {
+      _countTask = await _model!.taskCount();
+      return _model;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    int? id = ModalRoute.of(context)?.settings.arguments as int?;
     return FutureBuilder<ModelTaskGroup?>(
       initialData: _model,
-      future: ModelTaskGroup.byId(
-          ModalRoute.of(context)?.settings.arguments as int? ?? 0),
+      future: loadTaskGroup(id),
       builder: (context, snapshot) {
         return AppWidgets.checkSnapshot(context, snapshot) ??
             body(snapshot.data!);
@@ -187,7 +207,7 @@ class _WidgetTaskGroupEdit extends State<WidgetTaskGroupEdit> {
       AppWidgets.divider(),
 
       FilledButton(
-          child: const Text('Show Tasks from this group'),
+          child: Text('Show $_countTask Tasks from this group'),
           onPressed: () async {
             await Navigator.pushNamed(
                 context, AppRoutes.listTasksFromTaskGroup.route,

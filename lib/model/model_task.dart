@@ -284,12 +284,13 @@ class ModelTask implements Model {
       final q = '''
       SELECT ${columns.join(', ')} FROM ${TableTask.table}
       LEFT JOIN ${TableTaskTaskGroup.table} ON ${TableTaskTaskGroup.idTask} = ${TableTask.id}
-      LEFT JOIN ${TableTaskGroup.table} ON ${TableTaskTaskGroup.idTaskGroup} = ${TableTaskGroup.id}
-      WHERE ${TableTaskGroup.isPreselected} = ? OR ${TableTask.isPreselected} = ?
+      LEFT JOIN ${TableTaskGroup.table} ON ${TableTaskTaskGroup.idTaskGroup} = ${TableTaskGroup.id} 
+      WHERE (${TableTaskGroup.isActive} = ? AND ${TableTaskGroup.isPreselected} = ?) 
+      OR (${TableTask.isActive} = ? AND ${TableTask.isPreselected} = ?)
       GROUP BY ${TableTask.id}
       ORDER BY $nullsort, ${TableTask.sortOrder}, ${TableTask.title}
 ''';
-      return await txn.rawQuery(q, List.filled(2, DB.boolToInt(true)));
+      return await txn.rawQuery(q, List.filled(4, DB.boolToInt(true)));
     });
     return rows.map((e) => fromMap(e)).toList();
   }
@@ -305,11 +306,14 @@ class ModelTask implements Model {
       SELECT ${columns.join(', ')} FROM ${TableTask.table}
       LEFT JOIN ${TableTaskTaskGroup.table} ON ${TableTaskTaskGroup.idTask} = ${TableTask.id}
       LEFT JOIN ${TableTaskGroup.table} ON ${TableTaskTaskGroup.idTaskGroup} = ${TableTaskGroup.id}
-      WHERE ${TableTaskGroup.isSelectable} = ? OR ${TableTask.isSelectable} = ? OR ${TableTaskGroup.isPreselected} = ? OR ${TableTask.isPreselected} = ?
+      WHERE 
+        (${TableTaskGroup.isActive} = ? AND (${TableTaskGroup.isPreselected} = ? OR ${TableTaskGroup.isSelectable} = ?))
+        OR (${TableTask.isActive} = ?   AND (${TableTask.isPreselected} = ?      OR  ${TableTask.isSelectable} = ?))
+      
       GROUP BY ${TableTask.id}
       ORDER BY $nullsort, ${TableTask.sortOrder}, ${TableTask.title}
 ''';
-      return await txn.rawQuery(q, List.filled(4, DB.boolToInt(true)));
+      return await txn.rawQuery(q, List.filled(6, DB.boolToInt(true)));
     });
     return rows.map((e) => fromMap(e)).toList();
   }

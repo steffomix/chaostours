@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/model/model_task.dart';
 import 'package:flutter/material.dart';
 
 import 'package:chaostours/logger.dart';
@@ -91,11 +92,10 @@ class _WidgetUserList extends BaseWidgetState<WidgetUserList> {
     return _navBarBuilder.navBar(context,
         name: 'User',
         onCreate: (context) async {
-          var count = await ModelUser.count();
-          var model = await ModelUser(title: '#${count + 1}').insert();
+          final newUser = await AppWidgets.createUser(context);
           if (mounted) {
             Navigator.pushNamed(context, AppRoutes.editUser.route,
-                    arguments: model.id)
+                    arguments: newUser?.id)
                 .then((value) {
               Navigator.pop(context);
               resetLoader();

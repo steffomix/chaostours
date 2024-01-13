@@ -74,6 +74,7 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
           return AppWidgets.checkSnapshot(context, snapshot,
                   build: (context, data) => _model = data) ??
               AppWidgets.scaffold(context,
+                  title: 'Edit User',
                   body: renderBody(),
                   navBar: AppWidgets.navBarCreateItem(context, name: 'User',
                       onCreate: () async {
@@ -95,24 +96,28 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
       Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          FilledButton(
-              onPressed: () => Navigator.pushNamed(
-                  context, AppRoutes.listTrackpoints.route,
-                  arguments: argumentsTrackpointAliasList(_model!.id)),
-              child: const Text('User Trackpoints')),
-          FilledButton(
-              onPressed: () async {
-                var stats = await UserStatistics.statistics(_model!);
+          Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 3),
+              child: FilledButton(
+                  onPressed: () => Navigator.pushNamed(
+                      context, AppRoutes.listTrackpoints.route,
+                      arguments: argumentsTrackpointAliasList(_model!.id)),
+                  child: const Text('Trackpoints'))),
+          Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 3),
+              child: FilledButton(
+                  onPressed: () async {
+                    var stats = await UserStatistics.statistics(_model!);
 
-                if (mounted) {
-                  AppWidgets.statistics(context, stats: stats,
-                      reload: (DateTime start, DateTime end) async {
-                    return await UserStatistics.statistics(stats.model,
-                        start: start, end: end);
-                  });
-                }
-              },
-              child: const Text('User Statistics'))
+                    if (mounted) {
+                      AppWidgets.statistics(context, stats: stats,
+                          reload: (DateTime start, DateTime end) async {
+                        return await UserStatistics.statistics(stats.model,
+                            start: start, end: end);
+                      });
+                    }
+                  },
+                  child: const Text('Statistics')))
         ],
       ),
 
@@ -301,7 +306,7 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
           title: const Text('Preselected'),
           subtitle: const Text(
             'If checked this group is already selected in Live Tracking lists.\n '
-            'However, you can always uncheck preselected tasks in Live Tracking view.',
+            'However, you can always uncheck preselected users in Live Tracking view.',
             softWrap: true,
           ),
           leading: AppWidgets.checkbox(
