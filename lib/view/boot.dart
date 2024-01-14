@@ -430,11 +430,11 @@ class _WelcomeState extends State<Welcome> {
         .insert();
     await ModelUser(title: 'User 1').insert();
     await ModelTask(title: 'Task 1').insert();
-
+/* 
     await Cache.backgroundSharedAliasList.save<List<SharedTrackpointAlias>>([
       SharedTrackpointAlias(
           id: 1, notes: 'We was the nearby location most times.')
-    ]);
+    ]); */
 
     await Cache.backgroundSharedUserList.save<List<SharedTrackpointUser>>(
         [SharedTrackpointUser(id: 1, notes: 'User 1 was here.')]);

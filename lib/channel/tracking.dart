@@ -218,6 +218,7 @@ class Tracker {
         // skip tracking by user
         if (!(await checkSkipTrackingByUser(stopSkip: true))) {
           logger.log('tracking status MOVING');
+          gpsLocation = await Location.location(gpsLastStatusStanding ?? gps);
 
           await gpsLocation.executeStatusMoving();
         }

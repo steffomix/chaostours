@@ -104,7 +104,7 @@ class Location {
                 .load<List<CalendarEventId>>([]),
             address: address?.address ?? '',
             notes: await Cache.backgroundTrackPointNotes.load<String>(''))
-        .addSharedAssets(gps);
+        .addSharedAssets(this);
   }
 
   Future<void> updateSharedAliasList() async {
@@ -317,15 +317,15 @@ class Location {
 
     ModelTrackPoint newTrackPoint = ModelTrackPoint(
         gps: gps,
-        timeStart: (await Cache.backgroundGpsStartStanding.load<GPS>(gps)).time,
-        timeEnd: gps.time,
+        timeStart: gps.time,
+        timeEnd: DateTime.now(),
         calendarEventIds: await Cache.backgroundCalendarLastEventIds
             .load<List<CalendarEventId>>([]),
         address: address.address,
         fullAddress: address.addressDetails,
         notes: await Cache.backgroundTrackPointNotes.load<String>(''));
 
-    await newTrackPoint.addSharedAssets(gps);
+    await newTrackPoint.addSharedAssets(this);
 
     /// save new TrackPoint with user- and task ids
     await newTrackPoint.insert();

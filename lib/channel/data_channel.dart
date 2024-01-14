@@ -223,6 +223,7 @@ class DataChannel extends TrackPointData {
     await updateTaskList();
   }
 
+  /// updated on each tracking interval from
   Future<void> updateAliasList() async {
     /// load ids from shared and database
     final sharedAliasList = await Cache.backgroundSharedAliasList
