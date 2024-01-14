@@ -532,10 +532,10 @@ class AppWidgets {
       required Future<AssetStatistics> Function(DateTime start, DateTime end)
           reload}) {
     final notify = ValueNotifier(stats);
-    final startBounds =
-        util.removeTime(stats.firstVisited.subtract(const Duration(days: 1)));
+    final startBounds = util
+        .removeTime(stats.firstVisited.subtract(const Duration(days: 1000)));
     final endBounds =
-        util.removeTime(stats.lastVisited.add(const Duration(days: 1)));
+        util.removeTime(stats.lastVisited.add(const Duration(days: 1000)));
 /* 
     Widget dateStart = FilledButton(
       child: Text(util.formatDate(stats.firstVisited)),
@@ -586,13 +586,13 @@ class AppWidgets {
                   DataCell(FilledButton(
                     child: Text(util.formatDateTime(stats.firstVisited)),
                     onPressed: () async {
+                      final date = await showDatePicker(
+                          helpText: 'Select start',
+                          context: context,
+                          firstDate: startBounds,
+                          lastDate: endBounds);
                       notify.value = await reload(
-                          util.removeTime(await showDatePicker(
-                                  helpText: 'Select start',
-                                  context: context,
-                                  firstDate: startBounds,
-                                  lastDate: endBounds) ??
-                              stats.firstVisited),
+                          util.removeTime(date ?? stats.firstVisited),
                           stats.lastVisited);
                     },
                   ))

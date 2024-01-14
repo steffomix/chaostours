@@ -205,6 +205,9 @@ class DB {
     if (value is int) {
       return value;
     }
+    if (value is double) {
+      return value.round();
+    }
     if (value is String) {
       try {
         return int.parse(value.trim());

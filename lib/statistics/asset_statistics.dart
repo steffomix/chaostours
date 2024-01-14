@@ -19,10 +19,10 @@ limitations under the License.
 import 'package:chaostours/database/database.dart';
 import 'package:chaostours/model/model.dart'; */
 
-import 'package:chaostours/model/model.dart';
+import 'package:chaostours/model/model_group.dart';
 
 abstract class AssetStatistics {
-  Model get model;
+  ModelGroup get model;
   int get count;
   Duration get durationTotal;
   Duration get durationMin;

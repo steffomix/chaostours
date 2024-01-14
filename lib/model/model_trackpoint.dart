@@ -565,31 +565,48 @@ class ModelTrackPoint {
     );
   }
 
-  static Future<List<ModelTrackPoint>> search(
-    String search, {
-    int limit = 20,
-    int offset = 0,
-    int? idAlias,
-    int? idUser,
-    int? idTask,
-  }) async {
-    String? table;
-    int? idAsset;
+  static Future<List<ModelTrackPoint>> search(String search,
+      {int limit = 20,
+      int offset = 0,
+      int? idAlias,
+      int? idUser,
+      int? idTask,
+      int? idAliasGroup,
+      int? idUserGroup,
+      int? idTaskGroup}) async {
+    String? whereTable;
+    int? whereId;
+    String groupJoin = '';
     if (idAlias != null) {
-      table = TableAlias.id.toString();
-      idAsset = idAlias;
+      whereTable = TableAlias.id.toString();
+      whereId = idAlias;
     } else if (idUser != null) {
-      table = TableUser.id.toString();
-      idAsset = idUser;
+      whereTable = TableUser.id.toString();
+      whereId = idUser;
     } else if (idTask != null) {
-      table = TableTask.id.toString();
-      idAsset = idTask;
+      whereTable = TableTask.id.toString();
+      whereId = idTask;
+    } else if (idAliasGroup != null) {
+      groupJoin =
+          'INNER JOIN ${TableAliasAliasGroup.table} ON ${TableTrackPointAlias.idAlias} = ${TableAliasAliasGroup.idAlias}';
+      whereTable = TableAliasAliasGroup.idAliasGroup.toString();
+      whereId = idAliasGroup;
+    } else if (idUserGroup != null) {
+      groupJoin =
+          'INNER JOIN ${TableUserUserGroup.table} ON ${TableTrackPointUser.idUser} = ${TableUserUserGroup.idUser}';
+      whereTable = TableUserUserGroup.idUserGroup.toString();
+      whereId = idUserGroup;
+    } else if (idTaskGroup != null) {
+      groupJoin =
+          'INNER JOIN ${TableTaskTaskGroup.table} ON ${TableTrackPointTask.idTask} = ${TableTaskTaskGroup.idTask}';
+      whereTable = TableTaskTaskGroup.idTaskGroup.toString();
+      whereId = idTaskGroup;
     }
 
     String sqlSearch = search.isEmpty
         ? ''
         : '''
-        ${table == null ? 'WHERE ' : 'AND'}
+        ${whereTable == null ? 'WHERE ' : 'AND'}
         -- where notes
         ( ${TableTrackPoint.notes} LIKE ?
         -- where osm address
@@ -619,7 +636,8 @@ class ModelTrackPoint {
         -- join tasks
         LEFT JOIN ${TableTrackPointTask.table} ON ${TableTrackPointTask.idTrackPoint} = ${TableTrackPoint.id}
         LEFT JOIN ${TableTask.table} ON ${TableTask.id} = ${TableTrackPointTask.idTask}
-        ${table == null ? '' : 'WHERE $table == ? '} 
+        $groupJoin
+        ${whereTable == null ? '' : 'WHERE $whereTable == ? '} 
         $sqlSearch
         -- query
         GROUP BY ${TableTrackPoint.id}
@@ -632,8 +650,8 @@ class ModelTrackPoint {
 
     return await DB.execute((Transaction txn) async {
       final rows = await txn.rawQuery(sql, [
-        ...(table == null ? [] : [idAsset]),
-        ...List.filled(qmCount - (table == null ? 0 : 1), '%$search%'),
+        ...(whereTable == null ? [] : [whereId]),
+        ...List.filled(qmCount - (whereTable == null ? 0 : 1), '%$search%'),
         limit,
         offset,
       ]);

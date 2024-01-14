@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/statistics/task_statistics.dart';
+import 'package:chaostours/view/trackpoint/widget_trackpoint_list.dart';
 import 'package:flutter/material.dart';
 
 ///
@@ -65,7 +67,7 @@ class _WidgetTaskGroupEdit extends State<WidgetTaskGroupEdit> {
       if (mounted) {
         Future.microtask(() => Navigator.pop(context));
       }
-      return null;
+      throw 'Group #$id not found';
     } else {
       _countTask = await _model!.taskCount();
       return _model;
@@ -110,6 +112,35 @@ class _WidgetTaskGroupEdit extends State<WidgetTaskGroupEdit> {
 
   Widget renderBody() {
     return ListView(children: [
+      Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 3),
+              child: FilledButton(
+                  onPressed: () => Navigator.pushNamed(
+                      context, AppRoutes.listTrackpoints.route,
+                      arguments: TrackpointListArguments.taskGroup
+                          .arguments(_model!.id)),
+                  child: const Text('Trackpoints'))),
+          Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 3),
+              child: FilledButton(
+                  onPressed: () async {
+                    var stats = await TaskStatistics.statistics(_model!);
+
+                    if (mounted) {
+                      AppWidgets.statistics(context, stats: stats,
+                          reload: (DateTime start, DateTime end) async {
+                        return await TaskStatistics.groupStatistics(stats.model,
+                            start: start, end: end);
+                      });
+                    }
+                  },
+                  child: const Text('Statistics')))
+        ],
+      ),
+
       /// taskname
       ListTile(
           dense: true,

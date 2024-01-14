@@ -15,7 +15,6 @@ limitations under the License.
 */
 
 import 'package:chaostours/gps.dart';
-import 'package:chaostours/screen.dart';
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 
@@ -28,23 +27,16 @@ import 'package:chaostours/view/app_base_widget.dart';
 import 'package:chaostours/view/app_widgets.dart';
 import 'package:chaostours/util.dart' as util;
 
-String argumentsTrackpointAliasList(int aliasId) {
-  return '$aliasId;${_TrackpointListMode.alias.name}';
-}
-
-String argumentsTrackpointUserList(int userId) {
-  return '$userId;${_TrackpointListMode.user.name}';
-}
-
-String argumentsTrackpointTaskList(int taskId) {
-  return '$taskId;${_TrackpointListMode.task.name}';
-}
-
-enum _TrackpointListMode {
+enum TrackpointListArguments {
   none,
   alias,
+  aliasGroup,
   user,
-  task;
+  userGroup,
+  task,
+  taskGroup;
+
+  String arguments(int id) => '$id;$name';
 }
 
 class WidgetTrackPoints extends BaseWidget {
@@ -63,10 +55,15 @@ class _WidgetTrackPointsState extends BaseWidgetState<WidgetTrackPoints> {
 
   int getLimit() => 20;
 
-  _TrackpointListMode mode = _TrackpointListMode.none;
+  TrackpointListArguments mode = TrackpointListArguments.none;
   int? idAlias;
+  int? idAliasGroup;
   int? idUser;
+  int? idUserGroup;
   int? idTask;
+  int? idTaskGroup;
+
+  String trackpointSource = '';
 
   @override
   Future<void> initialize(BuildContext context, Object? args) async {
@@ -81,13 +78,30 @@ class _WidgetTrackPointsState extends BaseWidgetState<WidgetTrackPoints> {
         throw 'id must be > 1, given is $id in "$query"';
       }
       String key = parts[1];
-      if (key == _TrackpointListMode.alias.name) {
+      if (key == TrackpointListArguments.alias.name) {
         idAlias = id;
-      } else if (key == _TrackpointListMode.user.name) {
+        trackpointSource = 'Alias #$id';
+      } else if (key == TrackpointListArguments.user.name) {
         idUser = id;
-      } else if (key == _TrackpointListMode.task.name) {
+        trackpointSource = 'User #$id';
+      } else if (key == TrackpointListArguments.task.name) {
         idTask = id;
+        trackpointSource = 'Task #$id';
+      } else if (key == TrackpointListArguments.aliasGroup.name) {
+        idAliasGroup = id;
+        trackpointSource = 'Alias group #$id';
+      } else if (key == TrackpointListArguments.userGroup.name) {
+        idUserGroup = id;
+        trackpointSource = 'User group #$id';
+      } else if (key == TrackpointListArguments.taskGroup.name) {
+        idTaskGroup = id;
+        trackpointSource = 'Task group #$id';
       } else {
+        if (mounted) {
+          Future.microtask(
+            () => Navigator.pop(context),
+          );
+        }
         throw 'malformed query';
       }
     } catch (e, stk) {
@@ -105,7 +119,12 @@ class _WidgetTrackPointsState extends BaseWidgetState<WidgetTrackPoints> {
   @override
   Future<int> loadItems({int limit = 50, required int offset}) async {
     var items = await ModelTrackPoint.search(_searchController.text,
-        idAlias: idAlias, idUser: idUser, idTask: idTask);
+        idAlias: idAlias,
+        idUser: idUser,
+        idTask: idTask,
+        idAliasGroup: idAliasGroup,
+        idUserGroup: idUserGroup,
+        idTaskGroup: idTaskGroup);
     if (_loadedItems.isNotEmpty) {
       _loadedItems.add(AppWidgets.divider());
     }
@@ -165,7 +184,8 @@ class _WidgetTrackPointsState extends BaseWidgetState<WidgetTrackPoints> {
       AppWidgets.searchTile(
           context: context,
           textController: _searchController,
-          onChange: (_) => resetLoader())
+          onChange: (_) => resetLoader()),
+      Text(trackpointSource)
     ];
   }
 

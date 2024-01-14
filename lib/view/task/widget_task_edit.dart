@@ -97,7 +97,8 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
               child: FilledButton(
                   onPressed: () => Navigator.pushNamed(
                       context, AppRoutes.listTrackpoints.route,
-                      arguments: argumentsTrackpointTaskList(_model!.id)),
+                      arguments:
+                          TrackpointListArguments.task.arguments(_model!.id)),
                   child: const Text('Trackpoints'))),
           Padding(
               padding: const EdgeInsets.symmetric(horizontal: 3),

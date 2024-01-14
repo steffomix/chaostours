@@ -315,7 +315,7 @@ class Location {
     final Address address = await Address(gps)
         .lookup(OsmLookupConditions.onStatusChanged, saveToCache: true);
 
-    ModelTrackPoint newTrackPoint = await ModelTrackPoint(
+    ModelTrackPoint newTrackPoint = ModelTrackPoint(
         gps: gps,
         timeStart: (await Cache.backgroundGpsStartStanding.load<GPS>(gps)).time,
         timeEnd: gps.time,

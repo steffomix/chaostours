@@ -17,16 +17,20 @@ limitations under the License.
 import 'package:chaostours/database/database.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/model/model_alias.dart';
+import 'package:chaostours/model/model_group.dart';
 import 'package:sqflite/sqflite.dart';
 
-class ModelAliasGroup {
+class ModelAliasGroup implements ModelGroup {
   static final Logger logger = Logger.logger<ModelAliasGroup>();
   int _id = 0;
+  @override
   int get id => _id;
   bool isActive = true;
   String idCalendar = '';
   AliasPrivacy privacy = AliasPrivacy.public;
+  @override
   String title = '';
+  @override
   String description = '';
 
   ModelAliasGroup(

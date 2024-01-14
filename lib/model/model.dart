@@ -18,14 +18,9 @@ import 'dart:convert';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/database/database.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:chaostours/model/model_group.dart';
 
-var decode = Uri.decodeFull; // util.base64Codec().decode;
-var encode = Uri.encodeFull;
-
-abstract class Model {
-  int get id;
-  String title = '';
-  String description = '';
+abstract class Model implements ModelGroup {
   String trackpointNotes = '';
 
   static final Logger logger = Logger.logger<Model>();

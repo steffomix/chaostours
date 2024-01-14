@@ -14,19 +14,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:flutter/material.dart';
+import 'package:sqflite/sqflite.dart';
 import 'dart:math';
 
+///
 import 'package:chaostours/calendar.dart';
 import 'package:chaostours/model/model.dart';
-
-///
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_alias_group.dart';
 import 'package:chaostours/database/database.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/logger.dart';
-import 'package:flutter/material.dart';
-import 'package:sqflite/sqflite.dart';
 
 enum AliasPrivacy {
   /// send notification, make record, publish to calendar

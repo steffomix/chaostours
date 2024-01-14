@@ -156,7 +156,8 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
               child: FilledButton(
                   onPressed: () => Navigator.pushNamed(
                       context, AppRoutes.listTrackpoints.route,
-                      arguments: argumentsTrackpointAliasList(alias.id)),
+                      arguments:
+                          TrackpointListArguments.alias.arguments(alias.id)),
                   child: const Text('Trackpoints'))),
           Padding(
               padding: const EdgeInsets.symmetric(horizontal: 3),

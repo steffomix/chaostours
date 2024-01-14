@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import 'package:chaostours/database/database.dart';
-import 'package:chaostours/model/model.dart';
+import 'package:chaostours/model/model_group.dart';
 import 'package:chaostours/statistics/asset_statistics.dart';
 
 class UserStatistics implements AssetStatistics {
@@ -28,7 +28,7 @@ class UserStatistics implements AssetStatistics {
   static const columnLastVisited = 'tEnd';
 
   @override
-  Model model;
+  ModelGroup model;
   @override
   int count = 0;
   @override
@@ -58,9 +58,9 @@ class UserStatistics implements AssetStatistics {
     lastVisited = tEnd;
   }
 
-  static Future<UserStatistics> statistics(Model model,
+  static Future<UserStatistics> statistics(ModelGroup model,
       {DateTime? start, DateTime? end}) async {
-    List<Object?> params = [model.id];
+    List<Object?> params = [model.id, DB.boolToInt(true)];
     String whereStart = '';
     String whereEnd = '';
     if (start != null) {
@@ -69,7 +69,7 @@ class UserStatistics implements AssetStatistics {
     }
     if (end != null) {
       params.add(DB.timeToInt(end));
-      whereStart = ' AND ${TableTrackPoint.timeEnd.column} <= ? ';
+      whereEnd = ' AND ${TableTrackPoint.timeEnd.column} <= ? ';
     }
 
     final q = '''
@@ -82,7 +82,10 @@ class UserStatistics implements AssetStatistics {
       COUNT(*) AS $columnCount
     FROM ${TableTrackPointUser.table}
     LEFT JOIN ${TableTrackPoint.table} ON ${TableTrackPoint.id} = ${TableTrackPointUser.idTrackPoint}
-    WHERE ${TableTrackPointUser.idUser} = ? $whereStart $whereEnd
+    WHERE ${TableTrackPointUser.idUser} = ? 
+    AND (${TableTrackPoint.ignore} IS NULL OR ${TableTrackPoint.ignore} < ?)
+    $whereStart 
+    $whereEnd
 ''';
 
     final rows = await DB.execute(
@@ -93,6 +96,52 @@ class UserStatistics implements AssetStatistics {
 
     final map = rows.firstOrNull ?? {};
 
+    return _fromMap(model, map);
+  }
+
+  static Future<UserStatistics> groupStatistics(ModelGroup model,
+      {DateTime? start, DateTime? end}) async {
+    List<Object?> params = [model.id, DB.boolToInt(true)];
+    String whereStart = '';
+    String whereEnd = '';
+    if (start != null) {
+      params.add(DB.timeToInt(start));
+      whereStart = ' AND ${TableTrackPoint.timeStart.column} >= ? ';
+    }
+    if (end != null) {
+      params.add(DB.timeToInt(end));
+      whereEnd = ' AND ${TableTrackPoint.timeEnd.column} <= ? ';
+    }
+
+    final q = '''
+    SELECT SUM(${TableTrackPoint.timeEnd.column} - ${TableTrackPoint.timeStart.column}) AS $columnDurationTotal,
+      MIN(${TableTrackPoint.timeEnd.column} - ${TableTrackPoint.timeStart.column}) AS $columnDurationMin,
+      MAX(${TableTrackPoint.timeEnd.column} - ${TableTrackPoint.timeStart.column}) AS $columnDurationMax,
+      ROUND(AVG(${TableTrackPoint.timeEnd.column} - ${TableTrackPoint.timeStart.column})) AS $columnDurationAverage,
+      MIN( ${TableTrackPoint.timeStart.column}) AS $columnFirstVisited,
+      MAX( ${TableTrackPoint.timeStart.column}) AS $columnLastVisited,
+      COUNT(*) AS $columnCount
+    FROM ${TableTrackPointUser.table}
+    LEFT JOIN ${TableTrackPoint.table} ON ${TableTrackPoint.id} = ${TableTrackPointUser.idTrackPoint}
+    LEFT JOIN ${TableUserUserGroup.table} ON ${TableUserUserGroup.idUser} = ${TableTrackPointUser.idUser}
+    WHERE ${TableUserUserGroup.idUserGroup} = ? 
+    AND (${TableTrackPoint.ignore} IS NULL OR ${TableTrackPoint.ignore} < ?)
+    $whereStart 
+    $whereEnd
+''';
+
+    final rows = await DB.execute(
+      (txn) async {
+        return await txn.rawQuery(q, params);
+      },
+    );
+
+    final map = rows.firstOrNull ?? {};
+
+    return _fromMap(model, map);
+  }
+
+  static UserStatistics _fromMap(ModelGroup model, Map<String, Object?> map) {
     return UserStatistics(
         model: model,
         count: DB.parseInt(map[columnCount]),

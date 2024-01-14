@@ -16,17 +16,21 @@ limitations under the License.
 
 import 'package:chaostours/database/database.dart';
 import 'package:chaostours/logger.dart';
+import 'package:chaostours/model/model_group.dart';
 import 'package:sqflite/sqflite.dart';
 
-class ModelTaskGroup {
+class ModelTaskGroup implements ModelGroup {
   static final Logger logger = Logger.logger<ModelTaskGroup>();
   int _id = 0;
+  @override
   int get id => _id;
   bool isActive = true;
   bool isSelectable = true;
   bool isPreselected = false;
   String sortOrder = '';
+  @override
   String title = '';
+  @override
   String description = '';
 
   ModelTaskGroup(

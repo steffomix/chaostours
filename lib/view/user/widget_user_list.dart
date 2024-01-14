@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import 'package:chaostours/model/model_task.dart';
 import 'package:flutter/material.dart';
 
 import 'package:chaostours/logger.dart';

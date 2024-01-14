@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/statistics/user_statistics.dart';
+import 'package:chaostours/view/trackpoint/widget_trackpoint_list.dart';
 import 'package:flutter/material.dart';
 
 ///
@@ -64,7 +66,7 @@ class _WidgetUserGroupEdit extends State<WidgetUserGroupEdit> {
       if (mounted) {
         Future.microtask(() => Navigator.pop(context));
       }
-      return null;
+      throw 'Group #$id not found';
     } else {
       _countUser = await _model!.userCount();
       return _model;
@@ -109,6 +111,35 @@ class _WidgetUserGroupEdit extends State<WidgetUserGroupEdit> {
 
   Widget renderBody() {
     return ListView(children: [
+      Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 3),
+              child: FilledButton(
+                  onPressed: () => Navigator.pushNamed(
+                      context, AppRoutes.listTrackpoints.route,
+                      arguments: TrackpointListArguments.userGroup
+                          .arguments(_model!.id)),
+                  child: const Text('Trackpoints'))),
+          Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 3),
+              child: FilledButton(
+                  onPressed: () async {
+                    var stats = await UserStatistics.groupStatistics(_model!);
+
+                    if (mounted) {
+                      AppWidgets.statistics(context, stats: stats,
+                          reload: (DateTime start, DateTime end) async {
+                        return await UserStatistics.groupStatistics(stats.model,
+                            start: start, end: end);
+                      });
+                    }
+                  },
+                  child: const Text('Statistics')))
+        ],
+      ),
+
       /// username
       ListTile(
           dense: true,

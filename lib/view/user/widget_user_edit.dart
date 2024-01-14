@@ -101,7 +101,8 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
               child: FilledButton(
                   onPressed: () => Navigator.pushNamed(
                       context, AppRoutes.listTrackpoints.route,
-                      arguments: argumentsTrackpointAliasList(_model!.id)),
+                      arguments:
+                          TrackpointListArguments.user.arguments(_model!.id)),
                   child: const Text('Trackpoints'))),
           Padding(
               padding: const EdgeInsets.symmetric(horizontal: 3),

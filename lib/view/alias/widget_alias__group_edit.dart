@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/statistics/alias_statistics.dart';
+import 'package:chaostours/view/trackpoint/widget_trackpoint_list.dart';
 import 'package:flutter/material.dart';
 import 'package:device_calendar/device_calendar.dart';
 
@@ -73,16 +75,16 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
     } else {
       _modelAliasGroup = await ModelAliasGroup.byId(id);
     }
-    if (_modelAliasGroup == null) {
+    if (_modelAliasGroup == null && mounted) {
       if (mounted) {
         Future.microtask(() => Navigator.pop(context));
       }
-      return null;
+      throw 'Group #$id not found';
     } else {
       _countAlias = await _modelAliasGroup!.aliasCount();
       if (await Permission.calendarFullAccess.isGranted) {
         _calendar =
-            await AppCalendar().calendarById(_modelAliasGroup?.idCalendar);
+            await AppCalendar().calendarById(_modelAliasGroup!.idCalendar);
       }
       return _modelAliasGroup;
     }
@@ -107,8 +109,8 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
             context: context,
             selectedCalendar: _calendar,
             onSelect: (cal) {
-              _modelAliasGroup?.idCalendar = cal.id ?? '';
-              _modelAliasGroup?.update().then(
+              _modelAliasGroup!.idCalendar = cal.id ?? '';
+              _modelAliasGroup!.update().then(
                 (value) {
                   _displayMode = _DisplayMode.editGroup;
                   render();
@@ -136,6 +138,39 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
 
   Widget editGroup() {
     return ListView(children: [
+      /// Trackpoints button
+      Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 3),
+              child: FilledButton(
+                  onPressed: () => Navigator.pushNamed(
+                      context, AppRoutes.listTrackpoints.route,
+                      arguments: TrackpointListArguments.aliasGroup
+                          .arguments(_modelAliasGroup!.id)),
+                  child: const Text('Trackpoints'))),
+          Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 3),
+              child: FilledButton(
+                  onPressed: () async {
+                    var stats = await AliasStatistics.groupStatistics(
+                        _modelAliasGroup!);
+
+                    if (mounted) {
+                      AppWidgets.statistics(context, stats: stats,
+                          reload: (DateTime start, DateTime end) async {
+                        return await AliasStatistics.groupStatistics(
+                            stats.model,
+                            start: start,
+                            end: end);
+                      });
+                    }
+                  },
+                  child: const Text('Statistics')))
+        ],
+      ),
+
       /// groupname
       ListTile(
           dense: true,
@@ -158,8 +193,8 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
                 decoration:
                     const InputDecoration(label: Text('Alias Group Name')),
                 onChanged: ((value) {
-                  _modelAliasGroup?.title = value;
-                  _modelAliasGroup?.update();
+                  _modelAliasGroup!.title = value;
+                  _modelAliasGroup!.update();
                 }),
                 maxLines: 3,
                 minLines: 3,
@@ -192,8 +227,8 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
                 minLines: 3,
                 controller: _notesController,
                 onChanged: (value) {
-                  _modelAliasGroup?.description = value.trim();
-                  _modelAliasGroup?.update();
+                  _modelAliasGroup!.description = value.trim();
+                  _modelAliasGroup!.update();
                 },
               ))),
       AppWidgets.divider(),
@@ -206,8 +241,8 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
               leading: IconButton(
                   icon: const Icon(Icons.delete),
                   onPressed: () async {
-                    _modelAliasGroup?.idCalendar = '';
-                    await _modelAliasGroup?.update();
+                    _modelAliasGroup!.idCalendar = '';
+                    await _modelAliasGroup!.update();
                     render();
                   }),
               trailing: IconButton(
@@ -228,10 +263,10 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
           title: const Text('Active'),
           subtitle: const Text('This Group is active and visible'),
           leading: AppWidgets.checkbox(
-            value: _modelAliasGroup?.isActive ?? false,
+            value: _modelAliasGroup!.isActive,
             onChanged: (val) {
-              _modelAliasGroup?.isActive = val ?? false;
-              _modelAliasGroup?.update();
+              _modelAliasGroup!.isActive = val ?? false;
+              _modelAliasGroup!.update();
             },
           )),
 
@@ -241,7 +276,7 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
         child: Text('Show $_countAlias Aliases from this group'),
         onPressed: () => Navigator.pushNamed(
                 context, AppRoutes.listAliasesFromAliasGroup.route,
-                arguments: _modelAliasGroup?.id)
+                arguments: _modelAliasGroup!.id)
             .then((value) {
           render();
         }),
