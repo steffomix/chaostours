@@ -148,38 +148,19 @@ class GPS {
   static Duration defaultCacheDuration =
       AppUserSetting(Cache.appSettingCacheGpsTime).defaultValue as Duration;
   static ValueExpired _cachedGps =
-      ValueExpired(value: null, duration: Duration.zero);
+      ValueExpired(value: null, expireAfter: ExpiredValue.immediately);
   DateTime time = DateTime.now();
   double lat;
   double lon;
 
   GPS(this.lat, this.lon);
 
-  static Future<GPS> gps() async {
-    if (_cachedGps.isExpired) {
+  static Future<GPS> gps({useCache = false}) async {
+    if (!useCache || _cachedGps.isExpired) {
       _cachedGps = ValueExpired(
-          value: _gps(),
-          duration: await Cache.appSettingCacheGpsTime
-              .load<Duration>(defaultCacheDuration));
+          value: await _gps(), expireAfter: ExpiredValue.tenSeconds);
     }
     return await _cachedGps.value as GPS;
-    /*
-      bool cacheOutdated =
-          lastGps?.time.add(dur).isBefore(DateTime.now()) ?? true;
-      if (cacheOutdated) {
-        /// cache is outdated
-        GPS gps = await _gps();
-        lastGps = gps;
-        return gps;
-      } else {
-        /// use cache
-        return lastGps!;
-      }
-    } catch (e, stk) {
-      logger.error('get GPS: $e', stk);
-      return await _gps();
-    }
-    */
   }
 
   static Future<GPS> _gps() async {

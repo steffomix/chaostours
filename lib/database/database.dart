@@ -192,8 +192,9 @@ class DB {
 
   static Future<T> execute<T>(
       Future<T> Function(flite.Transaction txn) action) async {
-    if (_isClosed) {
-      throw 'Database is closed for import-export operations';
+    while (_isClosed) {
+      logger.warn('Database is closed for import-export operations');
+      await Future.delayed(const Duration(seconds: 1));
     }
     return await (_database ??= await openDatabase()).transaction<T>(action);
   }

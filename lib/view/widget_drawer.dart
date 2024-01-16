@@ -249,9 +249,9 @@ class _WidgetDrawer extends State<WidgetDrawer> {
               'Sevaral Settings. Most of them are good to go but who knows...',
           route: AppRoutes.appSettings),
       _Menu(
-          title: 'Color Scheme (todo)',
+          title: 'Color Scheme',
           description: 'Style your App.',
-          route: AppRoutes.appSettings),
+          route: AppRoutes.colorSchemePicker),
       _Menu(
           title: 'Permissions',
           description:

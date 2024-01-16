@@ -50,6 +50,8 @@ class Tracker {
   Tracker._();
   factory Tracker() => _instance ??= Tracker._();
 
+  int tick = 0;
+
   List<GPS> gpsPoints = [];
   List<GPS> gpsSmoothPoints = [];
   List<GPS> gpsCalcPoints = [];
@@ -72,6 +74,7 @@ class Tracker {
         .difference(DateTime.now())
         .abs();
     Map<String, dynamic> serialized = {
+      DataChannelKey.gps.toString(): tick.toString(),
       DataChannelKey.gps.toString(): TypeAdapter.serializeGps(gps),
       DataChannelKey.gpsPoints.toString():
           TypeAdapter.serializeGpsList(gpsPoints),
@@ -102,6 +105,8 @@ class Tracker {
   }
 
   Future<Map<String, dynamic>> track() async {
+    tick++;
+
     /// create gpsPoint
     ///
     GPS gps = await GPS.gps();
@@ -192,9 +197,9 @@ class Tracker {
                             .defaultValue as Duration)))) {
                   gps = GPS.average(gpsCalcPoints);
                   gps.time = DateTime.now();
-
-                  gpsLocation = await gpsLocation
-                      .autocreateAlias(gpsLastStatusStanding ?? gps);
+                  await Cache.reload();
+                  await (await Location.location(gpsLastStatusStanding ?? gps))
+                      .autocreateAlias();
                 }
               }
             } catch (e, stk) {
@@ -213,6 +218,8 @@ class Tracker {
 
       ///
     } else {
+      await Cache.reload();
+
       /// we started moving
       if (newTrackingStatus == TrackingStatus.moving) {
         // skip tracking by user

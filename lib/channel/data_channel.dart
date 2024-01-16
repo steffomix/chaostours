@@ -88,6 +88,8 @@ class DataChannel extends TrackPointData {
           tick++;
           Cache.reload();
           try {
+            tick = int.parse(data?[DataChannelKey.tick.toString()] ?? '0');
+
             /// serialized values
             gps = TypeAdapter.deserializeGps(
                 data?[DataChannelKey.gps.toString()]);

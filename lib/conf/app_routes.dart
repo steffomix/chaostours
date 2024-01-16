@@ -48,6 +48,8 @@ import 'package:chaostours/view/trackpoint/widget_live_tracking.dart';
 import 'package:chaostours/view/trackpoint/widget_trackpoint_list.dart';
 import 'package:chaostours/view/trackpoint/widget_edit_trackpoint.dart';
 //
+import 'package:chaostours/view/widget_color_scheme_picker.dart';
+//
 import 'package:chaostours/view/widget_manage_calendar.dart';
 
 enum AppRoutes {
@@ -94,6 +96,7 @@ enum AppRoutes {
   listUsersFromUserGroup,
 
   // misc
+  colorSchemePicker,
   selectCalendar,
   osm;
 
@@ -162,6 +165,9 @@ enum AppRoutes {
       AppRoutes.listAliasesFromAliasGroup.route: (context) =>
           const WidgetAliasesFromAliasGroupList(),
 
+      // color scheme
+      AppRoutes.colorSchemePicker.route: (context) =>
+          const WidgetColorSchemePicker(),
       // trackPoint events
       AppRoutes.selectCalendar.route: (context) => const WidgetManageCalendar(),
       // osm

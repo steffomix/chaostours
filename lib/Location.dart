@@ -125,7 +125,7 @@ class Location {
         .save<List<SharedTrackpointAlias>>(newShared);
   }
 
-  Future<Location> autocreateAlias(GPS gps) async {
+  Future<Location> autocreateAlias() async {
     /// get address
     tracker.address = await Address(gps)
         .lookup(OsmLookupConditions.onAutoCreateAlias, saveToCache: true);
@@ -175,16 +175,16 @@ class Location {
       await Cache.backgroundTrackPointNotes.save<String>('');
       // reset tasks with preselected
       await Cache.backgroundSharedTaskList
-          .save<List<String>>((await ModelTask.preselected())
+          .save<List<SharedTrackpointTask>>((await ModelTask.preselected())
               .map(
-                (e) => SharedTrackpointTask(id: e.id, notes: '').toString(),
+                (e) => SharedTrackpointTask(id: e.id, notes: ''),
               )
               .toList());
       // reset users with preselected
       await Cache.backgroundSharedUserList
-          .save<List<String>>((await ModelUser.preselected())
+          .save<List<SharedTrackpointUser>>((await ModelUser.preselected())
               .map(
-                (e) => SharedTrackpointUser(id: e.id, notes: '').toString(),
+                (e) => SharedTrackpointUser(id: e.id, notes: ''),
               )
               .toList());
     } catch (e, stk) {
@@ -314,7 +314,6 @@ class Location {
 
     final Address address = await Address(gps)
         .lookup(OsmLookupConditions.onStatusChanged, saveToCache: true);
-
     ModelTrackPoint newTrackPoint = ModelTrackPoint(
         gps: gps,
         timeStart: gps.time,
@@ -332,13 +331,6 @@ class Location {
     //_debugInsert(newTrackPoint);
     return newTrackPoint;
   }
-/* 
-  _debugInsert(ModelTrackPoint tp) async {
-    for (var i = 1; i < 10000; i++) {
-      tp.insert();
-      await Future.delayed(const Duration(milliseconds: 100));
-    }
-  } */
 
   // finish standing event
   Future<void> _publishMoving(ModelTrackPoint? tp) async {

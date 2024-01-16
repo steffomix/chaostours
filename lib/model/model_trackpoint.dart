@@ -127,7 +127,6 @@ class ModelTrackPoint {
 
   Future<ModelTrackPoint> addSharedAssets(Location location) async {
     aliasModels.clear();
-    Cache.reload();
 
     return await DB.execute((txn) async {
       aliasModels.clear();

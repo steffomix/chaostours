@@ -76,7 +76,9 @@ class _WidgetImportExport extends State<WidgetImportExport> {
 
     return Scaffold(
         appBar: AppBar(
-            leading: IconButton(onPressed: () {}, icon: const Icon(Icons.stop)),
+            leading: IconButton(
+                onPressed: () {},
+                icon: const Icon(Icons.stop, color: Colors.transparent)),
             title: const Text('Export / Import Database')),
 
         ///
@@ -240,8 +242,9 @@ class _WidgetImportExport extends State<WidgetImportExport> {
         isDismissible: false,
         buttons: [],
         contents: [const Text('Shutting down Chaostours...')]);
-    Future.delayed(const Duration(milliseconds: 1500), () {
-      SystemNavigator.pop();
+    Future.delayed(const Duration(milliseconds: 1500), () async {
+      await SystemNavigator.pop();
+      exit(0);
     });
   }
 

@@ -25,6 +25,12 @@ class SharedCache implements CacheModul {
   factory SharedCache() => _instance ??= SharedCache._();
   SharedPreferences? _sharedPreferencesInstance;
 
+  @override
+  Future<void> reload() async {
+    (_sharedPreferencesInstance ??= await SharedPreferences.getInstance())
+        .reload();
+  }
+
   String _key(Cache key) {
     return 'com.stefanbrinkmann.chaostours.${key.name}';
   }
@@ -99,12 +105,6 @@ class SharedCache implements CacheModul {
     (_sharedPreferencesInstance ??= await SharedPreferences.getInstance())
         .remove(_key(key));
   }
-
-  @override
-  Future<void> reload() async {
-    (_sharedPreferencesInstance ??= await SharedPreferences.getInstance())
-        .reload();
-  }
 }
 
 class DbCache implements CacheModul {
@@ -148,13 +148,10 @@ class DbCache implements CacheModul {
       if (values.isEmpty) {
         return;
       }
-      final batch = txn.batch();
-      batch.delete(_table, where: '$_key = ?', whereArgs: [id(key)]);
       int i = 1;
       for (var value in values) {
-        batch.insert(_table, {_id: i++, _key: id(key), _data: value});
+        await txn.insert(_table, {_id: i++, _key: id(key), _data: value});
       }
-      batch.commit();
     });
   }
 

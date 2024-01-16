@@ -14,17 +14,38 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-class ValueExpired {
-  dynamic value;
+enum ExpiredValue {
+  never(Duration.zero),
+  immediately(Duration.zero),
+  oneSecond(Duration(seconds: 1)),
+  tenSeconds(Duration(seconds: 10)),
+  oneMinute(Duration(minutes: 1));
 
-  late DateTime _expiredAt;
-  bool get isExpired => DateTime.now().isAfter(_expiredAt);
+  final Duration duration;
+  const ExpiredValue(this.duration);
+}
+
+class ValueExpired {
+  final DateTime now = DateTime.now();
+  final ExpiredValue expireAfter;
+  dynamic value;
+  bool _isExpired = false;
 
   void expire() {
-    _expiredAt = DateTime.now().subtract(const Duration(seconds: 1));
+    _isExpired = true;
   }
 
-  ValueExpired({required this.value, required Duration duration}) {
-    _expiredAt = DateTime.now().add(duration);
+  ValueExpired({required this.value, required this.expireAfter});
+
+  bool get isExpired {
+    switch (expireAfter) {
+      case ExpiredValue.never:
+        return false;
+      case ExpiredValue.immediately:
+        return true;
+      default:
+        return _isExpired ||
+            DateTime.now().isAfter(now.add(expireAfter.duration));
+    }
   }
 }

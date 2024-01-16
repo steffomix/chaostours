@@ -77,119 +77,122 @@ class StaticCache {
 }
 
 enum Cache {
-  cacheInitialized(CacheModulId.sharedPreferences, bool, expireNever),
+  cacheInitialized(CacheModulId.sharedPreferences, bool, ExpiredValue.never),
 
   /// trigger off == TrackingStatus.none
   /// triggered by user, set to none in background
   trackingStatusTriggered(
-      CacheModulId.sharedPreferences, TrackingStatus, expireImmediately),
+      CacheModulId.sharedPreferences, TrackingStatus, ExpiredValue.immediately),
 
   /// status change events
   backgroundGpsStartMoving(
-      CacheModulId.sharedPreferences, GPS, expireImmediately),
+      CacheModulId.sharedPreferences, GPS, ExpiredValue.immediately),
   backgroundGpsStartStanding(
-      CacheModulId.sharedPreferences, GPS, expireImmediately),
+      CacheModulId.sharedPreferences, GPS, ExpiredValue.immediately),
   backgroundGpsLastStatusChange(
-      CacheModulId.sharedPreferences, GPS, expireImmediately),
+      CacheModulId.sharedPreferences, GPS, ExpiredValue.immediately),
 
   /// cache background to forground
   backgroundTrackingStatus(
-      CacheModulId.sharedPreferences, TrackingStatus, expireImmediately),
+      CacheModulId.sharedPreferences, TrackingStatus, ExpiredValue.immediately),
 
   backgroundSharedAliasList(CacheModulId.sharedPreferences,
-      List<SharedTrackpointAlias>, expireImmediately),
+      List<SharedTrackpointAlias>, ExpiredValue.immediately),
   backgroundSharedUserList(CacheModulId.sharedPreferences,
-      List<SharedTrackpointUser>, expireImmediately),
+      List<SharedTrackpointUser>, ExpiredValue.immediately),
   backgroundSharedTaskList(CacheModulId.sharedPreferences,
-      List<SharedTrackpointTask>, expireImmediately),
+      List<SharedTrackpointTask>, ExpiredValue.immediately),
 
   backgroundTrackPointNotes(
-      CacheModulId.sharedPreferences, String, expireImmediately),
+      CacheModulId.sharedPreferences, String, ExpiredValue.immediately),
 
   backgroundTrackPointSkipRecordOnce(
-      CacheModulId.sharedPreferences, bool, expireImmediately),
+      CacheModulId.sharedPreferences, bool, ExpiredValue.immediately),
 
   /// tracking detection
-  backgroundLastGps(CacheModulId.sharedPreferences, GPS, expireImmediately),
+  backgroundLastGps(
+      CacheModulId.sharedPreferences, GPS, ExpiredValue.immediately),
   backgroundGpsPoints(
-      CacheModulId.sharedPreferences, List<GPS>, expireImmediately),
+      CacheModulId.sharedPreferences, List<GPS>, ExpiredValue.immediately),
   backgroundGpsSmoothPoints(
-      CacheModulId.sharedPreferences, List<GPS>, expireImmediately),
+      CacheModulId.sharedPreferences, List<GPS>, ExpiredValue.immediately),
   backgroundGpsCalcPoints(
-      CacheModulId.sharedPreferences, List<GPS>, expireImmediately),
+      CacheModulId.sharedPreferences, List<GPS>, ExpiredValue.immediately),
 
   /// stores last lookup to prevent more than one osm lookups per second
   addressTimeLastLookup(
-      CacheModulId.sharedPreferences, int, expireAfterOneSecond),
+      CacheModulId.sharedPreferences, int, ExpiredValue.oneSecond),
 
   /// address updated on each background tick - if permission granted
   addressMostRecent(
-      CacheModulId.sharedPreferences, String, expireAfterOneSecond),
+      CacheModulId.sharedPreferences, String, ExpiredValue.oneSecond),
   addressFullMostRecent(
-      CacheModulId.sharedPreferences, String, expireAfterOneSecond),
+      CacheModulId.sharedPreferences, String, ExpiredValue.oneSecond),
 
   /// address updated on status change - if activated
   backgroundLastStandingAddress(
-      CacheModulId.sharedPreferences, String, expireImmediately),
+      CacheModulId.sharedPreferences, String, ExpiredValue.immediately),
 
   /// eventCalendar
-  backgroundCalendarLastEventIds(
-      CacheModulId.sharedPreferences, List<CalendarEventId>, expireImmediately),
+  backgroundCalendarLastEventIds(CacheModulId.sharedPreferences,
+      List<CalendarEventId>, ExpiredValue.immediately),
 
-  useOfCalendarRequested(CacheModulId.sharedPreferences, bool, expireNever),
+  useOfCalendarRequested(
+      CacheModulId.sharedPreferences, bool, ExpiredValue.never),
 
   /// startup consent
-  chaosToursLicenseAccepted(CacheModulId.sharedPreferences, bool, expireNever),
+  chaosToursLicenseAccepted(
+      CacheModulId.sharedPreferences, bool, ExpiredValue.never),
 
-  osmLicenseAccepted(CacheModulId.sharedPreferences, bool, expireNever),
-  osmLicenseRequested(CacheModulId.sharedPreferences, bool, expireNever),
+  osmLicenseAccepted(CacheModulId.sharedPreferences, bool, ExpiredValue.never),
+  osmLicenseRequested(CacheModulId.sharedPreferences, bool, ExpiredValue.never),
 
   /// battery
   batteryOptimizationRequested(
-      CacheModulId.sharedPreferences, bool, expireNever),
+      CacheModulId.sharedPreferences, bool, ExpiredValue.never),
 
   /// webSSLKey
   ///
-  webSSLKey(CacheModulId.sharedPreferences, String, expireNever),
+  webSSLKey(CacheModulId.sharedPreferences, String, ExpiredValue.never),
 
   /// appUserStettings
-  appSettingBackgroundTrackingEnabled(CacheModulId.database, bool, expireNever),
+  appSettingBackgroundTrackingEnabled(
+      CacheModulId.database, bool, ExpiredValue.never),
   appSettingStatusStandingRequireAlias(
-      CacheModulId.database, bool, expireNever),
+      CacheModulId.database, bool, ExpiredValue.never),
   appSettingAutocreateAliasDuration(
-      CacheModulId.database, Duration, expireNever),
-  appSettingAutocreateAlias(CacheModulId.database, bool, expireNever),
+      CacheModulId.database, Duration, ExpiredValue.never),
+  appSettingAutocreateAlias(CacheModulId.database, bool, ExpiredValue.never),
   appSettingForegroundUpdateInterval(
-      CacheModulId.database, Duration, expireNever),
+      CacheModulId.database, Duration, ExpiredValue.never),
   appSettingOsmLookupCondition(
-      CacheModulId.database, OsmLookupConditions, expireNever),
-  appSettingCacheGpsTime(CacheModulId.database, Duration, expireNever),
+      CacheModulId.database, OsmLookupConditions, ExpiredValue.never),
+  appSettingCacheGpsTime(CacheModulId.database, Duration, ExpiredValue.never),
   appSettingLocationAccuracy(
-      CacheModulId.database, LocationAccuracy, expireNever),
-  appSettingDistanceTreshold(CacheModulId.database, int, expireNever),
-  appSettingTimeRangeTreshold(CacheModulId.database, Duration, expireNever),
+      CacheModulId.database, LocationAccuracy, ExpiredValue.never),
+  appSettingDistanceTreshold(CacheModulId.database, int, ExpiredValue.never),
+  appSettingTimeRangeTreshold(
+      CacheModulId.database, Duration, ExpiredValue.never),
   appSettingBackgroundTrackingInterval(
-      CacheModulId.database, Duration, expireNever),
-  appSettingGpsPointsSmoothCount(CacheModulId.database, int, expireNever),
-  appSettingPublishToCalendar(CacheModulId.database, bool, expireNever),
-  appSettingTimeZone(CacheModulId.database, String, expireNever),
-  appSettingWeekdays(CacheModulId.database, Weekdays, expireNever),
-  appSettingDateFormat(CacheModulId.database, DateFormat, expireNever),
-  appSettingGpsPrecision(CacheModulId.database, GpsPrecision, expireNever);
+      CacheModulId.database, Duration, ExpiredValue.never),
+  appSettingGpsPointsSmoothCount(
+      CacheModulId.database, int, ExpiredValue.never),
+  appSettingPublishToCalendar(CacheModulId.database, bool, ExpiredValue.never),
+  appSettingTimeZone(CacheModulId.database, String, ExpiredValue.never),
+  appSettingWeekdays(CacheModulId.database, Weekdays, ExpiredValue.never),
+  appSettingDateFormat(CacheModulId.database, DateFormat, ExpiredValue.never),
+  appSettingGpsPrecision(
+      CacheModulId.database, GpsPrecision, ExpiredValue.never);
 
   const Cache(this.modulId, this.cacheType, this.expireAfter);
 
   static final Logger logger = Logger.logger<Cache>();
 
-  static const Duration expireImmediately = Duration.zero;
-  static const Duration expireAfterOneSecond = Duration(seconds: 1);
-  static const Duration expireNever = Duration(days: 36500);
-
   static final Map<Cache, ValueExpired> _cache = {};
 
   final Type cacheType;
   final CacheModulId modulId;
-  final Duration expireAfter;
+  final ExpiredValue expireAfter;
 
   static Cache? byName(String name) {
     for (var key in values) {
@@ -208,6 +211,7 @@ enum Cache {
   }
 
   Future<T> load<T>(T defaultValue) async {
+    _checkType<T>(this);
     if (modulId == CacheModulId.database) {
       return await _loadFromDatabase<T>(defaultValue);
     } else {
@@ -216,6 +220,7 @@ enum Cache {
   }
 
   Future<T> save<T>(T value) async {
+    _checkType<T>(this);
     StaticCache.update(this, value);
     if (modulId == CacheModulId.sharedPreferences) {
       return await _savePreference<T>(value);
@@ -225,11 +230,10 @@ enum Cache {
   }
 
   Future<T> _loadFromDatabase<T>(T defaultValue) async {
-    _checkType<T>(this);
     if (_cache[this]?.isExpired ?? true) {
       var value = await _getValue<T>(
           cacheModul: DbCache(), key: this, defaultValue: defaultValue);
-      _cache[this] = ValueExpired(value: value, duration: expireAfter);
+      _cache[this] = ValueExpired(value: value, expireAfter: expireAfter);
       return value;
     }
     var value = _cache[this]!.value as T;
@@ -237,13 +241,11 @@ enum Cache {
   }
 
   Future<T> _saveToDatabase<T>(T value) async {
-    _checkType<T>(this);
-    _cache.addAll({this: ValueExpired(value: value, duration: expireAfter)});
+    _cache.addAll({this: ValueExpired(value: value, expireAfter: expireAfter)});
     return await _setValue<T>(cacheModul: DbCache(), key: this, value: value);
   }
 
   Future<T> _loadPreference<T>(T defaultValue) async {
-    _checkType<T>(this);
     return await _getValue<T>(
         cacheModul: SharedCache(), key: this, defaultValue: defaultValue);
   }
@@ -255,7 +257,8 @@ enum Cache {
 
   static void _checkType<T>(Cache key) {
     if (T != key.cacheType) {
-      throw 'setValue::value with type $T on key $key doesn\'t match required type ${key.cacheType} as specified in Cache.enum parameters.';
+      throw 'setValue::value with type $T on key $key doesn\'t match '
+          'required type ${key.cacheType} as specified in Cache.enum parameters.';
     }
   }
 
@@ -316,29 +319,6 @@ enum Cache {
           await cacheModul.setString(key,
               TypeAdapter.serializeTrackingStatus(value as TrackingStatus));
           break;
-        /* 
-        case const (ModelTrackPoint):
-          await cacheModul.setString(key,
-              TypeAdapter.serializeModelTrackPoint(value as ModelTrackPoint));
-          break;
-        case const (List<ModelTrackPoint>):
-          await cacheModul.setStringList(
-              key,
-              TypeAdapter.serializeModelTrackPointList(
-                  value as List<ModelTrackPoint>));
-          break;
-        case const (List<ModelAlias>):
-          await cacheModul.setStringList(key,
-              TypeAdapter.serializeModelAliasList(value as List<ModelAlias>));
-          break;
-        case const (List<ModelTask>):
-          await cacheModul.setStringList(key,
-              TypeAdapter.serializeModelTaskList(value as List<ModelTask>));
-          break;
-        case const (List<ModelUser>):
-          await cacheModul.setStringList(key,
-              TypeAdapter.serializeModelUserList(value as List<ModelUser>));
-          break; */
         case const (OsmLookupConditions):
           await cacheModul.setString(key,
               TypeAdapter.serializeOsmLookup(value as OsmLookupConditions));
@@ -441,27 +421,6 @@ enum Cache {
           return TypeAdapter.deserializeTrackingStatus(
                   await cacheModul.getString(key)) as T? ??
               defaultValue;
-        /* 
-        case const (ModelTrackPoint):
-          return TypeAdapter.deserializeModelTrackPoint(
-                  await cacheModul.getString(key)) as T? ??
-              defaultValue;
-        case const (List<ModelTrackPoint>):
-          return TypeAdapter.deserializeModelTrackPointList(
-                  await cacheModul.getStringList(key)) as T? ??
-              defaultValue;
-        case const (List<ModelAlias>):
-          return TypeAdapter.deserializeModelAliasList(
-                  await cacheModul.getStringList(key)) as T? ??
-              defaultValue;
-        case const (List<ModelTask>):
-          return TypeAdapter.deserializeModelTaskList(
-                  await cacheModul.getStringList(key)) as T? ??
-              defaultValue;
-        case const (List<ModelUser>):
-          return TypeAdapter.deserializeModelUserList(
-                  await cacheModul.getStringList(key)) as T? ??
-              defaultValue; */
         case const (OsmLookupConditions):
           return TypeAdapter.deserializeOsmLookup(
                   await cacheModul.getString(key)) as T? ??
