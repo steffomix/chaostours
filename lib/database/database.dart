@@ -799,7 +799,7 @@ enum TableAliasGroup {
   static List<TableAliasGroup> calendarFields() {
     return TableAliasGroup.values
         .where(
-          (e) => e.name.contains('Calendar'),
+          (e) => e.name.contains('withCalendar'),
         )
         .toList();
   }

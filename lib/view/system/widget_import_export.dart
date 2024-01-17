@@ -19,7 +19,6 @@ import 'dart:io';
 ///
 import 'package:chaostours/conf/app_colors.dart';
 import 'package:flutter/material.dart';
-import 'package:file_manager/file_manager.dart';
 import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:chaostours/logger.dart';
@@ -69,7 +68,6 @@ class _WidgetImportExport extends State<WidgetImportExport> {
     super.initState();
   }
 
-  FileManagerController fileManagerController = FileManagerController();
   @override
   Widget build(BuildContext context) {
     String? databaseOpenError =

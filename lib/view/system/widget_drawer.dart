@@ -137,7 +137,7 @@ class _WidgetDrawer extends State<WidgetDrawer> {
         title: FilledButton(
           child: const Text('Device calendar'),
           onPressed: () {
-            launchUrl(Uri.parse('https://calendar.google.com'));
+            launchUrl(Uri.parse('content://com.android.calendar'));
           },
         ),
         subtitle: const Text('Open your device calendar direct from here.'),
@@ -175,6 +175,18 @@ class _WidgetDrawer extends State<WidgetDrawer> {
           description: 'Your saved Data presented in a bloody raw style.',
           route: AppRoutes.databaseExplorer),
       DividerItem(),
+      CustomItem(
+          widget: ListTile(
+        title: FilledButton(
+          child: const Text('Support'),
+          onPressed: () {
+            launchUrl(
+                Uri.parse('https://github.com/steffomix/chaostours/issues'));
+          },
+        ),
+        subtitle: const Text(
+            'Opens the developer platform and issue tracker on github.com where you can view the source code, file an issue or a future request.'),
+      )),
       CustomItem(
           widget: ListTile(
         title: Text('Licence ChaosTours',

@@ -200,18 +200,9 @@ class _WidgetTaskEdit extends State<WidgetTaskEdit> {
             subtitle: Column(
                 children: _groups.map(
               (model) {
-                return FilledButton(
-                  child: ListTile(
-                    title: Text(model.title),
-                    subtitle: Text(model.description),
-                  ),
-                  onPressed: () {
-                    Navigator.pushNamed(context, AppRoutes.editTaskGroup.route,
-                            arguments: model.id)
-                        .then(
-                      (value) => render(),
-                    );
-                  },
+                return ListTile(
+                  title: Text(model.title),
+                  subtitle: Text(model.description),
                 );
               },
               // ignore: unnecessary_to_list_in_spreads

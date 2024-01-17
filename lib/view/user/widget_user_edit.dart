@@ -266,18 +266,9 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
             subtitle: Column(
                 children: _groups.map(
               (model) {
-                return FilledButton(
-                  child: ListTile(
-                    title: Text(model.title),
-                    subtitle: Text(model.description),
-                  ),
-                  onPressed: () {
-                    Navigator.pushNamed(context, AppRoutes.editUserGroup.route,
-                            arguments: model.id)
-                        .then(
-                      (value) => render(),
-                    );
-                  },
+                return ListTile(
+                  title: Text(model.title),
+                  subtitle: Text(model.description),
                 );
               },
               // ignore: unnecessary_to_list_in_spreads

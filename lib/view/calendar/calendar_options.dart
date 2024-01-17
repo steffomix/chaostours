@@ -19,6 +19,7 @@ import 'package:chaostours/logger.dart';
 import 'package:chaostours/model/model_alias_group.dart';
 import 'package:chaostours/view/system/app_widgets.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class WidgetCalendarOptions extends StatefulWidget {
   const WidgetCalendarOptions({super.key});
@@ -243,5 +244,44 @@ class _WidgetCalendarOptionsState extends State<WidgetCalendarOptions> {
       default:
         logger.error('field $field not implemented', StackTrace.current);
     }
+  }
+
+  bool _privacyRespected = false;
+
+  List<Widget> privacyWarning() {
+    return [
+      const Text('Important Privacy Advisory'),
+      const Text(
+          'Please be aware that certain device calendars can be set to public for everyone. This app does not have access to your device calendar settings. Therefore, it is crucial to verify your device calendar settings before selecting any content options from the list below.'),
+      const Text(
+          'We emphasize the importance of respecting the privacy of others — do not add content to your calendar without their explicit consent, as it may impact their privacy. Additionally, be mindful that this app writes data to your calendar while the app is closed and running in the background.'),
+      const Text(
+          'Before proceeding, we strongly recommend reviewing your device calendar\'s privacy policy. Understanding these policies will help you make informed decisions when checking any content options.'),
+      const Text(
+          'If you are unsure about locating your calendar or need assistance with settings, tap the button below to open and review your device calendar settings.'),
+      Center(
+          child: FilledButton(
+        child: const Text('Open device calendar'),
+        onPressed: () async {
+          launchUrl(Uri.parse('content://com.android.calendar'));
+        },
+      )),
+      const Text(
+          'Your commitment to privacy is greatly appreciated, and thank you for using our app responsibly.'),
+      AppWidgets.divider(),
+      const Text(
+          'I confirm that I have read and understood the privacy advisory.\n'
+          'I have checked and adjusted my device calendar settings before selecting any content options from the list.\n'
+          'I acknowledge the importance of respecting the privacy of others and affirm that I will not add any content to my calendar without explicit consent, ensuring it does not compromise anyone\'s privacy. Additionally, I am aware that this app writes data to my calendar while running in the background.\n'
+          'I have carefully read my device calendar\'s privacy policy.'),
+      const Text(
+          'By checking this box, I confirm that I have taken all necessary steps to use this app responsibly and in compliance with privacy considerations.'),
+      ListTile(
+          leading: AppWidgets.checkbox(
+              value: _privacyRespected,
+              onChanged: (bool? state) => _privacyRespected = state ?? false),
+          title: const Text(
+              'I have read, understood, and ensured privacy compliance.'))
+    ];
   }
 }

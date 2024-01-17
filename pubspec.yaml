@@ -40,10 +40,10 @@ dependencies:
   http: ^1.1.2
 
   # https://pub.dev/packages/flutter_local_notifications
-  flutter_local_notifications: ^16.2.0
+  flutter_local_notifications: ^16.3.0
 
   # https://pub.dev/packages/permission_handler
-  permission_handler: ^11.0.1
+  permission_handler: ^11.2.0
 
   # https://pub.dev/packages/shared_preferences
   shared_preferences: ^2.2.2
@@ -51,22 +51,23 @@ dependencies:
   # https://pub.dev/packages/path_provider
   path_provider: ^2.0.13
 
-  path: any
+  # https://pub.dev/packages/path
+  path: ^1.9.0
 
   # https://pub.dev/packages/external_path
-  external_path: ^1.0.3
+  #external_path: ^1.0.3
 
   # https://pub.dev/packages/android_intent_plus
   android_intent_plus: ^4.0.2
 
   # https://pub.dev/packages/flutter_sharing_intent
-  flutter_sharing_intent: ^1.1.0
+  #flutter_sharing_intent: ^1.1.0
 
   # https://pub.dev/packages/device_info_plus
-  device_info_plus: ^9.1.1
+  #device_info_plus: ^9.1.1
 
   # https://pub.dev/packages/share_plus
-  share_plus: ^7.2.1
+  #share_plus: ^7.2.1
 
   # https://pub.dev/packages/app_settings
   app_settings: ^5.1.1
@@ -81,7 +82,7 @@ dependencies:
   url_launcher: ^6.1.12
 
   # https://pub.dev/packages/file_manager
-  file_manager: ^1.0.2
+  #file_manager: ^1.0.2
 
   # https://pub.dev/packages/file_picker
   file_picker: ^6.1.1
@@ -108,17 +109,18 @@ dependencies:
   google_fonts: ^6.1.0
 
   # https://pub.dev/packages/visibility_detector
-  visibility_detector: ^0.4.0+2
+  #visibility_detector: ^0.4.0+2
 
   # https://pub.dev/packages/restart_app
   restart_app: ^1.2.1
+
 
   
 
 
 dev_dependencies:
-  flutter_test:
-    sdk: flutter
+  #flutter_test:
+   # sdk: flutter
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
