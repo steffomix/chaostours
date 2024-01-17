@@ -20,7 +20,7 @@ import 'package:flutter/material.dart';
 import 'package:chaostours/statistics/task_statistics.dart';
 import 'package:chaostours/view/trackpoint/widget_trackpoint_list.dart';
 import 'package:chaostours/conf/app_routes.dart';
-import 'package:chaostours/view/app_widgets.dart';
+import 'package:chaostours/view/system/app_widgets.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_task_group.dart';
 

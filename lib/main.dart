@@ -18,5 +18,5 @@ import 'package:chaostours/chaos_tours.dart';
 //import 'package:chaostours/runtime_data.dart';
 
 void main() async {
-  ChaosTours.start();
+  await ChaosTours.start();
 }

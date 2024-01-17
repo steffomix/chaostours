@@ -25,6 +25,7 @@ import 'package:chaostours/shared/shared_trackpoint_user.dart';
 import 'package:chaostours/channel/tracking.dart';
 import 'package:chaostours/calendar.dart';
 import 'package:chaostours/value_expired.dart';
+import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:geolocator/geolocator.dart';
 /* 
 import 'package:chaostours/model/model_trackpoint.dart';
@@ -58,8 +59,12 @@ enum CacheModulId {
 class StaticCache {
   static Weekdays _weekdays = Weekdays.mondayFirst;
   static Weekdays get weekdays => _weekdays;
+
   static DateFormat _dateFormat = DateFormat.yyyymmdd;
   static DateFormat get dateFormat => _dateFormat;
+
+  static FlexScheme _flexScheme = FlexScheme.gold;
+  static FlexScheme get flexScheme => _flexScheme;
 
   static void update<T>(Cache cache, T value) {
     switch (cache) {
@@ -69,9 +74,11 @@ class StaticCache {
       case Cache.appSettingDateFormat:
         _dateFormat = value as DateFormat;
         break;
+      case Cache.appSettingsColorScheme:
+        _flexScheme = value as FlexScheme;
 
       default:
-      //
+      // ignore
     }
   }
 }
@@ -182,7 +189,9 @@ enum Cache {
   appSettingWeekdays(CacheModulId.database, Weekdays, ExpiredValue.never),
   appSettingDateFormat(CacheModulId.database, DateFormat, ExpiredValue.never),
   appSettingGpsPrecision(
-      CacheModulId.database, GpsPrecision, ExpiredValue.never);
+      CacheModulId.database, GpsPrecision, ExpiredValue.never),
+  appSettingsColorScheme(
+      CacheModulId.sharedPreferences, FlexScheme, ExpiredValue.never);
 
   const Cache(this.modulId, this.cacheType, this.expireAfter);
 
@@ -212,11 +221,14 @@ enum Cache {
 
   Future<T> load<T>(T defaultValue) async {
     _checkType<T>(this);
+    T value;
     if (modulId == CacheModulId.database) {
-      return await _loadFromDatabase<T>(defaultValue);
+      value = await _loadFromDatabase<T>(defaultValue);
     } else {
-      return _loadPreference<T>(defaultValue);
+      value = await _loadPreference<T>(defaultValue);
     }
+    StaticCache.update(this, value);
+    return value;
   }
 
   Future<T> save<T>(T value) async {
@@ -356,6 +368,9 @@ enum Cache {
               key,
               TypeAdapter.serializeSharedTrackpointTaskList(
                   value as List<SharedTrackpointTask>));
+        case const (FlexScheme):
+          await cacheModul.setString(
+              key, TypeAdapter.serializeFlexScheme(value as FlexScheme));
           break;
         // ignore: prefer_void_to_null
         case const (Null):
@@ -442,16 +457,20 @@ enum Cache {
                   await cacheModul.getString(key)) as T? ??
               defaultValue;
         case const (List<SharedTrackpointAlias>):
-          return TypeAdapter.desrializeSharedrackpointAliasList(
+          return TypeAdapter.deserializeSharedrackpointAliasList(
                   await cacheModul.getStringList(key)) as T? ??
               defaultValue;
         case const (List<SharedTrackpointUser>):
-          return TypeAdapter.desrializeSharedrackpointUserList(
+          return TypeAdapter.deserializeSharedrackpointUserList(
                   await cacheModul.getStringList(key)) as T? ??
               defaultValue;
         case const (List<SharedTrackpointTask>):
-          return TypeAdapter.desrializeSharedrackpointTaskList(
+          return TypeAdapter.deserializeSharedrackpointTaskList(
                   await cacheModul.getStringList(key)) as T? ??
+              defaultValue;
+        case const (FlexScheme):
+          return TypeAdapter.deserializeFlexScheme(
+                  await cacheModul.getString(key)) as T? ??
               defaultValue;
         default:
           throw "Unsupported data type $T";

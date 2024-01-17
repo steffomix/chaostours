@@ -110,6 +110,9 @@ dependencies:
   # https://pub.dev/packages/visibility_detector
   visibility_detector: ^0.4.0+2
 
+  # https://pub.dev/packages/restart_app
+  restart_app: ^1.2.1
+
   
 
 

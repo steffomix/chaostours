@@ -24,7 +24,7 @@ import 'package:chaostours/model/model_trackpoint_user.dart';
 import 'package:chaostours/model/model_user.dart';
 import 'package:flutter/material.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
-import 'package:chaostours/view/app_widgets.dart';
+import 'package:chaostours/view/system/app_widgets.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/util.dart' as util;
 

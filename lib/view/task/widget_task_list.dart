@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import 'package:chaostours/view/app_base_widget.dart';
-import 'package:chaostours/view/app_widgets.dart';
+import 'package:chaostours/view/system/app_base_widget.dart';
+import 'package:chaostours/view/system/app_widgets.dart';
 import 'package:flutter/material.dart';
 
 ///

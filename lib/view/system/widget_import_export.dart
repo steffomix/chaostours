@@ -23,10 +23,11 @@ import 'package:file_manager/file_manager.dart';
 import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:chaostours/logger.dart';
-import 'package:chaostours/view/app_widgets.dart';
+import 'package:chaostours/view/system/app_widgets.dart';
 import 'package:path/path.dart';
 import 'package:chaostours/database/database.dart';
 import 'package:chaostours/util.dart' as util;
+import 'package:restart_app/restart_app.dart';
 
 class WidgetImportExport extends StatefulWidget {
   const WidgetImportExport({super.key});
@@ -241,10 +242,9 @@ class _WidgetImportExport extends State<WidgetImportExport> {
         context: context,
         isDismissible: false,
         buttons: [],
-        contents: [const Text('Shutting down Chaostours...')]);
+        contents: [const Text('Restart Chaostours...')]);
     Future.delayed(const Duration(milliseconds: 1500), () async {
-      await SystemNavigator.pop();
-      exit(0);
+      Restart.restartApp();
     });
   }
 
@@ -283,21 +283,19 @@ class _WidgetImportExport extends State<WidgetImportExport> {
       return null;
     }
 
-    String generateFullPath(String value) {
+    String generateFilename(String value) {
       bool isValid = validateFilename(value) == null;
       value = isValid ? '_${value.toLowerCase()}_' : '_';
-      String filename = '$prefix${value.isEmpty ? '_' : value}$suffix';
-      return join(path, filename);
+      return '$prefix${value.isEmpty ? '_' : value}$suffix';
     }
 
     await AppWidgets.dialog(
       context: context,
       title: const Text('Export Database'),
       contents: [
-        const Text('Please enter filename with [A-Za-z0-9_]'),
+        const Text('Enter optional filename with [A-Za-z0-9_]'),
         TextFormField(
           autovalidateMode: AutovalidateMode.always,
-          //key: _formKey,
           autofocus: true,
           controller: textFilenameController,
           onChanged: (value) {
@@ -308,7 +306,8 @@ class _WidgetImportExport extends State<WidgetImportExport> {
         ValueListenableBuilder(
           valueListenable: textInputNotifier,
           builder: (context, value, child) {
-            String fullPath = generateFullPath(value);
+            String filename = generateFilename(value);
+            String fullPath = join(path, filename);
 
             File file = File(fullPath);
             bool fileExists = file.existsSync();
@@ -321,7 +320,6 @@ class _WidgetImportExport extends State<WidgetImportExport> {
                   child: Text(
                       (maxChars - textInputNotifier.value.length).toString()),
                 ),
-                Text('Full path will be:\n$fullPath'),
                 Padding(
                     padding: const EdgeInsets.only(top: 10),
                     child: Center(
@@ -330,7 +328,7 @@ class _WidgetImportExport extends State<WidgetImportExport> {
                           ? () {
                               dialogActionLog(
                                   context,
-                                  'Export Database',
+                                  'Export to:\n$filename',
                                   DB.exportDatabase(fullPath,
                                       onSuccess: () => dialogShutdown(context),
                                       onError: () => Future.delayed(
@@ -340,7 +338,8 @@ class _WidgetImportExport extends State<WidgetImportExport> {
                           : null,
                       child:
                           Text(fileExists ? 'File already exists' : 'Export'),
-                    )))
+                    ))),
+                Text('Full path will be:\n$fullPath'),
               ],
             );
           },

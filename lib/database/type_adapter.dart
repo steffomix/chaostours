@@ -22,15 +22,8 @@ import 'package:chaostours/channel/tracking.dart';
 import 'package:chaostours/shared/shared_trackpoint_alias.dart';
 import 'package:chaostours/shared/shared_trackpoint_task.dart';
 import 'package:chaostours/shared/shared_trackpoint_user.dart';
+import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:geolocator/geolocator.dart';
-
-/* 
-import 'package:chaostours/model/model.dart';
-import 'package:chaostours/model/model_alias.dart';
-import 'package:chaostours/model/model_task.dart';
-import 'package:chaostours/model/model_trackpoint.dart';
-import 'package:chaostours/model/model_user.dart'; 
-*/
 
 class TypeAdapter {
   static final Logger logger = Logger.logger<TypeAdapter>();
@@ -123,7 +116,7 @@ class TypeAdapter {
             (e) => e.toString(),
           )
           .toList();
-  static List<SharedTrackpointAlias> desrializeSharedrackpointAliasList(
+  static List<SharedTrackpointAlias> deserializeSharedrackpointAliasList(
           List<String>? value) =>
       value == null
           ? []
@@ -137,7 +130,7 @@ class TypeAdapter {
             (e) => e.toString(),
           )
           .toList();
-  static List<SharedTrackpointUser> desrializeSharedrackpointUserList(
+  static List<SharedTrackpointUser> deserializeSharedrackpointUserList(
           List<String>? value) =>
       value == null
           ? []
@@ -151,54 +144,24 @@ class TypeAdapter {
             (e) => e.toString(),
           )
           .toList();
-  static List<SharedTrackpointTask> desrializeSharedrackpointTaskList(
+  static List<SharedTrackpointTask> deserializeSharedrackpointTaskList(
           List<String>? value) =>
       value == null
           ? []
           : value.map((e) => SharedTrackpointTask.toObject(e)).toList();
 
-/* 
-
-  // ModelTrackPoint
-  static String serializeModelTrackPoint(ModelTrackPoint value) =>
-      Model.toJson(value.toMap());
-  static ModelTrackPoint? deserializeModelTrackPoint(String? value) =>
-      value == null ? null : ModelTrackPoint.fromMap(Model.fromJson(value));
-
-  /// List ModelAlias
-  static List<String> serializeModelAliasList(List<ModelAlias> value) =>
-      value.map((e) => Model.toJson(e.toMap())).toList();
-  static List<ModelAlias>? deserializeModelAliasList(List<String>? value) =>
-      value == null
-          ? []
-          : value.map((e) => ModelAlias.fromMap(Model.fromJson(e))).toList();
-
-  /// List ModelUser
-  static List<String> serializeModelUserList(List<ModelUser> value) =>
-      value.map((e) => Model.toJson(e.toMap())).toList();
-  static List<ModelUser>? deserializeModelUserList(List<String>? value) =>
-      value == null
-          ? []
-          : value.map((e) => ModelUser.fromMap(Model.fromJson(e))).toList();
-
-  /// List ModelTask
-  static List<String> serializeModelTaskList(List<ModelTask> value) =>
-      value.map((e) => Model.toJson(e.toMap())).toList();
-  static List<ModelTask>? deserializeModelTaskList(List<String>? value) =>
-      value == null
-          ? []
-          : value.map((e) => ModelTask.fromMap(Model.fromJson(e))).toList();
-
-  /// List ModelTrackPoint
-  static List<String> serializeModelTrackPointList(
-          List<ModelTrackPoint> value) =>
-      value.map((e) => Model.toJson(e.toMap())).toList();
-  static List<ModelTrackPoint>? deserializeModelTrackPointList(
-          List<String>? value) =>
-      value == null
-          ? []
-          : value
-              .map((e) => ModelTrackPoint.fromMap(Model.fromJson(e)))
-              .toList();
- */
+  /// FlexSchemeLookup
+  static String serializeFlexScheme(FlexScheme value) => value.name;
+  static FlexScheme? deserializeFlexScheme(String? value) {
+    if (value == null) {
+      return FlexScheme.material;
+    }
+    try {
+      return FlexScheme.values.byName(value);
+    } catch (e) {
+      logger
+          .warn('FlexScheme $value not found. Fallback to FlexScheme.material');
+      return FlexScheme.material;
+    }
+  }
 }

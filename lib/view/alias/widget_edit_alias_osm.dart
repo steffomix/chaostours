@@ -33,7 +33,7 @@ import 'package:chaostours/address.dart' as addr;
 import 'package:chaostours/conf/app_user_settings.dart';
 import 'package:chaostours/screen.dart';
 import 'package:chaostours/event_manager.dart';
-import 'package:chaostours/view/app_widgets.dart';
+import 'package:chaostours/view/system/app_widgets.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/channel/data_channel.dart';
 import 'package:chaostours/conf/app_colors.dart';

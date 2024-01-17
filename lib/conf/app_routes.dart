@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import 'package:flutter/material.dart';
-import 'package:chaostours/view/boot.dart';
+import 'package:chaostours/view/system/boot.dart';
 //
 import 'package:chaostours/view/system/widget_permissions_page.dart';
 import 'package:chaostours/view/system/widget_import_export.dart';
@@ -48,9 +48,9 @@ import 'package:chaostours/view/trackpoint/widget_live_tracking.dart';
 import 'package:chaostours/view/trackpoint/widget_trackpoint_list.dart';
 import 'package:chaostours/view/trackpoint/widget_edit_trackpoint.dart';
 //
-import 'package:chaostours/view/widget_color_scheme_picker.dart';
+import 'package:chaostours/view/system/widget_color_scheme_picker.dart';
 //
-import 'package:chaostours/view/widget_manage_calendar.dart';
+import 'package:chaostours/view/calendar/widget_manage_calendar.dart';
 
 enum AppRoutes {
   // system

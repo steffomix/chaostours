@@ -20,7 +20,7 @@ import 'package:flutter/services.dart';
 ///
 import 'package:chaostours/conf/app_user_settings.dart';
 import 'package:chaostours/statistics/alias_statistics.dart';
-import 'package:chaostours/view/app_widgets.dart';
+import 'package:chaostours/view/system/app_widgets.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/address.dart';
 import 'package:chaostours/logger.dart';

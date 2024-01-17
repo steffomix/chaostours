@@ -33,12 +33,50 @@ class ModelAliasGroup implements ModelGroup {
   @override
   String description = '';
 
-  ModelAliasGroup(
-      {this.idCalendar = '',
-      this.isActive = true,
-      this.privacy = AliasPrivacy.public,
-      this.title = '',
-      this.description = ''});
+  bool calendarHtml = false;
+  bool calendarGps = false;
+  bool calendarTimeStart = false;
+  bool calendarTimeEnd = false;
+  bool calendarDuration = false;
+  bool calendarAddress = false;
+  bool calendarFullAddress = false;
+  bool calendarTrackpointNotes = false;
+  bool calendarAlias = false;
+  bool calendarAliasNearby = false;
+  bool calendarAliasNotes = false;
+  bool calendarAliasDescription = false;
+  bool calendarUsers = false;
+  bool calendarUserNotes = false;
+  bool calendarUserDescription = false;
+  bool calendarTasks = false;
+  bool calendarTaskNotes = false;
+  bool calendarTaskDescription = false;
+
+  ModelAliasGroup({
+    this.idCalendar = '',
+    this.isActive = true,
+    this.privacy = AliasPrivacy.public,
+    this.title = '',
+    this.description = '',
+    this.calendarHtml = false,
+    this.calendarGps = false,
+    this.calendarTimeStart = false,
+    this.calendarTimeEnd = false,
+    this.calendarDuration = false,
+    this.calendarAddress = false,
+    this.calendarFullAddress = false,
+    this.calendarTrackpointNotes = false,
+    this.calendarAlias = false,
+    this.calendarAliasNearby = false,
+    this.calendarAliasNotes = false,
+    this.calendarAliasDescription = false,
+    this.calendarUsers = false,
+    this.calendarUserNotes = false,
+    this.calendarUserDescription = false,
+    this.calendarTasks = false,
+    this.calendarTaskNotes = false,
+    this.calendarTaskDescription = false,
+  });
 
   Map<String, Object?> toMap() {
     return <String, Object?>{
@@ -47,17 +85,81 @@ class ModelAliasGroup implements ModelGroup {
       TableAliasGroup.isActive.column: DB.boolToInt(isActive),
       TableAliasGroup.privacy.column: privacy.level,
       TableAliasGroup.title.column: title,
-      TableAliasGroup.description.column: description
+      TableAliasGroup.description.column: description,
+      TableAliasGroup.withCalendarHtml.column: DB.boolToInt(calendarHtml),
+      TableAliasGroup.withCalendarGps.column: DB.boolToInt(calendarGps),
+      TableAliasGroup.withCalendarTimeStart.column:
+          DB.boolToInt(calendarTimeStart),
+      TableAliasGroup.withCalendarTimeEnd.column: DB.boolToInt(calendarTimeEnd),
+      TableAliasGroup.withCalendarDuration.column:
+          DB.boolToInt(calendarDuration),
+      TableAliasGroup.withCalendarAddress.column: DB.boolToInt(calendarAddress),
+      TableAliasGroup.withCalendarFullAddress.column:
+          DB.boolToInt(calendarFullAddress),
+      TableAliasGroup.withCalendarTrackpointNotes.column:
+          DB.boolToInt(calendarTrackpointNotes),
+      TableAliasGroup.withCalendarAlias.column: DB.boolToInt(calendarAlias),
+      TableAliasGroup.withCalendarAliasNearby.column:
+          DB.boolToInt(calendarAliasNearby),
+      TableAliasGroup.withCalendarAliasNotes.column:
+          DB.boolToInt(calendarAliasNotes),
+      TableAliasGroup.withCalendarAliasDescription.column:
+          DB.boolToInt(calendarAliasDescription),
+      TableAliasGroup.withCalendarUsers.column: DB.boolToInt(calendarUsers),
+      TableAliasGroup.withCalendarUserNotes.column:
+          DB.boolToInt(calendarUserNotes),
+      TableAliasGroup.withCalendarUserDescription.column:
+          DB.boolToInt(calendarUserDescription),
+      TableAliasGroup.withCalendarTasks.column: DB.boolToInt(calendarTasks),
+      TableAliasGroup.withCalendarTaskNotes.column:
+          DB.boolToInt(calendarTaskNotes),
+      TableAliasGroup.withCalendarTaskDescription.column:
+          DB.boolToInt(calendarTaskDescription),
     };
   }
 
   static ModelAliasGroup fromMap(Map<String, Object?> map) {
     var model = ModelAliasGroup(
-        idCalendar: DB.parseString(map[TableAliasGroup.idCalendar.column]),
-        isActive: DB.parseBool(map[TableAliasGroup.isActive.column]),
-        privacy: AliasPrivacy.byId(map[TableAliasGroup.privacy.column]),
-        title: DB.parseString(map[TableAliasGroup.title.column]),
-        description: DB.parseString(map[TableAliasGroup.description.column]));
+      idCalendar: DB.parseString(map[TableAliasGroup.idCalendar.column]),
+      isActive: DB.parseBool(map[TableAliasGroup.isActive.column]),
+      privacy: AliasPrivacy.byId(map[TableAliasGroup.privacy.column]),
+      title: DB.parseString(map[TableAliasGroup.title.column]),
+      description: DB.parseString(map[TableAliasGroup.description.column]),
+      calendarHtml: DB.parseBool(map[TableAliasGroup.withCalendarHtml.column]),
+      calendarGps: DB.parseBool(map[TableAliasGroup.withCalendarGps.column]),
+      calendarTimeStart:
+          DB.parseBool(map[TableAliasGroup.withCalendarTimeStart.column]),
+      calendarTimeEnd:
+          DB.parseBool(map[TableAliasGroup.withCalendarTimeEnd.column]),
+      calendarDuration:
+          DB.parseBool(map[TableAliasGroup.withCalendarDuration.column]),
+      calendarAddress:
+          DB.parseBool(map[TableAliasGroup.withCalendarAddress.column]),
+      calendarFullAddress:
+          DB.parseBool(map[TableAliasGroup.withCalendarFullAddress.column]),
+      calendarTrackpointNotes:
+          DB.parseBool(map[TableAliasGroup.withCalendarTrackpointNotes.column]),
+      calendarAlias:
+          DB.parseBool(map[TableAliasGroup.withCalendarAlias.column]),
+      calendarAliasNearby:
+          DB.parseBool(map[TableAliasGroup.withCalendarAliasNearby.column]),
+      calendarAliasNotes:
+          DB.parseBool(map[TableAliasGroup.withCalendarAliasNotes.column]),
+      calendarAliasDescription: DB
+          .parseBool(map[TableAliasGroup.withCalendarAliasDescription.column]),
+      calendarUsers:
+          DB.parseBool(map[TableAliasGroup.withCalendarUsers.column]),
+      calendarUserNotes:
+          DB.parseBool(map[TableAliasGroup.withCalendarUserNotes.column]),
+      calendarUserDescription:
+          DB.parseBool(map[TableAliasGroup.withCalendarUserDescription.column]),
+      calendarTasks:
+          DB.parseBool(map[TableAliasGroup.withCalendarTasks.column]),
+      calendarTaskNotes:
+          DB.parseBool(map[TableAliasGroup.withCalendarTaskNotes.column]),
+      calendarTaskDescription:
+          DB.parseBool(map[TableAliasGroup.withCalendarTaskDescription.column]),
+    );
     model._id = DB.parseInt(map[TableAliasGroup.primaryKey.column]);
     return model;
   }

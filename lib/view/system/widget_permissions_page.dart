@@ -21,7 +21,7 @@ import 'package:chaostours/channel/background_channel.dart';
 import 'package:flutter/material.dart';
 //
 import 'package:chaostours/logger.dart';
-import 'package:chaostours/view/app_widgets.dart';
+import 'package:chaostours/view/system/app_widgets.dart';
 //
 
 @override

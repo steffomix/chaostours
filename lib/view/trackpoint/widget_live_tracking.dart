@@ -42,7 +42,7 @@ import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/database/cache.dart';
 import 'package:chaostours/util.dart' as util;
-import 'package:chaostours/view/app_widgets.dart';
+import 'package:chaostours/view/system/app_widgets.dart';
 
 class WidgetTrackingPage extends StatefulWidget {
   const WidgetTrackingPage({super.key});

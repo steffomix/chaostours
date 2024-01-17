@@ -22,7 +22,7 @@ import 'dart:math' as math;
 ///
 //import 'package:chaostours/logger.dart';
 import 'package:chaostours/channel/background_channel.dart';
-import 'package:chaostours/view/app_widgets.dart';
+import 'package:chaostours/view/system/app_widgets.dart';
 import 'package:chaostours/conf/app_user_settings.dart';
 import 'package:chaostours/database/cache.dart';
 import 'package:chaostours/conf/license.dart';

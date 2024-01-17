@@ -17,8 +17,8 @@ limitations under the License.
 import 'package:flutter/material.dart';
 
 ///
-import 'package:chaostours/view/app_widgets.dart';
-import 'package:chaostours/view/app_base_widget.dart';
+import 'package:chaostours/view/system/app_widgets.dart';
+import 'package:chaostours/view/system/app_base_widget.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/model/model_alias_group.dart';

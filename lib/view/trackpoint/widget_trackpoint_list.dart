@@ -14,17 +14,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import 'package:chaostours/gps.dart';
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 
 ///
 import 'package:chaostours/logger.dart';
+import 'package:chaostours/gps.dart';
 import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/model/model_trackpoint_asset.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
-import 'package:chaostours/view/app_base_widget.dart';
-import 'package:chaostours/view/app_widgets.dart';
+import 'package:chaostours/view/system/app_base_widget.dart';
+import 'package:chaostours/view/system/app_widgets.dart';
 import 'package:chaostours/util.dart' as util;
 
 enum TrackpointListArguments {
@@ -282,18 +282,13 @@ class _WidgetTrackPointsState extends BaseWidgetState<WidgetTrackPoints> {
   Widget renderId(ModelTrackPoint model) {
     return Center(
         child: FilledButton(
-            onPressed: () async {
-              await Navigator.pushNamed(context, AppRoutes.editTrackPoint.route,
-                  arguments: model.id);
-              render();
-            },
-            child: ListTile(
-              leading: const Icon(
-                Icons.edit,
-              ),
-              title: Text('#${model.id}',
-                  style: Theme.of(context).textTheme.headlineMedium),
-            )));
+      child: Text('#${model.id}: ${util.formatDate(model.timeStart)}'),
+      onPressed: () async {
+        await Navigator.pushNamed(context, AppRoutes.editTrackPoint.route,
+            arguments: model.id);
+        render();
+      },
+    ));
   }
 
   Widget renderDateTime(ModelTrackPoint model) {

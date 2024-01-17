@@ -19,9 +19,9 @@ import 'package:flutter/material.dart';
 ///
 import 'package:chaostours/database/database.dart';
 // import 'package:chaostours/logger.dart';
-import 'package:chaostours/view/app_widgets.dart';
+import 'package:chaostours/view/system/app_widgets.dart';
 import 'package:chaostours/model/model.dart';
-import 'package:chaostours/view/app_base_widget.dart';
+import 'package:chaostours/view/system/app_base_widget.dart';
 
 typedef ModelRow = Map<String, Object?>;
 

@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
 import 'dart:async';
 import 'dart:io' as io;
 import 'dart:io';
@@ -794,6 +795,14 @@ enum TableAliasGroup {
   withCalendarTasks('calendar_tasks'),
   withCalendarTaskNotes('calendar_task_notes'),
   withCalendarTaskDescription('calendar_task_description');
+
+  static List<TableAliasGroup> calendarFields() {
+    return TableAliasGroup.values
+        .where(
+          (e) => e.name.contains('Calendar'),
+        )
+        .toList();
+  }
 
   static const String table = 'alias_group';
 
