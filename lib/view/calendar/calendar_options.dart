@@ -48,7 +48,8 @@ class _WidgetCalendarOptionsState extends State<WidgetCalendarOptions> {
           model.calendarTrackpointNotes,
       TableAliasGroup.withCalendarAlias: () => model.calendarAlias,
       TableAliasGroup.withCalendarAliasNearby: () => model.calendarAliasNearby,
-      TableAliasGroup.withCalendarAliasNotes: () => model.calendarAliasNotes,
+      TableAliasGroup.withCalendarNearbyAliasDescription: () =>
+          model.calendarNearbyAliasDescription,
       TableAliasGroup.withCalendarAliasDescription: () =>
           model.calendarAliasDescription,
       TableAliasGroup.withCalendarUsers: () => model.calendarUsers,
@@ -216,8 +217,8 @@ class _WidgetCalendarOptionsState extends State<WidgetCalendarOptions> {
       case TableAliasGroup.withCalendarAliasNearby:
         _model?.calendarAliasNearby = value;
         break;
-      case TableAliasGroup.withCalendarAliasNotes:
-        _model?.calendarAliasNotes = value;
+      case TableAliasGroup.withCalendarNearbyAliasDescription:
+        _model?.calendarNearbyAliasDescription = value;
         break;
       case TableAliasGroup.withCalendarAliasDescription:
         _model?.calendarAliasDescription = value;

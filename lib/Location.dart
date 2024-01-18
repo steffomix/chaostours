@@ -14,7 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/model/model_alias_group.dart';
+import 'package:device_calendar/device_calendar.dart';
+
+import 'package:flutter_native_timezone/flutter_native_timezone.dart';
+import 'package:timezone/timezone.dart';
 import 'dart:math' as math;
+
+///
 import 'package:chaostours/channel/notification_channel.dart';
 import 'package:chaostours/database/database.dart';
 import 'package:chaostours/model/model_task.dart';
@@ -22,8 +29,6 @@ import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/shared/shared_trackpoint_alias.dart';
 import 'package:chaostours/shared/shared_trackpoint_task.dart';
 import 'package:chaostours/shared/shared_trackpoint_user.dart';
-import 'package:device_calendar/device_calendar.dart';
-
 import 'package:chaostours/address.dart';
 import 'package:chaostours/calendar.dart';
 import 'package:chaostours/channel/data_channel.dart';
@@ -229,6 +234,165 @@ class Location {
     }
   }
 
+  Future<List<Event>> composeCalendarEvents() async {
+    if (aliasModels.isEmpty) {
+      return [];
+    }
+
+    // grab recources
+    final calendarIds = await mergeCalendarEvents();
+    final trackpoint = await createTrackPoint();
+
+    // grab alias models
+    final mainAlias = aliasModels.first;
+    final nearbyAlias = <ModelAlias>[];
+    if (aliasModels.length > 1) {
+      nearbyAlias.addAll(aliasModels.getRange(1, aliasModels.length));
+    }
+
+    final tzLocation =
+        getLocation(await FlutterNativeTimezone.getLocalTimezone());
+    final timeStart = TZDateTime.from(trackpoint.timeStart, tzLocation);
+    final timeEnd = TZDateTime.from(trackpoint.timeEnd, tzLocation);
+
+    List<Event> events = [];
+    for (var calendar in calendarIds) {
+      final ModelAliasGroup? group =
+          await ModelAliasGroup.byId(calendar.aliasGroupId);
+      if (group == null) {
+        continue;
+      }
+
+      if (!group.ensuredPrivacyCompliance) {
+        continue;
+      }
+
+      String eventTitle =
+          group.calendarAlias ? mainAlias.title : '#${mainAlias.id}';
+
+      List<String> bodyParts = [];
+
+      // time start
+      if (group.calendarTimeStart) {
+        bodyParts
+            .add('[START]: ${util.formatDateTime(trackpoint.timeStart)}\n');
+      }
+      // time end
+      if (group.calendarTimeEnd) {
+        bodyParts.add('[END]: ${util.formatDateTime(trackpoint.timeEnd)}\n');
+      }
+      // duration
+      if (group.calendarDuration) {
+        bodyParts
+            .add('[DURATION]: ${util.formatDuration(trackpoint.duration)}\n\n');
+      }
+      // GPS
+      if (group.calendarGps) {
+        bodyParts.add('[GPS]: ');
+        if (group.calendarHtml) {
+          bodyParts.add(
+              '<a href="https://maps.google.com?q=${trackpoint.gps.lat},${trackpoint.gps.lon}">[GPS]: maps.google.com?q=${trackpoint.gps.lat},${trackpoint.gps.lon}</a>\n\n');
+        } else {
+          bodyParts.add('${trackpoint.gps.lat},${trackpoint.gps.lon}\n\n');
+        }
+      }
+      // trackpoint notes
+      if (group.calendarTrackpointNotes) {
+        bodyParts.add('[NOTES]:\n${trackpoint.notes.trim()}\n\n');
+      }
+
+      // main alias
+      if (group.calendarAlias || group.calendarAliasDescription) {
+        bodyParts.add('[MAIN LOCATION #${mainAlias.id}]:\n');
+        if (group.calendarAlias) {
+          bodyParts.add(
+              '${GPS.distance(trackpoint.gps, mainAlias.gps).round()}m: ${mainAlias.title.trim()}${group.calendarAliasDescription ? '\n' : '\n\n'}');
+        }
+        if (group.calendarAliasDescription) {
+          bodyParts.add('${mainAlias.description.trim()}\n\n');
+        }
+      }
+
+      if (group.calendarAliasNearby || group.calendarNearbyAliasDescription) {
+        for (var alias in nearbyAlias) {
+          bodyParts.add('[NEARBY LOCATION #${alias.id}]:\n');
+          if (group.calendarAlias) {
+            bodyParts.add(
+                '${GPS.distance(trackpoint.gps, alias.gps).round()}m: ${alias.title.trim()}${group.calendarNearbyAliasDescription ? '\n' : '\n\n'}');
+          }
+          if (group.calendarNearbyAliasDescription) {
+            bodyParts.add('${alias.description.trim()}\n\n');
+          }
+        }
+      }
+
+      if (group.calendarAddress) {
+        bodyParts.add('[ADDRESS]: ${trackpoint.address.trim()}\n\n');
+      }
+
+      if (group.calendarFullAddress) {
+        bodyParts.add('[FULL ADDRESS]:\n${trackpoint.fullAddress.trim()}\n\n');
+      }
+
+      // tasks
+      if (group.calendarTasks ||
+          group.calendarTaskDescription ||
+          group.calendarTaskNotes) {
+        for (var task in trackpoint.taskModels) {
+          bodyParts.add('[TASK #${task.id}]:\n');
+          if (group.calendarTasks) {
+            bodyParts.add(
+                '${task.title.trim()}${group.calendarTaskDescription || group.calendarTaskNotes ? '\n' : '\n\n'}');
+          }
+          if (group.calendarTaskDescription) {
+            bodyParts.add(
+                '${task.description.trim()}${group.calendarTaskNotes ? '\n' : '\n\n'}');
+          }
+          if (group.calendarTaskNotes) {
+            bodyParts.add('${task.notes.trim()}\n\n');
+          }
+        }
+      }
+
+      // users
+      if (group.calendarUsers ||
+          group.calendarUserDescription ||
+          group.calendarUserNotes) {
+        for (var user in trackpoint.userModels) {
+          bodyParts.add('[USER #${user.id}]:\n');
+          if (group.calendarUsers) {
+            bodyParts.add(
+                '${user.title.trim()}${group.calendarUserDescription || group.calendarUserNotes ? '\n' : '\n\n'}');
+          }
+          if (group.calendarUserDescription) {
+            bodyParts.add(
+                '${user.description.trim()}${group.calendarUserNotes ? '\n' : '\n\n'}');
+          }
+          if (group.calendarUserNotes) {
+            bodyParts.add('${user.notes.trim()}\n\n');
+          }
+        }
+      }
+
+      bodyParts.add('This message was generated by Chaos Tours.');
+
+      final body = bodyParts.join('');
+
+      var event = Event(calendar.calendarId,
+          title: eventTitle,
+          start: timeStart,
+          end: timeEnd,
+          location: group.calendarGps
+              ? '${trackpoint.gps.lat},${trackpoint.gps.lon}'
+              : null,
+          description: body);
+
+      events.add(event);
+    }
+
+    return events;
+  }
+
   Future<void> _publishStanding() async {
     if (await Cache.databaseImportedCalendarDisabled.load<bool>(false)) {
       return;
@@ -247,22 +411,24 @@ class Location {
       return;
     }
 
-    List<CalendarEventId> calendarEvents = await mergeCalendarEvents();
+    final calendarEvents = await mergeCalendarEvents();
 
-    ModelTrackPoint tp = await createTrackPoint();
-    GPS lastStatusChange =
+    final tp = await createTrackPoint();
+    final lastStatusChange =
         await Cache.backgroundGpsLastStatusChange.load<GPS>(tp.gps);
 
-    /// get dates
-    final berlin = getLocation(await appCalendar.getTimeZone());
-    var start = TZDateTime.from(tp.timeStart, berlin);
-    var end = start.add(const Duration(minutes: 2));
-
-    var title =
+    final start = TZDateTime.from(tp.timeStart,
+        getLocation(await FlutterNativeTimezone.getLocalTimezone()));
+    const cache = Cache.appSettingTimeRangeTreshold;
+    final end = start.add(Duration(
+        seconds: (await cache
+                .load<Duration>(AppUserSetting(cache).defaultValue as Duration))
+            .inSeconds));
+    final title =
         'Arrived ${tp.aliasModels.isNotEmpty ? tp.aliasModels.first.title : tp.address} - ${start.hour}.${start.minute}';
-    var location =
+    final location =
         'maps.google.com?q=${lastStatusChange.lat},${lastStatusChange.lon}';
-    var description =
+    final description =
         '${tp.aliasModels.isNotEmpty ? tp.aliasModels.first.title : tp.address}\n'
         '${start.day}.${start.month}.${start.year}\n'
         'at ${start.hour}.${start.minute} - unknown)\n\n'
@@ -278,7 +444,7 @@ class Location {
         logger.warn('startCalendarEvent: no calendar #$calId found');
         continue;
       }
-      var id = await appCalendar.inserOrUpdate(Event(calendar.id,
+      final id = await appCalendar.inserOrUpdate(Event(calendar.id,
           title: title,
           start: start,
           end: end,
@@ -361,10 +527,10 @@ class Location {
     GPS lastStatusChange =
         await Cache.backgroundGpsLastStatusChange.load<GPS>(tp.gps);
 
-    /// get dates
-    final berlin = getLocation(await appCalendar.getTimeZone());
-    var start = TZDateTime.from(tp.timeStart, berlin);
-    var end = TZDateTime.from(tp.timeEnd, berlin);
+    final tzLocation =
+        getLocation(await FlutterNativeTimezone.getLocalTimezone());
+    var start = TZDateTime.from(tp.timeStart, tzLocation);
+    var end = TZDateTime.from(tp.timeEnd, tzLocation);
 
     var title =
         '${tp.aliasModels.isNotEmpty ? tp.aliasModels.first.title : tp.address}; ${util.formatDuration(tp.duration)}';

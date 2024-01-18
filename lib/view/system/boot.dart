@@ -302,7 +302,7 @@ class _WelcomeState extends State<Welcome> {
               const Text('Enable GPS-to-Address service?\n\n'
                   'This future sends your GPS location over an end-to-end encrypted connection to OpenStreetMap.com and receives an Address you can use.'),
               const Text(
-                  'The service is cost free with a maximum of one request per second.'),
+                  'The cost free service is limited to a maximum of one request per second.'),
               FilledButton(
                 child: const Text(
                     'For more Informations please visit OpenStreetMap.com'),

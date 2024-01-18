@@ -68,7 +68,8 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
           model.calendarTrackpointNotes,
       TableAliasGroup.withCalendarAlias: () => model.calendarAlias,
       TableAliasGroup.withCalendarAliasNearby: () => model.calendarAliasNearby,
-      TableAliasGroup.withCalendarAliasNotes: () => model.calendarAliasNotes,
+      TableAliasGroup.withCalendarNearbyAliasDescription: () =>
+          model.calendarNearbyAliasDescription,
       TableAliasGroup.withCalendarAliasDescription: () =>
           model.calendarAliasDescription,
       TableAliasGroup.withCalendarUsers: () => model.calendarUsers,
@@ -342,7 +343,7 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
           value: fieldsMap[field]?.call() ?? false,
           onChanged: (bool? state) {
             state = (state ?? false);
-            if (state == true && !_privacyRespected) {
+            if (state == true && !(_model?.ensuredPrivacyCompliance ?? false)) {
               AppWidgets.dialog(
                   context: context,
                   title: const Text('Privacy Compliance Warning'),
@@ -353,9 +354,12 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
                         'Please review the privacy advisory and confirm your understanding by checking the compliance checkbox provided. This is a critical step to guarantee that your usage aligns with privacy considerations.'),
                     ListTile(
                         leading: AppWidgets.checkbox(
-                            value: _privacyRespected,
-                            onChanged: (bool? state) =>
-                                _privacyRespected = state ?? false),
+                            value: _model?.ensuredPrivacyCompliance ?? false,
+                            onChanged: (bool? state) {
+                              _model?.ensuredPrivacyCompliance =
+                                  state ??= false;
+                              _model?.update();
+                            }),
                         title: const Text(
                             'I have read, understood, and ensured privacy compliance.')),
                     const Text(
@@ -374,8 +378,8 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
               updateField(field, state);
             }
           }),
-      title: Text(field.name),
-      subtitle: Text(field.toString()),
+      title: Text(title),
+      subtitle: Text(description),
     );
   }
 
@@ -389,82 +393,129 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
             Center(
                 child: Text('Calendar Options',
                     style: Theme.of(context).textTheme.bodyLarge)),
-            ...TableAliasGroup.calendarFields().map(
-              (e) => renderCalendarOption(field: e, title: '', description: ''),
-            )
+            const Text(
+                'All values are displayed in the calendar event body in same order as listed below.'),
+            const Text(
+                'The alias title will be set to the event title - if activated. Otherwise only the alias #id will be used.'),
+
+            ///
+            /// withCalendarTimeStart
+            renderCalendarOption(
+                field: TableAliasGroup.withCalendarTimeStart,
+                title: 'Start Date and Time',
+                description: ''),
+
+            /// withCalendarTimeEnd
+            renderCalendarOption(
+                field: TableAliasGroup.withCalendarTimeEnd,
+                title: 'End Date and Time',
+                description: ''),
+
+            /// withCalendarDuration
+            renderCalendarOption(
+                field: TableAliasGroup.withCalendarDuration,
+                title: 'Duration',
+                description: 'The duration of the event.'),
+
+            ///
+            /// withCalendarGps
+            renderCalendarOption(
+                field: TableAliasGroup.withCalendarGps,
+                title: 'GPS data',
+                description: 'Latitude and longitude of the location.'),
+
+            /// withCalendarHtml
+            renderCalendarOption(
+                field: TableAliasGroup.withCalendarHtml,
+                title: 'Use Html',
+                description:
+                    'Wraps gps data into a clickable link to maps.google.com.'),
+
+            ///
+            /// withCalendarTrackpointNotes
+            renderCalendarOption(
+                field: TableAliasGroup.withCalendarTrackpointNotes,
+                title: 'Trackpoint notes',
+                description: 'General trackpoint notes.'),
+
+            ///
+            /// withCalendarAlias
+            renderCalendarOption(
+                field: TableAliasGroup.withCalendarAlias,
+                title: 'Main location alias or title',
+                description: 'This is also displayed in the event title.\n'
+                    'If disabled, only the #id is displayed.'),
+
+            /// withCalendarAliasDescription
+            renderCalendarOption(
+                field: TableAliasGroup.withCalendarAliasDescription,
+                title: 'Alias description',
+                description: 'Description of the main location alias.'),
+
+            /// withCalendarAliasNearby
+            renderCalendarOption(
+                field: TableAliasGroup.withCalendarAliasNearby,
+                title: 'Nearby locations',
+                description: 'All overlapping location aliases.'),
+
+            /// withCalendarAliasNotes
+            renderCalendarOption(
+                field: TableAliasGroup.withCalendarNearbyAliasDescription,
+                title: 'Nearby alias description',
+                description:
+                    'The description of every overlapping location alias.'),
+
+            /// withCalendarAddress
+            renderCalendarOption(
+                field: TableAliasGroup.withCalendarAddress,
+                title: 'Address',
+                description: 'A Comma separated address.'),
+
+            /// withCalendarFullAddress
+            renderCalendarOption(
+                field: TableAliasGroup.withCalendarFullAddress,
+                title: 'Address details',
+                description:
+                    'Line separated address details with copyright informations from openstreetmap.org at the end.'),
+
+            ///
+            /// withCalendarTasks
+            renderCalendarOption(
+                field: TableAliasGroup.withCalendarTasks,
+                title: 'Task',
+                description: 'The task name or title'),
+
+            /// withCalendarTaskDescription
+            renderCalendarOption(
+                field: TableAliasGroup.withCalendarTaskDescription,
+                title: 'Task description',
+                description: 'The description of the task'),
+
+            /// withCalendarTaskNotes
+            renderCalendarOption(
+                field: TableAliasGroup.withCalendarTaskNotes,
+                title: 'Task trackpoint notes',
+                description: 'Trackpoint notes for this task.'),
+
+            ///
+            /// withCalendarUsers
+            renderCalendarOption(
+                field: TableAliasGroup.withCalendarUsers,
+                title: 'User',
+                description: 'The user name or title.'),
+
+            /// withCalendarUserDescription
+            renderCalendarOption(
+                field: TableAliasGroup.withCalendarUserDescription,
+                title: 'User description.',
+                description: 'The description of the user.'),
+
+            /// withCalendarUserNotes
+            renderCalendarOption(
+                field: TableAliasGroup.withCalendarUserNotes,
+                title: 'User trackpoint notes',
+                description: 'Trackpoint notes for this user.'),
           ];
-
-    ///
-    ///
-    /// withCalendarHtml
-
-    ///
-    ///
-    /// withCalendarGps
-
-    ///
-    ///
-    /// withCalendarTimeStart
-
-    ///
-    ///
-    /// withCalendarTimeEnd
-
-    ///
-    ///
-    /// withCalendarDuration
-
-    ///
-    ///
-    /// withCalendarAddress
-
-    ///
-    ///
-    /// withCalendarFullAddress
-
-    ///
-    ///
-    /// withCalendarTrackpointNotes
-
-    ///
-    ///
-    /// withCalendarAlias
-
-    ///
-    ///
-    /// withCalendarAliasNearby
-
-    ///
-    ///
-    /// withCalendarAliasNotes
-
-    ///
-    ///
-    /// withCalendarAliasDescription
-
-    ///
-    ///
-    /// withCalendarUsers
-
-    ///
-    ///
-    /// withCalendarUserNotes
-
-    ///
-    ///
-    /// withCalendarUserDescription
-
-    ///
-    ///
-    /// withCalendarTasks
-
-    ///
-    ///
-    /// withCalendarTaskNotes
-
-    ///
-    ///
-    /// withCalendarTaskDescription
   }
 
   Future<void> updateField(TableAliasGroup field, bool value) async {
@@ -499,8 +550,8 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
       case TableAliasGroup.withCalendarAliasNearby:
         _model?.calendarAliasNearby = value;
         break;
-      case TableAliasGroup.withCalendarAliasNotes:
-        _model?.calendarAliasNotes = value;
+      case TableAliasGroup.withCalendarNearbyAliasDescription:
+        _model?.calendarNearbyAliasDescription = value;
         break;
       case TableAliasGroup.withCalendarAliasDescription:
         _model?.calendarAliasDescription = value;
@@ -529,8 +580,6 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
     }
     await _model?.update();
   }
-
-  bool _privacyRespected = false;
 
   List<Widget> privacyWarning() {
     return [
@@ -606,8 +655,11 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
           'By checking this box, I confirm that I have taken all necessary steps to use this app responsibly and in compliance with privacy considerations.'),
       ListTile(
           leading: AppWidgets.checkbox(
-              value: _privacyRespected,
-              onChanged: (bool? state) => _privacyRespected = state ?? false),
+              value: _model?.ensuredPrivacyCompliance ?? false,
+              onChanged: (bool? state) {
+                _model?.ensuredPrivacyCompliance = state ??= false;
+                _model?.update();
+              }),
           title: const Text(
               'I have read, understood, and ensured privacy compliance.'))
     ];

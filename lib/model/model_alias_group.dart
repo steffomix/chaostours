@@ -35,6 +35,8 @@ class ModelAliasGroup implements ModelGroup {
   @override
   String description = '';
 
+  bool ensuredPrivacyCompliance = false;
+
   bool calendarHtml = false;
   bool calendarGps = false;
   bool calendarTimeStart = false;
@@ -45,7 +47,7 @@ class ModelAliasGroup implements ModelGroup {
   bool calendarTrackpointNotes = false;
   bool calendarAlias = false;
   bool calendarAliasNearby = false;
-  bool calendarAliasNotes = false;
+  bool calendarNearbyAliasDescription = false;
   bool calendarAliasDescription = false;
   bool calendarUsers = false;
   bool calendarUserNotes = false;
@@ -60,6 +62,7 @@ class ModelAliasGroup implements ModelGroup {
     this.privacy = AliasPrivacy.public,
     this.title = '',
     this.description = '',
+    this.ensuredPrivacyCompliance = false,
     this.calendarHtml = false,
     this.calendarGps = false,
     this.calendarTimeStart = false,
@@ -70,7 +73,7 @@ class ModelAliasGroup implements ModelGroup {
     this.calendarTrackpointNotes = false,
     this.calendarAlias = false,
     this.calendarAliasNearby = false,
-    this.calendarAliasNotes = false,
+    this.calendarNearbyAliasDescription = false,
     this.calendarAliasDescription = false,
     this.calendarUsers = false,
     this.calendarUserNotes = false,
@@ -88,6 +91,8 @@ class ModelAliasGroup implements ModelGroup {
       TableAliasGroup.privacy.column: privacy.level,
       TableAliasGroup.title.column: title,
       TableAliasGroup.description.column: description,
+      TableAliasGroup.ensuredPrivacyCompliance.column:
+          DB.boolToInt(ensuredPrivacyCompliance),
       TableAliasGroup.withCalendarHtml.column: DB.boolToInt(calendarHtml),
       TableAliasGroup.withCalendarGps.column: DB.boolToInt(calendarGps),
       TableAliasGroup.withCalendarTimeStart.column:
@@ -103,8 +108,8 @@ class ModelAliasGroup implements ModelGroup {
       TableAliasGroup.withCalendarAlias.column: DB.boolToInt(calendarAlias),
       TableAliasGroup.withCalendarAliasNearby.column:
           DB.boolToInt(calendarAliasNearby),
-      TableAliasGroup.withCalendarAliasNotes.column:
-          DB.boolToInt(calendarAliasNotes),
+      TableAliasGroup.withCalendarNearbyAliasDescription.column:
+          DB.boolToInt(calendarNearbyAliasDescription),
       TableAliasGroup.withCalendarAliasDescription.column:
           DB.boolToInt(calendarAliasDescription),
       TableAliasGroup.withCalendarUsers.column: DB.boolToInt(calendarUsers),
@@ -127,6 +132,8 @@ class ModelAliasGroup implements ModelGroup {
       privacy: AliasPrivacy.byId(map[TableAliasGroup.privacy.column]),
       title: DB.parseString(map[TableAliasGroup.title.column]),
       description: DB.parseString(map[TableAliasGroup.description.column]),
+      ensuredPrivacyCompliance:
+          DB.parseBool(map[TableAliasGroup.ensuredPrivacyCompliance.column]),
       calendarHtml: DB.parseBool(map[TableAliasGroup.withCalendarHtml.column]),
       calendarGps: DB.parseBool(map[TableAliasGroup.withCalendarGps.column]),
       calendarTimeStart:
@@ -145,8 +152,8 @@ class ModelAliasGroup implements ModelGroup {
           DB.parseBool(map[TableAliasGroup.withCalendarAlias.column]),
       calendarAliasNearby:
           DB.parseBool(map[TableAliasGroup.withCalendarAliasNearby.column]),
-      calendarAliasNotes:
-          DB.parseBool(map[TableAliasGroup.withCalendarAliasNotes.column]),
+      calendarNearbyAliasDescription: DB.parseBool(
+          map[TableAliasGroup.withCalendarNearbyAliasDescription.column]),
       calendarAliasDescription: DB
           .parseBool(map[TableAliasGroup.withCalendarAliasDescription.column]),
       calendarUsers:

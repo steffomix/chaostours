@@ -14,18 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import 'package:chaostours/database/cache.dart';
-import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/material.dart';
 import 'package:chaostours/view/system/app_widgets.dart';
 import 'package:google_fonts/google_fonts.dart';
-//import 'package:chaostours/runtime_data.dart';
 
 class ChaosTours extends StatelessWidget {
   static start() async {
     WidgetsFlutterBinding.ensureInitialized();
-
-    await Cache.appSettingsColorScheme.load<FlexScheme>(FlexScheme.material);
 
     GoogleFonts.config.allowRuntimeFetching = false;
     runApp(const ChaosTours());

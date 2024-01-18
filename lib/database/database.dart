@@ -783,24 +783,34 @@ enum TableAliasGroup {
   privacy('sort'),
   title('title'),
   description('description'),
+
+  ensuredPrivacyCompliance('ensured_privacy_compliance'),
+
   withCalendarHtml('calendar_html'),
-  withCalendarGps('calendar_gps'),
+
   withCalendarTimeStart('calendar_time_start'),
   withCalendarTimeEnd('calendar_time_end'),
   withCalendarDuration('calendar_duration'),
-  withCalendarAddress('calendar_address'),
-  withCalendarFullAddress('calendar_full_address'),
-  withCalendarTrackpointNotes('calendar_trackpoint_notes'),
+
   withCalendarAlias('calendar_alias'),
   withCalendarAliasNearby('calendar_alias_nearby'),
-  withCalendarAliasNotes('calendar_alias_notes'),
   withCalendarAliasDescription('calendar_alias_description'),
+  withCalendarNearbyAliasDescription('calendar_nearby_alias_description'),
+
+  withCalendarGps('calendar_gps'),
+  withCalendarAddress('calendar_address'),
+  withCalendarFullAddress('calendar_full_address'),
+
+  withCalendarTrackpointNotes('calendar_trackpoint_notes'),
+
+  withCalendarTasks('calendar_tasks'),
+  withCalendarTaskNotes('calendar_task_notes'),
+  withCalendarTaskDescription('calendar_task_description'),
+
   withCalendarUsers('calendar_users'),
   withCalendarUserNotes('calendar_user_notes'),
   withCalendarUserDescription('calendar_user_description'),
-  withCalendarTasks('calendar_tasks'),
-  withCalendarTaskNotes('calendar_task_notes'),
-  withCalendarTaskDescription('calendar_task_description');
+  ;
 
   static List<TableAliasGroup> calendarFields() {
     return TableAliasGroup.values
@@ -829,24 +839,34 @@ enum TableAliasGroup {
 	${privacy.column} INTEGER,
 	${title.column} TEXT,
 	${description.column} TEXT,
+  
+  ${ensuredPrivacyCompliance.column} INTEGER,
+
   ${withCalendarHtml.column} INTEGER,
-  ${withCalendarGps.column} INTEGER,
+
   ${withCalendarTimeStart.column}	INTEGER,
   ${withCalendarTimeEnd.column}	INTEGER,
   ${withCalendarDuration.column} INTEGER,
-  ${withCalendarAddress.column}	INTEGER,
-  ${withCalendarFullAddress.column}	INTEGER,
-  ${withCalendarTrackpointNotes.column}	INTEGER,
+
   ${withCalendarAlias.column}	INTEGER,
   ${withCalendarAliasNearby.column}	INTEGER,
-  ${withCalendarAliasNotes.column} INTEGER,
   ${withCalendarAliasDescription.column} INTEGER,
-  ${withCalendarUsers.column}	INTEGER,
-  ${withCalendarUserNotes.column}	INTEGER,
-  ${withCalendarUserDescription.column}	INTEGER,
+  ${withCalendarNearbyAliasDescription.column} INTEGER,
+
+  ${withCalendarGps.column} INTEGER,
+  ${withCalendarAddress.column}	INTEGER,
+  ${withCalendarFullAddress.column}	INTEGER,
+
+  ${withCalendarTrackpointNotes.column}	INTEGER,
+
   ${withCalendarTasks.column}	INTEGER,
   ${withCalendarTaskNotes.column}	INTEGER,
   ${withCalendarTaskDescription.column}	INTEGER,
+  
+  ${withCalendarUsers.column}	INTEGER,
+  ${withCalendarUserNotes.column}	INTEGER,
+  ${withCalendarUserDescription.column}	INTEGER,
+
 	PRIMARY KEY(${primaryKey.column} AUTOINCREMENT))''';
 
   @override
