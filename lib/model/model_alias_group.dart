@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/calendar.dart';
+import 'package:chaostours/database/cache.dart';
 import 'package:chaostours/database/database.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/model/model_alias.dart';
@@ -340,6 +342,28 @@ ORDER BY ${TableAliasGroup.primaryKey}
           (e) => fromMap(e),
         )
         .toList();
+  }
+
+  /// clear calendar ids after database import
+  static Future<void> deleteAllcalendarSettings() async {
+    await DB.execute(
+      (txn) async {
+        await txn.update(
+            TableTrackPointCalendar.table,
+            {
+              TableTrackPointCalendar.idCalendar.column: '',
+              TableTrackPointCalendar.idEvent.column: ''
+            },
+            where: '1');
+
+        var fields = <String, Object?>{};
+        for (var column in TableAliasGroup.calendarFields()) {
+          fields[column.column] = '';
+        }
+        await txn.update(TableAliasGroup.table, fields, where: '1');
+      },
+    );
+    await Cache.backgroundCalendarLastEventIds.save<List<CalendarEventId>>([]);
   }
 
   ModelAliasGroup clone() {

@@ -86,6 +86,14 @@ class StaticCache {
 enum Cache {
   cacheInitialized(CacheModulId.sharedPreferences, bool, ExpiredValue.never),
 
+  /// Used in app boot.
+  /// Set to true after Database import.
+  /// Checks if the user has imported a database.
+  /// The value true will ask the user to delete must likely not matching calendar ids.
+  /// Set to false after prompting user.
+  databaseImportedCalendarDisabled(
+      CacheModulId.sharedPreferences, bool, ExpiredValue.immediately),
+
   /// trigger off == TrackingStatus.none
   /// triggered by user, set to none in background
   trackingStatusTriggered(
@@ -105,11 +113,12 @@ enum Cache {
 
   backgroundSharedAliasList(CacheModulId.sharedPreferences,
       List<SharedTrackpointAlias>, ExpiredValue.immediately),
+
+  /// trackpoint user inputs
   backgroundSharedUserList(CacheModulId.sharedPreferences,
       List<SharedTrackpointUser>, ExpiredValue.immediately),
   backgroundSharedTaskList(CacheModulId.sharedPreferences,
       List<SharedTrackpointTask>, ExpiredValue.immediately),
-
   backgroundTrackPointNotes(
       CacheModulId.sharedPreferences, String, ExpiredValue.immediately),
 
@@ -135,10 +144,6 @@ enum Cache {
       CacheModulId.sharedPreferences, String, ExpiredValue.oneSecond),
   addressFullMostRecent(
       CacheModulId.sharedPreferences, String, ExpiredValue.oneSecond),
-
-  /// address updated on status change - if activated
-  backgroundLastStandingAddress(
-      CacheModulId.sharedPreferences, String, ExpiredValue.immediately),
 
   /// eventCalendar
   backgroundCalendarLastEventIds(CacheModulId.sharedPreferences,

@@ -18,6 +18,7 @@ import 'dart:async';
 import 'dart:io' as io;
 import 'dart:io';
 import 'package:chaostours/channel/background_channel.dart';
+import 'package:chaostours/database/cache.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart';
@@ -161,12 +162,15 @@ class DB {
       yield await returnDelayed(Text('Copy Database to $target'));
       await file.copy(await DB.getDBFullPath());
 
+      /// set trigger for calendar prompt on app boot
+      await Cache.databaseImportedCalendarDisabled.save<bool>(true);
+
       yield await returnDelayed(Center(
           child: FilledButton(
               onPressed: () {
                 SystemNavigator.pop();
               },
-              child: const Text('Export finished. Shutting down App...'))));
+              child: const Text('Export finished. Restarting App...'))));
     } catch (e, stk) {
       yield await returnDelayed(Text('Import Error: $e'));
       logger.error('import db.sqlite: $e', stk);
@@ -427,6 +431,7 @@ enum TableTrackPointUser {
 
 enum TableTrackPointCalendar {
   idTrackPoint('id_trackpoint'),
+  idAliasGroup('id_alias'),
   idCalendar('id_calendar'),
   idEvent('id_event'),
   title('title'),
@@ -442,6 +447,7 @@ enum TableTrackPointCalendar {
 
   static String get schema => '''CREATE TABLE IF NOT EXISTS $table (
 	${idTrackPoint.column}	INTEGER NOT NULL,
+	${idAliasGroup.column}	INTEGER NOT NULL,
 	${idCalendar.column}	TEXT,
 	${idEvent.column}	TEXT,
 	${title.column}	TEXT,

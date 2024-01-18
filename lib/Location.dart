@@ -230,7 +230,9 @@ class Location {
   }
 
   Future<void> _publishStanding() async {
-    ModelTrackPoint tp = await createTrackPoint();
+    if (await Cache.databaseImportedCalendarDisabled.load<bool>(false)) {
+      return;
+    }
     // check privacy
     if (privacy.level > AliasPrivacy.public.level) {
       return;
@@ -245,8 +247,9 @@ class Location {
       return;
     }
 
-    List<CalendarEventId> calendarEvents = await mergedCalendarEvents();
+    List<CalendarEventId> calendarEvents = await mergeCalendarEvents();
 
+    ModelTrackPoint tp = await createTrackPoint();
     GPS lastStatusChange =
         await Cache.backgroundGpsLastStatusChange.load<GPS>(tp.gps);
 
@@ -334,6 +337,9 @@ class Location {
 
   // finish standing event
   Future<void> _publishMoving(ModelTrackPoint? tp) async {
+    if (await Cache.databaseImportedCalendarDisabled.load<bool>(false)) {
+      return;
+    }
     if (tp == null) {
       return;
     }
@@ -347,7 +353,7 @@ class Location {
       return;
     }
 
-    List<CalendarEventId> sharedCalendars = await mergedCalendarEvents();
+    List<CalendarEventId> sharedCalendars = await mergeCalendarEvents();
     if (sharedCalendars.isEmpty) {
       return;
     }
@@ -397,6 +403,7 @@ class Location {
           for (CalendarEventId calId in sharedCalendars) {
             await txn.insert(TableTrackPointCalendar.table, {
               TableTrackPointCalendar.idTrackPoint.column: tp.id,
+              TableTrackPointCalendar.idAliasGroup.column: calId.aliasGroupId,
               TableTrackPointCalendar.idCalendar.column: calId.calendarId,
               TableTrackPointCalendar.idEvent.column: calId.eventId,
               TableTrackPointCalendar.title.column: title,
@@ -412,7 +419,7 @@ class Location {
     tp.calendarEventIds.clear();
   }
 
-  Future<List<CalendarEventId>> mergedCalendarEvents() async {
+  Future<List<CalendarEventId>> mergeCalendarEvents() async {
     if (privacy.level > AliasPrivacy.public.level) {
       return [];
     }

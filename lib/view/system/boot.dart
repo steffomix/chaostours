@@ -17,6 +17,7 @@ limitations under the License.
 import 'dart:async';
 import 'dart:io';
 import 'package:chaostours/location.dart';
+import 'package:chaostours/model/model_alias_group.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/shared/shared_trackpoint_task.dart';
@@ -26,6 +27,7 @@ import 'dart:io' as io;
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/services.dart';
+import 'package:restart_app/restart_app.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 ///
@@ -146,6 +148,60 @@ class _WelcomeState extends State<Welcome> {
         return;
       }
       sinkNext(const Text('Database opened'));
+
+      if (await Cache.databaseImportedCalendarDisabled.load<bool>(false) &&
+          mounted) {
+        sinkNext(const Text(
+            'Imported Database Advisory: Privacy and Data Accuracy'));
+        await AppWidgets.dialog(
+            context: context,
+            title: const Text('Imported Database found'),
+            contents: [
+              Text('Important Notice: Verify Calendar Settings',
+                  style: Theme.of(context).textTheme.bodyLarge),
+              const Text(
+                  'It has been detected that the imported database may originate from a different device or account, possibly leading to inconsistent or incorrect calendar IDs. This could result in data being written to the wrong calendars on your current device.'),
+              const Text(
+                  'To safeguard privacy policies and ensure accurate data handling, we strongly recommend reviewing and deleting all former calendar settings from the imported database.',
+                  style: TextStyle(fontWeight: FontWeight.w900)),
+              const Text(''),
+              const Text(
+                'Would you like to proceed with deleting all calendar settings from the imported database?',
+              ),
+              FilledButton(
+                child: const Text('Delete all calendar settings'),
+                onPressed: () async {
+                  Navigator.pop(context);
+                  sinkNext(const Text('Deleting all calendar settings'));
+                  await ModelAliasGroup.deleteAllcalendarSettings();
+                  sinkNext(const Text('Turning off database import warning'));
+                  await Cache.databaseImportedCalendarDisabled.save(false);
+                },
+              ),
+              const Text(''),
+              const Text(
+                  'Feel free to review your calendar settings before making a decision. Rest assured, the app will refrain from writing any data to your calendar as long as this message is displayed during app boot.'),
+              FilledButton(
+                child: const Text('Let me review calendar settings first'),
+                onPressed: () => Navigator.pop(context),
+              ),
+              const Text(''),
+              const Text(
+                  'I have thoroughly examined all calendar settings and can confidently affirm that everything is in order. There are no concerns regarding data inconsistency or risks of violating any privacy policy, making it safe to proceed with activation.'),
+              FilledButton(
+                child: const Text('Aktivate calendar settings'),
+                onPressed: () async {
+                  Navigator.pop(context);
+                  sinkNext(const Text('Turning off database import warning'));
+                  await Cache.databaseImportedCalendarDisabled.save(false);
+                  sinkNext(const Text('Restart app...'));
+                  await Future.delayed(const Duration(seconds: 2));
+                  Restart.restartApp();
+                },
+              )
+            ],
+            buttons: []);
+      }
 
       sinkNext(const Text('Lookup GPS'));
       await Permission.location.request();

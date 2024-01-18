@@ -481,25 +481,31 @@ LIMIT ?
           (e) => e.id,
         )
         .toList();
-    List<String> qms = List.filled(ids.length, '?');
-    const idKey = 'id';
+    List<String> params = List.filled(ids.length, '?');
+    const idCalendar = 'idCalendar';
+    const idAliasGroup = 'idAliasGroup';
 
-    final q =
-        '''SELECT NULLIF(${TableAliasGroup.idCalendar}, '') as $idKey FROM ${TableAlias.table}
-    LEFT JOIN ${TableAliasAliasGroup.table} ON ${TableAlias.id} = ${TableAliasAliasGroup.idAlias}
+    final q = '''SELECT 
+        NULLIF(${TableAliasGroup.idCalendar}, '') as $idCalendar,
+        ${TableAliasGroup.id} as $idAliasGroup
+    FROM ${TableAlias.table}
+    INNER JOIN ${TableAliasAliasGroup.table} ON ${TableAlias.id} = ${TableAliasAliasGroup.idAlias}
     LEFT JOIN ${TableAliasGroup.table} ON ${TableAliasAliasGroup.idAliasGroup} = ${TableAliasGroup.id}
-    WHERE ${TableAliasGroup.idCalendar} IS NOT NULL
-    AND ${TableAlias.id} IN (${qms.join(', ')})
+    WHERE $idCalendar IS NOT NULL
+    AND ${TableAlias.id} IN (${params.join(', ')})
     GROUP BY ${TableAliasGroup.idCalendar}
 ''';
-    final idRows = await DB.execute((txn) async {
+    final rows = await DB.execute((txn) async {
       return await txn.rawQuery(q, ids);
     });
     List<CalendarEventId> result = [];
-    for (var id in idRows) {
-      String parsedId = DB.parseString(id[idKey]);
+    for (var row in rows) {
+      String parsedId = DB.parseString(row[idCalendar]);
+
       if (parsedId.isNotEmpty) {
-        result.add(CalendarEventId(calendarId: parsedId));
+        result.add(CalendarEventId(
+            aliasGroupId: DB.parseInt(row[idAliasGroup], fallback: -1),
+            calendarId: DB.parseString(row[idCalendar])));
       }
     }
     return result;
