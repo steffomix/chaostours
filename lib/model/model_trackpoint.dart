@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import 'package:chaostours/database/cache.dart';
-import 'package:chaostours/location.dart';
+import 'package:chaostours/gps_location.dart';
 import 'package:chaostours/shared/shared_trackpoint_task.dart';
 import 'package:chaostours/shared/shared_trackpoint_user.dart';
 import 'package:sqflite/sqflite.dart';
@@ -125,7 +125,7 @@ class ModelTrackPoint {
     return model;
   }
 
-  Future<ModelTrackPoint> addSharedAssets(Location location) async {
+  Future<ModelTrackPoint> addSharedAssets(GpsLocation location) async {
     aliasModels.clear();
 
     return await DB.execute((txn) async {

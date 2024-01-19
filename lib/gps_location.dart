@@ -40,8 +40,9 @@ import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/channel/tracking.dart';
 import 'package:chaostours/util.dart' as util;
 
-class Location {
-  static final Logger logger = Logger.logger<Location>();
+//
+class GpsLocation {
+  static final Logger logger = Logger.logger<GpsLocation>();
 
   final GPS gps;
   Address? address;
@@ -54,9 +55,9 @@ class Location {
   final appCalendar = AppCalendar();
   final List<ModelAlias> aliasModels;
 
-  Location._location({required this.gps, required this.aliasModels});
+  GpsLocation._location({required this.gps, required this.aliasModels});
 
-  static Future<Location> location(GPS gps) async {
+  static Future<GpsLocation> location(GPS gps) async {
     List<ModelAlias> allModels = await ModelAlias.byArea(
         gps: gps,
         gpsArea: math.max(
@@ -85,7 +86,7 @@ class Location {
           AppUserSetting(Cache.appSettingDistanceTreshold).defaultValue as int;
     }
 
-    final location = Location._location(
+    final location = GpsLocation._location(
       gps: gps,
       aliasModels: models,
     );
@@ -129,7 +130,7 @@ class Location {
         .save<List<SharedTrackpointAlias>>(newShared);
   }
 
-  Future<Location> autocreateAlias() async {
+  Future<GpsLocation> autocreateAlias() async {
     /// get address
     tracker.address = await Address(gps)
         .lookup(OsmLookupConditions.onAutoCreateAlias, saveToCache: true);

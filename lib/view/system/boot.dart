@@ -16,7 +16,7 @@ limitations under the License.
 
 import 'dart:async';
 import 'dart:io';
-import 'package:chaostours/location.dart';
+import 'package:chaostours/gps_location.dart';
 import 'package:chaostours/model/model_alias_group.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_user.dart';
@@ -500,7 +500,7 @@ class _WelcomeState extends State<Welcome> {
     await Cache.backgroundTrackPointNotes
         .save<String>('What a great location today!');
 
-    Location location = await Location.location(gps!);
+    GpsLocation location = await GpsLocation.location(gps!);
     location.address = address;
 
     await location.executeStatusMoving();

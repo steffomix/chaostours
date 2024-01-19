@@ -24,7 +24,7 @@ import 'package:chaostours/logger.dart';
 import 'package:chaostours/conf/app_user_settings.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/database/cache.dart';
-import 'package:chaostours/location.dart';
+import 'package:chaostours/gps_location.dart';
 import 'package:chaostours/database/type_adapter.dart';
 
 enum TrackingStatus {
@@ -127,7 +127,7 @@ class Tracker {
     gps = await claculateGPSPoints(gps);
 
     /// collect gps related data
-    Location gpsLocation = await Location.location(gps);
+    GpsLocation gpsLocation = await GpsLocation.location(gps);
 
     /// remember old status
     TrackingStatus newTrackingStatus = oldTrackingStatus = await Cache
@@ -207,7 +207,8 @@ class Tracker {
                   gps = GPS.average(gpsCalcPoints);
                   gps.time = DateTime.now();
                   await Cache.reload();
-                  await (await Location.location(gpsLastStatusStanding ?? gps))
+                  await (await GpsLocation.location(
+                          gpsLastStatusStanding ?? gps))
                       .autocreateAlias();
                 }
               }
@@ -234,7 +235,8 @@ class Tracker {
         // skip tracking by user
         if (!(await checkSkipTrackingByUser(stopSkip: true))) {
           logger.log('new tracking status MOVING');
-          gpsLocation = await Location.location(gpsLastStatusStanding ?? gps);
+          gpsLocation =
+              await GpsLocation.location(gpsLastStatusStanding ?? gps);
           await gpsLocation.executeStatusMoving();
           logger.log('status MOVING finished');
         }
