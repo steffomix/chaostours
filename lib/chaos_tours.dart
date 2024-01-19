@@ -16,12 +16,16 @@ limitations under the License.
 
 import 'package:flutter/material.dart';
 import 'package:chaostours/view/system/app_widgets.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class ChaosTours extends StatelessWidget {
   static start() async {
     WidgetsFlutterBinding.ensureInitialized();
-
+    await SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
     GoogleFonts.config.allowRuntimeFetching = false;
     runApp(const ChaosTours());
   }

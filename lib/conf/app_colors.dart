@@ -44,8 +44,7 @@ enum AppColors {
   smoothedGpsTrackingDot(Colors.black),
   calcGpsTrackingDot(Color.fromARGB(255, 34, 156, 255)),
   lastTrackingStatusWithAliasDot(Colors.red),
-  lastTrackingStatusWithoutAliasDot(Color.fromARGB(255, 244, 209, 54)),
-  ;
+  currentGpsDot(Color.fromARGB(255, 247, 2, 255));
 
   static Color aliasStatusColor(AliasPrivacy status) {
     switch (status) {

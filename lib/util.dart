@@ -19,8 +19,6 @@ import 'dart:io';
 import 'dart:math';
 import 'package:chaostours/conf/app_user_settings.dart';
 import 'package:chaostours/database/cache.dart';
-import 'package:flutter_native_timezone/flutter_native_timezone.dart';
-import 'package:timezone/timezone.dart';
 // import 'package:device_calendar/device_calendar.dart';
 //
 

@@ -223,6 +223,8 @@ class Location {
     if (privacy.level > AliasPrivacy.privat.level) {
       return;
     }
+
+    print('### lookup address');
     tracker.address = await Address(tracker.gpsLastStatusStanding ?? gps)
         .lookup(OsmLookupConditions.onStatusChanged, saveToCache: true);
 

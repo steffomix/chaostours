@@ -145,6 +145,10 @@ class GpsArea {
 class GPS {
   static Logger logger = Logger.logger<GPS>();
 
+  static int _id = 0;
+
+  int id = ++_id;
+
   static Duration defaultCacheDuration =
       AppUserSetting(Cache.appSettingCacheGpsTime).defaultValue as Duration;
   static ValueExpired _cachedGps =

@@ -361,7 +361,8 @@ class _WidgetOsm extends State<WidgetOsm> {
                         .defaultValue as int),
                 lastVisited: DateTime.now());
 
-            alias.insert();
+            await alias.insert();
+            aliasRenderer.renderAlias(mapController);
             Fluttertoast.showToast(msg: 'Alias created');
             if (mounted) {
               Navigator.pop(context);
@@ -546,7 +547,7 @@ class _AliasTrackingRenderer {
       centerPoint:
           GeoPoint(latitude: currentGps.lat, longitude: currentGps.lon),
       radius: 10,
-      color: const Color.fromARGB(255, 247, 2, 255),
+      color: AppColors.currentGpsDot.color,
       strokeWidth: 10,
     ));
 

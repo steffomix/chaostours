@@ -142,7 +142,6 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       ]),
       Center(child: widgetDate()),
       Center(child: widgetDuration()),
-      skipRecord(),
       //AppWidgets.divider(),
       widgetAddress(),
       ListTile(
@@ -154,7 +153,10 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         AppWidgets.divider(),
         widgetTrackpointNotes(),
         AppWidgets.divider(),
-        Text('', style: Theme.of(context).textTheme.bodySmall)
+        Text('', style: Theme.of(context).textTheme.bodySmall),
+        skipRecord(),
+        AppWidgets.divider(),
+        trackingInfos()
       ]))
     ]);
     return AppWidgets.scaffold(context,
@@ -170,6 +172,180 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
             style: TextStyle(
                 backgroundColor: AppColors.warning.color,
                 color: AppColors.black.color));
+  }
+
+  Widget trackingInfos() {
+    final distance =
+        GPS.distanceOverTrackList(dataChannel.gpsCalcPoints).round();
+    int avgDistance = 0;
+    try {
+      avgDistance = (distance / dataChannel.gpsCalcPoints.length).round();
+    } catch (e) {
+      //ignore
+    }
+    return Column(
+      children: [
+        Text(
+          'Tracking Info',
+          style: Theme.of(context).textTheme.headlineSmall,
+        ),
+        FilledButton(
+          child: const Text('Show points on map'),
+          onPressed: () => Navigator.pushNamed(context, AppRoutes.osm.route),
+        ),
+
+        /// raw gps points
+        ListTile(
+            leading: Container(
+                color: Colors.white,
+                child: Stack(children: [
+                  Icon(
+                    Icons.circle_outlined,
+                    color: AppColors.rawGpsTrackingDot.color,
+                  ),
+                  Icon(
+                    Icons.circle,
+                    color: AppColors.rawGpsTrackingDot.color.withAlpha(128),
+                  )
+                ])),
+            title: Text('${dataChannel.gpsPoints.length} Raw GPS points'),
+            subtitle: const Text(
+              'Pool of points for further calculations. Calculated by auto create alias duration divided by trackpoint interval.',
+            ),
+            trailing: IconButton(
+              icon: const Icon(Icons.copy),
+              onPressed: () {
+                String text = dataChannel.gpsPoints
+                    .map(
+                      (e) => e.toString(),
+                    )
+                    .join('\n');
+                Clipboard.setData(ClipboardData(text: text));
+              },
+            )),
+
+        /// smoothed gps points
+        ListTile(
+            leading: Container(
+                color: Colors.white,
+                child: Stack(children: [
+                  Icon(
+                    Icons.circle_outlined,
+                    color: AppColors.smoothedGpsTrackingDot.color,
+                  ),
+                  Icon(
+                    Icons.circle,
+                    color:
+                        AppColors.smoothedGpsTrackingDot.color.withAlpha(128),
+                  )
+                ])),
+            title: Text(
+                '${dataChannel.gpsSmoothPoints.length} Smoothed GPS points'),
+            subtitle: const Text(
+              'Raw GPS averaged by smooth count',
+            ),
+            trailing: IconButton(
+              icon: const Icon(Icons.copy),
+              onPressed: () {
+                String text = dataChannel.gpsSmoothPoints
+                    .map(
+                      (e) => e.toString(),
+                    )
+                    .join('\n');
+                Clipboard.setData(ClipboardData(text: text));
+              },
+            )),
+        // calculation gps points
+        ListTile(
+            leading: Container(
+                color: Colors.white,
+                child: Stack(children: [
+                  Icon(Icons.circle_outlined,
+                      color: AppColors.calcGpsTrackingDot.color),
+                  Icon(
+                    Icons.circle,
+                    color: AppColors.calcGpsTrackingDot.color.withAlpha(128),
+                  )
+                ])),
+            title: Text(
+                '${dataChannel.gpsCalcPoints.length} Calculation GPS points '),
+            subtitle: const Text(
+              'Points used for Tracking Status calculations. The amount is calculated by time range treshold divided by tracking interval. Caution: A too hight amount of this points can lead to tracking status get stuck in status moving!',
+            ),
+            trailing: IconButton(
+              icon: const Icon(Icons.copy),
+              onPressed: () {
+                String text = dataChannel.gpsCalcPoints
+                    .map(
+                      (e) => e.toString(),
+                    )
+                    .join('\n');
+                Clipboard.setData(ClipboardData(text: text));
+              },
+            )),
+        // distance
+        ListTile(
+          title: Text(
+              'Distance over all ${dataChannel.gpsCalcPoints.length} calculation points'),
+          subtitle: Text('${distance}m (avg.: ${avgDistance}m)'),
+        ),
+        // current gps
+        ListTile(
+            leading: Container(
+                color: Colors.white,
+                child: Stack(children: [
+                  Icon(Icons.circle_outlined,
+                      color: AppColors.currentGpsDot.color),
+                  Icon(
+                    Icons.circle,
+                    color: AppColors.currentGpsDot.color.withAlpha(128),
+                  )
+                ])),
+            title: const Text('Current GPS point'),
+            trailing: IconButton(
+              icon: const Icon(Icons.copy),
+              onPressed: () async {
+                var gps = await GPS.gps();
+                Clipboard.setData(ClipboardData(text: '${gps.lat},${gps.lon}'));
+              },
+            )),
+        // last status change gps
+        ListTile(
+            leading: Container(
+                color: Colors.white,
+                child: Stack(children: [
+                  Icon(Icons.circle_outlined,
+                      color: AppColors.lastTrackingStatusWithAliasDot.color),
+                  Icon(
+                    Icons.circle,
+                    color: AppColors.lastTrackingStatusWithAliasDot.color
+                        .withAlpha(128),
+                  )
+                ])),
+            title: const Text('Last Status change GPS point'),
+            subtitle: TextButton(
+              onPressed: dataChannel.gps == null
+                  ? null
+                  : () async {
+                      var gps = await GPS.gps();
+                      GPS.launchGoogleMaps(
+                          gps.lat,
+                          gps.lon,
+                          dataChannel.gpsLastStatusChange!.lat,
+                          dataChannel.gpsLastStatusChange!.lon);
+                    },
+              child: Text(
+                  '${dataChannel.gpsLastStatusChange?.lat},${dataChannel.gpsLastStatusChange?.lon}'),
+            ),
+            trailing: IconButton(
+              icon: const Icon(Icons.copy),
+              onPressed: () async {
+                var gps = dataChannel.gpsLastStatusChange ?? await GPS.gps();
+                Clipboard.setData(ClipboardData(text: '${gps.lat},${gps.lon}'));
+              },
+            )),
+      ],
+    );
   }
 
   Widget statusTriggerIcon() {
