@@ -78,9 +78,8 @@ class _WidgetUserEdit extends State<WidgetUserEdit> {
                   body: renderBody(),
                   navBar: AppWidgets.navBarCreateItem(context, name: 'User',
                       onCreate: () async {
-                    var count = (await ModelUser.count()) + 1;
-                    var model = await ModelUser(title: '#$count').insert();
-                    if (mounted) {
+                    final model = await AppWidgets.createUser(context);
+                    if (model != null && mounted) {
                       await Navigator.pushNamed(
                           context, AppRoutes.editUser.route,
                           arguments: model.id);

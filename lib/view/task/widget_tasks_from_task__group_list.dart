@@ -99,9 +99,8 @@ class _WidgetTasksFromTaskGroupList
         title: 'Tasks from Group',
         navBar: AppWidgets.navBarCreateItem(context, name: 'Task',
             onCreate: () async {
-          var count = (await ModelTask.count()) + 1;
-          var model = await ModelTask(title: '#$count').insert();
-          if (mounted) {
+          final model = await AppWidgets.createTask(context);
+          if (model != null && mounted) {
             await Navigator.pushNamed(context, AppRoutes.editTask.route,
                 arguments: model.id);
             resetLoader();

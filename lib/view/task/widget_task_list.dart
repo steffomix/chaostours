@@ -96,11 +96,9 @@ class _WidgetTaskList extends BaseWidgetState<WidgetTaskList> {
         name: 'Task',
         onCreate: (context) async {
           final newTask = await AppWidgets.createTask(context);
-          //var count = await ModelTask.count();
-          //var model = await ModelTask(title: '#${count + 1}').insert();
-          if (mounted) {
+          if (newTask != null && mounted) {
             Navigator.pushNamed(context, AppRoutes.editTask.route,
-                    arguments: newTask?.id)
+                    arguments: newTask.id)
                 .then((value) {
               Navigator.pop(context);
               resetLoader();

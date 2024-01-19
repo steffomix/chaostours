@@ -121,16 +121,12 @@ class _WidgetAliasGroupsFromAliasList
         navBar: _navBarBuilder.navBar(context,
             name: 'Alias Group',
             onCreate: (context) async {
-              var count = await ModelAliasGroup.count();
-              var model =
-                  await ModelAliasGroup(title: '#${count + 1}').insert();
-              if (mounted) {
-                Navigator.pushNamed(context, AppRoutes.editAliasGroup.route,
-                        arguments: model.id)
-                    .then((value) {
-                  Navigator.pop(context);
-                  resetLoader();
-                });
+              final model = await AppWidgets.createAliasGroup(context);
+              if (model != null && mounted) {
+                await Navigator.pushNamed(
+                    context, AppRoutes.editAliasGroup.route,
+                    arguments: model.id);
+                resetLoader();
               }
             },
             onSwitch: (context) => resetLoader()));

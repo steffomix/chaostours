@@ -91,14 +91,11 @@ class _WidgetUserList extends BaseWidgetState<WidgetUserList> {
     return _navBarBuilder.navBar(context,
         name: 'User',
         onCreate: (context) async {
-          final newUser = await AppWidgets.createUser(context);
-          if (mounted) {
-            Navigator.pushNamed(context, AppRoutes.editUser.route,
-                    arguments: newUser?.id)
-                .then((value) {
-              Navigator.pop(context);
-              resetLoader();
-            });
+          final model = await AppWidgets.createUser(context);
+          if (model != null && mounted) {
+            await Navigator.pushNamed(context, AppRoutes.editUser.route,
+                arguments: model.id);
+            resetLoader();
           }
         },
         onSwitch: (context) => resetLoader());

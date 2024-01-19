@@ -60,6 +60,7 @@ class DataChannel extends TrackPointData {
   bool _initialized = false;
   bool get initalized => _initialized;
   int tick = 0;
+  DateTime start = DateTime.now();
 
   /// computed values
   TrackingStatus trackingStatus = TrackingStatus.standing;
@@ -85,7 +86,6 @@ class DataChannel extends TrackPointData {
         await for (var data in FlutterBackgroundService()
             .on(BackgroundChannelCommand.onTracking.toString())) {
           _initialized = true;
-          tick++;
           Cache.reload();
           try {
             tick = int.parse(data?[DataChannelKey.tick.toString()] ?? '0');

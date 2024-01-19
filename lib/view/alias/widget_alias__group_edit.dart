@@ -157,9 +157,8 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
         body: body,
         navBar: AppWidgets.navBarCreateItem(context, name: 'Alias Group',
             onCreate: () async {
-          var count = (await ModelAliasGroup.count()) + 1;
-          var model = await ModelAliasGroup(title: '#$count').insert();
-          if (mounted) {
+          final model = await AppWidgets.createAliasGroup(context);
+          if (model != null && mounted) {
             await Navigator.pushNamed(context, AppRoutes.editAliasGroup.route,
                 arguments: model.id);
             render();

@@ -18,7 +18,6 @@ import 'package:chaostours/model/model_alias_group.dart';
 import 'package:device_calendar/device_calendar.dart';
 
 import 'package:flutter_native_timezone/flutter_native_timezone.dart';
-import 'package:timezone/timezone.dart';
 import 'dart:math' as math;
 
 ///
@@ -224,7 +223,6 @@ class Location {
       return;
     }
 
-    print('### lookup address');
     tracker.address = await Address(tracker.gpsLastStatusStanding ?? gps)
         .lookup(OsmLookupConditions.onStatusChanged, saveToCache: true);
 

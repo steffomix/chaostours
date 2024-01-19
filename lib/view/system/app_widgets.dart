@@ -16,6 +16,9 @@ limitations under the License.
 
 import 'package:app_settings/app_settings_platform_interface.dart';
 import 'package:chaostours/database/cache.dart';
+import 'package:chaostours/model/model_alias_group.dart';
+import 'package:chaostours/model/model_task_group.dart';
+import 'package:chaostours/model/model_user_group.dart';
 import 'package:flutter/material.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:device_calendar/device_calendar.dart';
@@ -170,18 +173,7 @@ class AppWidgets {
           switch (id) {
             /// create
             case 0:
-              AppWidgets.dialog(context: context, contents: [
-                Text('Create new $name?')
-              ], buttons: [
-                TextButton(
-                  child: const Text('Cancel'),
-                  onPressed: () => Navigator.pop(context),
-                ),
-                TextButton(
-                  onPressed: onCreate,
-                  child: const Text('Yes'),
-                )
-              ]);
+              onCreate();
               break;
             // return
             case 1:
@@ -528,6 +520,129 @@ class AppWidgets {
     return newModel;
   }
 
+  static Future<ModelAliasGroup?> createAliasGroup(BuildContext context) async {
+    final controller = TextEditingController(text: '');
+    final nextId = (await ModelAliasGroup.count()) + 1;
+    ModelAliasGroup? newModel;
+    if (!context.mounted) {
+      return null;
+    }
+    await AppWidgets.dialog(
+        isDismissible: true,
+        context: context,
+        title: const Text('Create new alias group'),
+        contents: [
+          Padding(
+              padding: const EdgeInsets.all(10),
+              child: TextField(
+                decoration: const InputDecoration(label: Text('Group name')),
+                controller: controller,
+              )),
+        ],
+        buttons: [
+          FilledButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('Cancel')),
+          FilledButton(
+              onPressed: () async {
+                newModel = await ModelAliasGroup(
+                        title: controller.text.isEmpty
+                            ? 'Alias group #$nextId'
+                            : controller.text)
+                    .insert();
+                if (context.mounted) {
+                  Navigator.pop(context);
+                }
+              },
+              child: const Text('Create')),
+        ]);
+    return newModel;
+  }
+
+  static Future<ModelTaskGroup?> createTaskGroup(BuildContext context) async {
+    final controller = TextEditingController(text: '');
+    final nextId = (await ModelTaskGroup.count()) + 1;
+    ModelTaskGroup? newModel;
+    if (!context.mounted) {
+      return null;
+    }
+    await AppWidgets.dialog(
+        isDismissible: true,
+        context: context,
+        title: const Text('Create new task group'),
+        contents: [
+          Padding(
+              padding: const EdgeInsets.all(10),
+              child: TextField(
+                decoration: const InputDecoration(label: Text('Group name')),
+                controller: controller,
+              )),
+        ],
+        buttons: [
+          FilledButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('Cancel')),
+          FilledButton(
+              onPressed: () async {
+                newModel = await ModelTaskGroup(
+                        title: controller.text.isEmpty
+                            ? 'Task group #$nextId'
+                            : controller.text)
+                    .insert();
+                if (context.mounted) {
+                  Navigator.pop(context);
+                }
+              },
+              child: const Text('Create')),
+        ]);
+    return newModel;
+  }
+
+  static Future<ModelUserGroup?> createUserGroup(BuildContext context) async {
+    final controller = TextEditingController(text: '');
+    final nextId = (await ModelUserGroup.count()) + 1;
+    ModelUserGroup? newModel;
+    if (!context.mounted) {
+      return null;
+    }
+    await AppWidgets.dialog(
+        isDismissible: true,
+        context: context,
+        title: const Text('Create new user group'),
+        contents: [
+          Padding(
+              padding: const EdgeInsets.all(10),
+              child: TextField(
+                decoration: const InputDecoration(label: Text('Group name')),
+                controller: controller,
+              )),
+        ],
+        buttons: [
+          FilledButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('Cancel')),
+          FilledButton(
+              onPressed: () async {
+                newModel = await ModelUserGroup(
+                        title: controller.text.isEmpty
+                            ? 'User group #$nextId'
+                            : controller.text)
+                    .insert();
+                if (context.mounted) {
+                  Navigator.pop(context);
+                }
+              },
+              child: const Text('Create')),
+        ]);
+    return newModel;
+  }
+
   static void statistics(BuildContext context,
       {required AssetStatistics stats,
       required Future<AssetStatistics> Function(DateTime start, DateTime end)
@@ -537,33 +652,7 @@ class AppWidgets {
         .removeTime(stats.firstVisited.subtract(const Duration(days: 1000)));
     final endBounds =
         util.removeTime(stats.lastVisited.add(const Duration(days: 1000)));
-/* 
-    Widget dateStart = FilledButton(
-      child: Text(util.formatDate(stats.firstVisited)),
-      onPressed: () async {
-        stats = await reload(
-            await showDatePicker(
-                    context: context,
-                    firstDate: stats.firstVisited,
-                    lastDate: stats.lastVisited) ??
-                stats.firstVisited,
-            stats.lastVisited);
-      },
-    );
-    Widget dateEnd = FilledButton(
-      child: Text(util.formatDate(stats.lastVisited)),
-      onPressed: () async {
-        stats = await reload(
-          stats.firstVisited,
-          await showDatePicker(
-                  context: context,
-                  firstDate: stats.firstVisited,
-                  lastDate: stats.lastVisited) ??
-              stats.lastVisited,
-        );
-      },
-    );
- */
+
     Widget contents = ValueListenableBuilder(
       valueListenable: notify,
       builder: (context, value, child) {
@@ -700,6 +789,8 @@ class NavBarWithBin {
         ],
         onTap: (int id) async {
           if (id == 0) {
+            onCreate(context);
+            /* 
             AppWidgets.dialog(context: context, contents: [
               Text('Create new $name?')
             ], buttons: [
@@ -713,7 +804,7 @@ class NavBarWithBin {
                     onCreate(context);
                   },
                   child: const Text('Yes'))
-            ]);
+            ]); */
           } else if (id == 1) {
             _showActivated = !_showActivated;
             onSwitch(context);

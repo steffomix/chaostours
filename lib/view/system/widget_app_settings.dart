@@ -95,20 +95,13 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
           margin: const EdgeInsets.all(10),
           child: Column(
             children: intersperse(divider, [
-              ListTile(
-                  title: const Text('Tracking calculating settings'),
-                  subtitle: Column(children: [
-                    const Text(
-                        'These Settings depend on each other from top to bottom.\n'
-                        'It is strongly recommended to modify the values in that order, because '
-                        'the System will auto-adjust them if neccecary.'),
-                    Container(
-                        color: Colors.red,
-                        child: const Text(
-                          'WARNING! Too many trackpoints can cause Chaos Tours to never leave the satus MOVING!',
-                          style: TextStyle(color: Colors.white),
-                        ))
-                  ])),
+              const ListTile(
+                title: Text('Tracking calculating settings'),
+                subtitle: Text(
+                    'These Settings depend on each other from top to bottom.\n'
+                    'It is strongly recommended to modify the values in that order, because '
+                    'the System will auto-adjust them if neccecary.'),
+              ),
               await integerSetting(Cache.appSettingBackgroundTrackingInterval,
                   onChange: (
                       {required AppUserSetting setting,

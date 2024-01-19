@@ -102,12 +102,11 @@ class _WidgetUsersFromUserGroupList
         title: 'Users from Group',
         navBar: AppWidgets.navBarCreateItem(context, name: 'User',
             onCreate: () async {
-          var count = (await ModelUser.count()) + 1;
-          var model = await ModelUser(title: '#$count').insert();
-          if (mounted) {
+          final model = await AppWidgets.createUser(context);
+          if (model != null && mounted) {
             await Navigator.pushNamed(context, AppRoutes.editUser.route,
                 arguments: model.id);
-            render();
+            resetLoader();
           }
         }));
   }

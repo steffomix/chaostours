@@ -616,13 +616,20 @@ class _AliasTrackingRenderer {
 }
 
 class MapCenter {
+  static final Logger logger = Logger.logger<MapCenter>();
   static int _id = 0;
   static String get id {
     return (++_id).toString();
   }
 
   static Future<void> draw(MapController controller) async {
-    var zoom = await controller.getZoom();
+    double zoom = 5;
+    try {
+      zoom = await controller.getZoom();
+    } catch (e, stk) {
+      logger.error('draw: $e', stk);
+      return;
+    }
     String oldId = _id.toString();
     controller.drawCircle(CircleOSM(
       key: id,

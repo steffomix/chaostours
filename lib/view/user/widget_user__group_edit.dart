@@ -99,9 +99,8 @@ class _WidgetUserGroupEdit extends State<WidgetUserGroupEdit> {
         body: body,
         navBar: AppWidgets.navBarCreateItem(context, name: 'User Group',
             onCreate: () async {
-          var count = (await ModelUserGroup.count()) + 1;
-          var model = await ModelUserGroup(title: '#$count').insert();
-          if (mounted) {
+          final model = await AppWidgets.createUserGroup(context);
+          if (model != null && mounted) {
             await Navigator.pushNamed(context, AppRoutes.editUserGroup.route,
                 arguments: model.id);
             render();

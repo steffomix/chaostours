@@ -74,7 +74,7 @@ class Tracker {
         .difference(DateTime.now())
         .abs();
     Map<String, dynamic> serialized = {
-      DataChannelKey.gps.toString(): tick.toString(),
+      DataChannelKey.tick.toString(): tick.toString(),
       DataChannelKey.gps.toString(): TypeAdapter.serializeGps(gps),
       DataChannelKey.gpsPoints.toString():
           TypeAdapter.serializeGpsList(gpsPoints),
@@ -162,12 +162,11 @@ class Tracker {
         /// start check with assumed true value
         bool checkStartedMoving = true;
 
-        GPS gpsStandingStartet = await Cache.backgroundGpsStartStanding
-            .load<GPS>(gpsCalcPoints.last);
-
-        /// check if all calc points are below distance treshold
+        /// check if all are outside distance treshold or alias radius
         for (var gps in gpsCalcPoints) {
-          if (GPS.distance(gpsStandingStartet, gps) <= gpsLocation.radius) {
+          final distance =
+              GPS.distance(gpsLastStatusStanding ?? gps, gps).round();
+          if (distance <= gpsLocation.radius) {
             // still standing
             checkStartedMoving = false;
             break;
@@ -177,7 +176,17 @@ class Tracker {
           newTrackingStatus = await cacheNewStatusMoving(gps);
         }
       } else if (oldTrackingStatus == TrackingStatus.moving) {
-        if (GPS.distanceOverTrackList(gpsCalcPoints) < gpsLocation.radius) {
+        // assume we are standing
+        bool isStanding = true;
+        for (var point in gpsCalcPoints) {
+          final distance = GPS.distance(gps, point).round();
+          if (distance > gpsLocation.radius) {
+            isStanding = false;
+            break;
+          }
+        }
+
+        if (isStanding) {
           newTrackingStatus = await cacheNewStatusStanding(gps);
 
           /// autocreate alias?
@@ -235,15 +244,12 @@ class Tracker {
         // skip tracking by user
         if (!(await checkSkipTrackingByUser())) {
           logger.log('new tracking status STANDING');
-          //gpsLocation = await Location.location(gps);
-          print('### execute standing');
           await gpsLocation.executeStatusStanding();
           logger.log('status STANDING finished');
         }
       }
     }
 
-    print('### serialize data');
     return await serializeState(gps);
   }
 

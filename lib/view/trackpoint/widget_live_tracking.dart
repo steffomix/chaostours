@@ -70,8 +70,8 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
 
   final _trackpointNotesUndoController = UndoHistoryController();
 
-  bool _isUsersExpanded = false;
-  bool _isTasksExpanded = false;
+  static bool _isUsersExpanded = false;
+  static bool _isTasksExpanded = false;
 
   // clock update
   Timer? _timer;
@@ -175,20 +175,20 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   }
 
   Widget trackingInfos() {
-    final distance =
-        GPS.distanceOverTrackList(dataChannel.gpsCalcPoints).round();
-    int avgDistance = 0;
-    try {
-      avgDistance = (distance / dataChannel.gpsCalcPoints.length).round();
-    } catch (e) {
-      //ignore
-    }
     return Column(
       children: [
         Text(
           'Tracking Info',
           style: Theme.of(context).textTheme.headlineSmall,
         ),
+
+        ListenableBuilder(
+            listenable: _listenableDuration,
+            builder: (context, child) {
+              return Text('Interval No. #${dataChannel.tick} '
+                  'since\n${util.formatDuration(DateTime.now().difference(dataChannel.start))}');
+            }),
+
         FilledButton(
           child: const Text('Show points on map'),
           onPressed: () => Navigator.pushNamed(context, AppRoutes.osm.route),
@@ -270,7 +270,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
             title: Text(
                 '${dataChannel.gpsCalcPoints.length} Calculation GPS points '),
             subtitle: const Text(
-              'Points used for Tracking Status calculations. The amount is calculated by time range treshold divided by tracking interval. Caution: A too hight amount of this points can lead to tracking status get stuck in status moving!',
+              'Points used for Tracking Status calculations. The amount is calculated by time range treshold divided by tracking interval.',
             ),
             trailing: IconButton(
               icon: const Icon(Icons.copy),
@@ -283,12 +283,6 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                 Clipboard.setData(ClipboardData(text: text));
               },
             )),
-        // distance
-        ListTile(
-          title: Text(
-              'Distance over all ${dataChannel.gpsCalcPoints.length} calculation points'),
-          subtitle: Text('${distance}m (avg.: ${avgDistance}m)'),
-        ),
         // current gps
         ListTile(
             leading: Container(
@@ -746,7 +740,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                               ? null
                               : Text(channelModel.notes,
                                   style: Theme.of(context).textTheme.bodySmall),
-                          leading: IconButton(
+                          trailing: IconButton(
                             icon: const Icon(Icons.note),
                             onPressed: () async {
                               await editUserNotes(channelModel);
@@ -933,7 +927,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                               ? null
                               : Text(channelModel.notes,
                                   style: Theme.of(context).textTheme.bodySmall),
-                          leading: IconButton(
+                          trailing: IconButton(
                             icon: const Icon(Icons.note),
                             onPressed: () async {
                               await editTaskNotes(channelModel);
