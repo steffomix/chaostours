@@ -52,6 +52,7 @@ class _WidgetTrackPointsState extends BaseWidgetState<WidgetTrackPoints> {
 
   final _searchController = TextEditingController();
   final List<Widget> _loadedItems = [];
+  final _isSelectActive = ValueNotifier<bool>(true);
 
   int getLimit() => 20;
 
@@ -116,9 +117,33 @@ class _WidgetTrackPointsState extends BaseWidgetState<WidgetTrackPoints> {
     render();
   }
 
+  BottomNavigationBar renderNavBar() {
+    return BottomNavigationBar(
+      currentIndex: 0,
+      items: [
+        const BottomNavigationBarItem(
+            icon: Icon(Icons.cancel), label: 'Cancel'),
+        BottomNavigationBarItem(
+            icon: _isSelectActive.value
+                ? const Icon(Icons.delete)
+                : const Icon(Icons.visibility),
+            label: _isSelectActive.value ? 'Show deleted' : 'Show active')
+      ],
+      onTap: (int id) {
+        if (id == 0) {
+          Navigator.pop(context);
+        } else if (id == 1) {
+          _isSelectActive.value = !_isSelectActive.value;
+          resetLoader();
+        }
+      },
+    );
+  }
+
   @override
   Future<int> loadItems({int limit = 50, required int offset}) async {
     var items = await ModelTrackPoint.search(_searchController.text,
+        isActive: _isSelectActive.value,
         idAlias: idAlias,
         idUser: idUser,
         idTask: idTask,
@@ -136,6 +161,33 @@ class _WidgetTrackPointsState extends BaseWidgetState<WidgetTrackPoints> {
     return items.length;
   }
 
+  @override
+  List<Widget> renderBody(BoxConstraints constraints) {
+    return _loadedItems
+        .map(
+          (e) => SizedBox(width: constraints.maxWidth, child: e),
+        )
+        .toList();
+  }
+
+  @override
+  Scaffold renderScaffold(Widget body) {
+    return AppWidgets.scaffold(context,
+        body: body, title: 'Trackpoints', navBar: renderNavBar());
+  }
+
+  Widget renderIsActive(ModelTrackPoint model) {
+    return ListTile(
+        leading: AppWidgets.checkbox(
+          value: model.isActive,
+          onChanged: (state) async {
+            model.isActive = state ?? false;
+            model.update();
+          },
+        ),
+        title: const Text('Active & statistics'));
+  }
+
   Widget renderItem(ModelTrackPoint model) {
     var divider = AppWidgets.divider();
     return Column(children: [
@@ -145,6 +197,7 @@ class _WidgetTrackPointsState extends BaseWidgetState<WidgetTrackPoints> {
             renderId(model),
             renderDateTime(model),
             renderDuration(model),
+            renderIsActive(model),
             divider,
             Align(
                 alignment: Alignment.centerLeft,
@@ -158,7 +211,7 @@ class _WidgetTrackPointsState extends BaseWidgetState<WidgetTrackPoints> {
             divider,
             Column(
               children: [
-                const Text('Members'),
+                const Text('Users'),
                 ...renderAssetList(
                     models: model.userModels, route: AppRoutes.editUser)
               ],
@@ -187,20 +240,6 @@ class _WidgetTrackPointsState extends BaseWidgetState<WidgetTrackPoints> {
           onChange: (_) => resetLoader()),
       Text(trackpointSource)
     ];
-  }
-
-  @override
-  List<Widget> renderBody(BoxConstraints constraints) {
-    return _loadedItems
-        .map(
-          (e) => SizedBox(width: constraints.maxWidth, child: e),
-        )
-        .toList();
-  }
-
-  @override
-  Scaffold renderScaffold(Widget body) {
-    return AppWidgets.scaffold(context, body: body, title: 'Trackpoints');
   }
 
   List<Widget> renderAliasList(

@@ -52,11 +52,15 @@ class Tracker {
 
   int tick = 0;
 
+  DateTime upTimeStart = DateTime.now();
+
   List<GPS> gpsPoints = [];
   List<GPS> gpsSmoothPoints = [];
   List<GPS> gpsCalcPoints = [];
 
   Duration statusDuration = Duration.zero;
+
+  TrackingStatus triggeredTrackingStatus = TrackingStatus.none;
 
   /// initials
   TrackingStatus oldTrackingStatus = TrackingStatus.standing;
@@ -75,11 +79,10 @@ class Tracker {
         .abs();
     Map<String, dynamic> serialized = {
       DataChannelKey.tick.toString(): tick.toString(),
+      DataChannelKey.upTime.toString(): upTimeStart.toIso8601String(),
       DataChannelKey.gps.toString(): TypeAdapter.serializeGps(gps),
       DataChannelKey.gpsPoints.toString():
           TypeAdapter.serializeGpsList(gpsPoints),
-      DataChannelKey.gpsSmoothPoints.toString():
-          TypeAdapter.serializeGpsList(gpsSmoothPoints),
       DataChannelKey.gpsCalcPoints.toString():
           TypeAdapter.serializeGpsList(gpsCalcPoints),
       DataChannelKey.gpsLastStatusChange.toString(): gpsLastStatusChange == null
@@ -116,46 +119,39 @@ class Tracker {
       //gpsPoints = await Cache.backgroundGpsPoints.load<List<GPS>>([]);
     }
 
-    trackingStatus ??= await Cache.backgroundTrackingStatus
-        .save<TrackingStatus>(TrackingStatus.standing);
-    gpsLastStatusMoving ??= await Cache.backgroundGpsStartMoving.save<GPS>(gps);
-    gpsLastStatusStanding ??=
-        await Cache.backgroundGpsStartStanding.save<GPS>(gps);
-    gpsLastStatusChange ??=
-        await Cache.backgroundGpsLastStatusChange.save<GPS>(gps);
+    trackingStatus ??= TrackingStatus.standing;
+    gpsLastStatusMoving ??= gps;
+    gpsLastStatusStanding ??= gps;
+    gpsLastStatusChange ??= gps;
 
-    gps = await claculateGPSPoints(gps);
+    //gps = await
+    await claculateGPSPoints(gps);
 
     /// collect gps related data
     GpsLocation gpsLocation = await GpsLocation.location(gps);
 
     /// remember old status
-    TrackingStatus newTrackingStatus = oldTrackingStatus = await Cache
-        .backgroundTrackingStatus
-        .load<TrackingStatus>(TrackingStatus.standing);
+    TrackingStatus newTrackingStatus = oldTrackingStatus;
 
     ///
     /// process trackpoint
     ///
     ///
     /// process user trigger
-    TrackingStatus triggeredTrackingStatus = await Cache.trackingStatusTriggered
-        .load<TrackingStatus>(TrackingStatus.none);
 
     if (triggeredTrackingStatus != TrackingStatus.none) {
       if (triggeredTrackingStatus == TrackingStatus.moving) {
         // status changed by user
-        newTrackingStatus = await cacheNewStatusMoving(gps);
+        newTrackingStatus = setStatusMoving(gps);
       } else if (triggeredTrackingStatus == TrackingStatus.standing) {
         /* gpsPoints.clear();
         gps = await claculateGPSPoints(gps); */
         // status changed by user
-        newTrackingStatus = await cacheNewStatusStanding(gps);
+        newTrackingStatus = setStatusStanding(gps);
       }
 
       /// reset trigger
-      await Cache.trackingStatusTriggered
-          .save<TrackingStatus>(TrackingStatus.none);
+      triggeredTrackingStatus = TrackingStatus.none;
     } else {
       /// check for standing
       if (oldTrackingStatus == TrackingStatus.standing) {
@@ -173,7 +169,7 @@ class Tracker {
           }
         }
         if (checkStartedMoving) {
-          newTrackingStatus = await cacheNewStatusMoving(gps);
+          newTrackingStatus = setStatusMoving(gps);
         }
       } else if (oldTrackingStatus == TrackingStatus.moving) {
         // assume we are standing
@@ -187,7 +183,7 @@ class Tracker {
         }
 
         if (isStanding) {
-          newTrackingStatus = await cacheNewStatusStanding(gps);
+          newTrackingStatus = setStatusStanding(gps);
 
           /// autocreate alias?
           if ((await Cache.appSettingStatusStandingRequireAlias
@@ -197,10 +193,8 @@ class Tracker {
               /// autocreate must be activated
               if (await Cache.appSettingAutocreateAlias.load<bool>(false)) {
                 /// check if enough time has passed
-                if ((await Cache.backgroundGpsStartMoving.load<GPS>(gps))
-                    .time
-                    .isBefore(gps.time.subtract(await Cache
-                        .appSettingAutocreateAliasDuration
+                if ((gpsLastStatusMoving ??= gps).time.isBefore(gps.time
+                    .subtract(await Cache.appSettingAutocreateAliasDuration
                         .load<Duration>(AppUserSetting(
                                 Cache.appSettingAutocreateAliasDuration)
                             .defaultValue as Duration)))) {
@@ -307,14 +301,14 @@ class Tracker {
     }
 
     /// filter gps points for trackpoint calculation
-    gpsSmoothPoints = await calculateSmoothPoints(gpsPoints);
+    //await calculateSmoothPoints();
 
     /// extract calculation points from smoothed points
-    gpsCalcPoints = gpsSmoothPoints
+    gpsCalcPoints = gpsPoints
         .getRange(
             0,
             math.min(
-                gpsSmoothPoints.length - 1,
+                gpsPoints.length - 1,
                 (timeRangeTreshold.inSeconds / trackpointInterval.inSeconds)
                     .ceil()))
         .toList();
@@ -332,42 +326,31 @@ class Tracker {
     return gps;
   }
 
-  Future<TrackingStatus> cacheNewStatusStanding(GPS gps) async {
-    trackingStatus = await Cache.backgroundTrackingStatus
-        .save<TrackingStatus>(TrackingStatus.standing);
-    await Cache.backgroundGpsStartStanding.save<GPS>(gps);
-    await Cache.backgroundGpsLastStatusChange.save<GPS>(gps);
+  TrackingStatus setStatusStanding(GPS gps) {
+    trackingStatus = TrackingStatus.standing;
     gpsLastStatusChange = gps;
     gpsLastStatusStanding = gps;
-    return TrackingStatus.standing;
+    return trackingStatus!;
   }
 
-  Future<TrackingStatus> cacheNewStatusMoving(GPS gps) async {
-    trackingStatus = await Cache.backgroundTrackingStatus
-        .save<TrackingStatus>(TrackingStatus.moving);
-    await Cache.backgroundGpsStartMoving.save<GPS>(gps);
-    await Cache.backgroundGpsLastStatusChange.save<GPS>(gps);
+  TrackingStatus setStatusMoving(GPS gps) {
+    trackingStatus = TrackingStatus.moving;
     gpsLastStatusChange = gps;
     gpsLastStatusMoving = gps;
-    return TrackingStatus.moving;
+    return trackingStatus!;
   }
-
-  Future<List<GPS>> calculateSmoothPoints(List<GPS> gpsPoints) async {
-    List<GPS> smoothGpsPoints = [];
+/* 
+  Future<void> calculateSmoothPoints() async {
+    gpsSmoothPoints.clear();
+    gpsSmoothPoints.addAll(gpsPoints);
+    return;
     int smoothCount = await Cache.appSettingGpsPointsSmoothCount.load<int>(
         AppUserSetting(Cache.appSettingGpsPointsSmoothCount).defaultValue
             as int);
-    if (smoothCount < 2) {
+    if (smoothCount < 2 || gpsPoints.length <= smoothCount) {
       /// smoothing is disabled
-      smoothGpsPoints.addAll(gpsPoints);
-      return smoothGpsPoints;
-    }
-
-    if (gpsPoints.length <= smoothCount) {
-      logger.warn('too few gpsPoints for $smoothCount smoothPoints. '
-          'Use all gpsPoints as smoothPoints directly without smmothing effect');
-      smoothGpsPoints.addAll(gpsPoints);
-      return smoothGpsPoints;
+      gpsSmoothPoints.addAll(gpsPoints);
+      return;
     }
     int index = 0;
     int range = gpsPoints.length - smoothCount;
@@ -376,12 +359,11 @@ class Tracker {
         var averageGps = GPS
             .average(gpsPoints.getRange(index, index + smoothCount).toList());
         averageGps.time = gpsPoints[index].time;
-        smoothGpsPoints.add(averageGps);
+        gpsSmoothPoints.add(averageGps);
       } catch (e, stk) {
         logger.error('calculateSmoothPoints: $e', stk);
       }
       index++;
     }
-    return smoothGpsPoints;
-  }
+  } */
 }

@@ -92,33 +92,22 @@ class _WidgetDatabaseExplorer extends BaseWidgetState<WidgetDatabaseExplorer>
   @override
   List<Widget> renderHeader(BoxConstraints constraints) {
     return <Widget>[
-      Row(children: [
-        const Padding(padding: EdgeInsets.all(10), child: Text('DbTable: ')),
-        Padding(
-            padding: const EdgeInsets.all(10),
-            child: DropdownMenu<DbTable>(
-              enableSearch: true,
-              trailingIcon: const Icon(Icons.arrow_left_outlined),
-              selectedTrailingIcon: const Icon(Icons.arrow_left),
-              initialSelection: _table,
-              dropdownMenuEntries: renderTableList(),
-              onSelected: (value) {
-                if (value == null) {
-                  return;
-                }
-                _table = value;
-                Future.delayed(const Duration(milliseconds: 100), () {
-                  resetLoader();
-                });
-                /*
-                        Future.delayed(
-                            const Duration(milliseconds: 100),
-                            () => AppWidgets.navigate(
-                                context, AppRoutes.databaseExplorer));
-                                */
-              },
-            ))
-      ]),
+      DropdownMenu<DbTable>(
+        enableSearch: true,
+        trailingIcon: const Icon(Icons.arrow_left_outlined),
+        selectedTrailingIcon: const Icon(Icons.arrow_left),
+        initialSelection: _table,
+        dropdownMenuEntries: renderTableList(),
+        onSelected: (value) {
+          if (value == null) {
+            return;
+          }
+          _table = value;
+          Future.delayed(const Duration(milliseconds: 100), () {
+            resetLoader();
+          });
+        },
+      ),
       AppWidgets.searchTile(
           context: context,
           textController: _searchController,
@@ -151,6 +140,6 @@ class _WidgetDatabaseExplorer extends BaseWidgetState<WidgetDatabaseExplorer>
 
   @override
   Scaffold renderScaffold(Widget body) {
-    return AppWidgets.scaffold(context, body: body);
+    return AppWidgets.scaffold(context, body: body, title: 'Database Explorer');
   }
 }

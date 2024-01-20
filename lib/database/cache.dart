@@ -93,7 +93,7 @@ enum Cache {
   /// Set to false after prompting user.
   databaseImportedCalendarDisabled(
       CacheModulId.sharedPreferences, bool, ExpiredValue.immediately),
-
+/* 
   /// trigger off == TrackingStatus.none
   /// triggered by user, set to none in background
   trackingStatusTriggered(
@@ -110,7 +110,7 @@ enum Cache {
   /// cache background to forground
   backgroundTrackingStatus(
       CacheModulId.sharedPreferences, TrackingStatus, ExpiredValue.immediately),
-
+ */
   backgroundSharedAliasList(CacheModulId.sharedPreferences,
       List<SharedTrackpointAlias>, ExpiredValue.immediately),
 
@@ -129,8 +129,6 @@ enum Cache {
   backgroundLastGps(
       CacheModulId.sharedPreferences, GPS, ExpiredValue.immediately),
   backgroundGpsPoints(
-      CacheModulId.sharedPreferences, List<GPS>, ExpiredValue.immediately),
-  backgroundGpsSmoothPoints(
       CacheModulId.sharedPreferences, List<GPS>, ExpiredValue.immediately),
   backgroundGpsCalcPoints(
       CacheModulId.sharedPreferences, List<GPS>, ExpiredValue.immediately),
@@ -169,32 +167,39 @@ enum Cache {
 
   /// appUserStettings
   appSettingBackgroundTrackingEnabled(
-      CacheModulId.database, bool, ExpiredValue.never),
+      CacheModulId.sharedPreferences, bool, ExpiredValue.never),
   appSettingStatusStandingRequireAlias(
-      CacheModulId.database, bool, ExpiredValue.never),
+      CacheModulId.sharedPreferences, bool, ExpiredValue.never),
   appSettingAutocreateAliasDuration(
-      CacheModulId.database, Duration, ExpiredValue.never),
-  appSettingAutocreateAlias(CacheModulId.database, bool, ExpiredValue.never),
+      CacheModulId.sharedPreferences, Duration, ExpiredValue.never),
+  appSettingAutocreateAlias(
+      CacheModulId.sharedPreferences, bool, ExpiredValue.never),
   appSettingForegroundUpdateInterval(
-      CacheModulId.database, Duration, ExpiredValue.never),
+      CacheModulId.sharedPreferences, Duration, ExpiredValue.never),
   appSettingOsmLookupCondition(
-      CacheModulId.database, OsmLookupConditions, ExpiredValue.never),
-  appSettingCacheGpsTime(CacheModulId.database, Duration, ExpiredValue.never),
+      CacheModulId.sharedPreferences, OsmLookupConditions, ExpiredValue.never),
+  appSettingCacheGpsTime(
+      CacheModulId.sharedPreferences, Duration, ExpiredValue.never),
   appSettingLocationAccuracy(
-      CacheModulId.database, LocationAccuracy, ExpiredValue.never),
-  appSettingDistanceTreshold(CacheModulId.database, int, ExpiredValue.never),
+      CacheModulId.sharedPreferences, LocationAccuracy, ExpiredValue.never),
+  appSettingDistanceTreshold(
+      CacheModulId.sharedPreferences, int, ExpiredValue.never),
   appSettingTimeRangeTreshold(
-      CacheModulId.database, Duration, ExpiredValue.never),
+      CacheModulId.sharedPreferences, Duration, ExpiredValue.never),
   appSettingBackgroundTrackingInterval(
-      CacheModulId.database, Duration, ExpiredValue.never),
+      CacheModulId.sharedPreferences, Duration, ExpiredValue.never),
   appSettingGpsPointsSmoothCount(
-      CacheModulId.database, int, ExpiredValue.never),
-  appSettingPublishToCalendar(CacheModulId.database, bool, ExpiredValue.never),
-  appSettingTimeZone(CacheModulId.database, String, ExpiredValue.never),
-  appSettingWeekdays(CacheModulId.database, Weekdays, ExpiredValue.never),
-  appSettingDateFormat(CacheModulId.database, DateFormat, ExpiredValue.never),
+      CacheModulId.sharedPreferences, int, ExpiredValue.never),
+  appSettingPublishToCalendar(
+      CacheModulId.sharedPreferences, bool, ExpiredValue.never),
+  appSettingTimeZone(
+      CacheModulId.sharedPreferences, String, ExpiredValue.never),
+  appSettingWeekdays(
+      CacheModulId.sharedPreferences, Weekdays, ExpiredValue.never),
+  appSettingDateFormat(
+      CacheModulId.sharedPreferences, DateFormat, ExpiredValue.never),
   appSettingGpsPrecision(
-      CacheModulId.database, GpsPrecision, ExpiredValue.never),
+      CacheModulId.sharedPreferences, GpsPrecision, ExpiredValue.never),
   appSettingsColorScheme(
       CacheModulId.sharedPreferences, FlexScheme, ExpiredValue.never);
 

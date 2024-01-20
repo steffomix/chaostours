@@ -59,8 +59,8 @@ class UserStatistics implements AssetStatistics {
   }
 
   static Future<UserStatistics> statistics(ModelGroup model,
-      {DateTime? start, DateTime? end}) async {
-    List<Object?> params = [model.id, DB.boolToInt(true)];
+      {DateTime? start, DateTime? end, bool isActive = true}) async {
+    List<Object?> params = [model.id, DB.boolToInt(isActive)];
     String whereStart = '';
     String whereEnd = '';
     if (start != null) {
@@ -83,7 +83,7 @@ class UserStatistics implements AssetStatistics {
     FROM ${TableTrackPointUser.table}
     LEFT JOIN ${TableTrackPoint.table} ON ${TableTrackPoint.id} = ${TableTrackPointUser.idTrackPoint}
     WHERE ${TableTrackPointUser.idUser} = ? 
-    AND (${TableTrackPoint.ignore} IS NULL OR ${TableTrackPoint.ignore} < ?)
+    AND (${TableTrackPoint.isActive} = ?)
     $whereStart 
     $whereEnd
 ''';
@@ -100,8 +100,8 @@ class UserStatistics implements AssetStatistics {
   }
 
   static Future<UserStatistics> groupStatistics(ModelGroup model,
-      {DateTime? start, DateTime? end}) async {
-    List<Object?> params = [model.id, DB.boolToInt(true)];
+      {DateTime? start, DateTime? end, bool isActive = true}) async {
+    List<Object?> params = [model.id, DB.boolToInt(isActive)];
     String whereStart = '';
     String whereEnd = '';
     if (start != null) {
@@ -125,7 +125,7 @@ class UserStatistics implements AssetStatistics {
     LEFT JOIN ${TableTrackPoint.table} ON ${TableTrackPoint.id} = ${TableTrackPointUser.idTrackPoint}
     LEFT JOIN ${TableUserUserGroup.table} ON ${TableUserUserGroup.idUser} = ${TableTrackPointUser.idUser}
     WHERE ${TableUserUserGroup.idUserGroup} = ? 
-    AND (${TableTrackPoint.ignore} IS NULL OR ${TableTrackPoint.ignore} < ?)
+    AND (${TableTrackPoint.isActive} = ?)
     $whereStart 
     $whereEnd
 ''';

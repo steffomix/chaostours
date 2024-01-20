@@ -63,8 +63,8 @@ class AliasStatistics implements AssetStatistics {
   }
 
   static Future<AliasStatistics> statistics(ModelGroup model,
-      {DateTime? start, DateTime? end}) async {
-    List<Object?> params = [model.id, DB.boolToInt(true)];
+      {DateTime? start, DateTime? end, bool isActive = true}) async {
+    List<Object?> params = [model.id, DB.boolToInt(isActive)];
     String whereStart = '';
     String whereEnd = '';
     if (start != null) {
@@ -86,7 +86,7 @@ class AliasStatistics implements AssetStatistics {
     FROM ${TableTrackPointAlias.table}
     LEFT JOIN ${TableTrackPoint.table} ON ${TableTrackPoint.id} = ${TableTrackPointAlias.idTrackPoint}
     WHERE ${TableTrackPointAlias.idAlias} = ?
-    AND (${TableTrackPoint.ignore} IS NULL OR ${TableTrackPoint.ignore} < ?) 
+    AND (${TableTrackPoint.isActive} = ?) 
     $whereStart 
     $whereEnd
 ''';
@@ -103,8 +103,8 @@ class AliasStatistics implements AssetStatistics {
   }
 
   static Future<AliasStatistics> groupStatistics(ModelGroup model,
-      {DateTime? start, DateTime? end}) async {
-    List<Object?> params = [model.id, DB.boolToInt(true)];
+      {DateTime? start, DateTime? end, bool isActive = true}) async {
+    List<Object?> params = [model.id, DB.boolToInt(isActive)];
     String whereStart = '';
     String whereEnd = '';
     if (start != null) {
@@ -128,7 +128,7 @@ class AliasStatistics implements AssetStatistics {
     LEFT JOIN ${TableAliasAliasGroup.table} ON ${TableAliasAliasGroup.idAlias} = ${TableTrackPointAlias.idAlias}
     LEFT JOIN ${TableTrackPoint.table} ON ${TableTrackPoint.id} = ${TableTrackPointAlias.idTrackPoint}
     WHERE ${TableAliasAliasGroup.idAliasGroup} = ?
-    AND (${TableTrackPoint.ignore} IS NULL OR ${TableTrackPoint.ignore} < ?) 
+    AND (${TableTrackPoint.isActive} = ?) 
     $whereStart 
     $whereEnd
 ''';

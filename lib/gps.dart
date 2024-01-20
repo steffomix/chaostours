@@ -160,11 +160,12 @@ class GPS {
   GPS(this.lat, this.lon);
 
   static Future<GPS> gps({useCache = false}) async {
-    if (!useCache || _cachedGps.isExpired) {
+    return await _gps();
+    /* if (!useCache || _cachedGps.isExpired) {
       _cachedGps = ValueExpired(
           value: await _gps(), expireAfter: ExpiredValue.tenSeconds);
     }
-    return await _cachedGps.value as GPS;
+    return await _cachedGps.value as GPS; */
   }
 
   static Future<GPS> _gps() async {

@@ -102,8 +102,7 @@ class GpsLocation {
         .lookup(OsmLookupConditions.onStatusChanged, saveToCache: true);
     return await ModelTrackPoint(
             gps: gps,
-            timeStart:
-                (await Cache.backgroundGpsStartStanding.load<GPS>(gps)).time,
+            timeStart: (tracker.gpsLastStatusStanding ?? gps).time,
             timeEnd: gps.time,
             calendarEventIds: await Cache.backgroundCalendarLastEventIds
                 .load<List<CalendarEventId>>([]),
@@ -152,7 +151,7 @@ class GpsLocation {
 
   bool _standingExecuted = false;
   Future<void> executeStatusStanding() async {
-    if (_standingExecuted || _privacy == AliasPrivacy.none) {
+    if (_standingExecuted || privacy == AliasPrivacy.none) {
       return;
     }
     try {
@@ -167,7 +166,7 @@ class GpsLocation {
 
   bool _movingExecuted = false;
   Future<void> executeStatusMoving() async {
-    if (_movingExecuted || _privacy == AliasPrivacy.none) {
+    if (_movingExecuted || privacy == AliasPrivacy.none) {
       return;
     }
 
@@ -229,8 +228,7 @@ class GpsLocation {
 
     // update last visited
     for (var model in aliasModels) {
-      model.lastVisited =
-          (await Cache.backgroundGpsStartStanding.load<GPS>(gps)).time;
+      model.lastVisited = (tracker.gpsLastStatusStanding ?? gps).time;
       await model.update();
     }
   }
@@ -415,8 +413,7 @@ class GpsLocation {
     final calendarEvents = await mergeCalendarEvents();
 
     final tp = await createTrackPoint();
-    final lastStatusChange =
-        await Cache.backgroundGpsLastStatusChange.load<GPS>(tp.gps);
+    final lastStatusChange = tracker.gpsLastStatusChange ?? tp.gps;
 
     final start = TZDateTime.from(tp.timeStart,
         getLocation(await FlutterNativeTimezone.getLocalTimezone()));
@@ -525,8 +522,7 @@ class GpsLocation {
       return;
     }
 
-    GPS lastStatusChange =
-        await Cache.backgroundGpsLastStatusChange.load<GPS>(tp.gps);
+    GPS lastStatusChange = tracker.gpsLastStatusChange ?? tp.gps;
 
     final tzLocation =
         getLocation(await FlutterNativeTimezone.getLocalTimezone());

@@ -318,7 +318,7 @@ enum CacheData {
 
 enum TableTrackPoint {
   id('id'),
-  ignore('ignore'),
+  isActive('active'),
   latitude('latitude'),
   longitude('longitude'),
   timeStart('datetime_start'),
@@ -341,7 +341,7 @@ enum TableTrackPoint {
 
   static String get schema => '''CREATE TABLE IF NOT EXISTS $table (
 	${primaryKey.column}	INTEGER NOT NULL,
-  ${ignore.column} INTEGER,
+  ${isActive.column} INTEGER DEFAULT 1,
 	${latitude.column}	NUMERIC NOT NULL,
 	${longitude.column}	NUMERIC NOT NULL,
 	${timeStart.column}	INTEGER NOT NULL,

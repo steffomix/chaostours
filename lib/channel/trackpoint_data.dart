@@ -22,7 +22,6 @@ import 'package:chaostours/model/model_trackpoint_user.dart';
 class TrackPointData {
   GPS? gps;
   List<GPS> gpsPoints = [];
-  List<GPS> gpsSmoothPoints = [];
   List<GPS> gpsCalcPoints = [];
   GPS? gpsLastStatusChange;
   GPS? gpsLastStatusStanding;

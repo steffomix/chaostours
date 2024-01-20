@@ -41,6 +41,8 @@ class ModelTrackPoint {
 
   int _id = 0;
   int get id => _id;
+
+  bool isActive;
   GPS gps;
 
   DateTime timeStart;
@@ -71,6 +73,7 @@ class ModelTrackPoint {
       {required this.gps,
       required this.timeStart,
       required this.timeEnd,
+      this.isActive = true,
       this.address = '',
       this.fullAddress = '',
       this.notes = '',
@@ -99,6 +102,7 @@ class ModelTrackPoint {
   Map<String, Object?> toMap() {
     return <String, Object?>{
       TableTrackPoint.primaryKey.column: id,
+      TableTrackPoint.isActive.column: DB.boolToInt(isActive),
       TableTrackPoint.latitude.column: gps.lat,
       TableTrackPoint.longitude.column: gps.lon,
       TableTrackPoint.timeStart.column:
@@ -115,6 +119,7 @@ class ModelTrackPoint {
     var model = ModelTrackPoint(
         gps: GPS(DB.parseDouble(map[TableTrackPoint.latitude.column]),
             DB.parseDouble(map[TableTrackPoint.longitude.column])),
+        isActive: DB.parseBool(map[TableTrackPoint.isActive.column]),
         timeStart:
             DB.intToTime(DB.parseInt(map[TableTrackPoint.timeStart.column])),
         timeEnd: DB.intToTime(DB.parseInt(map[TableTrackPoint.timeEnd.column])),
@@ -563,6 +568,7 @@ class ModelTrackPoint {
   static Future<List<ModelTrackPoint>> search(String search,
       {int limit = 20,
       int offset = 0,
+      bool isActive = true,
       int? idAlias,
       int? idUser,
       int? idTask,
@@ -597,13 +603,12 @@ class ModelTrackPoint {
       whereTable = TableTaskTaskGroup.idTaskGroup.toString();
       whereId = idTaskGroup;
     }
-
-    String sqlSearch = search.isEmpty
-        ? ''
-        : '''
-        ${whereTable == null ? 'WHERE ' : 'AND'}
+    String sqlSearch = 'WHERE ${TableTrackPoint.isActive} = ?';
+    if (search.isNotEmpty) {
+      sqlSearch = '''
+        $sqlSearch
         -- where notes
-        ( ${TableTrackPoint.notes} LIKE ?
+        AND ( ${TableTrackPoint.notes} LIKE ?
         -- where osm address
         OR ${TableTrackPoint.address} LIKE ?
         -- where alias
@@ -617,6 +622,7 @@ class ModelTrackPoint {
         -- where task notes
         OR ${TableTrackPointTask.notes} LIKE ? )
 ''';
+    }
 
     String sql = '''
         SELECT 
@@ -641,11 +647,12 @@ class ModelTrackPoint {
         OFFSET ?
 ''';
     var rx = RegExp(r'\?', multiLine: true);
-    int qmCount = rx.allMatches(sql).length - 2; // exclute limit and offset
+    int qmCount = rx.allMatches(sql).length - 3; // exclute limit and offset
 
     return await DB.execute((Transaction txn) async {
       final rows = await txn.rawQuery(sql, [
         ...(whereTable == null ? [] : [whereId]),
+        DB.boolToInt(isActive),
         ...List.filled(qmCount - (whereTable == null ? 0 : 1), '%$search%'),
         limit,
         offset,

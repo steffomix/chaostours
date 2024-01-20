@@ -40,6 +40,7 @@ typedef Callback = void Function();
 
 enum DataChannelKey {
   tick,
+  upTime,
   gps,
   gpsPoints,
   gpsSmoothPoints,
@@ -57,10 +58,11 @@ class DataChannel extends TrackPointData {
   static final Logger logger = Logger.logger<DataChannel>();
   static DataChannel? _instance;
   factory DataChannel() => _instance ??= DataChannel._();
+
   bool _initialized = false;
   bool get initalized => _initialized;
   int tick = 0;
-  DateTime start = DateTime.now();
+  DateTime upTimeStart = DateTime.now();
 
   /// computed values
   TrackingStatus trackingStatus = TrackingStatus.standing;
@@ -86,17 +88,17 @@ class DataChannel extends TrackPointData {
         await for (var data in FlutterBackgroundService()
             .on(BackgroundChannelCommand.onTracking.toString())) {
           _initialized = true;
-          Cache.reload();
           try {
             tick = int.parse(data?[DataChannelKey.tick.toString()] ?? '0');
+            upTimeStart = DateTime.parse(
+                data?[DataChannelKey.upTime.toString()] ??
+                    DateTime.now().toIso8601String());
 
             /// serialized values
             gps = TypeAdapter.deserializeGps(
                 data?[DataChannelKey.gps.toString()]);
             gpsPoints = TypeAdapter.deserializeGpsList(
                 stringify(data?[DataChannelKey.gpsPoints.toString()] ?? []));
-            gpsSmoothPoints = TypeAdapter.deserializeGpsList(stringify(
-                data?[DataChannelKey.gpsSmoothPoints.toString()] ?? []));
             gpsCalcPoints = TypeAdapter.deserializeGpsList(stringify(
                 data?[DataChannelKey.gpsCalcPoints.toString()] ?? []));
             gpsLastStatusChange = TypeAdapter.deserializeGps(
@@ -133,10 +135,11 @@ class DataChannel extends TrackPointData {
                     'Most Recent: ${await Cache.addressFullMostRecent.load<String>('-')}';
               }
             }
-
+/* 
             /// Cached values
             trackingStatusTrigger = await Cache.trackingStatusTriggered
                 .load<TrackingStatus>(TrackingStatus.none);
+                 */
             notes = await Cache.backgroundTrackPointNotes.load<String>('');
 
             skipTracking = await Cache.backgroundTrackPointSkipRecordOnce

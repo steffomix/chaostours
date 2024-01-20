@@ -101,7 +101,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
     }();
 
     FlutterBackgroundService()
-        .invoke(BackgroundChannelCommand.track.toString());
+        .invoke(BackgroundChannelCommand.forceTracking.toString());
     EventManager.listen<DataChannel>(onTracking);
     EventManager.listen<EventOnRender>(onRender);
     super.initState();
@@ -186,7 +186,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
             listenable: _listenableDuration,
             builder: (context, child) {
               return Text('Interval No. #${dataChannel.tick} '
-                  'since\n${util.formatDuration(DateTime.now().difference(dataChannel.start))}');
+                  'since\n${util.formatDuration(DateTime.now().difference(dataChannel.upTimeStart))}');
             }),
 
         FilledButton(
@@ -208,7 +208,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                     color: AppColors.rawGpsTrackingDot.color.withAlpha(128),
                   )
                 ])),
-            title: Text('${dataChannel.gpsPoints.length} Raw GPS points'),
+            title: Text('${dataChannel.gpsPoints.length} GPS points'),
             subtitle: const Text(
               'Pool of points for further calculations. Calculated by auto create alias duration divided by trackpoint interval.',
             ),
@@ -224,37 +224,6 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
               },
             )),
 
-        /// smoothed gps points
-        ListTile(
-            leading: Container(
-                color: Colors.white,
-                child: Stack(children: [
-                  Icon(
-                    Icons.circle_outlined,
-                    color: AppColors.smoothedGpsTrackingDot.color,
-                  ),
-                  Icon(
-                    Icons.circle,
-                    color:
-                        AppColors.smoothedGpsTrackingDot.color.withAlpha(128),
-                  )
-                ])),
-            title: Text(
-                '${dataChannel.gpsSmoothPoints.length} Smoothed GPS points'),
-            subtitle: const Text(
-              'Raw GPS averaged by smooth count',
-            ),
-            trailing: IconButton(
-              icon: const Icon(Icons.copy),
-              onPressed: () {
-                String text = dataChannel.gpsSmoothPoints
-                    .map(
-                      (e) => e.toString(),
-                    )
-                    .join('\n');
-                Clipboard.setData(ClipboardData(text: text));
-              },
-            )),
         // calculation gps points
         ListTile(
             leading: Container(
@@ -375,17 +344,17 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                           child: const Text('Yes'),
                           onPressed: () async {
                             Navigator.pop(context);
-                            FlutterBackgroundService().invoke(
-                                BackgroundChannelCommand.reloadUserSettings
-                                    .toString());
+
                             if (dataChannel.trackingStatusTrigger !=
                                 TrackingStatus.moving) {
+                              FlutterBackgroundService().invoke(
+                                  BackgroundChannelCommand.triggerMoving
+                                      .toString());
                               Fluttertoast.showToast(msg: 'Start sheduled');
+                              dataChannel.trackingStatusTrigger =
+                                  TrackingStatus.moving;
+                              notify(_listenableStatusTrigger);
                             }
-                            dataChannel.trackingStatusTrigger = await Cache
-                                .trackingStatusTriggered
-                                .save<TrackingStatus>(TrackingStatus.moving);
-                            notify(_listenableStatusTrigger);
                           },
                         ),
                         TextButton(
@@ -416,17 +385,16 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                           child: const Text('Yes'),
                           onPressed: () async {
                             Navigator.pop(context);
-                            FlutterBackgroundService().invoke(
-                                BackgroundChannelCommand.reloadUserSettings
-                                    .toString());
                             if (dataChannel.trackingStatusTrigger !=
                                 TrackingStatus.standing) {
+                              FlutterBackgroundService().invoke(
+                                  BackgroundChannelCommand.triggerStanding
+                                      .toString());
                               Fluttertoast.showToast(msg: 'Stop sheduled');
+                              dataChannel.trackingStatusTrigger =
+                                  TrackingStatus.standing;
+                              notify(_listenableStatusTrigger);
                             }
-                            dataChannel.trackingStatusTrigger = await Cache
-                                .trackingStatusTriggered
-                                .save<TrackingStatus>(TrackingStatus.moving);
-                            notify(_listenableStatusTrigger);
                           },
                         ),
                         TextButton(
@@ -668,7 +636,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         },
       ),
       title: FilledButton(
-        child: const Text('Members'),
+        child: const Text('Users'),
         onPressed: () async {
           await dialogSelectUser();
           await dataChannel.updateAssets();
@@ -704,7 +672,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
         },
       ),
       title: FilledButton(
-        child: const Text('Members'),
+        child: const Text('Users'),
         onPressed: () async {
           await dialogSelectUser();
           await dataChannel.updateAssets();

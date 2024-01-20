@@ -79,7 +79,11 @@ android {
             
             // source: https://stackoverflow.com/a/43230396/4823385
             signingConfig signingConfigs.release
-            //proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+
+            // https://github.com/builttoroam/device_calendar/issues/99#issuecomment-612449677
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
         
     }

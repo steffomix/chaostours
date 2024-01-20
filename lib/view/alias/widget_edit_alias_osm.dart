@@ -535,17 +535,16 @@ class _AliasTrackingRenderer {
     GeoPoint geoPoint = await controller.centerMap;
     GPS currentGps = channel.gps ?? GPS(geoPoint.latitude, geoPoint.longitude);
     List<GPS> gpsPoints = getRange(channel.gpsPoints);
-    List<GPS> gpsSmoothPoints = getRange(channel.gpsSmoothPoints);
     List<GPS> gpsCalcPoints = getRange(channel.gpsCalcPoints);
     GPS? lastStatusStanding = channel.gpsLastStatusStanding;
     while (keys.isNotEmpty) {
       controller.removeCircle(keys.removeLast());
     }
 
+    var g = await GPS.gps();
     controller.drawCircle(CircleOSM(
       key: key,
-      centerPoint:
-          GeoPoint(latitude: currentGps.lat, longitude: currentGps.lon),
+      centerPoint: GeoPoint(latitude: g.lat, longitude: g.lon),
       radius: 10,
       color: AppColors.currentGpsDot.color,
       strokeWidth: 10,
@@ -579,15 +578,6 @@ class _AliasTrackingRenderer {
           strokeWidth: 10,
         ));
       }
-      for (var gps in gpsSmoothPoints) {
-        controller.drawCircle(CircleOSM(
-          key: key,
-          centerPoint: GeoPoint(latitude: gps.lat, longitude: gps.lon),
-          radius: 3,
-          color: AppColors.smoothedGpsTrackingDot.color,
-          strokeWidth: 10,
-        ));
-      }
       for (var gps in gpsCalcPoints) {
         controller.drawCircle(CircleOSM(
           key: key,
@@ -599,10 +589,11 @@ class _AliasTrackingRenderer {
       }
 
       if (lastStatusStanding != null) {
-        GPS gps = lastStatusStanding;
         controller.drawCircle(CircleOSM(
           key: key,
-          centerPoint: GeoPoint(latitude: gps.lat, longitude: gps.lon),
+          centerPoint: GeoPoint(
+              latitude: lastStatusStanding.lat,
+              longitude: lastStatusStanding.lon),
           radius: 5,
           color: AppColors.lastTrackingStatusWithAliasDot.color,
           strokeWidth: 10,

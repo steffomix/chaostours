@@ -83,6 +83,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
     return ListView(padding: const EdgeInsets.all(10), children: [
       dateTime(),
       duration(),
+      isActive(),
       AppWidgets.divider(),
       address(),
       AppWidgets.divider(),
@@ -235,6 +236,18 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
     ]);
   }
 
+  Widget isActive() {
+    return ListTile(
+        leading: AppWidgets.checkbox(
+          value: _model.isActive,
+          onChanged: (state) async {
+            _model.isActive = state ?? false;
+            _model.update();
+          },
+        ),
+        title: const Text('Active & statistics'));
+  }
+
   /// aliasList
   ///
   ///
@@ -277,7 +290,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
   Widget widgetUsers() {
     return ListTile(
       title: FilledButton(
-        child: const Text('Members'),
+        child: const Text('Users'),
         onPressed: () async {
           await dialogSelectUser();
           render();

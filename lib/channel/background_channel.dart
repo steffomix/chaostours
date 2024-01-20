@@ -21,6 +21,7 @@ limitations under the License.
 
 import 'dart:io';
 import 'dart:ui';
+import 'package:chaostours/channel/data_channel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 
@@ -36,13 +37,12 @@ import 'package:chaostours/util.dart' as util;
 enum BackgroundChannelCommand {
   startService,
   stopService,
-  gotoForeground,
-  gotoBackground,
   reloadUserSettings,
   onTracking,
-  track,
-  notify,
-  closeDatabase;
+  forceTracking,
+  closeDatabase,
+  triggerStanding,
+  triggerMoving;
 
   @override
   String toString() => name;
@@ -72,32 +72,6 @@ class BackgroundChannel {
 
     await DB.openDatabase();
 
-    service.on(BackgroundChannelCommand.stopService.toString()).listen((_) {
-      serviceIsRunning = false;
-      service.stopSelf();
-    });
-    service
-        .on(BackgroundChannelCommand.stopService.toString())
-        .listen((_) async {
-      try {
-        service.invoke(BackgroundChannelCommand.onTracking.toString(),
-            await tracker.track());
-      } catch (e, stk) {
-        logger.error('background tracking: $e', stk);
-      }
-    });
-
-    service
-        .on(BackgroundChannelCommand.reloadUserSettings.toString())
-        .listen((_) {
-      Cache.reload();
-    });
-
-    service.on(BackgroundChannelCommand.closeDatabase.toString()).listen((_) {
-      DB.closeDatabase();
-    });
-    int tick = 0;
-
     Future<void> executeTracker() async {
       try {
         service.invoke(BackgroundChannelCommand.onTracking.toString(),
@@ -108,8 +82,7 @@ class BackgroundChannel {
       try {
         NotificationChannel.sendTrackingUpdateNotification(
             title: 'Tick Update',
-            message:
-                'T$tick; Status: ${tracker.trackingStatus?.name.toUpperCase()}'
+            message: 'Status: ${tracker.trackingStatus?.name.toUpperCase()}'
                 ' since ${util.formatDuration(tracker.statusDuration)}',
             details: NotificationChannel.ongoigTrackingUpdateConfiguration);
       } catch (e) {
@@ -117,10 +90,46 @@ class BackgroundChannel {
       }
     }
 
+    service
+        .on(BackgroundChannelCommand.triggerStanding.toString())
+        .listen((_) async {
+      tracker.triggeredTrackingStatus = TrackingStatus.standing;
+    });
+    service
+        .on(BackgroundChannelCommand.triggerMoving.toString())
+        .listen((_) async {
+      tracker.triggeredTrackingStatus = TrackingStatus.moving;
+    });
+
+    // stop service
+    service.on(BackgroundChannelCommand.stopService.toString()).listen((_) {
+      serviceIsRunning = false;
+      service.stopSelf();
+    });
+
+    // force tracking
+    service
+        .on(BackgroundChannelCommand.forceTracking.toString())
+        .listen((_) async {
+      executeTracker();
+    });
+
+    // reload user settings
+    service
+        .on(BackgroundChannelCommand.reloadUserSettings.toString())
+        .listen((_) {
+      Cache.reload();
+    });
+
+    // close database
+    service.on(BackgroundChannelCommand.closeDatabase.toString()).listen((_) {
+      service.stopSelf();
+      DB.closeDatabase();
+    });
+
     try {
       const Cache cache = Cache.appSettingBackgroundTrackingInterval;
       while (serviceIsRunning) {
-        tick++;
         await Future.microtask(executeTracker);
         try {
           await Future.delayed(await cache

@@ -321,10 +321,6 @@ class AppUserSetting {
           },
         );
 
-      ///
-      ///
-      ///
-
       case Cache.appSettingBackgroundTrackingEnabled:
         return _appUserSettings[cache] ??= AppUserSetting._option(
           cache,
