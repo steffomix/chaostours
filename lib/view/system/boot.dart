@@ -546,13 +546,7 @@ class _WelcomeState extends State<Welcome> {
     }
     if (mounted) {
       await AppWidgets.dialog(context: context, contents: [
-        FilledButton(
-          child: Text(chaosToursLicense),
-          onPressed: () async {
-            await launchUrl(
-                Uri.parse('http://www.apache.org/licenses/LICENSE-2.0'));
-          },
-        )
+        widgetChaosToursLicense
       ], buttons: [
         FilledButton(
           child: const Text('Decline'),

@@ -16,6 +16,7 @@ limitations under the License.
 
 import 'package:chaostours/calendar.dart';
 import 'package:chaostours/conf/app_user_settings.dart';
+import 'package:chaostours/database/cache.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/channel/tracking.dart';
@@ -234,14 +235,14 @@ class TypeAdapter {
   static String serializeFlexScheme(FlexScheme value) => value.name;
   static FlexScheme? deserializeFlexScheme(String? value) {
     if (value == null) {
-      return FlexScheme.material;
+      return StaticCache.flexScheme;
     }
     try {
       return FlexScheme.values.byName(value);
     } catch (e) {
       logger
           .warn('FlexScheme $value not found. Fallback to FlexScheme.material');
-      return FlexScheme.material;
+      return StaticCache.flexScheme;
     }
   }
 }

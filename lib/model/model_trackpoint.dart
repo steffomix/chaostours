@@ -14,14 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:sqflite/sqflite.dart';
+
+///
 import 'package:chaostours/database/cache.dart';
 import 'package:chaostours/database/type_adapter.dart';
 import 'package:chaostours/gps_location.dart';
 import 'package:chaostours/shared/shared_trackpoint_task.dart';
 import 'package:chaostours/shared/shared_trackpoint_user.dart';
-import 'package:sqflite/sqflite.dart';
-
-///
 import 'package:chaostours/calendar.dart';
 import 'package:chaostours/database/database.dart';
 import 'package:chaostours/model/model_alias.dart';
@@ -34,8 +34,6 @@ import 'package:chaostours/model/model_trackpoint_task.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/util.dart' as util;
 import 'package:chaostours/logger.dart';
-
-class TrackpointAssets {}
 
 class ModelTrackPoint {
   static Logger logger = Logger.logger<ModelTrackPoint>();
