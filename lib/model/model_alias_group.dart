@@ -17,6 +17,7 @@ limitations under the License.
 import 'package:chaostours/calendar.dart';
 import 'package:chaostours/database/cache.dart';
 import 'package:chaostours/database/database.dart';
+import 'package:chaostours/database/type_adapter.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_group.dart';
@@ -87,89 +88,101 @@ class ModelAliasGroup implements ModelGroup {
     return <String, Object?>{
       TableAliasGroup.primaryKey.column: id,
       TableAliasGroup.idCalendar.column: idCalendar,
-      TableAliasGroup.isActive.column: DB.boolToInt(isActive),
+      TableAliasGroup.isActive.column: TypeAdapter.serializeBool(isActive),
       TableAliasGroup.privacy.column: privacy.level,
       TableAliasGroup.title.column: title,
       TableAliasGroup.description.column: description,
       TableAliasGroup.ensuredPrivacyCompliance.column:
-          DB.boolToInt(ensuredPrivacyCompliance),
-      TableAliasGroup.withCalendarHtml.column: DB.boolToInt(calendarHtml),
-      TableAliasGroup.withCalendarGps.column: DB.boolToInt(calendarGps),
+          TypeAdapter.serializeBool(ensuredPrivacyCompliance),
+      TableAliasGroup.withCalendarHtml.column:
+          TypeAdapter.serializeBool(calendarHtml),
+      TableAliasGroup.withCalendarGps.column:
+          TypeAdapter.serializeBool(calendarGps),
       TableAliasGroup.withCalendarTimeStart.column:
-          DB.boolToInt(calendarTimeStart),
-      TableAliasGroup.withCalendarTimeEnd.column: DB.boolToInt(calendarTimeEnd),
+          TypeAdapter.serializeBool(calendarTimeStart),
+      TableAliasGroup.withCalendarTimeEnd.column:
+          TypeAdapter.serializeBool(calendarTimeEnd),
       TableAliasGroup.withCalendarDuration.column:
-          DB.boolToInt(calendarDuration),
-      TableAliasGroup.withCalendarAddress.column: DB.boolToInt(calendarAddress),
+          TypeAdapter.serializeBool(calendarDuration),
+      TableAliasGroup.withCalendarAddress.column:
+          TypeAdapter.serializeBool(calendarAddress),
       TableAliasGroup.withCalendarFullAddress.column:
-          DB.boolToInt(calendarFullAddress),
+          TypeAdapter.serializeBool(calendarFullAddress),
       TableAliasGroup.withCalendarTrackpointNotes.column:
-          DB.boolToInt(calendarTrackpointNotes),
-      TableAliasGroup.withCalendarAlias.column: DB.boolToInt(calendarAlias),
+          TypeAdapter.serializeBool(calendarTrackpointNotes),
+      TableAliasGroup.withCalendarAlias.column:
+          TypeAdapter.serializeBool(calendarAlias),
       TableAliasGroup.withCalendarAliasNearby.column:
-          DB.boolToInt(calendarAliasNearby),
+          TypeAdapter.serializeBool(calendarAliasNearby),
       TableAliasGroup.withCalendarNearbyAliasDescription.column:
-          DB.boolToInt(calendarNearbyAliasDescription),
+          TypeAdapter.serializeBool(calendarNearbyAliasDescription),
       TableAliasGroup.withCalendarAliasDescription.column:
-          DB.boolToInt(calendarAliasDescription),
-      TableAliasGroup.withCalendarUsers.column: DB.boolToInt(calendarUsers),
+          TypeAdapter.serializeBool(calendarAliasDescription),
+      TableAliasGroup.withCalendarUsers.column:
+          TypeAdapter.serializeBool(calendarUsers),
       TableAliasGroup.withCalendarUserNotes.column:
-          DB.boolToInt(calendarUserNotes),
+          TypeAdapter.serializeBool(calendarUserNotes),
       TableAliasGroup.withCalendarUserDescription.column:
-          DB.boolToInt(calendarUserDescription),
-      TableAliasGroup.withCalendarTasks.column: DB.boolToInt(calendarTasks),
+          TypeAdapter.serializeBool(calendarUserDescription),
+      TableAliasGroup.withCalendarTasks.column:
+          TypeAdapter.serializeBool(calendarTasks),
       TableAliasGroup.withCalendarTaskNotes.column:
-          DB.boolToInt(calendarTaskNotes),
+          TypeAdapter.serializeBool(calendarTaskNotes),
       TableAliasGroup.withCalendarTaskDescription.column:
-          DB.boolToInt(calendarTaskDescription),
+          TypeAdapter.serializeBool(calendarTaskDescription),
     };
   }
 
   static ModelAliasGroup fromMap(Map<String, Object?> map) {
     var model = ModelAliasGroup(
-      idCalendar: DB.parseString(map[TableAliasGroup.idCalendar.column]),
-      isActive: DB.parseBool(map[TableAliasGroup.isActive.column]),
+      idCalendar:
+          TypeAdapter.parseString(map[TableAliasGroup.idCalendar.column]),
+      isActive:
+          TypeAdapter.deserializeBool(map[TableAliasGroup.isActive.column]),
       privacy: AliasPrivacy.byId(map[TableAliasGroup.privacy.column]),
-      title: DB.parseString(map[TableAliasGroup.title.column]),
-      description: DB.parseString(map[TableAliasGroup.description.column]),
-      ensuredPrivacyCompliance:
-          DB.parseBool(map[TableAliasGroup.ensuredPrivacyCompliance.column]),
-      calendarHtml: DB.parseBool(map[TableAliasGroup.withCalendarHtml.column]),
-      calendarGps: DB.parseBool(map[TableAliasGroup.withCalendarGps.column]),
-      calendarTimeStart:
-          DB.parseBool(map[TableAliasGroup.withCalendarTimeStart.column]),
-      calendarTimeEnd:
-          DB.parseBool(map[TableAliasGroup.withCalendarTimeEnd.column]),
-      calendarDuration:
-          DB.parseBool(map[TableAliasGroup.withCalendarDuration.column]),
-      calendarAddress:
-          DB.parseBool(map[TableAliasGroup.withCalendarAddress.column]),
-      calendarFullAddress:
-          DB.parseBool(map[TableAliasGroup.withCalendarFullAddress.column]),
-      calendarTrackpointNotes:
-          DB.parseBool(map[TableAliasGroup.withCalendarTrackpointNotes.column]),
-      calendarAlias:
-          DB.parseBool(map[TableAliasGroup.withCalendarAlias.column]),
-      calendarAliasNearby:
-          DB.parseBool(map[TableAliasGroup.withCalendarAliasNearby.column]),
-      calendarNearbyAliasDescription: DB.parseBool(
+      title: TypeAdapter.parseString(map[TableAliasGroup.title.column]),
+      description:
+          TypeAdapter.parseString(map[TableAliasGroup.description.column]),
+      ensuredPrivacyCompliance: TypeAdapter.deserializeBool(
+          map[TableAliasGroup.ensuredPrivacyCompliance.column]),
+      calendarHtml: TypeAdapter.deserializeBool(
+          map[TableAliasGroup.withCalendarHtml.column]),
+      calendarGps: TypeAdapter.deserializeBool(
+          map[TableAliasGroup.withCalendarGps.column]),
+      calendarTimeStart: TypeAdapter.deserializeBool(
+          map[TableAliasGroup.withCalendarTimeStart.column]),
+      calendarTimeEnd: TypeAdapter.deserializeBool(
+          map[TableAliasGroup.withCalendarTimeEnd.column]),
+      calendarDuration: TypeAdapter.deserializeBool(
+          map[TableAliasGroup.withCalendarDuration.column]),
+      calendarAddress: TypeAdapter.deserializeBool(
+          map[TableAliasGroup.withCalendarAddress.column]),
+      calendarFullAddress: TypeAdapter.deserializeBool(
+          map[TableAliasGroup.withCalendarFullAddress.column]),
+      calendarTrackpointNotes: TypeAdapter.deserializeBool(
+          map[TableAliasGroup.withCalendarTrackpointNotes.column]),
+      calendarAlias: TypeAdapter.deserializeBool(
+          map[TableAliasGroup.withCalendarAlias.column]),
+      calendarAliasNearby: TypeAdapter.deserializeBool(
+          map[TableAliasGroup.withCalendarAliasNearby.column]),
+      calendarNearbyAliasDescription: TypeAdapter.deserializeBool(
           map[TableAliasGroup.withCalendarNearbyAliasDescription.column]),
-      calendarAliasDescription: DB
-          .parseBool(map[TableAliasGroup.withCalendarAliasDescription.column]),
-      calendarUsers:
-          DB.parseBool(map[TableAliasGroup.withCalendarUsers.column]),
-      calendarUserNotes:
-          DB.parseBool(map[TableAliasGroup.withCalendarUserNotes.column]),
-      calendarUserDescription:
-          DB.parseBool(map[TableAliasGroup.withCalendarUserDescription.column]),
-      calendarTasks:
-          DB.parseBool(map[TableAliasGroup.withCalendarTasks.column]),
-      calendarTaskNotes:
-          DB.parseBool(map[TableAliasGroup.withCalendarTaskNotes.column]),
-      calendarTaskDescription:
-          DB.parseBool(map[TableAliasGroup.withCalendarTaskDescription.column]),
+      calendarAliasDescription: TypeAdapter.deserializeBool(
+          map[TableAliasGroup.withCalendarAliasDescription.column]),
+      calendarUsers: TypeAdapter.deserializeBool(
+          map[TableAliasGroup.withCalendarUsers.column]),
+      calendarUserNotes: TypeAdapter.deserializeBool(
+          map[TableAliasGroup.withCalendarUserNotes.column]),
+      calendarUserDescription: TypeAdapter.deserializeBool(
+          map[TableAliasGroup.withCalendarUserDescription.column]),
+      calendarTasks: TypeAdapter.deserializeBool(
+          map[TableAliasGroup.withCalendarTasks.column]),
+      calendarTaskNotes: TypeAdapter.deserializeBool(
+          map[TableAliasGroup.withCalendarTaskNotes.column]),
+      calendarTaskDescription: TypeAdapter.deserializeBool(
+          map[TableAliasGroup.withCalendarTaskDescription.column]),
     );
-    model._id = DB.parseInt(map[TableAliasGroup.primaryKey.column]);
+    model._id = TypeAdapter.parseInt(map[TableAliasGroup.primaryKey.column]);
     return model;
   }
 
@@ -181,7 +194,7 @@ class ModelAliasGroup implements ModelGroup {
             .query(TableAliasGroup.table, columns: ['count(*) as $col']);
 
         if (rows.isNotEmpty) {
-          return DB.parseInt(rows.first[col], fallback: 0);
+          return TypeAdapter.parseInt(rows.first[col], fallback: 0);
         } else {
           return 0;
         }
@@ -267,7 +280,7 @@ class ModelAliasGroup implements ModelGroup {
         return await txn.query(TableAliasGroup.table,
             columns: TableAliasGroup.columns,
             where: '${TableAliasGroup.isActive.column} = ?',
-            whereArgs: [DB.boolToInt(activated)],
+            whereArgs: [TypeAdapter.serializeBool(activated)],
             limit: limit,
             offset: offset,
             orderBy: TableAliasGroup.title.column);
@@ -312,7 +325,7 @@ class ModelAliasGroup implements ModelGroup {
           where: '${TableAliasAliasGroup.idAliasGroup.column} = ?',
           whereArgs: [id]);
     });
-    return rows.map((e) => DB.parseInt(e[col])).toList();
+    return rows.map((e) => TypeAdapter.parseInt(e[col])).toList();
   }
 
   Future<int> aliasCount() async {
@@ -322,7 +335,7 @@ class ModelAliasGroup implements ModelGroup {
           columns: ['count(*) as $col'],
           where: '${TableAliasAliasGroup.idAliasGroup.column} = ?',
           whereArgs: [id]);
-      return DB.parseInt(rows.firstOrNull?[col]);
+      return TypeAdapter.parseInt(rows.firstOrNull?[col]);
     });
   }
 

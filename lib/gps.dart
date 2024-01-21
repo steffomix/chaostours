@@ -24,7 +24,6 @@ import 'package:android_intent_plus/android_intent.dart';
 
 //
 import 'package:chaostours/conf/app_user_settings.dart';
-import 'package:chaostours/value_expired.dart';
 import 'package:chaostours/logger.dart';
 
 const earthRadius = 6378137.0;
@@ -151,8 +150,6 @@ class GPS {
 
   static Duration defaultCacheDuration =
       AppUserSetting(Cache.appSettingCacheGpsTime).defaultValue as Duration;
-  static ValueExpired _cachedGps =
-      ValueExpired(value: null, expireAfter: ExpiredValue.immediately);
   DateTime time = DateTime.now();
   double lat;
   double lon;

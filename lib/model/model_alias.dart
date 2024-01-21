@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/database/type_adapter.dart';
 import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'dart:math';
@@ -47,7 +48,7 @@ enum AliasPrivacy {
   static final int _saveId = AliasPrivacy.restricted.level;
 
   static AliasPrivacy byId(Object? value) {
-    int id = DB.parseInt(value, fallback: 3);
+    int id = TypeAdapter.parseInt(value, fallback: 3);
     int idChecked = max(1, min(3, id));
     return byValue(idChecked == id ? idChecked : _saveId);
   }
@@ -103,29 +104,31 @@ class ModelAlias implements Model {
 
   static ModelAlias fromMap(Map<String, Object?> map) {
     var model = ModelAlias(
-        isActive: DB.parseBool(map[TableAlias.isActive.column],
-            fallback: DB.parseBool(true)),
-        gps: GPS(DB.parseDouble(map[TableAlias.latitude.column]),
-            DB.parseDouble(map[TableAlias.longitude.column])),
-        radius: DB.parseInt(map[TableAlias.radius.column], fallback: 10),
+        isActive: TypeAdapter.deserializeBool(map[TableAlias.isActive.column],
+            fallback: TypeAdapter.deserializeBool(true)),
+        gps: GPS(TypeAdapter.parseDouble(map[TableAlias.latitude.column]),
+            TypeAdapter.parseDouble(map[TableAlias.longitude.column])),
+        radius:
+            TypeAdapter.parseInt(map[TableAlias.radius.column], fallback: 10),
         privacy: AliasPrivacy.byId(map[TableAlias.privacy.column]),
-        lastVisited: DB.intToTime(map[TableAlias.lastVisited.column]),
-        timesVisited: DB.parseInt(map[TableAlias.timesVisited.column]),
-        title: DB.parseString(map[TableAlias.title.column]),
-        description: DB.parseString(map[TableAlias.description.column]));
-    model._id = DB.parseInt(map[TableAlias.primaryKey.column]);
+        lastVisited: TypeAdapter.intToTime(map[TableAlias.lastVisited.column]),
+        timesVisited: TypeAdapter.parseInt(map[TableAlias.timesVisited.column]),
+        title: TypeAdapter.parseString(map[TableAlias.title.column]),
+        description:
+            TypeAdapter.parseString(map[TableAlias.description.column]));
+    model._id = TypeAdapter.parseInt(map[TableAlias.primaryKey.column]);
     return model;
   }
 
   Map<String, Object?> toMap() {
     return <String, Object?>{
       TableAlias.primaryKey.column: id,
-      TableAlias.isActive.column: DB.boolToInt(isActive),
+      TableAlias.isActive.column: TypeAdapter.serializeBool(isActive),
       TableAlias.latitude.column: gps.lat,
       TableAlias.longitude.column: gps.lon,
       TableAlias.radius.column: radius,
       TableAlias.privacy.column: privacy.level,
-      TableAlias.lastVisited.column: DB.timeToInt(lastVisited),
+      TableAlias.lastVisited.column: TypeAdapter.timeToInt(lastVisited),
       TableAlias.timesVisited.column: timesVisited,
       TableAlias.title.column: title,
       TableAlias.description.column: description
@@ -139,7 +142,7 @@ class ModelAlias implements Model {
         final rows =
             await txn.query(TableAlias.table, columns: ['count(*) as $col']);
         if (rows.isNotEmpty) {
-          return DB.parseInt(rows.first[col], fallback: 0);
+          return TypeAdapter.parseInt(rows.first[col], fallback: 0);
         } else {
           return 0;
         }
@@ -158,7 +161,7 @@ class ModelAlias implements Model {
       },
     );
     if (rows.isNotEmpty) {
-      return DB.parseInt(rows.first[col], fallback: 0);
+      return TypeAdapter.parseInt(rows.first[col], fallback: 0);
     }
     return 0;
   }
@@ -282,7 +285,12 @@ class ModelAlias implements Model {
             ? ''
             : ' AND (${TableAlias.title.column} LIKE ? OR ${TableAlias.description.column} LIKE ?) ';
         final searchArgs = search.isEmpty ? [] : [trueSearch, trueSearch];
-        final args = [DB.boolToInt(activated), ...searchArgs, limit, offset];
+        final args = [
+          TypeAdapter.serializeBool(activated),
+          ...searchArgs,
+          limit,
+          offset
+        ];
         final q = '''
 SELECT ${TableAlias.columns.join(', ')} , COUNT(${TableTrackPointAlias.idAlias}) as $colCountVisited FROM ${TableAlias.table}
 LEFT JOIN ${TableTrackPointAlias.table} ON ${TableTrackPointAlias.idAlias} = ${TableAlias.id}
@@ -300,7 +308,7 @@ OFFSET ?
     ModelAlias model;
     for (var row in rows) {
       model = fromMap(row);
-      model._countVisited = DB.parseInt(row[colCountVisited]);
+      model._countVisited = TypeAdapter.parseInt(row[colCountVisited]);
       models.add(model);
     }
     return models;
@@ -310,7 +318,7 @@ OFFSET ?
       return await txn.query(TableAlias.table,
           columns: TableAlias.columns,
           where: '${TableAlias.isActive.column} = ? $searchQuery',
-          whereArgs: [DB.boolToInt(activated), ...searchArgs],
+          whereArgs: [TypeAdapter.serializeBool(activated), ...searchArgs],
           orderBy: lastVisited
               ? '${TableAlias.lastVisited.column} DESC'
               : '${TableAlias.title.column} ASC',
@@ -336,7 +344,8 @@ LEFT JOIN ${TableAliasGroup.table} ON ${TableAliasAliasGroup.idAliasGroup} =  ${
 WHERE ${TableAlias.isActive} = ? AND ${TableAliasGroup.isActive} = ?
 ''';
 
-      return await txn.rawQuery(q, List.filled(2, DB.boolToInt(isActive)));
+      return await txn.rawQuery(
+          q, List.filled(2, TypeAdapter.serializeBool(isActive)));
     });
     return rows
         .map(
@@ -399,7 +408,7 @@ GROUP BY ${TableAlias.id}
 LIMIT ?
 ''';
       return await txn.rawQuery(q, [
-        ...(includeInactive ? [] : [DB.boolToInt(true)]),
+        ...(includeInactive ? [] : [TypeAdapter.serializeBool(true)]),
         area.southLatitudeBorder,
         area.northLatitudeBorder,
         area.westLongitudeBorder,
@@ -439,7 +448,7 @@ LIMIT ?
     if (ids.isEmpty) {
       return <int>[];
     }
-    return ids.map((e) => DB.parseInt(e[col])).toList();
+    return ids.map((e) => TypeAdapter.parseInt(e[col])).toList();
   }
 
   Future<int> addGroup(ModelAliasGroup group) async {
@@ -500,12 +509,12 @@ LIMIT ?
     });
     List<CalendarEventId> result = [];
     for (var row in rows) {
-      String parsedId = DB.parseString(row[idCalendar]);
+      String parsedId = TypeAdapter.parseString(row[idCalendar]);
 
       if (parsedId.isNotEmpty) {
         result.add(CalendarEventId(
-            aliasGroupId: DB.parseInt(row[idAliasGroup], fallback: -1),
-            calendarId: DB.parseString(row[idCalendar])));
+            aliasGroupId: TypeAdapter.parseInt(row[idAliasGroup], fallback: -1),
+            calendarId: TypeAdapter.parseString(row[idCalendar])));
       }
     }
     return result;

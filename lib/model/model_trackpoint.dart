@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 import 'package:chaostours/database/cache.dart';
+import 'package:chaostours/database/type_adapter.dart';
 import 'package:chaostours/gps_location.dart';
 import 'package:chaostours/shared/shared_trackpoint_task.dart';
 import 'package:chaostours/shared/shared_trackpoint_user.dart';
@@ -102,7 +103,7 @@ class ModelTrackPoint {
   Map<String, Object?> toMap() {
     return <String, Object?>{
       TableTrackPoint.primaryKey.column: id,
-      TableTrackPoint.isActive.column: DB.boolToInt(isActive),
+      TableTrackPoint.isActive.column: TypeAdapter.serializeBool(isActive),
       TableTrackPoint.latitude.column: gps.lat,
       TableTrackPoint.longitude.column: gps.lon,
       TableTrackPoint.timeStart.column:
@@ -117,16 +118,18 @@ class ModelTrackPoint {
 
   static ModelTrackPoint fromMap(Map<String, Object?> map) {
     var model = ModelTrackPoint(
-        gps: GPS(DB.parseDouble(map[TableTrackPoint.latitude.column]),
-            DB.parseDouble(map[TableTrackPoint.longitude.column])),
-        isActive: DB.parseBool(map[TableTrackPoint.isActive.column]),
-        timeStart:
-            DB.intToTime(DB.parseInt(map[TableTrackPoint.timeStart.column])),
-        timeEnd: DB.intToTime(DB.parseInt(map[TableTrackPoint.timeEnd.column])),
+        gps: GPS(TypeAdapter.parseDouble(map[TableTrackPoint.latitude.column]),
+            TypeAdapter.parseDouble(map[TableTrackPoint.longitude.column])),
+        isActive:
+            TypeAdapter.deserializeBool(map[TableTrackPoint.isActive.column]),
+        timeStart: TypeAdapter.intToTime(
+            TypeAdapter.parseInt(map[TableTrackPoint.timeStart.column])),
+        timeEnd: TypeAdapter.intToTime(
+            TypeAdapter.parseInt(map[TableTrackPoint.timeEnd.column])),
         address: (map[TableTrackPoint.address.column] ?? '').toString(),
         fullAddress: (map[TableTrackPoint.fullAddress.column] ?? '').toString(),
         notes: (map[TableTrackPoint.notes.column] ?? '').toString());
-    model._id = DB.parseInt(map[TableTrackPoint.primaryKey.column]);
+    model._id = TypeAdapter.parseInt(map[TableTrackPoint.primaryKey.column]);
     return model;
   }
 
@@ -181,7 +184,7 @@ class ModelTrackPoint {
         }
 
         if (rows.isNotEmpty) {
-          return DB.parseInt(rows.first[col], fallback: 0);
+          return TypeAdapter.parseInt(rows.first[col], fallback: 0);
         } else {
           return 0;
         }
@@ -247,7 +250,7 @@ class ModelTrackPoint {
           whereArgs: [id, asset.id],
           limit: 1);
 
-      final isUpdate = DB.parseBool(rows.firstOrNull?[count]);
+      final isUpdate = TypeAdapter.deserializeBool(rows.firstOrNull?[count]);
 
       return isUpdate
           ? await txn.update(table, {columnNotes: asset.notes},
@@ -370,7 +373,9 @@ class ModelTrackPoint {
     for (var row in rows) {
       var model = ModelAlias.fromMap(row);
       models.add(ModelTrackpointAlias(
-          model: model, trackpointId: id, notes: DB.parseString(row[notes])));
+          model: model,
+          trackpointId: id,
+          notes: TypeAdapter.parseString(row[notes])));
     }
 
     return models;
@@ -402,7 +407,7 @@ class ModelTrackPoint {
       models.add(ModelTrackpointTask(
         model: model,
         trackpointId: id,
-        notes: DB.parseString(row[notes]),
+        notes: TypeAdapter.parseString(row[notes]),
       ));
     }
 
@@ -435,7 +440,7 @@ class ModelTrackPoint {
       models.add(ModelTrackpointUser(
         model: model,
         trackpointId: id,
-        notes: DB.parseString(row[notes]),
+        notes: TypeAdapter.parseString(row[notes]),
       ));
     }
 
@@ -652,7 +657,7 @@ class ModelTrackPoint {
     return await DB.execute((Transaction txn) async {
       final rows = await txn.rawQuery(sql, [
         ...(whereTable == null ? [] : [whereId]),
-        DB.boolToInt(isActive),
+        TypeAdapter.serializeBool(isActive),
         ...List.filled(qmCount - (whereTable == null ? 0 : 1), '%$search%'),
         limit,
         offset,

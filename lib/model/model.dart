@@ -15,6 +15,7 @@ limitations under the License.
 */
 import 'dart:convert';
 
+import 'package:chaostours/database/type_adapter.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/database/database.dart';
 import 'package:sqflite/sqflite.dart';
@@ -83,7 +84,7 @@ abstract class Model implements ModelGroup {
       }
     });
     if (rows.isNotEmpty) {
-      return DB.parseInt(rows.first[col]);
+      return TypeAdapter.parseInt(rows.first[col]);
     }
     return 0;
   }

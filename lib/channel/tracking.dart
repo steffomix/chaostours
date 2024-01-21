@@ -62,6 +62,8 @@ class Tracker {
 
   TrackingStatus triggeredTrackingStatus = TrackingStatus.none;
 
+  bool skipRecord = false;
+
   /// initials
   TrackingStatus oldTrackingStatus = TrackingStatus.standing;
   TrackingStatus? trackingStatus;
@@ -144,8 +146,8 @@ class Tracker {
         // status changed by user
         newTrackingStatus = setStatusMoving(gps);
       } else if (triggeredTrackingStatus == TrackingStatus.standing) {
-        /* gpsPoints.clear();
-        gps = await claculateGPSPoints(gps); */
+        gpsPoints.clear();
+        gps = await claculateGPSPoints(gps);
         // status changed by user
         newTrackingStatus = setStatusStanding(gps);
       }
@@ -162,7 +164,8 @@ class Tracker {
         for (var gps in gpsCalcPoints) {
           final distance =
               GPS.distance(gpsLastStatusStanding ?? gps, gps).round();
-          if (distance <= gpsLocation.radius) {
+          final radius = gpsLocation.radius;
+          if (distance <= radius) {
             // still standing
             checkStartedMoving = false;
             break;
@@ -222,23 +225,25 @@ class Tracker {
 
       ///
     } else {
+      oldTrackingStatus = newTrackingStatus;
       await Cache.reload();
 
       /// we started moving
       if (newTrackingStatus == TrackingStatus.moving) {
         // skip tracking by user
-        if (!(await checkSkipTrackingByUser(stopSkip: true))) {
+        if (!skipRecord) {
           logger.log('new tracking status MOVING');
           gpsLocation =
               await GpsLocation.location(gpsLastStatusStanding ?? gps);
           await gpsLocation.executeStatusMoving();
           logger.log('status MOVING finished');
         }
+        skipRecord = false;
 
         ///
       } else if (newTrackingStatus == TrackingStatus.standing) {
         // skip tracking by user
-        if (!(await checkSkipTrackingByUser())) {
+        if (!skipRecord) {
           logger.log('new tracking status STANDING');
           await gpsLocation.executeStatusStanding();
           logger.log('status STANDING finished');
@@ -247,17 +252,6 @@ class Tracker {
     }
 
     return await serializeState(gps);
-  }
-
-  Future<bool> checkSkipTrackingByUser({bool stopSkip = true}) async {
-    // skip tracking by user
-    if (await Cache.backgroundTrackPointSkipRecordOnce.load<bool>(false)) {
-      if (stopSkip) {
-        await Cache.backgroundTrackPointSkipRecordOnce.save<bool>(false);
-      }
-      return true;
-    }
-    return false;
   }
 
   Future<GPS> claculateGPSPoints(GPS gps) async {

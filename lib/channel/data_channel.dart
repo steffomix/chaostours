@@ -49,6 +49,7 @@ enum DataChannelKey {
   gpsLastStatusStanding,
   gpsLastStatusMoving,
   trackingStatus,
+  skipRecord,
   statusDuration,
   lastAddress,
   lastFullAddress;
@@ -76,7 +77,7 @@ class DataChannel extends TrackPointData {
       ? distanceStanding
       : distanceMoving;
 
-  bool skipTracking = false;
+  bool skipRecord = false;
 
   Future<String> setTrackpointNotes(String text) async {
     return (notes = await Cache.backgroundTrackPointNotes.save<String>(text));
@@ -93,6 +94,8 @@ class DataChannel extends TrackPointData {
             upTimeStart = DateTime.parse(
                 data?[DataChannelKey.upTime.toString()] ??
                     DateTime.now().toIso8601String());
+            skipRecord = TypeAdapter.deserializeBool(
+                data?[DataChannelKey.skipRecord.toString()]);
 
             /// serialized values
             gps = TypeAdapter.deserializeGps(
@@ -141,9 +144,6 @@ class DataChannel extends TrackPointData {
                 .load<TrackingStatus>(TrackingStatus.none);
                  */
             notes = await Cache.backgroundTrackPointNotes.load<String>('');
-
-            skipTracking = await Cache.backgroundTrackPointSkipRecordOnce
-                .load<bool>(false);
 
             distanceMoving = gpsPoints.isNotEmpty
                 ? GPS.distanceOverTrackList(gpsPoints).round()

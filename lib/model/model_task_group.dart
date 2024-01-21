@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 import 'package:chaostours/database/database.dart';
+import 'package:chaostours/database/type_adapter.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/model/model_group.dart';
 import 'package:sqflite/sqflite.dart';
@@ -44,9 +45,11 @@ class ModelTaskGroup implements ModelGroup {
   Map<String, Object?> toMap() {
     return <String, Object?>{
       TableTaskGroup.primaryKey.column: id,
-      TableTaskGroup.isActive.column: DB.boolToInt(isActive),
-      TableTaskGroup.isSelectable.column: DB.boolToInt(isSelectable),
-      TableTaskGroup.isPreselected.column: DB.boolToInt(isPreselected),
+      TableTaskGroup.isActive.column: TypeAdapter.serializeBool(isActive),
+      TableTaskGroup.isSelectable.column:
+          TypeAdapter.serializeBool(isSelectable),
+      TableTaskGroup.isPreselected.column:
+          TypeAdapter.serializeBool(isPreselected),
       TableTaskGroup.sortOrder.column: sortOrder,
       TableTaskGroup.title.column: title,
       TableTaskGroup.description.column: description
@@ -55,13 +58,18 @@ class ModelTaskGroup implements ModelGroup {
 
   static ModelTaskGroup fromMap(Map<String, Object?> map) {
     var model = ModelTaskGroup(
-        isActive: DB.parseBool(map[TableTaskGroup.isActive.column]),
-        isSelectable: DB.parseBool(map[TableTaskGroup.isSelectable.column]),
-        isPreselected: DB.parseBool(map[TableTaskGroup.isPreselected.column]),
-        sortOrder: DB.parseString(map[TableTaskGroup.sortOrder.column]),
-        title: DB.parseString(map[TableTaskGroup.title.column]),
-        description: DB.parseString(map[TableTaskGroup.description.column]));
-    model._id = DB.parseInt(map[TableTaskGroup.primaryKey.column]);
+        isActive:
+            TypeAdapter.deserializeBool(map[TableTaskGroup.isActive.column]),
+        isSelectable: TypeAdapter.deserializeBool(
+            map[TableTaskGroup.isSelectable.column]),
+        isPreselected: TypeAdapter.deserializeBool(
+            map[TableTaskGroup.isPreselected.column]),
+        sortOrder:
+            TypeAdapter.parseString(map[TableTaskGroup.sortOrder.column]),
+        title: TypeAdapter.parseString(map[TableTaskGroup.title.column]),
+        description:
+            TypeAdapter.parseString(map[TableTaskGroup.description.column]));
+    model._id = TypeAdapter.parseInt(map[TableTaskGroup.primaryKey.column]);
     return model;
   }
 
@@ -73,7 +81,7 @@ class ModelTaskGroup implements ModelGroup {
             .query(TableTaskGroup.table, columns: ['count(*) as $col']);
 
         if (rows.isNotEmpty) {
-          return DB.parseInt(rows.first[col], fallback: 0);
+          return TypeAdapter.parseInt(rows.first[col], fallback: 0);
         } else {
           return 0;
         }
@@ -88,7 +96,7 @@ class ModelTaskGroup implements ModelGroup {
           columns: ['count(*) as $col'],
           where: '${TableTaskTaskGroup.idTaskGroup.column} = ?',
           whereArgs: [id]);
-      return DB.parseInt(rows.firstOrNull?[col]);
+      return TypeAdapter.parseInt(rows.firstOrNull?[col]);
     });
   }
 
@@ -173,7 +181,7 @@ class ModelTaskGroup implements ModelGroup {
         return await txn.query(TableTaskGroup.table,
             columns: TableTaskGroup.columns,
             where: '${TableTaskGroup.isActive.column} = ?',
-            whereArgs: [DB.boolToInt(activated)],
+            whereArgs: [TypeAdapter.serializeBool(activated)],
             limit: limit,
             offset: offset,
             orderBy: TableTaskGroup.primaryKey.column);
@@ -223,7 +231,7 @@ class ModelTaskGroup implements ModelGroup {
           where: '${TableTaskTaskGroup.idTaskGroup.column} = ?',
           whereArgs: [id]);
     });
-    return rows.map((e) => DB.parseInt(e[col])).toList();
+    return rows.map((e) => TypeAdapter.parseInt(e[col])).toList();
   }
 
 /* 

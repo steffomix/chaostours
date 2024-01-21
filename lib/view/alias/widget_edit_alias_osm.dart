@@ -170,65 +170,74 @@ class _WidgetOsm extends State<WidgetOsm> {
 
   Widget infoBox() {
     var boxContent = Column(children: [
-      ListTile(
+      ConstrainedBox(
+          constraints: const BoxConstraints(
+            maxHeight: 75,
+            //maxWidth: 1000,
+          ),
+          child: ListTile(
+            /// search icon
+            trailing: IconButton(
+                icon: const Icon(Icons.search, size: 40),
+                onPressed: () {
+                  if (_searchTextChanged) {
+                    lookupGps();
+                  }
+                }),
 
-          /// search icon
-          trailing: IconButton(
-              icon: const Icon(Icons.search, size: 40),
-              onPressed: () {
-                if (_searchTextChanged) {
-                  lookupGps();
-                }
-              }),
-
-          /// search text field
-          title: TextField(
-              controller: _textController,
-              decoration: InputDecoration(
-                  labelStyle: TextStyle(color: Theme.of(context).hintColor),
-                  label: const Text(
-                      'Search order: Country, City, Street, House number')),
-              onChanged: (val) {
-                _searchTextChanged = true;
-                _searchText = val;
-                lookupGps(val);
-              })),
+            /// search text field
+            title: TextField(
+                controller: _textController,
+                decoration: InputDecoration(
+                    labelStyle: TextStyle(color: Theme.of(context).hintColor),
+                    label: const Text(
+                        'Search order: Country, City, Street, House number')),
+                onChanged: (val) {
+                  _searchTextChanged = true;
+                  _searchText = val;
+                  lookupGps(val);
+                }),
+          )),
 
       /// map address
-      ListTile(
+      ConstrainedBox(
+          constraints: const BoxConstraints(
+            maxHeight: 75,
+          ),
+          child: ListTile(
 
-          /// icon update map address
-          trailing: IconButton(
-              icon: const Icon(size: 40, Icons.rotate_left),
+              /// icon update map address
+              trailing: IconButton(
+                  icon: const Icon(size: 40, Icons.rotate_left),
 
-              /// on pressed move to location
-              onPressed: () async {
-                GeoPoint loc = await mapController.centerMap;
-                final gps = GPS(loc.latitude, loc.longitude);
-                await mapController.goToLocation(
-                    GeoPoint(latitude: gps.lat, longitude: gps.lon));
-                addr.Address address = await addr.Address(gps)
-                    .lookup(OsmLookupConditions.onUserRequest);
+                  /// on pressed move to location
+                  onPressed: () async {
+                    GeoPoint loc = await mapController.centerMap;
+                    final gps = GPS(loc.latitude, loc.longitude);
+                    await mapController.goToLocation(
+                        GeoPoint(latitude: gps.lat, longitude: gps.lon));
+                    addr.Address address = await addr.Address(gps)
+                        .lookup(OsmLookupConditions.onUserRequest);
 
-                _addressNotifier.value = address.address;
-              }),
+                    _addressNotifier.value = address.address;
+                  }),
 
-          /// _address value
-          title: ValueListenableBuilder(
-              valueListenable: _addressNotifier,
-              builder: (context, value, child) => Text(
-                    _addressNotifier.value,
-                    style: Theme.of(context).textTheme.bodySmall,
-                    maxLines: 3,
-                  )),
-          leading: IconButton(
-              icon: const Icon(Icons.copy, size: 20),
-              onPressed: () async {
-                await Clipboard.setData(
-                    ClipboardData(text: _addressNotifier.value));
-              })
-          //subtitle: Text('GPS: $_gps'),
-          )
+              /// _address value
+              title: ValueListenableBuilder(
+                  valueListenable: _addressNotifier,
+                  builder: (context, value, child) => Text(
+                        _addressNotifier.value,
+                        style: Theme.of(context).textTheme.bodySmall,
+                        maxLines: 3,
+                      )),
+              leading: IconButton(
+                  icon: const Icon(Icons.copy, size: 20),
+                  onPressed: () async {
+                    await Clipboard.setData(
+                        ClipboardData(text: _addressNotifier.value));
+                  })
+              //subtitle: Text('GPS: $_gps'),
+              )),
     ]);
 
     return SizedBox(
@@ -533,7 +542,6 @@ class _AliasTrackingRenderer {
       return;
     }
     GeoPoint geoPoint = await controller.centerMap;
-    GPS currentGps = channel.gps ?? GPS(geoPoint.latitude, geoPoint.longitude);
     List<GPS> gpsPoints = getRange(channel.gpsPoints);
     List<GPS> gpsCalcPoints = getRange(channel.gpsCalcPoints);
     GPS? lastStatusStanding = channel.gpsLastStatusStanding;
@@ -573,16 +581,17 @@ class _AliasTrackingRenderer {
         controller.drawCircle(CircleOSM(
           key: key,
           centerPoint: GeoPoint(latitude: gps.lat, longitude: gps.lon),
-          radius: 2,
-          color: AppColors.rawGpsTrackingDot.color,
+          radius: 3,
+          color: Colors.black,
           strokeWidth: 10,
         ));
       }
+      double i = 4.0;
       for (var gps in gpsCalcPoints) {
         controller.drawCircle(CircleOSM(
           key: key,
           centerPoint: GeoPoint(latitude: gps.lat, longitude: gps.lon),
-          radius: 4,
+          radius: (i += 0.5),
           color: AppColors.calcGpsTrackingDot.color,
           strokeWidth: 10,
         ));

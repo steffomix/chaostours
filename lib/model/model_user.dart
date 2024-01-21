@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/database/type_adapter.dart';
 import 'package:chaostours/model/model.dart';
 import 'package:sqflite/sqflite.dart';
 //
@@ -52,25 +53,27 @@ class ModelUser implements Model {
 
   static ModelUser fromMap(Map<String, Object?> map) {
     var model = ModelUser(
-      isActive: DB.parseBool(map[TableUser.isActive.column]),
-      isSelectable: DB.parseBool(map[TableUser.isSelectable.column]),
-      isPreselected: DB.parseBool(map[TableUser.isPreselected.column]),
-      sortOrder: DB.parseString(map[TableUser.sortOrder.column]),
-      title: DB.parseString(map[TableUser.title.column]),
-      description: DB.parseString(map[TableUser.description.column]),
-      phone: DB.parseString(map[TableUser.phone.column]),
-      address: DB.parseString(map[TableUser.address.column]),
+      isActive: TypeAdapter.deserializeBool(map[TableUser.isActive.column]),
+      isSelectable:
+          TypeAdapter.deserializeBool(map[TableUser.isSelectable.column]),
+      isPreselected:
+          TypeAdapter.deserializeBool(map[TableUser.isPreselected.column]),
+      sortOrder: TypeAdapter.parseString(map[TableUser.sortOrder.column]),
+      title: TypeAdapter.parseString(map[TableUser.title.column]),
+      description: TypeAdapter.parseString(map[TableUser.description.column]),
+      phone: TypeAdapter.parseString(map[TableUser.phone.column]),
+      address: TypeAdapter.parseString(map[TableUser.address.column]),
     );
-    model._id = DB.parseInt(map[TableUser.primaryKey.column]);
+    model._id = TypeAdapter.parseInt(map[TableUser.primaryKey.column]);
     return model;
   }
 
   Map<String, Object?> toMap() {
     return <String, Object?>{
       TableUser.primaryKey.column: id,
-      TableUser.isActive.column: DB.boolToInt(isActive),
-      TableUser.isSelectable.column: DB.boolToInt(isSelectable),
-      TableUser.isPreselected.column: DB.boolToInt(isPreselected),
+      TableUser.isActive.column: TypeAdapter.serializeBool(isActive),
+      TableUser.isSelectable.column: TypeAdapter.serializeBool(isSelectable),
+      TableUser.isPreselected.column: TypeAdapter.serializeBool(isPreselected),
       TableUser.sortOrder.column: sortOrder,
       TableUser.title.column: title,
       TableUser.description.column: description,
@@ -87,7 +90,7 @@ class ModelUser implements Model {
             await txn.query(TableUser.table, columns: ['count(*) as $col']);
 
         if (rows.isNotEmpty) {
-          return DB.parseInt(rows.first[col], fallback: 0);
+          return TypeAdapter.parseInt(rows.first[col], fallback: 0);
         } else {
           return 0;
         }
@@ -150,7 +153,7 @@ class ModelUser implements Model {
     if (ids.isEmpty) {
       return <int>[];
     }
-    return ids.map((e) => DB.parseInt(e[col])).toList();
+    return ids.map((e) => TypeAdapter.parseInt(e[col])).toList();
   }
 
   Future<int> addGroup(ModelUserGroup group) async {
@@ -195,8 +198,9 @@ class ModelUser implements Model {
             where: selectDeleted
                 ? '${TableUser.title} like ? OR ${TableUser.description} like ?'
                 : '(${TableUser.title} like ? OR ${TableUser.description} like ?) AND ${TableUser.isActive.column} = ?',
-            whereArgs:
-                selectDeleted ? [text, text] : [text, text, DB.boolToInt(true)],
+            whereArgs: selectDeleted
+                ? [text, text]
+                : [text, text, TypeAdapter.serializeBool(true)],
             orderBy: '${TableUser.isActive.column}, ${TableUser.title.column}',
             limit: limit,
             offset: offset);
@@ -229,7 +233,7 @@ class ModelUser implements Model {
           TableUser.table,
           columns: TableUser.columns,
           where: '${TableUser.isActive.column} = ?',
-          whereArgs: [DB.boolToInt(activated)],
+          whereArgs: [TypeAdapter.serializeBool(activated)],
           orderBy: '${TableUser.sortOrder.column}, ${TableUser.title.column}',
           limit: limit,
           offset: offset,
@@ -302,7 +306,8 @@ class ModelUser implements Model {
       ORDER BY $nullsort, ${TableUser.sortOrder}, ${TableUser.title}
 ''';
 
-      return await txn.rawQuery(q, List.filled(3, DB.boolToInt(true)));
+      return await txn.rawQuery(
+          q, List.filled(3, TypeAdapter.serializeBool(true)));
     });
     return rows.map((e) => fromMap(e)).toList();
   }
@@ -323,7 +328,8 @@ class ModelUser implements Model {
       GROUP BY ${TableUser.id}
       ORDER BY $nullsort, ${TableUser.sortOrder}, ${TableUser.title}
 ''';
-      return await txn.rawQuery(q, List.filled(6, DB.boolToInt(true)));
+      return await txn.rawQuery(
+          q, List.filled(6, TypeAdapter.serializeBool(true)));
     });
     return rows.map((e) => fromMap(e)).toList();
   }

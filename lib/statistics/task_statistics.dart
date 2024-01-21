@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 import 'package:chaostours/database/database.dart';
+import 'package:chaostours/database/type_adapter.dart';
 import 'package:chaostours/model/model_group.dart';
 import 'package:chaostours/statistics/asset_statistics.dart';
 
@@ -60,15 +61,15 @@ class TaskStatistics implements AssetStatistics {
 
   static Future<TaskStatistics> statistics(ModelGroup model,
       {DateTime? start, DateTime? end, bool isActive = true}) async {
-    List<Object?> params = [model.id, DB.boolToInt(isActive)];
+    List<Object?> params = [model.id, TypeAdapter.serializeBool(isActive)];
     String whereStart = '';
     String whereEnd = '';
     if (start != null) {
-      params.add(DB.timeToInt(start));
+      params.add(TypeAdapter.timeToInt(start));
       whereStart = ' AND ${TableTrackPoint.timeStart.column} >= ? ';
     }
     if (end != null) {
-      params.add(DB.timeToInt(end));
+      params.add(TypeAdapter.timeToInt(end));
       whereEnd = ' AND ${TableTrackPoint.timeEnd.column} <= ? ';
     }
     final q = '''
@@ -100,15 +101,15 @@ class TaskStatistics implements AssetStatistics {
 
   static Future<TaskStatistics> groupStatistics(ModelGroup model,
       {DateTime? start, DateTime? end, bool isActive = true}) async {
-    List<Object?> params = [model.id, DB.boolToInt(isActive)];
+    List<Object?> params = [model.id, TypeAdapter.serializeBool(isActive)];
     String whereStart = '';
     String whereEnd = '';
     if (start != null) {
-      params.add(DB.timeToInt(start));
+      params.add(TypeAdapter.timeToInt(start));
       whereStart = ' AND ${TableTrackPoint.timeStart.column} >= ? ';
     }
     if (end != null) {
-      params.add(DB.timeToInt(end));
+      params.add(TypeAdapter.timeToInt(end));
       whereEnd = ' AND ${TableTrackPoint.timeEnd.column} <= ? ';
     }
 
@@ -143,13 +144,16 @@ class TaskStatistics implements AssetStatistics {
   static TaskStatistics _fromMap(ModelGroup model, Map<String, Object?> map) {
     return TaskStatistics(
         model: model,
-        count: DB.parseInt(map[columnCount]),
-        durationTotal: Duration(seconds: DB.parseInt(map[columnDurationTotal])),
-        durationMin: Duration(seconds: DB.parseInt(map[columnDurationMin])),
-        durationMax: Duration(seconds: DB.parseInt(map[columnDurationMax])),
+        count: TypeAdapter.parseInt(map[columnCount]),
+        durationTotal:
+            Duration(seconds: TypeAdapter.parseInt(map[columnDurationTotal])),
+        durationMin:
+            Duration(seconds: TypeAdapter.parseInt(map[columnDurationMin])),
+        durationMax:
+            Duration(seconds: TypeAdapter.parseInt(map[columnDurationMax])),
         durationAverage:
-            Duration(seconds: DB.parseInt(map[columnDurationAverage])),
-        tStart: DB.intToTime(map[columnFirstVisited]),
-        tEnd: DB.intToTime(map[columnLastVisited]));
+            Duration(seconds: TypeAdapter.parseInt(map[columnDurationAverage])),
+        tStart: TypeAdapter.intToTime(map[columnFirstVisited]),
+        tEnd: TypeAdapter.intToTime(map[columnLastVisited]));
   }
 }

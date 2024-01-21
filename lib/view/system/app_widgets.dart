@@ -75,7 +75,7 @@ class AppWidgets {
       theme: FlexThemeData.light(
         scheme: StaticCache.flexScheme, //FlexScheme.gold,
         surfaceMode: FlexSurfaceMode.levelSurfacesLowScaffold,
-        blendLevel: 5,
+        blendLevel: 13,
         subThemesData: const FlexSubThemesData(
           blendOnLevel: 20,
           blendOnColors: true,
@@ -94,14 +94,14 @@ class AppWidgets {
           dialogRadius: 5.0,
           useInputDecoratorThemeInDialogs: true,
         ),
-        visualDensity: FlexColorScheme.comfortablePlatformDensity,
+        visualDensity: null, //FlexColorScheme.comfortablePlatformDensity,
         useMaterial3: true,
         swapLegacyOnMaterial3: true,
         // To use the Playground font, add GoogleFonts package and uncomment
         fontFamily: GoogleFonts.openSans().fontFamily,
       ),
       darkTheme: FlexThemeData.dark(
-        scheme: FlexScheme.mango,
+        scheme: StaticCache.flexScheme,
         surfaceMode: FlexSurfaceMode
             .highScaffoldLowSurface, // .levelSurfacesLowScaffold,
         blendLevel: 13,

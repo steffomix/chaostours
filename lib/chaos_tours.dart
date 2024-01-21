@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/database/cache.dart';
+import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/material.dart';
 import 'package:chaostours/view/system/app_widgets.dart';
 import 'package:flutter/services.dart';
@@ -27,6 +29,13 @@ class ChaosTours extends StatelessWidget {
       DeviceOrientation.portraitDown,
     ]);
     GoogleFonts.config.allowRuntimeFetching = false;
+
+    try {
+      await Cache.appSettingsColorScheme.load<FlexScheme>(FlexScheme.gold);
+    } catch (e) {
+      //
+    }
+
     runApp(const ChaosTours());
   }
 

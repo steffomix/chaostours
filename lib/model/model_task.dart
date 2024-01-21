@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/database/type_adapter.dart';
 import 'package:chaostours/model/model.dart';
 import 'package:sqflite/sqflite.dart';
 //
@@ -48,22 +49,25 @@ class ModelTask implements Model {
 
   static ModelTask fromMap(Map<String, Object?> map) {
     var model = ModelTask(
-        isActive: DB.parseBool(map[TableTask.isActive.column]),
-        isSelectable: DB.parseBool(map[TableTask.isSelectable.column]),
-        isPreselected: DB.parseBool(map[TableTask.isPreselected.column]),
-        sortOrder: DB.parseString(map[TableTask.sortOrder.column]),
-        title: DB.parseString(map[TableTask.title.column]),
-        description: DB.parseString(map[TableTask.description.column]));
-    model._id = DB.parseInt(map[TableTask.primaryKey.column]);
+        isActive: TypeAdapter.deserializeBool(map[TableTask.isActive.column]),
+        isSelectable:
+            TypeAdapter.deserializeBool(map[TableTask.isSelectable.column]),
+        isPreselected:
+            TypeAdapter.deserializeBool(map[TableTask.isPreselected.column]),
+        sortOrder: TypeAdapter.parseString(map[TableTask.sortOrder.column]),
+        title: TypeAdapter.parseString(map[TableTask.title.column]),
+        description:
+            TypeAdapter.parseString(map[TableTask.description.column]));
+    model._id = TypeAdapter.parseInt(map[TableTask.primaryKey.column]);
     return model;
   }
 
   Map<String, Object?> toMap() {
     return <String, Object?>{
       TableTask.primaryKey.column: id,
-      TableTask.isActive.column: DB.boolToInt(isActive),
-      TableTask.isSelectable.column: DB.boolToInt(isSelectable),
-      TableTask.isPreselected.column: DB.boolToInt(isPreselected),
+      TableTask.isActive.column: TypeAdapter.serializeBool(isActive),
+      TableTask.isSelectable.column: TypeAdapter.serializeBool(isSelectable),
+      TableTask.isPreselected.column: TypeAdapter.serializeBool(isPreselected),
       TableTask.sortOrder.column: sortOrder,
       TableTask.title.column: title,
       TableTask.description.column: description
@@ -78,7 +82,7 @@ class ModelTask implements Model {
             await txn.query(TableTask.table, columns: ['count(*) as $col']);
 
         if (rows.isNotEmpty) {
-          return DB.parseInt(rows.first[col], fallback: 0);
+          return TypeAdapter.parseInt(rows.first[col], fallback: 0);
         } else {
           return 0;
         }
@@ -141,7 +145,7 @@ class ModelTask implements Model {
     if (ids.isEmpty) {
       return <int>[];
     }
-    return ids.map((e) => DB.parseInt(e[col])).toList();
+    return ids.map((e) => TypeAdapter.parseInt(e[col])).toList();
   }
 
   Future<int> addGroup(ModelTaskGroup group) async {
@@ -186,8 +190,9 @@ class ModelTask implements Model {
             where: selectDeleted
                 ? '${TableTask.title} like ? OR ${TableTask.description} like ?'
                 : '(${TableTask.title} like ? OR ${TableTask.description} like ?) AND ${TableTask.isActive.column} = ?',
-            whereArgs:
-                selectDeleted ? [text, text] : [text, text, DB.boolToInt(true)],
+            whereArgs: selectDeleted
+                ? [text, text]
+                : [text, text, TypeAdapter.serializeBool(true)],
             orderBy: '${TableTask.isActive.column}, ${TableTask.title.column}',
             limit: limit,
             offset: offset);
@@ -219,7 +224,7 @@ class ModelTask implements Model {
         return await txn.query(TableTask.table,
             columns: TableTask.columns,
             where: '${TableTask.isActive.column} = ?',
-            whereArgs: [DB.boolToInt(activated)],
+            whereArgs: [TypeAdapter.serializeBool(activated)],
             orderBy: '${TableTask.sortOrder.column}, ${TableTask.title.column}',
             limit: limit,
             offset: offset);
@@ -290,7 +295,8 @@ class ModelTask implements Model {
       GROUP BY ${TableTask.id}
       ORDER BY $nullsort, ${TableTask.sortOrder}, ${TableTask.title}
 ''';
-      return await txn.rawQuery(q, List.filled(4, DB.boolToInt(true)));
+      return await txn.rawQuery(
+          q, List.filled(4, TypeAdapter.serializeBool(true)));
     });
     return rows.map((e) => fromMap(e)).toList();
   }
@@ -313,7 +319,8 @@ class ModelTask implements Model {
       GROUP BY ${TableTask.id}
       ORDER BY $nullsort, ${TableTask.sortOrder}, ${TableTask.title}
 ''';
-      return await txn.rawQuery(q, List.filled(6, DB.boolToInt(true)));
+      return await txn.rawQuery(
+          q, List.filled(6, TypeAdapter.serializeBool(true)));
     });
     return rows.map((e) => fromMap(e)).toList();
   }

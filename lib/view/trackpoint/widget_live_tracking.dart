@@ -16,6 +16,8 @@ limitations under the License.
 
 import 'dart:async';
 
+import 'package:chaostours/database/database.dart';
+import 'package:chaostours/database/type_adapter.dart';
 import 'package:chaostours/model/model_trackpoint_task.dart';
 import 'package:chaostours/model/model_trackpoint_user.dart';
 import 'package:flutter/material.dart';
@@ -412,11 +414,11 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
   Widget skipRecord() {
     return ListTile(
         leading: AppWidgets.checkbox(
-            value: dataChannel.skipTracking,
+            value: dataChannel.skipRecord,
             onChanged: (state) async {
-              dataChannel.skipTracking = await Cache
-                  .backgroundTrackPointSkipRecordOnce
-                  .save<bool>(state ?? false);
+              final cmd = BackgroundChannelCommand.skipRecord.toString();
+              FlutterBackgroundService().invoke(
+                  cmd, {cmd: TypeAdapter.serializeBool(state ?? false)});
             }),
         title: const Text('Skip Record'),
         trailing: IconButton(

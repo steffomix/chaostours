@@ -21,7 +21,7 @@ limitations under the License.
 
 import 'dart:io';
 import 'dart:ui';
-import 'package:chaostours/channel/data_channel.dart';
+import 'package:chaostours/database/type_adapter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 
@@ -42,7 +42,8 @@ enum BackgroundChannelCommand {
   forceTracking,
   closeDatabase,
   triggerStanding,
-  triggerMoving;
+  triggerMoving,
+  skipRecord;
 
   @override
   String toString() => name;
@@ -94,6 +95,13 @@ class BackgroundChannel {
         .on(BackgroundChannelCommand.triggerStanding.toString())
         .listen((_) async {
       tracker.triggeredTrackingStatus = TrackingStatus.standing;
+    });
+    service
+        .on(BackgroundChannelCommand.skipRecord.toString())
+        .listen((map) async {
+      final skip = TypeAdapter.deserializeBool(
+          map?[BackgroundChannelCommand.skipRecord.toString()]);
+      tracker.skipRecord = skip;
     });
     service
         .on(BackgroundChannelCommand.triggerMoving.toString())

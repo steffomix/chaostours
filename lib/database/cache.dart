@@ -107,9 +107,21 @@ enum Cache {
   backgroundGpsLastStatusChange(
       CacheModulId.sharedPreferences, GPS, ExpiredValue.immediately),
 
+
+  /// tracking detection
+  backgroundLastGps(
+      CacheModulId.sharedPreferences, GPS, ExpiredValue.immediately),
+  backgroundGpsPoints(
+      CacheModulId.sharedPreferences, List<GPS>, ExpiredValue.immediately),
+  backgroundGpsCalcPoints(
+      CacheModulId.sharedPreferences, List<GPS>, ExpiredValue.immediately),
+
   /// cache background to forground
   backgroundTrackingStatus(
       CacheModulId.sharedPreferences, TrackingStatus, ExpiredValue.immediately),
+   
+  backgroundTrackPointSkipRecordOnce(
+      CacheModulId.sharedPreferences, bool, ExpiredValue.immediately),
  */
   backgroundSharedAliasList(CacheModulId.sharedPreferences,
       List<SharedTrackpointAlias>, ExpiredValue.immediately),
@@ -121,17 +133,6 @@ enum Cache {
       List<SharedTrackpointTask>, ExpiredValue.immediately),
   backgroundTrackPointNotes(
       CacheModulId.sharedPreferences, String, ExpiredValue.immediately),
-
-  backgroundTrackPointSkipRecordOnce(
-      CacheModulId.sharedPreferences, bool, ExpiredValue.immediately),
-
-  /// tracking detection
-  backgroundLastGps(
-      CacheModulId.sharedPreferences, GPS, ExpiredValue.immediately),
-  backgroundGpsPoints(
-      CacheModulId.sharedPreferences, List<GPS>, ExpiredValue.immediately),
-  backgroundGpsCalcPoints(
-      CacheModulId.sharedPreferences, List<GPS>, ExpiredValue.immediately),
 
   /// stores last lookup to prevent more than one osm lookups per second
   addressTimeLastLookup(

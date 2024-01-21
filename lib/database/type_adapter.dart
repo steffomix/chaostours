@@ -16,6 +16,7 @@ limitations under the License.
 
 import 'package:chaostours/calendar.dart';
 import 'package:chaostours/conf/app_user_settings.dart';
+import 'package:chaostours/database/database.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/channel/tracking.dart';
@@ -27,6 +28,87 @@ import 'package:geolocator/geolocator.dart';
 
 class TypeAdapter {
   static final Logger logger = Logger.logger<TypeAdapter>();
+
+  // wrapper to DB type adaper
+  static int serializeBool(bool value) => value ? 1 : 0;
+  static bool deserializeBool(Object? value, {bool fallback = false}) {
+    if (value == null) {
+      return fallback;
+    }
+    if (value is bool) {
+      return value;
+    }
+    if (value is int) {
+      return value > 0;
+    }
+    if (value is String) {
+      try {
+        return int.parse(value.toString()) > 0;
+      } catch (e) {
+        return fallback;
+      }
+    }
+    return fallback;
+  }
+
+  static int timeToInt(DateTime time) {
+    return (time.millisecondsSinceEpoch / 1000).round();
+  }
+
+  static DateTime intToTime(Object? i, {int fallback = 0}) {
+    int t = parseInt(i, fallback: fallback);
+
+    return t == 0
+        ? DateTime.now()
+        : DateTime.fromMillisecondsSinceEpoch(parseInt(t) * 1000);
+  }
+
+  static int parseInt(Object? value, {int fallback = 0}) {
+    if (value == null) {
+      return fallback;
+    }
+    if (value is int) {
+      return value;
+    }
+    if (value is double) {
+      return value.round();
+    }
+    if (value is String) {
+      try {
+        return int.parse(value.trim());
+      } catch (e) {
+        return fallback;
+      }
+    }
+    return fallback;
+  }
+
+  static double parseDouble(Object? value, {double fallback = 0.0}) {
+    if (value == null) {
+      return fallback;
+    }
+    if (value is double) {
+      return value;
+    }
+    if (value is String) {
+      try {
+        return double.parse(value.trim());
+      } catch (e) {
+        return fallback;
+      }
+    }
+    return fallback;
+  }
+
+  static String parseString(Object? text, {fallback = ''}) {
+    if (text == null) {
+      return fallback;
+    }
+    if (text is String) {
+      return text;
+    }
+    return text.toString();
+  }
 
   /// intList
   static List<String> serializeIntList(List<int> value) =>

@@ -203,7 +203,7 @@ class DB {
     }
     return await (_database ??= await openDatabase()).transaction<T>(action);
   }
-
+/* 
   static int parseInt(Object? value, {int fallback = 0}) {
     if (value == null) {
       return fallback;
@@ -283,13 +283,7 @@ class DB {
     return t == 0
         ? DateTime.now()
         : DateTime.fromMillisecondsSinceEpoch(parseInt(t) * 1000);
-  }
-
-  static Duration intToDuration(Object? i, {int fallback = 0}) {
-    return Duration(seconds: parseInt(i, fallback: fallback));
-  }
-
-  static int durationToInt(Duration d) => d.inSeconds;
+  } */
 }
 
 enum CacheData {

@@ -57,15 +57,15 @@ abstract class AssetStatistics {
 
   static ModelAssetStatistics fromMap(Map<String, Object?> map) {
     return ModelAssetStatistics(
-        count: DB.parseInt(map[_columnCount]),
+        count: TypeAdapter.parseInt(map[_columnCount]),
         durationTotal:
-            Duration(seconds: DB.parseInt(map[_columnDurationTotal])),
-        durationMin: Duration(seconds: DB.parseInt(map[_columnDurationMin])),
-        durationMax: Duration(seconds: DB.parseInt(map[_columnDurationMax])),
+            Duration(seconds: TypeAdapter.parseInt(map[_columnDurationTotal])),
+        durationMin: Duration(seconds: TypeAdapter.parseInt(map[_columnDurationMin])),
+        durationMax: Duration(seconds: TypeAdapter.parseInt(map[_columnDurationMax])),
         durationAverage:
-            Duration(seconds: DB.parseInt(map[_columnDurationAverage])),
-        tStart: DB.intToTime(map[_columnFirstVisited]),
-        tEnd: DB.intToTime(map[_columnLastVisited]));
+            Duration(seconds: TypeAdapter.parseInt(map[_columnDurationAverage])),
+        tStart: TypeAdapter.intToTime(map[_columnFirstVisited]),
+        tEnd: TypeAdapter.intToTime(map[_columnLastVisited]));
   }
 
   /// ### example

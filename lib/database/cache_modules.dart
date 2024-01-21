@@ -16,6 +16,7 @@ limitations under the License.
 
 import 'package:chaostours/database/database.dart';
 import 'package:chaostours/database/cache.dart';
+import 'package:chaostours/database/type_adapter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqlite_api.dart';
 
@@ -122,7 +123,7 @@ class DbCache implements CacheModul {
   Future<int> _count(Transaction txn, Cache key) async {
     var col = 'ct';
     var rows = await txn.rawQuery('SELECT count(*) FROM $_table AS $col');
-    return DB.parseInt(rows.firstOrNull?[col]);
+    return TypeAdapter.parseInt(rows.firstOrNull?[col]);
   }
 
   Future<int> count(Cache key) async {
@@ -213,7 +214,7 @@ class DbCache implements CacheModul {
   @override
   Future<int?> getInt(Cache key) async {
     final value = await _get(key);
-    return value == null ? null : DB.parseInt(value);
+    return value == null ? null : TypeAdapter.parseInt(value);
   }
 
   /// double
@@ -223,15 +224,16 @@ class DbCache implements CacheModul {
   @override
   Future<double?> getDouble(Cache key) async {
     final value = await _get(key);
-    return value == null ? null : DB.parseDouble(value);
+    return value == null ? null : TypeAdapter.parseDouble(value);
   }
 
   /// bool
   @override
   Future<void> setBool(Cache key, bool value) async =>
-      await _set(key, DB.boolToInt(value).toString());
+      await _set(key, TypeAdapter.serializeBool(value).toString());
   @override
-  Future<bool> getBool(Cache key) async => DB.parseBool(await _get(key));
+  Future<bool> getBool(Cache key) async =>
+      TypeAdapter.deserializeBool(await _get(key));
 
   @override
   Future<void> remove(Cache key) async {
