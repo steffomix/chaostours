@@ -118,18 +118,21 @@ class ModelTrackPoint {
 
   static ModelTrackPoint fromMap(Map<String, Object?> map) {
     var model = ModelTrackPoint(
-        gps: GPS(TypeAdapter.parseDouble(map[TableTrackPoint.latitude.column]),
-            TypeAdapter.parseDouble(map[TableTrackPoint.longitude.column])),
+        gps: GPS(
+            TypeAdapter.deserializeDouble(map[TableTrackPoint.latitude.column]),
+            TypeAdapter.deserializeDouble(
+                map[TableTrackPoint.longitude.column])),
         isActive:
             TypeAdapter.deserializeBool(map[TableTrackPoint.isActive.column]),
-        timeStart: TypeAdapter.intToTime(
-            TypeAdapter.parseInt(map[TableTrackPoint.timeStart.column])),
-        timeEnd: TypeAdapter.intToTime(
-            TypeAdapter.parseInt(map[TableTrackPoint.timeEnd.column])),
+        timeStart: TypeAdapter.dbIntToTime(
+            TypeAdapter.deserializeInt(map[TableTrackPoint.timeStart.column])),
+        timeEnd: TypeAdapter.dbIntToTime(
+            TypeAdapter.deserializeInt(map[TableTrackPoint.timeEnd.column])),
         address: (map[TableTrackPoint.address.column] ?? '').toString(),
         fullAddress: (map[TableTrackPoint.fullAddress.column] ?? '').toString(),
         notes: (map[TableTrackPoint.notes.column] ?? '').toString());
-    model._id = TypeAdapter.parseInt(map[TableTrackPoint.primaryKey.column]);
+    model._id =
+        TypeAdapter.deserializeInt(map[TableTrackPoint.primaryKey.column]);
     return model;
   }
 
@@ -184,7 +187,7 @@ class ModelTrackPoint {
         }
 
         if (rows.isNotEmpty) {
-          return TypeAdapter.parseInt(rows.first[col], fallback: 0);
+          return TypeAdapter.deserializeInt(rows.first[col], fallback: 0);
         } else {
           return 0;
         }
@@ -375,7 +378,7 @@ class ModelTrackPoint {
       models.add(ModelTrackpointAlias(
           model: model,
           trackpointId: id,
-          notes: TypeAdapter.parseString(row[notes])));
+          notes: TypeAdapter.deserializeString(row[notes])));
     }
 
     return models;
@@ -407,7 +410,7 @@ class ModelTrackPoint {
       models.add(ModelTrackpointTask(
         model: model,
         trackpointId: id,
-        notes: TypeAdapter.parseString(row[notes]),
+        notes: TypeAdapter.deserializeString(row[notes]),
       ));
     }
 
@@ -440,7 +443,7 @@ class ModelTrackPoint {
       models.add(ModelTrackpointUser(
         model: model,
         trackpointId: id,
-        notes: TypeAdapter.parseString(row[notes]),
+        notes: TypeAdapter.deserializeString(row[notes]),
       ));
     }
 

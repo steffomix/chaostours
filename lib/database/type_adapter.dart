@@ -16,7 +16,6 @@ limitations under the License.
 
 import 'package:chaostours/calendar.dart';
 import 'package:chaostours/conf/app_user_settings.dart';
-import 'package:chaostours/database/database.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/channel/tracking.dart';
@@ -51,19 +50,18 @@ class TypeAdapter {
     return fallback;
   }
 
-  static int timeToInt(DateTime time) {
+  static int dbTimeToInt(DateTime time) {
     return (time.millisecondsSinceEpoch / 1000).round();
   }
 
-  static DateTime intToTime(Object? i, {int fallback = 0}) {
-    int t = parseInt(i, fallback: fallback);
-
+  static DateTime dbIntToTime(Object? i, {int fallback = 0}) {
+    int t = deserializeInt(i, fallback: fallback);
     return t == 0
         ? DateTime.now()
-        : DateTime.fromMillisecondsSinceEpoch(parseInt(t) * 1000);
+        : DateTime.fromMillisecondsSinceEpoch(t * 1000);
   }
 
-  static int parseInt(Object? value, {int fallback = 0}) {
+  static int deserializeInt(Object? value, {int fallback = 0}) {
     if (value == null) {
       return fallback;
     }
@@ -83,7 +81,7 @@ class TypeAdapter {
     return fallback;
   }
 
-  static double parseDouble(Object? value, {double fallback = 0.0}) {
+  static double deserializeDouble(Object? value, {double fallback = 0.0}) {
     if (value == null) {
       return fallback;
     }
@@ -100,7 +98,7 @@ class TypeAdapter {
     return fallback;
   }
 
-  static String parseString(Object? text, {fallback = ''}) {
+  static String deserializeString(Object? text, {fallback = ''}) {
     if (text == null) {
       return fallback;
     }

@@ -136,13 +136,13 @@ class ModelAliasGroup implements ModelGroup {
   static ModelAliasGroup fromMap(Map<String, Object?> map) {
     var model = ModelAliasGroup(
       idCalendar:
-          TypeAdapter.parseString(map[TableAliasGroup.idCalendar.column]),
+          TypeAdapter.deserializeString(map[TableAliasGroup.idCalendar.column]),
       isActive:
           TypeAdapter.deserializeBool(map[TableAliasGroup.isActive.column]),
       privacy: AliasPrivacy.byId(map[TableAliasGroup.privacy.column]),
-      title: TypeAdapter.parseString(map[TableAliasGroup.title.column]),
-      description:
-          TypeAdapter.parseString(map[TableAliasGroup.description.column]),
+      title: TypeAdapter.deserializeString(map[TableAliasGroup.title.column]),
+      description: TypeAdapter.deserializeString(
+          map[TableAliasGroup.description.column]),
       ensuredPrivacyCompliance: TypeAdapter.deserializeBool(
           map[TableAliasGroup.ensuredPrivacyCompliance.column]),
       calendarHtml: TypeAdapter.deserializeBool(
@@ -182,7 +182,8 @@ class ModelAliasGroup implements ModelGroup {
       calendarTaskDescription: TypeAdapter.deserializeBool(
           map[TableAliasGroup.withCalendarTaskDescription.column]),
     );
-    model._id = TypeAdapter.parseInt(map[TableAliasGroup.primaryKey.column]);
+    model._id =
+        TypeAdapter.deserializeInt(map[TableAliasGroup.primaryKey.column]);
     return model;
   }
 
@@ -194,7 +195,7 @@ class ModelAliasGroup implements ModelGroup {
             .query(TableAliasGroup.table, columns: ['count(*) as $col']);
 
         if (rows.isNotEmpty) {
-          return TypeAdapter.parseInt(rows.first[col], fallback: 0);
+          return TypeAdapter.deserializeInt(rows.first[col], fallback: 0);
         } else {
           return 0;
         }
@@ -325,7 +326,7 @@ class ModelAliasGroup implements ModelGroup {
           where: '${TableAliasAliasGroup.idAliasGroup.column} = ?',
           whereArgs: [id]);
     });
-    return rows.map((e) => TypeAdapter.parseInt(e[col])).toList();
+    return rows.map((e) => TypeAdapter.deserializeInt(e[col])).toList();
   }
 
   Future<int> aliasCount() async {
@@ -335,7 +336,7 @@ class ModelAliasGroup implements ModelGroup {
           columns: ['count(*) as $col'],
           where: '${TableAliasAliasGroup.idAliasGroup.column} = ?',
           whereArgs: [id]);
-      return TypeAdapter.parseInt(rows.firstOrNull?[col]);
+      return TypeAdapter.deserializeInt(rows.firstOrNull?[col]);
     });
   }
 

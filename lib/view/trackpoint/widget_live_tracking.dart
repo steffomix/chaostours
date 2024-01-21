@@ -16,7 +16,6 @@ limitations under the License.
 
 import 'dart:async';
 
-import 'package:chaostours/database/database.dart';
 import 'package:chaostours/database/type_adapter.dart';
 import 'package:chaostours/model/model_trackpoint_task.dart';
 import 'package:chaostours/model/model_trackpoint_user.dart';

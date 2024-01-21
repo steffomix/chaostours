@@ -65,11 +65,11 @@ class UserStatistics implements AssetStatistics {
     String whereStart = '';
     String whereEnd = '';
     if (start != null) {
-      params.add(TypeAdapter.timeToInt(start));
+      params.add(TypeAdapter.dbTimeToInt(start));
       whereStart = ' AND ${TableTrackPoint.timeStart.column} >= ? ';
     }
     if (end != null) {
-      params.add(TypeAdapter.timeToInt(end));
+      params.add(TypeAdapter.dbTimeToInt(end));
       whereEnd = ' AND ${TableTrackPoint.timeEnd.column} <= ? ';
     }
 
@@ -106,11 +106,11 @@ class UserStatistics implements AssetStatistics {
     String whereStart = '';
     String whereEnd = '';
     if (start != null) {
-      params.add(TypeAdapter.timeToInt(start));
+      params.add(TypeAdapter.dbTimeToInt(start));
       whereStart = ' AND ${TableTrackPoint.timeStart.column} >= ? ';
     }
     if (end != null) {
-      params.add(TypeAdapter.timeToInt(end));
+      params.add(TypeAdapter.dbTimeToInt(end));
       whereEnd = ' AND ${TableTrackPoint.timeEnd.column} <= ? ';
     }
 
@@ -145,16 +145,16 @@ class UserStatistics implements AssetStatistics {
   static UserStatistics _fromMap(ModelGroup model, Map<String, Object?> map) {
     return UserStatistics(
         model: model,
-        count: TypeAdapter.parseInt(map[columnCount]),
-        durationTotal:
-            Duration(seconds: TypeAdapter.parseInt(map[columnDurationTotal])),
-        durationMin:
-            Duration(seconds: TypeAdapter.parseInt(map[columnDurationMin])),
-        durationMax:
-            Duration(seconds: TypeAdapter.parseInt(map[columnDurationMax])),
-        durationAverage:
-            Duration(seconds: TypeAdapter.parseInt(map[columnDurationAverage])),
-        tStart: TypeAdapter.intToTime(map[columnFirstVisited]),
-        tEnd: TypeAdapter.intToTime(map[columnLastVisited]));
+        count: TypeAdapter.deserializeInt(map[columnCount]),
+        durationTotal: Duration(
+            seconds: TypeAdapter.deserializeInt(map[columnDurationTotal])),
+        durationMin: Duration(
+            seconds: TypeAdapter.deserializeInt(map[columnDurationMin])),
+        durationMax: Duration(
+            seconds: TypeAdapter.deserializeInt(map[columnDurationMax])),
+        durationAverage: Duration(
+            seconds: TypeAdapter.deserializeInt(map[columnDurationAverage])),
+        tStart: TypeAdapter.dbIntToTime(map[columnFirstVisited]),
+        tEnd: TypeAdapter.dbIntToTime(map[columnLastVisited]));
   }
 }

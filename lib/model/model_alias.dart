@@ -48,7 +48,7 @@ enum AliasPrivacy {
   static final int _saveId = AliasPrivacy.restricted.level;
 
   static AliasPrivacy byId(Object? value) {
-    int id = TypeAdapter.parseInt(value, fallback: 3);
+    int id = TypeAdapter.deserializeInt(value, fallback: 3);
     int idChecked = max(1, min(3, id));
     return byValue(idChecked == id ? idChecked : _saveId);
   }
@@ -106,17 +106,19 @@ class ModelAlias implements Model {
     var model = ModelAlias(
         isActive: TypeAdapter.deserializeBool(map[TableAlias.isActive.column],
             fallback: TypeAdapter.deserializeBool(true)),
-        gps: GPS(TypeAdapter.parseDouble(map[TableAlias.latitude.column]),
-            TypeAdapter.parseDouble(map[TableAlias.longitude.column])),
-        radius:
-            TypeAdapter.parseInt(map[TableAlias.radius.column], fallback: 10),
+        gps: GPS(TypeAdapter.deserializeDouble(map[TableAlias.latitude.column]),
+            TypeAdapter.deserializeDouble(map[TableAlias.longitude.column])),
+        radius: TypeAdapter.deserializeInt(map[TableAlias.radius.column],
+            fallback: 10),
         privacy: AliasPrivacy.byId(map[TableAlias.privacy.column]),
-        lastVisited: TypeAdapter.intToTime(map[TableAlias.lastVisited.column]),
-        timesVisited: TypeAdapter.parseInt(map[TableAlias.timesVisited.column]),
-        title: TypeAdapter.parseString(map[TableAlias.title.column]),
+        lastVisited:
+            TypeAdapter.dbIntToTime(map[TableAlias.lastVisited.column]),
+        timesVisited:
+            TypeAdapter.deserializeInt(map[TableAlias.timesVisited.column]),
+        title: TypeAdapter.deserializeString(map[TableAlias.title.column]),
         description:
-            TypeAdapter.parseString(map[TableAlias.description.column]));
-    model._id = TypeAdapter.parseInt(map[TableAlias.primaryKey.column]);
+            TypeAdapter.deserializeString(map[TableAlias.description.column]));
+    model._id = TypeAdapter.deserializeInt(map[TableAlias.primaryKey.column]);
     return model;
   }
 
@@ -128,7 +130,7 @@ class ModelAlias implements Model {
       TableAlias.longitude.column: gps.lon,
       TableAlias.radius.column: radius,
       TableAlias.privacy.column: privacy.level,
-      TableAlias.lastVisited.column: TypeAdapter.timeToInt(lastVisited),
+      TableAlias.lastVisited.column: TypeAdapter.dbTimeToInt(lastVisited),
       TableAlias.timesVisited.column: timesVisited,
       TableAlias.title.column: title,
       TableAlias.description.column: description
@@ -142,7 +144,7 @@ class ModelAlias implements Model {
         final rows =
             await txn.query(TableAlias.table, columns: ['count(*) as $col']);
         if (rows.isNotEmpty) {
-          return TypeAdapter.parseInt(rows.first[col], fallback: 0);
+          return TypeAdapter.deserializeInt(rows.first[col], fallback: 0);
         } else {
           return 0;
         }
@@ -161,7 +163,7 @@ class ModelAlias implements Model {
       },
     );
     if (rows.isNotEmpty) {
-      return TypeAdapter.parseInt(rows.first[col], fallback: 0);
+      return TypeAdapter.deserializeInt(rows.first[col], fallback: 0);
     }
     return 0;
   }
@@ -308,7 +310,7 @@ OFFSET ?
     ModelAlias model;
     for (var row in rows) {
       model = fromMap(row);
-      model._countVisited = TypeAdapter.parseInt(row[colCountVisited]);
+      model._countVisited = TypeAdapter.deserializeInt(row[colCountVisited]);
       models.add(model);
     }
     return models;
@@ -448,7 +450,7 @@ LIMIT ?
     if (ids.isEmpty) {
       return <int>[];
     }
-    return ids.map((e) => TypeAdapter.parseInt(e[col])).toList();
+    return ids.map((e) => TypeAdapter.deserializeInt(e[col])).toList();
   }
 
   Future<int> addGroup(ModelAliasGroup group) async {
@@ -509,12 +511,13 @@ LIMIT ?
     });
     List<CalendarEventId> result = [];
     for (var row in rows) {
-      String parsedId = TypeAdapter.parseString(row[idCalendar]);
+      String parsedId = TypeAdapter.deserializeString(row[idCalendar]);
 
       if (parsedId.isNotEmpty) {
         result.add(CalendarEventId(
-            aliasGroupId: TypeAdapter.parseInt(row[idAliasGroup], fallback: -1),
-            calendarId: TypeAdapter.parseString(row[idCalendar])));
+            aliasGroupId:
+                TypeAdapter.deserializeInt(row[idAliasGroup], fallback: -1),
+            calendarId: TypeAdapter.deserializeString(row[idCalendar])));
       }
     }
     return result;

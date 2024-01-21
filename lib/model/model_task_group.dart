@@ -65,11 +65,12 @@ class ModelTaskGroup implements ModelGroup {
         isPreselected: TypeAdapter.deserializeBool(
             map[TableTaskGroup.isPreselected.column]),
         sortOrder:
-            TypeAdapter.parseString(map[TableTaskGroup.sortOrder.column]),
-        title: TypeAdapter.parseString(map[TableTaskGroup.title.column]),
-        description:
-            TypeAdapter.parseString(map[TableTaskGroup.description.column]));
-    model._id = TypeAdapter.parseInt(map[TableTaskGroup.primaryKey.column]);
+            TypeAdapter.deserializeString(map[TableTaskGroup.sortOrder.column]),
+        title: TypeAdapter.deserializeString(map[TableTaskGroup.title.column]),
+        description: TypeAdapter.deserializeString(
+            map[TableTaskGroup.description.column]));
+    model._id =
+        TypeAdapter.deserializeInt(map[TableTaskGroup.primaryKey.column]);
     return model;
   }
 
@@ -81,7 +82,7 @@ class ModelTaskGroup implements ModelGroup {
             .query(TableTaskGroup.table, columns: ['count(*) as $col']);
 
         if (rows.isNotEmpty) {
-          return TypeAdapter.parseInt(rows.first[col], fallback: 0);
+          return TypeAdapter.deserializeInt(rows.first[col], fallback: 0);
         } else {
           return 0;
         }
@@ -96,7 +97,7 @@ class ModelTaskGroup implements ModelGroup {
           columns: ['count(*) as $col'],
           where: '${TableTaskTaskGroup.idTaskGroup.column} = ?',
           whereArgs: [id]);
-      return TypeAdapter.parseInt(rows.firstOrNull?[col]);
+      return TypeAdapter.deserializeInt(rows.firstOrNull?[col]);
     });
   }
 
@@ -231,7 +232,7 @@ class ModelTaskGroup implements ModelGroup {
           where: '${TableTaskTaskGroup.idTaskGroup.column} = ?',
           whereArgs: [id]);
     });
-    return rows.map((e) => TypeAdapter.parseInt(e[col])).toList();
+    return rows.map((e) => TypeAdapter.deserializeInt(e[col])).toList();
   }
 
 /* 

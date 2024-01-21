@@ -58,13 +58,14 @@ class ModelUser implements Model {
           TypeAdapter.deserializeBool(map[TableUser.isSelectable.column]),
       isPreselected:
           TypeAdapter.deserializeBool(map[TableUser.isPreselected.column]),
-      sortOrder: TypeAdapter.parseString(map[TableUser.sortOrder.column]),
-      title: TypeAdapter.parseString(map[TableUser.title.column]),
-      description: TypeAdapter.parseString(map[TableUser.description.column]),
-      phone: TypeAdapter.parseString(map[TableUser.phone.column]),
-      address: TypeAdapter.parseString(map[TableUser.address.column]),
+      sortOrder: TypeAdapter.deserializeString(map[TableUser.sortOrder.column]),
+      title: TypeAdapter.deserializeString(map[TableUser.title.column]),
+      description:
+          TypeAdapter.deserializeString(map[TableUser.description.column]),
+      phone: TypeAdapter.deserializeString(map[TableUser.phone.column]),
+      address: TypeAdapter.deserializeString(map[TableUser.address.column]),
     );
-    model._id = TypeAdapter.parseInt(map[TableUser.primaryKey.column]);
+    model._id = TypeAdapter.deserializeInt(map[TableUser.primaryKey.column]);
     return model;
   }
 
@@ -90,7 +91,7 @@ class ModelUser implements Model {
             await txn.query(TableUser.table, columns: ['count(*) as $col']);
 
         if (rows.isNotEmpty) {
-          return TypeAdapter.parseInt(rows.first[col], fallback: 0);
+          return TypeAdapter.deserializeInt(rows.first[col], fallback: 0);
         } else {
           return 0;
         }
@@ -153,7 +154,7 @@ class ModelUser implements Model {
     if (ids.isEmpty) {
       return <int>[];
     }
-    return ids.map((e) => TypeAdapter.parseInt(e[col])).toList();
+    return ids.map((e) => TypeAdapter.deserializeInt(e[col])).toList();
   }
 
   Future<int> addGroup(ModelUserGroup group) async {

@@ -54,11 +54,12 @@ class ModelTask implements Model {
             TypeAdapter.deserializeBool(map[TableTask.isSelectable.column]),
         isPreselected:
             TypeAdapter.deserializeBool(map[TableTask.isPreselected.column]),
-        sortOrder: TypeAdapter.parseString(map[TableTask.sortOrder.column]),
-        title: TypeAdapter.parseString(map[TableTask.title.column]),
+        sortOrder:
+            TypeAdapter.deserializeString(map[TableTask.sortOrder.column]),
+        title: TypeAdapter.deserializeString(map[TableTask.title.column]),
         description:
-            TypeAdapter.parseString(map[TableTask.description.column]));
-    model._id = TypeAdapter.parseInt(map[TableTask.primaryKey.column]);
+            TypeAdapter.deserializeString(map[TableTask.description.column]));
+    model._id = TypeAdapter.deserializeInt(map[TableTask.primaryKey.column]);
     return model;
   }
 
@@ -82,7 +83,7 @@ class ModelTask implements Model {
             await txn.query(TableTask.table, columns: ['count(*) as $col']);
 
         if (rows.isNotEmpty) {
-          return TypeAdapter.parseInt(rows.first[col], fallback: 0);
+          return TypeAdapter.deserializeInt(rows.first[col], fallback: 0);
         } else {
           return 0;
         }
@@ -145,7 +146,7 @@ class ModelTask implements Model {
     if (ids.isEmpty) {
       return <int>[];
     }
-    return ids.map((e) => TypeAdapter.parseInt(e[col])).toList();
+    return ids.map((e) => TypeAdapter.deserializeInt(e[col])).toList();
   }
 
   Future<int> addGroup(ModelTaskGroup group) async {

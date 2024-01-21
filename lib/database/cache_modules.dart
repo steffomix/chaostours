@@ -123,7 +123,7 @@ class DbCache implements CacheModul {
   Future<int> _count(Transaction txn, Cache key) async {
     var col = 'ct';
     var rows = await txn.rawQuery('SELECT count(*) FROM $_table AS $col');
-    return TypeAdapter.parseInt(rows.firstOrNull?[col]);
+    return TypeAdapter.deserializeInt(rows.firstOrNull?[col]);
   }
 
   Future<int> count(Cache key) async {
@@ -214,7 +214,7 @@ class DbCache implements CacheModul {
   @override
   Future<int?> getInt(Cache key) async {
     final value = await _get(key);
-    return value == null ? null : TypeAdapter.parseInt(value);
+    return value == null ? null : TypeAdapter.deserializeInt(value);
   }
 
   /// double
@@ -224,7 +224,7 @@ class DbCache implements CacheModul {
   @override
   Future<double?> getDouble(Cache key) async {
     final value = await _get(key);
-    return value == null ? null : TypeAdapter.parseDouble(value);
+    return value == null ? null : TypeAdapter.deserializeDouble(value);
   }
 
   /// bool

@@ -84,7 +84,7 @@ abstract class Model implements ModelGroup {
       }
     });
     if (rows.isNotEmpty) {
-      return TypeAdapter.parseInt(rows.first[col]);
+      return TypeAdapter.deserializeInt(rows.first[col]);
     }
     return 0;
   }

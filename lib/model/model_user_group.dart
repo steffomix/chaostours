@@ -65,11 +65,12 @@ class ModelUserGroup implements ModelGroup {
         isPreselected: TypeAdapter.deserializeBool(
             map[TableUserGroup.isPreselected.column]),
         sortOrder:
-            TypeAdapter.parseString(map[TableUserGroup.sortOrder.column]),
-        title: TypeAdapter.parseString(map[TableUserGroup.title.column]),
-        description:
-            TypeAdapter.parseString(map[TableUserGroup.description.column]));
-    model._id = TypeAdapter.parseInt(map[TableUserGroup.primaryKey.column]);
+            TypeAdapter.deserializeString(map[TableUserGroup.sortOrder.column]),
+        title: TypeAdapter.deserializeString(map[TableUserGroup.title.column]),
+        description: TypeAdapter.deserializeString(
+            map[TableUserGroup.description.column]));
+    model._id =
+        TypeAdapter.deserializeInt(map[TableUserGroup.primaryKey.column]);
     return model;
   }
 
@@ -81,7 +82,7 @@ class ModelUserGroup implements ModelGroup {
             .query(TableUserGroup.table, columns: ['count(*) as $col']);
 
         if (rows.isNotEmpty) {
-          return TypeAdapter.parseInt(rows.first[col], fallback: 0);
+          return TypeAdapter.deserializeInt(rows.first[col], fallback: 0);
         } else {
           return 0;
         }
@@ -96,7 +97,7 @@ class ModelUserGroup implements ModelGroup {
           columns: ['count(*) as $col'],
           where: '${TableUserUserGroup.idUserGroup.column} = ?',
           whereArgs: [id]);
-      return TypeAdapter.parseInt(rows.firstOrNull?[col]);
+      return TypeAdapter.deserializeInt(rows.firstOrNull?[col]);
     });
   }
 
@@ -230,7 +231,7 @@ class ModelUserGroup implements ModelGroup {
           where: '${TableUserUserGroup.idUserGroup.column} = ?',
           whereArgs: [id]);
     });
-    return rows.map((e) => TypeAdapter.parseInt(e[col])).toList();
+    return rows.map((e) => TypeAdapter.deserializeInt(e[col])).toList();
   }
 /* 
   /// select a list of distinct Groups from a List of User IDs
