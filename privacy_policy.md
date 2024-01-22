@@ -1,5 +1,5 @@
 
-##Chaos Tours privacy policy
+## Chaos Tours privacy policy
 
 Chaos Tours prioritizes user privacy and operates without the need for any personalized information. We strongly encourage users to adopt alias names for all interactions, minimizing the risk of revealing real identities.
 Additionally, Chaos Tours offers an optional feature allowing users to integrate their data with their device calendar. It is important to exercise caution because sharing your device calendar with others is possible. Therefore, we advise users to be mindful of the information they choose to share, ensuring utmost discretion in their interactions.
@@ -22,15 +22,14 @@ This data can be choosen from a list that includes data like:
 
 You can reduce the calendar entrys to the start time that is required to create a calendar entry and the location id of the app internal database. For example the ID may look like #12345. So that only you as the app owner can search for the ID in his app to lookup its stored data.
 
-Chaos Tours requires "permission.FOREGROUND_SERVICE" in order to let the app run as a foreground service in background.
+## Chaos Tours required permissions:
+- Required "FOREGROUND_SERVICE" in order to let the app run as a foreground service in background.
+- Required "FOREGROUND_SERVICE_LOCATION", "ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION" to receive location data while running as a foreground service in background.
+- Required "FOREGROUND_SERVICE_DATA_SYNC" for communication between the active app and the foreground service running in background
 
-Chaos Tours requires "permission.FOREGROUND_SERVICE_LOCATION", "permission.ACCESS_COARSE_LOCATION", "permission.ACCESS_FINE_LOCATION" to receive location data while running as a foreground service in background.
-
-Chaos Tours requires "permission.FOREGROUND_SERVICE_DATA_SYNC" for communication between the active app and the foreground service running in background
-
-Chaos Tours requires permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS to keep running the foreground service without time limitations
-
-Chaos Tours requires "permission.MANAGE_EXTERNAL_STORAGE", "permission.WRITE_EXTERNAL_STORAGE, "permission.READ_EXTERNAL_STORAGE" to import and export its database.
+## Chaos Tours optional permissions:
+- Optional "REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" to keep running the foreground service without time limitations
+- Optional "MANAGE_EXTERNAL_STORAGE", "permission.WRITE_EXTERNAL_STORAGE, "permission.READ_EXTERNAL_STORAGE" to import and export its database.
 
 Please note that this privacy policy is subject to change over time. We strongly encourage you to proactively monitor it, as the app does not provide notifications to inform users about updates. Stay informed about any modifications to ensure you are aware of the latest terms and conditions governing your use of the application.
 
@@ -41,4 +40,5 @@ or file an issue here: [https://github.com/steffomix/chaostours/issues](https://
 
 Third party service provider:
 - [https://github.com/steffomix/chaostours/issues](https://github.com/steffomix/chaostours/issues)
-- [https://calendar.google.com](https://calendar.google.com)
+- Device Calendar: Depends on the device calendar provider of the device where the app is installed.
+In most cases but in no way granted it is [https://calendar.google.com](https://calendar.google.com)
