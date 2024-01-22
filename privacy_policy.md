@@ -5,7 +5,7 @@ Chaos Tours adheres to a strict policy of never soliciting or requesting any for
 
 Chaos Tours prioritizes user privacy and operates without the need for any personalized information. We strongly encourage users to adopt alias names for all interactions, minimizing the risk of revealing real identities.
 
-## Data Ccollection and sharing
+## Data collection and sharing
 Chaos Tours offers an optional feature allowing users to integrate their data with their device calendar. It is important to exercise caution, however, sharing your device calendar with others is possible. Therefore, we advise users to be mindful of the information they choose to share, ensuring utmost discretion in their interactions.
 
 ## Encryption
