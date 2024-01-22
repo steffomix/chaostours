@@ -10,17 +10,16 @@ The stored data in the app internal database is NOT ENCRYPTED! It is stored as c
 ## App internal Database
 Please visit [https://www.sqlite.org/](https://www.sqlite.org/) for more informations about the SqLite Database.
 
-## Chaos Tours required permissions:
-- Required "FOREGROUND_SERVICE" in order to let the app run as a foreground service in background.
-- Required "FOREGROUND_SERVICE_LOCATION", "ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION" to receive location data while running as a foreground service in background.
-- Required "FOREGROUND_SERVICE_DATA_SYNC" for communication between the active app and the foreground service running in background
+## Required permissions:
+- "FOREGROUND_SERVICE" in order to let the app run as a foreground service in background.
+- "FOREGROUND_SERVICE_LOCATION", "ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION" to receive location data while running as a foreground service in background.
+- "FOREGROUND_SERVICE_DATA_SYNC" for communication between the active app and the foreground service running in background
 
 ## Chaos Tours optional permissions:
-- Optional "REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" to keep running the foreground service without time limitations
-- Optional "MANAGE_EXTERNAL_STORAGE", "permission.WRITE_EXTERNAL_STORAGE, "permission.READ_EXTERNAL_STORAGE" to import and export its database.
-- Optional "INTERNET" to send gps data over an end-to-end encrypted connection to [https://www.openstreetmap.org](https://www.openstreetmap.org) in order receive address informations of the given location. This future is optional and disabled by default.
-- Optional 
-Chaos Tours requires "permission.READ_CALENDAR", "permission.WRITE_CALENDAR" for an optional future that writes data to the device calendar even when the app is closed and running in the background.
+- "REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" to keep running the foreground service in background without time limitations.
+- "MANAGE_EXTERNAL_STORAGE", "permission.WRITE_EXTERNAL_STORAGE, "permission.READ_EXTERNAL_STORAGE" to import and export its database.
+- "INTERNET" to send gps data over an end-to-end encrypted connection to [https://www.openstreetmap.org](https://www.openstreetmap.org) in order receive address informations of the given location. This future is optional and disabled by default.
+- "permission.READ_CALENDAR", "permission.WRITE_CALENDAR" for an optional future that writes data to the device calendar even when the app is closed and running in the background.
 This data can be choosen from a list that includes data like:
   - fine or coarse gps location data as latitude and longitude
   - a clickable link to google maps using gps coordinates of the given location.
