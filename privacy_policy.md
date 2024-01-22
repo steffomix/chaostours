@@ -1,6 +1,8 @@
 
 ## Chaos Tours privacy policy
 
+Chaos Tours adheres to a strict policy of never soliciting or requesting any form of account information, including details or credentials, from its users. It's important to note that Chaos Tours operates entirely independent of any user accounts, and no such accounts are required for the seamless functioning of the platform. Your privacy and security are paramount, and we assure you that our service operates without necessitating the provision of sensitive account-related information.
+
 Chaos Tours prioritizes user privacy and operates without the need for any personalized information. We strongly encourage users to adopt alias names for all interactions, minimizing the risk of revealing real identities.
 Additionally, Chaos Tours offers an optional feature allowing users to integrate their data with their device calendar. It is important to exercise caution because sharing your device calendar with others is possible. Therefore, we advise users to be mindful of the information they choose to share, ensuring utmost discretion in their interactions.
 
@@ -46,3 +48,6 @@ In most cases but in no way granted it is [https://calendar.google.com](https://
 # Important Notice:
 ## Changes to Our Privacy Policy and Your Responsibility to Stay Informed
 Please note that this privacy policy is subject to change over time. We strongly encourage you to proactively monitor it, as the app does not provide notifications to inform users about updates. Stay informed about any modifications to ensure you are aware of the latest terms and conditions governing your use of the application.
+
+## Credits:
+This Policy was created with the help of [OpenAI ChatGpt 3.5](https://chat.openai.com)
