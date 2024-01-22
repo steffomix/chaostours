@@ -4,7 +4,9 @@
 Chaos Tours adheres to a strict policy of never soliciting or requesting any form of account information, including details or credentials, from its users. It's important to note that Chaos Tours operates entirely independent of any user accounts, and no such accounts are required for the seamless functioning of the platform. Your privacy and security are paramount, and we assure you that our service operates without necessitating the provision of sensitive account-related information.
 
 Chaos Tours prioritizes user privacy and operates without the need for any personalized information. We strongly encourage users to adopt alias names for all interactions, minimizing the risk of revealing real identities.
-Additionally, Chaos Tours offers an optional feature allowing users to integrate their data with their device calendar. It is important to exercise caution because sharing your device calendar with others is possible. Therefore, we advise users to be mindful of the information they choose to share, ensuring utmost discretion in their interactions.
+
+## Data Ccollection and sharing
+Chaos Tours offers an optional feature allowing users to integrate their data with their device calendar. It is important to exercise caution, however, sharing your device calendar with others is possible. Therefore, we advise users to be mindful of the information they choose to share, ensuring utmost discretion in their interactions.
 
 ## Encryption
 The stored data in the app internal database is NOT ENCRYPTED! It is stored as clear Text information in a common SqLite Database, that can be exported and imported, reopened for inspection and manipulated by any commom SqLite reader or -editor.
@@ -12,12 +14,12 @@ The stored data in the app internal database is NOT ENCRYPTED! It is stored as c
 ## App internal Database
 Please visit [https://www.sqlite.org/](https://www.sqlite.org/) for more informations about the SqLite Database.
 
-## Required permissions:
+## Required permissions
 - "FOREGROUND_SERVICE" in order to let the app run as a foreground service in background.
 - "FOREGROUND_SERVICE_LOCATION", "ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION" to receive location data while running as a foreground service in background.
 - "FOREGROUND_SERVICE_DATA_SYNC" for communication between the active app and the foreground service running in background
 
-## Chaos Tours optional permissions:
+## Chaos Tours optional permissions
 - "REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" to keep running the foreground service in background without time limitations.
 - "MANAGE_EXTERNAL_STORAGE", "permission.WRITE_EXTERNAL_STORAGE, "permission.READ_EXTERNAL_STORAGE" to import and export its database.
 - "INTERNET" to send gps data over an end-to-end encrypted connection to [https://www.openstreetmap.org](https://www.openstreetmap.org) in order receive address informations of the given location. This future is optional and disabled by default.
@@ -40,14 +42,14 @@ If you have any questions or concerns, please contact me at st.brinkmann@gmail.c
 ## Issues
 You can file an issue here: [https://github.com/steffomix/chaostours/issues](https://github.com/steffomix/chaostours/issues)
 
-## Third party service providers:
+## Third party service providers
 - [https://github.com/steffomix/chaostours/issues](https://github.com/steffomix/chaostours/issues)
 - Device Calendar: Depends on the device calendar provider of the device where the app is installed.
 In most cases but in no way granted it is [https://calendar.google.com](https://calendar.google.com)
 
-# Important Notice:
+# Important Notice
 ## Changes to Our Privacy Policy and Your Responsibility to Stay Informed
 Please note that this privacy policy is subject to change over time. We strongly encourage you to proactively monitor it, as the app does not provide notifications to inform users about updates. Stay informed about any modifications to ensure you are aware of the latest terms and conditions governing your use of the application.
 
-## Credits:
+## Credits
 This Policy was created with the help of [OpenAI ChatGpt 3.5](https://chat.openai.com)
