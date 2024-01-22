@@ -33,14 +33,17 @@ This data can be choosen from a list that includes data like:
   - a list of tasks with optional notices related to the location
   - You can reduce the calendar entrys to the start time that is required to create a calendar entry and the location id of the app internal database. For example the ID may look like #12345. So that only you as the app owner can search for the ID in his app to lookup its stored data.
 
+## Contact
+If you have any questions or concerns, please contact me at st.brinkmann@gmail.com
 
-Please note that this privacy policy is subject to change over time. We strongly encourage you to proactively monitor it, as the app does not provide notifications to inform users about updates. Stay informed about any modifications to ensure you are aware of the latest terms and conditions governing your use of the application.
+## Issues
+You can file an issue here: [https://github.com/steffomix/chaostours/issues](https://github.com/steffomix/chaostours/issues)
 
-If you have any questions or concerns, please contact me at st.brinkmann@gmail.com 
-or file an issue here: [https://github.com/steffomix/chaostours/issues](https://github.com/steffomix/chaostours/issues)
-
-
-Third party service provider:
+## Third party service providers:
 - [https://github.com/steffomix/chaostours/issues](https://github.com/steffomix/chaostours/issues)
 - Device Calendar: Depends on the device calendar provider of the device where the app is installed.
 In most cases but in no way granted it is [https://calendar.google.com](https://calendar.google.com)
+
+# Important Notice:
+## Changes to Our Privacy Policy and Your Responsibility to Stay Informed
+Please note that this privacy policy is subject to change over time. We strongly encourage you to proactively monitor it, as the app does not provide notifications to inform users about updates. Stay informed about any modifications to ensure you are aware of the latest terms and conditions governing your use of the application.
