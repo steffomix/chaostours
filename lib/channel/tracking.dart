@@ -157,62 +157,19 @@ class Tracker {
     } else {
       /// check for standing
       if (oldTrackingStatus == TrackingStatus.standing) {
-        /// start check with assumed true value
-        bool checkStartedMoving = true;
-
-        /// check if all are outside distance treshold or alias radius
-        for (var gps in gpsCalcPoints) {
-          final distance =
-              GPS.distance(gpsLastStatusStanding ?? gps, gps).round();
-          final radius = gpsLocation.radius;
-          if (distance <= radius) {
-            // still standing
-            checkStartedMoving = false;
-            break;
-          }
-        }
-        if (checkStartedMoving) {
+        //
+        if (!(await checkIfStillStanding(gps))) {
           newTrackingStatus = setStatusMoving(gps);
         }
       } else if (oldTrackingStatus == TrackingStatus.moving) {
-        // assume we are standing
-        bool isStanding = true;
-        for (var point in gpsCalcPoints) {
-          final distance = GPS.distance(gps, point).round();
-          if (distance > gpsLocation.radius) {
-            isStanding = false;
-            break;
-          }
-        }
+        bool isStillMoving = await checkIfStillMoving(gps, gpsLocation);
 
-        if (isStanding) {
+        if (!isStillMoving) {
           newTrackingStatus = setStatusStanding(gps);
 
+          await autoCreateAlias(gps, gpsLocation);
+
           /// autocreate alias?
-          if ((await Cache.appSettingStatusStandingRequireAlias
-                  .load<bool>(true)) &&
-              gpsLocation.aliasModels.isEmpty) {
-            try {
-              /// autocreate must be activated
-              if (await Cache.appSettingAutocreateAlias.load<bool>(false)) {
-                /// check if enough time has passed
-                if ((gpsLastStatusMoving ??= gps).time.isBefore(gps.time
-                    .subtract(await Cache.appSettingAutocreateAliasDuration
-                        .load<Duration>(AppUserSetting(
-                                Cache.appSettingAutocreateAliasDuration)
-                            .defaultValue as Duration)))) {
-                  gps = GPS.average(gpsCalcPoints);
-                  gps.time = DateTime.now();
-                  await Cache.reload();
-                  await (await GpsLocation.location(
-                          gpsLastStatusStanding ?? gps))
-                      .autocreateAlias();
-                }
-              }
-            } catch (e, stk) {
-              logger.error('autocreate alias: $e', stk);
-            }
-          }
         }
       }
     }
@@ -252,6 +209,108 @@ class Tracker {
     }
 
     return await serializeState(gps);
+  }
+
+  Future<void> autoCreateAlias(GPS gps, GpsLocation gpsLocation) async {
+    if ((await Cache.appSettingStatusStandingRequireAlias.load<bool>(true)) &&
+        gpsLocation.aliasModels.isEmpty) {
+      try {
+        /// autocreate must be activated
+        if (await Cache.appSettingAutocreateAlias.load<bool>(false)) {
+          /// check if enough time has passed
+          if ((gpsLastStatusMoving ??= gps).time.isBefore(gps.time.subtract(
+              await Cache.appSettingAutocreateAliasDuration.load<Duration>(
+                  AppUserSetting(Cache.appSettingAutocreateAliasDuration)
+                      .defaultValue as Duration)))) {
+            gps = GPS.average(gpsCalcPoints);
+            gps.time = DateTime.now();
+            await Cache.reload();
+            await (await GpsLocation.location(gpsLastStatusStanding ?? gps))
+                .autocreateAlias();
+          }
+        }
+      } catch (e, stk) {
+        logger.error('autocreate alias: $e', stk);
+      }
+    }
+  }
+
+  /// true if at least one is out of radius
+  bool atLeastOneIsOutside(GPS gps, int radius) {
+    for (var point in gpsCalcPoints) {
+      if (GPS.distance(gps, point) > radius) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /// true if at least one is out of radius
+  bool atLeastOneIsInside(GPS gps, int radius) {
+    for (var point in gpsCalcPoints) {
+      if (GPS.distance(gps, point) < radius) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  Future<bool> checkIfStillMoving(GPS gps, GpsLocation gpsLocation) async {
+    const cache = Cache.appSettingDistanceTreshold;
+    final distanceTreshold =
+        await cache.load<int>(AppUserSetting(cache).defaultValue as int);
+
+    if (gpsLocation.aliasModels.isEmpty &&
+        (await Cache.appSettingStatusStandingRequireAlias.load<bool>(true))) {
+      return true;
+    }
+    if (gpsLocation.aliasModels.isEmpty &&
+        !(await Cache.appSettingStatusStandingRequireAlias.load<bool>(true)) &&
+        !atLeastOneIsOutside(gps, distanceTreshold)) {
+      return false;
+    }
+
+    if (gpsLocation.aliasModels.isNotEmpty &&
+        !atLeastOneIsOutside(gps, gpsLocation.radius)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  // returns false if started moving or satnding is not allowed
+  // otherwise execute status standing
+  Future<bool> checkIfStillStanding(GPS gps) async {
+    final standingLocation =
+        (await GpsLocation.location(gpsLastStatusStanding ?? gps));
+
+    bool standingRequireAlias =
+        (await Cache.appSettingStatusStandingRequireAlias.load<bool>(true));
+
+    // standing not allowed
+    if (standingLocation.aliasModels.isEmpty && standingRequireAlias) {
+      return false;
+    }
+
+    const cache = Cache.appSettingDistanceTreshold;
+    final distanceTreshold =
+        await cache.load<int>(AppUserSetting(cache).defaultValue as int);
+
+    // moved away from last standing location
+    if (standingLocation.aliasModels.isEmpty &&
+        !standingRequireAlias &&
+        !atLeastOneIsInside(gpsLastStatusStanding ?? gps, distanceTreshold)) {
+      return false;
+    }
+    // moved away from alias
+    if (standingLocation.aliasModels.isNotEmpty &&
+        !atLeastOneIsInside(
+            gpsLastStatusStanding ?? gps, standingLocation.radius)) {
+      return false;
+    }
+
+    return atLeastOneIsInside(
+        gpsLastStatusStanding ?? gps, standingLocation.radius);
   }
 
   Future<GPS> claculateGPSPoints(GPS gps) async {

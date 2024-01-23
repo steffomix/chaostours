@@ -42,6 +42,7 @@ class ModelAliasGroup implements ModelGroup {
   bool calendarGps = false;
   bool calendarTimeStart = false;
   bool calendarTimeEnd = false;
+  bool calendarAllDay = false;
   bool calendarDuration = false;
   bool calendarAddress = false;
   bool calendarFullAddress = false;
@@ -68,6 +69,7 @@ class ModelAliasGroup implements ModelGroup {
     this.calendarGps = false,
     this.calendarTimeStart = false,
     this.calendarTimeEnd = false,
+    this.calendarAllDay = false,
     this.calendarDuration = false,
     this.calendarAddress = false,
     this.calendarFullAddress = false,
@@ -102,6 +104,8 @@ class ModelAliasGroup implements ModelGroup {
           TypeAdapter.serializeBool(calendarTimeStart),
       TableAliasGroup.withCalendarTimeEnd.column:
           TypeAdapter.serializeBool(calendarTimeEnd),
+      TableAliasGroup.withCalendarAllDay.column:
+          TypeAdapter.serializeBool(calendarAllDay),
       TableAliasGroup.withCalendarDuration.column:
           TypeAdapter.serializeBool(calendarDuration),
       TableAliasGroup.withCalendarAddress.column:
@@ -153,6 +157,8 @@ class ModelAliasGroup implements ModelGroup {
           map[TableAliasGroup.withCalendarTimeStart.column]),
       calendarTimeEnd: TypeAdapter.deserializeBool(
           map[TableAliasGroup.withCalendarTimeEnd.column]),
+      calendarAllDay: TypeAdapter.deserializeBool(
+          map[TableAliasGroup.withCalendarAllDay.column]),
       calendarDuration: TypeAdapter.deserializeBool(
           map[TableAliasGroup.withCalendarDuration.column]),
       calendarAddress: TypeAdapter.deserializeBool(

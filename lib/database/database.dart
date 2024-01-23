@@ -364,7 +364,8 @@ enum TableTrackPointCalendar {
 	${idCalendar.column}	TEXT,
 	${idEvent.column}	TEXT,
 	${title.column}	TEXT,
-	${body.column} TEXT)''';
+	${body.column} TEXT),
+  PRIMARY KEY(${idTrackPoint.column}, ${idAliasGroup.column})''';
 
   @override
   String toString() {
@@ -703,6 +704,7 @@ enum TableAliasGroup {
 
   withCalendarTimeStart('calendar_time_start'),
   withCalendarTimeEnd('calendar_time_end'),
+  withCalendarAllDay('calendar_all_day'),
   withCalendarDuration('calendar_duration'),
 
   withCalendarAlias('calendar_alias'),
@@ -759,6 +761,7 @@ enum TableAliasGroup {
 
   ${withCalendarTimeStart.column}	INTEGER,
   ${withCalendarTimeEnd.column}	INTEGER,
+  ${withCalendarAllDay.column}	INTEGER,
   ${withCalendarDuration.column} INTEGER,
 
   ${withCalendarAlias.column}	INTEGER,

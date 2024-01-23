@@ -136,37 +136,33 @@ class ModelTrackPoint {
 
   Future<ModelTrackPoint> addSharedAssets(GpsLocation location) async {
     aliasModels.clear();
+    for (var model in location.aliasModels) {
+      aliasModels
+          .add(ModelTrackpointAlias(model: model, trackpointId: 0, notes: ''));
+    }
 
-    return await DB.execute((txn) async {
-      aliasModels.clear();
-      for (var model in location.aliasModels) {
-        aliasModels.add(
-            ModelTrackpointAlias(model: model, trackpointId: 0, notes: ''));
+    userModels.clear();
+    for (var asset in await Cache.backgroundSharedUserList
+        .load<List<SharedTrackpointUser>>([])) {
+      var model = await ModelUser.byId(asset.id);
+      if (model == null) {
+        continue;
       }
+      userModels.add(ModelTrackpointUser(
+          model: model, trackpointId: 0, notes: asset.notes));
+    }
 
-      userModels.clear();
-      for (var asset in await Cache.backgroundSharedUserList
-          .load<List<SharedTrackpointUser>>([])) {
-        var model = await ModelUser.byId(asset.id, txn);
-        if (model == null) {
-          continue;
-        }
-        userModels.add(ModelTrackpointUser(
-            model: model, trackpointId: 0, notes: asset.notes));
+    taskModels.clear();
+    for (var asset in await Cache.backgroundSharedTaskList
+        .load<List<SharedTrackpointTask>>([])) {
+      var model = await ModelTask.byId(asset.id);
+      if (model == null) {
+        continue;
       }
-
-      taskModels.clear();
-      for (var asset in await Cache.backgroundSharedTaskList
-          .load<List<SharedTrackpointTask>>([])) {
-        var model = await ModelTask.byId(asset.id, txn);
-        if (model == null) {
-          continue;
-        }
-        taskModels.add(ModelTrackpointTask(
-            model: model, trackpointId: 0, notes: asset.notes));
-      }
-      return this;
-    });
+      taskModels.add(ModelTrackpointTask(
+          model: model, trackpointId: 0, notes: asset.notes));
+    }
+    return this;
   }
 
   static Future<int> count({ModelAlias? alias}) async {

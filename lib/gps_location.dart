@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 import 'package:chaostours/model/model_alias_group.dart';
+import 'package:chaostours/model/model_trackpoint_calendar.dart';
 import 'package:device_calendar/device_calendar.dart';
 
 import 'package:flutter_native_timezone/flutter_native_timezone.dart';
@@ -39,6 +40,13 @@ import 'package:chaostours/model/model_alias.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/channel/tracking.dart';
 import 'package:chaostours/util.dart' as util;
+
+class CalendarEvent {
+  final Event event;
+  final ModelAliasGroup modelGroup;
+
+  CalendarEvent({required this.event, required this.modelGroup});
+}
 
 //
 class GpsLocation {
@@ -70,6 +78,9 @@ class GpsLocation {
     List<ModelAlias> models = [];
     int rad = 0;
     for (var model in allModels) {
+      if (model.privacy.level >= AliasPrivacy.restricted.level) {
+        continue;
+      }
       if (GPS.distance(gps, model.gps) <= model.radius) {
         model.sortDistance = model.radius;
         models.add(model);
@@ -233,7 +244,7 @@ class GpsLocation {
     }
   }
 
-  Future<List<Event>> composeCalendarEvents() async {
+  Future<List<CalendarEvent>> composeCalendarEvents() async {
     if (aliasModels.isEmpty) {
       return [];
     }
@@ -254,7 +265,7 @@ class GpsLocation {
     final timeStart = TZDateTime.from(trackpoint.timeStart, tzLocation);
     final timeEnd = TZDateTime.from(trackpoint.timeEnd, tzLocation);
 
-    List<Event> events = [];
+    List<CalendarEvent> events = [];
     for (var calendar in calendarIds) {
       final ModelAliasGroup? group =
           await ModelAliasGroup.byId(calendar.aliasGroupId);
@@ -278,10 +289,11 @@ class GpsLocation {
       }
       // time end
       if (group.calendarTimeEnd) {
-        bodyParts.add('[END]: ${util.formatDateTime(trackpoint.timeEnd)}\n');
+        bodyParts.add(
+            '[END]: ${util.formatDateTime(group.calendarAllDay ? trackpoint.timeStart : trackpoint.timeEnd)}\n');
       }
       // duration
-      if (group.calendarDuration) {
+      if (group.calendarDuration && !group.calendarAllDay) {
         bodyParts
             .add('[DURATION]: ${util.formatDuration(trackpoint.duration)}\n\n');
       }
@@ -380,13 +392,18 @@ class GpsLocation {
       var event = Event(calendar.calendarId,
           title: eventTitle,
           start: timeStart,
-          end: timeEnd,
+          end: group.calendarAllDay ? timeStart : timeEnd,
           location: group.calendarGps
               ? '${trackpoint.gps.lat},${trackpoint.gps.lon}'
               : null,
+          url: group.calendarHtml && group.calendarGps
+              ? Uri.parse(
+                  'https://maps.google.com?q=${trackpoint.gps.lat},${trackpoint.gps.lon}')
+              : null,
+          allDay: group.calendarAllDay ? true : false,
           description: body);
 
-      events.add(event);
+      events.add(CalendarEvent(event: event, modelGroup: group));
     }
 
     return events;
@@ -400,63 +417,37 @@ class GpsLocation {
     if (privacy.level > AliasPrivacy.public.level) {
       return;
     }
+
     bool publishActivated = await Cache.appSettingPublishToCalendar.load<bool>(
         AppUserSetting(Cache.appSettingPublishToCalendar).defaultValue as bool);
     if (!publishActivated) {
       return;
     }
-    var calendars = await appCalendar.loadCalendars();
-    if (calendars.isEmpty) {
-      return;
-    }
 
-    final calendarEvents = await mergeCalendarEvents();
+    final events = await composeCalendarEvents();
+    List<CalendarEventId> sharedEvents = [];
+    for (var event in events) {
+      final calendar = await AppCalendar().calendarById(event.event.calendarId);
+      if (calendar != null) {
+        var eventId = await AppCalendar().inserOrUpdate(event.event);
+        sharedEvents.add(CalendarEventId(
+            aliasGroupId: event.modelGroup.id,
+            calendarId: calendar.id ?? '',
+            eventId: eventId ?? ''));
 
-    final tp = await createTrackPoint();
-    final lastStatusChange = tracker.gpsLastStatusChange ?? tp.gps;
-
-    final start = TZDateTime.from(tp.timeStart,
-        getLocation(await FlutterNativeTimezone.getLocalTimezone()));
-    const cache = Cache.appSettingTimeRangeTreshold;
-    final end = start.add(Duration(
-        seconds: (await cache
-                .load<Duration>(AppUserSetting(cache).defaultValue as Duration))
-            .inSeconds));
-    final title =
-        'Arrived ${tp.aliasModels.isNotEmpty ? tp.aliasModels.first.title : tp.address} - ${start.hour}.${start.minute}';
-    final location =
-        'maps.google.com?q=${lastStatusChange.lat},${lastStatusChange.lon}';
-    final description =
-        '${tp.aliasModels.isNotEmpty ? tp.aliasModels.first.title : tp.address}\n'
-        '${start.day}.${start.month}.${start.year}\n'
-        'at ${start.hour}.${start.minute} - unknown)\n\n'
-        'Tasks: ...\n\n'
-        'Users:\n${tp.userModels.map(
-              (e) => e.title,
-            ).join(', ')}\n\n'
-        'Notes: ...';
-
-    for (var calId in calendarEvents) {
-      Calendar? calendar = await appCalendar.calendarById(calId.calendarId);
-      if (calendar == null) {
-        logger.warn('startCalendarEvent: no calendar #$calId found');
-        continue;
+        await ModelTrackpointCalendar(
+                idTrackPoint: 0,
+                idAliasGroup: event.modelGroup.id,
+                idCalendar: event.event.calendarId ?? '',
+                idEvent: event.event.eventId ?? '',
+                title: event.event.title ?? '',
+                body: event.event.description ?? '')
+            .insertOrUpdate();
       }
-      final id = await appCalendar.inserOrUpdate(Event(calendar.id,
-          title: title,
-          start: start,
-          end: end,
-          location: location,
-          description: description));
-
-      calId.eventId = id ?? '';
-
-      await Future.delayed(const Duration(milliseconds: 100));
     }
 
-    /// cache event id
     await Cache.backgroundCalendarLastEventIds
-        .save<List<CalendarEventId>>(calendarEvents);
+        .save<List<CalendarEventId>>(sharedEvents);
   }
 
   Future<void> _notifyMoving() async {
@@ -522,64 +513,30 @@ class GpsLocation {
       return;
     }
 
-    GPS lastStatusChange = tracker.gpsLastStatusChange ?? tp.gps;
-
-    final tzLocation =
-        getLocation(await FlutterNativeTimezone.getLocalTimezone());
-    var start = TZDateTime.from(tp.timeStart, tzLocation);
-    var end = TZDateTime.from(tp.timeEnd, tzLocation);
-
-    var title =
-        '${tp.aliasModels.isNotEmpty ? tp.aliasModels.first.title : tp.address}; ${util.formatDuration(tp.duration)}';
-    var location =
-        'maps.google.com?q=${lastStatusChange.lat},${lastStatusChange.lon}';
-    var description =
-        '${tp.aliasModels.isNotEmpty ? tp.aliasModels.first.title : tp.address}\n'
-        '${start.day}.${start.month}. - ${util.formatDuration(tp.duration)}\n'
-        '(${start.hour}.${start.minute} - ${end.hour}.${end.minute})\n\n'
-        'Tasks:\n${tp.taskModels.map(
-              (e) => e.title,
-            ).join(', ')}\n\n'
-        'Users:\n${tp.userModels.map(
-              (e) => e.title,
-            ).join(', ')}\n\n'
-        'Notes: ${tp.notes.isEmpty ? '-' : tp.notes}';
-
-    for (CalendarEventId calId in sharedCalendars) {
-      Calendar? calendar = await appCalendar.calendarById(calId.calendarId);
-      if (calendar == null) {
-        continue;
+    final events = await composeCalendarEvents();
+    List<CalendarEventId> sharedEvents = [];
+    for (var event in events) {
+      final calendar = await AppCalendar().calendarById(event.event.calendarId);
+      if (calendar != null) {
+        var eventId = await AppCalendar().inserOrUpdate(event.event);
+        sharedEvents.add(CalendarEventId(
+            aliasGroupId: event.modelGroup.id,
+            calendarId: calendar.id ?? '',
+            eventId: eventId ?? ''));
       }
 
-      Event event = Event(calendar.id,
-          eventId: calId.eventId.isEmpty ? null : calId.eventId,
-          title: title,
-          start: start,
-          end: end,
-          location: location,
-          description: description);
-      String? id = await appCalendar.inserOrUpdate(event);
-      calId.eventId = id ?? '';
-      // save for edit trackpoint
-      await DB.execute(
-        (txn) async {
-          for (CalendarEventId calId in sharedCalendars) {
-            await txn.insert(TableTrackPointCalendar.table, {
-              TableTrackPointCalendar.idTrackPoint.column: tp.id,
-              TableTrackPointCalendar.idAliasGroup.column: calId.aliasGroupId,
-              TableTrackPointCalendar.idCalendar.column: calId.calendarId,
-              TableTrackPointCalendar.idEvent.column: calId.eventId,
-              TableTrackPointCalendar.title.column: title,
-              TableTrackPointCalendar.body.column: description
-            });
-          }
-        },
-      );
+      await ModelTrackpointCalendar(
+              idTrackPoint: tp.id,
+              idAliasGroup: event.modelGroup.id,
+              idCalendar: event.event.calendarId ?? '',
+              idEvent: event.event.eventId ?? '',
+              title: event.event.title ?? '',
+              body: event.event.description ?? '')
+          .insertOrUpdate();
     }
 
-    // clear calendar cache
-    await Cache.backgroundCalendarLastEventIds.save<List<CalendarEventId>>([]);
     tp.calendarEventIds.clear();
+    await Cache.backgroundCalendarLastEventIds.save<List<CalendarEventId>>([]);
   }
 
   Future<List<CalendarEventId>> mergeCalendarEvents() async {

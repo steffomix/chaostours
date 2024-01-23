@@ -410,11 +410,19 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
                 title: 'End Date and Time',
                 description: ''),
 
+            /// withCalendarTimeEnd
+            renderCalendarOption(
+                field: TableAliasGroup.withCalendarAllDay,
+                title:
+                    'Write as All Day Event. End date and time will be the same as start date and time.',
+                description: ''),
+
             /// withCalendarDuration
             renderCalendarOption(
                 field: TableAliasGroup.withCalendarDuration,
                 title: 'Duration',
-                description: 'The duration of the event.'),
+                description:
+                    'The duration of the event. If you have set teh Event as an all day event, the duration will not be displayed.'),
 
             ///
             /// withCalendarGps
