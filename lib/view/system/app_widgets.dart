@@ -16,7 +16,7 @@ limitations under the License.
 
 import 'package:app_settings/app_settings_platform_interface.dart';
 import 'package:chaostours/database/cache.dart';
-import 'package:chaostours/model/model_alias_group.dart';
+import 'package:chaostours/model/model_location_group.dart';
 import 'package:chaostours/model/model_task_group.dart';
 import 'package:chaostours/model/model_user_group.dart';
 import 'package:flutter/material.dart';
@@ -520,17 +520,18 @@ class AppWidgets {
     return newModel;
   }
 
-  static Future<ModelAliasGroup?> createAliasGroup(BuildContext context) async {
+  static Future<ModelLocationGroup?> createLocationGroup(
+      BuildContext context) async {
     final controller = TextEditingController(text: '');
-    final nextId = (await ModelAliasGroup.count()) + 1;
-    ModelAliasGroup? newModel;
+    final nextId = (await ModelLocationGroup.count()) + 1;
+    ModelLocationGroup? newModel;
     if (!context.mounted) {
       return null;
     }
     await AppWidgets.dialog(
         isDismissible: true,
         context: context,
-        title: const Text('Create new alias group'),
+        title: const Text('Create new location group'),
         contents: [
           Padding(
               padding: const EdgeInsets.all(10),
@@ -547,9 +548,9 @@ class AppWidgets {
               child: const Text('Cancel')),
           FilledButton(
               onPressed: () async {
-                newModel = await ModelAliasGroup(
+                newModel = await ModelLocationGroup(
                         title: controller.text.isEmpty
-                            ? 'Alias group #$nextId'
+                            ? 'Location group #$nextId'
                             : controller.text)
                     .insert();
                 if (context.mounted) {
@@ -741,7 +742,7 @@ class AppWidgets {
             child: const Icon(Icons.copy),
             onPressed: () {
               Clipboard.setData(ClipboardData(text: '''
-Location Alias:\t ${stats.model.title}
+Location:\t ${stats.model.title}
 
 First Visited:\t ${util.formatDateTime(stats.firstVisited)}
 Last Visited:\t ${util.formatDateTime(stats.lastVisited)}

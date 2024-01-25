@@ -87,7 +87,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
       AppWidgets.divider(),
       address(),
       AppWidgets.divider(),
-      widgetAliases(),
+      widgetLocations(),
       AppWidgets.divider(),
       widgetUsers(),
       widgetTasks(),
@@ -248,15 +248,15 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
         title: const Text('Active & statistics'));
   }
 
-  /// aliasList
+  /// locationList
   ///
   ///
   ///
-  Widget widgetAliases() {
+  Widget widgetLocations() {
     ///
     List<Widget> list = [];
     var i = 0;
-    for (var model in _model.aliasModels) {
+    for (var model in _model.locationModels) {
       i++;
       list.add(ListTile(
           leading: Icon(Icons.square, color: model.model.privacy.color),
@@ -264,7 +264,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
               alignment: Alignment.centerLeft,
               child: TextButton(
                   onPressed: () {
-                    Navigator.pushNamed(context, AppRoutes.editAlias.route,
+                    Navigator.pushNamed(context, AppRoutes.editLocation.route,
                             arguments: model.model.id)
                         .then(
                       (value) {

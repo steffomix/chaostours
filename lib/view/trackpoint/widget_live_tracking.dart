@@ -147,7 +147,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
       widgetAddress(),
       ListTile(
           title: Column(children: [
-        widgetAliases(),
+        widgetLocations(),
         AppWidgets.divider(),
         widgetSelectedTasks(),
         widgetSelectedUsers(),
@@ -211,7 +211,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                 ])),
             title: Text('${dataChannel.gpsPoints.length} GPS points'),
             subtitle: const Text(
-              'Pool of points for further calculations. Calculated by auto create alias duration divided by trackpoint interval.',
+              'Pool of points for further calculations. Calculated by auto create location duration divided by trackpoint interval.',
             ),
             trailing: IconButton(
               icon: const Icon(Icons.copy),
@@ -279,10 +279,10 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                 color: Colors.white,
                 child: Stack(children: [
                   Icon(Icons.circle_outlined,
-                      color: AppColors.lastTrackingStatusWithAliasDot.color),
+                      color: AppColors.lastTrackingStatusWithLocationDot.color),
                   Icon(
                     Icons.circle,
-                    color: AppColors.lastTrackingStatusWithAliasDot.color
+                    color: AppColors.lastTrackingStatusWithLocationDot.color
                         .withAlpha(128),
                   )
                 ])),
@@ -428,7 +428,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
                 title: const Text('Skip Record'),
                 contents: [
                   const Text(
-                      'Pause record and publish trackpoints until you have started moving from a known location alias.')
+                      'Pause record and publish trackpoints until you have started moving from a known location.')
                 ],
                 buttons: [
                   FilledButton(
@@ -573,15 +573,15 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
             )));
   }
 
-  /// aliasList
+  /// locationList
   ///
   ///
   ///
-  Widget widgetAliases() {
+  Widget widgetLocations() {
     ///
     List<Widget> list = [];
     var i = 0;
-    for (var model in dataChannel.aliasList) {
+    for (var model in dataChannel.locationList) {
       i++;
       list.add(ListTile(
           leading: Icon(Icons.square, color: model.model.privacy.color),
@@ -589,7 +589,7 @@ class _WidgetTrackingPage extends State<WidgetTrackingPage> {
               alignment: Alignment.centerLeft,
               child: TextButton(
                   onPressed: () {
-                    Navigator.pushNamed(context, AppRoutes.editAlias.route,
+                    Navigator.pushNamed(context, AppRoutes.editLocation.route,
                             arguments: model.model.id)
                         .then(
                       (value) {

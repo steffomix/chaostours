@@ -30,8 +30,8 @@ abstract class EnumUserSetting<T> {
 enum OsmLookupConditions implements EnumUserSetting<OsmLookupConditions> {
   never(Text('Never, completely restricted')),
   onUserRequest(Text('On user requests')),
-  onUserCreateAlias(Text('On user create alias')),
-  onAutoCreateAlias(Text('On auto create alias')),
+  onUserCreateLocation(Text('On user create location')),
+  onAutoCreateLocation(Text('On auto create location')),
   onStatusChanged(Text('On tracking status changed')),
   onBackgroundGps(Text('On every background GPS interval')),
   always(Text('Always, no restrictions'));
@@ -131,7 +131,7 @@ class AppUserSetting {
   static Future<void> resetAllToDefault() async {
     for (var setting in [
       Cache.appSettingTimeRangeTreshold,
-      Cache.appSettingAutocreateAliasDuration,
+      Cache.appSettingAutocreateLocationDuration,
       Cache.appSettingBackgroundTrackingInterval,
       Cache.appSettingGpsPointsSmoothCount,
       Cache.appSettingBackgroundTrackingEnabled,
@@ -140,8 +140,8 @@ class AppUserSetting {
       Cache.appSettingOsmLookupCondition,
       Cache.appSettingWeekdays,
       Cache.appSettingPublishToCalendar,
-      Cache.appSettingAutocreateAlias,
-      Cache.appSettingStatusStandingRequireAlias,
+      Cache.appSettingAutocreateLocation,
+      Cache.appSettingStatusStandingRequireLocation,
       Cache.appSettingForegroundUpdateInterval,
       Cache.appSettingTimeZone
     ]) {
@@ -182,9 +182,9 @@ class AppUserSetting {
               await cTimeRange.save<Duration>(Duration(seconds: minTimeRange));
             }
 
-            // recheck autocreate alias duration
+            // recheck autocreate location duration
             int minCreate = minTimeRange * 2;
-            Cache cAutoCreate = Cache.appSettingAutocreateAliasDuration;
+            Cache cAutoCreate = Cache.appSettingAutocreateLocationDuration;
             int autoCreate = (await cAutoCreate.load<Duration>(
                     AppUserSetting(cAutoCreate).defaultValue as Duration))
                 .inSeconds;
@@ -231,9 +231,9 @@ class AppUserSetting {
                 .inSeconds;
             timeRangeSeconds = math.max(timeRangeSeconds, trackingSeconds * 3);
             //
-            // recheck autocreate alias duration
+            // recheck autocreate location duration
             int minCreateSeconds = timeRangeSeconds * 2;
-            cache = Cache.appSettingAutocreateAliasDuration;
+            cache = Cache.appSettingAutocreateLocationDuration;
             int createSeconds = (await cache.load<Duration>(
                     AppUserSetting(cache).defaultValue as Duration))
                 .inSeconds;
@@ -257,13 +257,13 @@ class AppUserSetting {
           },
         );
 
-      case Cache.appSettingAutocreateAliasDuration:
+      case Cache.appSettingAutocreateLocationDuration:
         return _appUserSettings[cache] ??= AppUserSetting._option(
           cache,
-          title: const Text('Auto create Alias time period.'),
+          title: const Text('Auto create location time period.'),
           description: const Text(
-              'The period after which an alias will be created automatically if none is found. '
-              'The "Status Standing Requires Alias" option must be activated to make it work. '
+              'The period after which an location will be created automatically if none is found. '
+              'The "Status Standing Requires Location" option must be activated to make it work. '
               'The system requires at least 2x time as the above "Time Range Threshold" '
               'and will automatically increase false values if necessary.'),
           unit: Unit.minute,
@@ -359,7 +359,7 @@ class AppUserSetting {
         return _appUserSettings[cache] ??= AppUserSetting._option(
           cache,
           title: const Text('Movement measuring range.'),
-          description: const Text('Only relevant if no alias is found. '
+          description: const Text('Only relevant if no location is found. '
               'All measuring points must be within this radius to trigger the status Standing. '
               'Or the path of the GPS calculation points must be greater '
               'than this measuring range value to trigger the status Moving.'),
@@ -379,7 +379,7 @@ class AppUserSetting {
               'The requirements for when the app is allowed to search for an address. '
               'Higher restrictions reduce the app\'s data consumption.'),
           unit: Unit.option,
-          defaultValue: OsmLookupConditions.onAutoCreateAlias,
+          defaultValue: OsmLookupConditions.onAutoCreateLocation,
           resetToDefault: () async {
             await cache.save<OsmLookupConditions>(
                 AppUserSetting(cache).defaultValue as OsmLookupConditions);
@@ -424,12 +424,12 @@ class AppUserSetting {
           },
         );
 
-      case Cache.appSettingAutocreateAlias:
+      case Cache.appSettingAutocreateLocation:
         return _appUserSettings[cache] ??= AppUserSetting._option(
           cache,
-          title: const Text('Auto create Location Alias.'),
+          title: const Text('Auto create location.'),
           description: const Text(
-              'The App can create a Location Alias for you automatically after a certain time of standing. '
+              'The App can create a location for you automatically after a certain time of standing. '
               ' It also can lookup an Address from OpenStreetMap.com for free, just make sure you have set the lookup permissions below.'),
           unit: Unit.option,
           defaultValue: true,
@@ -438,12 +438,12 @@ class AppUserSetting {
           },
         );
 
-      case Cache.appSettingStatusStandingRequireAlias:
+      case Cache.appSettingStatusStandingRequireLocation:
         return _appUserSettings[cache] ??= AppUserSetting._option(
           cache,
-          title: const Text('Status stop required alias'),
+          title: const Text('Status stop required location'),
           description: const Text(
-              'If deactivated, the Movement measuring range is used as a virtual alias.'),
+              'If deactivated, the Movement measuring range is used as a virtual location.'),
           unit: Unit.option,
           defaultValue: true,
           resetToDefault: () async {

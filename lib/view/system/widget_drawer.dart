@@ -74,22 +74,22 @@ class _WidgetDrawer extends State<WidgetDrawer> {
           route: AppRoutes.liveTracking),
       CustomItem(
           widget: FutureBuilder(
-        future: Cache.appSettingStatusStandingRequireAlias.load<bool>(false),
+        future: Cache.appSettingStatusStandingRequireLocation.load<bool>(false),
         initialData: false,
         builder: (context, snapshot) {
           bool enabled = snapshot.data ?? false;
           return ListTile(
-              title: const Text('STOP require Alias'),
+              title: const Text('STOP require location'),
               leading: AppWidgets.checkbox(
                   value: enabled,
                   onChanged: (state) async {
                     bool isRunning = await BackgroundChannel.isRunning();
                     if (isRunning != state) {
                       if (state ?? false) {
-                        await Cache.appSettingStatusStandingRequireAlias
+                        await Cache.appSettingStatusStandingRequireLocation
                             .save<bool>(false);
                       } else {
-                        await Cache.appSettingStatusStandingRequireAlias
+                        await Cache.appSettingStatusStandingRequireLocation
                             .save<bool>(false);
                       }
                     }
@@ -105,9 +105,9 @@ class _WidgetDrawer extends State<WidgetDrawer> {
         title: 'Assets',
       ),
       MenuItem(
-          title: 'Location Alias',
+          title: 'Location',
           description: 'Manage your saved Locations.',
-          route: AppRoutes.listAlias), // todo
+          route: AppRoutes.listLocation), // todo
       MenuItem(
           title: 'Tasks',
           description: 'Manage your tasks for your trackpoints.',
@@ -118,18 +118,18 @@ class _WidgetDrawer extends State<WidgetDrawer> {
           route: AppRoutes.listUser),
       DividerItem(),
       HeaderItem(
-          title: 'Asset Groups', description: 'Group your Tasks and Users.'),
+          title: 'Asset groups', description: 'Group your tasks and users.'),
       MenuItem(
-          title: 'Alias Groups',
-          description: 'Here you can set your Calendars',
-          route: AppRoutes.listAliasGroup),
+          title: 'Location groups',
+          description: 'Here you can set your calendars',
+          route: AppRoutes.listLocationGroup),
       MenuItem(
           title: 'Task Groups',
-          description: 'Group your Tasks into Seasons.',
+          description: 'Group your tasks into seasons.',
           route: AppRoutes.listTaskGroup),
       MenuItem(
           title: 'User Groups',
-          description: 'Group your Users into Teams.',
+          description: 'Group your Users into teams.',
           route: AppRoutes.listUserGroup),
       DividerItem(),
       CustomItem(
@@ -149,30 +149,30 @@ class _WidgetDrawer extends State<WidgetDrawer> {
       MenuItem(
           title: 'Settings',
           description:
-              'Sevaral Settings. Most of them are good to go but who knows...',
+              'Sevaral settings. Most of them are good to go but who knows...',
           route: AppRoutes.appSettings),
       MenuItem(
-          title: 'Color Scheme',
-          description: 'Style your App.',
+          title: 'Color scheme',
+          description: 'Style your app.',
           route: AppRoutes.colorSchemePicker),
       MenuItem(
           title: 'Permissions',
           description:
-              'This App needs tons of permissions to unfold its full potential.',
+              'This app needs tons of permissions to unfold its full potential.',
           route: AppRoutes.permissions,
           routeArguments: ''),
       MenuItem(
-          title: 'Import/Export Database',
-          description: 'Backup and restore your Data',
+          title: 'Import/Export database',
+          description: 'Backup and restore your data',
           route: AppRoutes.importExport,
           routeArguments: ''),
       DividerItem(),
       HeaderItem(
-          title: 'App Backstage',
-          description: 'Explore your saved Data\nhot\'n raw from Backstage.'),
+          title: 'App backstage',
+          description: 'Explore your saved data\nhot\'n raw from backstage.'),
       MenuItem(
-          title: 'Database Explorer',
-          description: 'Your saved Data presented in a bloody raw style.',
+          title: 'Database explorer',
+          description: 'Your saved data presented in a bloody raw style.',
           route: AppRoutes.databaseExplorer),
       DividerItem(),
       CustomItem(
@@ -214,8 +214,8 @@ class _WidgetDrawer extends State<WidgetDrawer> {
             style: Theme.of(context).textTheme.titleLarge),
         subtitle: TextButton(
             child: const Text('OpenStreetmap\n'
-                'This App uses the free service from OpenStreetMap.org'
-                ' for Mmp display and reverse address lookup.\n'
+                'This app uses the free service from openstreetmap.org'
+                ' for map display and reverse address lookup.\n'
                 'Tap on this text to get to:\n'
                 'www.openstreetmap.org/copyright'),
             onPressed: () {

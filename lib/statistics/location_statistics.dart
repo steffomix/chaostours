@@ -22,7 +22,7 @@ import 'package:chaostours/database/type_adapter.dart';
 import 'package:chaostours/model/model_group.dart';
 import 'package:chaostours/statistics/asset_statistics.dart';
 
-class AliasStatistics implements AssetStatistics {
+class LocationStatistics implements AssetStatistics {
   static const columnCount = 'ct';
   static const columnDurationTotal = 'durationTotal';
   static const columnDurationMin = 'durationMin';
@@ -49,7 +49,7 @@ class AliasStatistics implements AssetStatistics {
   @override
   late DateTime lastVisited;
 
-  AliasStatistics({
+  LocationStatistics({
     required this.model,
     this.count = 0,
     this.durationTotal = Duration.zero,
@@ -63,7 +63,7 @@ class AliasStatistics implements AssetStatistics {
     lastVisited = tEnd;
   }
 
-  static Future<AliasStatistics> statistics(ModelGroup model,
+  static Future<LocationStatistics> statistics(ModelGroup model,
       {DateTime? start, DateTime? end, bool isActive = true}) async {
     List<Object?> params = [model.id, TypeAdapter.serializeBool(isActive)];
     String whereStart = '';
@@ -84,9 +84,9 @@ class AliasStatistics implements AssetStatistics {
       MIN( ${TableTrackPoint.timeStart.column}) AS $columnFirstVisited,
       MAX( ${TableTrackPoint.timeStart.column}) AS $columnLastVisited,
       COUNT(*) AS $columnCount
-    FROM ${TableTrackPointAlias.table}
-    LEFT JOIN ${TableTrackPoint.table} ON ${TableTrackPoint.id} = ${TableTrackPointAlias.idTrackPoint}
-    WHERE ${TableTrackPointAlias.idAlias} = ?
+    FROM ${TableTrackPointLocation.table}
+    LEFT JOIN ${TableTrackPoint.table} ON ${TableTrackPoint.id} = ${TableTrackPointLocation.idTrackPoint}
+    WHERE ${TableTrackPointLocation.idLocation} = ?
     AND (${TableTrackPoint.isActive} = ?) 
     $whereStart 
     $whereEnd
@@ -103,7 +103,7 @@ class AliasStatistics implements AssetStatistics {
     return _fromMap(model, map);
   }
 
-  static Future<AliasStatistics> groupStatistics(ModelGroup model,
+  static Future<LocationStatistics> groupStatistics(ModelGroup model,
       {DateTime? start, DateTime? end, bool isActive = true}) async {
     List<Object?> params = [model.id, TypeAdapter.serializeBool(isActive)];
     String whereStart = '';
@@ -125,10 +125,10 @@ class AliasStatistics implements AssetStatistics {
       MIN( ${TableTrackPoint.timeStart.column}) AS $columnFirstVisited,
       MAX( ${TableTrackPoint.timeStart.column}) AS $columnLastVisited,
       COUNT(*) AS $columnCount
-    FROM ${TableTrackPointAlias.table}
-    LEFT JOIN ${TableAliasAliasGroup.table} ON ${TableAliasAliasGroup.idAlias} = ${TableTrackPointAlias.idAlias}
-    LEFT JOIN ${TableTrackPoint.table} ON ${TableTrackPoint.id} = ${TableTrackPointAlias.idTrackPoint}
-    WHERE ${TableAliasAliasGroup.idAliasGroup} = ?
+    FROM ${TableTrackPointLocation.table}
+    LEFT JOIN ${TableLocationLocationGroup.table} ON ${TableLocationLocationGroup.idLocation} = ${TableTrackPointLocation.idLocation}
+    LEFT JOIN ${TableTrackPoint.table} ON ${TableTrackPoint.id} = ${TableTrackPointLocation.idTrackPoint}
+    WHERE ${TableLocationLocationGroup.idLocationGroup} = ?
     AND (${TableTrackPoint.isActive} = ?) 
     $whereStart 
     $whereEnd
@@ -145,8 +145,9 @@ class AliasStatistics implements AssetStatistics {
     return _fromMap(model, map);
   }
 
-  static AliasStatistics _fromMap(ModelGroup model, Map<String, Object?> map) {
-    return AliasStatistics(
+  static LocationStatistics _fromMap(
+      ModelGroup model, Map<String, Object?> map) {
+    return LocationStatistics(
         model: model,
         count: TypeAdapter.deserializeInt(map[columnCount]),
         durationTotal: Duration(

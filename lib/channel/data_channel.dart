@@ -14,14 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import 'package:chaostours/model/model_trackpoint_alias.dart';
+import 'package:chaostours/model/model_trackpoint_location.dart';
 import 'package:chaostours/model/model_trackpoint_task.dart';
 import 'package:chaostours/model/model_trackpoint_user.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 
 ///
 import 'package:chaostours/channel/trackpoint_data.dart';
-import 'package:chaostours/shared/shared_trackpoint_alias.dart';
+import 'package:chaostours/shared/shared_trackpoint_location.dart';
 import 'package:chaostours/shared/shared_trackpoint_task.dart';
 import 'package:chaostours/shared/shared_trackpoint_user.dart';
 import 'package:chaostours/channel/tracking.dart';
@@ -32,7 +32,7 @@ import 'package:chaostours/database/type_adapter.dart';
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/logger.dart';
-import 'package:chaostours/model/model_alias.dart';
+import 'package:chaostours/model/model_location.dart';
 import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/model/model_task.dart';
 
@@ -156,7 +156,7 @@ class DataChannel extends TrackPointData {
             distanceTreshold = await cache
                 .load<int>(AppUserSetting(cache).defaultValue as int);
 
-            await updateAliasList();
+            await updateLocationList();
             await updateUserList();
             await updateTaskList();
 
@@ -223,37 +223,37 @@ class DataChannel extends TrackPointData {
   }
 
   Future<void> updateAssets() async {
-    await updateAliasList();
+    await updateLocationList();
     await updateUserList();
     await updateTaskList();
   }
 
   /// updated on each tracking interval from
-  Future<void> updateAliasList() async {
+  Future<void> updateLocationList() async {
     /// load ids from shared and database
-    final sharedAliasList = await Cache.backgroundSharedAliasList
-        .load<List<SharedTrackpointAlias>>([]);
-    final modelAliasList = await ModelAlias.byIdList(sharedAliasList
+    final sharedLocationList = await Cache.backgroundSharedLocationList
+        .load<List<SharedTrackpointLocation>>([]);
+    final modelLocationList = await ModelLocation.byIdList(sharedLocationList
         .map(
           (e) => e.id,
         )
         .toList());
-    List<ModelTrackpointAlias> list = [];
-    for (var shared in sharedAliasList) {
-      ModelAlias model;
+    List<ModelTrackpointLocation> list = [];
+    for (var shared in sharedLocationList) {
+      ModelLocation model;
       try {
-        model = modelAliasList.firstWhere((model) => model.id == shared.id);
+        model = modelLocationList.firstWhere((model) => model.id == shared.id);
       } catch (e) {
         continue;
       }
       try {
-        list.add(ModelTrackpointAlias(
+        list.add(ModelTrackpointLocation(
             model: model, trackpointId: 0, notes: shared.notes));
       } catch (e) {
         /// ignore and skip element
       }
     }
-    aliasList = list;
+    locationList = list;
   }
 
   Future<void> updateUserList() async {

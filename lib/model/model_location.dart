@@ -23,12 +23,12 @@ import 'dart:math';
 import 'package:chaostours/calendar.dart';
 import 'package:chaostours/model/model.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
-import 'package:chaostours/model/model_alias_group.dart';
+import 'package:chaostours/model/model_location_group.dart';
 import 'package:chaostours/database/database.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/logger.dart';
 
-enum AliasPrivacy {
+enum LocationPrivacy {
   /// send notification, make record, publish to calendar
   public(1, Color.fromARGB(255, 0, 166, 0)),
 
@@ -39,37 +39,37 @@ enum AliasPrivacy {
   restricted(3, Color.fromARGB(255, 166, 0, 166)),
 
   /// do nothing
-  none(4, Colors.black); // no alias found
+  none(4, Colors.black); // no location found
 
-  static final Logger logger = Logger.logger<AliasPrivacy>();
+  static final Logger logger = Logger.logger<LocationPrivacy>();
   final int level;
   final Color color;
-  const AliasPrivacy(this.level, this.color);
-  static final int _saveId = AliasPrivacy.restricted.level;
+  const LocationPrivacy(this.level, this.color);
+  static final int _saveId = LocationPrivacy.restricted.level;
 
-  static AliasPrivacy byId(Object? value) {
+  static LocationPrivacy byId(Object? value) {
     int id = TypeAdapter.deserializeInt(value, fallback: 3);
     int idChecked = max(1, min(3, id));
     return byValue(idChecked == id ? idChecked : _saveId);
   }
 
-  static AliasPrivacy byValue(int id) {
+  static LocationPrivacy byValue(int id) {
     try {
-      return AliasPrivacy.values.firstWhere((status) => status.level == id);
+      return LocationPrivacy.values.firstWhere((status) => status.level == id);
     } catch (e, stk) {
       logger.error('invalid value $id: $e', stk);
-      return AliasPrivacy.restricted;
+      return LocationPrivacy.restricted;
     }
   }
 }
 
-class ModelAlias implements Model {
-  static Logger logger = Logger.logger<ModelAlias>();
+class ModelLocation implements Model {
+  static Logger logger = Logger.logger<ModelLocation>();
   int _id = 0;
   @override
   int get id => _id;
   // lazy loaded group
-  List<ModelAliasGroup> aliasGroups = [];
+  List<ModelLocationGroup> locationGroups = [];
   GPS gps;
   int radius = 50;
   DateTime lastVisited;
@@ -83,57 +83,60 @@ class ModelAlias implements Model {
   String trackpointNotes = '';
 
   /// group values
-  AliasPrivacy privacy = AliasPrivacy.privat;
+  LocationPrivacy privacy = LocationPrivacy.privat;
   bool isActive = true;
 
-  /// temporary set during search for nearest Alias
+  /// temporary set during search for nearest Location
   int sortDistance = 0;
   int _countVisited = 0;
   int get countVisited => _countVisited;
 
-  ModelAlias({
+  ModelLocation({
     required this.gps,
     required this.lastVisited,
     required this.title,
     this.isActive = true,
-    this.privacy = AliasPrivacy.privat,
+    this.privacy = LocationPrivacy.privat,
     this.radius = 50,
     this.timesVisited = 0,
     this.description = '',
   });
 
-  static ModelAlias fromMap(Map<String, Object?> map) {
-    var model = ModelAlias(
-        isActive: TypeAdapter.deserializeBool(map[TableAlias.isActive.column],
+  static ModelLocation fromMap(Map<String, Object?> map) {
+    var model = ModelLocation(
+        isActive: TypeAdapter.deserializeBool(
+            map[TableLocation.isActive.column],
             fallback: TypeAdapter.deserializeBool(true)),
-        gps: GPS(TypeAdapter.deserializeDouble(map[TableAlias.latitude.column]),
-            TypeAdapter.deserializeDouble(map[TableAlias.longitude.column])),
-        radius: TypeAdapter.deserializeInt(map[TableAlias.radius.column],
+        gps: GPS(
+            TypeAdapter.deserializeDouble(map[TableLocation.latitude.column]),
+            TypeAdapter.deserializeDouble(map[TableLocation.longitude.column])),
+        radius: TypeAdapter.deserializeInt(map[TableLocation.radius.column],
             fallback: 10),
-        privacy: AliasPrivacy.byId(map[TableAlias.privacy.column]),
+        privacy: LocationPrivacy.byId(map[TableLocation.privacy.column]),
         lastVisited:
-            TypeAdapter.dbIntToTime(map[TableAlias.lastVisited.column]),
+            TypeAdapter.dbIntToTime(map[TableLocation.lastVisited.column]),
         timesVisited:
-            TypeAdapter.deserializeInt(map[TableAlias.timesVisited.column]),
-        title: TypeAdapter.deserializeString(map[TableAlias.title.column]),
-        description:
-            TypeAdapter.deserializeString(map[TableAlias.description.column]));
-    model._id = TypeAdapter.deserializeInt(map[TableAlias.primaryKey.column]);
+            TypeAdapter.deserializeInt(map[TableLocation.timesVisited.column]),
+        title: TypeAdapter.deserializeString(map[TableLocation.title.column]),
+        description: TypeAdapter.deserializeString(
+            map[TableLocation.description.column]));
+    model._id =
+        TypeAdapter.deserializeInt(map[TableLocation.primaryKey.column]);
     return model;
   }
 
   Map<String, Object?> toMap() {
     return <String, Object?>{
-      TableAlias.primaryKey.column: id,
-      TableAlias.isActive.column: TypeAdapter.serializeBool(isActive),
-      TableAlias.latitude.column: gps.lat,
-      TableAlias.longitude.column: gps.lon,
-      TableAlias.radius.column: radius,
-      TableAlias.privacy.column: privacy.level,
-      TableAlias.lastVisited.column: TypeAdapter.dbTimeToInt(lastVisited),
-      TableAlias.timesVisited.column: timesVisited,
-      TableAlias.title.column: title,
-      TableAlias.description.column: description
+      TableLocation.primaryKey.column: id,
+      TableLocation.isActive.column: TypeAdapter.serializeBool(isActive),
+      TableLocation.latitude.column: gps.lat,
+      TableLocation.longitude.column: gps.lon,
+      TableLocation.radius.column: radius,
+      TableLocation.privacy.column: privacy.level,
+      TableLocation.lastVisited.column: TypeAdapter.dbTimeToInt(lastVisited),
+      TableLocation.timesVisited.column: timesVisited,
+      TableLocation.title.column: title,
+      TableLocation.description.column: description
     };
   }
 
@@ -142,7 +145,7 @@ class ModelAlias implements Model {
       (Transaction txn) async {
         const col = 'ct';
         final rows =
-            await txn.query(TableAlias.table, columns: ['count(*) as $col']);
+            await txn.query(TableLocation.table, columns: ['count(*) as $col']);
         if (rows.isNotEmpty) {
           return TypeAdapter.deserializeInt(rows.first[col], fallback: 0);
         } else {
@@ -156,9 +159,9 @@ class ModelAlias implements Model {
     const col = 'ct';
     final rows = await DB.execute<List<Map<String, Object?>>>(
       (Transaction txn) async {
-        return await txn.query(TableTrackPointAlias.table,
+        return await txn.query(TableTrackPointLocation.table,
             columns: ['count(*) as $col'],
-            where: '${TableTrackPointAlias.idAlias.column} = ?',
+            where: '${TableTrackPointLocation.idLocation.column} = ?',
             whereArgs: [id]);
       },
     );
@@ -169,11 +172,11 @@ class ModelAlias implements Model {
   }
 
   ///
-  static Future<ModelAlias?> byId(int id, [Transaction? txn]) async {
-    Future<ModelAlias?> select(Transaction txn) async {
-      final rows = await txn.query(TableAlias.table,
-          columns: TableAlias.columns,
-          where: '${TableAlias.primaryKey.column} = ?',
+  static Future<ModelLocation?> byId(int id, [Transaction? txn]) async {
+    Future<ModelLocation?> select(Transaction txn) async {
+      final rows = await txn.query(TableLocation.table,
+          columns: TableLocation.columns,
+          where: '${TableLocation.primaryKey.column} = ?',
           whereArgs: [id]);
 
       return rows.isEmpty ? null : fromMap(rows.first);
@@ -189,20 +192,20 @@ class ModelAlias implements Model {
   }
 
   ///
-  static Future<List<ModelAlias>> byIdList(List<int> ids) async {
+  static Future<List<ModelLocation>> byIdList(List<int> ids) async {
     if (ids.isEmpty) {
-      return <ModelAlias>[];
+      return <ModelLocation>[];
     }
     final rows = await DB.execute<List<Map<String, Object?>>>(
       (Transaction txn) async {
-        return await txn.query(TableAlias.table,
-            columns: TableAlias.columns,
+        return await txn.query(TableLocation.table,
+            columns: TableLocation.columns,
             where:
-                '${TableAlias.primaryKey.column} IN (${List.filled(ids.length, '?').join(', ')})',
+                '${TableLocation.primaryKey.column} IN (${List.filled(ids.length, '?').join(', ')})',
             whereArgs: ids);
       },
     );
-    List<ModelAlias> models = [];
+    List<ModelLocation> models = [];
     for (var row in rows) {
       try {
         models.add(fromMap(row));
@@ -213,15 +216,15 @@ class ModelAlias implements Model {
     return models;
   }
 
-  /// find trackpoints by aliasId
+  /// find trackpoints by locationId
   Future<List<ModelTrackPoint>> trackpoints(
       {int offset = 0, int limit = 20}) async {
     const idCol = 'id';
     var rows =
         await DB.execute<List<Map<String, Object?>>>((Transaction txn) async {
-      return await txn.query(TableTrackPointAlias.table,
-          columns: ['${TableTrackPointAlias.idTrackPoint.column} as $idCol'],
-          where: '${TableTrackPointAlias.idAlias.column} = ?',
+      return await txn.query(TableTrackPointLocation.table,
+          columns: ['${TableTrackPointLocation.idTrackPoint.column} as $idCol'],
+          where: '${TableTrackPointLocation.idLocation.column} = ?',
           whereArgs: [id],
           limit: limit,
           offset: offset);
@@ -238,18 +241,18 @@ class ModelAlias implements Model {
   }
 
   ///
-  static Future<List<ModelAlias>> byRadius(
+  static Future<List<ModelLocation>> byRadius(
       {required GPS gps, required int radius}) async {
     var area = GpsArea(
         latitude: gps.lat, longitude: gps.lon, distanceInMeters: radius);
-    var table = TableAlias.table;
-    var latCol = TableAlias.latitude.column;
-    var lonCol = TableAlias.longitude.column;
+    var table = TableLocation.table;
+    var latCol = TableLocation.latitude.column;
+    var lonCol = TableLocation.longitude.column;
 
     var rows = await DB.execute<List<Map<String, Object?>>>(
       (Transaction txn) async {
         return await txn.query(table,
-            columns: TableAlias.columns,
+            columns: TableLocation.columns,
             where:
                 '$latCol > ? AND $latCol < ? AND $lonCol > ? AND $lonCol < ?',
             whereArgs: [
@@ -260,11 +263,11 @@ class ModelAlias implements Model {
             ]);
       },
     );
-    var rawModels = <ModelAlias>[];
+    var rawModels = <ModelLocation>[];
     for (var row in rows) {
       rawModels.add(fromMap(row));
     }
-    var models = <ModelAlias>[];
+    var models = <ModelLocation>[];
     for (var model in rawModels) {
       if (GPS.distance(model.gps, gps) <= radius) {
         models.add(model);
@@ -273,7 +276,7 @@ class ModelAlias implements Model {
     return models;
   }
 
-  static Future<List<ModelAlias>> select(
+  static Future<List<ModelLocation>> select(
       {int offset = 0,
       int limit = 50,
       bool activated = true,
@@ -285,7 +288,7 @@ class ModelAlias implements Model {
         final trueSearch = '%$search%';
         final searchQuery = search.isEmpty
             ? ''
-            : ' AND (${TableAlias.title.column} LIKE ? OR ${TableAlias.description.column} LIKE ?) ';
+            : ' AND (${TableLocation.title.column} LIKE ? OR ${TableLocation.description.column} LIKE ?) ';
         final searchArgs = search.isEmpty ? [] : [trueSearch, trueSearch];
         final args = [
           TypeAdapter.serializeBool(activated),
@@ -294,56 +297,37 @@ class ModelAlias implements Model {
           offset
         ];
         final q = '''
-SELECT ${TableAlias.columns.join(', ')} , COUNT(${TableTrackPointAlias.idAlias}) as $colCountVisited FROM ${TableAlias.table}
-LEFT JOIN ${TableTrackPointAlias.table} ON ${TableTrackPointAlias.idAlias} = ${TableAlias.id}
--- LEFT JOIN ${TableTrackPoint.table} ON ${TableTrackPoint.id} = ${TableTrackPointAlias.idTrackPoint}
-WHERE ${TableAlias.isActive.column} = ? $searchQuery
-GROUP BY ${TableAlias.id}  -- (${TableTrackPoint.timeStart} / (60 * 60 * 24))
-ORDER BY ${lastVisited ? '${TableAlias.lastVisited.column} DESC' : '${TableAlias.title.column} ASC'}
+SELECT ${TableLocation.columns.join(', ')} , COUNT(${TableTrackPointLocation.idLocation}) as $colCountVisited FROM ${TableLocation.table}
+LEFT JOIN ${TableTrackPointLocation.table} ON ${TableTrackPointLocation.idLocation} = ${TableLocation.id}
+-- LEFT JOIN ${TableTrackPoint.table} ON ${TableTrackPoint.id} = ${TableTrackPointLocation.idTrackPoint}
+WHERE ${TableLocation.isActive.column} = ? $searchQuery
+GROUP BY ${TableLocation.id}  -- (${TableTrackPoint.timeStart} / (60 * 60 * 24))
+ORDER BY ${lastVisited ? '${TableLocation.lastVisited.column} DESC' : '${TableLocation.title.column} ASC'}
 LIMIT ?
 OFFSET ?
 ''';
         return await txn.rawQuery(q, args);
       },
     );
-    List<ModelAlias> models = [];
-    ModelAlias model;
+    List<ModelLocation> models = [];
+    ModelLocation model;
     for (var row in rows) {
       model = fromMap(row);
       model._countVisited = TypeAdapter.deserializeInt(row[colCountVisited]);
       models.add(model);
     }
     return models;
-/*
-    var rows =
-        await DB.execute<List<Map<String, Object?>>>((Transaction txn) async {
-      return await txn.query(TableAlias.table,
-          columns: TableAlias.columns,
-          where: '${TableAlias.isActive.column} = ? $searchQuery',
-          whereArgs: [TypeAdapter.serializeBool(activated), ...searchArgs],
-          orderBy: lastVisited
-              ? '${TableAlias.lastVisited.column} DESC'
-              : '${TableAlias.title.column} ASC',
-          offset: offset,
-          limit: limit);
-    });
-    return rows
-        .map(
-          (e) => fromMap(e),
-        )
-        .toList();
-    */
   }
 
   /// select deep activated, respects group activation
-  static Future<List<ModelAlias>> selsectActivated(
+  static Future<List<ModelLocation>> selsectActivated(
       {bool isActive = true}) async {
     final rows = await DB.execute<List<Map<String, Object?>>>((txn) async {
       var q = '''
-SELECT ${TableAlias.columns.join(', ')} FROM ${TableAliasAliasGroup.table}
-LEFT JOIN ${TableAlias.table} ON ${TableAlias.primaryKey} = ${TableAliasAliasGroup.idAlias}
-LEFT JOIN ${TableAliasGroup.table} ON ${TableAliasAliasGroup.idAliasGroup} =  ${TableAliasGroup.primaryKey}
-WHERE ${TableAlias.isActive} = ? AND ${TableAliasGroup.isActive} = ?
+SELECT ${TableLocation.columns.join(', ')} FROM ${TableLocationLocationGroup.table}
+LEFT JOIN ${TableLocation.table} ON ${TableLocation.primaryKey} = ${TableLocationLocationGroup.idLocation}
+LEFT JOIN ${TableLocationGroup.table} ON ${TableLocationLocationGroup.idLocationGroup} =  ${TableLocationGroup.primaryKey}
+WHERE ${TableLocation.isActive} = ? AND ${TableLocationGroup.isActive} = ?
 ''';
 
       return await txn.rawQuery(
@@ -356,16 +340,16 @@ WHERE ${TableAlias.isActive} = ? AND ${TableAliasGroup.isActive} = ?
         .toList();
   }
 
-  Future<ModelAlias> insert() async {
+  Future<ModelLocation> insert() async {
     var map = toMap();
-    map.removeWhere((key, value) => key == TableAlias.primaryKey.column);
+    map.removeWhere((key, value) => key == TableLocation.primaryKey.column);
 
     await DB.execute(
       (Transaction txn) async {
-        _id = await txn.insert(TableAlias.table, map);
-        await txn.insert(TableAliasAliasGroup.table, {
-          TableAliasAliasGroup.idAlias.column: _id,
-          TableAliasAliasGroup.idAliasGroup.column: 1
+        _id = await txn.insert(TableLocation.table, map);
+        await txn.insert(TableLocationLocationGroup.table, {
+          TableLocationLocationGroup.idLocation.column: _id,
+          TableLocationLocationGroup.idLocationGroup.column: 1
         });
       },
     );
@@ -379,14 +363,14 @@ WHERE ${TableAlias.isActive} = ? AND ${TableAliasGroup.isActive} = ?
     }
     var count = await DB.execute<int>(
       (Transaction txn) async {
-        return await txn.update(TableAlias.table, toMap(),
-            where: '${TableAlias.primaryKey.column} = ?', whereArgs: [id]);
+        return await txn.update(TableLocation.table, toMap(),
+            where: '${TableLocation.primaryKey.column} = ?', whereArgs: [id]);
       },
     );
     return count;
   }
 
-  static Future<List<ModelAlias>> byArea(
+  static Future<List<ModelLocation>> byArea(
       {required GPS gps,
       includeInactive = true,
       int gpsArea = 10000,
@@ -394,19 +378,19 @@ WHERE ${TableAlias.isActive} = ? AND ${TableAliasGroup.isActive} = ?
       int softLimit = 0}) async {
     var area = GpsArea(
         latitude: gps.lat, longitude: gps.lon, distanceInMeters: gpsArea);
-    var latCol = TableAlias.latitude.column;
-    var lonCol = TableAlias.longitude.column;
+    var latCol = TableLocation.latitude.column;
+    var lonCol = TableLocation.longitude.column;
     var whereArea =
         ' $latCol > ? AND $latCol < ? AND $lonCol > ? AND $lonCol < ? ';
     var isActiveCol = 'isActive';
     var rows = await DB.execute((txn) async {
       var q = '''
-SELECT ${TableAlias.columns.join(', ')}, ${TableAliasGroup.isActive} AS $isActiveCol  FROM ${TableAlias.table}
-LEFT JOIN ${TableAliasAliasGroup.table} ON ${TableAlias.id} = ${TableAliasAliasGroup.idAlias}
-LEFT JOIN ${TableAliasGroup.table} ON ${TableAliasGroup.id} = ${TableAliasAliasGroup.idAliasGroup}
+SELECT ${TableLocation.columns.join(', ')}, ${TableLocationGroup.isActive} AS $isActiveCol  FROM ${TableLocation.table}
+LEFT JOIN ${TableLocationLocationGroup.table} ON ${TableLocation.id} = ${TableLocationLocationGroup.idLocation}
+LEFT JOIN ${TableLocationGroup.table} ON ${TableLocationGroup.id} = ${TableLocationLocationGroup.idLocationGroup}
 WHERE ${includeInactive ? '' : '$isActiveCol = ? AND'}
 $whereArea
-GROUP BY ${TableAlias.id}
+GROUP BY ${TableLocation.id}
 LIMIT ?
 ''';
       return await txn.rawQuery(q, [
@@ -418,14 +402,14 @@ LIMIT ?
         limit
       ]);
     });
-    var models = <ModelAlias>[];
+    var models = <ModelLocation>[];
     for (var row in rows) {
       try {
         var model = fromMap(row);
         model.sortDistance = GPS.distance(gps, model.gps).round();
         models.add(model);
       } catch (e, stk) {
-        logger.error('nextAlias fromMap $e', stk);
+        logger.error('next location fromMap $e', stk);
       }
     }
     if (models.isNotEmpty) {
@@ -438,13 +422,13 @@ LIMIT ?
     return models;
   }
 
-  /// select ALL groups from this alias for checkbox selection.
+  /// select ALL groups from this location for checkbox selection.
   Future<List<int>> groupIds() async {
-    var col = TableAliasAliasGroup.idAliasGroup.column;
+    var col = TableLocationLocationGroup.idLocationGroup.column;
     final ids = await DB.execute<List<Map<String, Object?>>>((txn) async {
-      return await txn.query(TableAliasAliasGroup.table,
+      return await txn.query(TableLocationLocationGroup.table,
           columns: [col],
-          where: '${TableAliasAliasGroup.idAlias.column} = ?',
+          where: '${TableLocationLocationGroup.idLocation.column} = ?',
           whereArgs: [id]);
     });
     if (ids.isEmpty) {
@@ -453,12 +437,12 @@ LIMIT ?
     return ids.map((e) => TypeAdapter.deserializeInt(e[col])).toList();
   }
 
-  Future<int> addGroup(ModelAliasGroup group) async {
+  Future<int> addGroup(ModelLocationGroup group) async {
     return await DB.execute<int>((txn) async {
       try {
-        var c = await txn.insert(TableAliasAliasGroup.table, {
-          TableAliasAliasGroup.idAlias.column: id,
-          TableAliasAliasGroup.idAliasGroup.column: group.id
+        var c = await txn.insert(TableLocationLocationGroup.table, {
+          TableLocationLocationGroup.idLocation.column: id,
+          TableLocationLocationGroup.idLocationGroup.column: group.id
         });
         return c;
       } catch (e) {
@@ -468,13 +452,13 @@ LIMIT ?
     });
   }
 
-  Future<int> removeGroup(ModelAliasGroup group) async {
+  Future<int> removeGroup(ModelLocationGroup group) async {
     return await DB.execute<int>((txn) async {
       try {
         var c = await txn.delete(
-          TableAliasAliasGroup.table,
+          TableLocationLocationGroup.table,
           where:
-              '${TableAliasAliasGroup.idAlias.column} = ? AND ${TableAliasAliasGroup.idAliasGroup.column} = ?',
+              '${TableLocationLocationGroup.idLocation.column} = ? AND ${TableLocationLocationGroup.idLocationGroup.column} = ?',
           whereArgs: [id, group.id],
         );
         return c;
@@ -486,7 +470,7 @@ LIMIT ?
   }
 
   static Future<List<CalendarEventId>> calendarIds(
-      List<ModelAlias> models) async {
+      List<ModelLocation> models) async {
     List<int> ids = models
         .map(
           (e) => e.id,
@@ -494,17 +478,17 @@ LIMIT ?
         .toList();
     List<String> params = List.filled(ids.length, '?');
     const idCalendar = 'idCalendar';
-    const idAliasGroup = 'idAliasGroup';
+    const idLocationGroup = 'idLocationGroup';
 
     final q = '''SELECT 
-        NULLIF(${TableAliasGroup.idCalendar}, '') as $idCalendar,
-        ${TableAliasGroup.id} as $idAliasGroup
-    FROM ${TableAlias.table}
-    INNER JOIN ${TableAliasAliasGroup.table} ON ${TableAlias.id} = ${TableAliasAliasGroup.idAlias}
-    LEFT JOIN ${TableAliasGroup.table} ON ${TableAliasAliasGroup.idAliasGroup} = ${TableAliasGroup.id}
+        NULLIF(${TableLocationGroup.idCalendar}, '') as $idCalendar,
+        ${TableLocationGroup.id} as $idLocationGroup
+    FROM ${TableLocation.table}
+    INNER JOIN ${TableLocationLocationGroup.table} ON ${TableLocation.id} = ${TableLocationLocationGroup.idLocation}
+    LEFT JOIN ${TableLocationGroup.table} ON ${TableLocationLocationGroup.idLocationGroup} = ${TableLocationGroup.id}
     WHERE $idCalendar IS NOT NULL
-    AND ${TableAlias.id} IN (${params.join(', ')})
-    GROUP BY ${TableAliasGroup.idCalendar}
+    AND ${TableLocation.id} IN (${params.join(', ')})
+    GROUP BY ${TableLocationGroup.idCalendar}
 ''';
     final rows = await DB.execute((txn) async {
       return await txn.rawQuery(q, ids);
@@ -515,8 +499,8 @@ LIMIT ?
 
       if (parsedId.isNotEmpty) {
         result.add(CalendarEventId(
-            aliasGroupId:
-                TypeAdapter.deserializeInt(row[idAliasGroup], fallback: -1),
+            locationGroupId:
+                TypeAdapter.deserializeInt(row[idLocationGroup], fallback: -1),
             calendarId: TypeAdapter.deserializeString(row[idCalendar])));
       }
     }

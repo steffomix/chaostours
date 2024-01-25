@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import 'package:chaostours/model/model_alias_group.dart';
+import 'package:chaostours/model/model_location_group.dart';
 import 'package:chaostours/model/model_trackpoint_calendar.dart';
 import 'package:device_calendar/device_calendar.dart';
 
@@ -26,7 +26,7 @@ import 'package:chaostours/channel/notification_channel.dart';
 import 'package:chaostours/database/database.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_user.dart';
-import 'package:chaostours/shared/shared_trackpoint_alias.dart';
+import 'package:chaostours/shared/shared_trackpoint_location.dart';
 import 'package:chaostours/shared/shared_trackpoint_task.dart';
 import 'package:chaostours/shared/shared_trackpoint_user.dart';
 import 'package:chaostours/address.dart';
@@ -36,14 +36,14 @@ import 'package:chaostours/database/cache.dart';
 import 'package:chaostours/conf/app_user_settings.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/logger.dart';
-import 'package:chaostours/model/model_alias.dart';
+import 'package:chaostours/model/model_location.dart';
 import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/channel/tracking.dart';
 import 'package:chaostours/util.dart' as util;
 
 class CalendarEvent {
   final Event event;
-  final ModelAliasGroup modelGroup;
+  final ModelLocationGroup modelGroup;
 
   CalendarEvent({required this.event, required this.modelGroup});
 }
@@ -54,19 +54,19 @@ class GpsLocation {
 
   final GPS gps;
   Address? address;
-  AliasPrivacy get privacy => _privacy ?? AliasPrivacy.none;
-  AliasPrivacy? _privacy;
+  LocationPrivacy get privacy => _privacy ?? LocationPrivacy.none;
+  LocationPrivacy? _privacy;
   int radius = 0;
 
   final tracker = Tracker();
   final channel = DataChannel();
   final appCalendar = AppCalendar();
-  final List<ModelAlias> aliasModels;
+  final List<ModelLocation> locationModels;
 
-  GpsLocation._location({required this.gps, required this.aliasModels});
+  GpsLocation._location({required this.gps, required this.locationModels});
 
-  static Future<GpsLocation> location(GPS gps) async {
-    List<ModelAlias> allModels = await ModelAlias.byArea(
+  static Future<GpsLocation> gpsLocation(GPS gps) async {
+    List<ModelLocation> allModels = await ModelLocation.byArea(
         gps: gps,
         gpsArea: math.max(
             1000,
@@ -74,11 +74,11 @@ class GpsLocation {
                 AppUserSetting(Cache.appSettingDistanceTreshold).defaultValue
                     as int)));
 
-    AliasPrivacy? priv;
-    List<ModelAlias> models = [];
+    LocationPrivacy? priv;
+    List<ModelLocation> models = [];
     int rad = 0;
     for (var model in allModels) {
-      if (model.privacy.level >= AliasPrivacy.restricted.level) {
+      if (model.privacy.level >= LocationPrivacy.restricted.level) {
         continue;
       }
       if (GPS.distance(gps, model.gps) <= model.radius) {
@@ -99,12 +99,12 @@ class GpsLocation {
 
     final location = GpsLocation._location(
       gps: gps,
-      aliasModels: models,
+      locationModels: models,
     );
 
     location._privacy = priv;
     location.radius = rad;
-    await location.updateSharedAliasList();
+    await location.updateSharedLocationList();
     return location;
   }
 
@@ -122,31 +122,31 @@ class GpsLocation {
         .addSharedAssets(this);
   }
 
-  Future<void> updateSharedAliasList() async {
-    List<SharedTrackpointAlias> oldShared = await Cache
-        .backgroundSharedAliasList
-        .load<List<SharedTrackpointAlias>>([]);
-    List<SharedTrackpointAlias> newShared = [];
-    for (var model in aliasModels) {
+  Future<void> updateSharedLocationList() async {
+    List<SharedTrackpointLocation> oldShared = await Cache
+        .backgroundSharedLocationList
+        .load<List<SharedTrackpointLocation>>([]);
+    List<SharedTrackpointLocation> newShared = [];
+    for (var model in locationModels) {
       newShared.add(oldShared
               .where(
                 (old) => old.id == model.id,
               )
               .firstOrNull ??
-          SharedTrackpointAlias(id: model.id, notes: ''));
+          SharedTrackpointLocation(id: model.id, notes: ''));
     }
 
-    await Cache.backgroundSharedAliasList
-        .save<List<SharedTrackpointAlias>>(newShared);
+    await Cache.backgroundSharedLocationList
+        .save<List<SharedTrackpointLocation>>(newShared);
   }
 
-  Future<GpsLocation> autocreateAlias() async {
+  Future<GpsLocation> autocreateLocation() async {
     /// get address
     tracker.address = await Address(gps)
-        .lookup(OsmLookupConditions.onAutoCreateAlias, saveToCache: true);
+        .lookup(OsmLookupConditions.onAutoCreateLocation, saveToCache: true);
 
-    /// create alias
-    ModelAlias newAlias = ModelAlias(
+    /// create location
+    ModelLocation newModel = ModelLocation(
         gps: gps,
         lastVisited: tracker.gpsCalcPoints.lastOrNull?.time ?? gps.time,
         timesVisited: 1,
@@ -154,15 +154,15 @@ class GpsLocation {
         description: tracker.address?.addressDetails ?? '',
         radius: radius);
 
-    await newAlias.insert();
-    final newLocation = await location(gps);
-    await newLocation.updateSharedAliasList();
+    await newModel.insert();
+    final newLocation = await gpsLocation(gps);
+    await newLocation.updateSharedLocationList();
     return newLocation;
   }
 
   bool _standingExecuted = false;
   Future<void> executeStatusStanding() async {
-    if (_standingExecuted || privacy == AliasPrivacy.none) {
+    if (_standingExecuted || privacy == LocationPrivacy.none) {
       return;
     }
     try {
@@ -177,7 +177,7 @@ class GpsLocation {
 
   bool _movingExecuted = false;
   Future<void> executeStatusMoving() async {
-    if (_movingExecuted || privacy == AliasPrivacy.none) {
+    if (_movingExecuted || privacy == LocationPrivacy.none) {
       return;
     }
 
@@ -210,16 +210,16 @@ class GpsLocation {
 
   Future<void> _notifyStanding() async {
     // update address
-    if (privacy.level <= AliasPrivacy.privat.level) {
+    if (privacy.level <= LocationPrivacy.privat.level) {
       tracker.address = await Address(gps)
           .lookup(OsmLookupConditions.onStatusChanged, saveToCache: true);
     }
     // check privacy
-    if (privacy.level > AliasPrivacy.restricted.level) {
+    if (privacy.level > LocationPrivacy.restricted.level) {
       return;
     }
 
-    await updateSharedAliasList();
+    await updateSharedLocationList();
 
     NotificationChannel.sendTrackingUpdateNotification(
         title: 'Tick Update',
@@ -230,7 +230,7 @@ class GpsLocation {
 
   Future<void> _recordStanding() async {
     // check privacy
-    if (privacy.level > AliasPrivacy.privat.level) {
+    if (privacy.level > LocationPrivacy.privat.level) {
       return;
     }
 
@@ -238,14 +238,14 @@ class GpsLocation {
         .lookup(OsmLookupConditions.onStatusChanged, saveToCache: true);
 
     // update last visited
-    for (var model in aliasModels) {
+    for (var model in locationModels) {
       model.lastVisited = (tracker.gpsLastStatusStanding ?? gps).time;
       await model.update();
     }
   }
 
   Future<List<CalendarEvent>> composeCalendarEvents() async {
-    if (aliasModels.isEmpty) {
+    if (locationModels.isEmpty) {
       return [];
     }
 
@@ -253,11 +253,11 @@ class GpsLocation {
     final calendarIds = await mergeCalendarEvents();
     final trackpoint = await createTrackPoint();
 
-    // grab alias models
-    final mainAlias = aliasModels.first;
-    final nearbyAlias = <ModelAlias>[];
-    if (aliasModels.length > 1) {
-      nearbyAlias.addAll(aliasModels.getRange(1, aliasModels.length));
+    // grab location models
+    final mainLocation = locationModels.first;
+    final nearbyLocation = <ModelLocation>[];
+    if (locationModels.length > 1) {
+      nearbyLocation.addAll(locationModels.getRange(1, locationModels.length));
     }
 
     final tzLocation =
@@ -267,18 +267,14 @@ class GpsLocation {
 
     List<CalendarEvent> events = [];
     for (var calendar in calendarIds) {
-      final ModelAliasGroup? group =
-          await ModelAliasGroup.byId(calendar.aliasGroupId);
+      final ModelLocationGroup? group =
+          await ModelLocationGroup.byId(calendar.locationGroupId);
       if (group == null) {
         continue;
       }
 
-      if (!group.ensuredPrivacyCompliance) {
-        continue;
-      }
-
       String eventTitle =
-          group.calendarAlias ? mainAlias.title : '#${mainAlias.id}';
+          group.calendarLocation ? mainLocation.title : '#${mainLocation.id}';
 
       List<String> bodyParts = [];
 
@@ -312,27 +308,28 @@ class GpsLocation {
         bodyParts.add('[NOTES]:\n${trackpoint.notes.trim()}\n\n');
       }
 
-      // main alias
-      if (group.calendarAlias || group.calendarAliasDescription) {
-        bodyParts.add('[MAIN LOCATION #${mainAlias.id}]:\n');
-        if (group.calendarAlias) {
+      // main location
+      if (group.calendarLocation || group.calendarLocationDescription) {
+        bodyParts.add('[MAIN LOCATION #${mainLocation.id}]:\n');
+        if (group.calendarLocation) {
           bodyParts.add(
-              '${GPS.distance(trackpoint.gps, mainAlias.gps).round()}m: ${mainAlias.title.trim()}${group.calendarAliasDescription ? '\n' : '\n\n'}');
+              '${GPS.distance(trackpoint.gps, mainLocation.gps).round()}m: ${mainLocation.title.trim()}${group.calendarLocationDescription ? '\n' : '\n\n'}');
         }
-        if (group.calendarAliasDescription) {
-          bodyParts.add('${mainAlias.description.trim()}\n\n');
+        if (group.calendarLocationDescription) {
+          bodyParts.add('${mainLocation.description.trim()}\n\n');
         }
       }
 
-      if (group.calendarAliasNearby || group.calendarNearbyAliasDescription) {
-        for (var alias in nearbyAlias) {
-          bodyParts.add('[NEARBY LOCATION #${alias.id}]:\n');
-          if (group.calendarAlias) {
+      if (group.calendarLocationNearby ||
+          group.calendarNearbyLocationDescription) {
+        for (var location in nearbyLocation) {
+          bodyParts.add('[NEARBY LOCATION #${location.id}]:\n');
+          if (group.calendarLocation) {
             bodyParts.add(
-                '${GPS.distance(trackpoint.gps, alias.gps).round()}m: ${alias.title.trim()}${group.calendarNearbyAliasDescription ? '\n' : '\n\n'}');
+                '${GPS.distance(trackpoint.gps, location.gps).round()}m: ${location.title.trim()}${group.calendarNearbyLocationDescription ? '\n' : '\n\n'}');
           }
-          if (group.calendarNearbyAliasDescription) {
-            bodyParts.add('${alias.description.trim()}\n\n');
+          if (group.calendarNearbyLocationDescription) {
+            bodyParts.add('${location.description.trim()}\n\n');
           }
         }
       }
@@ -414,7 +411,7 @@ class GpsLocation {
       return;
     }
     // check privacy
-    if (privacy.level > AliasPrivacy.public.level) {
+    if (privacy.level > LocationPrivacy.public.level) {
       return;
     }
 
@@ -431,13 +428,13 @@ class GpsLocation {
       if (calendar != null) {
         var eventId = await AppCalendar().inserOrUpdate(event.event);
         sharedEvents.add(CalendarEventId(
-            aliasGroupId: event.modelGroup.id,
+            locationGroupId: event.modelGroup.id,
             calendarId: calendar.id ?? '',
             eventId: eventId ?? ''));
 
         await ModelTrackpointCalendar(
                 idTrackPoint: 0,
-                idAliasGroup: event.modelGroup.id,
+                idLocationGroup: event.modelGroup.id,
                 idCalendar: event.event.calendarId ?? '',
                 idEvent: event.event.eventId ?? '',
                 title: event.event.title ?? '',
@@ -452,21 +449,21 @@ class GpsLocation {
 
   Future<void> _notifyMoving() async {
     // check privacy
-    if (privacy.level > AliasPrivacy.restricted.level) {
+    if (privacy.level > LocationPrivacy.restricted.level) {
       return;
     }
   }
 
   Future<ModelTrackPoint?> _recordMoving() async {
     // check privacy
-    if (privacy.level > AliasPrivacy.privat.level) {
+    if (privacy.level > LocationPrivacy.privat.level) {
       return null;
     }
 
-    // check if alias is required and present
-    bool aliasRequired =
-        await Cache.appSettingStatusStandingRequireAlias.load<bool>(true);
-    if (aliasRequired && aliasModels.isEmpty) {
+    // check if location is required and present
+    bool locationRequired =
+        await Cache.appSettingStatusStandingRequireLocation.load<bool>(true);
+    if (locationRequired && locationModels.isEmpty) {
       return null;
     }
 
@@ -498,7 +495,7 @@ class GpsLocation {
     if (tp == null) {
       return;
     }
-    if (privacy.level > AliasPrivacy.public.level) {
+    if (privacy.level > LocationPrivacy.public.level) {
       return;
     }
 
@@ -520,14 +517,14 @@ class GpsLocation {
       if (calendar != null) {
         var eventId = await AppCalendar().inserOrUpdate(event.event);
         sharedEvents.add(CalendarEventId(
-            aliasGroupId: event.modelGroup.id,
+            locationGroupId: event.modelGroup.id,
             calendarId: calendar.id ?? '',
             eventId: eventId ?? ''));
       }
 
       await ModelTrackpointCalendar(
               idTrackPoint: tp.id,
-              idAliasGroup: event.modelGroup.id,
+              idLocationGroup: event.modelGroup.id,
               idCalendar: event.event.calendarId ?? '',
               idEvent: event.event.eventId ?? '',
               title: event.event.title ?? '',
@@ -540,7 +537,7 @@ class GpsLocation {
   }
 
   Future<List<CalendarEventId>> mergeCalendarEvents() async {
-    if (privacy.level > AliasPrivacy.public.level) {
+    if (privacy.level > LocationPrivacy.public.level) {
       return [];
     }
     final sharedCalendarList = await Cache.backgroundCalendarLastEventIds
@@ -555,7 +552,7 @@ class GpsLocation {
       return false;
     }
 
-    final dbCalendarList = await ModelAlias.calendarIds(aliasModels);
+    final dbCalendarList = await ModelLocation.calendarIds(locationModels);
 
     List<CalendarEventId> result = [...sharedCalendarList];
     for (var id in dbCalendarList) {

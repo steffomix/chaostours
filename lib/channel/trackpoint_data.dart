@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import 'package:chaostours/gps.dart';
-import 'package:chaostours/model/model_trackpoint_alias.dart';
+import 'package:chaostours/model/model_trackpoint_location.dart';
 import 'package:chaostours/model/model_trackpoint_task.dart';
 import 'package:chaostours/model/model_trackpoint_user.dart';
 
@@ -37,7 +37,7 @@ class TrackPointData {
   String address = '';
   String fullAddress = '';
 
-  List<ModelTrackpointAlias> aliasList = [];
+  List<ModelTrackpointLocation> locationList = [];
   List<ModelTrackpointUser> userList = [];
   List<ModelTrackpointTask> taskList = [];
 

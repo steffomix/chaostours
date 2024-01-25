@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import 'package:chaostours/database/database.dart';
-import 'package:chaostours/statistics/alias_statistics.dart';
+import 'package:chaostours/statistics/location_statistics.dart';
 import 'package:chaostours/view/trackpoint/widget_trackpoint_list.dart';
 import 'package:flutter/material.dart';
 import 'package:device_calendar/device_calendar.dart';
@@ -23,7 +23,7 @@ import 'package:device_calendar/device_calendar.dart';
 ///
 import 'package:chaostours/view/system/app_widgets.dart';
 import 'package:chaostours/logger.dart';
-import 'package:chaostours/model/model_alias_group.dart';
+import 'package:chaostours/model/model_location_group.dart';
 import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/calendar.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -34,51 +34,53 @@ enum _DisplayMode {
   editGroup;
 }
 
-class WidgetAliasGroupEdit extends StatefulWidget {
-  const WidgetAliasGroupEdit({super.key});
+class WidgetLocationGroupEdit extends StatefulWidget {
+  const WidgetLocationGroupEdit({super.key});
 
   @override
-  State<WidgetAliasGroupEdit> createState() => _WidgetAliasGroupEdit();
+  State<WidgetLocationGroupEdit> createState() => _WidgetLocationGroupEdit();
 }
 
-class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
+class _WidgetLocationGroupEdit extends State<WidgetLocationGroupEdit> {
   // ignore: unused_field
-  static final Logger logger = Logger.logger<WidgetAliasGroupEdit>();
+  static final Logger logger = Logger.logger<WidgetLocationGroupEdit>();
   _DisplayMode _displayMode = _DisplayMode.editGroup;
-  ModelAliasGroup? _model;
-  int _countAlias = 0;
+  ModelLocationGroup? _model;
+  int _countLocation = 0;
   Calendar? _calendar;
   final _titleUndoController = UndoHistoryController();
 
   final _descriptionUndoController = UndoHistoryController();
 
-  Map<TableAliasGroup, bool Function()> fieldsMap = {};
+  Map<TableLocationGroup, bool Function()> fieldsMap = {};
 
-  void generateMap(ModelAliasGroup model) {
+  void generateMap(ModelLocationGroup model) {
     fieldsMap.clear();
     fieldsMap.addAll({
-      TableAliasGroup.withCalendarHtml: () => model.calendarHtml,
-      TableAliasGroup.withCalendarGps: () => model.calendarGps,
-      TableAliasGroup.withCalendarTimeStart: () => model.calendarTimeStart,
-      TableAliasGroup.withCalendarTimeEnd: () => model.calendarTimeEnd,
-      TableAliasGroup.withCalendarDuration: () => model.calendarDuration,
-      TableAliasGroup.withCalendarAddress: () => model.calendarAddress,
-      TableAliasGroup.withCalendarFullAddress: () => model.calendarFullAddress,
-      TableAliasGroup.withCalendarTrackpointNotes: () =>
+      TableLocationGroup.withCalendarHtml: () => model.calendarHtml,
+      TableLocationGroup.withCalendarGps: () => model.calendarGps,
+      TableLocationGroup.withCalendarTimeStart: () => model.calendarTimeStart,
+      TableLocationGroup.withCalendarTimeEnd: () => model.calendarTimeEnd,
+      TableLocationGroup.withCalendarDuration: () => model.calendarDuration,
+      TableLocationGroup.withCalendarAddress: () => model.calendarAddress,
+      TableLocationGroup.withCalendarFullAddress: () =>
+          model.calendarFullAddress,
+      TableLocationGroup.withCalendarTrackpointNotes: () =>
           model.calendarTrackpointNotes,
-      TableAliasGroup.withCalendarAlias: () => model.calendarAlias,
-      TableAliasGroup.withCalendarAliasNearby: () => model.calendarAliasNearby,
-      TableAliasGroup.withCalendarNearbyAliasDescription: () =>
-          model.calendarNearbyAliasDescription,
-      TableAliasGroup.withCalendarAliasDescription: () =>
-          model.calendarAliasDescription,
-      TableAliasGroup.withCalendarUsers: () => model.calendarUsers,
-      TableAliasGroup.withCalendarUserNotes: () => model.calendarUserNotes,
-      TableAliasGroup.withCalendarUserDescription: () =>
+      TableLocationGroup.withCalendarLocation: () => model.calendarLocation,
+      TableLocationGroup.withCalendarLocationNearby: () =>
+          model.calendarLocationNearby,
+      TableLocationGroup.withCalendarNearbyLocationDescription: () =>
+          model.calendarNearbyLocationDescription,
+      TableLocationGroup.withCalendarLocationDescription: () =>
+          model.calendarLocationDescription,
+      TableLocationGroup.withCalendarUsers: () => model.calendarUsers,
+      TableLocationGroup.withCalendarUserNotes: () => model.calendarUserNotes,
+      TableLocationGroup.withCalendarUserDescription: () =>
           model.calendarUserDescription,
-      TableAliasGroup.withCalendarTasks: () => model.calendarTasks,
-      TableAliasGroup.withCalendarTaskNotes: () => model.calendarTaskNotes,
-      TableAliasGroup.withCalendarTaskDescription: () =>
+      TableLocationGroup.withCalendarTasks: () => model.calendarTasks,
+      TableLocationGroup.withCalendarTaskNotes: () => model.calendarTaskNotes,
+      TableLocationGroup.withCalendarTaskDescription: () =>
           model.calendarTaskDescription,
     });
   }
@@ -94,17 +96,17 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
     }
   }
 
-  Future<ModelAliasGroup> createAliasGroup() async {
-    var count = await ModelAliasGroup.count();
-    var model = await ModelAliasGroup(title: '#${count + 1}').insert();
+  Future<ModelLocationGroup> createLocationGroup() async {
+    var count = await ModelLocationGroup.count();
+    var model = await ModelLocationGroup(title: '#${count + 1}').insert();
     return model;
   }
 
-  Future<ModelAliasGroup?> loadAliasGroup(int? id) async {
+  Future<ModelLocationGroup?> loadLocationGroup(int? id) async {
     if (id == null) {
-      _model = await createAliasGroup();
+      _model = await createLocationGroup();
     } else {
-      _model = await ModelAliasGroup.byId(id);
+      _model = await ModelLocationGroup.byId(id);
     }
     if (_model == null && mounted) {
       if (mounted) {
@@ -112,7 +114,7 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
       }
       throw 'Group #$id not found';
     } else {
-      _countAlias = await _model!.aliasCount();
+      _countLocation = await _model!.locationCount();
       if (await Permission.calendarFullAccess.isGranted) {
         _calendar = await AppCalendar().calendarById(_model!.idCalendar);
       }
@@ -125,8 +127,8 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
   Widget build(BuildContext context) {
     int? id = ModalRoute.of(context)?.settings.arguments as int?;
 
-    return FutureBuilder<ModelAliasGroup?>(
-      future: loadAliasGroup(id),
+    return FutureBuilder<ModelLocationGroup?>(
+      future: loadLocationGroup(id),
       builder: (context, snapshot) {
         return AppWidgets.checkSnapshot(context, snapshot) ?? body();
       },
@@ -153,13 +155,14 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
 
   Widget scaffold(Widget body) {
     return AppWidgets.scaffold(context,
-        title: 'Edit Alias Group',
+        title: 'Edit Location Group',
         body: body,
-        navBar: AppWidgets.navBarCreateItem(context, name: 'Alias Group',
+        navBar: AppWidgets.navBarCreateItem(context, name: 'Location group',
             onCreate: () async {
-          final model = await AppWidgets.createAliasGroup(context);
+          final model = await AppWidgets.createLocationGroup(context);
           if (model != null && mounted) {
-            await Navigator.pushNamed(context, AppRoutes.editAliasGroup.route,
+            await Navigator.pushNamed(
+                context, AppRoutes.editLocationGroup.route,
                 arguments: model.id);
             render();
           }
@@ -177,19 +180,20 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
               child: FilledButton(
                   onPressed: () => Navigator.pushNamed(
                       context, AppRoutes.listTrackpoints.route,
-                      arguments: TrackpointListArguments.aliasGroup
+                      arguments: TrackpointListArguments.locationGroup
                           .arguments(_model!.id)),
                   child: const Text('Trackpoints'))),
           Padding(
               padding: const EdgeInsets.symmetric(horizontal: 3),
               child: FilledButton(
                   onPressed: () async {
-                    var stats = await AliasStatistics.groupStatistics(_model!);
+                    var stats =
+                        await LocationStatistics.groupStatistics(_model!);
 
                     if (mounted) {
                       AppWidgets.statistics(context, stats: stats,
                           reload: (DateTime start, DateTime end) async {
-                        return await AliasStatistics.groupStatistics(
+                        return await LocationStatistics.groupStatistics(
                             stats.model,
                             start: start,
                             end: end);
@@ -220,7 +224,7 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
               padding: const EdgeInsets.all(10),
               child: TextField(
                 decoration:
-                    const InputDecoration(label: Text('Alias Group Name')),
+                    const InputDecoration(label: Text('Location Group Name')),
                 onChanged: ((value) {
                   _model!.title = value;
                   _model!.update();
@@ -279,9 +283,9 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 10),
         child: FilledButton(
-          child: Text('Show $_countAlias Aliases from this group'),
+          child: Text('Show $_countLocation locations from this group'),
           onPressed: () => Navigator.pushNamed(
-                  context, AppRoutes.listAliasesFromAliasGroup.route,
+                  context, AppRoutes.listLocationsFromLocationGroup.route,
                   arguments: _model!.id)
               .then((value) {
             render();
@@ -333,7 +337,7 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
   }
 
   Widget renderCalendarOption({
-    required TableAliasGroup field,
+    required TableLocationGroup field,
     required String title,
     required String description,
   }) {
@@ -342,40 +346,7 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
           value: fieldsMap[field]?.call() ?? false,
           onChanged: (bool? state) {
             state = (state ?? false);
-            if (state == true && !(_model?.ensuredPrivacyCompliance ?? false)) {
-              AppWidgets.dialog(
-                  context: context,
-                  title: const Text('Privacy Compliance Warning'),
-                  contents: [
-                    const Text(
-                        'Attention: To ensure privacy compliance and data integrity, it is mandatory to confirm that you have read, understood, and taken necessary steps to adhere to our privacy advisory. Without checking the compliance checkbox, the app will not post any data to your calendar.'),
-                    const Text(
-                        'Please review the privacy advisory and confirm your understanding by checking the compliance checkbox provided. This is a critical step to guarantee that your usage aligns with privacy considerations.'),
-                    ListTile(
-                        leading: AppWidgets.checkbox(
-                            value: _model?.ensuredPrivacyCompliance ?? false,
-                            onChanged: (bool? state) {
-                              _model?.ensuredPrivacyCompliance =
-                                  state ??= false;
-                              _model?.update();
-                            }),
-                        title: const Text(
-                            'I have read, understood, and ensured privacy compliance.')),
-                    const Text(
-                        'Thank you for your cooperation in maintaining a secure and respectful environment within our app. If you have any questions or concerns, feel free to reach out to our support team for assistance.'),
-                  ],
-                  buttons: [
-                    FilledButton(
-                      child: const Text('OK'),
-                      onPressed: () {
-                        Navigator.pop(context);
-                        setState(() {});
-                      },
-                    )
-                  ]);
-            } else {
-              updateField(field, state);
-            }
+            updateField(field, state);
           }),
       title: Text(title),
       subtitle: Text(description),
@@ -387,39 +358,37 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
         ? []
         : [
             AppWidgets.divider(),
-            ...privacyWarning(),
-            AppWidgets.divider(),
             Center(
                 child: Text('Calendar Options',
                     style: Theme.of(context).textTheme.bodyLarge)),
             const Text(
                 'All values are displayed in the calendar event body in same order as listed below.'),
             const Text(
-                'The alias title will be set to the event title - if activated. Otherwise only the alias #id will be used.'),
+                'The location title will be set to the event title - if activated. Otherwise only the location #id will be used.'),
 
             ///
             /// withCalendarTimeStart
             renderCalendarOption(
-                field: TableAliasGroup.withCalendarTimeStart,
+                field: TableLocationGroup.withCalendarTimeStart,
                 title: 'Start Date and Time',
                 description: ''),
 
             /// withCalendarTimeEnd
             renderCalendarOption(
-                field: TableAliasGroup.withCalendarTimeEnd,
+                field: TableLocationGroup.withCalendarTimeEnd,
                 title: 'End Date and Time',
                 description: ''),
 
             /// withCalendarTimeEnd
             renderCalendarOption(
-                field: TableAliasGroup.withCalendarAllDay,
+                field: TableLocationGroup.withCalendarAllDay,
                 title:
                     'Write as All Day Event. End date and time will be the same as start date and time.',
                 description: ''),
 
             /// withCalendarDuration
             renderCalendarOption(
-                field: TableAliasGroup.withCalendarDuration,
+                field: TableLocationGroup.withCalendarDuration,
                 title: 'Duration',
                 description:
                     'The duration of the event. If you have set teh Event as an all day event, the duration will not be displayed.'),
@@ -427,13 +396,13 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
             ///
             /// withCalendarGps
             renderCalendarOption(
-                field: TableAliasGroup.withCalendarGps,
+                field: TableLocationGroup.withCalendarGps,
                 title: 'GPS data',
                 description: 'Latitude and longitude of the location.'),
 
             /// withCalendarHtml
             renderCalendarOption(
-                field: TableAliasGroup.withCalendarHtml,
+                field: TableLocationGroup.withCalendarHtml,
                 title: 'Use Html',
                 description:
                     'Wraps gps data into a clickable link to maps.google.com.'),
@@ -441,46 +410,45 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
             ///
             /// withCalendarTrackpointNotes
             renderCalendarOption(
-                field: TableAliasGroup.withCalendarTrackpointNotes,
+                field: TableLocationGroup.withCalendarTrackpointNotes,
                 title: 'Trackpoint notes',
                 description: 'General trackpoint notes.'),
 
             ///
-            /// withCalendarAlias
+            /// withCalendarLocation
             renderCalendarOption(
-                field: TableAliasGroup.withCalendarAlias,
-                title: 'Main location alias or title',
+                field: TableLocationGroup.withCalendarLocation,
+                title: 'Main location name or title',
                 description: 'This is also displayed in the event title.\n'
                     'If disabled, only the #id is displayed.'),
 
-            /// withCalendarAliasDescription
+            /// withCalendarLocationDescription
             renderCalendarOption(
-                field: TableAliasGroup.withCalendarAliasDescription,
-                title: 'Alias description',
-                description: 'Description of the main location alias.'),
+                field: TableLocationGroup.withCalendarLocationDescription,
+                title: 'Location description',
+                description: 'Description of the main location.'),
 
-            /// withCalendarAliasNearby
+            /// withCalendarLocationNearby
             renderCalendarOption(
-                field: TableAliasGroup.withCalendarAliasNearby,
+                field: TableLocationGroup.withCalendarLocationNearby,
                 title: 'Nearby locations',
-                description: 'All overlapping location aliases.'),
+                description: 'All overlapping location names.'),
 
-            /// withCalendarAliasNotes
+            /// withCalendarLocationNotes
             renderCalendarOption(
-                field: TableAliasGroup.withCalendarNearbyAliasDescription,
-                title: 'Nearby alias description',
-                description:
-                    'The description of every overlapping location alias.'),
+                field: TableLocationGroup.withCalendarNearbyLocationDescription,
+                title: 'Nearby location description',
+                description: 'The description of every overlapping location.'),
 
             /// withCalendarAddress
             renderCalendarOption(
-                field: TableAliasGroup.withCalendarAddress,
+                field: TableLocationGroup.withCalendarAddress,
                 title: 'Address',
                 description: 'A Comma separated address.'),
 
             /// withCalendarFullAddress
             renderCalendarOption(
-                field: TableAliasGroup.withCalendarFullAddress,
+                field: TableLocationGroup.withCalendarFullAddress,
                 title: 'Address details',
                 description:
                     'Line separated address details with copyright informations from openstreetmap.org at the end.'),
@@ -488,97 +456,97 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
             ///
             /// withCalendarTasks
             renderCalendarOption(
-                field: TableAliasGroup.withCalendarTasks,
+                field: TableLocationGroup.withCalendarTasks,
                 title: 'Task',
                 description: 'The task name or title'),
 
             /// withCalendarTaskDescription
             renderCalendarOption(
-                field: TableAliasGroup.withCalendarTaskDescription,
+                field: TableLocationGroup.withCalendarTaskDescription,
                 title: 'Task description',
                 description: 'The description of the task'),
 
             /// withCalendarTaskNotes
             renderCalendarOption(
-                field: TableAliasGroup.withCalendarTaskNotes,
+                field: TableLocationGroup.withCalendarTaskNotes,
                 title: 'Task trackpoint notes',
                 description: 'Trackpoint notes for this task.'),
 
             ///
             /// withCalendarUsers
             renderCalendarOption(
-                field: TableAliasGroup.withCalendarUsers,
+                field: TableLocationGroup.withCalendarUsers,
                 title: 'User',
                 description: 'The user name or title.'),
 
             /// withCalendarUserDescription
             renderCalendarOption(
-                field: TableAliasGroup.withCalendarUserDescription,
+                field: TableLocationGroup.withCalendarUserDescription,
                 title: 'User description.',
                 description: 'The description of the user.'),
 
             /// withCalendarUserNotes
             renderCalendarOption(
-                field: TableAliasGroup.withCalendarUserNotes,
+                field: TableLocationGroup.withCalendarUserNotes,
                 title: 'User trackpoint notes',
                 description: 'Trackpoint notes for this user.'),
           ];
   }
 
-  Future<void> updateField(TableAliasGroup field, bool value) async {
+  Future<void> updateField(TableLocationGroup field, bool value) async {
     switch (field) {
-      case TableAliasGroup.withCalendarHtml:
+      case TableLocationGroup.withCalendarHtml:
         _model?.calendarHtml = value;
         break;
-      case TableAliasGroup.withCalendarGps:
+      case TableLocationGroup.withCalendarGps:
         _model?.calendarGps = value;
         break;
-      case TableAliasGroup.withCalendarTimeStart:
+      case TableLocationGroup.withCalendarTimeStart:
         _model?.calendarTimeStart = value;
         break;
-      case TableAliasGroup.withCalendarTimeEnd:
+      case TableLocationGroup.withCalendarTimeEnd:
         _model?.calendarTimeEnd = value;
         break;
-      case TableAliasGroup.withCalendarDuration:
+      case TableLocationGroup.withCalendarDuration:
         _model?.calendarDuration = value;
         break;
-      case TableAliasGroup.withCalendarAddress:
+      case TableLocationGroup.withCalendarAddress:
         _model?.calendarAddress = value;
         break;
-      case TableAliasGroup.withCalendarFullAddress:
+      case TableLocationGroup.withCalendarFullAddress:
         _model?.calendarFullAddress = value;
         break;
-      case TableAliasGroup.withCalendarTrackpointNotes:
+      case TableLocationGroup.withCalendarTrackpointNotes:
         _model?.calendarTrackpointNotes = value;
         break;
-      case TableAliasGroup.withCalendarAlias:
-        _model?.calendarAlias = value;
+      case TableLocationGroup.withCalendarLocation:
+        _model?.calendarLocation = value;
         break;
-      case TableAliasGroup.withCalendarAliasNearby:
-        _model?.calendarAliasNearby = value;
+      case TableLocationGroup.withCalendarLocationNearby:
+        _model?.calendarLocationNearby = value;
         break;
-      case TableAliasGroup.withCalendarNearbyAliasDescription:
-        _model?.calendarNearbyAliasDescription = value;
+      case TableLocationGroup.withCalendarNearbyLocationDescription:
+        _model?.calendarNearbyLocationDescription = value;
         break;
-      case TableAliasGroup.withCalendarAliasDescription:
-        _model?.calendarAliasDescription = value;
+      case TableLocationGroup.withCalendarLocationDescription:
+        _model?.calendarLocationDescription = value;
         break;
-      case TableAliasGroup.withCalendarUsers:
+      case TableLocationGroup.withCalendarUsers:
         _model?.calendarUsers = value;
         break;
-      case TableAliasGroup.withCalendarUserNotes:
+      case TableLocationGroup.withCalendarUserNotes:
         _model?.calendarUserNotes = value;
         break;
-      case TableAliasGroup.withCalendarUserDescription:
+      case TableLocationGroup.withCalendarUserDescription:
         _model?.calendarUserDescription = value;
         break;
-      case TableAliasGroup.withCalendarTasks:
+      case TableLocationGroup.withCalendarTasks:
         _model?.calendarTasks = value;
         break;
-      case TableAliasGroup.withCalendarTaskNotes:
+      case TableLocationGroup.withCalendarTaskNotes:
         _model?.calendarTaskNotes = value;
         break;
-      case TableAliasGroup.withCalendarTaskDescription:
+      case TableLocationGroup.withCalendarTaskDescription:
         _model?.calendarTaskDescription = value;
         break;
 
@@ -586,89 +554,5 @@ class _WidgetAliasGroupEdit extends State<WidgetAliasGroupEdit> {
         logger.error('field $field not implemented', StackTrace.current);
     }
     await _model?.update();
-  }
-
-  List<Widget> privacyWarning() {
-    return [
-      Text('Important Privacy Advisory',
-          style: Theme.of(context).textTheme.headlineSmall),
-      const Text(
-          'Please be aware that certain device calendars can be set to public for everyone. ',
-          style: TextStyle(
-              decoration: TextDecoration.underline,
-              fontWeight: FontWeight.w900)),
-      const Text(
-          'This app does not have access to your device calendar settings. Therefore, it is crucial to verify your device calendar settings before selecting any content options from the list below.'),
-      const Text(
-          'We emphasize the importance of respecting the privacy of others and yourself — do not add content to your calendar without explicit consent, as it may impact your and others privacy. Additionally, be mindful that this app writes data to your calendar while the app is closed and running in the background.'),
-      const Text(
-          'Before proceeding, we strongly recommend reviewing your device calendar\'s privacy policy. Understanding these policies will help you make informed decisions when checking any content options.'),
-      const Text(
-          'If you are unsure about locating your calendar or need assistance with settings, tap the button below to open and review your device calendar settings.'),
-      Center(
-          child: FilledButton(
-        child: const Text('Open device calendar'),
-        onPressed: () async {
-          var success =
-              await launchUrl(Uri.parse('content://com.android.calendar'));
-          if (!success && mounted) {
-            AppWidgets.dialog(
-                context: context,
-                title: const Text('Calendar Opening Error'),
-                contents: [
-                  const Text(
-                      'We regret to inform you that an issue occurred while attempting to open your device calendar. If the calendar did not open, please consider the following steps:'),
-                  const ListTile(
-                    title: Text('1: Check Installation and Activation:'),
-                    subtitle: Text(
-                        'Ensure that your calendar is properly installed and activated on your device. Verify its functionality by opening it manually.'),
-                  ),
-                  const ListTile(
-                    title: Text('2: Device Calendar Troubleshooting:'),
-                    subtitle: Text(
-                        'If the issue persists, it\'s advisable to check for any updates or settings that might be affecting the calendar\'s operation. Refer to your device\'s user manual or support resources for guidance.'),
-                  ),
-                  const ListTile(
-                    title: Text('3: Service Point Assistance:'),
-                    subtitle: Text(
-                        'If the problem still persists, we recommend seeking assistance from a service point or authorized support center for your device. Professionals at these service points can provide specialized help in resolving issues related to your device calendar.'),
-                  ),
-                  const Text(
-                      'We apologize for any inconvenience this may have caused. If you encounter further difficulties, please feel free to contact our support team for additional assistance.')
-                ],
-                buttons: [
-                  FilledButton(
-                    child: const Text('Cancel'),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  FilledButton(
-                    child: const Text('Support'),
-                    onPressed: () => launchUrl(Uri.parse(
-                        'https://github.com/steffomix/chaostours/issues')),
-                  )
-                ]);
-          }
-        },
-      )),
-      const Text(
-          'Your commitment to privacy is greatly appreciated, and thank you for using our app responsibly.\n\n'),
-      Text('Confirmation', style: Theme.of(context).textTheme.headlineSmall),
-      const Text(
-          'I confirm that I have read and understood the privacy advisory.\n'
-          'I have checked and adjusted my device calendar settings before selecting any content options from the list.\n'
-          'I acknowledge the importance of respecting the privacy of others and myself and affirm that I will not add any content to my calendar without explicit consent, ensuring it does not compromise anyone\'s privacy. Additionally, I am aware that this app writes data to my calendar while the app is closed and running in the background.\n'
-          'I have carefully read my device calendar\'s privacy policy.'),
-      const Text(
-          'By checking this box, I confirm that I have taken all necessary steps to use this app responsibly and in compliance with privacy considerations.'),
-      ListTile(
-          leading: AppWidgets.checkbox(
-              value: _model?.ensuredPrivacyCompliance ?? false,
-              onChanged: (bool? state) {
-                _model?.ensuredPrivacyCompliance = state ??= false;
-                _model?.update();
-              }),
-          title: const Text(
-              'I have read, understood, and ensured privacy compliance.'))
-    ];
   }
 }

@@ -22,7 +22,7 @@ class ModelTrackpointCalendar {
   static Logger logger = Logger.logger<ModelTrackpointCalendar>();
 
   final int idTrackPoint;
-  final int idAliasGroup;
+  final int idLocationGroup;
   String idCalendar = '';
   String idEvent = '';
   String title = '';
@@ -30,7 +30,7 @@ class ModelTrackpointCalendar {
 
   ModelTrackpointCalendar(
       {required this.idTrackPoint,
-      required this.idAliasGroup,
+      required this.idLocationGroup,
       this.idCalendar = '',
       this.idEvent = '',
       this.title = '',
@@ -40,8 +40,8 @@ class ModelTrackpointCalendar {
     return ModelTrackpointCalendar(
       idTrackPoint: TypeAdapter.deserializeInt(
           map[TableTrackPointCalendar.idTrackPoint.column]),
-      idAliasGroup: TypeAdapter.deserializeInt(
-          map[TableTrackPointCalendar.idAliasGroup.column]),
+      idLocationGroup: TypeAdapter.deserializeInt(
+          map[TableTrackPointCalendar.idLocationGroup.column]),
       idCalendar: TypeAdapter.deserializeString(
           map[TableTrackPointCalendar.idCalendar.column]),
       idEvent: TypeAdapter.deserializeString(
@@ -56,7 +56,7 @@ class ModelTrackpointCalendar {
   Map<String, Object?> toMap() {
     return {
       TableTrackPointCalendar.idTrackPoint.column: idTrackPoint,
-      TableTrackPointCalendar.idAliasGroup.column: idAliasGroup,
+      TableTrackPointCalendar.idLocationGroup.column: idLocationGroup,
       TableTrackPointCalendar.idCalendar.column: idCalendar,
       TableTrackPointCalendar.idEvent.column: idEvent,
       TableTrackPointCalendar.title.column: title,
@@ -67,8 +67,8 @@ class ModelTrackpointCalendar {
   Future<ModelTrackpointCalendar> insertOrUpdate() async {
     var update = false;
     final where =
-        '${TableTrackPointCalendar.idTrackPoint} = ? AND ${TableTrackPointCalendar.idAliasGroup} = ?';
-    final whereArgs = [idTrackPoint, idAliasGroup];
+        '${TableTrackPointCalendar.idTrackPoint} = ? AND ${TableTrackPointCalendar.idLocationGroup} = ?';
+    final whereArgs = [idTrackPoint, idLocationGroup];
 
     const rowCount = 'ct';
     var rows = await DB.execute((txn) async {

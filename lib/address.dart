@@ -49,10 +49,10 @@ class Address {
   double get lon => _gps.lon;
   GPS get gps => _gps;
 
-  String? _alias;
-  String get address => _alias ??= _parseAlias();
+  String? _location;
+  String get address => _location ??= _parseLocation();
 
-  String _parseAlias() {
+  String _parseLocation() {
     try {
       final body = _response?.body;
       var json = jsonDecode(body ?? '{}');

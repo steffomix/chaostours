@@ -142,7 +142,7 @@ class ModelUser implements Model {
     return models;
   }
 
-  /// select ALL groups from this alias for checkbox selection.
+  /// select ALL groups from this location for checkbox selection.
   Future<List<int>> groupIds() async {
     var col = TableUserUserGroup.idUserGroup.column;
     final ids = await DB.execute<List<Map<String, Object?>>>((txn) async {

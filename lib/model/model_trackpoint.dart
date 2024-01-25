@@ -24,11 +24,11 @@ import 'package:chaostours/shared/shared_trackpoint_task.dart';
 import 'package:chaostours/shared/shared_trackpoint_user.dart';
 import 'package:chaostours/calendar.dart';
 import 'package:chaostours/database/database.dart';
-import 'package:chaostours/model/model_alias.dart';
+import 'package:chaostours/model/model_location.dart';
 import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_trackpoint_asset.dart';
-import 'package:chaostours/model/model_trackpoint_alias.dart';
+import 'package:chaostours/model/model_trackpoint_location.dart';
 import 'package:chaostours/model/model_trackpoint_user.dart';
 import 'package:chaostours/model/model_trackpoint_task.dart';
 import 'package:chaostours/gps.dart';
@@ -53,7 +53,7 @@ class ModelTrackPoint {
   String notes = ''; // calendarId;calendarEventId
 
   /// "id,id,..." needs to be sorted by distance
-  List<ModelTrackpointAlias> aliasModels = [];
+  List<ModelTrackpointLocation> locationModels = [];
   List<ModelTrackpointUser> userModels = [];
   List<ModelTrackpointTask> taskModels = [];
 
@@ -84,9 +84,9 @@ class ModelTrackPoint {
 
   ModelTrackPoint clone() => fromMap(toMap());
 
-  static Future<int> countAlias(int id) async {
-    var table = TableTrackPointAlias.table;
-    var idTrackPoint = TableTrackPointAlias.idTrackPoint;
+  static Future<int> countLocation(int id) async {
+    var table = TableTrackPointLocation.table;
+    var idTrackPoint = TableTrackPointLocation.idTrackPoint;
     var field = 'ct';
     var res =
         await DB.execute<List<Map<String, Object?>>>((Transaction txn) async {
@@ -135,10 +135,10 @@ class ModelTrackPoint {
   }
 
   Future<ModelTrackPoint> addSharedAssets(GpsLocation location) async {
-    aliasModels.clear();
-    for (var model in location.aliasModels) {
-      aliasModels
-          .add(ModelTrackpointAlias(model: model, trackpointId: 0, notes: ''));
+    locationModels.clear();
+    for (var model in location.locationModels) {
+      locationModels.add(
+          ModelTrackpointLocation(model: model, trackpointId: 0, notes: ''));
     }
 
     userModels.clear();
@@ -165,19 +165,19 @@ class ModelTrackPoint {
     return this;
   }
 
-  static Future<int> count({ModelAlias? alias}) async {
+  static Future<int> count({ModelLocation? location}) async {
     return await DB.execute<int>(
       (Transaction txn) async {
         const col = 'ct';
         List<Map<String, Object?>> rows;
-        if (alias == null) {
+        if (location == null) {
           rows = await txn
               .query(TableTrackPoint.table, columns: ['count(*) as $col']);
         } else {
-          rows = await txn.query(TableTrackPointAlias.table,
+          rows = await txn.query(TableTrackPointLocation.table,
               columns: ['count(*) as $col'],
-              where: "${TableTrackPointAlias.idAlias} = ?",
-              whereArgs: [alias.id]);
+              where: "${TableTrackPointLocation.idLocation} = ?",
+              whereArgs: [location.id]);
         }
 
         if (rows.isNotEmpty) {
@@ -195,11 +195,11 @@ class ModelTrackPoint {
     await DB.execute((Transaction txn) async {
       _id = await txn.insert(TableTrackPoint.table, map);
 
-      for (var alias in aliasModels) {
+      for (var location in locationModels) {
         try {
-          addAlias(alias, txn);
+          addLocation(location, txn);
         } catch (e, stk) {
-          logger.error('insert idAlias: $e', stk);
+          logger.error('insert idLocation: $e', stk);
         }
       }
       for (var task in taskModels) {
@@ -269,12 +269,13 @@ class ModelTrackPoint {
           );
   }
 
-  Future<int> addAlias(ModelTrackpointAlias asset, [Transaction? txn]) async {
+  Future<int> addLocation(ModelTrackpointLocation asset,
+      [Transaction? txn]) async {
     return await _addOrUpdateAsset(
-        table: TableTrackPointAlias.table,
-        columnTrackPoint: TableTrackPointAlias.idTrackPoint.column,
-        columnForeign: TableTrackPointAlias.idAlias.column,
-        columnNotes: TableTrackPointAlias.notes.column,
+        table: TableTrackPointLocation.table,
+        columnTrackPoint: TableTrackPointLocation.idTrackPoint.column,
+        columnForeign: TableTrackPointLocation.idLocation.column,
+        columnNotes: TableTrackPointLocation.notes.column,
         asset: asset,
         txn: txn);
   }
@@ -318,12 +319,12 @@ class ModelTrackPoint {
           );
   }
 
-  Future<int> removeAlias(ModelTrackpointAlias asset,
+  Future<int> removeLocation(ModelTrackpointLocation asset,
       [Transaction? txn]) async {
     return await _removeAsset(
-        table: TableTrackPointAlias.table,
-        columnTrackPoint: TableTrackPointAlias.idTrackPoint.column,
-        columnForeign: TableTrackPointAlias.idAlias.column,
+        table: TableTrackPointLocation.table,
+        columnTrackPoint: TableTrackPointLocation.idTrackPoint.column,
+        columnForeign: TableTrackPointLocation.idLocation.column,
         asset: asset,
         txn: txn);
   }
@@ -346,15 +347,15 @@ class ModelTrackPoint {
         txn: txn);
   }
 
-  Future<List<ModelTrackpointAlias>> loadAliasList(
+  Future<List<ModelTrackpointLocation>> loadLocationList(
       {Transaction? txn, List<int>? ids}) async {
     ids ??= [id];
     const notes = 'trackpoint_notes';
     final q =
-        '''SELECT ${TableTrackPointAlias.notes} as $notes, ${TableAlias.columns.join(',')} 
+        '''SELECT ${TableTrackPointLocation.notes} as $notes, ${TableLocation.columns.join(',')} 
     FROM ${TableTrackPoint.table}
-    INNER JOIN ${TableTrackPointAlias.table} ON ${TableTrackPoint.id} = ${TableTrackPointAlias.idTrackPoint}
-    INNER JOIN ${TableAlias.table} ON ${TableTrackPointAlias.idAlias} = ${TableAlias.id}
+    INNER JOIN ${TableTrackPointLocation.table} ON ${TableTrackPoint.id} = ${TableTrackPointLocation.idTrackPoint}
+    INNER JOIN ${TableLocation.table} ON ${TableTrackPointLocation.idLocation} = ${TableLocation.id}
     WHERE ${TableTrackPoint.id} IN (${List.filled(ids.length, '?').join(', ')})
 ''';
 
@@ -366,10 +367,10 @@ class ModelTrackPoint {
             },
           );
 
-    List<ModelTrackpointAlias> models = [];
+    List<ModelTrackpointLocation> models = [];
     for (var row in rows) {
-      var model = ModelAlias.fromMap(row);
-      models.add(ModelTrackpointAlias(
+      var model = ModelLocation.fromMap(row);
+      models.add(ModelTrackpointLocation(
           model: model,
           trackpointId: id,
           notes: TypeAdapter.deserializeString(row[notes])));
@@ -445,7 +446,7 @@ class ModelTrackPoint {
   }
 
   Future<ModelTrackPoint> loadAssets(Transaction? txn) async {
-    aliasModels = await loadAliasList(txn: txn);
+    locationModels = await loadLocationList(txn: txn);
     taskModels = await loadTaskList(txn: txn);
     userModels = await loadUserList(txn: txn);
     return this;
@@ -512,19 +513,19 @@ class ModelTrackPoint {
     );
   }
 
-  static Future<List<ModelTrackPoint>> byAlias(ModelAlias alias,
+  static Future<List<ModelTrackPoint>> byLocation(ModelLocation location,
       {int offset = 0, int limit = 50}) async {
     return await DB.execute(
       (Transaction txn) async {
         final q =
-            '''SELECT ${TableTrackPoint.columns.join(', ')} FROM ${TableTrackPointAlias.table}
-        LEFT JOIN ${TableTrackPoint.table} ON ${TableTrackPoint.id} = ${TableTrackPointAlias.idTrackPoint}
-        WHERE ${TableTrackPointAlias.idAlias} = ?
+            '''SELECT ${TableTrackPoint.columns.join(', ')} FROM ${TableTrackPointLocation.table}
+        LEFT JOIN ${TableTrackPoint.table} ON ${TableTrackPoint.id} = ${TableTrackPointLocation.idTrackPoint}
+        WHERE ${TableTrackPointLocation.idLocation} = ?
         LIMIT ?
         OFFSET ?
 ''';
 
-        var rows = await txn.rawQuery(q, [alias.id, limit, offset]);
+        var rows = await txn.rawQuery(q, [location.id, limit, offset]);
         List<ModelTrackPoint> models = [];
         for (var row in rows) {
           models.add(await fromMap(row).loadAssets(txn));
@@ -571,29 +572,29 @@ class ModelTrackPoint {
       {int limit = 20,
       int offset = 0,
       bool isActive = true,
-      int? idAlias,
+      int? idLocation,
       int? idUser,
       int? idTask,
-      int? idAliasGroup,
+      int? idLocationGroup,
       int? idUserGroup,
       int? idTaskGroup}) async {
     String? whereTable;
     int? whereId;
     String groupJoin = '';
-    if (idAlias != null) {
-      whereTable = TableAlias.id.toString();
-      whereId = idAlias;
+    if (idLocation != null) {
+      whereTable = TableLocation.id.toString();
+      whereId = idLocation;
     } else if (idUser != null) {
       whereTable = TableUser.id.toString();
       whereId = idUser;
     } else if (idTask != null) {
       whereTable = TableTask.id.toString();
       whereId = idTask;
-    } else if (idAliasGroup != null) {
+    } else if (idLocationGroup != null) {
       groupJoin =
-          'INNER JOIN ${TableAliasAliasGroup.table} ON ${TableTrackPointAlias.idAlias} = ${TableAliasAliasGroup.idAlias}';
-      whereTable = TableAliasAliasGroup.idAliasGroup.toString();
-      whereId = idAliasGroup;
+          'INNER JOIN ${TableLocationLocationGroup.table} ON ${TableTrackPointLocation.idLocation} = ${TableLocationLocationGroup.idLocation}';
+      whereTable = TableLocationLocationGroup.idLocationGroup.toString();
+      whereId = idLocationGroup;
     } else if (idUserGroup != null) {
       groupJoin =
           'INNER JOIN ${TableUserUserGroup.table} ON ${TableTrackPointUser.idUser} = ${TableUserUserGroup.idUser}';
@@ -613,8 +614,8 @@ class ModelTrackPoint {
         AND ( ${TableTrackPoint.notes} LIKE ?
         -- where osm address
         OR ${TableTrackPoint.address} LIKE ?
-        -- where alias
-        OR ${TableAlias.title} LIKE ? OR  ${TableAlias.description} LIKE ?
+        -- where location
+        OR ${TableLocation.title} LIKE ? OR  ${TableLocation.description} LIKE ?
         -- where users
         OR ${TableUser.title} LIKE ? OR ${TableUser.description} LIKE ?
         -- where tasks
@@ -630,9 +631,9 @@ class ModelTrackPoint {
         SELECT 
           ${TableTrackPoint.columns.join(', ')}
         FROM ${TableTrackPoint.table}
-        -- join alias
-        LEFT JOIN ${TableTrackPointAlias.table} ON ${TableTrackPointAlias.idTrackPoint} = ${TableTrackPoint.id}
-        LEFT JOIN ${TableAlias.table} ON ${TableAlias.id} = ${TableTrackPointAlias.idAlias}
+        -- join location
+        LEFT JOIN ${TableTrackPointLocation.table} ON ${TableTrackPointLocation.idTrackPoint} = ${TableTrackPoint.id}
+        LEFT JOIN ${TableLocation.table} ON ${TableLocation.id} = ${TableTrackPointLocation.idLocation}
         -- join users
         LEFT JOIN ${TableTrackPointUser.table} ON ${TableTrackPointUser.idTrackPoint} = ${TableTrackPoint.id}
         LEFT JOIN ${TableUser.table} ON ${TableUser.id} = ${TableTrackPointUser.idUser}

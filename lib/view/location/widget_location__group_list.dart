@@ -22,23 +22,23 @@ import 'package:chaostours/view/system/app_widgets.dart';
 import 'package:chaostours/calendar.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/conf/app_routes.dart';
-import 'package:chaostours/model/model_alias_group.dart';
+import 'package:chaostours/model/model_location_group.dart';
 import 'package:chaostours/view/system/app_base_widget.dart';
 import 'package:chaostours/util.dart';
 
 typedef CalendarEntry = Map<String?, Calendar>;
 
-class WidgetAliasGroupList extends BaseWidget {
-  const WidgetAliasGroupList({super.key});
+class WidgetLocationGroupList extends BaseWidget {
+  const WidgetLocationGroupList({super.key});
 
   @override
-  State<WidgetAliasGroupList> createState() => _WidgetAliasGroupList();
+  State<WidgetLocationGroupList> createState() => _WidgetLocationGroupList();
 }
 
-class _WidgetAliasGroupList extends BaseWidgetState<WidgetAliasGroupList>
+class _WidgetLocationGroupList extends BaseWidgetState<WidgetLocationGroupList>
     implements BaseWidgetInterface {
   // ignore: unused_field
-  static final Logger logger = Logger.logger<WidgetAliasGroupList>();
+  static final Logger logger = Logger.logger<WidgetLocationGroupList>();
 
   final _navBarBuilder = NavBarWithBin();
   final CalendarEntry _calendars = {};
@@ -72,7 +72,7 @@ class _WidgetAliasGroupList extends BaseWidgetState<WidgetAliasGroupList>
 
   @override
   Future<int> loadItems({required int offset, int limit = 20}) async {
-    List<ModelAliasGroup> newItems = await ModelAliasGroup.select(
+    List<ModelLocationGroup> newItems = await ModelLocationGroup.select(
         offset: offset,
         limit: limit,
         search: _searchTextController.text,
@@ -86,7 +86,7 @@ class _WidgetAliasGroupList extends BaseWidgetState<WidgetAliasGroupList>
     return newItems.length;
   }
 
-  Widget renderRow(ModelAliasGroup model) {
+  Widget renderRow(ModelLocationGroup model) {
     return Column(children: [
       ListTile(
           title: Text(
@@ -100,7 +100,7 @@ class _WidgetAliasGroupList extends BaseWidgetState<WidgetAliasGroupList>
               icon: const Icon(Icons.edit),
               onPressed: () async {
                 await Navigator.pushNamed(
-                    context, AppRoutes.editAliasGroup.route,
+                    context, AppRoutes.editLocationGroup.route,
                     arguments: model.id);
                 resetLoader();
               })),
@@ -120,12 +120,12 @@ class _WidgetAliasGroupList extends BaseWidgetState<WidgetAliasGroupList>
     return AppWidgets.scaffold(context,
         body: body,
         navBar: _navBarBuilder.navBar(context,
-            name: 'Alias Group',
+            name: 'Location Group',
             onCreate: (context) async {
-              final model = await AppWidgets.createAliasGroup(context);
+              final model = await AppWidgets.createLocationGroup(context);
               if (model != null && mounted) {
                 await Navigator.pushNamed(
-                    context, AppRoutes.editAliasGroup.route,
+                    context, AppRoutes.editLocationGroup.route,
                     arguments: model.id);
                 resetLoader();
               }

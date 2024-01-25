@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import 'package:flutter/material.dart';
-import 'package:chaostours/model/model_alias.dart';
+import 'package:chaostours/model/model_location.dart';
 
 ///
 enum AppColors {
@@ -34,26 +34,26 @@ enum AppColors {
   /// transparent background
   iconDisabled(Colors.white54),
 
-  /// alias colors
-  aliasRestricted(Colors.red),
-  aliasPrivate(Colors.blue),
-  aliasPublic(Colors.green),
+  /// location colors
+  locationRestricted(Colors.red),
+  locationPrivate(Colors.blue),
+  locationPublic(Colors.green),
 
   /// tracking dot colors
   rawGpsTrackingDot(Color.fromARGB(255, 111, 111, 111)),
   smoothedGpsTrackingDot(Colors.black),
   calcGpsTrackingDot(Color.fromARGB(255, 34, 156, 255)),
-  lastTrackingStatusWithAliasDot(Colors.red),
+  lastTrackingStatusWithLocationDot(Colors.red),
   currentGpsDot(Color.fromARGB(255, 247, 2, 255));
 
-  static Color aliasStatusColor(AliasPrivacy status) {
+  static Color locationStatusColor(LocationPrivacy status) {
     switch (status) {
-      case AliasPrivacy.public:
-        return aliasPublic.color;
-      case AliasPrivacy.privat:
-        return aliasPrivate.color;
+      case LocationPrivacy.public:
+        return locationPublic.color;
+      case LocationPrivacy.privat:
+        return locationPrivate.color;
       default:
-        return aliasRestricted.color;
+        return locationRestricted.color;
     }
   }
 

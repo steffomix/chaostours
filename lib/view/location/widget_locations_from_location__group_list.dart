@@ -23,38 +23,39 @@ import 'package:chaostours/calendar.dart';
 import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/view/system/app_widgets.dart';
 import 'package:chaostours/view/system/app_base_widget.dart';
-import 'package:chaostours/model/model_alias_group.dart';
-import 'package:chaostours/model/model_alias.dart';
+import 'package:chaostours/model/model_location_group.dart';
+import 'package:chaostours/model/model_location.dart';
 import 'package:chaostours/util.dart';
 
 typedef CalendarEntry = Map<String?, Calendar>;
 
-class WidgetAliasesFromAliasGroupList extends BaseWidget {
-  const WidgetAliasesFromAliasGroupList({super.key});
+class WidgetLocationsFromLocationGroupList extends BaseWidget {
+  const WidgetLocationsFromLocationGroupList({super.key});
   @override
-  State<WidgetAliasesFromAliasGroupList> createState() =>
-      _WidgetAliasesFromAliasGroupList();
+  State<WidgetLocationsFromLocationGroupList> createState() =>
+      _WidgetLocationsFromLocationGroupList();
 }
 
-class _WidgetAliasesFromAliasGroupList
-    extends BaseWidgetState<WidgetAliasesFromAliasGroupList>
+class _WidgetLocationsFromLocationGroupList
+    extends BaseWidgetState<WidgetLocationsFromLocationGroupList>
     implements BaseWidgetInterface {
-  static final Logger logger = Logger.logger<WidgetAliasesFromAliasGroupList>();
+  static final Logger logger =
+      Logger.logger<WidgetLocationsFromLocationGroupList>();
 
   final CalendarEntry _calendars = {};
   final _navBarBuilder = NavBarWithBin();
 
   final TextEditingController _searchTextController = TextEditingController();
   final List<Widget> _loadedWidgets = [];
-  ModelAliasGroup? _model;
+  ModelLocationGroup? _model;
   List<int>? _ids;
   // items per page
   int getLimit() => 30;
 
   @override
   Future<void> initialize(BuildContext context, Object? args) async {
-    _model = await ModelAliasGroup.byId(args as int);
-    _ids ??= await _model?.aliasIds() ?? [];
+    _model = await ModelLocationGroup.byId(args as int);
+    _ids ??= await _model?.locationIds() ?? [];
     try {
       var cals = (await AppCalendar().loadCalendars());
       for (var c in cals) {
@@ -67,7 +68,7 @@ class _WidgetAliasesFromAliasGroupList
 
   @override
   Future<int> loadItems({required int offset, int limit = 20}) async {
-    var newItems = await ModelAlias.select(
+    var newItems = await ModelLocation.select(
         limit: limit,
         offset: offset,
         search: _searchTextController.text,
@@ -88,12 +89,12 @@ class _WidgetAliasesFromAliasGroupList
     render();
   }
 
-  Widget renderRow(ModelAlias model) {
+  Widget renderRow(ModelLocation model) {
     return ListTile(
       leading: IconButton(
         icon: const Icon(Icons.edit),
         onPressed: () {
-          Navigator.pushNamed(context, AppRoutes.editAlias.route,
+          Navigator.pushNamed(context, AppRoutes.editLocation.route,
                   arguments: model.id)
               .then(
             (value) {
@@ -157,9 +158,9 @@ class _WidgetAliasesFromAliasGroupList
   Scaffold renderScaffold(Widget body) {
     return AppWidgets.scaffold(context,
         body: body,
-        title: 'Aliases from Group',
+        title: 'Locations from group',
         navBar: _navBarBuilder.navBar(context,
-            name: 'Alias',
+            name: 'Location',
             onCreate: (context) async {
               await Navigator.pushNamed(context, AppRoutes.osm.route);
               resetLoader();

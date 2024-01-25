@@ -20,7 +20,7 @@ import 'package:flutter/material.dart';
 import 'package:chaostours/view/system/app_widgets.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/conf/app_routes.dart';
-import 'package:chaostours/model/model_alias.dart';
+import 'package:chaostours/model/model_location.dart';
 import 'package:chaostours/view/system/app_base_widget.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/util.dart' as util;
@@ -30,17 +30,17 @@ enum _DisplayMode {
   nearest,
 }
 
-class WidgetAliasList extends BaseWidget {
-  const WidgetAliasList({super.key});
+class WidgetLocationList extends BaseWidget {
+  const WidgetLocationList({super.key});
 
   @override
-  State<WidgetAliasList> createState() => _WidgetAliasList();
+  State<WidgetLocationList> createState() => _WidgetLocationList();
 }
 
-class _WidgetAliasList extends BaseWidgetState<WidgetAliasList>
+class _WidgetLocationList extends BaseWidgetState<WidgetLocationList>
     implements BaseWidgetInterface {
   // ignore: unused_field
-  static final Logger logger = Logger.logger<WidgetAliasList>();
+  static final Logger logger = Logger.logger<WidgetLocationList>();
 
   _DisplayMode _displayMode = _DisplayMode.list;
 
@@ -68,12 +68,12 @@ class _WidgetAliasList extends BaseWidgetState<WidgetAliasList>
 
   @override
   Future<int> loadItems({required int offset, int limit = 20}) async {
-    List<ModelAlias> newItems = [];
+    List<ModelLocation> newItems = [];
     if (_displayMode == _DisplayMode.nearest) {
-      newItems.addAll(await ModelAlias.byArea(
+      newItems.addAll(await ModelLocation.byArea(
           gps: _gps ??= (await GPS.gps()), gpsArea: 10000));
     } else {
-      newItems.addAll(await ModelAlias.select(
+      newItems.addAll(await ModelLocation.select(
           offset: offset,
           limit: limit,
           activated: _showActivated,
@@ -89,7 +89,7 @@ class _WidgetAliasList extends BaseWidgetState<WidgetAliasList>
     return newItems.length;
   }
 
-  Widget itemTitle(ModelAlias model) {
+  Widget itemTitle(ModelLocation model) {
     int dur = DateTime.now().difference(model.lastVisited).inDays;
     int count = model.timesVisited;
     var subStyle = Theme.of(context).listTileTheme.subtitleTextStyle;
@@ -103,12 +103,12 @@ class _WidgetAliasList extends BaseWidgetState<WidgetAliasList>
     ]);
   }
 
-  Widget itemSubtitle(ModelAlias model) {
+  Widget itemSubtitle(ModelLocation model) {
     return Text(util.cutString(model.description),
         style: Theme.of(context).listTileTheme.subtitleTextStyle);
   }
 
-  Widget googleMaps(ModelAlias model) {
+  Widget googleMaps(ModelLocation model) {
     return IconButton(
         icon: const Icon(Icons.map),
         onPressed: () async {
@@ -117,11 +117,11 @@ class _WidgetAliasList extends BaseWidgetState<WidgetAliasList>
         });
   }
 
-  Widget edit(ModelAlias model) {
+  Widget edit(ModelLocation model) {
     return IconButton(
       icon: const Icon(Icons.edit),
       onPressed: () {
-        Navigator.pushNamed(context, AppRoutes.editAlias.route,
+        Navigator.pushNamed(context, AppRoutes.editLocation.route,
                 arguments: model.id)
             .then((_) {
           resetLoader();
@@ -130,7 +130,7 @@ class _WidgetAliasList extends BaseWidgetState<WidgetAliasList>
     );
   }
 
-  Widget renderRow(ModelAlias model) {
+  Widget renderRow(ModelLocation model) {
     return ListTile(
         leading: googleMaps(model),
         title: itemTitle(model),
@@ -148,7 +148,7 @@ class _WidgetAliasList extends BaseWidgetState<WidgetAliasList>
   @override
   Scaffold renderScaffold(Widget body) {
     return AppWidgets.scaffold(context,
-        body: body, navBar: navBar(context), title: 'Alias');
+        body: body, navBar: navBar(context), title: 'Location');
   }
 
   @override
@@ -169,7 +169,7 @@ class _WidgetAliasList extends BaseWidgetState<WidgetAliasList>
         items: [
           // 0
           const BottomNavigationBarItem(
-              icon: Icon(Icons.add), label: 'Create new Alias'),
+              icon: Icon(Icons.add), label: 'Create new location'),
           // 1
           _lastVisited
               ? const BottomNavigationBarItem(

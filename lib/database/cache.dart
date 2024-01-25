@@ -19,7 +19,7 @@ import 'package:chaostours/database/type_adapter.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/conf/app_user_settings.dart';
 import 'package:chaostours/gps.dart';
-import 'package:chaostours/shared/shared_trackpoint_alias.dart';
+import 'package:chaostours/shared/shared_trackpoint_location.dart';
 import 'package:chaostours/shared/shared_trackpoint_task.dart';
 import 'package:chaostours/shared/shared_trackpoint_user.dart';
 import 'package:chaostours/channel/tracking.dart';
@@ -27,12 +27,6 @@ import 'package:chaostours/calendar.dart';
 import 'package:chaostours/value_expired.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:geolocator/geolocator.dart';
-/* 
-import 'package:chaostours/model/model_trackpoint.dart';
-import 'package:chaostours/model/model_alias.dart';
-import 'package:chaostours/model/model_task.dart';
-import 'package:chaostours/model/model_user.dart'; 
-*/
 
 abstract class CacheModul {
   Future<void> setString(Cache key, String value);
@@ -93,38 +87,9 @@ enum Cache {
   /// Set to false after prompting user.
   databaseImportedCalendarDisabled(
       CacheModulId.sharedPreferences, bool, ExpiredValue.immediately),
-/* 
-  /// trigger off == TrackingStatus.none
-  /// triggered by user, set to none in background
-  trackingStatusTriggered(
-      CacheModulId.sharedPreferences, TrackingStatus, ExpiredValue.immediately),
 
-  /// status change events
-  backgroundGpsStartMoving(
-      CacheModulId.sharedPreferences, GPS, ExpiredValue.immediately),
-  backgroundGpsStartStanding(
-      CacheModulId.sharedPreferences, GPS, ExpiredValue.immediately),
-  backgroundGpsLastStatusChange(
-      CacheModulId.sharedPreferences, GPS, ExpiredValue.immediately),
-
-
-  /// tracking detection
-  backgroundLastGps(
-      CacheModulId.sharedPreferences, GPS, ExpiredValue.immediately),
-  backgroundGpsPoints(
-      CacheModulId.sharedPreferences, List<GPS>, ExpiredValue.immediately),
-  backgroundGpsCalcPoints(
-      CacheModulId.sharedPreferences, List<GPS>, ExpiredValue.immediately),
-
-  /// cache background to forground
-  backgroundTrackingStatus(
-      CacheModulId.sharedPreferences, TrackingStatus, ExpiredValue.immediately),
-   
-  backgroundTrackPointSkipRecordOnce(
-      CacheModulId.sharedPreferences, bool, ExpiredValue.immediately),
- */
-  backgroundSharedAliasList(CacheModulId.sharedPreferences,
-      List<SharedTrackpointAlias>, ExpiredValue.immediately),
+  backgroundSharedLocationList(CacheModulId.sharedPreferences,
+      List<SharedTrackpointLocation>, ExpiredValue.immediately),
 
   /// trackpoint user inputs
   backgroundSharedUserList(CacheModulId.sharedPreferences,
@@ -169,11 +134,11 @@ enum Cache {
   /// appUserStettings
   appSettingBackgroundTrackingEnabled(
       CacheModulId.sharedPreferences, bool, ExpiredValue.never),
-  appSettingStatusStandingRequireAlias(
+  appSettingStatusStandingRequireLocation(
       CacheModulId.sharedPreferences, bool, ExpiredValue.never),
-  appSettingAutocreateAliasDuration(
+  appSettingAutocreateLocationDuration(
       CacheModulId.sharedPreferences, Duration, ExpiredValue.never),
-  appSettingAutocreateAlias(
+  appSettingAutocreateLocation(
       CacheModulId.sharedPreferences, bool, ExpiredValue.never),
   appSettingForegroundUpdateInterval(
       CacheModulId.sharedPreferences, Duration, ExpiredValue.never),
@@ -362,11 +327,11 @@ enum Cache {
           await cacheModul.setString(
               key, TypeAdapter.serializeGpsPrecision(value as GpsPrecision));
           break;
-        case const (List<SharedTrackpointAlias>):
+        case const (List<SharedTrackpointLocation>):
           await cacheModul.setStringList(
               key,
-              TypeAdapter.serializeSharedTrackpointAliasList(
-                  value as List<SharedTrackpointAlias>));
+              TypeAdapter.serializeSharedTrackpointLocationList(
+                  value as List<SharedTrackpointLocation>));
           break;
         case const (List<SharedTrackpointUser>):
           await cacheModul.setStringList(
@@ -467,8 +432,8 @@ enum Cache {
           return TypeAdapter.deserializeGpsPrecision(
                   await cacheModul.getString(key)) as T? ??
               defaultValue;
-        case const (List<SharedTrackpointAlias>):
-          return TypeAdapter.deserializeSharedrackpointAliasList(
+        case const (List<SharedTrackpointLocation>):
+          return TypeAdapter.deserializeSharedrackpointLocationList(
                   await cacheModul.getStringList(key)) as T? ??
               defaultValue;
         case const (List<SharedTrackpointUser>):

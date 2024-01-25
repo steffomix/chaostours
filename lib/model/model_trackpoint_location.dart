@@ -17,11 +17,11 @@ limitations under the License.
 import 'package:chaostours/database/database.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/model/model_trackpoint_asset.dart';
-import 'package:chaostours/model/model_alias.dart';
+import 'package:chaostours/model/model_location.dart';
 
-class ModelTrackpointAlias implements ModelTrackpointAsset {
+class ModelTrackpointLocation implements ModelTrackpointAsset {
   @override
-  final ModelAlias model;
+  final ModelLocation model;
 
   @override
   final int trackpointId;
@@ -40,17 +40,17 @@ class ModelTrackpointAlias implements ModelTrackpointAsset {
   @override
   Future<int> updateNotes(String notes) async {
     return await DB.execute((txn) async {
-      return await txn.update(TableTrackPointAlias.table,
-          {TableTrackPointAlias.notes.column: notes},
+      return await txn.update(TableTrackPointLocation.table,
+          {TableTrackPointLocation.notes.column: notes},
           where:
-              '${TableTrackPointAlias.idTrackPoint} = ? AND ${TableTrackPointAlias.idAlias} = ?',
+              '${TableTrackPointLocation.idTrackPoint} = ? AND ${TableTrackPointLocation.idLocation} = ?',
           whereArgs: [trackpointId, id]);
     });
   }
 
-  ModelTrackpointAlias(
+  ModelTrackpointLocation(
       {required this.model, required this.trackpointId, required this.notes});
 
-  /// alias only
+  /// location only
   int distance(GPS gps) => GPS.distance(gps, model.gps).round();
 }

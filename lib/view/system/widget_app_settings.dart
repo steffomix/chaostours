@@ -17,7 +17,6 @@ limitations under the License.
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
-import 'dart:math' as math;
 
 ///
 //import 'package:chaostours/logger.dart';
@@ -29,13 +28,13 @@ import 'package:chaostours/conf/license.dart';
 import 'package:chaostours/util.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-enum AliasRequired {
+enum LocationRequired {
   yes(true),
   no(false);
 
   final bool state;
 
-  const AliasRequired(this.state);
+  const LocationRequired(this.state);
 }
 
 class WidgetAppSettings extends StatefulWidget {
@@ -74,7 +73,6 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
   }
 
   Future<bool> renderWidgets() async {
-    await updateDebugValues();
     _renderedWidgets.clear();
     _renderedWidgets.addAll(intersperse(divider, [
       await booleanSetting(Cache.appSettingBackgroundTrackingEnabled, onChange:
@@ -83,8 +81,8 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
             ? await BackgroundChannel.start()
             : await BackgroundChannel.stop();
       }),
-      await booleanSetting(Cache.appSettingAutocreateAlias),
-      await booleanSetting(Cache.appSettingStatusStandingRequireAlias),
+      await booleanSetting(Cache.appSettingAutocreateLocation),
+      await booleanSetting(Cache.appSettingStatusStandingRequireLocation),
       await booleanSetting(Cache.appSettingPublishToCalendar),
       await integerSetting(Cache.appSettingForegroundUpdateInterval),
       await integerSetting(Cache.appSettingDistanceTreshold),
@@ -108,7 +106,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                       required int value}) async {
                 //valueNotifiers[Cache.appSettingBackgroundTrackingInterval]?.value++;
                 valueNotifiers[Cache.appSettingTimeRangeTreshold]?.value++;
-                valueNotifiers[Cache.appSettingAutocreateAliasDuration]
+                valueNotifiers[Cache.appSettingAutocreateLocationDuration]
                     ?.value++;
                 valueNotifiers[Cache.appSettingGpsPointsSmoothCount]?.value++;
               }),
@@ -119,18 +117,18 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                 valueNotifiers[Cache.appSettingBackgroundTrackingInterval]
                     ?.value++;
                 //valueNotifiers[Cache.appSettingTimeRangeTreshold]?.value++;
-                valueNotifiers[Cache.appSettingAutocreateAliasDuration]
+                valueNotifiers[Cache.appSettingAutocreateLocationDuration]
                     ?.value++;
                 valueNotifiers[Cache.appSettingGpsPointsSmoothCount]?.value++;
               }),
-              await integerSetting(Cache.appSettingAutocreateAliasDuration,
+              await integerSetting(Cache.appSettingAutocreateLocationDuration,
                   onChange: (
                       {required AppUserSetting setting,
                       required int value}) async {
                 valueNotifiers[Cache.appSettingBackgroundTrackingInterval]
                     ?.value++;
                 valueNotifiers[Cache.appSettingTimeRangeTreshold]?.value++;
-                // valueNotifiers[Cache.appSettingAutocreateAliasDuration]?.value++;
+                // valueNotifiers[Cache.appSettingAutocreateLocationuration]?.value++;
                 valueNotifiers[Cache.appSettingGpsPointsSmoothCount]?.value++;
               }),
               await integerSetting(Cache.appSettingGpsPointsSmoothCount),
@@ -147,48 +145,6 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
     ]));
 
     return true;
-  }
-
-  final List<Widget> debugValues = [];
-  Future<void> updateDebugValues() async {
-    debugValues.clear();
-    final smoothCount =
-        await Cache.appSettingGpsPointsSmoothCount.load<int>(-1);
-    final autoCreateDuration = await Cache.appSettingAutocreateAliasDuration
-        .load<Duration>(Duration.zero);
-    final trackingInterval = await Cache.appSettingBackgroundTrackingInterval
-        .load<Duration>(Duration.zero);
-    final distanceTreshold =
-        await Cache.appSettingDistanceTreshold.load<int>(-1);
-    final timeTreshold =
-        await Cache.appSettingTimeRangeTreshold.load<Duration>(Duration.zero);
-
-    valueNotifiers[Cache.appSettingGpsPointsSmoothCount]?.value++;
-    valueNotifiers[Cache.appSettingAutocreateAliasDuration]?.value++;
-    valueNotifiers[Cache.appSettingBackgroundTrackingInterval]?.value++;
-    valueNotifiers[Cache.appSettingDistanceTreshold]?.value++;
-    valueNotifiers[Cache.appSettingTimeRangeTreshold]?.value++;
-
-    final gpsPoints =
-        (autoCreateDuration.inSeconds / trackingInterval.inSeconds).ceil();
-
-    final calcPoints = math.min(smoothCount - 1,
-        (timeTreshold.inSeconds / trackingInterval.inSeconds).ceil());
-    debugValues.addAll([
-      Text('min autocreate Alias: '
-          '${autoCreateDuration.inMinutes.toString()}'),
-      Text('sec tracking Interval: '
-          '${trackingInterval.inSeconds.toString()}'),
-      Text('GPS Points: $gpsPoints'),
-      divider,
-      Text('min timeRange Treshold: '
-          '${timeTreshold.inMinutes.toString()}'),
-      Text('GPS calc points: $calcPoints'),
-      Text('int smoothCount: ${smoothCount.toString()}'),
-      divider,
-      Text('m distanceTreshold: '
-          '${distanceTreshold.toString()}'),
-    ]);
   }
 
   Future<bool> checkIntegerInput(AppUserSetting setting, String? value) async {
@@ -404,7 +360,6 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                             await setting.resetToDefault();
                             textEditingControllers[cache]?.text =
                                 await setting.load();
-                            await updateDebugValues();
                             valueNotifiers[cache]?.value++;
                             if (mounted) {
                               Navigator.pop(context);
@@ -436,7 +391,6 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                       await setting.save(textEditingControllers[cache]!.text);
                       controller.text = await setting.load();
                       isValid = true;
-                      await updateDebugValues();
                       valueNotifiers[cache]?.value++;
 
                       await onChange?.call(

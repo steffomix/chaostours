@@ -17,7 +17,7 @@ limitations under the License.
 import 'dart:async';
 import 'dart:io';
 import 'package:chaostours/gps_location.dart';
-import 'package:chaostours/model/model_alias_group.dart';
+import 'package:chaostours/model/model_location_group.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/shared/shared_trackpoint_task.dart';
@@ -39,7 +39,7 @@ import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/database/cache.dart';
 import 'package:chaostours/conf/app_user_settings.dart';
 import 'package:chaostours/gps.dart';
-import 'package:chaostours/model/model_alias.dart';
+import 'package:chaostours/model/model_location.dart';
 import 'package:chaostours/channel/background_channel.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/database/database.dart';
@@ -173,7 +173,7 @@ class _WelcomeState extends State<Welcome> {
                 onPressed: () async {
                   Navigator.pop(context);
                   sinkNext(const Text('Deleting all calendar settings'));
-                  await ModelAliasGroup.deleteAllcalendarSettings();
+                  await ModelLocationGroup.deleteAllcalendarSettings();
                   sinkNext(const Text('Turning off database import warning'));
                   await Cache.databaseImportedCalendarDisabled.save(false);
                 },
@@ -433,7 +433,7 @@ class _WelcomeState extends State<Welcome> {
             contents: [
               const Text(
                   'Install some basic data so that everything doesn\'t look so empty?'),
-              Text('This is \n- a Location Alias ${osm ? 'with address' : ''}\n'
+              Text('This is \n- a location ${osm ? 'with address' : ''}\n'
                   '- a user named "user 1" \n- a task named "task 1"'
                   '- a trackpoint with "user 1", "task 1" and a note "Welcome to Chaos Tours"'),
               const Text('You can of course edit everything every time.')
@@ -477,19 +477,14 @@ class _WelcomeState extends State<Welcome> {
 
   Future<void> installData() async {
     gps ??= await GPS.gps();
-    await ModelAlias(
+    await ModelLocation(
             gps: gps!,
-            title: 'First Alias',
+            title: 'First location',
             lastVisited: DateTime.now(),
-            privacy: AliasPrivacy.privat)
+            privacy: LocationPrivacy.privat)
         .insert();
     await ModelUser(title: 'User 1').insert();
     await ModelTask(title: 'Task 1').insert();
-/* 
-    await Cache.backgroundSharedAliasList.save<List<SharedTrackpointAlias>>([
-      SharedTrackpointAlias(
-          id: 1, notes: 'We was the nearby location most times.')
-    ]); */
 
     await Cache.backgroundSharedUserList.save<List<SharedTrackpointUser>>(
         [SharedTrackpointUser(id: 1, notes: 'User 1 was here.')]);
@@ -500,7 +495,7 @@ class _WelcomeState extends State<Welcome> {
     await Cache.backgroundTrackPointNotes
         .save<String>('What a great location today!');
 
-    GpsLocation location = await GpsLocation.location(gps!);
+    GpsLocation location = await GpsLocation.gpsLocation(gps!);
     location.address = address;
 
     await location.executeStatusMoving();

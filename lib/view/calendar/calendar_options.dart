@@ -16,7 +16,7 @@ limitations under the License.
 
 import 'package:chaostours/database/database.dart';
 import 'package:chaostours/logger.dart';
-import 'package:chaostours/model/model_alias_group.dart';
+import 'package:chaostours/model/model_location_group.dart';
 import 'package:chaostours/view/system/app_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -31,40 +31,42 @@ class WidgetCalendarOptions extends StatefulWidget {
 class _WidgetCalendarOptionsState extends State<WidgetCalendarOptions> {
   static final Logger logger = Logger.logger<WidgetCalendarOptions>();
 
-  ModelAliasGroup? _model;
-  Map<TableAliasGroup, bool Function()> fieldsMap = {};
+  ModelLocationGroup? _model;
+  Map<TableLocationGroup, bool Function()> fieldsMap = {};
 
-  void generateMap(ModelAliasGroup model) {
+  void generateMap(ModelLocationGroup model) {
     fieldsMap.clear();
     fieldsMap.addAll({
-      TableAliasGroup.withCalendarHtml: () => model.calendarHtml,
-      TableAliasGroup.withCalendarGps: () => model.calendarGps,
-      TableAliasGroup.withCalendarTimeStart: () => model.calendarTimeStart,
-      TableAliasGroup.withCalendarTimeEnd: () => model.calendarTimeEnd,
-      TableAliasGroup.withCalendarDuration: () => model.calendarDuration,
-      TableAliasGroup.withCalendarAddress: () => model.calendarAddress,
-      TableAliasGroup.withCalendarFullAddress: () => model.calendarFullAddress,
-      TableAliasGroup.withCalendarTrackpointNotes: () =>
+      TableLocationGroup.withCalendarHtml: () => model.calendarHtml,
+      TableLocationGroup.withCalendarGps: () => model.calendarGps,
+      TableLocationGroup.withCalendarTimeStart: () => model.calendarTimeStart,
+      TableLocationGroup.withCalendarTimeEnd: () => model.calendarTimeEnd,
+      TableLocationGroup.withCalendarDuration: () => model.calendarDuration,
+      TableLocationGroup.withCalendarAddress: () => model.calendarAddress,
+      TableLocationGroup.withCalendarFullAddress: () =>
+          model.calendarFullAddress,
+      TableLocationGroup.withCalendarTrackpointNotes: () =>
           model.calendarTrackpointNotes,
-      TableAliasGroup.withCalendarAlias: () => model.calendarAlias,
-      TableAliasGroup.withCalendarAliasNearby: () => model.calendarAliasNearby,
-      TableAliasGroup.withCalendarNearbyAliasDescription: () =>
-          model.calendarNearbyAliasDescription,
-      TableAliasGroup.withCalendarAliasDescription: () =>
-          model.calendarAliasDescription,
-      TableAliasGroup.withCalendarUsers: () => model.calendarUsers,
-      TableAliasGroup.withCalendarUserNotes: () => model.calendarUserNotes,
-      TableAliasGroup.withCalendarUserDescription: () =>
+      TableLocationGroup.withCalendarLocation: () => model.calendarLocation,
+      TableLocationGroup.withCalendarLocationNearby: () =>
+          model.calendarLocationNearby,
+      TableLocationGroup.withCalendarNearbyLocationDescription: () =>
+          model.calendarNearbyLocationDescription,
+      TableLocationGroup.withCalendarLocationDescription: () =>
+          model.calendarLocationDescription,
+      TableLocationGroup.withCalendarUsers: () => model.calendarUsers,
+      TableLocationGroup.withCalendarUserNotes: () => model.calendarUserNotes,
+      TableLocationGroup.withCalendarUserDescription: () =>
           model.calendarUserDescription,
-      TableAliasGroup.withCalendarTasks: () => model.calendarTasks,
-      TableAliasGroup.withCalendarTaskNotes: () => model.calendarTaskNotes,
-      TableAliasGroup.withCalendarTaskDescription: () =>
+      TableLocationGroup.withCalendarTasks: () => model.calendarTasks,
+      TableLocationGroup.withCalendarTaskNotes: () => model.calendarTaskNotes,
+      TableLocationGroup.withCalendarTaskDescription: () =>
           model.calendarTaskDescription,
     });
   }
 
-  Future<ModelAliasGroup?> loadAlias(int id) async {
-    _model = await ModelAliasGroup.byId(id);
+  Future<ModelLocationGroup?> loadLocation(int id) async {
+    _model = await ModelLocationGroup.byId(id);
     if (_model == null) {
       if (mounted) {
         Future.microtask(() => Navigator.pop(context));
@@ -80,7 +82,7 @@ class _WidgetCalendarOptionsState extends State<WidgetCalendarOptions> {
     int id = ModalRoute.of(context)?.settings.arguments as int? ?? 0;
 
     return FutureBuilder(
-      future: loadAlias(id),
+      future: loadLocation(id),
       builder: (context, snapshot) {
         return AppWidgets.checkSnapshot(context, snapshot) ?? body();
       },
@@ -88,7 +90,7 @@ class _WidgetCalendarOptionsState extends State<WidgetCalendarOptions> {
   }
 
   Widget renderItem({
-    required TableAliasGroup field,
+    required TableLocationGroup field,
     required String title,
     required String description,
   }) {
@@ -107,7 +109,7 @@ class _WidgetCalendarOptionsState extends State<WidgetCalendarOptions> {
     return AppWidgets.scaffold(context,
         title: 'Calendar Options',
         body: ListView(padding: const EdgeInsets.all(5), children: [
-          ...TableAliasGroup.calendarFields().map(
+          ...TableLocationGroup.calendarFields().map(
             (e) => renderItem(field: e, title: '', description: ''),
           )
 
@@ -145,19 +147,19 @@ class _WidgetCalendarOptionsState extends State<WidgetCalendarOptions> {
 
           ///
           ///
-          /// withCalendarAlias
+          /// withCalendarLocation
 
           ///
           ///
-          /// withCalendarAliasNearby
+          /// withCalendarLocationNearby
 
           ///
           ///
-          /// withCalendarAliasNotes
+          /// withCalendarLocationNotes
 
           ///
           ///
-          /// withCalendarAliasDescription
+          /// withCalendarLocationDescription
 
           ///
           ///
@@ -185,60 +187,60 @@ class _WidgetCalendarOptionsState extends State<WidgetCalendarOptions> {
         ]));
   }
 
-  void updateField(TableAliasGroup field, bool value) {
+  void updateField(TableLocationGroup field, bool value) {
     switch (field) {
-      case TableAliasGroup.withCalendarHtml:
+      case TableLocationGroup.withCalendarHtml:
         _model?.calendarHtml = value;
         break;
-      case TableAliasGroup.withCalendarGps:
+      case TableLocationGroup.withCalendarGps:
         _model?.calendarGps = value;
         break;
-      case TableAliasGroup.withCalendarTimeStart:
+      case TableLocationGroup.withCalendarTimeStart:
         _model?.calendarTimeStart = value;
         break;
-      case TableAliasGroup.withCalendarTimeEnd:
+      case TableLocationGroup.withCalendarTimeEnd:
         _model?.calendarTimeEnd = value;
         break;
-      case TableAliasGroup.withCalendarDuration:
+      case TableLocationGroup.withCalendarDuration:
         _model?.calendarDuration = value;
         break;
-      case TableAliasGroup.withCalendarAddress:
+      case TableLocationGroup.withCalendarAddress:
         _model?.calendarAddress = value;
         break;
-      case TableAliasGroup.withCalendarFullAddress:
+      case TableLocationGroup.withCalendarFullAddress:
         _model?.calendarFullAddress = value;
         break;
-      case TableAliasGroup.withCalendarTrackpointNotes:
+      case TableLocationGroup.withCalendarTrackpointNotes:
         _model?.calendarTrackpointNotes = value;
         break;
-      case TableAliasGroup.withCalendarAlias:
-        _model?.calendarAlias = value;
+      case TableLocationGroup.withCalendarLocation:
+        _model?.calendarLocation = value;
         break;
-      case TableAliasGroup.withCalendarAliasNearby:
-        _model?.calendarAliasNearby = value;
+      case TableLocationGroup.withCalendarLocationNearby:
+        _model?.calendarLocationNearby = value;
         break;
-      case TableAliasGroup.withCalendarNearbyAliasDescription:
-        _model?.calendarNearbyAliasDescription = value;
+      case TableLocationGroup.withCalendarNearbyLocationDescription:
+        _model?.calendarNearbyLocationDescription = value;
         break;
-      case TableAliasGroup.withCalendarAliasDescription:
-        _model?.calendarAliasDescription = value;
+      case TableLocationGroup.withCalendarLocationDescription:
+        _model?.calendarLocationDescription = value;
         break;
-      case TableAliasGroup.withCalendarUsers:
+      case TableLocationGroup.withCalendarUsers:
         _model?.calendarUsers = value;
         break;
-      case TableAliasGroup.withCalendarUserNotes:
+      case TableLocationGroup.withCalendarUserNotes:
         _model?.calendarUserNotes = value;
         break;
-      case TableAliasGroup.withCalendarUserDescription:
+      case TableLocationGroup.withCalendarUserDescription:
         _model?.calendarUserDescription = value;
         break;
-      case TableAliasGroup.withCalendarTasks:
+      case TableLocationGroup.withCalendarTasks:
         _model?.calendarTasks = value;
         break;
-      case TableAliasGroup.withCalendarTaskNotes:
+      case TableLocationGroup.withCalendarTaskNotes:
         _model?.calendarTaskNotes = value;
         break;
-      case TableAliasGroup.withCalendarTaskDescription:
+      case TableLocationGroup.withCalendarTaskDescription:
         _model?.calendarTaskDescription = value;
         break;
 

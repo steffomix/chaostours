@@ -270,22 +270,22 @@ enum TableTrackPoint {
   }
 }
 
-enum TableTrackPointAlias {
+enum TableTrackPointLocation {
   idTrackPoint('id_trackpoint'),
-  idAlias('id_alias'),
+  idLocation('id_location'),
   notes('notes');
 
-  static const String table = 'trackpoint_alias';
+  static const String table = 'trackpoint_location';
 
   static List<String> get columns =>
-      TableTrackPointAlias.values.map((e) => e.toString()).toList();
+      TableTrackPointLocation.values.map((e) => e.toString()).toList();
 
   final String column;
-  const TableTrackPointAlias(this.column);
+  const TableTrackPointLocation(this.column);
 
   static String get schema => '''CREATE TABLE IF NOT EXISTS $table (
 	${idTrackPoint.column}	INTEGER NOT NULL,
-	${idAlias.column}	INTEGER NOT NULL,
+	${idLocation.column}	INTEGER NOT NULL,
   ${notes.column} Text)''';
 
   @override
@@ -344,7 +344,7 @@ enum TableTrackPointUser {
 
 enum TableTrackPointCalendar {
   idTrackPoint('id_trackpoint'),
-  idAliasGroup('id_alias'),
+  idLocationGroup('id_location'),
   idCalendar('id_calendar'),
   idEvent('id_event'),
   title('title'),
@@ -360,12 +360,12 @@ enum TableTrackPointCalendar {
 
   static String get schema => '''CREATE TABLE IF NOT EXISTS $table (
 	${idTrackPoint.column}	INTEGER NOT NULL,
-	${idAliasGroup.column}	INTEGER NOT NULL,
+	${idLocationGroup.column}	INTEGER NOT NULL,
 	${idCalendar.column}	TEXT,
 	${idEvent.column}	TEXT,
 	${title.column}	TEXT,
 	${body.column} TEXT),
-  PRIMARY KEY(${idTrackPoint.column}, ${idAliasGroup.column})''';
+  PRIMARY KEY(${idTrackPoint.column}, ${idLocationGroup.column})''';
 
   @override
   String toString() {
@@ -373,21 +373,21 @@ enum TableTrackPointCalendar {
   }
 }
 
-enum TableAliasAliasGroup {
-  idAlias('id_alias'),
-  idAliasGroup('id_alias_group');
+enum TableLocationLocationGroup {
+  idLocation('id_location'),
+  idLocationGroup('id_location_group');
 
-  static const String table = 'alias_alias_group';
+  static const String table = 'location_location_group';
 
   static List<String> get columns =>
-      TableAliasAliasGroup.values.map((e) => e.toString()).toList();
+      TableLocationLocationGroup.values.map((e) => e.toString()).toList();
 
   final String column;
-  const TableAliasAliasGroup(this.column);
+  const TableLocationLocationGroup(this.column);
 
   static String get schema => '''CREATE TABLE IF NOT EXISTS $table (
-	${idAlias.column}	INTEGER NOT NULL,
-	${idAliasGroup.column}	INTEGER NOT NULL)''';
+	${idLocation.column}	INTEGER NOT NULL,
+	${idLocationGroup.column}	INTEGER NOT NULL)''';
 
   @override
   String toString() {
@@ -477,7 +477,7 @@ enum TableTask {
   }
 }
 
-enum TableAlias {
+enum TableLocation {
   id('id'),
   isActive('active'),
   radius('radius'),
@@ -489,17 +489,17 @@ enum TableAlias {
   title('title'),
   description('description');
 
-  static const String table = 'alias';
+  static const String table = 'location';
 
   static List<String> get columns =>
-      TableAlias.values.map((e) => e.toString()).toList();
+      TableLocation.values.map((e) => e.toString()).toList();
 
-  static TableAlias get primaryKey {
+  static TableLocation get primaryKey {
     return id;
   }
 
   final String column;
-  const TableAlias(this.column);
+  const TableLocation(this.column);
 
   static String get schema => '''CREATE TABLE IF NOT EXISTS $table (
 	${primaryKey.column}	INTEGER NOT NULL,
@@ -635,20 +635,20 @@ enum TableUserGroup {
   }
 }
 
-enum TableAliasTopic {
-  idAlias('id_alias'),
+enum TableLocationTopic {
+  idLocation('id_location'),
   idTopic('id_topic');
 
-  static const String table = 'alias_topic';
+  static const String table = 'location_topic';
 
   final String column;
-  const TableAliasTopic(this.column);
+  const TableLocationTopic(this.column);
 
   static List<String> get columns =>
-      TableAliasTopic.values.map((e) => e.toString()).toList();
+      TableLocationTopic.values.map((e) => e.toString()).toList();
 
   static String get schema => '''CREATE TABLE IF NOT EXISTS $table (
-	${idAlias.column}	INTEGER,
+	${idLocation.column}	INTEGER,
 	${idTopic.column}	INTEGER)''';
 
   @override
@@ -690,15 +690,13 @@ enum TableTopic {
   }
 }
 
-enum TableAliasGroup {
+enum TableLocationGroup {
   id('id'),
   idCalendar('id_calendar'),
   isActive('active'),
   privacy('sort'),
   title('title'),
   description('description'),
-
-  ensuredPrivacyCompliance('ensured_privacy_compliance'),
 
   withCalendarHtml('calendar_html'),
 
@@ -707,10 +705,10 @@ enum TableAliasGroup {
   withCalendarAllDay('calendar_all_day'),
   withCalendarDuration('calendar_duration'),
 
-  withCalendarAlias('calendar_alias'),
-  withCalendarAliasNearby('calendar_alias_nearby'),
-  withCalendarAliasDescription('calendar_alias_description'),
-  withCalendarNearbyAliasDescription('calendar_nearby_alias_description'),
+  withCalendarLocation('calendar_location'),
+  withCalendarLocationNearby('calendar_location_nearby'),
+  withCalendarLocationDescription('calendar_location_description'),
+  withCalendarNearbyLocationDescription('calendar_nearby_location_description'),
 
   withCalendarGps('calendar_gps'),
   withCalendarAddress('calendar_address'),
@@ -727,25 +725,25 @@ enum TableAliasGroup {
   withCalendarUserDescription('calendar_user_description'),
   ;
 
-  static List<TableAliasGroup> calendarFields() {
-    return TableAliasGroup.values
+  static List<TableLocationGroup> calendarFields() {
+    return TableLocationGroup.values
         .where(
           (e) => e.name.contains('withCalendar'),
         )
         .toList();
   }
 
-  static const String table = 'alias_group';
+  static const String table = 'location_group';
 
   static List<String> get columns =>
-      TableAliasGroup.values.map((e) => e.toString()).toList();
+      TableLocationGroup.values.map((e) => e.toString()).toList();
 
-  static TableAliasGroup get primaryKey {
+  static TableLocationGroup get primaryKey {
     return id;
   }
 
   final String column;
-  const TableAliasGroup(this.column);
+  const TableLocationGroup(this.column);
 
   static String get schema => '''CREATE TABLE IF NOT EXISTS $table (
 	${primaryKey.column} INTEGER NOT NULL,
@@ -754,8 +752,6 @@ enum TableAliasGroup {
 	${privacy.column} INTEGER,
 	${title.column} TEXT,
 	${description.column} TEXT,
-  
-  ${ensuredPrivacyCompliance.column} INTEGER,
 
   ${withCalendarHtml.column} INTEGER,
 
@@ -764,10 +760,10 @@ enum TableAliasGroup {
   ${withCalendarAllDay.column}	INTEGER,
   ${withCalendarDuration.column} INTEGER,
 
-  ${withCalendarAlias.column}	INTEGER,
-  ${withCalendarAliasNearby.column}	INTEGER,
-  ${withCalendarAliasDescription.column} INTEGER,
-  ${withCalendarNearbyAliasDescription.column} INTEGER,
+  ${withCalendarLocation.column}	INTEGER,
+  ${withCalendarLocationNearby.column}	INTEGER,
+  ${withCalendarLocationDescription.column} INTEGER,
+  ${withCalendarNearbyLocationDescription.column} INTEGER,
 
   ${withCalendarGps.column} INTEGER,
   ${withCalendarAddress.column}	INTEGER,
@@ -793,22 +789,21 @@ enum TableAliasGroup {
 
 class DbTable {
   static final List<DbTable> tables = List.unmodifiable([
-    DbTable(CacheData.table, CacheData.columns, CacheData.schema),
-    // alias
-    DbTable(TableAlias.table, TableAlias.columns, TableAlias.schema),
-    DbTable(TableAliasAliasGroup.table, TableAliasAliasGroup.columns,
-        TableAliasAliasGroup.schema),
-    DbTable(
-        TableAliasGroup.table, TableAliasGroup.columns, TableAliasGroup.schema),
-    // alias topic
+    // location
+    DbTable(TableLocation.table, TableLocation.columns, TableLocation.schema),
+    DbTable(TableLocationLocationGroup.table,
+        TableLocationLocationGroup.columns, TableLocationLocationGroup.schema),
+    DbTable(TableLocationGroup.table, TableLocationGroup.columns,
+        TableLocationGroup.schema),
+    // location topic
     DbTable(TableTopic.table, TableTopic.columns, TableTopic.schema),
-    DbTable(
-        TableAliasTopic.table, TableAliasTopic.columns, TableAliasTopic.schema),
+    DbTable(TableLocationTopic.table, TableLocationTopic.columns,
+        TableLocationTopic.schema),
     // trackpoint
     DbTable(
         TableTrackPoint.table, TableTrackPoint.columns, TableTrackPoint.schema),
-    DbTable(TableTrackPointAlias.table, TableTrackPointAlias.columns,
-        TableTrackPointAlias.schema),
+    DbTable(TableTrackPointLocation.table, TableTrackPointLocation.columns,
+        TableTrackPointLocation.schema),
     DbTable(TableTrackPointTask.table, TableTrackPointTask.columns,
         TableTrackPointTask.schema),
     DbTable(TableTrackPointUser.table, TableTrackPointUser.columns,
@@ -827,6 +822,8 @@ class DbTable {
         TableUserUserGroup.schema),
     DbTable(
         TableUserGroup.table, TableUserGroup.columns, TableUserGroup.schema),
+
+    //DbTable(CacheData.table, CacheData.columns, CacheData.schema),
   ]);
   final String table;
   final String schema;
@@ -845,9 +842,9 @@ class DbTable {
 	${TableTrackPoint.latitude.column}	ASC,
 	${TableTrackPoint.longitude.column} ASC)''',
 
-    '''CREATE INDEX IF NOT EXISTS index_gps_${TableAlias.table} ON ${TableAlias.table} (
-	${TableAlias.latitude.column} ASC,
-	${TableAlias.longitude.column}	ASC)''',
+    '''CREATE INDEX IF NOT EXISTS index_gps_${TableLocation.table} ON ${TableLocation.table} (
+	${TableLocation.latitude.column} ASC,
+	${TableLocation.longitude.column}	ASC)''',
 
     /// calendar to trackpoint
     /// ***not unique!***, calendar ids are text and can change unpredectable)
@@ -866,9 +863,9 @@ class DbTable {
     ///
     /// asset to trackpoint
     ///
-    '''CREATE UNIQUE INDEX IF NOT EXISTS index_${TableTrackPointAlias.table}_${TableTrackPointAlias.table} ON ${TableTrackPointAlias.table} (
-	${TableTrackPointAlias.idAlias.column}	ASC,
-	${TableTrackPointAlias.idTrackPoint.column} ASC)''',
+    '''CREATE UNIQUE INDEX IF NOT EXISTS index_${TableTrackPointLocation.table}_${TableTrackPointLocation.table} ON ${TableTrackPointLocation.table} (
+	${TableTrackPointLocation.idLocation.column}	ASC,
+	${TableTrackPointLocation.idTrackPoint.column} ASC)''',
 
     '''CREATE UNIQUE INDEX IF NOT EXISTS index_${TableTrackPointUser.table}_${TableTrackPointUser.table} ON ${TableTrackPointUser.table} (
 	${TableTrackPointUser.idUser.column}	ASC,
@@ -881,9 +878,9 @@ class DbTable {
     ///
     /// asset to group
     ///
-    '''CREATE UNIQUE INDEX IF NOT EXISTS index_${TableAlias.table}_${TableAliasGroup.table} ON ${TableAliasAliasGroup.table} (
-	${TableAliasAliasGroup.idAlias.column}	ASC,
-	${TableAliasAliasGroup.idAliasGroup.column} ASC)''',
+    '''CREATE UNIQUE INDEX IF NOT EXISTS index_${TableLocation.table}_${TableLocationGroup.table} ON ${TableLocationLocationGroup.table} (
+	${TableLocationLocationGroup.idLocation.column}	ASC,
+	${TableLocationLocationGroup.idLocationGroup.column} ASC)''',
 
     '''CREATE UNIQUE INDEX IF NOT EXISTS index_${TableUser.table}_${TableUserGroup.table} ON ${TableUserUserGroup.table} (
 	${TableUserUserGroup.idUser.column}	ASC,
@@ -895,7 +892,7 @@ class DbTable {
   ];
 
   static final List<String> inserts = [
-    'INSERT INTO ${TableAliasGroup.table} (title) VALUES ("Default Aliasgroup")',
+    'INSERT INTO ${TableLocationGroup.table} (title) VALUES ("Default Locationgroup")',
     'INSERT INTO ${TableUserGroup.table} (title) VALUES ("Default Usergroup")',
     'INSERT INTO ${TableTaskGroup.table} (title) VALUES ("Default Taskgroup")',
   ];

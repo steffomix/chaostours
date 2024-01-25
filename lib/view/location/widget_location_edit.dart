@@ -19,26 +19,26 @@ import 'package:flutter/services.dart';
 
 ///
 import 'package:chaostours/conf/app_user_settings.dart';
-import 'package:chaostours/statistics/alias_statistics.dart';
+import 'package:chaostours/statistics/location_statistics.dart';
 import 'package:chaostours/view/system/app_widgets.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/address.dart';
 import 'package:chaostours/logger.dart';
-import 'package:chaostours/model/model_alias.dart';
-import 'package:chaostours/model/model_alias_group.dart';
+import 'package:chaostours/model/model_location.dart';
+import 'package:chaostours/model/model_location_group.dart';
 import 'package:chaostours/view/trackpoint/widget_trackpoint_list.dart';
 import 'package:chaostours/conf/app_routes.dart';
 
-class WidgetAliasEdit extends StatefulWidget {
-  const WidgetAliasEdit({super.key});
+class WidgetLocationEdit extends StatefulWidget {
+  const WidgetLocationEdit({super.key});
 
   @override
-  State<WidgetAliasEdit> createState() => _WidgetAliasEdit();
+  State<WidgetLocationEdit> createState() => _WidgetLocationEdit();
 }
 
-class _WidgetAliasEdit extends State<WidgetAliasEdit> {
+class _WidgetLocationEdit extends State<WidgetLocationEdit> {
   // ignore: unused_field
-  static final Logger logger = Logger.logger<WidgetAliasEdit>();
+  static final Logger logger = Logger.logger<WidgetLocationEdit>();
 
   static const double _paddingSide = 10.0;
 
@@ -52,12 +52,12 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
   final _radiusUndoController = UndoHistoryController();
 
   final _privacy = ValueNotifier<bool>(false);
-  ModelAlias? _modelAlias;
+  ModelLocation? _modelLocation;
 
-  List<ModelAliasGroup> _groups = [];
+  List<ModelLocationGroup> _groups = [];
 
-  void initialize(ModelAlias model) {
-    _modelAlias = model;
+  void initialize(ModelLocation model) {
+    _modelLocation = model;
     if (_addressController.text != model.title) {
       _addressController.text = model.title;
     }
@@ -72,11 +72,11 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
     super.dispose();
   }
 
-  Future<ModelAlias> createAlias() async {
+  Future<ModelLocation> createLocation() async {
     var gps = await GPS.gps();
     var address =
-        (await Address(gps).lookup(OsmLookupConditions.onUserCreateAlias));
-    var model = ModelAlias(
+        (await Address(gps).lookup(OsmLookupConditions.onUserCreateLocation));
+    var model = ModelLocation(
         gps: gps,
         lastVisited: DateTime.now(),
         title: address.address,
@@ -85,15 +85,15 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
     return model;
   }
 
-  Future<ModelAlias?> loadAlias(int? id) async {
-    var model = await ModelAlias.byId(id ?? 0);
+  Future<ModelLocation?> loadLocation(int? id) async {
+    var model = await ModelLocation.byId(id ?? 0);
     if (model == null) {
       if (mounted) {
         Navigator.pop(context);
       }
     }
     var ids = (await model?.groupIds()) ?? [];
-    _groups = ids.isEmpty ? [] : await ModelAliasGroup.byIdList(ids);
+    _groups = ids.isEmpty ? [] : await ModelLocationGroup.byIdList(ids);
     return model;
   }
 
@@ -101,8 +101,8 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
   Widget build(BuildContext context) {
     int? id = ModalRoute.of(context)?.settings.arguments as int?;
 
-    return FutureBuilder<ModelAlias?>(
-      future: loadAlias(id),
+    return FutureBuilder<ModelLocation?>(
+      future: loadLocation(id),
       builder: (context, snapshot) {
         Widget? loading = AppWidgets.checkSnapshot(context, snapshot);
         if (loading == null) {
@@ -111,7 +111,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
           return scaffold(body(model));
         } else {
           return AppWidgets.scaffold(context,
-              body: AppWidgets.loading(const Text('Loading Alias...')));
+              body: AppWidgets.loading(const Text('Loading location...')));
         }
       },
     );
@@ -119,12 +119,12 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
 
   Widget scaffold(Widget body) {
     return AppWidgets.scaffold(context,
-        title: 'Edit Alias',
+        title: 'Edit location',
         navBar: BottomNavigationBar(
             type: BottomNavigationBarType.fixed,
             items: const [
               BottomNavigationBarItem(
-                  icon: Icon(Icons.add), label: 'Create new Alias'),
+                  icon: Icon(Icons.add), label: 'Create new location'),
               BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Route'),
               BottomNavigationBarItem(
                   icon: Icon(Icons.cancel), label: 'Cancel'),
@@ -137,7 +137,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
               } else if (id == 1) {
                 var gps = await GPS.gps();
                 await GPS.launchGoogleMaps(gps.lat, gps.lon,
-                    _modelAlias!.gps.lat, _modelAlias!.gps.lon);
+                    _modelLocation!.gps.lat, _modelLocation!.gps.lon);
               } else if (id == 2) {
                 Navigator.pop(context);
               }
@@ -145,7 +145,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
         body: body);
   }
 
-  Widget body(ModelAlias alias) {
+  Widget body(ModelLocation location) {
     return ListView(children: [
       /// Trackpoints button
       Row(
@@ -156,19 +156,19 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
               child: FilledButton(
                   onPressed: () => Navigator.pushNamed(
                       context, AppRoutes.listTrackpoints.route,
-                      arguments:
-                          TrackpointListArguments.alias.arguments(alias.id)),
+                      arguments: TrackpointListArguments.location
+                          .arguments(location.id)),
                   child: const Text('Trackpoints'))),
           Padding(
               padding: const EdgeInsets.symmetric(horizontal: 3),
               child: FilledButton(
                   onPressed: () async {
-                    var stats = await AliasStatistics.statistics(alias);
+                    var stats = await LocationStatistics.statistics(location);
 
                     if (mounted) {
                       AppWidgets.statistics(context, stats: stats,
                           reload: (DateTime start, DateTime end) async {
-                        return await AliasStatistics.statistics(stats.model,
+                        return await LocationStatistics.statistics(stats.model,
                             start: start, end: end);
                       });
                     }
@@ -177,7 +177,7 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
         ],
       ),
 
-      /// aliasname
+      /// location name
       ListTile(
           dense: true,
           trailing: ValueListenableBuilder<UndoHistoryValue>(
@@ -197,10 +197,11 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
               padding: const EdgeInsets.all(_paddingSide),
               child: TextField(
                 undoController: _addressUndoController,
-                decoration: const InputDecoration(label: Text('Alias Address')),
+                decoration:
+                    const InputDecoration(label: Text('Location Address')),
                 onChanged: ((value) {
-                  alias.title = value;
-                  alias.update();
+                  location.title = value;
+                  location.update();
                 }),
                 maxLines: 3,
                 minLines: 3,
@@ -233,8 +234,8 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                 minLines: 3,
                 controller: _notesController,
                 onChanged: (value) {
-                  alias.description = value.trim();
-                  alias.update();
+                  location.description = value.trim();
+                  location.update();
                 },
               ))),
       AppWidgets.divider(),
@@ -244,24 +245,24 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
         trailing: IconButton(
             icon: const Icon(Icons.copy),
             onPressed: () {
-              Clipboard.setData(
-                  ClipboardData(text: '${alias.gps.lat}, ${alias.gps.lon}'));
+              Clipboard.setData(ClipboardData(
+                  text: '${location.gps.lat}, ${location.gps.lon}'));
             }),
         title: const Text('GPS Location'),
         subtitle: Padding(
             padding: const EdgeInsets.all(_paddingSide),
             child: FilledButton(
               child: Text(
-                  'Latitude, Longitude:\n${alias.gps.lat}, ${alias.gps.lon}'),
+                  'Latitude, Longitude:\n${location.gps.lat}, ${location.gps.lon}'),
               onPressed: () {
                 Navigator.pushNamed(context, AppRoutes.osm.route,
-                        arguments: alias.id)
+                        arguments: location.id)
                     .then(
                   (value) {
-                    ModelAlias.byId(alias.id).then(
-                      (ModelAlias? model) {
+                    ModelLocation.byId(location.id).then(
+                      (ModelLocation? model) {
                         setState(() {
-                          _modelAlias = model;
+                          _modelLocation = model;
                         });
                       },
                     );
@@ -299,8 +300,8 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                     const InputDecoration(label: Text('Radius in meter.')),
                 onChanged: ((value) {
                   try {
-                    alias.radius = int.parse(value);
-                    alias.update();
+                    location.radius = int.parse(value);
+                    location.update();
                   } catch (e) {
                     //
                   }
@@ -319,9 +320,9 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
             trailing: IconButton(
                 icon: const Icon(Icons.edit),
                 onPressed: () {
-                  Navigator.pushNamed(
-                          context, AppRoutes.listAliasGroupsFromAlias.route,
-                          arguments: _modelAlias?.id)
+                  Navigator.pushNamed(context,
+                          AppRoutes.listLocationGroupsFromLocation.route,
+                          arguments: _modelLocation?.id)
                       .then(
                     (value) {
                       render();
@@ -350,69 +351,69 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
             const ListTile(
               title: Text('Typ'),
               subtitle: Text(
-                'Defines Alias and Trackpoints privacy level and functionalty.',
+                'Defines location and trackpoints privacy level and functionalty.',
                 softWrap: true,
               ),
             ),
             ListTile(
                 title: Container(
-                    color: AliasPrivacy.public.color,
+                    color: LocationPrivacy.public.color,
                     padding: const EdgeInsets.all(3),
                     child: const Text('  Public',
                         style: TextStyle(
                           color: Colors.white,
                         ))),
-                subtitle: const Text('This Alias supports all app futures:\n'
-                    '- Send Notification if permission granted\n- Lookup Address if permitted\n- make a Database record\n- publish to Device Calendar if activated in App Settings.'),
+                subtitle: const Text('This location supports all app futures:\n'
+                    '- Send notification if permission granted\n- Lookup address if permitted\n- make a database record\n- publish to Device Calendar if activated in App Settings.'),
                 leading: ValueListenableBuilder(
                     valueListenable: _privacy,
                     builder: (context, value, child) {
-                      return Radio<AliasPrivacy>(
-                          value: AliasPrivacy.public,
-                          groupValue: alias.privacy,
-                          onChanged: (AliasPrivacy? val) {
+                      return Radio<LocationPrivacy>(
+                          value: LocationPrivacy.public,
+                          groupValue: location.privacy,
+                          onChanged: (LocationPrivacy? val) {
                             setStatus(val);
                           });
                     })),
             ListTile(
                 title: Container(
-                    color: AliasPrivacy.privat.color,
+                    color: LocationPrivacy.privat.color,
                     padding: const EdgeInsets.all(3),
                     child: const Text('  Private',
                         style: TextStyle(
                           color: Colors.white,
                         ))),
                 subtitle: const Text(
-                    'This Alias is reduced to app internal futures only:\n'
-                    '- Send Notification if permission granted\n- Lookup Address if permitted\n- make a Database record'),
+                    'This location is reduced to app internal futures only:\n'
+                    '- Send notification if permission granted\n- Lookup address if permitted\n- make a database record'),
                 leading: ValueListenableBuilder(
                     valueListenable: _privacy,
                     builder: (context, value, child) {
-                      return Radio<AliasPrivacy>(
-                          value: AliasPrivacy.privat,
-                          groupValue: alias.privacy,
-                          onChanged: (AliasPrivacy? val) {
+                      return Radio<LocationPrivacy>(
+                          value: LocationPrivacy.privat,
+                          groupValue: location.privacy,
+                          onChanged: (LocationPrivacy? val) {
                             setStatus(val);
                           });
                     })),
             ListTile(
                 title: Container(
-                    color: AliasPrivacy.restricted.color,
+                    color: LocationPrivacy.restricted.color,
                     padding: const EdgeInsets.all(3),
                     child: const Text('  Restricted ',
                         style: TextStyle(
                           color: Colors.white,
                         ))),
                 subtitle: const Text(
-                    'This Alias functionality is reduced to be visible in apps map and:\n'
-                    '- Send Notification if permission granted'),
+                    'This location functionality is reduced to be visible in apps map and:\n'
+                    '- Send notification if permission granted'),
                 leading: ValueListenableBuilder(
                   valueListenable: _privacy,
                   builder: (context, value, child) {
-                    return Radio<AliasPrivacy>(
-                        value: AliasPrivacy.restricted,
-                        groupValue: alias.privacy,
-                        onChanged: (AliasPrivacy? state) {
+                    return Radio<LocationPrivacy>(
+                        value: LocationPrivacy.restricted,
+                        groupValue: location.privacy,
+                        onChanged: (LocationPrivacy? state) {
                           _privacy.value = !_privacy.value;
                           setStatus(state);
                         });
@@ -427,15 +428,15 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
                           color: Colors.white,
                         ))),
                 subtitle: const Text(
-                    'This Alias functionality is reduced to be visible in apps map and:\n'
+                    'This location functionality is reduced to be visible in apps map and:\n'
                     '- does nothing else'),
                 leading: ValueListenableBuilder(
                   valueListenable: _privacy,
                   builder: (context, value, child) {
-                    return Radio<AliasPrivacy>(
-                        value: AliasPrivacy.none,
-                        groupValue: alias.privacy,
-                        onChanged: (AliasPrivacy? state) {
+                    return Radio<LocationPrivacy>(
+                        value: LocationPrivacy.none,
+                        groupValue: location.privacy,
+                        onChanged: (LocationPrivacy? state) {
                           _privacy.value = !_privacy.value;
                           setStatus(state);
                         });
@@ -448,14 +449,14 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
       ListTile(
           title: const Text('Aktive if checked'),
           subtitle: const Text(
-            'If inactive this Alias has no functionality and is visible in garbage list only.',
+            'If inactive this location has no functionality and is visible in garbage list only.',
             softWrap: true,
           ),
           leading: AppWidgets.checkbox(
-            value: alias.isActive,
+            value: location.isActive,
             onChanged: (state) async {
-              alias.isActive = state ?? false;
-              await alias.update();
+              location.isActive = state ?? false;
+              await location.update();
             },
           ))
     ]);
@@ -467,9 +468,9 @@ class _WidgetAliasEdit extends State<WidgetAliasEdit> {
     }
   }
 
-  void setStatus(AliasPrivacy? state) {
-    _modelAlias?.privacy = (state ?? AliasPrivacy.restricted);
-    _modelAlias?.update();
+  void setStatus(LocationPrivacy? state) {
+    _modelLocation?.privacy = (state ?? LocationPrivacy.restricted);
+    _modelLocation?.update();
     _privacy.value = !_privacy.value;
   }
 }

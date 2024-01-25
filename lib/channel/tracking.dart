@@ -130,7 +130,7 @@ class Tracker {
     await claculateGPSPoints(gps);
 
     /// collect gps related data
-    GpsLocation gpsLocation = await GpsLocation.location(gps);
+    GpsLocation gpsLocation = await GpsLocation.gpsLocation(gps);
 
     /// remember old status
     TrackingStatus newTrackingStatus = oldTrackingStatus;
@@ -167,9 +167,9 @@ class Tracker {
         if (!isStillMoving) {
           newTrackingStatus = setStatusStanding(gps);
 
-          await autoCreateAlias(gps, gpsLocation);
+          await autoCreateLocation(gps, gpsLocation);
 
-          /// autocreate alias?
+          /// autocreate location?
         }
       }
     }
@@ -191,7 +191,7 @@ class Tracker {
         if (!skipRecord) {
           logger.log('new tracking status MOVING');
           gpsLocation =
-              await GpsLocation.location(gpsLastStatusStanding ?? gps);
+              await GpsLocation.gpsLocation(gpsLastStatusStanding ?? gps);
           await gpsLocation.executeStatusMoving();
           logger.log('status MOVING finished');
         }
@@ -211,26 +211,27 @@ class Tracker {
     return await serializeState(gps);
   }
 
-  Future<void> autoCreateAlias(GPS gps, GpsLocation gpsLocation) async {
-    if ((await Cache.appSettingStatusStandingRequireAlias.load<bool>(true)) &&
-        gpsLocation.aliasModels.isEmpty) {
+  Future<void> autoCreateLocation(GPS gps, GpsLocation gpsLocation) async {
+    if ((await Cache.appSettingStatusStandingRequireLocation
+            .load<bool>(true)) &&
+        gpsLocation.locationModels.isEmpty) {
       try {
         /// autocreate must be activated
-        if (await Cache.appSettingAutocreateAlias.load<bool>(false)) {
+        if (await Cache.appSettingAutocreateLocation.load<bool>(false)) {
           /// check if enough time has passed
           if ((gpsLastStatusMoving ??= gps).time.isBefore(gps.time.subtract(
-              await Cache.appSettingAutocreateAliasDuration.load<Duration>(
-                  AppUserSetting(Cache.appSettingAutocreateAliasDuration)
+              await Cache.appSettingAutocreateLocationDuration.load<Duration>(
+                  AppUserSetting(Cache.appSettingAutocreateLocationDuration)
                       .defaultValue as Duration)))) {
             gps = GPS.average(gpsCalcPoints);
             gps.time = DateTime.now();
             await Cache.reload();
-            await (await GpsLocation.location(gpsLastStatusStanding ?? gps))
-                .autocreateAlias();
+            await (await GpsLocation.gpsLocation(gpsLastStatusStanding ?? gps))
+                .autocreateLocation();
           }
         }
       } catch (e, stk) {
-        logger.error('autocreate alias: $e', stk);
+        logger.error('autocreate location: $e', stk);
       }
     }
   }
@@ -260,17 +261,19 @@ class Tracker {
     final distanceTreshold =
         await cache.load<int>(AppUserSetting(cache).defaultValue as int);
 
-    if (gpsLocation.aliasModels.isEmpty &&
-        (await Cache.appSettingStatusStandingRequireAlias.load<bool>(true))) {
+    if (gpsLocation.locationModels.isEmpty &&
+        (await Cache.appSettingStatusStandingRequireLocation
+            .load<bool>(true))) {
       return true;
     }
-    if (gpsLocation.aliasModels.isEmpty &&
-        !(await Cache.appSettingStatusStandingRequireAlias.load<bool>(true)) &&
+    if (gpsLocation.locationModels.isEmpty &&
+        !(await Cache.appSettingStatusStandingRequireLocation
+            .load<bool>(true)) &&
         !atLeastOneIsOutside(gps, distanceTreshold)) {
       return false;
     }
 
-    if (gpsLocation.aliasModels.isNotEmpty &&
+    if (gpsLocation.locationModels.isNotEmpty &&
         !atLeastOneIsOutside(gps, gpsLocation.radius)) {
       return false;
     }
@@ -282,13 +285,13 @@ class Tracker {
   // otherwise execute status standing
   Future<bool> checkIfStillStanding(GPS gps) async {
     final standingLocation =
-        (await GpsLocation.location(gpsLastStatusStanding ?? gps));
+        (await GpsLocation.gpsLocation(gpsLastStatusStanding ?? gps));
 
-    bool standingRequireAlias =
-        (await Cache.appSettingStatusStandingRequireAlias.load<bool>(true));
+    bool standingRequireLocation =
+        (await Cache.appSettingStatusStandingRequireLocation.load<bool>(true));
 
     // standing not allowed
-    if (standingLocation.aliasModels.isEmpty && standingRequireAlias) {
+    if (standingLocation.locationModels.isEmpty && standingRequireLocation) {
       return false;
     }
 
@@ -297,13 +300,13 @@ class Tracker {
         await cache.load<int>(AppUserSetting(cache).defaultValue as int);
 
     // moved away from last standing location
-    if (standingLocation.aliasModels.isEmpty &&
-        !standingRequireAlias &&
+    if (standingLocation.locationModels.isEmpty &&
+        !standingRequireLocation &&
         !atLeastOneIsInside(gpsLastStatusStanding ?? gps, distanceTreshold)) {
       return false;
     }
-    // moved away from alias
-    if (standingLocation.aliasModels.isNotEmpty &&
+    // moved away from location
+    if (standingLocation.locationModels.isNotEmpty &&
         !atLeastOneIsInside(
             gpsLastStatusStanding ?? gps, standingLocation.radius)) {
       return false;
@@ -314,13 +317,13 @@ class Tracker {
   }
 
   Future<GPS> claculateGPSPoints(GPS gps) async {
-    Duration autoCreateAliasDefault =
-        AppUserSetting(Cache.appSettingAutocreateAliasDuration).defaultValue
+    Duration autoCreateLocationDefault =
+        AppUserSetting(Cache.appSettingAutocreateLocationDuration).defaultValue
             as Duration;
 
-    Duration autoCreateAliasDuration = await Cache
-        .appSettingAutocreateAliasDuration
-        .load<Duration>(autoCreateAliasDefault);
+    Duration autoCreateLocationDuration = await Cache
+        .appSettingAutocreateLocationDuration
+        .load<Duration>(autoCreateLocationDefault);
 
     Duration trackpointInterval =
         await Cache.appSettingBackgroundTrackingInterval.load<Duration>(
@@ -331,9 +334,9 @@ class Tracker {
         .load<Duration>(AppUserSetting(Cache.appSettingTimeRangeTreshold)
             .defaultValue as Duration);
 
-    int maxGpsPoints = ((autoCreateAliasDuration.inSeconds == 0
-                ? autoCreateAliasDefault.inSeconds
-                : autoCreateAliasDuration.inSeconds) /
+    int maxGpsPoints = ((autoCreateLocationDuration.inSeconds == 0
+                ? autoCreateLocationDefault.inSeconds
+                : autoCreateLocationDuration.inSeconds) /
             trackpointInterval.inSeconds)
         .ceil();
 

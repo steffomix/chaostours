@@ -20,7 +20,7 @@ import 'package:chaostours/database/cache.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/channel/tracking.dart';
-import 'package:chaostours/shared/shared_trackpoint_alias.dart';
+import 'package:chaostours/shared/shared_trackpoint_location.dart';
 import 'package:chaostours/shared/shared_trackpoint_task.dart';
 import 'package:chaostours/shared/shared_trackpoint_user.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
@@ -189,19 +189,19 @@ class TypeAdapter {
   static GpsPrecision? deserializeGpsPrecision(String? value) =>
       value == null ? GpsPrecision.best : GpsPrecision.values.byName(value);
 
-  /// List<SharedTrackpointAlias>
-  static List<String> serializeSharedTrackpointAliasList(
-          List<SharedTrackpointAlias> value) =>
+  /// List<SharedTrackpointLocation>
+  static List<String> serializeSharedTrackpointLocationList(
+          List<SharedTrackpointLocation> value) =>
       value
           .map(
             (e) => e.toString(),
           )
           .toList();
-  static List<SharedTrackpointAlias> deserializeSharedrackpointAliasList(
+  static List<SharedTrackpointLocation> deserializeSharedrackpointLocationList(
           List<String>? value) =>
       value == null
           ? []
-          : value.map((e) => SharedTrackpointAlias.toObject(e)).toList();
+          : value.map((e) => SharedTrackpointLocation.toObject(e)).toList();
 
   /// List<SharedTrackpointUser>
   static List<String> serializeSharedTrackpointUserList(

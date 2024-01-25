@@ -22,13 +22,13 @@ import 'package:chaostours/view/system/widget_import_export.dart';
 import 'package:chaostours/view/system/widget_app_settings.dart';
 import 'package:chaostours/view/system/widget_database_explorer.dart';
 //
-import 'package:chaostours/view/alias/widget_alias_list.dart';
-import 'package:chaostours/view/alias/widget_alias_edit.dart';
-import 'package:chaostours/view/alias/widget_alias__group_edit.dart';
-import 'package:chaostours/view/alias/widget_alias__group_list.dart';
-import 'package:chaostours/view/alias/widget_aliases_from_alias__group_list.dart';
-import 'package:chaostours/view/alias/widget_alias__groups_from_alias_list.dart';
-import 'package:chaostours/view/alias/widget_edit_alias_osm.dart';
+import 'package:chaostours/view/location/widget_location_list.dart';
+import 'package:chaostours/view/location/widget_location_edit.dart';
+import 'package:chaostours/view/location/widget_location__group_edit.dart';
+import 'package:chaostours/view/location/widget_location__group_list.dart';
+import 'package:chaostours/view/location/widget_locations_from_location__group_list.dart';
+import 'package:chaostours/view/location/widget_location__groups_from_location_list.dart';
+import 'package:chaostours/view/location/widget_edit_location_osm.dart';
 //
 import 'package:chaostours/view/user/widget_user_list.dart';
 import 'package:chaostours/view/user/widget_user_edit.dart';
@@ -65,15 +65,15 @@ enum AppRoutes {
   listTrackpoints,
   editTrackPoint,
 
-  // alias
-  listAlias,
-  editAlias,
+  // location
+  listLocation,
+  editLocation,
 
-  // alias group
-  listAliasGroup,
-  editAliasGroup,
-  listAliasGroupsFromAlias,
-  listAliasesFromAliasGroup,
+  // allocationias group
+  listLocationGroup,
+  editLocationGroup,
+  listLocationGroupsFromLocation,
+  listLocationsFromLocationGroup,
 
   // task
   listTask,
@@ -153,17 +153,19 @@ enum AppRoutes {
       AppRoutes.listTasksFromTaskGroup.route: (context) =>
           const WidgetTasksFromTaskGroupList(),
 
-      // alias
-      AppRoutes.listAlias.route: (context) => const WidgetAliasList(),
-      AppRoutes.editAlias.route: (context) => const WidgetAliasEdit(),
+      // location
+      AppRoutes.listLocation.route: (context) => const WidgetLocationList(),
+      AppRoutes.editLocation.route: (context) => const WidgetLocationEdit(),
 
-      // alias group
-      AppRoutes.listAliasGroup.route: (context) => const WidgetAliasGroupList(),
-      AppRoutes.editAliasGroup.route: (context) => const WidgetAliasGroupEdit(),
-      AppRoutes.listAliasGroupsFromAlias.route: (context) =>
-          const WidgetAliasGroupsFromAliasList(),
-      AppRoutes.listAliasesFromAliasGroup.route: (context) =>
-          const WidgetAliasesFromAliasGroupList(),
+      // location group
+      AppRoutes.listLocationGroup.route: (context) =>
+          const WidgetLocationGroupList(),
+      AppRoutes.editLocationGroup.route: (context) =>
+          const WidgetLocationGroupEdit(),
+      AppRoutes.listLocationGroupsFromLocation.route: (context) =>
+          const WidgetLocationGroupsFromLocationList(),
+      AppRoutes.listLocationsFromLocationGroup.route: (context) =>
+          const WidgetLocationsFromLocationGroupList(),
 
       // color scheme
       AppRoutes.colorSchemePicker.route: (context) =>

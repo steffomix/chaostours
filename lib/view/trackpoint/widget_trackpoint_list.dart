@@ -29,8 +29,8 @@ import 'package:chaostours/util.dart' as util;
 
 enum TrackpointListArguments {
   none,
-  alias,
-  aliasGroup,
+  location,
+  locationGroup,
   user,
   userGroup,
   task,
@@ -57,8 +57,8 @@ class _WidgetTrackPointsState extends BaseWidgetState<WidgetTrackPoints> {
   int getLimit() => 20;
 
   TrackpointListArguments mode = TrackpointListArguments.none;
-  int? idAlias;
-  int? idAliasGroup;
+  int? idLocation;
+  int? idLocationGroup;
   int? idUser;
   int? idUserGroup;
   int? idTask;
@@ -79,18 +79,18 @@ class _WidgetTrackPointsState extends BaseWidgetState<WidgetTrackPoints> {
         throw 'id must be > 1, given is $id in "$query"';
       }
       String key = parts[1];
-      if (key == TrackpointListArguments.alias.name) {
-        idAlias = id;
-        trackpointSource = 'Alias #$id';
+      if (key == TrackpointListArguments.location.name) {
+        idLocation = id;
+        trackpointSource = 'Location #$id';
       } else if (key == TrackpointListArguments.user.name) {
         idUser = id;
         trackpointSource = 'User #$id';
       } else if (key == TrackpointListArguments.task.name) {
         idTask = id;
         trackpointSource = 'Task #$id';
-      } else if (key == TrackpointListArguments.aliasGroup.name) {
-        idAliasGroup = id;
-        trackpointSource = 'Alias group #$id';
+      } else if (key == TrackpointListArguments.locationGroup.name) {
+        idLocationGroup = id;
+        trackpointSource = 'Location group #$id';
       } else if (key == TrackpointListArguments.userGroup.name) {
         idUserGroup = id;
         trackpointSource = 'User group #$id';
@@ -144,10 +144,10 @@ class _WidgetTrackPointsState extends BaseWidgetState<WidgetTrackPoints> {
   Future<int> loadItems({int limit = 50, required int offset}) async {
     var items = await ModelTrackPoint.search(_searchController.text,
         isActive: _isSelectActive.value,
-        idAlias: idAlias,
+        idLocation: idLocation,
         idUser: idUser,
         idTask: idTask,
-        idAliasGroup: idAliasGroup,
+        idLocationGroup: idLocationGroup,
         idUserGroup: idUserGroup,
         idTaskGroup: idTaskGroup);
     if (_loadedItems.isNotEmpty) {
@@ -204,8 +204,8 @@ class _WidgetTrackPointsState extends BaseWidgetState<WidgetTrackPoints> {
                 child: Text('OSM Addr: ${model.address}')),
             Column(
               children: [
-                const Text('Location Alias'),
-                ...renderAliasList(trackpoint: model)
+                const Text('Location'),
+                ...renderLocationList(trackpoint: model)
               ],
             ),
             divider,
@@ -242,18 +242,18 @@ class _WidgetTrackPointsState extends BaseWidgetState<WidgetTrackPoints> {
     ];
   }
 
-  List<Widget> renderAliasList(
+  List<Widget> renderLocationList(
       {required ModelTrackPoint trackpoint, int index = 0}) {
     List<Widget> widgets = [];
 
-    trackpoint.aliasModels.sort(
+    trackpoint.locationModels.sort(
       (a, b) {
         return a.distance(trackpoint.gps).compareTo(b.distance(trackpoint.gps));
       },
     );
 
     int index = 0;
-    for (var model in trackpoint.aliasModels) {
+    for (var model in trackpoint.locationModels) {
       int distance = GPS.distance(trackpoint.gps, model.model.gps).round();
       widgets.add(ListTile(
           leading: Icon(Icons.square, color: model.model.privacy.color),
@@ -261,7 +261,7 @@ class _WidgetTrackPointsState extends BaseWidgetState<WidgetTrackPoints> {
               alignment: Alignment.centerLeft,
               child: TextButton(
                   onPressed: () {
-                    Navigator.pushNamed(context, AppRoutes.editAlias.route,
+                    Navigator.pushNamed(context, AppRoutes.editLocation.route,
                             arguments: model.id)
                         .then(
                       (value) {

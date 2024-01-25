@@ -21,40 +21,41 @@ import 'package:chaostours/view/system/app_widgets.dart';
 import 'package:chaostours/view/system/app_base_widget.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/conf/app_routes.dart';
-import 'package:chaostours/model/model_alias_group.dart';
-import 'package:chaostours/model/model_alias.dart';
+import 'package:chaostours/model/model_location_group.dart';
+import 'package:chaostours/model/model_location.dart';
 import 'package:chaostours/util.dart' as util;
 
-class WidgetAliasGroupsFromAliasList extends BaseWidget {
-  const WidgetAliasGroupsFromAliasList({super.key});
+class WidgetLocationGroupsFromLocationList extends BaseWidget {
+  const WidgetLocationGroupsFromLocationList({super.key});
 
   @override
-  State<WidgetAliasGroupsFromAliasList> createState() =>
-      _WidgetAliasGroupsFromAliasList();
+  State<WidgetLocationGroupsFromLocationList> createState() =>
+      _WidgetLocationGroupsFromLocationList();
 }
 
-class _WidgetAliasGroupsFromAliasList
-    extends BaseWidgetState<WidgetAliasGroupsFromAliasList> {
+class _WidgetLocationGroupsFromLocationList
+    extends BaseWidgetState<WidgetLocationGroupsFromLocationList> {
   // ignore: unused_field
-  static final Logger logger = Logger.logger<WidgetAliasGroupsFromAliasList>();
+  static final Logger logger =
+      Logger.logger<WidgetLocationGroupsFromLocationList>();
 
   final TextEditingController _searchTextController = TextEditingController();
   final List<Widget> _loadedWidgets = [];
   final _navBarBuilder = NavBarWithBin();
-  ModelAlias? _model;
+  ModelLocation? _model;
   List<int>? _ids;
   // items per page
   int getLimit() => 30;
 
   @override
   Future<void> initialize(BuildContext context, Object? args) async {
-    _model = await ModelAlias.byId(args as int);
+    _model = await ModelLocation.byId(args as int);
     _ids ??= await _model?.groupIds() ?? [];
   }
 
   @override
   Future<int> loadItems({required int offset, int limit = 20}) async {
-    var newItems = await ModelAliasGroup.select(
+    var newItems = await ModelLocationGroup.select(
         limit: limit,
         offset: offset,
         search: _searchTextController.text,
@@ -75,12 +76,12 @@ class _WidgetAliasGroupsFromAliasList
     render();
   }
 
-  Widget renderRow(ModelAliasGroup model) {
+  Widget renderRow(ModelLocationGroup model) {
     return ListTile(
       leading: IconButton(
         icon: const Icon(Icons.edit),
         onPressed: () {
-          Navigator.pushNamed(context, AppRoutes.editAliasGroup.route,
+          Navigator.pushNamed(context, AppRoutes.editLocationGroup.route,
                   arguments: model.id)
               .then(
             (value) {
@@ -117,14 +118,14 @@ class _WidgetAliasGroupsFromAliasList
   Scaffold renderScaffold(Widget body) {
     return AppWidgets.scaffold(context,
         body: body,
-        title: 'Groups from Alias',
+        title: 'Groups from location',
         navBar: _navBarBuilder.navBar(context,
-            name: 'Alias Group',
+            name: 'Location group',
             onCreate: (context) async {
-              final model = await AppWidgets.createAliasGroup(context);
+              final model = await AppWidgets.createLocationGroup(context);
               if (model != null && mounted) {
                 await Navigator.pushNamed(
-                    context, AppRoutes.editAliasGroup.route,
+                    context, AppRoutes.editLocationGroup.route,
                     arguments: model.id);
                 resetLoader();
               }

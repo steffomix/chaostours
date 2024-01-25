@@ -22,17 +22,17 @@ import 'package:chaostours/conf/app_user_settings.dart';
 import 'package:chaostours/logger.dart';
 
 class CalendarEventId {
-  int aliasGroupId;
+  int locationGroupId;
   String calendarId;
   String eventId;
   static const String separator = ',';
 
   CalendarEventId(
-      {required this.aliasGroupId, this.calendarId = '', this.eventId = ''});
+      {required this.locationGroupId, this.calendarId = '', this.eventId = ''});
 
   @override
   String toString() {
-    return '$aliasGroupId$calendarId$separator$eventId';
+    return '$locationGroupId$calendarId$separator$eventId';
   }
 
   static CalendarEventId toObject(String s) {
@@ -40,14 +40,14 @@ class CalendarEventId {
 
     if (parts.length == 3) {
       return CalendarEventId(
-          aliasGroupId: int.parse(parts[0]),
+          locationGroupId: int.parse(parts[0]),
           calendarId: parts[1],
           eventId: parts[2]);
     } else if (parts.length == 2) {
       return CalendarEventId(
-          aliasGroupId: int.parse(parts[0]), eventId: parts[1]);
+          locationGroupId: int.parse(parts[0]), eventId: parts[1]);
     } else {
-      return CalendarEventId(aliasGroupId: 0, eventId: '');
+      return CalendarEventId(locationGroupId: 0, eventId: '');
     }
   }
 }

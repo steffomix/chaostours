@@ -34,7 +34,7 @@ import 'package:chaostours/conf/app_user_settings.dart';
 import 'package:chaostours/screen.dart';
 import 'package:chaostours/event_manager.dart';
 import 'package:chaostours/view/system/app_widgets.dart';
-import 'package:chaostours/model/model_alias.dart';
+import 'package:chaostours/model/model_location.dart';
 import 'package:chaostours/channel/data_channel.dart';
 import 'package:chaostours/conf/app_colors.dart';
 
@@ -62,11 +62,12 @@ class _WidgetOsm extends State<WidgetOsm> {
   //late SizeChangedLayoutNotifier screenListener;
 
   /// osm tools to draw circles
-  final _AliasTrackingRenderer aliasRenderer = _AliasTrackingRenderer();
+  final _LocationTrackingRenderer locationRenderer =
+      _LocationTrackingRenderer();
 
-  /// alias id
+  /// location id
   int _id = 0;
-  ModelAlias? _modelAlias;
+  ModelLocation? _modelLocation;
 
   /// map _controller position
   GPS? _gps;
@@ -98,7 +99,7 @@ class _WidgetOsm extends State<WidgetOsm> {
   }
 
   void onTracking(DataChannel e) async {
-    aliasRenderer.renderAlias(mapController);
+    locationRenderer.renderLocation(mapController);
   }
 
   Future<void> lookupGps([String? query]) async {
@@ -327,7 +328,7 @@ class _WidgetOsm extends State<WidgetOsm> {
     });
   }
 
-  Future<void> createAlias() async {
+  Future<void> createLocation() async {
     var pos = await mapController.centerMap;
     if (!mounted) {
       return;
@@ -335,7 +336,7 @@ class _WidgetOsm extends State<WidgetOsm> {
     AppWidgets.dialog(context: context, contents: [
       Text(_id > 0
           ? 'Update Position?'
-          : 'Create new Alias on current Position?')
+          : 'Create new location on current Position?')
     ], buttons: [
       TextButton(
         child: const Text('Cancel'),
@@ -345,23 +346,23 @@ class _WidgetOsm extends State<WidgetOsm> {
         child: const Text('Yes'),
         onPressed: () async {
           if (_id > 0) {
-            if (_modelAlias == null) {
+            if (_modelLocation == null) {
               return;
             }
-            ModelAlias alias = _modelAlias!;
-            alias.gps = GPS(pos.latitude, pos.longitude);
-            await alias.update();
-            Fluttertoast.showToast(msg: 'Alias location updated');
+            ModelLocation location = _modelLocation!;
+            location.gps = GPS(pos.latitude, pos.longitude);
+            await location.update();
+            Fluttertoast.showToast(msg: 'Location updated');
             if (mounted) {
               Navigator.pop(context);
             }
           } else {
-            /// create alias
+            /// create location
             addr.Address address =
                 (await addr.Address(GPS(pos.latitude, pos.longitude))
-                    .lookup(OsmLookupConditions.onUserCreateAlias));
+                    .lookup(OsmLookupConditions.onUserCreateLocation));
 
-            ModelAlias alias = ModelAlias(
+            ModelLocation location = ModelLocation(
                 gps: GPS(pos.latitude, pos.longitude),
                 title: address.address,
                 description: address.addressDetails,
@@ -370,13 +371,13 @@ class _WidgetOsm extends State<WidgetOsm> {
                         .defaultValue as int),
                 lastVisited: DateTime.now());
 
-            await alias.insert();
-            aliasRenderer.renderAlias(mapController);
-            Fluttertoast.showToast(msg: 'Alias created');
+            await location.insert();
+            locationRenderer.renderLocation(mapController);
+            Fluttertoast.showToast(msg: 'Location created');
             if (mounted) {
               Navigator.pop(context);
-              Navigator.pushNamed(context, AppRoutes.editAlias.route,
-                  arguments: alias.id);
+              Navigator.pushNamed(context, AppRoutes.editLocation.route,
+                  arguments: location.id);
             }
           }
         },
@@ -394,7 +395,7 @@ class _WidgetOsm extends State<WidgetOsm> {
           const BottomNavigationBarItem(
               icon: Icon(Icons.map), label: 'Google Maps'),
           const BottomNavigationBarItem(
-              icon: Icon(Icons.search), label: 'Alias'),
+              icon: Icon(Icons.search), label: 'Location'),
           const BottomNavigationBarItem(
               icon: Icon(Icons.cancel), label: 'Abbrechen'),
         ],
@@ -402,22 +403,22 @@ class _WidgetOsm extends State<WidgetOsm> {
           /// get current position
           switch (buttonId) {
             case 0:
-              createAlias();
+              createLocation();
               break;
             case 1:
               launchGoogleMaps();
               break;
             case 2:
-              // search for alias
+              // search for location
               mapController.centerMap.then((GeoPoint pos) {
-                ModelAlias.byArea(gps: GPS(pos.latitude, pos.longitude))
-                    .then((List<ModelAlias> models) async {
+                ModelLocation.byArea(gps: GPS(pos.latitude, pos.longitude))
+                    .then((List<ModelLocation> models) async {
                   if (models.isNotEmpty && mounted) {
                     await Navigator.pushNamed(
-                        context, AppRoutes.editAlias.route,
+                        context, AppRoutes.editLocation.route,
                         arguments: models.first.id);
                     if (mounted) {
-                      aliasRenderer.renderAlias(mapController);
+                      locationRenderer.renderLocation(mapController);
                     }
                   }
                 });
@@ -441,10 +442,10 @@ class _WidgetOsm extends State<WidgetOsm> {
     if (mounted) {
       _id = (ModalRoute.of(context)?.settings.arguments as int?) ?? 0;
 
-      if (_id > 0 && _modelAlias == null) {
-        ModelAlias? model = await ModelAlias.byId(_id);
+      if (_id > 0 && _modelLocation == null) {
+        ModelLocation? model = await ModelLocation.byId(_id);
         if (model != null) {
-          _modelAlias = model;
+          _modelLocation = model;
           _gps = model.gps;
           _addressNotifier.value = model.title;
         }
@@ -477,7 +478,7 @@ class _WidgetOsm extends State<WidgetOsm> {
             onMapIsReady: (bool ready) {
               Future.delayed(const Duration(seconds: 2), () {
                 MapCenter.draw(mapController);
-                aliasRenderer.renderAlias(mapController);
+                locationRenderer.renderLocation(mapController);
               });
             },
             osmOption: const OSMOption(
@@ -492,7 +493,7 @@ class _WidgetOsm extends State<WidgetOsm> {
             controller: mapController,
           );
           return AppWidgets.scaffold(context,
-              appBar: AppBar(title: const Text('OSM & Alias')),
+              appBar: AppBar(title: const Text('OSM & Location')),
               body: Stack(
                   children: [_osmFlutter!, searchResultContainer(), infoBox()]),
               navBar: navBar(context));
@@ -504,8 +505,8 @@ class _WidgetOsm extends State<WidgetOsm> {
   }
 }
 
-class _AliasTrackingRenderer {
-  static final Logger logger = Logger.logger<_AliasTrackingRenderer>();
+class _LocationTrackingRenderer {
+  static final Logger logger = Logger.logger<_LocationTrackingRenderer>();
 
   //static final bridge = DataBridge();
   static int circleId = 0;
@@ -529,7 +530,7 @@ class _AliasTrackingRenderer {
     return source;
   }
 
-  Future<void> renderAlias(MapController controller) async {
+  Future<void> renderLocation(MapController controller) async {
     DataChannel channel = DataChannel();
 
     if (channel.gpsPoints.isEmpty) {
@@ -558,15 +559,15 @@ class _AliasTrackingRenderer {
       strokeWidth: 10,
     ));
 
-    for (var alias in await ModelAlias.byArea(
+    for (var location in await ModelLocation.byArea(
         gps: GPS(geoPoint.latitude, geoPoint.longitude), gpsArea: 1000 * 50)) {
       try {
         controller.drawCircle(CircleOSM(
           key: key,
           centerPoint:
-              GeoPoint(latitude: alias.gps.lat, longitude: alias.gps.lon),
-          radius: alias.radius.toDouble(),
-          color: alias.privacy.color,
+              GeoPoint(latitude: location.gps.lat, longitude: location.gps.lon),
+          radius: location.radius.toDouble(),
+          color: location.privacy.color,
           strokeWidth: 10,
         ));
       } catch (e, stk) {
@@ -604,7 +605,7 @@ class _AliasTrackingRenderer {
               latitude: lastStatusStanding.lat,
               longitude: lastStatusStanding.lon),
           radius: 5,
-          color: AppColors.lastTrackingStatusWithAliasDot.color,
+          color: AppColors.lastTrackingStatusWithLocationDot.color,
           strokeWidth: 10,
         ));
       }
