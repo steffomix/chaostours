@@ -64,7 +64,7 @@ android {
     // source: https://stackoverflow.com/a/43230396/4823385
     signingConfigs {
             release {
-                keyLocation keystoreProperties['keyLocation']
+                keyAlias keystoreProperties['keyAlias']
                 keyPassword keystoreProperties['keyPassword']
                 storeFile file(keystoreProperties['storeFile'])
                 storePassword keystoreProperties['storePassword']

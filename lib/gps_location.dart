@@ -23,7 +23,6 @@ import 'dart:math' as math;
 
 ///
 import 'package:chaostours/channel/notification_channel.dart';
-import 'package:chaostours/database/database.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_user.dart';
 import 'package:chaostours/shared/shared_trackpoint_location.dart';
@@ -65,7 +64,8 @@ class GpsLocation {
 
   GpsLocation._location({required this.gps, required this.locationModels});
 
-  static Future<GpsLocation> gpsLocation(GPS gps) async {
+  static Future<GpsLocation> gpsLocation(GPS gps,
+      [bool updateSharedLocations = false]) async {
     List<ModelLocation> allModels = await ModelLocation.byArea(
         gps: gps,
         gpsArea: math.max(
@@ -104,7 +104,13 @@ class GpsLocation {
 
     location._privacy = priv;
     location.radius = rad;
-    await location.updateSharedLocationList();
+    if (updateSharedLocations) {
+      await Cache.backgroundSharedLocationList
+          .save<List<SharedTrackpointLocation>>(location.locationModels
+              .map((model) => SharedTrackpointLocation(id: model.id, notes: ''))
+              .toList());
+    }
+
     return location;
   }
 
@@ -122,24 +128,6 @@ class GpsLocation {
         .addSharedAssets(this);
   }
 
-  Future<void> updateSharedLocationList() async {
-    List<SharedTrackpointLocation> oldShared = await Cache
-        .backgroundSharedLocationList
-        .load<List<SharedTrackpointLocation>>([]);
-    List<SharedTrackpointLocation> newShared = [];
-    for (var model in locationModels) {
-      newShared.add(oldShared
-              .where(
-                (old) => old.id == model.id,
-              )
-              .firstOrNull ??
-          SharedTrackpointLocation(id: model.id, notes: ''));
-    }
-
-    await Cache.backgroundSharedLocationList
-        .save<List<SharedTrackpointLocation>>(newShared);
-  }
-
   Future<GpsLocation> autocreateLocation() async {
     /// get address
     tracker.address = await Address(gps)
@@ -155,8 +143,7 @@ class GpsLocation {
         radius: radius);
 
     await newModel.insert();
-    final newLocation = await gpsLocation(gps);
-    await newLocation.updateSharedLocationList();
+    final newLocation = await gpsLocation(gps, true);
     return newLocation;
   }
 
@@ -218,8 +205,6 @@ class GpsLocation {
     if (privacy.level > LocationPrivacy.restricted.level) {
       return;
     }
-
-    await updateSharedLocationList();
 
     NotificationChannel.sendTrackingUpdateNotification(
         title: 'Tick Update',

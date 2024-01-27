@@ -495,7 +495,7 @@ class _WelcomeState extends State<Welcome> {
     await Cache.backgroundTrackPointNotes
         .save<String>('What a great location today!');
 
-    GpsLocation location = await GpsLocation.gpsLocation(gps!);
+    GpsLocation location = await GpsLocation.gpsLocation(gps!, true);
     location.address = address;
 
     await location.executeStatusMoving();

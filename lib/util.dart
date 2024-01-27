@@ -75,12 +75,7 @@ Duration extractTime(DateTime t) {
 }
 
 DateTime removeTime(DateTime time) {
-  return time
-    ..subtract(Duration(hours: time.hour))
-    ..subtract(Duration(minutes: time.minute))
-    ..subtract(Duration(seconds: time.second))
-    ..subtract(Duration(milliseconds: time.millisecond))
-    ..subtract(Duration(microseconds: time.microsecond));
+  return time.subtract(extractTime(time));
 }
 
 String formatDateFilename(DateTime t) {

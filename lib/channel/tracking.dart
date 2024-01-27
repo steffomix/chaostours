@@ -26,6 +26,7 @@ import 'package:chaostours/gps.dart';
 import 'package:chaostours/database/cache.dart';
 import 'package:chaostours/gps_location.dart';
 import 'package:chaostours/database/type_adapter.dart';
+import 'package:chaostours/shared/shared_trackpoint_location.dart';
 
 enum TrackingStatus {
   none(0),
@@ -51,6 +52,13 @@ class Tracker {
   factory Tracker() => _instance ??= Tracker._();
 
   int tick = 0;
+
+  int defaultDistanceTreshold =
+      AppUserSetting(Cache.appSettingDistanceTreshold).defaultValue as int;
+
+  bool statusStandingRequireLocation =
+      AppUserSetting(Cache.appSettingStatusStandingRequireLocation).defaultValue
+          as bool;
 
   DateTime upTimeStart = DateTime.now();
 
@@ -116,6 +124,18 @@ class Tracker {
     ///
     GPS gps = await GPS.gps();
 
+    // load always used cache data
+
+    const cacheDistanceTreshold = Cache.appSettingDistanceTreshold;
+    defaultDistanceTreshold = await cacheDistanceTreshold
+        .load<int>(AppUserSetting(cacheDistanceTreshold).defaultValue as int);
+
+    const cacheStandingRequireLocation =
+        Cache.appSettingStatusStandingRequireLocation;
+    statusStandingRequireLocation =
+        await cacheStandingRequireLocation.load<bool>(
+            AppUserSetting(cacheStandingRequireLocation).defaultValue as bool);
+
     // load old gps points
     if (trackingStatus == null) {
       //gpsPoints = await Cache.backgroundGpsPoints.load<List<GPS>>([]);
@@ -130,7 +150,7 @@ class Tracker {
     await claculateGPSPoints(gps);
 
     /// collect gps related data
-    GpsLocation gpsLocation = await GpsLocation.gpsLocation(gps);
+    GpsLocation gpsLocation = await GpsLocation.gpsLocation(gps, true);
 
     /// remember old status
     TrackingStatus newTrackingStatus = oldTrackingStatus;
@@ -144,7 +164,7 @@ class Tracker {
     if (triggeredTrackingStatus != TrackingStatus.none) {
       if (triggeredTrackingStatus == TrackingStatus.moving) {
         // status changed by user
-        newTrackingStatus = setStatusMoving(gps);
+        newTrackingStatus = await setStatusMoving(gps);
       } else if (triggeredTrackingStatus == TrackingStatus.standing) {
         gpsPoints.clear();
         gps = await claculateGPSPoints(gps);
@@ -159,7 +179,7 @@ class Tracker {
       if (oldTrackingStatus == TrackingStatus.standing) {
         //
         if (!(await checkIfStillStanding(gps))) {
-          newTrackingStatus = setStatusMoving(gps);
+          newTrackingStatus = await setStatusMoving(gps);
         }
       } else if (oldTrackingStatus == TrackingStatus.moving) {
         bool isStillMoving = await checkIfStillMoving(gps, gpsLocation);
@@ -183,7 +203,6 @@ class Tracker {
       ///
     } else {
       oldTrackingStatus = newTrackingStatus;
-      await Cache.reload();
 
       /// we started moving
       if (newTrackingStatus == TrackingStatus.moving) {
@@ -225,7 +244,6 @@ class Tracker {
                       .defaultValue as Duration)))) {
             gps = GPS.average(gpsCalcPoints);
             gps.time = DateTime.now();
-            await Cache.reload();
             await (await GpsLocation.gpsLocation(gpsLastStatusStanding ?? gps))
                 .autocreateLocation();
           }
@@ -257,19 +275,13 @@ class Tracker {
   }
 
   Future<bool> checkIfStillMoving(GPS gps, GpsLocation gpsLocation) async {
-    const cache = Cache.appSettingDistanceTreshold;
-    final distanceTreshold =
-        await cache.load<int>(AppUserSetting(cache).defaultValue as int);
-
-    if (gpsLocation.locationModels.isEmpty &&
-        (await Cache.appSettingStatusStandingRequireLocation
-            .load<bool>(true))) {
+    if (gpsLocation.locationModels.isEmpty && statusStandingRequireLocation) {
       return true;
     }
+
     if (gpsLocation.locationModels.isEmpty &&
-        !(await Cache.appSettingStatusStandingRequireLocation
-            .load<bool>(true)) &&
-        !atLeastOneIsOutside(gps, distanceTreshold)) {
+        !statusStandingRequireLocation &&
+        !atLeastOneIsOutside(gps, defaultDistanceTreshold)) {
       return false;
     }
 
@@ -287,22 +299,17 @@ class Tracker {
     final standingLocation =
         (await GpsLocation.gpsLocation(gpsLastStatusStanding ?? gps));
 
-    bool standingRequireLocation =
-        (await Cache.appSettingStatusStandingRequireLocation.load<bool>(true));
-
     // standing not allowed
-    if (standingLocation.locationModels.isEmpty && standingRequireLocation) {
+    if (standingLocation.locationModels.isEmpty &&
+        statusStandingRequireLocation) {
       return false;
     }
 
-    const cache = Cache.appSettingDistanceTreshold;
-    final distanceTreshold =
-        await cache.load<int>(AppUserSetting(cache).defaultValue as int);
-
     // moved away from last standing location
     if (standingLocation.locationModels.isEmpty &&
-        !standingRequireLocation &&
-        !atLeastOneIsInside(gpsLastStatusStanding ?? gps, distanceTreshold)) {
+        !statusStandingRequireLocation &&
+        !atLeastOneIsInside(
+            gpsLastStatusStanding ?? gps, defaultDistanceTreshold)) {
       return false;
     }
     // moved away from location
@@ -389,10 +396,14 @@ class Tracker {
     return trackingStatus!;
   }
 
-  TrackingStatus setStatusMoving(GPS gps) {
+  Future<TrackingStatus> setStatusMoving(GPS gps) async {
     trackingStatus = TrackingStatus.moving;
     gpsLastStatusChange = gps;
     gpsLastStatusMoving = gps;
+
+    await Cache.backgroundSharedLocationList
+        .save<List<SharedTrackpointLocation>>([]);
+
     return trackingStatus!;
   }
 /* 

@@ -364,8 +364,8 @@ enum TableTrackPointCalendar {
 	${idCalendar.column}	TEXT,
 	${idEvent.column}	TEXT,
 	${title.column}	TEXT,
-	${body.column} TEXT),
-  PRIMARY KEY(${idTrackPoint.column}, ${idLocationGroup.column})''';
+	${body.column} TEXT,
+  PRIMARY KEY(${idTrackPoint.column}, ${idLocationGroup.column}))''';
 
   @override
   String toString() {

@@ -139,8 +139,9 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
     final firstDate = DateTime.now().subtract(const Duration(days: 365 * 100));
     final lastDate = DateTime.now().add(const Duration(days: 365 * 100));
 
-    return Column(children: [
-      Row(children: [
+    return Center(
+        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+      Row(mainAxisAlignment: MainAxisAlignment.center, children: [
         ///
         /// date start
         Transform.rotate(
@@ -175,6 +176,9 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
                     context: context,
                     initialTime: TimeOfDay.fromDateTime(_model.timeStart));
                 if ((time != null)) {
+                  var t = DateTime.parse(_model.timeStart.toIso8601String());
+                  t = util.removeTime(t);
+                  t = t.add(Duration(hours: time.hour, minutes: time.minute));
                   _model.timeStart = util
                       .removeTime(_model.timeStart)
                       .add(Duration(hours: time.hour, minutes: time.minute));
@@ -189,7 +193,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
       ///
       ///
       ///
-      Row(children: [
+      Row(mainAxisAlignment: MainAxisAlignment.center, children: [
         ///
         /// date end
         Transform.rotate(
@@ -233,7 +237,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
               },
             ))
       ]),
-    ]);
+    ]));
   }
 
   Widget isActive() {

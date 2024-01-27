@@ -90,6 +90,7 @@ class DataChannel extends TrackPointData {
             .on(BackgroundChannelCommand.onTracking.toString())) {
           _initialized = true;
           try {
+            await Cache.reload();
             tick = int.parse(data?[DataChannelKey.tick.toString()] ?? '0');
             upTimeStart = DateTime.parse(
                 data?[DataChannelKey.upTime.toString()] ??

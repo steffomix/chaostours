@@ -37,7 +37,6 @@ import 'package:chaostours/util.dart' as util;
 enum BackgroundChannelCommand {
   startService,
   stopService,
-  reloadUserSettings,
   onTracking,
   forceTracking,
   closeDatabase,
@@ -75,6 +74,7 @@ class BackgroundChannel {
 
     Future<void> executeTracker() async {
       try {
+        Cache.reload();
         service.invoke(BackgroundChannelCommand.onTracking.toString(),
             await tracker.track());
       } catch (e, stk) {
@@ -120,13 +120,6 @@ class BackgroundChannel {
         .on(BackgroundChannelCommand.forceTracking.toString())
         .listen((_) async {
       executeTracker();
-    });
-
-    // reload user settings
-    service
-        .on(BackgroundChannelCommand.reloadUserSettings.toString())
-        .listen((_) {
-      Cache.reload();
     });
 
     // close database

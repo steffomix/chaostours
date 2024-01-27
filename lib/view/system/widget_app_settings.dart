@@ -16,7 +16,6 @@ limitations under the License.
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_background_service/flutter_background_service.dart';
 
 ///
 //import 'package:chaostours/logger.dart';
@@ -188,8 +187,6 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
 
   void onSettingChanged(void Function() fn) {
     fn.call();
-    FlutterBackgroundService()
-        .invoke(BackgroundChannelCommand.reloadUserSettings.toString());
   }
 
   final _licenceConsentChaosTours = ValueNotifier<bool>(false);

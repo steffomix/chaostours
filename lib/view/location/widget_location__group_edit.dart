@@ -27,7 +27,6 @@ import 'package:chaostours/model/model_location_group.dart';
 import 'package:chaostours/conf/app_routes.dart';
 import 'package:chaostours/calendar.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 enum _DisplayMode {
   selectCalendar,
