@@ -22,7 +22,7 @@
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
    <application
         android:enableOnBackInvokedCallback="true"
-        android:label="Chaos Tours Unlimited"
+        android:label="Chaos Tours Unleashed"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

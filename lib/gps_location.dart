@@ -136,7 +136,6 @@ class GpsLocation {
     /// create location
     ModelLocation newModel = ModelLocation(
         gps: gps,
-        lastVisited: tracker.gpsCalcPoints.lastOrNull?.time ?? gps.time,
         timesVisited: 1,
         title: tracker.address?.address ?? '',
         description: tracker.address?.addressDetails ?? '',
@@ -172,6 +171,10 @@ class GpsLocation {
       await _notifyMoving();
       ModelTrackPoint? tp = await _recordMoving();
       await _publishMoving(tp);
+
+      tp?.calendarEventIds.clear();
+      await Cache.backgroundCalendarLastEventIds
+          .save<List<CalendarEventId>>([]);
 
       // reset notes
       await Cache.backgroundTrackPointNotes.save<String>('');
@@ -266,65 +269,67 @@ class GpsLocation {
       // time start
       if (group.calendarTimeStart) {
         bodyParts
-            .add('[START]: ${util.formatDateTime(trackpoint.timeStart)}\n');
+            .add('[START]: ${util.formatDateTime(trackpoint.timeStart)}<br />');
       }
       // time end
       if (group.calendarTimeEnd) {
         bodyParts.add(
-            '[END]: ${util.formatDateTime(group.calendarAllDay ? trackpoint.timeStart : trackpoint.timeEnd)}\n');
+            '[END]: ${util.formatDateTime(group.calendarAllDay ? trackpoint.timeStart : trackpoint.timeEnd)}<br />');
       }
       // duration
       if (group.calendarDuration && !group.calendarAllDay) {
-        bodyParts
-            .add('[DURATION]: ${util.formatDuration(trackpoint.duration)}\n\n');
+        bodyParts.add(
+            '[DURATION]: ${util.formatDuration(trackpoint.duration)}<br /><br />');
       }
       // GPS
       if (group.calendarGps) {
         bodyParts.add('[GPS]: ');
         if (group.calendarHtml) {
           bodyParts.add(
-              '<a href="https://maps.google.com?q=${trackpoint.gps.lat},${trackpoint.gps.lon}">[GPS]: maps.google.com?q=${trackpoint.gps.lat},${trackpoint.gps.lon}</a>\n\n');
+              '<a href="https://maps.google.com?q=${trackpoint.gps.lat},${trackpoint.gps.lon}">[GPS]: maps.google.com?q=${trackpoint.gps.lat},${trackpoint.gps.lon}</a><br /><br />');
         } else {
-          bodyParts.add('${trackpoint.gps.lat},${trackpoint.gps.lon}\n\n');
+          bodyParts
+              .add('${trackpoint.gps.lat},${trackpoint.gps.lon}<br /><br />');
         }
       }
       // trackpoint notes
       if (group.calendarTrackpointNotes) {
-        bodyParts.add('[NOTES]:\n${trackpoint.notes.trim()}\n\n');
+        bodyParts.add('[NOTES]:<br />${trackpoint.notes.trim()}<br /><br />');
       }
 
       // main location
       if (group.calendarLocation || group.calendarLocationDescription) {
-        bodyParts.add('[MAIN LOCATION #${mainLocation.id}]:\n');
+        bodyParts.add('[MAIN LOCATION #${mainLocation.id}]:<br />');
         if (group.calendarLocation) {
           bodyParts.add(
-              '${GPS.distance(trackpoint.gps, mainLocation.gps).round()}m: ${mainLocation.title.trim()}${group.calendarLocationDescription ? '\n' : '\n\n'}');
+              '${GPS.distance(trackpoint.gps, mainLocation.gps).round()}m: ${mainLocation.title.trim()}${group.calendarLocationDescription ? '<br />' : '<br /><br />'}');
         }
         if (group.calendarLocationDescription) {
-          bodyParts.add('${mainLocation.description.trim()}\n\n');
+          bodyParts.add('${mainLocation.description.trim()}<br /><br />');
         }
       }
 
       if (group.calendarLocationNearby ||
           group.calendarNearbyLocationDescription) {
         for (var location in nearbyLocation) {
-          bodyParts.add('[NEARBY LOCATION #${location.id}]:\n');
+          bodyParts.add('[NEARBY LOCATION #${location.id}]:<br />');
           if (group.calendarLocation) {
             bodyParts.add(
-                '${GPS.distance(trackpoint.gps, location.gps).round()}m: ${location.title.trim()}${group.calendarNearbyLocationDescription ? '\n' : '\n\n'}');
+                '${GPS.distance(trackpoint.gps, location.gps).round()}m: ${location.title.trim()}${group.calendarNearbyLocationDescription ? '<br />' : '<br /><br />'}');
           }
           if (group.calendarNearbyLocationDescription) {
-            bodyParts.add('${location.description.trim()}\n\n');
+            bodyParts.add('${location.description.trim()}<br /><br />');
           }
         }
       }
 
       if (group.calendarAddress) {
-        bodyParts.add('[ADDRESS]: ${trackpoint.address.trim()}\n\n');
+        bodyParts.add('[ADDRESS]: ${trackpoint.address.trim()}<br /><br />');
       }
 
       if (group.calendarFullAddress) {
-        bodyParts.add('[FULL ADDRESS]:\n${trackpoint.fullAddress.trim()}\n\n');
+        bodyParts.add(
+            '[FULL ADDRESS]:<br />${trackpoint.fullAddress.trim()}<br /><br />');
       }
 
       // tasks
@@ -332,17 +337,17 @@ class GpsLocation {
           group.calendarTaskDescription ||
           group.calendarTaskNotes) {
         for (var task in trackpoint.taskModels) {
-          bodyParts.add('[TASK #${task.id}]:\n');
+          bodyParts.add('[TASK #${task.id}]:<br />');
           if (group.calendarTasks) {
             bodyParts.add(
-                '${task.title.trim()}${group.calendarTaskDescription || group.calendarTaskNotes ? '\n' : '\n\n'}');
+                '${task.title.trim()}${group.calendarTaskDescription || group.calendarTaskNotes ? '<br />' : '<br /><br />'}');
           }
           if (group.calendarTaskDescription) {
             bodyParts.add(
-                '${task.description.trim()}${group.calendarTaskNotes ? '\n' : '\n\n'}');
+                '${task.description.trim()}${group.calendarTaskNotes ? '<br />' : '<br /><br />'}');
           }
           if (group.calendarTaskNotes) {
-            bodyParts.add('${task.notes.trim()}\n\n');
+            bodyParts.add('${task.notes.trim()}<br /><br />');
           }
         }
       }
@@ -352,17 +357,17 @@ class GpsLocation {
           group.calendarUserDescription ||
           group.calendarUserNotes) {
         for (var user in trackpoint.userModels) {
-          bodyParts.add('[USER #${user.id}]:\n');
+          bodyParts.add('[USER #${user.id}]:<br />');
           if (group.calendarUsers) {
             bodyParts.add(
-                '${user.title.trim()}${group.calendarUserDescription || group.calendarUserNotes ? '\n' : '\n\n'}');
+                '${user.title.trim()}${group.calendarUserDescription || group.calendarUserNotes ? '<br />' : '<br /><br />'}');
           }
           if (group.calendarUserDescription) {
             bodyParts.add(
-                '${user.description.trim()}${group.calendarUserNotes ? '\n' : '\n\n'}');
+                '${user.description.trim()}${group.calendarUserNotes ? '<br />' : '<br /><br />'}');
           }
           if (group.calendarUserNotes) {
-            bodyParts.add('${user.notes.trim()}\n\n');
+            bodyParts.add('${user.notes.trim()}<br /><br />');
           }
         }
       }
@@ -472,53 +477,48 @@ class GpsLocation {
     return newTrackPoint;
   }
 
+  Future<bool> publishToCalendars(ModelTrackPoint tp) async =>
+      await _publishMoving(tp);
+
   // finish standing event
-  Future<void> _publishMoving(ModelTrackPoint? tp) async {
-    if (await Cache.databaseImportedCalendarDisabled.load<bool>(false)) {
-      return;
-    }
+  Future<bool> _publishMoving(ModelTrackPoint? tp) async {
     if (tp == null) {
-      return;
+      return false;
     }
     if (privacy.level > LocationPrivacy.public.level) {
-      return;
+      return false;
+    }
+    if (await Cache.databaseImportedCalendarDisabled.load<bool>(false)) {
+      return false;
     }
 
     bool publishActivated = await Cache.appSettingPublishToCalendar.load<bool>(
         AppUserSetting(Cache.appSettingPublishToCalendar).defaultValue as bool);
     if (!publishActivated) {
-      return;
+      return false;
     }
 
     List<CalendarEventId> sharedCalendars = await mergeCalendarEvents();
     if (sharedCalendars.isEmpty) {
-      return;
+      return false;
     }
 
     final events = await composeCalendarEvents();
-    List<CalendarEventId> sharedEvents = [];
     for (var event in events) {
       final calendar = await AppCalendar().calendarById(event.event.calendarId);
       if (calendar != null) {
-        var eventId = await AppCalendar().inserOrUpdate(event.event);
-        sharedEvents.add(CalendarEventId(
-            locationGroupId: event.modelGroup.id,
-            calendarId: calendar.id ?? '',
-            eventId: eventId ?? ''));
+        String? eventId = await AppCalendar().inserOrUpdate(event.event);
+        await ModelTrackpointCalendar(
+                idTrackPoint: tp.id,
+                idLocationGroup: event.modelGroup.id,
+                idCalendar: event.event.calendarId ?? '',
+                idEvent: eventId ?? '',
+                title: event.event.title ?? '',
+                body: event.event.description ?? '')
+            .insertOrUpdate();
       }
-
-      await ModelTrackpointCalendar(
-              idTrackPoint: tp.id,
-              idLocationGroup: event.modelGroup.id,
-              idCalendar: event.event.calendarId ?? '',
-              idEvent: event.event.eventId ?? '',
-              title: event.event.title ?? '',
-              body: event.event.description ?? '')
-          .insertOrUpdate();
     }
-
-    tp.calendarEventIds.clear();
-    await Cache.backgroundCalendarLastEventIds.save<List<CalendarEventId>>([]);
+    return true;
   }
 
   Future<List<CalendarEventId>> mergeCalendarEvents() async {

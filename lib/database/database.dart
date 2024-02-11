@@ -344,7 +344,7 @@ enum TableTrackPointUser {
 
 enum TableTrackPointCalendar {
   idTrackPoint('id_trackpoint'),
-  idLocationGroup('id_location'),
+  idLocationGroup('id_location_group'),
   idCalendar('id_calendar'),
   idEvent('id_event'),
   title('title'),
@@ -482,8 +482,6 @@ enum TableLocation {
   isActive('active'),
   radius('radius'),
   privacy('privacy'),
-  lastVisited('last_visited'),
-  timesVisited('times_visited'),
   latitude('latitude'),
   longitude('longitude'),
   title('title'),
@@ -508,8 +506,6 @@ enum TableLocation {
 	${privacy.column}	INTEGER,
 	${latitude.column}	NUMERIC NOT NULL,
 	${longitude.column}	NUMERIC NOT NULL,
-	${lastVisited.column}	TEXT,
-	${timesVisited.column}	INTEGER,
 	${title.column}	TEXT,
 	${description.column}	TEXT,
 	PRIMARY KEY(${primaryKey.column} AUTOINCREMENT))''';

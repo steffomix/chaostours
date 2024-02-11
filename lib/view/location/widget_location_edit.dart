@@ -77,10 +77,7 @@ class _WidgetLocationEdit extends State<WidgetLocationEdit> {
     var address =
         (await Address(gps).lookup(OsmLookupConditions.onUserCreateLocation));
     var model = ModelLocation(
-        gps: gps,
-        lastVisited: DateTime.now(),
-        title: address.address,
-        description: address.addressDetails);
+        gps: gps, title: address.address, description: address.addressDetails);
     await model.insert();
     return model;
   }

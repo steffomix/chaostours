@@ -27,15 +27,6 @@ import 'package:chaostours/conf/license.dart';
 import 'package:chaostours/util.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-enum LocationRequired {
-  yes(true),
-  no(false);
-
-  final bool state;
-
-  const LocationRequired(this.state);
-}
-
 class WidgetAppSettings extends StatefulWidget {
   const WidgetAppSettings({super.key});
 

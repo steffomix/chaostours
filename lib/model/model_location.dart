@@ -70,10 +70,12 @@ class ModelLocation implements Model {
   int get id => _id;
   // lazy loaded group
   List<ModelLocationGroup> locationGroups = [];
+
+  int timesVisited = 0;
+  DateTime? lastVisited;
+
   GPS gps;
   int radius = 50;
-  DateTime lastVisited;
-  int timesVisited = 0;
   String calendarId = '';
   @override
   String title = '';
@@ -88,12 +90,9 @@ class ModelLocation implements Model {
 
   /// temporary set during search for nearest Location
   int sortDistance = 0;
-  int _countVisited = 0;
-  int get countVisited => _countVisited;
 
   ModelLocation({
     required this.gps,
-    required this.lastVisited,
     required this.title,
     this.isActive = true,
     this.privacy = LocationPrivacy.privat,
@@ -113,10 +112,6 @@ class ModelLocation implements Model {
         radius: TypeAdapter.deserializeInt(map[TableLocation.radius.column],
             fallback: 10),
         privacy: LocationPrivacy.byId(map[TableLocation.privacy.column]),
-        lastVisited:
-            TypeAdapter.dbIntToTime(map[TableLocation.lastVisited.column]),
-        timesVisited:
-            TypeAdapter.deserializeInt(map[TableLocation.timesVisited.column]),
         title: TypeAdapter.deserializeString(map[TableLocation.title.column]),
         description: TypeAdapter.deserializeString(
             map[TableLocation.description.column]));
@@ -133,8 +128,6 @@ class ModelLocation implements Model {
       TableLocation.longitude.column: gps.lon,
       TableLocation.radius.column: radius,
       TableLocation.privacy.column: privacy.level,
-      TableLocation.lastVisited.column: TypeAdapter.dbTimeToInt(lastVisited),
-      TableLocation.timesVisited.column: timesVisited,
       TableLocation.title.column: title,
       TableLocation.description.column: description
     };
@@ -172,23 +165,34 @@ class ModelLocation implements Model {
   }
 
   ///
-  static Future<ModelLocation?> byId(int id, [Transaction? txn]) async {
-    Future<ModelLocation?> select(Transaction txn) async {
-      final rows = await txn.query(TableLocation.table,
-          columns: TableLocation.columns,
-          where: '${TableLocation.primaryKey.column} = ?',
-          whereArgs: [id]);
+  static Future<ModelLocation?> byId(int id) async {
+    return await DB.execute(
+      (Transaction txn) async {
+        const colTimesVisited = 'timesVisited';
+        const colLastVisited = 'lastVisited';
+        final sql = '''
+          SELECT ${TableLocation.columns.join(', ')}, 
+            COUNT(${TableTrackPointLocation.idLocation}) AS $colTimesVisited,
+            MAX(${TableTrackPoint.timeStart}) AS $colLastVisited
+          FROM ${TableLocation.table}
+          LEFT JOIN ${TableTrackPointLocation.table} ON ${TableTrackPointLocation.idLocation} = ${TableLocation.id}
+          LEFT JOIN ${TableTrackPoint.table} ON ${TableTrackPoint.id} = ${TableTrackPointLocation.idTrackPoint}
+          WHERE ${TableLocation.id} = ?
+          GROUP BY ${TableLocation.id}
+''';
+        final rows = await txn.rawQuery(sql, [id]);
 
-      return rows.isEmpty ? null : fromMap(rows.first);
-    }
+        if (rows.isEmpty) {
+          return null;
+        }
 
-    return txn != null
-        ? await select(txn)
-        : await DB.execute(
-            (Transaction txn) async {
-              return await select(txn);
-            },
-          );
+        final model = fromMap(rows.first);
+        model.lastVisited = TypeAdapter.dbIntToTime(rows.first[colLastVisited]);
+        model.timesVisited =
+            TypeAdapter.deserializeInt(rows.first[colTimesVisited]);
+        return model;
+      },
+    );
   }
 
   ///
@@ -196,24 +200,34 @@ class ModelLocation implements Model {
     if (ids.isEmpty) {
       return <ModelLocation>[];
     }
-    final rows = await DB.execute<List<Map<String, Object?>>>(
+    return await DB.execute(
       (Transaction txn) async {
-        return await txn.query(TableLocation.table,
-            columns: TableLocation.columns,
-            where:
-                '${TableLocation.primaryKey.column} IN (${List.filled(ids.length, '?').join(', ')})',
-            whereArgs: ids);
+        const colTimesVisited = 'timesVisited';
+        const colLastVisited = 'lastVisited';
+        final sql = '''
+          SELECT ${TableLocation.columns.join(', ')}, 
+            COUNT(${TableTrackPointLocation.idLocation}) AS $colTimesVisited,
+            MAX(${TableTrackPoint.timeStart}) AS $colLastVisited
+          FROM ${TableLocation.table}
+          LEFT JOIN ${TableTrackPointLocation.table} ON ${TableTrackPointLocation.idLocation} = ${TableLocation.id}
+          LEFT JOIN ${TableTrackPoint.table} ON ${TableTrackPoint.id} = ${TableTrackPointLocation.idTrackPoint}
+          WHERE ${TableLocation.id} IN (${List.filled(ids.length, '?').join(', ')})
+          GROUP BY ${TableLocation.id}
+''';
+        final rows = await txn.rawQuery(sql, ids);
+
+        List<ModelLocation> models = [];
+        for (var row in rows) {
+          final model = fromMap(row);
+          model.lastVisited =
+              TypeAdapter.dbIntToTime(rows.first[colLastVisited]);
+          model.timesVisited =
+              TypeAdapter.deserializeInt(rows.first[colTimesVisited]);
+          models.add(model);
+        }
+        return models;
       },
     );
-    List<ModelLocation> models = [];
-    for (var row in rows) {
-      try {
-        models.add(fromMap(row));
-      } catch (e, stk) {
-        logger.error('byId: $e', stk);
-      }
-    }
-    return models;
   }
 
   /// find trackpoints by locationId
@@ -283,6 +297,7 @@ class ModelLocation implements Model {
       bool lastVisited = true,
       String search = ''}) async {
     var colCountVisited = 'countVisited';
+    var colLastVisited = 'lastVisited';
     var rows = await DB.execute(
       (txn) async {
         final trueSearch = '%$search%';
@@ -297,12 +312,15 @@ class ModelLocation implements Model {
           offset
         ];
         final q = '''
-SELECT ${TableLocation.columns.join(', ')} , COUNT(${TableTrackPointLocation.idLocation}) as $colCountVisited FROM ${TableLocation.table}
+SELECT ${TableLocation.columns.join(', ')} , 
+COUNT(${TableTrackPointLocation.idLocation}) as $colCountVisited,
+MAX(${TableTrackPoint.timeStart}) as $colLastVisited
+FROM ${TableLocation.table}
 LEFT JOIN ${TableTrackPointLocation.table} ON ${TableTrackPointLocation.idLocation} = ${TableLocation.id}
--- LEFT JOIN ${TableTrackPoint.table} ON ${TableTrackPoint.id} = ${TableTrackPointLocation.idTrackPoint}
-WHERE ${TableLocation.isActive.column} = ? $searchQuery
+LEFT JOIN ${TableTrackPoint.table} ON ${TableTrackPoint.id} = ${TableTrackPointLocation.idTrackPoint}
+WHERE ${TableLocation.isActive} = ? $searchQuery
 GROUP BY ${TableLocation.id}  -- (${TableTrackPoint.timeStart} / (60 * 60 * 24))
-ORDER BY ${lastVisited ? '${TableLocation.lastVisited.column} DESC' : '${TableLocation.title.column} ASC'}
+ORDER BY ${lastVisited ? '${TableTrackPoint.timeStart.column} DESC' : '${TableLocation.title.column} ASC'}
 LIMIT ?
 OFFSET ?
 ''';
@@ -313,7 +331,8 @@ OFFSET ?
     ModelLocation model;
     for (var row in rows) {
       model = fromMap(row);
-      model._countVisited = TypeAdapter.deserializeInt(row[colCountVisited]);
+      model.timesVisited = TypeAdapter.deserializeInt(row[colCountVisited]);
+      model.lastVisited = TypeAdapter.dbIntToTime(rows.first[colLastVisited]);
       models.add(model);
     }
     return models;
@@ -378,16 +397,21 @@ WHERE ${TableLocation.isActive} = ? AND ${TableLocationGroup.isActive} = ?
       int softLimit = 0}) async {
     var area = GpsArea(
         latitude: gps.lat, longitude: gps.lon, distanceInMeters: gpsArea);
-    var latCol = TableLocation.latitude.column;
-    var lonCol = TableLocation.longitude.column;
-    var whereArea =
-        ' $latCol > ? AND $latCol < ? AND $lonCol > ? AND $lonCol < ? ';
-    var isActiveCol = 'isActive';
+    final whereArea =
+        ' ${TableLocation.latitude} > ? AND ${TableLocation.latitude} < ? AND ${TableLocation.longitude} > ? AND ${TableLocation.longitude} < ? ';
+    const isActiveCol = 'colIsActive';
+    const colTimesVisited = 'countVisited';
+    const colLastVisited = 'lastVisited';
     var rows = await DB.execute((txn) async {
       var q = '''
-SELECT ${TableLocation.columns.join(', ')}, ${TableLocationGroup.isActive} AS $isActiveCol  FROM ${TableLocation.table}
-LEFT JOIN ${TableLocationLocationGroup.table} ON ${TableLocation.id} = ${TableLocationLocationGroup.idLocation}
-LEFT JOIN ${TableLocationGroup.table} ON ${TableLocationGroup.id} = ${TableLocationLocationGroup.idLocationGroup}
+SELECT ${TableLocation.columns.join(', ')}, ${TableLocationGroup.isActive} AS $isActiveCol,
+  COUNT(${TableTrackPointLocation.idLocation}) AS $colTimesVisited,
+  MAX(${TableTrackPoint.timeStart}) AS $colLastVisited
+FROM ${TableLocation.table}
+  LEFT JOIN ${TableTrackPointLocation.table} ON ${TableTrackPointLocation.idLocation} = ${TableLocation.id}
+  LEFT JOIN ${TableTrackPoint.table} ON ${TableTrackPoint.id} = ${TableTrackPointLocation.idTrackPoint}  
+  LEFT JOIN ${TableLocationLocationGroup.table} ON ${TableLocation.id} = ${TableLocationLocationGroup.idLocation}
+  LEFT JOIN ${TableLocationGroup.table} ON ${TableLocationGroup.id} = ${TableLocationLocationGroup.idLocationGroup}
 WHERE ${includeInactive ? '' : '$isActiveCol = ? AND'}
 $whereArea
 GROUP BY ${TableLocation.id}
@@ -407,6 +431,9 @@ LIMIT ?
       try {
         var model = fromMap(row);
         model.sortDistance = GPS.distance(gps, model.gps).round();
+        model.lastVisited = TypeAdapter.dbIntToTime(rows.first[colLastVisited]);
+        model.timesVisited =
+            TypeAdapter.deserializeInt(rows.first[colTimesVisited]);
         models.add(model);
       } catch (e, stk) {
         logger.error('next location fromMap $e', stk);

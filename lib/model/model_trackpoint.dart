@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/model/model_location_group.dart';
 import 'package:sqflite/sqflite.dart';
 
 ///
@@ -513,6 +514,24 @@ class ModelTrackPoint {
     );
   }
 
+  Future<List<ModelLocationGroup>> locationGroups() async {
+    final sql =
+        '''SELECT ${TableLocationGroup.columns.join(', ')} FROM ${TableTrackPointLocation.table}
+    INNER JOIN ${TableLocationLocationGroup.table} ON ${TableLocationLocationGroup.idLocation} = ${TableTrackPointLocation.idLocation}
+    INNER JOIN ${TableLocationGroup.table} ON ${TableLocationGroup.id} = ${TableLocationLocationGroup.idLocationGroup}
+    WHERE ${TableTrackPointLocation.idTrackPoint} = ?
+    GROUP BY ${TableLocationGroup.id}
+''';
+
+    final rows = await DB.execute(
+      (txn) async {
+        return await txn.rawQuery(sql, [id]);
+      },
+    );
+
+    return rows.map((e) => ModelLocationGroup.fromMap(e)).toList();
+  }
+
   static Future<List<ModelTrackPoint>> byLocation(ModelLocation location,
       {int offset = 0, int limit = 50}) async {
     return await DB.execute(
@@ -606,7 +625,8 @@ class ModelTrackPoint {
       whereTable = TableTaskTaskGroup.idTaskGroup.toString();
       whereId = idTaskGroup;
     }
-    String sqlSearch = 'WHERE ${TableTrackPoint.isActive} = ?';
+    String sqlSearch =
+        'WHERE ${TableTrackPoint.isActive} = ? ${whereTable == null ? '' : 'AND $whereTable == ? '} ';
     if (search.isNotEmpty) {
       sqlSearch = '''
         $sqlSearch
@@ -641,7 +661,6 @@ class ModelTrackPoint {
         LEFT JOIN ${TableTrackPointTask.table} ON ${TableTrackPointTask.idTrackPoint} = ${TableTrackPoint.id}
         LEFT JOIN ${TableTask.table} ON ${TableTask.id} = ${TableTrackPointTask.idTask}
         $groupJoin
-        ${whereTable == null ? '' : 'WHERE $whereTable == ? '} 
         $sqlSearch
         -- query
         GROUP BY ${TableTrackPoint.id}

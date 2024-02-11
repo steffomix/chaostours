@@ -70,7 +70,6 @@ class ModelTrackpointCalendar {
         '${TableTrackPointCalendar.idTrackPoint} = ? AND ${TableTrackPointCalendar.idLocationGroup} = ?';
     final whereArgs = [idTrackPoint, idLocationGroup];
 
-    const rowCount = 'ct';
     var rows = await DB.execute((txn) async {
       return await txn.query(TableTrackPointCalendar.table,
           columns: [TableTrackPointCalendar.idTrackPoint.column],
@@ -78,7 +77,7 @@ class ModelTrackpointCalendar {
           whereArgs: whereArgs);
     });
     await Future.delayed(const Duration(milliseconds: 200));
-    update = TypeAdapter.deserializeInt(rows.firstOrNull?[rowCount]) > 0;
+    update = rows.isNotEmpty;
     await DB.execute((txn) async {
       if (update) {
         await txn.update(TableTrackPointCalendar.table, toMap(),

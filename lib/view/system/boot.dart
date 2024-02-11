@@ -478,10 +478,7 @@ class _WelcomeState extends State<Welcome> {
   Future<void> installData() async {
     gps ??= await GPS.gps();
     await ModelLocation(
-            gps: gps!,
-            title: 'First location',
-            lastVisited: DateTime.now(),
-            privacy: LocationPrivacy.privat)
+            gps: gps!, title: 'First location', privacy: LocationPrivacy.privat)
         .insert();
     await ModelUser(title: 'User 1').insert();
     await ModelTask(title: 'Task 1').insert();

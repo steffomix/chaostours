@@ -90,7 +90,9 @@ class _WidgetLocationList extends BaseWidgetState<WidgetLocationList>
   }
 
   Widget itemTitle(ModelLocation model) {
-    int dur = DateTime.now().difference(model.lastVisited).inDays;
+    int? dur = model.lastVisited != null
+        ? DateTime.now().difference(model.lastVisited!).inDays
+        : null;
     int count = model.timesVisited;
     var subStyle = Theme.of(context).listTileTheme.subtitleTextStyle;
     return Column(children: [
@@ -98,7 +100,8 @@ class _WidgetLocationList extends BaseWidgetState<WidgetLocationList>
           style: model.isActive
               ? null
               : const TextStyle(decoration: TextDecoration.lineThrough)),
-      Text('Visited: ${count}x, ${count == 0 ? 'Never' : 'before $dur days.'}',
+      Text(
+          'Visited: ${count}x, ${count == 0 ? 'Never' : dur == null ? 'Never' : 'Before $dur days'}',
           style: subStyle),
     ]);
   }

@@ -18,6 +18,7 @@ import 'dart:math' as math;
 
 ///
 import 'package:chaostours/conf/app_routes.dart';
+import 'package:chaostours/model/model_location_group.dart';
 import 'package:chaostours/model/model_task.dart';
 import 'package:chaostours/model/model_trackpoint_task.dart';
 import 'package:chaostours/model/model_trackpoint_user.dart';
@@ -27,6 +28,7 @@ import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/view/system/app_widgets.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/util.dart' as util;
+import 'package:url_launcher/url_launcher.dart';
 
 ///
 /// CheckBox list
@@ -43,6 +45,17 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
 
   late ModelTrackPoint _model;
 
+  List<ModelLocationGroup> locationGroups = [];
+  List<String> get calendarIds {
+    var list = <String>[];
+    for (var group in locationGroups) {
+      if (group.idCalendar.isNotEmpty && !list.contains(group.idCalendar)) {
+        list.add(group.idCalendar);
+      }
+    }
+    return list;
+  }
+
   TextEditingController? _addressController;
   final _addressUndoController = UndoHistoryController();
 
@@ -56,6 +69,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
     if (model == null) {
       throw 'Trackpoint #$id not found';
     }
+    locationGroups = await model.locationGroups();
     _model = model;
     return model;
   }
@@ -84,6 +98,7 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
       dateTime(),
       duration(),
       isActive(),
+      //writeToCalendar(),
       AppWidgets.divider(),
       address(),
       AppWidgets.divider(),
@@ -252,6 +267,45 @@ class _WidgetAddTasksState extends State<WidgetEditTrackPoint> {
         title: const Text('Active & statistics'));
   }
 
+/* 
+  Widget writeToCalendar() {
+    return Center(
+        child: FilledButton(
+      onPressed: calendarIds.isEmpty
+          ? null
+          : () async {
+              final location = await GpsLocation.gpsLocation(_model.gps);
+              bool published = await location.publishToCalendars(_model);
+              if (mounted) {
+                await AppWidgets.dialog(
+                    context: context,
+                    title: const Text('Publish result'),
+                    isDismissible: true,
+                    contents: [
+                      published
+                          ? const Text('Trackpoint written to Calendar')
+                          : const Text('Nothing written to Calendar'),
+                      const Text(''),
+                      FilledButton(
+                        child: const Text('Open device calendar'),
+                        onPressed: () {
+                          launchUrl(
+                              Uri.parse('content://com.android.calendar'));
+                        },
+                      )
+                    ],
+                    buttons: [
+                      FilledButton(
+                        child: const Text('OK'),
+                        onPressed: () => Navigator.pop(context),
+                      )
+                    ]);
+              }
+            },
+      child: const Text('Write to Calendars'),
+    ));
+  }
+ */
   /// locationList
   ///
   ///

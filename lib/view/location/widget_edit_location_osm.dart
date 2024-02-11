@@ -363,13 +363,13 @@ class _WidgetOsm extends State<WidgetOsm> {
                     .lookup(OsmLookupConditions.onUserCreateLocation));
 
             ModelLocation location = ModelLocation(
-                gps: GPS(pos.latitude, pos.longitude),
-                title: address.address,
-                description: address.addressDetails,
-                radius: await Cache.appSettingDistanceTreshold.load<int>(
-                    AppUserSetting(Cache.appSettingDistanceTreshold)
-                        .defaultValue as int),
-                lastVisited: DateTime.now());
+              gps: GPS(pos.latitude, pos.longitude),
+              title: address.address,
+              description: address.addressDetails,
+              radius: await Cache.appSettingDistanceTreshold.load<int>(
+                  AppUserSetting(Cache.appSettingDistanceTreshold).defaultValue
+                      as int),
+            );
 
             await location.insert();
             locationRenderer.renderLocation(mapController);
