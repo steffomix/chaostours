@@ -32,7 +32,7 @@ class CalendarEventId {
 
   @override
   String toString() {
-    return '$locationGroupId$calendarId$separator$eventId';
+    return '$locationGroupId$separator$calendarId$separator$eventId';
   }
 
   static CalendarEventId toObject(String s) {

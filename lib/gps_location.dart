@@ -51,7 +51,7 @@ class CalendarEvent {
 class GpsLocation {
   static final Logger logger = Logger.logger<GpsLocation>();
 
-  final GPS gps;
+  final GPS gpsOfLocation;
   Address? address;
   LocationPrivacy get privacy => _privacy ?? LocationPrivacy.none;
   LocationPrivacy? _privacy;
@@ -62,7 +62,8 @@ class GpsLocation {
   final appCalendar = AppCalendar();
   final List<ModelLocation> locationModels;
 
-  GpsLocation._location({required this.gps, required this.locationModels});
+  GpsLocation._location(
+      {required this.gpsOfLocation, required this.locationModels});
 
   static Future<GpsLocation> gpsLocation(GPS gps,
       [bool updateSharedLocations = false]) async {
@@ -98,7 +99,7 @@ class GpsLocation {
     }
 
     final location = GpsLocation._location(
-      gps: gps,
+      gpsOfLocation: gps,
       locationModels: models,
     );
 
@@ -115,12 +116,12 @@ class GpsLocation {
   }
 
   Future<ModelTrackPoint> createTrackPoint() async {
-    address ??= await Address(gps)
+    address ??= await Address(gpsOfLocation)
         .lookup(OsmLookupConditions.onStatusChanged, saveToCache: true);
     return await ModelTrackPoint(
-            gps: gps,
-            timeStart: (tracker.gpsLastStatusStanding ?? gps).time,
-            timeEnd: gps.time,
+            gps: gpsOfLocation,
+            timeStart: gpsOfLocation.time,
+            timeEnd: DateTime.now(),
             calendarEventIds: await Cache.backgroundCalendarLastEventIds
                 .load<List<CalendarEventId>>([]),
             address: address?.address ?? '',
@@ -130,19 +131,18 @@ class GpsLocation {
 
   Future<GpsLocation> autocreateLocation() async {
     /// get address
-    tracker.address = await Address(gps)
+    tracker.address = await Address(gpsOfLocation)
         .lookup(OsmLookupConditions.onAutoCreateLocation, saveToCache: true);
 
     /// create location
     ModelLocation newModel = ModelLocation(
-        gps: gps,
-        timesVisited: 1,
+        gps: gpsOfLocation,
         title: tracker.address?.address ?? '',
         description: tracker.address?.addressDetails ?? '',
         radius: radius);
 
     await newModel.insert();
-    final newLocation = await gpsLocation(gps, true);
+    final newLocation = await gpsLocation(gpsOfLocation, true);
     return newLocation;
   }
 
@@ -201,7 +201,7 @@ class GpsLocation {
   Future<void> _notifyStanding() async {
     // update address
     if (privacy.level <= LocationPrivacy.privat.level) {
-      tracker.address = await Address(gps)
+      tracker.address = await Address(gpsOfLocation)
           .lookup(OsmLookupConditions.onStatusChanged, saveToCache: true);
     }
     // check privacy
@@ -222,12 +222,13 @@ class GpsLocation {
       return;
     }
 
-    tracker.address = await Address(tracker.gpsLastStatusStanding ?? gps)
-        .lookup(OsmLookupConditions.onStatusChanged, saveToCache: true);
+    tracker.address =
+        await Address(tracker.gpsLastStatusStanding ?? gpsOfLocation)
+            .lookup(OsmLookupConditions.onStatusChanged, saveToCache: true);
 
     // update last visited
     for (var model in locationModels) {
-      model.lastVisited = (tracker.gpsLastStatusStanding ?? gps).time;
+      model.lastVisited = (tracker.gpsLastStatusStanding ?? gpsOfLocation).time;
       await model.update();
     }
   }
@@ -286,7 +287,7 @@ class GpsLocation {
         bodyParts.add('[GPS]: ');
         if (group.calendarHtml) {
           bodyParts.add(
-              '<a href="https://maps.google.com?q=${trackpoint.gps.lat},${trackpoint.gps.lon}">[GPS]: maps.google.com?q=${trackpoint.gps.lat},${trackpoint.gps.lon}</a><br /><br />');
+              '<a href="https://maps.google.com?q=${trackpoint.gps.lat},${trackpoint.gps.lon}">maps.google.com?q=${trackpoint.gps.lat},${trackpoint.gps.lon}</a><br /><br />');
         } else {
           bodyParts
               .add('${trackpoint.gps.lat},${trackpoint.gps.lon}<br /><br />');
@@ -377,6 +378,7 @@ class GpsLocation {
       final body = bodyParts.join('');
 
       var event = Event(calendar.calendarId,
+          eventId: calendar.eventId.isEmpty ? null : calendar.eventId,
           title: eventTitle,
           start: timeStart,
           end: group.calendarAllDay ? timeStart : timeEnd,
@@ -457,11 +459,11 @@ class GpsLocation {
       return null;
     }
 
-    final Address address = await Address(gps)
+    final Address address = await Address(gpsOfLocation)
         .lookup(OsmLookupConditions.onStatusChanged, saveToCache: true);
     ModelTrackPoint newTrackPoint = ModelTrackPoint(
-        gps: gps,
-        timeStart: gps.time,
+        gps: gpsOfLocation,
+        timeStart: gpsOfLocation.time,
         timeEnd: DateTime.now(),
         calendarEventIds: await Cache.backgroundCalendarLastEventIds
             .load<List<CalendarEventId>>([]),

@@ -673,8 +673,8 @@ class ModelTrackPoint {
 
     return await DB.execute((Transaction txn) async {
       final rows = await txn.rawQuery(sql, [
-        ...(whereTable == null ? [] : [whereId]),
         TypeAdapter.serializeBool(isActive),
+        ...(whereTable == null ? [] : [whereId]),
         ...List.filled(qmCount - (whereTable == null ? 0 : 1), '%$search%'),
         limit,
         offset,

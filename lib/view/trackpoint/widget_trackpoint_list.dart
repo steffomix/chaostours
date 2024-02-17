@@ -149,7 +149,8 @@ class _WidgetTrackPointsState extends BaseWidgetState<WidgetTrackPoints> {
         idTask: idTask,
         idLocationGroup: idLocationGroup,
         idUserGroup: idUserGroup,
-        idTaskGroup: idTaskGroup);
+        idTaskGroup: idTaskGroup,
+        offset: offset);
     if (_loadedItems.isNotEmpty) {
       _loadedItems.add(AppWidgets.divider());
     }

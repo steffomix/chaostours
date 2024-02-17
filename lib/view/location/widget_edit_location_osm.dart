@@ -37,6 +37,7 @@ import 'package:chaostours/view/system/app_widgets.dart';
 import 'package:chaostours/model/model_location.dart';
 import 'package:chaostours/channel/data_channel.dart';
 import 'package:chaostours/conf/app_colors.dart';
+import 'package:chaostours/util.dart';
 
 class _OsmSearchResult {
   final double lat;
@@ -77,11 +78,14 @@ class _WidgetOsm extends State<WidgetOsm> {
   final ValueNotifier<bool> _loading = ValueNotifier<bool>(false);
 
   /// search
-  String _searchText = '';
   bool _searchTextChanged = true;
-  final _textController = TextEditingController(text: '');
+  final _searchTextController = TextEditingController(text: '');
   final _searchDelay = const Duration(milliseconds: 1200);
   DateTime _lastSearch = DateTime.now();
+
+  List<Widget> searchResultWidgetList = [];
+
+  final _searchNotifier = ValueNotifier<int>(0);
 
   ///searchResult
   final List<_OsmSearchResult> searchResultList = [];
@@ -111,12 +115,12 @@ class _WidgetOsm extends State<WidgetOsm> {
       });
       return;
     }
-    query = (query ??= _searchText).trim();
+    query = (query ??= _searchTextController.text).trim();
     if (query.trim().isEmpty) {
       return;
     }
 
-    if (query != _searchText) {
+    if (query != _searchTextController.text) {
       // search has changed
       return;
     }
@@ -153,7 +157,7 @@ class _WidgetOsm extends State<WidgetOsm> {
             logger.error(e.toString(), stk);
           }
         }
-        setState(() {});
+        _searchNotifier.value++;
       } catch (e) {
         logger.warn(e.toString());
       }
@@ -166,7 +170,7 @@ class _WidgetOsm extends State<WidgetOsm> {
     _lastSearch = time;
     _searchTextChanged = false;
     _loading.value = true;
-    setState(() {});
+    _searchNotifier.value++;
   }
 
   Widget infoBox() {
@@ -188,14 +192,13 @@ class _WidgetOsm extends State<WidgetOsm> {
 
             /// search text field
             title: TextField(
-                controller: _textController,
+                controller: _searchTextController,
                 decoration: InputDecoration(
                     labelStyle: TextStyle(color: Theme.of(context).hintColor),
                     label: const Text(
                         'Search order: Country, City, Street, House number')),
                 onChanged: (val) {
                   _searchTextChanged = true;
-                  _searchText = val;
                   lookupGps(val);
                 }),
           )),
@@ -252,69 +255,75 @@ class _WidgetOsm extends State<WidgetOsm> {
             child: boxContent));
   }
 
-  List<Widget> searchResultWidgetList = [];
-
   Widget searchResultContainer() {
-    if (searchResultList.isEmpty && _loading.value == false) {
-      return const SizedBox.shrink();
-    }
-    var list = <Widget>[];
-    for (var item in searchResultList) {
-      list.add(
-        ListTile(
-            leading: IconButton(
-                icon: const Icon(
-                  Icons.near_me,
-                  size: 30,
+    return ListenableBuilder(
+      listenable: _searchNotifier,
+      builder: (context, child) {
+        if (searchResultList.isEmpty && _loading.value == false) {
+          return const SizedBox.shrink();
+        }
+        var list = <Widget>[];
+        for (var item in searchResultList) {
+          list.add(
+            ListTile(
+                leading: IconButton(
+                    icon: const Icon(
+                      Icons.near_me,
+                      size: 30,
+                    ),
+                    onPressed: () {
+                      searchResultList.clear();
+                      _searchNotifier.value++;
+                      _gps = GPS(item.lat, item.lon);
+                      mapController.goToLocation(
+                          GeoPoint(latitude: item.lat, longitude: item.lon));
+                    }),
+                title: Text(
+                  item.address,
+                  softWrap: true,
                 ),
-                onPressed: () {
-                  searchResultList.clear();
-                  setState(() {});
-                  _gps = GPS(item.lat, item.lon);
-                  mapController.goToLocation(
-                      GeoPoint(latitude: item.lat, longitude: item.lon));
-                }),
-            title: Text(item.address),
-            trailing: IconButton(
-                icon: const Icon(Icons.copy, size: 20),
-                onPressed: () async {
-                  await Clipboard.setData(ClipboardData(
-                      text:
-                          '${item.address}\nlat/lon:${item.lat},${item.lon}'));
-                })),
-      );
-      list.add(AppWidgets.divider());
-    }
+                trailing: IconButton(
+                    icon: const Icon(Icons.copy, size: 20),
+                    onPressed: () async {
+                      await Clipboard.setData(ClipboardData(
+                          text:
+                              '${item.address}\nlat/lon:${item.lat},${item.lon}'));
+                    })),
+          );
+          list.add(AppWidgets.divider());
+        }
 
-    ///
-    final screen = Screen(context);
-    return Positioned(
-        top: 170,
-        left: 10,
-        width: screen.width * 0.95,
-        height: screen.height * 0.7,
-        child: Container(
-            color: const Color.fromARGB(108, 255, 255, 255),
-            child: ListView(children: [
-              ListTile(
-                  trailing: IconButton(
-                      icon: const Icon(Icons.cancel),
-                      onPressed: () {
-                        searchResultList.clear();
-                        setState(() {});
-                      }),
-                  title: const Text('Abbrechen'),
-                  leading: ValueListenableBuilder(
-                    builder: (context, value, child) {
-                      return value == true
-                          ? AppWidgets.loading(const Text(''))
-                          : const SizedBox(width: 30 + 5, height: 30 + 5);
-                    },
-                    valueListenable: _loading,
-                  )),
-              AppWidgets.divider(),
-              ...list
-            ])));
+        ///
+        final screen = Screen(context);
+        return Positioned(
+            top: 160,
+            left: 0,
+            width: screen.width,
+            height: screen.height - 300,
+            child: Container(
+                color: Theme.of(context).cardColor.withAlpha(150),
+                child: ListView(children: [
+                  ListTile(
+                      trailing: IconButton(
+                          icon: const Icon(Icons.cancel),
+                          onPressed: () {
+                            searchResultList.clear();
+                            _searchNotifier.value++;
+                          }),
+                      title: const Text('Abbrechen'),
+                      leading: ValueListenableBuilder(
+                        builder: (context, value, child) {
+                          return value == true
+                              ? AppWidgets.loading(const Text(''))
+                              : const SizedBox(width: 30 + 5, height: 30 + 5);
+                        },
+                        valueListenable: _loading,
+                      )),
+                  AppWidgets.divider(),
+                  ...list
+                ])));
+      },
+    );
   }
 
   launchGoogleMaps() {
@@ -352,10 +361,11 @@ class _WidgetOsm extends State<WidgetOsm> {
             ModelLocation location = _modelLocation!;
             location.gps = GPS(pos.latitude, pos.longitude);
             await location.update();
-            Fluttertoast.showToast(msg: 'Location updated');
             if (mounted) {
               Navigator.pop(context);
             }
+            Fluttertoast.showToast(msg: 'Location updated');
+            await locationRenderer.renderLocation(_mapController!);
           } else {
             /// create location
             addr.Address address =
@@ -390,14 +400,13 @@ class _WidgetOsm extends State<WidgetOsm> {
         type: BottomNavigationBarType.fixed,
         items: [
           BottomNavigationBarItem(
-              icon: const Icon(Icons.done),
-              label: _id > 0 ? 'Speichern' : 'Erstellen'),
+              icon: const Icon(Icons.done), label: _id > 0 ? 'Save' : 'Create'),
           const BottomNavigationBarItem(
               icon: Icon(Icons.map), label: 'Google Maps'),
           const BottomNavigationBarItem(
-              icon: Icon(Icons.search), label: 'Location'),
+              icon: Icon(Icons.search), label: 'Nearby'),
           const BottomNavigationBarItem(
-              icon: Icon(Icons.cancel), label: 'Abbrechen'),
+              icon: Icon(Icons.cancel), label: 'Cancel'),
         ],
         onTap: (int buttonId) async {
           /// get current position
@@ -409,21 +418,36 @@ class _WidgetOsm extends State<WidgetOsm> {
               launchGoogleMaps();
               break;
             case 2:
-              // search for location
-              mapController.centerMap.then((GeoPoint pos) {
-                ModelLocation.byArea(gps: GPS(pos.latitude, pos.longitude))
-                    .then((List<ModelLocation> models) async {
-                  if (models.isNotEmpty && mounted) {
-                    await Navigator.pushNamed(
-                        context, AppRoutes.editLocation.route,
-                        arguments: models.first.id);
-                    if (mounted) {
-                      locationRenderer.renderLocation(mapController);
-                    }
-                  }
-                });
-              });
+              final pos = await mapController.centerMap;
+              final gps = GPS(pos.latitude, pos.longitude);
+              List<ModelLocation> locations =
+                  await ModelLocation.byArea(softLimit: 10, gps: gps);
+              final tiles = locations.map(
+                (location) {
+                  return ListTile(
+                    trailing: IconButton(
+                      icon: const Icon(Icons.edit),
+                      onPressed: () {
+                        Navigator.pushNamed(
+                            context, AppRoutes.editLocation.route,
+                            arguments: location.id);
+                      },
+                    ),
+                    title: Text(location.title,
+                        style: location.isActive
+                            ? null
+                            : const TextStyle(
+                                decoration: TextDecoration.lineThrough)),
+                    subtitle:
+                        Text('${GPS.distance(gps, location.gps).round()}m'),
+                  );
+                },
+              );
 
+              AppWidgets.dialog(
+                  context: context,
+                  isDismissible: true,
+                  contents: intersperse(const Divider(), tiles).toList());
               break;
             default:
 
@@ -560,7 +584,9 @@ class _LocationTrackingRenderer {
     ));
 
     for (var location in await ModelLocation.byArea(
-        gps: GPS(geoPoint.latitude, geoPoint.longitude), gpsArea: 1000 * 50)) {
+        gps: GPS(geoPoint.latitude, geoPoint.longitude),
+        gpsArea: 1000 * 50,
+        isActive: true)) {
       try {
         controller.drawCircle(CircleOSM(
           key: key,

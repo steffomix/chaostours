@@ -391,20 +391,20 @@ WHERE ${TableLocation.isActive} = ? AND ${TableLocationGroup.isActive} = ?
 
   static Future<List<ModelLocation>> byArea(
       {required GPS gps,
-      includeInactive = true,
+      bool? isActive,
       int gpsArea = 10000,
       int limit = 300,
       int softLimit = 0}) async {
-    var area = GpsArea(
+    final area = GpsArea(
         latitude: gps.lat, longitude: gps.lon, distanceInMeters: gpsArea);
-    final whereArea =
-        ' ${TableLocation.latitude} > ? AND ${TableLocation.latitude} < ? AND ${TableLocation.longitude} > ? AND ${TableLocation.longitude} < ? ';
-    const isActiveCol = 'colIsActive';
+    final searchActive = isActive == null
+        ? ''
+        : '${TableLocationGroup.isActive} = ? AND ${TableLocation.isActive} = ? AND';
     const colTimesVisited = 'countVisited';
     const colLastVisited = 'lastVisited';
-    var rows = await DB.execute((txn) async {
-      var q = '''
-SELECT ${TableLocation.columns.join(', ')}, ${TableLocationGroup.isActive} AS $isActiveCol,
+    final rows = await DB.execute((txn) async {
+      final q = '''
+SELECT ${TableLocation.columns.join(', ')},
   COUNT(${TableTrackPointLocation.idLocation}) AS $colTimesVisited,
   MAX(${TableTrackPoint.timeStart}) AS $colLastVisited
 FROM ${TableLocation.table}
@@ -412,13 +412,19 @@ FROM ${TableLocation.table}
   LEFT JOIN ${TableTrackPoint.table} ON ${TableTrackPoint.id} = ${TableTrackPointLocation.idTrackPoint}  
   LEFT JOIN ${TableLocationLocationGroup.table} ON ${TableLocation.id} = ${TableLocationLocationGroup.idLocation}
   LEFT JOIN ${TableLocationGroup.table} ON ${TableLocationGroup.id} = ${TableLocationLocationGroup.idLocationGroup}
-WHERE ${includeInactive ? '' : '$isActiveCol = ? AND'}
-$whereArea
+WHERE 
+$searchActive
+${TableLocation.latitude} > ? AND 
+${TableLocation.latitude} < ? AND 
+${TableLocation.longitude} > ? AND 
+${TableLocation.longitude} < ? 
 GROUP BY ${TableLocation.id}
 LIMIT ?
 ''';
       return await txn.rawQuery(q, [
-        ...(includeInactive ? [] : [TypeAdapter.serializeBool(true)]),
+        ...isActive == null
+            ? []
+            : List.filled(2, TypeAdapter.serializeBool(isActive)),
         area.southLatitudeBorder,
         area.northLatitudeBorder,
         area.westLongitudeBorder,
