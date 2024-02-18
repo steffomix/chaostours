@@ -167,6 +167,7 @@ class Tracker {
       } else if (triggeredTrackingStatus == TrackingStatus.standing) {
         gpsPoints.clear();
         gps = await claculateGPSPoints(gps);
+        gpsLocation = await GpsLocation.gpsLocation(gps);
         // status changed by user
         newTrackingStatus = setStatusStanding(gps);
       }
@@ -177,18 +178,17 @@ class Tracker {
       /// check for standing
       if (oldTrackingStatus == TrackingStatus.standing) {
         //
-        if (!(await checkIfStillStanding(gps))) {
+        if (!(await checkIfStillStanding(gpsLocation))) {
           newTrackingStatus = await setStatusMoving(gps);
         }
       } else if (oldTrackingStatus == TrackingStatus.moving) {
-        bool isStillMoving = await checkIfStillMoving(gps, gpsLocation);
+        bool isStillMoving = await checkIfStillMoving(gpsLocation);
 
         if (!isStillMoving) {
           newTrackingStatus = setStatusStanding(gps);
-
-          await autoCreateLocation(gps, gpsLocation);
-
+        } else {
           /// autocreate location?
+          await autoCreateLocation(gpsLocation);
         }
       }
     }
@@ -229,29 +229,27 @@ class Tracker {
     return await serializeState(gps);
   }
 
-  Future<void> autoCreateLocation(GPS gps, GpsLocation gpsLocation) async {
-    if ((await Cache.appSettingStatusStandingRequireLocation
-            .load<bool>(true)) &&
-        gpsLocation.locationModels.isEmpty) {
-      try {
-        /// autocreate must be activated
-        if (await Cache.appSettingAutocreateLocation.load<bool>(false)) {
-          const cache = Cache.appSettingAutocreateLocationDuration;
-          final duration = await cache
-              .load<Duration>(AppUserSetting(cache).defaultValue as Duration);
+  Future<void> autoCreateLocation(GpsLocation gpsLocation) async {
+    if (gpsLocation.locationModels.isNotEmpty) {
+      return;
+    }
 
-          /// check if enough time has passed
-          if ((gpsLastStatusMoving ??= gps)
-              .time
-              .add(duration)
-              .isBefore(DateTime.now())) {
-            gps = GPS.average(gpsCalcPoints);
-            gps.time = DateTime.now();
-            await (await GpsLocation.gpsLocation(gps)).autocreateLocation();
-          }
-        }
-      } catch (e, stk) {
-        logger.error('autocreate location: $e', stk);
+    final gps = gpsLocation.gpsOfLocation;
+
+    const cache = Cache.appSettingAutocreateLocation;
+    if (await cache.load<bool>(AppUserSetting(cache).defaultValue as bool)) {
+      const cache = Cache.appSettingAutocreateLocationDuration;
+      final duration = await cache
+          .load<Duration>(AppUserSetting(cache).defaultValue as Duration);
+
+      /// check if enough time has passed
+      if ((gpsLastStatusMoving ??= gps)
+          .time
+          .add(duration)
+          .isBefore(DateTime.now())) {
+        final averageGps = GPS.average(gpsCalcPoints);
+        averageGps.time = DateTime.now();
+        await (await GpsLocation.gpsLocation(gps)).autocreateLocation();
       }
     }
   }
@@ -276,19 +274,20 @@ class Tracker {
     return false;
   }
 
-  Future<bool> checkIfStillMoving(GPS gps, GpsLocation gpsLocation) async {
+  Future<bool> checkIfStillMoving(GpsLocation gpsLocation) async {
     if (gpsLocation.locationModels.isEmpty && statusStandingRequireLocation) {
       return true;
     }
 
     if (gpsLocation.locationModels.isEmpty &&
         !statusStandingRequireLocation &&
-        !atLeastOneIsOutside(gps, defaultDistanceTreshold)) {
+        !atLeastOneIsOutside(
+            gpsLocation.gpsOfLocation, defaultDistanceTreshold)) {
       return false;
     }
 
     if (gpsLocation.locationModels.isNotEmpty &&
-        !atLeastOneIsOutside(gps, gpsLocation.radius)) {
+        !atLeastOneIsOutside(gpsLocation.gpsOfLocation, gpsLocation.radius)) {
       return false;
     }
 
@@ -297,32 +296,28 @@ class Tracker {
 
   // returns false if started moving or satnding is not allowed
   // otherwise execute status standing
-  Future<bool> checkIfStillStanding(GPS gps) async {
-    final standingLocation =
-        (await GpsLocation.gpsLocation(gpsLastStatusStanding ?? gps));
-
+  Future<bool> checkIfStillStanding(GpsLocation gpsLocation) async {
     // standing not allowed
-    if (standingLocation.locationModels.isEmpty &&
-        statusStandingRequireLocation) {
+    if (gpsLocation.locationModels.isEmpty && statusStandingRequireLocation) {
       return false;
     }
 
     // moved away from last standing location
-    if (standingLocation.locationModels.isEmpty &&
+    if (gpsLocation.locationModels.isEmpty &&
         !statusStandingRequireLocation &&
-        !atLeastOneIsInside(
-            gpsLastStatusStanding ?? gps, defaultDistanceTreshold)) {
+        !atLeastOneIsInside(gpsLastStatusStanding ?? gpsLocation.gpsOfLocation,
+            defaultDistanceTreshold)) {
       return false;
     }
     // moved away from location
-    if (standingLocation.locationModels.isNotEmpty &&
-        !atLeastOneIsInside(
-            gpsLastStatusStanding ?? gps, standingLocation.radius)) {
+    if (gpsLocation.locationModels.isNotEmpty &&
+        !atLeastOneIsInside(gpsLastStatusStanding ?? gpsLocation.gpsOfLocation,
+            gpsLocation.radius)) {
       return false;
     }
 
     return atLeastOneIsInside(
-        gpsLastStatusStanding ?? gps, standingLocation.radius);
+        gpsLastStatusStanding ?? gpsLocation.gpsOfLocation, gpsLocation.radius);
   }
 
   Future<GPS> claculateGPSPoints(GPS gps) async {

@@ -430,7 +430,7 @@ class AppUserSetting {
           title: const Text('Auto create location.'),
           description: const Text(
               'The App can create a location for you automatically after a certain time of standing. '
-              ' It also can lookup an Address from OpenStreetMap.com for free, just make sure you have set the lookup permissions below.'),
+              ' It also can lookup an Address from OpenStreetMap.com.'),
           unit: Unit.option,
           defaultValue: true,
           resetToDefault: () async {
