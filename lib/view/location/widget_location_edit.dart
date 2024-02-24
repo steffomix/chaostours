@@ -28,6 +28,7 @@ import 'package:chaostours/model/model_location.dart';
 import 'package:chaostours/model/model_location_group.dart';
 import 'package:chaostours/view/trackpoint/widget_trackpoint_list.dart';
 import 'package:chaostours/conf/app_routes.dart';
+import 'package:chaostours/util.dart' as util;
 
 class WidgetLocationEdit extends StatefulWidget {
   const WidgetLocationEdit({super.key});
@@ -287,27 +288,30 @@ class _WidgetLocationEdit extends State<WidgetLocationEdit> {
           ),
           title: Container(
               padding: const EdgeInsets.all(_paddingSide),
-              child: TextField(
-                undoController: _radiusUndoController,
-                keyboardType: TextInputType.number,
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp('[0-9]')),
-                ],
-                decoration:
-                    const InputDecoration(label: Text('Radius in meter.')),
-                onChanged: ((value) {
-                  try {
-                    location.radius = int.parse(value);
-                    location.update();
-                  } catch (e) {
-                    //
-                  }
-                }),
-                maxLines: 1, //
-                minLines: 1,
-                controller: _radiusController,
-              ))),
-
+              child: Column(children: [
+                TextField(
+                  undoController: _radiusUndoController,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp('[0-9]')),
+                  ],
+                  decoration:
+                      const InputDecoration(label: Text('Radius in meter.')),
+                  onChanged: ((value) {
+                    try {
+                      location.radius = int.parse(value);
+                      location.update();
+                    } catch (e) {
+                      //
+                    }
+                  }),
+                  maxLines: 1, //
+                  minLines: 1,
+                  controller: _radiusController,
+                ),
+                const Text(
+                    'Life tracking locations lookup is limited to 10km, therefore don\'t use values higher than 10000.'),
+              ]))),
       AppWidgets.divider(),
 
       // groups
@@ -455,7 +459,12 @@ class _WidgetLocationEdit extends State<WidgetLocationEdit> {
               location.isActive = state ?? false;
               await location.update();
             },
-          ))
+          )),
+
+      AppWidgets.divider(),
+      Center(
+          child: Text(
+              'Created at: ${_modelLocation?.dateCreated == null ? '-' : util.formatDateTime(_modelLocation?.dateCreated ?? DateTime.now())}'))
     ]);
   }
 

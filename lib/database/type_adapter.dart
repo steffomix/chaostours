@@ -118,7 +118,7 @@ class TypeAdapter {
   /// DateTime
   static String serializeDateTime(DateTime value) => value.toIso8601String();
   static DateTime? deserializeDateTime(String? value) =>
-      value == null ? null : DateTime.parse(value);
+      value == null ? null : DateTime.parse(value.toString());
 
   /// trackingstatus
   static String serializeTrackingStatus(TrackingStatus value) {

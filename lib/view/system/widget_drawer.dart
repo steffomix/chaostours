@@ -105,7 +105,7 @@ class _WidgetDrawer extends State<WidgetDrawer> {
         title: 'Assets',
       ),
       MenuItem(
-          title: 'Location',
+          title: 'Locations',
           description: 'Manage your saved Locations.',
           route: AppRoutes.listLocation), // todo
       MenuItem(

@@ -71,6 +71,8 @@ class ModelLocation implements Model {
   // lazy loaded group
   List<ModelLocationGroup> locationGroups = [];
 
+  DateTime? dateCreated;
+
   int timesVisited = 0;
   DateTime? lastVisited;
 
@@ -95,6 +97,7 @@ class ModelLocation implements Model {
     required this.gps,
     required this.title,
     this.isActive = true,
+    this.dateCreated,
     this.privacy = LocationPrivacy.privat,
     this.radius = 50,
     this.timesVisited = 0,
@@ -106,6 +109,8 @@ class ModelLocation implements Model {
         isActive: TypeAdapter.deserializeBool(
             map[TableLocation.isActive.column],
             fallback: TypeAdapter.deserializeBool(true)),
+        dateCreated:
+            TypeAdapter.dbIntToTime(map[TableLocation.dateCreated.column]),
         gps: GPS(
             TypeAdapter.deserializeDouble(map[TableLocation.latitude.column]),
             TypeAdapter.deserializeDouble(map[TableLocation.longitude.column])),
@@ -124,6 +129,8 @@ class ModelLocation implements Model {
     return <String, Object?>{
       TableLocation.primaryKey.column: id,
       TableLocation.isActive.column: TypeAdapter.serializeBool(isActive),
+      TableLocation.dateCreated.column:
+          TypeAdapter.dbTimeToInt(dateCreated ?? DateTime.now()),
       TableLocation.latitude.column: gps.lat,
       TableLocation.longitude.column: gps.lon,
       TableLocation.radius.column: radius,

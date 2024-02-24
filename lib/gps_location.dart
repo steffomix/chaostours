@@ -69,8 +69,9 @@ class GpsLocation {
       [bool updateSharedLocations = false]) async {
     List<ModelLocation> allModels = await ModelLocation.byArea(
         gps: gps,
+        isActive: true,
         gpsArea: math.max(
-            1000,
+            10000,
             await Cache.appSettingDistanceTreshold.load(
                 AppUserSetting(Cache.appSettingDistanceTreshold).defaultValue
                     as int)));

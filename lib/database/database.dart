@@ -183,8 +183,13 @@ class DB {
       {Function()? onSuccess, Function()? onError}) async* {
     yield await returnDelayed(Text('Delete Database: ${getDBFullPath()}'));
     try {
-      File file = File(await getDBFullPath());
-      file.deleteSync();
+      final fullPath = await getDBFullPath();
+      File file = File(fullPath);
+      try {
+        file.rename('$fullPath~').then((f) => f.delete());
+      } catch (e) {
+        //
+      }
       yield await returnDelayed(const Text('Database deleted.'));
       yield await returnDelayed(
           const Text('A brand new one will be created on restart.'));
@@ -480,6 +485,7 @@ enum TableTask {
 enum TableLocation {
   id('id'),
   isActive('active'),
+  dateCreated('date_created'),
   radius('radius'),
   privacy('privacy'),
   latitude('latitude'),
@@ -502,6 +508,7 @@ enum TableLocation {
   static String get schema => '''CREATE TABLE IF NOT EXISTS $table (
 	${primaryKey.column}	INTEGER NOT NULL,
 	${isActive.column}	INTEGER DEFAULT 1,
+	${dateCreated.column}	INTEGER,
   ${radius.column} INTEGER,
 	${privacy.column}	INTEGER,
 	${latitude.column}	NUMERIC NOT NULL,

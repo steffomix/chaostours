@@ -186,8 +186,6 @@ class Tracker {
 
         if (!isStillMoving) {
           newTrackingStatus = setStatusStanding(gps);
-        } else {
-          /// autocreate location?
           await autoCreateLocation(gpsLocation);
         }
       }
