@@ -19,6 +19,7 @@ import 'package:chaostours/database/type_adapter.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/conf/app_user_settings.dart';
 import 'package:chaostours/gps.dart';
+import 'package:chaostours/model/model_location.dart';
 import 'package:chaostours/shared/shared_trackpoint_location.dart';
 import 'package:chaostours/shared/shared_trackpoint_task.dart';
 import 'package:chaostours/shared/shared_trackpoint_user.dart';
@@ -148,6 +149,10 @@ enum Cache {
       CacheModulId.sharedPreferences, Duration, ExpiredValue.never),
   appSettingLocationAccuracy(
       CacheModulId.sharedPreferences, LocationAccuracy, ExpiredValue.never),
+  appSettingDefaultLocationPrivacy(
+      CacheModulId.sharedPreferences, LocationPrivacy, ExpiredValue.never),
+  appSettingDefaultLocationRadius(
+      CacheModulId.sharedPreferences, LocationPrivacy, ExpiredValue.never),
   appSettingDistanceTreshold(
       CacheModulId.sharedPreferences, int, ExpiredValue.never),
   appSettingTimeRangeTreshold(
@@ -315,6 +320,10 @@ enum Cache {
           await cacheModul.setString(key,
               TypeAdapter.serializeLocationAccuracy(value as LocationAccuracy));
           break;
+        case const (LocationPrivacy):
+          await cacheModul.setString(key,
+              TypeAdapter.serializeLocationPrivacy(value as LocationPrivacy));
+          break;
         case const (Weekdays):
           await cacheModul.setString(
               key, TypeAdapter.serializeWeekdays(value as Weekdays));
@@ -418,6 +427,10 @@ enum Cache {
               defaultValue;
         case const (LocationAccuracy):
           return TypeAdapter.deserializeLocationAccuracy(
+                  await cacheModul.getString(key)) as T? ??
+              defaultValue;
+        case const (LocationPrivacy):
+          return TypeAdapter.deserializeLocationPrivacy(
                   await cacheModul.getString(key)) as T? ??
               defaultValue;
         case const (Weekdays):

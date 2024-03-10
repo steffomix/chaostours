@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/conf/app_user_settings.dart';
 import 'package:chaostours/database/type_adapter.dart';
 import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
@@ -28,23 +29,28 @@ import 'package:chaostours/database/database.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/logger.dart';
 
-enum LocationPrivacy {
+enum LocationPrivacy implements EnumUserSetting<LocationPrivacy> {
   /// send notification, make record, publish to calendar
-  public(1, Color.fromARGB(255, 0, 166, 0)),
+  public(1, Color.fromARGB(255, 0, 166, 0),
+      Text('Publish to calendar, notification, make a trackpoint record')),
 
   /// send notification, make record
-  privat(2, Color.fromARGB(255, 0, 0, 166)),
+  privat(2, Color.fromARGB(255, 0, 0, 166),
+      Text('Notification, make a trackpoint record')),
 
   /// send notification
-  restricted(3, Color.fromARGB(255, 166, 0, 166)),
+  restricted(
+      3, Color.fromARGB(255, 166, 0, 166), Text('Make a trackpoint record')),
 
   /// do nothing
-  none(4, Colors.black); // no location found
+  none(4, Colors.black, Text('Does nothing')); // no location found
 
   static final Logger logger = Logger.logger<LocationPrivacy>();
   final int level;
   final Color color;
-  const LocationPrivacy(this.level, this.color);
+  @override
+  final Widget title;
+  const LocationPrivacy(this.level, this.color, this.title);
   static final int _saveId = LocationPrivacy.restricted.level;
 
   static LocationPrivacy byId(Object? value) {
@@ -60,6 +66,15 @@ enum LocationPrivacy {
       logger.error('invalid value $id: $e', stk);
       return LocationPrivacy.restricted;
     }
+  }
+
+  static LocationPrivacy? byName(String name) {
+    for (var value in values) {
+      if (value.name == name) {
+        return value;
+      }
+    }
+    return null;
   }
 }
 

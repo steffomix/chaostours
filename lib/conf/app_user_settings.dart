@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 import 'package:chaostours/address.dart';
+import 'package:chaostours/model/model_location.dart';
 import 'package:flutter/material.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/database/cache.dart';
@@ -438,6 +439,33 @@ class AppUserSetting {
           },
         );
 
+      case Cache.appSettingDefaultLocationPrivacy:
+        return _appUserSettings[cache] ??= AppUserSetting._option(
+          cache,
+          title: const Text('Default Location Privacy'),
+          description:
+              const Text('Default of manual and auto created locations.'),
+          unit: Unit.option,
+          defaultValue: LocationPrivacy.privat,
+          resetToDefault: () async {
+            await cache.save<LocationPrivacy>(
+                AppUserSetting(cache).defaultValue as LocationPrivacy);
+          },
+        );
+
+      case Cache.appSettingDefaultLocationRadius:
+        return _appUserSettings[cache] ??= AppUserSetting._option(cache,
+            title: const Text('Default Location Radius'),
+            description:
+                const Text('Default of manual and auto created locations.'),
+            unit: Unit.meter,
+            minValue: 25,
+            maxValue: 10000,
+            defaultValue: 50, //
+            resetToDefault: () async {
+          await cache.save<int>(AppUserSetting(cache).defaultValue as int);
+        });
+
       case Cache.appSettingStatusStandingRequireLocation:
         return _appUserSettings[cache] ??= AppUserSetting._option(
           cache,
@@ -546,6 +574,13 @@ class AppUserSetting {
                 data ?? (defaultValue as OsmLookupConditions).name) ??
             (defaultValue as OsmLookupConditions);
         await cache.save<OsmLookupConditions>(value);
+        break;
+
+      case const (LocationPrivacy):
+        var value = LocationPrivacy.byName(
+                data ?? (defaultValue as LocationPrivacy).name) ??
+            (defaultValue as LocationPrivacy);
+        await cache.save<LocationPrivacy>(value);
         break;
 
       default:

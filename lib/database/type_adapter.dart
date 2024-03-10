@@ -20,6 +20,7 @@ import 'package:chaostours/database/cache.dart';
 import 'package:chaostours/gps.dart';
 import 'package:chaostours/logger.dart';
 import 'package:chaostours/channel/tracking.dart';
+import 'package:chaostours/model/model_location.dart';
 import 'package:chaostours/shared/shared_trackpoint_location.dart';
 import 'package:chaostours/shared/shared_trackpoint_task.dart';
 import 'package:chaostours/shared/shared_trackpoint_user.dart';
@@ -166,6 +167,11 @@ class TypeAdapter {
       value == null
           ? OsmLookupConditions.never
           : OsmLookupConditions.values.byName(value);
+
+  /// LocationPrivacy
+  static String serializeLocationPrivacy(LocationPrivacy value) => value.name;
+  static LocationPrivacy? deserializeLocationPrivacy(String? value) =>
+      value == null ? LocationPrivacy.privat : LocationPrivacy.byName(value);
 
   /// Location Accuracy
   static String serializeLocationAccuracy(LocationAccuracy value) => value.name;

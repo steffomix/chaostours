@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import 'package:chaostours/model/model_location.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -72,6 +73,9 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
             : await BackgroundChannel.stop();
       }),
       await booleanSetting(Cache.appSettingAutocreateLocation),
+      await radioSetting<LocationPrivacy>(
+          Cache.appSettingDefaultLocationPrivacy, LocationPrivacy.values),
+      await integerSetting(Cache.appSettingDefaultLocationRadius),
       await booleanSetting(Cache.appSettingStatusStandingRequireLocation),
       await booleanSetting(Cache.appSettingPublishToCalendar),
       await integerSetting(Cache.appSettingForegroundUpdateInterval),
@@ -121,7 +125,6 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                 // valueNotifiers[Cache.appSettingAutocreateLocationuration]?.value++;
                 valueNotifiers[Cache.appSettingGpsPointsSmoothCount]?.value++;
               }),
-              await integerSetting(Cache.appSettingGpsPointsSmoothCount),
             ]).toList(),
           )),
       await radioSetting<DateFormat>(
