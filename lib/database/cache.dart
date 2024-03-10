@@ -152,15 +152,13 @@ enum Cache {
   appSettingDefaultLocationPrivacy(
       CacheModulId.sharedPreferences, LocationPrivacy, ExpiredValue.never),
   appSettingDefaultLocationRadius(
-      CacheModulId.sharedPreferences, LocationPrivacy, ExpiredValue.never),
+      CacheModulId.sharedPreferences, int, ExpiredValue.never),
   appSettingDistanceTreshold(
       CacheModulId.sharedPreferences, int, ExpiredValue.never),
   appSettingTimeRangeTreshold(
       CacheModulId.sharedPreferences, Duration, ExpiredValue.never),
   appSettingBackgroundTrackingInterval(
       CacheModulId.sharedPreferences, Duration, ExpiredValue.never),
-  appSettingGpsPointsSmoothCount(
-      CacheModulId.sharedPreferences, int, ExpiredValue.never),
   appSettingPublishToCalendar(
       CacheModulId.sharedPreferences, bool, ExpiredValue.never),
   appSettingTimeZone(

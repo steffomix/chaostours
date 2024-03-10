@@ -182,11 +182,11 @@ class Tracker {
           newTrackingStatus = await setStatusMoving(gps);
         }
       } else if (oldTrackingStatus == TrackingStatus.moving) {
+        await autoCreateLocation(gpsLocation);
         bool isStillMoving = await checkIfStillMoving(gpsLocation);
 
         if (!isStillMoving) {
           newTrackingStatus = setStatusStanding(gps);
-          await autoCreateLocation(gpsLocation);
         }
       }
     }

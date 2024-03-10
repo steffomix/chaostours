@@ -100,7 +100,7 @@ class GpsLocation {
     }
 
     final location = GpsLocation._location(
-      gpsOfLocation: gps,
+      gpsOfLocation: models.isEmpty ? gps : models.first.gps,
       locationModels: models,
     );
 

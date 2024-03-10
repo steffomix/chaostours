@@ -131,10 +131,9 @@ class AppUserSetting {
 
   static Future<void> resetAllToDefault() async {
     for (var setting in [
+      // trackpoints
       Cache.appSettingTimeRangeTreshold,
-      Cache.appSettingAutocreateLocationDuration,
       Cache.appSettingBackgroundTrackingInterval,
-      Cache.appSettingGpsPointsSmoothCount,
       Cache.appSettingBackgroundTrackingEnabled,
       Cache.appSettingCacheGpsTime,
       Cache.appSettingDistanceTreshold,
@@ -142,9 +141,12 @@ class AppUserSetting {
       Cache.appSettingWeekdays,
       Cache.appSettingPublishToCalendar,
       Cache.appSettingAutocreateLocation,
+      Cache.appSettingAutocreateLocationDuration,
       Cache.appSettingStatusStandingRequireLocation,
+      Cache.appSettingDefaultLocationPrivacy,
+      Cache.appSettingDefaultLocationRadius,
       Cache.appSettingForegroundUpdateInterval,
-      Cache.appSettingTimeZone
+      Cache.appSettingTimeZone,
     ]) {
       await AppUserSetting(setting).resetToDefault();
     }
@@ -192,17 +194,6 @@ class AppUserSetting {
             if (autoCreate < minCreate) {
               await cAutoCreate.save<Duration>(Duration(seconds: minCreate));
             }
-
-            // recheck smoothCount
-            Cache cSmooth = Cache.appSettingGpsPointsSmoothCount;
-            int smooth = await cSmooth
-                .load<int>(AppUserSetting(cSmooth).defaultValue as int);
-            if (smooth > 0) {
-              int maxSmooth = maxSmoothCount(timeRange, value);
-              if (smooth > maxSmooth) {
-                await cSmooth.save<int>(maxSmooth);
-              }
-            }
             return value;
           },
         );
@@ -241,18 +232,6 @@ class AppUserSetting {
             if (createSeconds < minCreateSeconds) {
               await cache.save<Duration>(Duration(seconds: minCreateSeconds));
             }
-            //
-            // recheck smoothCount
-            cache = Cache.appSettingGpsPointsSmoothCount;
-            int smoothCount = await cache
-                .load<int>(AppUserSetting(cache).defaultValue as int);
-            if (smoothCount > 1) {
-              // if not disabled
-              int maxSmooth = maxSmoothCount(timeRangeSeconds, trackingSeconds);
-              if (smoothCount > maxSmooth) {
-                await cache.save<int>(maxSmooth);
-              }
-            }
 
             return timeRangeSeconds;
           },
@@ -287,40 +266,6 @@ class AppUserSetting {
             return value;
           }, //
         ); // 15 minutes
-
-      case Cache.appSettingGpsPointsSmoothCount:
-        return _appUserSettings[cache] ??= AppUserSetting._option(
-          cache,
-          title: const Text('GPS smoothing count'),
-          description: const Text(
-              'Compensates for inaccurate GPS by calculating the average of the given number of GPS points. '
-              'The maximum possible number of smooth points is calculated with the '
-              'ceiling of "(Time Range Treshold" / "Background GPS Tracking Interval Duration) -1". '
-              'A value below 2 disables this future.'),
-          unit: Unit.piece,
-          defaultValue: 3,
-          zeroDeactivates: true,
-          resetToDefault: () async {
-            await cache.save<int>(AppUserSetting(cache).defaultValue as int);
-          },
-          extraCheck: (int value) async {
-            Cache cTimeRange = Cache.appSettingTimeRangeTreshold;
-            int timeRange = (await cTimeRange.load<Duration>(
-                    AppUserSetting(cTimeRange).defaultValue as Duration))
-                .inSeconds;
-            //
-            Cache cLookup = Cache.appSettingBackgroundTrackingInterval;
-            int lookup = (await cLookup.load<Duration>(
-                    AppUserSetting(cLookup).defaultValue as Duration))
-                .inSeconds;
-            //
-            int maxCount = (timeRange / lookup).floor() - 1;
-            if (value > maxCount) {
-              return maxCount;
-            }
-            return value;
-          },
-        );
 
       case Cache.appSettingBackgroundTrackingEnabled:
         return _appUserSettings[cache] ??= AppUserSetting._option(
@@ -615,6 +560,11 @@ class AppUserSetting {
       case const (GpsPrecision):
         GpsPrecision value =
             await cache.load<GpsPrecision>(defaultValue as GpsPrecision);
+        return value.name;
+
+      case const (LocationPrivacy):
+        LocationPrivacy value =
+            await cache.load<LocationPrivacy>(defaultValue as LocationPrivacy);
         return value.name;
 
       default:

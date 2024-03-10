@@ -102,7 +102,6 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                 valueNotifiers[Cache.appSettingTimeRangeTreshold]?.value++;
                 valueNotifiers[Cache.appSettingAutocreateLocationDuration]
                     ?.value++;
-                valueNotifiers[Cache.appSettingGpsPointsSmoothCount]?.value++;
               }),
               await integerSetting(Cache.appSettingTimeRangeTreshold, onChange:
                   (
@@ -113,7 +112,6 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                 //valueNotifiers[Cache.appSettingTimeRangeTreshold]?.value++;
                 valueNotifiers[Cache.appSettingAutocreateLocationDuration]
                     ?.value++;
-                valueNotifiers[Cache.appSettingGpsPointsSmoothCount]?.value++;
               }),
               await integerSetting(Cache.appSettingAutocreateLocationDuration,
                   onChange: (
@@ -122,8 +120,8 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
                 valueNotifiers[Cache.appSettingBackgroundTrackingInterval]
                     ?.value++;
                 valueNotifiers[Cache.appSettingTimeRangeTreshold]?.value++;
-                // valueNotifiers[Cache.appSettingAutocreateLocationuration]?.value++;
-                valueNotifiers[Cache.appSettingGpsPointsSmoothCount]?.value++;
+                valueNotifiers[Cache.appSettingAutocreateLocationDuration]
+                    ?.value++;
               }),
             ]).toList(),
           )),
