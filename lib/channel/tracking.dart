@@ -246,8 +246,8 @@ class Tracker {
           .add(duration)
           .isBefore(DateTime.now())) {
         final averageGps = GPS.average(gpsCalcPoints);
-        averageGps.time = DateTime.now();
-        await (await GpsLocation.gpsLocation(gps)).autocreateLocation();
+        averageGps.time = DateTime.now().subtract(duration);
+        await (await GpsLocation.gpsLocation(averageGps)).autocreateLocation();
       }
     }
   }
@@ -295,9 +295,18 @@ class Tracker {
   // returns false if started moving or satnding is not allowed
   // otherwise execute status standing
   Future<bool> checkIfStillStanding(GpsLocation gpsLocation) async {
+    if (gpsLocation.locationModels.isNotEmpty ||
+        !statusStandingRequireLocation) {
+      return atLeastOneIsInside(
+          gpsLastStatusStanding ?? gpsLocation.gpsOfLocation,
+          gpsLocation.radius);
+    }
+
     // standing not allowed
     if (gpsLocation.locationModels.isEmpty && statusStandingRequireLocation) {
-      return false;
+      return atLeastOneIsInside(
+          gpsLastStatusStanding ?? gpsLocation.gpsOfLocation,
+          gpsLocation.radius);
     }
 
     // moved away from last standing location

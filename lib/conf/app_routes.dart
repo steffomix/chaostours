@@ -51,6 +51,8 @@ import 'package:chaostours/view/trackpoint/widget_edit_trackpoint.dart';
 import 'package:chaostours/view/system/widget_color_scheme_picker.dart';
 //
 import 'package:chaostours/view/calendar/widget_manage_calendar.dart';
+//
+import 'package:chaostours/view/calendar/calendar.dart';
 
 enum AppRoutes {
   // system
@@ -98,7 +100,10 @@ enum AppRoutes {
   // misc
   colorSchemePicker,
   selectCalendar,
-  osm;
+  osm,
+
+  // calendar
+  calendar;
 
   String get route => name.toLowerCase();
 
@@ -174,6 +179,9 @@ enum AppRoutes {
       AppRoutes.selectCalendar.route: (context) => const WidgetManageCalendar(),
       // osm
       AppRoutes.osm.route: (context) => const WidgetOsm(),
+
+      // calendar
+      AppRoutes.calendar.route: (context) => const WidgetCalendar(),
     };
   }
 }

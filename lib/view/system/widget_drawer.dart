@@ -101,6 +101,11 @@ class _WidgetDrawer extends State<WidgetDrawer> {
           description: 'Manage cour Trackpoints.',
           route: AppRoutes.listTrackpoints),
       DividerItem(),
+      MenuItem(
+          title: 'Calendar',
+          description: 'Your recorded trackpoints in a calendar view.',
+          route: AppRoutes.calendar),
+      DividerItem(),
       HeaderItem(
         title: 'Assets',
       ),

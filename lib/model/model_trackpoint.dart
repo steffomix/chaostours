@@ -503,7 +503,7 @@ class ModelTrackPoint {
             columns: TableTrackPoint.columns,
             offset: offset,
             limit: limit,
-            orderBy: TableTrackPoint.timeStart.column);
+            orderBy: '${TableTrackPoint.timeStart.column} DESC');
 
         var models = <ModelTrackPoint>[];
         for (var row in rows) {

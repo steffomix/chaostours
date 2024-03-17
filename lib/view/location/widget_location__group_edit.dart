@@ -390,7 +390,7 @@ class _WidgetLocationGroupEdit extends State<WidgetLocationGroupEdit> {
                 field: TableLocationGroup.withCalendarDuration,
                 title: 'Duration',
                 description:
-                    'The duration of the event. If you have set teh Event as an all day event, the duration will not be displayed.'),
+                    'The duration of the event. If you have set the Event as an all day event, the duration will not be displayed.'),
 
             ///
             /// withCalendarGps
@@ -505,6 +505,9 @@ class _WidgetLocationGroupEdit extends State<WidgetLocationGroupEdit> {
         break;
       case TableLocationGroup.withCalendarTimeEnd:
         _model?.calendarTimeEnd = value;
+        break;
+      case TableLocationGroup.withCalendarAllDay:
+        _model?.calendarAllDay = value;
         break;
       case TableLocationGroup.withCalendarDuration:
         _model?.calendarDuration = value;

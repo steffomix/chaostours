@@ -135,12 +135,21 @@ class GpsLocation {
     tracker.address = await Address(gpsOfLocation)
         .lookup(OsmLookupConditions.onAutoCreateLocation, saveToCache: true);
 
+    var cache = Cache.appSettingDefaultLocationPrivacy;
+    LocationPrivacy privacy = await cache.load<LocationPrivacy>(
+        AppUserSetting(cache).defaultValue as LocationPrivacy);
+
+    cache = Cache.appSettingDefaultLocationRadius;
+    int defaultRadius =
+        await cache.load<int>(AppUserSetting(cache).defaultValue as int);
+
     /// create location
     ModelLocation newModel = ModelLocation(
         gps: gpsOfLocation,
         title: tracker.address?.address ?? '',
         description: tracker.address?.addressDetails ?? '',
-        radius: radius);
+        privacy: privacy,
+        radius: defaultRadius);
 
     await newModel.insert();
     final newLocation = await gpsLocation(gpsOfLocation, true);
@@ -223,13 +232,12 @@ class GpsLocation {
       return;
     }
 
-    tracker.address =
-        await Address(tracker.gpsLastStatusStanding ?? gpsOfLocation)
-            .lookup(OsmLookupConditions.onStatusChanged, saveToCache: true);
+    tracker.address = await Address(gpsOfLocation)
+        .lookup(OsmLookupConditions.onStatusChanged, saveToCache: true);
 
     // update last visited
     for (var model in locationModels) {
-      model.lastVisited = (tracker.gpsLastStatusStanding ?? gpsOfLocation).time;
+      model.lastVisited = gpsOfLocation.time;
       await model.update();
     }
   }
@@ -268,20 +276,24 @@ class GpsLocation {
 
       List<String> bodyParts = [];
 
-      // time start
-      if (group.calendarTimeStart) {
-        bodyParts
-            .add('[START]: ${util.formatDateTime(trackpoint.timeStart)}<br />');
-      }
-      // time end
-      if (group.calendarTimeEnd) {
-        bodyParts.add(
-            '[END]: ${util.formatDateTime(group.calendarAllDay ? trackpoint.timeStart : trackpoint.timeEnd)}<br />');
-      }
-      // duration
-      if (group.calendarDuration && !group.calendarAllDay) {
-        bodyParts.add(
-            '[DURATION]: ${util.formatDuration(trackpoint.duration)}<br /><br />');
+      if (!group.calendarAllDay) {
+        // time start
+        if (group.calendarTimeStart) {
+          bodyParts.add(
+              '[START]: ${util.formatDateTime(trackpoint.timeStart)}<br />');
+        }
+        // time end
+        if (group.calendarTimeEnd) {
+          bodyParts.add(
+              '[END]: ${util.formatDateTime(group.calendarAllDay ? trackpoint.timeStart : trackpoint.timeEnd)}<br />');
+        }
+        // duration
+        if (group.calendarDuration) {
+          bodyParts.add(
+              '[DURATION]: ${util.formatDuration(trackpoint.duration)}<br /><br />');
+        }
+      } else {
+        bodyParts.add('[DURATION]: all day<br /><br />');
       }
       // GPS
       if (group.calendarGps) {

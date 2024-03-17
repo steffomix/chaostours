@@ -15,9 +15,11 @@ limitations under the License.
 */
 
 import 'package:app_settings/app_settings_platform_interface.dart';
+import 'package:calendar_view/calendar_view.dart';
 import 'package:chaostours/database/cache.dart';
 import 'package:chaostours/model/model_location_group.dart';
 import 'package:chaostours/model/model_task_group.dart';
+import 'package:chaostours/model/model_trackpoint.dart';
 import 'package:chaostours/model/model_user_group.dart';
 import 'package:flutter/material.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
@@ -61,77 +63,81 @@ String translate(String s, [List<Object?>? p]) {
 class AppWidgets {
   static final Logger logger = Logger.logger<AppWidgets>();
 
+  static final calendarEventController = EventController<ModelTrackPoint>();
+
   static Widget materialApp(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      //themeMode: ThemeMode.system,
-      title: 'Chaos Tours',
-      initialRoute: AppRoutes.welcome.route,
-      routes: AppRoutes.routes,
-      // Theme config for FlexColorScheme version 7.3.x. Make sure you use
-      // same or higher package version, but still same major version. If you
-      // use a lower package version, some properties may not be supported.
-      // In that case remove them after copying this theme to your app.
-      theme: FlexThemeData.light(
-        scheme: StaticCache.flexScheme, //FlexScheme.gold,
-        surfaceMode: FlexSurfaceMode.levelSurfacesLowScaffold,
-        blendLevel: 13,
-        subThemesData: const FlexSubThemesData(
-          blendOnLevel: 20,
-          blendOnColors: true,
-          useTextTheme: true,
-          useM2StyleDividerInM3: true,
-          textButtonRadius: 5.0,
-          filledButtonRadius: 5.0,
-          elevatedButtonRadius: 5.0,
-          outlinedButtonRadius: 5.0,
-          segmentedButtonRadius: 5.0,
-          fabUseShape: true,
-          fabRadius: 5.0,
-          chipRadius: 5.0,
-          cardRadius: 5.0,
-          alignedDropdown: true,
-          dialogRadius: 5.0,
-          useInputDecoratorThemeInDialogs: true,
-        ),
-        visualDensity: null, //FlexColorScheme.comfortablePlatformDensity,
-        useMaterial3: true,
-        swapLegacyOnMaterial3: true,
-        // To use the Playground font, add GoogleFonts package and uncomment
-        fontFamily: GoogleFonts.openSans().fontFamily,
-      ),
-      darkTheme: FlexThemeData.dark(
-        scheme: StaticCache.flexScheme,
-        surfaceMode: FlexSurfaceMode
-            .highScaffoldLowSurface, // .levelSurfacesLowScaffold,
-        blendLevel: 13,
-        subThemesData: const FlexSubThemesData(
-          blendOnLevel: 20,
-          useTextTheme: true,
-          useM2StyleDividerInM3: true,
-          textButtonRadius: 5.0,
-          filledButtonRadius: 5.0,
-          elevatedButtonRadius: 5.0,
-          outlinedButtonRadius: 5.0,
-          segmentedButtonRadius: 5.0,
-          fabUseShape: true,
-          fabRadius: 5.0,
-          chipRadius: 5.0,
-          cardRadius: 5.0,
-          alignedDropdown: true,
-          dialogRadius: 5.0,
-          useInputDecoratorThemeInDialogs: true,
-        ),
-        visualDensity: FlexColorScheme.comfortablePlatformDensity,
-        useMaterial3: true,
-        swapLegacyOnMaterial3: true,
-        // To use the Playground font, add GoogleFonts package and uncomment
-        fontFamily: GoogleFonts.openSans().fontFamily,
-      ),
+    return CalendarControllerProvider(
+        controller: calendarEventController,
+        child: MaterialApp(
+          debugShowCheckedModeBanner: false,
+          //themeMode: ThemeMode.system,
+          title: 'Chaos Tours',
+          initialRoute: AppRoutes.welcome.route,
+          routes: AppRoutes.routes,
+          // Theme config for FlexColorScheme version 7.3.x. Make sure you use
+          // same or higher package version, but still same major version. If you
+          // use a lower package version, some properties may not be supported.
+          // In that case remove them after copying this theme to your app.
+          theme: FlexThemeData.light(
+            scheme: StaticCache.flexScheme, //FlexScheme.gold,
+            surfaceMode: FlexSurfaceMode.levelSurfacesLowScaffold,
+            blendLevel: 13,
+            subThemesData: const FlexSubThemesData(
+              blendOnLevel: 20,
+              blendOnColors: true,
+              useTextTheme: true,
+              useM2StyleDividerInM3: true,
+              textButtonRadius: 5.0,
+              filledButtonRadius: 5.0,
+              elevatedButtonRadius: 5.0,
+              outlinedButtonRadius: 5.0,
+              segmentedButtonRadius: 5.0,
+              fabUseShape: true,
+              fabRadius: 5.0,
+              chipRadius: 5.0,
+              cardRadius: 5.0,
+              alignedDropdown: true,
+              dialogRadius: 5.0,
+              useInputDecoratorThemeInDialogs: true,
+            ),
+            visualDensity: null, //FlexColorScheme.comfortablePlatformDensity,
+            useMaterial3: true,
+            swapLegacyOnMaterial3: true,
+            // To use the Playground font, add GoogleFonts package and uncomment
+            fontFamily: GoogleFonts.openSans().fontFamily,
+          ),
+          darkTheme: FlexThemeData.dark(
+            scheme: StaticCache.flexScheme,
+            surfaceMode: FlexSurfaceMode
+                .highScaffoldLowSurface, // .levelSurfacesLowScaffold,
+            blendLevel: 13,
+            subThemesData: const FlexSubThemesData(
+              blendOnLevel: 20,
+              useTextTheme: true,
+              useM2StyleDividerInM3: true,
+              textButtonRadius: 5.0,
+              filledButtonRadius: 5.0,
+              elevatedButtonRadius: 5.0,
+              outlinedButtonRadius: 5.0,
+              segmentedButtonRadius: 5.0,
+              fabUseShape: true,
+              fabRadius: 5.0,
+              chipRadius: 5.0,
+              cardRadius: 5.0,
+              alignedDropdown: true,
+              dialogRadius: 5.0,
+              useInputDecoratorThemeInDialogs: true,
+            ),
+            visualDensity: FlexColorScheme.comfortablePlatformDensity,
+            useMaterial3: true,
+            swapLegacyOnMaterial3: true,
+            // To use the Playground font, add GoogleFonts package and uncomment
+            fontFamily: GoogleFonts.openSans().fontFamily,
+          ),
 // If you do not have a themeMode switch, uncomment this line
 // to let the device system mode control the theme mode:
-      themeMode: ThemeMode.system,
-    );
+          themeMode: ThemeMode.system,
+        ));
   }
 
   static Scaffold scaffold(BuildContext context,

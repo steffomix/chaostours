@@ -119,6 +119,10 @@ dependencies:
 
   # https://pub.dev/packages/restart_app
   restart_app: ^1.2.1
+  
+  # https://fluttergems.dev/calendar/
+  # https://pub.dev/packages/calendar_view
+  calendar_view: ^1.0.4
 
 
   
