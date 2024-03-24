@@ -124,6 +124,10 @@ class Tracker {
     ///
     GPS gps = await GPS.gps();
 
+    gpsLastStatusMoving ??= gps;
+    gpsLastStatusStanding ??= gps;
+    gpsLastStatusChange ??= gps;
+
     // load always used cache data
 
     const cacheDistanceTreshold = Cache.appSettingDistanceTreshold;
@@ -135,15 +139,6 @@ class Tracker {
     statusStandingRequireLocation =
         await cacheStandingRequireLocation.load<bool>(
             AppUserSetting(cacheStandingRequireLocation).defaultValue as bool);
-
-    // load old gps points
-    if (trackingStatus == null) {
-      //gpsPoints = await Cache.backgroundGpsPoints.load<List<GPS>>([]);
-    }
-
-    gpsLastStatusMoving ??= gps;
-    gpsLastStatusStanding ??= gps;
-    gpsLastStatusChange ??= gps;
 
     //gps = await
     await claculateGPSPoints(gps);
@@ -225,6 +220,20 @@ class Tracker {
     }
 
     return await serializeState(gps);
+  }
+
+  TrackingStatus setStatusStanding(GPS gps) {
+    trackingStatus = TrackingStatus.standing;
+    gpsLastStatusChange = gps;
+    gpsLastStatusStanding = gps;
+    return trackingStatus!;
+  }
+
+  Future<TrackingStatus> setStatusMoving(GPS gps) async {
+    trackingStatus = TrackingStatus.moving;
+    gpsLastStatusChange = gps;
+    gpsLastStatusMoving = gps;
+    return trackingStatus!;
   }
 
   Future<void> autoCreateLocation(GpsLocation gpsLocation) async {
@@ -382,22 +391,5 @@ class Tracker {
 
     gps = gpsCalcPoints.first;
     return gps;
-  }
-
-  TrackingStatus setStatusStanding(GPS gps) {
-    trackingStatus = TrackingStatus.standing;
-    gpsLastStatusChange = gps;
-    gpsLastStatusStanding = gps;
-    return trackingStatus!;
-  }
-
-  Future<TrackingStatus> setStatusMoving(GPS gps) async {
-    trackingStatus = TrackingStatus.moving;
-    gpsLastStatusChange = gpsLastStatusMoving = gps;
-
-    await Cache.backgroundSharedLocationList
-        .save<List<SharedTrackpointLocation>>([]);
-
-    return trackingStatus!;
   }
 }

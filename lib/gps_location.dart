@@ -126,6 +126,7 @@ class GpsLocation {
             calendarEventIds: await Cache.backgroundCalendarLastEventIds
                 .load<List<CalendarEventId>>([]),
             address: address?.address ?? '',
+            fullAddress: address?.addressDetails ?? '',
             notes: await Cache.backgroundTrackPointNotes.load<String>(''))
         .addSharedAssets(this);
   }
@@ -202,6 +203,9 @@ class GpsLocation {
                 (e) => SharedTrackpointUser(id: e.id, notes: ''),
               )
               .toList());
+
+      await Cache.backgroundSharedLocationList
+          .save<List<SharedTrackpointLocation>>([]);
     } catch (e, stk) {
       logger.error('executeStatusMoving: $e', stk);
     }
@@ -242,14 +246,29 @@ class GpsLocation {
     }
   }
 
-  Future<List<CalendarEvent>> composeCalendarEvents() async {
+  Future<List<CalendarEvent>> composeCalendarEvents(
+      {ModelTrackPoint? trackpoint}) async {
     if (locationModels.isEmpty) {
       return [];
     }
 
     // grab recources
     final calendarIds = await mergeCalendarEvents();
-    final trackpoint = await createTrackPoint();
+
+    if (trackpoint == null) {
+      address ??= await Address(gpsOfLocation)
+          .lookup(OsmLookupConditions.onStatusChanged, saveToCache: true);
+      trackpoint = await ModelTrackPoint(
+              gps: gpsOfLocation,
+              timeStart: gpsOfLocation.time,
+              timeEnd: DateTime.now(),
+              calendarEventIds: await Cache.backgroundCalendarLastEventIds
+                  .load<List<CalendarEventId>>([]),
+              address: address?.address ?? '',
+              fullAddress: address?.addressDetails ?? '',
+              notes: await Cache.backgroundTrackPointNotes.load<String>(''))
+          .addSharedAssets(this);
+    }
 
     // grab location models
     final mainLocation = locationModels.first;
@@ -471,13 +490,18 @@ class GpsLocation {
     if (locationRequired && locationModels.isEmpty) {
       return null;
     }
+    /* 
+    final trackerStart = tracker.gpsLastStatusStanding?.time;
+    final tStart = gpsOfLocation.time;
+    final tStop = DateTime.now(); 
+    */
 
     final Address address = await Address(gpsOfLocation)
         .lookup(OsmLookupConditions.onStatusChanged, saveToCache: true);
     ModelTrackPoint newTrackPoint = ModelTrackPoint(
         gps: gpsOfLocation,
-        timeStart: gpsOfLocation.time,
-        timeEnd: DateTime.now(),
+        timeStart: tracker.gpsLastStatusStanding?.time ?? gpsOfLocation.time,
+        timeEnd: gpsOfLocation.time,
         calendarEventIds: await Cache.backgroundCalendarLastEventIds
             .load<List<CalendarEventId>>([]),
         address: address.address,
@@ -491,9 +515,6 @@ class GpsLocation {
     //_debugInsert(newTrackPoint);
     return newTrackPoint;
   }
-
-  Future<bool> publishToCalendars(ModelTrackPoint tp) async =>
-      await _publishMoving(tp);
 
   // finish standing event
   Future<bool> _publishMoving(ModelTrackPoint? tp) async {
@@ -518,7 +539,7 @@ class GpsLocation {
       return false;
     }
 
-    final events = await composeCalendarEvents();
+    final events = await composeCalendarEvents(trackpoint: tp);
     for (var event in events) {
       final calendar = await AppCalendar().calendarById(event.event.calendarId);
       if (calendar != null) {
