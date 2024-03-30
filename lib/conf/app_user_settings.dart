@@ -140,7 +140,7 @@ class AppUserSetting {
       Cache.appSettingOsmLookupCondition,
       Cache.appSettingWeekdays,
       Cache.appSettingPublishToCalendar,
-      Cache.appSettingAutocreateLocation,
+      Cache.appSettingAutoCreateLocation,
       Cache.appSettingAutocreateLocationDuration,
       Cache.appSettingStatusStandingRequireLocation,
       Cache.appSettingDefaultLocationPrivacy,
@@ -370,7 +370,7 @@ class AppUserSetting {
           },
         );
 
-      case Cache.appSettingAutocreateLocation:
+      case Cache.appSettingAutoCreateLocation:
         return _appUserSettings[cache] ??= AppUserSetting._option(
           cache,
           title: const Text('Auto create location.'),

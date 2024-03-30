@@ -158,7 +158,7 @@ class Tracker {
     if (triggeredTrackingStatus != TrackingStatus.none) {
       if (triggeredTrackingStatus == TrackingStatus.moving) {
         // status changed by user
-        newTrackingStatus = await setStatusMoving(gps);
+        newTrackingStatus = setStatusMoving(gps);
       } else if (triggeredTrackingStatus == TrackingStatus.standing) {
         gpsPoints.clear();
         gps = await claculateGPSPoints(gps);
@@ -174,7 +174,7 @@ class Tracker {
       if (oldTrackingStatus == TrackingStatus.standing) {
         //
         if (!(await checkIfStillStanding(gpsLocation))) {
-          newTrackingStatus = await setStatusMoving(gps);
+          newTrackingStatus = setStatusMoving(gps);
         }
       } else if (oldTrackingStatus == TrackingStatus.moving) {
         await autoCreateLocation(gpsLocation);
@@ -229,7 +229,7 @@ class Tracker {
     return trackingStatus!;
   }
 
-  Future<TrackingStatus> setStatusMoving(GPS gps) async {
+  TrackingStatus setStatusMoving(GPS gps) {
     trackingStatus = TrackingStatus.moving;
     gpsLastStatusChange = gps;
     gpsLastStatusMoving = gps;
@@ -243,7 +243,11 @@ class Tracker {
 
     final gps = gpsLocation.gpsOfLocation;
 
-    const cache = Cache.appSettingAutocreateLocation;
+    Cache cache = Cache.appSettingDefaultLocationRadius;
+    int radius =
+        await cache.load<int>(AppUserSetting(cache).defaultValue as int);
+
+    cache = Cache.appSettingAutoCreateLocation;
     if (await cache.load<bool>(AppUserSetting(cache).defaultValue as bool)) {
       const cache = Cache.appSettingAutocreateLocationDuration;
       final duration = await cache
@@ -254,7 +258,13 @@ class Tracker {
           .time
           .add(duration)
           .isBefore(DateTime.now())) {
-        final averageGps = GPS.average(gpsCalcPoints);
+        final averageGps = GPS.average(gpsPoints);
+        // check if all gps points are in default radius
+        for (var point in gpsPoints) {
+          if (GPS.distance(point, averageGps) > radius) {
+            return;
+          }
+        }
         averageGps.time = DateTime.now().subtract(duration);
         await (await GpsLocation.gpsLocation(averageGps)).autocreateLocation();
       }

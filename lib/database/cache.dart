@@ -139,7 +139,7 @@ enum Cache {
       CacheModulId.sharedPreferences, bool, ExpiredValue.never),
   appSettingAutocreateLocationDuration(
       CacheModulId.sharedPreferences, Duration, ExpiredValue.never),
-  appSettingAutocreateLocation(
+  appSettingAutoCreateLocation(
       CacheModulId.sharedPreferences, bool, ExpiredValue.never),
   appSettingForegroundUpdateInterval(
       CacheModulId.sharedPreferences, Duration, ExpiredValue.never),

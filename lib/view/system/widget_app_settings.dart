@@ -72,7 +72,7 @@ class _WidgetAppSettings extends State<WidgetAppSettings> {
             ? await BackgroundChannel.start()
             : await BackgroundChannel.stop();
       }),
-      await booleanSetting(Cache.appSettingAutocreateLocation),
+      await booleanSetting(Cache.appSettingAutoCreateLocation),
       await radioSetting<LocationPrivacy>(
           Cache.appSettingDefaultLocationPrivacy, LocationPrivacy.values),
       await integerSetting(Cache.appSettingDefaultLocationRadius),
