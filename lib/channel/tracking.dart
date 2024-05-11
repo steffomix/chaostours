@@ -26,7 +26,6 @@ import 'package:chaostours/gps.dart';
 import 'package:chaostours/database/cache.dart';
 import 'package:chaostours/gps_location.dart';
 import 'package:chaostours/database/type_adapter.dart';
-import 'package:chaostours/shared/shared_trackpoint_location.dart';
 
 enum TrackingStatus {
   none(0),
@@ -206,9 +205,9 @@ class Tracker {
           await gpsLocation.executeStatusMoving();
           logger.log('status MOVING finished');
         }
-        skipRecord = false;
 
         ///
+        skipRecord = false;
       } else if (newTrackingStatus == TrackingStatus.standing) {
         // skip tracking by user
         if (!skipRecord) {

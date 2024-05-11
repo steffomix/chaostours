@@ -127,9 +127,12 @@ class ModelTrackPoint {
             TypeAdapter.deserializeInt(map[TableTrackPoint.timeStart.column])),
         timeEnd: TypeAdapter.dbIntToTime(
             TypeAdapter.deserializeInt(map[TableTrackPoint.timeEnd.column])),
-        address: (map[TableTrackPoint.address.column] ?? '').toString(),
-        fullAddress: (map[TableTrackPoint.fullAddress.column] ?? '').toString(),
-        notes: (map[TableTrackPoint.notes.column] ?? '').toString());
+        address:
+            TypeAdapter.deserializeString(map[TableTrackPoint.address.column]),
+        fullAddress: TypeAdapter.deserializeString(
+            map[TableTrackPoint.fullAddress.column]),
+        notes:
+            TypeAdapter.deserializeString(map[TableTrackPoint.notes.column]));
     model._id =
         TypeAdapter.deserializeInt(map[TableTrackPoint.primaryKey.column]);
     return model;

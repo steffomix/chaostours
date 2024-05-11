@@ -379,10 +379,13 @@ class _WidgetOsm extends State<WidgetOsm> {
               radius: await Cache.appSettingDistanceTreshold.load<int>(
                   AppUserSetting(Cache.appSettingDistanceTreshold).defaultValue
                       as int),
+              privacy: await Cache.appSettingDefaultLocationPrivacy
+                  .load<LocationPrivacy>(
+                      AppUserSetting(Cache.appSettingDefaultLocationPrivacy)
+                          .defaultValue as LocationPrivacy),
             );
 
             await location.insert();
-            locationRenderer.renderLocation(mapController);
             Fluttertoast.showToast(msg: 'Location created');
             if (mounted) {
               Navigator.pop(context);
@@ -412,7 +415,11 @@ class _WidgetOsm extends State<WidgetOsm> {
           /// get current position
           switch (buttonId) {
             case 0:
-              createLocation();
+              createLocation().then(
+                (value) {
+                  locationRenderer.renderLocation(mapController);
+                },
+              );
               break;
             case 1:
               launchGoogleMaps();
@@ -444,10 +451,11 @@ class _WidgetOsm extends State<WidgetOsm> {
                 },
               );
 
-              AppWidgets.dialog(
+              await AppWidgets.dialog(
                   context: context,
                   isDismissible: true,
                   contents: intersperse(const Divider(), tiles).toList());
+              locationRenderer.renderLocation(mapController);
               break;
             default:
 
@@ -500,9 +508,10 @@ class _WidgetOsm extends State<WidgetOsm> {
         if (check == null) {
           _osmFlutter ??= OSMFlutter(
             onMapIsReady: (bool ready) {
-              Future.delayed(const Duration(seconds: 2), () {
-                MapCenter.draw(mapController);
-                locationRenderer.renderLocation(mapController);
+              Future.delayed(const Duration(seconds: 2), () async {
+                await mapController.removeAllCircle();
+                await MapCenter.draw(mapController);
+                await locationRenderer.renderLocation(mapController);
               });
             },
             osmOption: const OSMOption(
