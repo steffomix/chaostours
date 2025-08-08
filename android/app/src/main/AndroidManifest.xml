@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.stefanbrinkmann.chaosToursUnlimited">
+    package="com.stefanbrinkmann.chaosToursReloaded">
     <uses-permission android:name="android.permission.INTERNET" />
 
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
@@ -22,7 +22,7 @@
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
    <application
         android:enableOnBackInvokedCallback="true"
-        android:label="Chaos Tours Unleashed"
+        android:label="Chaos Tours Reloaded"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

@@ -1,4 +1,4 @@
-package com.stefanbrinkmann.chaosToursUnlimited
+package com.stefanbrinkmann.chaosToursReloaded
 
 import io.flutter.embedding.android.FlutterActivity
 
